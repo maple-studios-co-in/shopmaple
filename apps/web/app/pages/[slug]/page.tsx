@@ -65,9 +65,9 @@ function Contact({ context }: { context: EnquiryContext }) {
           <p className="cp-contact-eyebrow">GET IN TOUCH</p>
           <h1>Tell us what you need. We’ll help you shape it</h1>
           <div className="cp-contact-links">
-            <a href="tel:+919211819727">
+            <a href="tel:+918796130252">
               <Image src={shopFile("Call.svg")} alt="" width={40} height={40} />
-              <span>+91 9211819727</span>
+              <span>+91 87961 30252</span>
             </a>
             <a href="mailto:contact@maplefurnishers.com">
               <Image src={shopFile("Mail.svg")} alt="" width={40} height={40} />

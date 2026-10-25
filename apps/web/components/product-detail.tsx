@@ -396,8 +396,8 @@ export function ProductDetail({
                 {variant.sku && <p>SKU: {variant.sku}</p>}
               </details>
             </div>
-            <a className="pdp-phone" href="tel:+919211819727">
-              CALL US ON +919211819727
+            <a className="pdp-phone" href="tel:+918796130252">
+              CALL US ON +91 87961 30252
             </a>
           </div>
         </div>

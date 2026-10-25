@@ -62,8 +62,8 @@ export function Footer() {
               New Delhi, Delhi, 110015
             </span>
           </p>
-          <a href="tel:+919211819727">
-            <Phone size={26} strokeWidth={1} /> +91 9211819727
+          <a href="tel:+918796130252">
+            <Phone size={26} strokeWidth={1} /> +91 87961 30252
           </a>
           <a href="mailto:contact@maplefurnishers.com">
             <Mail size={26} strokeWidth={1} /> contact@maplefurnishers.com
@@ -77,7 +77,7 @@ export function Footer() {
         <div>
           <h3>For Bulk Order/Collaboration:</h3>
           <a href="tel:+918796130252">
-            <Phone size={24} strokeWidth={1} /> +91 8796130252
+            <Phone size={24} strokeWidth={1} /> +91 87961 30252
           </a>
           <a href="mailto:aayushi@maplefurnishers.com">
             <Mail size={24} strokeWidth={1} /> aayushi@maplefurnishers.com
@@ -85,8 +85,8 @@ export function Footer() {
         </div>
         <div>
           <h3>For Customer Service:</h3>
-          <a href="tel:+919211819727">
-            <Phone size={24} strokeWidth={1} /> +91 9211819727
+          <a href="tel:+918796130252">
+            <Phone size={24} strokeWidth={1} /> +91 87961 30252
           </a>
           <a href="mailto:contact@maplefurnishers.com">
             <Mail size={24} strokeWidth={1} /> contact@maplefurnishers.com
