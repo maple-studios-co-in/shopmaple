@@ -37,7 +37,7 @@ export async function listProducts(db: PrismaClient, input: unknown) {
   // Catalogue is bounded for the initial channel; prices sort by the cheapest displayed variant.
   const all = await db.product.findMany({
     where,
-    include: { variants: { orderBy: { id: "asc" } } },
+    include: { variants: { where: { published: true }, orderBy: { id: "asc" } } },
     orderBy: { title: "asc" },
   });
   if (q.sort.startsWith("price"))

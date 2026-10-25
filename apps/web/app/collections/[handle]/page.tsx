@@ -1,8 +1,12 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductCard } from "@/components/product-card";
+import { CollectionListing } from "@/components/collection-listing";
 import { getProducts } from "@/lib/catalog";
-import { categoryNames } from "@/lib/format";
+import {
+  collectionTitles,
+  collectionQuery,
+  collectionMembers,
+  filterCollection,
+} from "@/lib/collections";
 export const dynamic = "force-dynamic";
 type Query = Record<string, string | string[] | undefined>;
 export default async function Collection({
@@ -13,123 +17,44 @@ export default async function Collection({
   searchParams: Promise<Query>;
 }) {
   const { handle } = await params;
-  if (!Object.hasOwn(categoryNames, handle)) notFound();
-  const query = await searchParams;
-  const term = typeof query.q === "string" ? query.q.slice(0, 80) : "";
-  const sort =
-    typeof query.sort === "string" &&
-    ["price-asc", "price-desc", "title"].includes(query.sort)
-      ? query.sort
-      : "featured";
-  const page =
-    typeof query.page === "string" && /^[1-9]\d{0,2}$/.test(query.page)
-      ? query.page
-      : "1";
-  const data = await getProducts({
-    ...(handle !== "all" ? { category: handle } : {}),
-    ...(term ? { q: term } : {}),
-    sort,
-    page,
-    limit: "20",
-  });
+  if (!Object.hasOwn(collectionTitles, handle)) notFound();
+  const query = collectionQuery(await searchParams);
+  // Membership and facets must run over the entire preview, not just its first API page.
+  const first = await getProducts({ limit: "50", sort: "featured" });
+  const pages = await Promise.all(
+    Array.from({ length: Math.ceil(first.total / 50) - 1 }, (_, index) =>
+      getProducts({ limit: "50", sort: "featured", page: String(index + 2) }),
+    ),
+  );
+  const members = collectionMembers(
+    [...first.products, ...pages.flatMap((page) => page.products)],
+    handle,
+  );
+  const filtered = filterCollection(members, query);
+  const limit = 24;
+  const page = Math.min(
+    query.page,
+    Math.max(1, Math.ceil(filtered.length / limit)),
+  );
   return (
-    <section className="page-section collection-page">
-      <div className="breadcrumb">
-        <Link href="/">Home</Link>
-        <span>/</span>
-        {categoryNames[handle]}
-      </div>
-      <h1>{term ? "Results for “" + term + "”" : categoryNames[handle]}</h1>
-      <form className="collection-toolbar" method="get">
-        <div className="collection-search">
-          <label htmlFor="collection-query" className="sr-only">
-            Search this collection
-          </label>
-          <input
-            id="collection-query"
-            name="q"
-            type="search"
-            maxLength={80}
-            placeholder="Search furniture"
-            defaultValue={term}
-          />
-        </div>
-        <span>{data.total} pieces</span>
-        <label className="sort-label">
-          Sort by
-          <select name="sort" defaultValue={sort}>
-            <option value="featured">Featured</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="title">Name: A–Z</option>
-          </select>
-        </label>
-        <button className="button compact" type="submit">
-          Apply
-        </button>
-      </form>
-      <nav className="category-tabs" aria-label="Filter by category">
-        {Object.entries(categoryNames).map(([key, name]) => (
-          <Link
-            href={"/collections/" + key}
-            key={key}
-            aria-current={key === handle ? "page" : undefined}
-          >
-            {name}
-          </Link>
-        ))}
-      </nav>
-      {data.products.length ? (
-        <div className="product-grid">
-          {data.products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <h2>
-            {term ? "No matching pieces" : "This collection is being prepared"}
-          </h2>
-          <p>
-            {term
-              ? "Try a different name or browse all furniture."
-              : "More pieces will appear here as the catalogue is connected."}
-          </p>
-          <Link href="/collections/all" className="button">
-            Browse all furniture
-          </Link>
-        </div>
+    <CollectionListing
+      handle={handle}
+      title={collectionTitles[handle]!}
+      query={{ ...query, page }}
+      products={filtered.slice((page - 1) * limit, page * limit)}
+      total={filtered.length}
+      collectionTotal={members.length}
+      limit={limit}
+      inStock={
+        members.filter((p) => p.variants.some((v) => v.available)).length
+      }
+      outOfStock={
+        members.filter((p) => p.variants.some((v) => !v.available)).length
+      }
+      highestPrice={Math.max(
+        0,
+        ...members.flatMap((p) => p.variants.map((v) => v.pricePaise)),
       )}
-      <div className="pagination">
-        {data.page > 1 && (
-          <Link
-            href={
-              "?" +
-              new URLSearchParams({
-                q: term,
-                sort,
-                page: String(data.page - 1),
-              })
-            }
-          >
-            Previous
-          </Link>
-        )}
-        {data.total > data.page * data.limit && (
-          <Link
-            href={
-              "?" +
-              new URLSearchParams({
-                q: term,
-                sort,
-                page: String(data.page + 1),
-              })
-            }
-          >
-            Next
-          </Link>
-        )}
-      </div>
-    </section>
+    />
   );
 }

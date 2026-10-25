@@ -53,7 +53,7 @@ export async function readCart(
     quantity,
     lineTotalPaise: v.pricePaise * quantity,
     available:
-      v.available && v.product.published && v.stockPolicy !== "made_to_order",
+      v.available && v.published && v.product.published && v.stockPolicy !== "made_to_order",
     stockPolicy: v.stockPolicy,
   }));
   return {
@@ -85,7 +85,7 @@ export async function setCartQuantity(
         "PRODUCT_NOT_FOUND",
         "This item is no longer available.",
       );
-    if (!variant.available || variant.stockPolicy === "made_to_order")
+    if (!variant.available || !variant.published || variant.stockPolicy === "made_to_order")
       throw new HttpError(
         409,
         "ENQUIRY_REQUIRED",

@@ -4,11 +4,15 @@ import Image from "next/image";
 import { Heart, ArrowUpRight } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { useShop } from "./shop-provider";
-import { money } from "@/lib/format";
+import { shopMoney } from "@/lib/format";
 export function ProductCard({ product }: { product: Product }) {
   const { favourites, toggleFavourite } = useShop();
   const saved = favourites.includes(product.handle);
-  const price = Math.min(...product.variants.map((v) => v.pricePaise));
+  const cheapest = product.variants.reduce((a, b) =>
+    a.pricePaise <= b.pricePaise ? a : b,
+  );
+  const price = cheapest.pricePaise;
+  const sale = cheapest.compareAtPaise && cheapest.compareAtPaise > price;
   return (
     <article className="product-card">
       <div className="product-card-image">
@@ -20,6 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
             sizes="(max-width: 650px) 48vw, (max-width: 1000px) 32vw, 24vw"
           />
         </Link>
+        {sale ? <span className="card-sale">Sale</span> : null}
         <button
           className={"save-button" + (saved ? " saved" : "")}
           aria-label={(saved ? "Unsave " : "Save ") + product.title}
@@ -36,8 +41,13 @@ export function ProductCard({ product }: { product: Product }) {
         {product.title}
       </Link>
       <p className="product-card-price">
-        {product.variants.length > 1 ? "From " : ""}
-        {money(price)}
+        <span>
+          {new Set(product.variants.map((v) => v.pricePaise)).size > 1
+            ? "From "
+            : ""}
+          {shopMoney(price)}
+        </span>
+        {sale ? <del>{shopMoney(cheapest.compareAtPaise!)}</del> : null}
       </p>
     </article>
   );

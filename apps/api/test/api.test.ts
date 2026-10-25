@@ -334,3 +334,59 @@ test("preview imports cannot overwrite variants owned by another source", async 
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("Keeri full snapshots atomically import, replay, retire variants and reject stale publications", async () => {
+  const { syncKeeriExport } = await import("../src/keeri-sync.js");
+  const { keeriFixture } = await import("./fixtures/keeri.js");
+  await db.catalogueSyncState.deleteMany();
+  const input = keeriFixture();
+  await syncKeeriExport(db, input, "maple");
+  const product = await db.product.findUniqueOrThrow({ where: { id: "keeri:maple:model1" }, include: { variants: true } });
+  assert.equal(product.variants[0]?.pricePaise, 1234567);
+  assert.equal(product.variants[0]?.available, false);
+  assert.equal((await syncKeeriExport(db, input, "maple")).replayed, true);
+  const next = keeriFixture(); next.capturedAt = "2026-10-25T11:00:00Z";
+  const second = structuredClone(next.models[0]!.variants[0]!);
+  second.id = "variant2"; second.sku = "CH-ZYRO-BLUE";
+  next.models[0]!.variants = [second];
+  await syncKeeriExport(db, next, "maple");
+  const response = await request(app).get("/api/products/zyro-chair");
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.variants.map((v: { id: string }) => v.id), ["keeri:maple:variant2"]);
+  await assert.rejects(syncKeeriExport(db, input, "maple"), /older/);
+  const conflict = structuredClone(next); conflict.models[0]!.name = "Changed";
+  await assert.rejects(syncKeeriExport(db, conflict, "maple"), /timestamp/);
+  const empty = { ...next, capturedAt: "2026-10-25T12:00:00Z", models: [], publication: [], publicMedia: [] };
+  await syncKeeriExport(db, empty, "maple");
+  assert.equal((await request(app).get("/api/products/zyro-chair")).status, 404);
+  assert.equal((await db.product.findUniqueOrThrow({ where: { id: "chair" } })).published, true);
+});
+
+test("Keeri identity and handle collisions roll back the complete import and watermark", async () => {
+  const { syncKeeriExport } = await import("../src/keeri-sync.js");
+  const { keeriFixture } = await import("./fixtures/keeri.js");
+  await db.catalogueSyncState.deleteMany();
+  const input = keeriFixture(); input.publication[0]!.handle = "walnut-chair";
+  await assert.rejects(syncKeeriExport(db, input, "maple"));
+  assert.equal(await db.product.count({ where: { source: "keeri:maple" } }), 0);
+  assert.equal(await db.catalogueSyncState.count(), 0);
+  await db.variant.update({ where: { id: "chair-cream" }, data: { id: "keeri:maple:variant1" } });
+  await assert.rejects(syncKeeriExport(db, keeriFixture(), "maple"), /identity/);
+  assert.equal(await db.product.count({ where: { source: "keeri:maple" } }), 0);
+  assert.equal(await db.catalogueSyncState.count(), 0);
+});
+
+test("concurrent Keeri snapshots cannot restore older catalogue data", async () => {
+  const { syncKeeriExport } = await import("../src/keeri-sync.js");
+  const { keeriFixture } = await import("./fixtures/keeri.js");
+  await db.catalogueSyncState.deleteMany();
+  const older = keeriFixture();
+  const newer = keeriFixture(); newer.capturedAt = "2026-10-25T11:00:00Z";
+  newer.models[0]!.variants[0]!.prices[0]!.amount = 222222;
+  const results = await Promise.allSettled([
+    syncKeeriExport(db, newer, "maple"), syncKeeriExport(db, older, "maple"),
+  ]);
+  assert.equal(results[0]?.status, "fulfilled");
+  assert.equal((await db.variant.findUniqueOrThrow({ where: { id: "keeri:maple:variant1" } })).pricePaise, 222222);
+  assert.equal((await db.catalogueSyncState.findUniqueOrThrow({ where: { source: "keeri:maple" } })).capturedAt.toISOString(), "2026-10-25T11:00:00.000Z");
+});

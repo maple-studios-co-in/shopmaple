@@ -17,3 +17,14 @@ export const categoryNames: Record<string, string> = {
 };
 export const shopFile = (filename: string) =>
   "https://shop.maplefurnishers.com/cdn/shop/files/" + filename;
+
+// The existing shop displays decimal rupees with international grouping.
+export function shopMoney(paise: number) {
+  return (
+    "Rs. " +
+    (paise / 100).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  );
+}

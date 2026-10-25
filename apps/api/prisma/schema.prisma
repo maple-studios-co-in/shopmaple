@@ -26,6 +26,7 @@ model Variant {
   sku String?
   pricePaise Int
   compareAtPaise Int?
+  published Boolean @default(true)
   available Boolean @default(false)
   stockPolicy String @default("unverified")
   cartItems CartItem[]
@@ -45,4 +46,12 @@ model CartItem {
   cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   @@id([cartId, variantId])
+}
+
+// One durable cursor per tenant source, including completely empty snapshots.
+model CatalogueSyncState {
+  source String @id
+  capturedAt DateTime
+  payloadHash String
+  importedAt DateTime @default(now())
 }

@@ -55,7 +55,7 @@ export function createApp(db: PrismaClient, config: AppConfig) {
   app.get("/api/products/:handle", async (req, res) => {
     const p = await db.product.findFirst({
       where: { handle: req.params.handle, published: true },
-      include: { variants: { orderBy: { id: "asc" } } },
+      include: { variants: { where: { published: true }, orderBy: { id: "asc" } } },
     });
     if (!p)
       throw new HttpError(
