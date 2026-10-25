@@ -1,0 +1,11 @@
+query ProductCopy($after: String) {
+  products(first: 50, after: $after) {
+    nodes {
+      id
+      details: metafield(namespace: "custom", key: "description") { type jsonValue }
+      materialsCare: metafield(namespace: "custom", key: "materials_care") { type jsonValue }
+      shippingReturns: metafield(namespace: "custom", key: "shipping_returns") { type jsonValue }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}

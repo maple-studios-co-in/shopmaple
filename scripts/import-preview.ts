@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { catalogueImportSchema } from "@shopmaple/contracts";
 if (process.env.NODE_ENV === "production")
   throw new Error("Preview import is disabled in production");
@@ -41,8 +41,8 @@ try {
         const { variants, ...product } = p;
         await tx.product.upsert({
           where: { id: p.id },
-          create: { ...product, sourceUpdatedAt: new Date(p.sourceUpdatedAt) },
-          update: { ...product, sourceUpdatedAt: new Date(p.sourceUpdatedAt) },
+          create: { ...product, pdpContent: product.pdpContent ?? Prisma.DbNull, sourceUpdatedAt: new Date(p.sourceUpdatedAt) },
+          update: { ...product, pdpContent: product.pdpContent ?? Prisma.DbNull, sourceUpdatedAt: new Date(p.sourceUpdatedAt) },
         });
         for (const v of variants)
           await tx.variant.upsert({
