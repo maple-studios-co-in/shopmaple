@@ -11,7 +11,7 @@ export const variantSchema = z.object({
   id: z.string().min(1).max(160),
   title: z.string().min(1).max(300),
   sku: z.string().nullable(),
-  pricePaise: z.number().int().min(0).max(1_000_000_000),
+  pricePaise: z.number().int().min(0).max(1_000_000_000).nullable(),
   compareAtPaise: z.number().int().min(0).max(1_000_000_000).nullable(),
   available: z.boolean(),
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
@@ -24,15 +24,15 @@ export const productSchema = z.object({
     .max(200),
   title: z.string().min(1).max(500),
   description: z.string().max(50000),
-  category: z.enum(categories),
+  category: z.enum(categories).nullable(),
   images: z
     .array(z.url().refine((url) => new URL(url).protocol === "https:"))
-    .min(1)
     .max(30),
   published: z.boolean(),
   source: z.string().min(1).max(100),
+  sourceStatus: z.string().max(80).nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
-  variants: z.array(variantSchema).min(1).max(500),
+  variants: z.array(variantSchema).max(500),
 });
 export type Product = z.infer<typeof productSchema>;
 export type Variant = z.infer<typeof variantSchema>;
@@ -51,16 +51,16 @@ export const cartItemSchema = z.object({
   title: z.string(),
   variantTitle: z.string(),
   image: z.string(),
-  pricePaise: z.number().int(),
+  pricePaise: z.number().int().nullable(),
   quantity: z.number().int(),
-  lineTotalPaise: z.number().int(),
+  lineTotalPaise: z.number().int().nullable(),
   available: z.boolean(),
   stockPolicy: z.string(),
 });
 export const cartSchema = z.object({
   items: z.array(cartItemSchema),
   itemCount: z.number().int(),
-  subtotalPaise: z.number().int(),
+  subtotalPaise: z.number().int().nullable(),
   currency: z.literal("INR"),
   checkoutEnabled: z.literal(false),
   mode: z.literal("preview"),

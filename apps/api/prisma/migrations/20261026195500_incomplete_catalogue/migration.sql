@@ -1,0 +1,2 @@
+ALTER TABLE "Product" ALTER COLUMN "category" DROP NOT NULL;
+ALTER TABLE "Variant" ALTER COLUMN "pricePaise" DROP NOT NULL;

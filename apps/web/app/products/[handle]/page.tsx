@@ -15,7 +15,9 @@ export default async function ProductPage({
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const product = await getProduct(handle);
   if (!product) notFound();
-  const related = await getProducts({ category: product.category, limit: "5" });
+  const related = product.category
+    ? await getProducts({ category: product.category, limit: "5" })
+    : { products: [] };
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]

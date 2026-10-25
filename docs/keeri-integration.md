@@ -1,92 +1,49 @@
-# Keeri catalogue integration boundary
+# Store catalogue union and Keeri synchronization
 
-Implemented on 25 October 2026: a validated **offline export adapter and local read-model importer**. It does not authenticate to Keeri, fetch a live catalogue, reserve stock, create orders, or enable checkout. The API still reports `mode: preview` and `checkoutEnabled: false`.
+The new store is an enquiry catalogue while checkout remains disabled. The merchant explicitly selected every current Shopify and nondeleted Keeri product, including source drafts, with ShopMaple inclusion enabled by default. This does not change Shopify publication, Keeri's global publication flags, stock, or payment settings.
 
-## Verified source contract
+## Sources and publication
 
-Read-only inspection used `/Users/adityaagrawal/dev/keeri` at commit `8d87561195f551c5b6e041219c4d5e32c2281daa`. No Keeri database was accessed or changed.
+The full Shopify Admin projection contains only product-facing fields: stable IDs, names, descriptions, handles, product type, source status, public image URLs, variants/SKUs, and prices. The captured complete snapshot has 186 products (176 active, 10 draft), 284 variants, no truncated variant pages. Archived products are excluded. Store the snapshot outside Git under the deployment shared directory. This is a **pinned snapshot**, not an ongoing Shopify subscription: later Shopify changes require a newly captured complete snapshot and a sync run. Reports expose its capture timestamp separately from live Keeri freshness.
 
-| Keeri source | Confirmed behavior |
-| --- | --- |
-| `packages/db/prisma/schema.prisma`, `ProductModel` | Stable `id`, `tenantId`, `name`, `productType`, nullable `description`, `status`, `deletedAt`, `updatedAt`; model owns variants and media. There is no native storefront handle or Shop Maple category enum. |
-| `ProductVariant` | Stable `id`, `modelId`, `tenantId`, current unique-per-tenant `sku`, nullable `variantName`, `status`, separate `published`, `deletedAt`, `stockPolicy`, `updatedAt`. Legacy `oldSku` is not unique and is not used for identity. |
-| `PriceTier` | `amount` is already integer paise; `currency` defaults to INR; `kind: mrp` supplies the public price. No rupee conversion, dealer discount, cost disclosure or stock inference. |
-| `MediaAsset` | `id`, `tenantId`, nullable `modelId`/`variantId`, `stage`, `storageKey`, `supersededAt`, `position`. Only approved, stored, current media is eligible. |
-| `apps/admin/src/products/shopify-publish-plan.ts`, `productStatus` | An active product requires model status published and each variant status published plus `published: true`. Shop Maple applies these checks per included variant. |
-| `apps/admin/src/catalogue/catalogue-query.ts`, `LIVE_MEDIA` | Outward media reads require `stage: approved`, `supersededAt: null`, and non-null storage key. |
-| `apps/admin/app/api/products/route.ts` | GET is an admin catalogue read guarded by `gateProducts("read")`; its projection lacks complete variant identities and media. It is not the export contract implemented here. |
-| `apps/admin/src/products/guard.ts`, `apps/admin/src/auth/session.ts` | Authentication uses the current signed session cookie, refreshed active user/tenant state, and the `catalog` module permission. No unattended service credential/read endpoint was verified. |
+Keeri V2 is `GET /api/storefront/catalogue/v2`, authenticated with a tenant-bound `catalogue:read` service credential. The consumer validates the complete schema, tenant and asset ownership before any write. V2 uses `channelPublished` independently of global source status; explicit channel exclusions are omitted by the producer. Missing price, category, media or variants remain explicit unknowns. All imported stock is unconfirmed (`available: false`); missing/zero placeholder prices become `null`, and such variants cannot enter a purchasing cart. V1 remains available with its original stricter publication gates.
 
-## Export format
+Public images must be approved/current and explicitly mapped by Keeri, then match the storefront image allowlist: `cdn.shopify.com/s/files/` or `shop.maplefurnishers.com/cdn/shop/`. No private storage key/admin route is published or fetched automatically. Products without a public image use the storefront fallback.
 
-`apps/api/src/keeri.ts` defines the strict version 1 export schema. `apps/api/test/fixtures/keeri.ts` is a synthetic complete example with real field names, not merchant data. The envelope and publication manifest are **new Shop Maple integration metadata**, not claimed existing Keeri API fields.
+## Identity and precedence
 
-The envelope contains:
+The union matches stable Shopify IDs or exact current SKUs only. A SKU must be unique on both sides. Titles and legacy SKUs are never identity evidence. Conflicting model/variant evidence or multiple Keeri models claiming one Shopify model remain separate enquiry listings and appear in the aggregate ambiguity count.
 
-- `schemaVersion: 1`, `source: "keeri-export"`, `complete: true`, `tenantId`, `capturedAt` (ISO datetime).
-- `models`: the source field projection below, captured as one consistent full tenant snapshot. Do not concatenate pages captured at different times or label a filtered page complete.
-- `publication`: an explicitly reviewed list of `{ modelId, handle, category }`. Categories are `sofas`, `chairs`, `tables`, `beds`, `storage`, `outdoors`. This avoids guessing Keeri's open product-type taxonomy or changing URLs when names change. A manifest entry alone cannot publish a draft source record.
-- `publicMedia`: reviewed `{ assetId, url }` mappings to publicly accessible HTTPS images. Keeri storage keys and private admin image routes are never turned into public URLs automatically. Only media owned by the included model/published variants can be used.
+Existing Shopify `preview-*` IDs, public handles, variant IDs and cart references survive exact merges. Persisted source-binding tables prevent two identities from the same source claiming one storefront row; previously established bindings cannot silently move. Partial matches preserve unmatched Shopify variants. Real Keeri values take precedence, while absent Keeri photos, descriptive copy, category or price retain known Shopify presentation/price. Truly unknown values stay null. Source status is retained as provenance and does not imply purchasability.
 
-An authorized export producer can select the following actual Prisma fields in Keeri. This is a specification for that producer, not a command this repository runs against Keeri:
+The complete import runs in one transaction with an advisory lock, timestamp/hash replay guard, collision checks and a durable sync cursor. Failed imports leave catalogue and cursor unchanged. Omitted Keeri-only rows retire; products still independently present in Shopify remain. Historical checkout snapshots are untouched. No stock or source database mutations occur.
 
-```ts
-const mediaSelect = {
-  id: true, tenantId: true, modelId: true, variantId: true,
-  stage: true, storageKey: true, supersededAt: true, position: true,
-};
-const modelSelect = {
-  id: true, tenantId: true, name: true, productType: true,
-  description: true, status: true, deletedAt: true, updatedAt: true,
-  media: { select: mediaSelect },
-  variants: { select: {
-    id: true, tenantId: true, modelId: true, sku: true,
-    variantName: true, status: true, published: true, deletedAt: true,
-    stockPolicy: true, updatedAt: true,
-    prices: {
-      where: { kind: "mrp" },
-      select: { kind: true, amount: true, currency: true, updatedAt: true },
-    },
-    media: { select: mediaSelect },
-  } },
-};
-// Authorized producer: tenant-scoped consistent read, JSON-serialize Dates,
-// then attach the reviewed publication/publicMedia manifests and capture time.
-// Never export customers, orders, users, credentials, cost/dealer prices or raw URLs.
-```
+## Deployment command
 
-The producer must match each row's tenant and ownership; the adapter rejects cross-tenant rows, conflicting duplicate media, duplicate models/variants/SKUs/handles, invalid money/currency and source timestamps newer than the capture. Unexpected fields are rejected rather than silently exported. Source `deletedAt` and publication status are enforced again on consumption. Missing MRP, non-positive MRP, absent approved public media, or missing publication mapping omit the product/variant from the public result. Empty complete snapshots are valid and retire all records for that tenant source.
+Server-private environment (never commit or print values):
 
-## Local commands
+- `KEERI_ORIGIN=https://maplefurnishers.keeri.in`
+- `KEERI_CATALOGUE_TOKEN` (catalogue read scope only)
+- `KEERI_TENANT_ID`
+- `SHOPIFY_CATALOGUE_FILE=/home/deploy/shopmaple/shared/shopify-full-export.json`
+- `DATABASE_URL` (isolated ShopMaple database)
+- `APPROVE_STORE_CATALOGUE=publish-all-current-enquiry-only`
 
-Use Node 22+. Dry run validates and summarizes without creating a database client or making a network request:
+From the immutable release:
 
 ```sh
-npx tsx scripts/import-keeri.ts /private/path/keeri-export.json EXPECTED_TENANT_ID
+node --env-file=/home/deploy/shopmaple/shared/store.env --import tsx deploy/sync-store-catalogue.ts
+node --env-file=/home/deploy/shopmaple/shared/store.env --import tsx deploy/sync-store-catalogue.ts --apply
 ```
 
-Apply requires `--apply`, refuses production, and accepts only `localhost`, `127.0.0.1` or `::1` with database name `shopmaple` or `shopmaple_test`. Use the Shop Maple database URL, never a Keeri database URL:
+Default is read-only. Apply accepts only loopback database `shopmaple_store` on 55440 (or dedicated tests on 55439). Keeri capture must be no older than 15 minutes or over one minute in the future. HTTPS transport rejects redirects, oversized payloads, bad content types and untrusted origin changes. An entirely empty Keeri snapshot requires the explicit one-run `--allow-empty-keeri` flag; otherwise the previous catalogue is retained and the job fails. Individual Keeri-only exclusions need no flag. Initial publication has no exclusion rows. Current V2 omits exclusions, so a product independently present in the Shopify snapshot remains listed; a follow-up explicit exclusion identity contract is required for a Keeri channel opt-out to suppress an exact-matched Shopify contribution. Shopify itself remains unchanged.
 
-```sh
-npm run db:generate
-npm run db:migrate
-npx tsx --env-file=.env scripts/import-keeri.ts /private/path/keeri-export.json EXPECTED_TENANT_ID --apply
-```
+After a reviewed first import, install a five-minute cron invoking the current release under `flock -n /home/deploy/shopmaple/shared/catalogue-sync.lock`. Log aggregate JSON only (counts, ambiguity, each source capture timestamp and dry-run state), rotate logs, and preserve nonzero failures. Credential expiry and repeated failures require operator attention; there is not yet a staff dashboard displaying the consumer's sync freshness. Keeri channel inclusion controls are the ongoing staff selection surface.
 
-The printed result includes source, capture time, imported and omitted model counts, dry-run status and disabled checkout. Keep actual exports and private media manifests outside this public repository. The synthetic test fixture is safe to commit.
+## Release and rollback
 
-## Synchronization semantics
+Back up and checksum the isolated database before migrations/import. Restore-test that backup into a separate scratch database. Apply the additive identity/source-status and nullable category/price migrations, start the reviewed nullable-aware runtime, dry-run the real sources, then atomically import and verify counts and representative public pages. Keep checkout disabled.
 
-- Source is `keeri:<tenantId>`. Stable read-model IDs are `keeri:<tenantId>:<sourceId>` (the colon separator is forbidden inside source IDs, so tenant/ID boundaries cannot collide); the source SKU is retained unchanged. Handles/categories are explicit manifest values.
-- Every variant is imported with `available: false` regardless of source stock policy. The original `stockPolicy` remains available for enquiry UI. Checkout needs a verified reservation/allocation contract before anything becomes purchasable.
-- The entire snapshot applies in one PostgreSQL transaction. A transaction-scoped advisory lock serializes a tenant's imports. `CatalogueSyncState` stores capture time and SHA-256 of the validated export, including empty snapshots.
-- Older snapshots fail. An identical validated payload at the same capture time is an idempotent no-op; a different payload at the same time fails. Array ordering remains significant for this fingerprint; producers should emit deterministic order. Correct an export with a new capture timestamp.
-- Only the matching tenant source is updated/retired. Existing product/variant ownership and globally unique handles cannot be taken over; a collision rolls back everything, including the cursor. Existing preview products are untouched, so a later catalogue cutover requires an explicit handle/source migration.
-- Omitted products become unpublished. Omitted variants become unpublished and unavailable, but remain stored so old cart references are valid. Both product-list and product-detail reads exclude retired variants; old carts allow their removal.
-- The read model uses snapshot capture time as `sourceUpdatedAt`, because price/media publication can change independently of `ProductModel.updatedAt`.
+**After nullable catalogue rows are imported, switching the symlink to the older runtime alone is unsafe:** that version rejects null prices/categories and empty variants/images. Rollback must either retain the new compatible runtime or stop the scheduled sync, restore the exact pre-import database backup, then activate the previous release. Rehearse the database restore before activation and retain both release directories. Do not delete releases or reset Keeri/Shopify data.
 
-## Remaining live integration work
-
-This local snapshot format is not an authenticated transport. A verified Keeri export/read endpoint, dedicated read credential, consistent snapshot/pagination semantics, deployed schema verification, freshness monitoring and media hosting are still needed. The approved media domain must also be configured in the frontend image allowlist before those images render there. Product/variant-specific specifications, variant image selection and migration of existing Shopify handles remain separate work.
-
-No real tenant export or live public media URLs were supplied in this slice. Tests use synthetic schema-shaped fixtures and the dedicated local PostgreSQL test database; they establish transformation, publication, transaction, replay, concurrency and guard behavior, not production sync. Reservation, payment/order persistence and durable Keeri order handoff remain release blockers.
+The legacy `deploy/sync-keeri-catalogue.ts` remains a V1-only incremental tool. Do not schedule it alongside the union runner.

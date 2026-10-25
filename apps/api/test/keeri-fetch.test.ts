@@ -184,3 +184,9 @@ test("a transport completing after the deadline cannot leave an unread body runn
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(cancelled, true);
 });
+
+test('V2 transport validates channel-published incomplete listings without relaxing V1',async()=>{
+ const {v2Fixture}=await import('./fixtures/keeri-v2.js');const data=v2Fixture();data.publicMedia=[];
+ const result=await fetchKeeriExport({endpoint:'https://keeri.example/api/storefront/catalogue/v2',trustedOrigin:'https://keeri.example',token:'synthetic-token',tenantId:'maple',schemaVersion:2,fetch:async()=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}})});
+ assert.equal(result.products.length,1);assert.equal(result.products[0]!.sourceStatus,'draft');
+});

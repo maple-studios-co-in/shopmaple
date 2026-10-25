@@ -112,6 +112,14 @@ test("freezes database prices and server charges once across concurrent idempote
   assert.equal(await db.checkoutAttempt.count(), 1);
 });
 
+test("an unknown catalogue price cannot become a frozen zero-priced checkout or provider order", async () => {
+  await db.variant.update({where:{id:"orders-variant"},data:{pricePaise:null}});
+  await assert.rejects(service().freezeCart(token,"unpriced-checkout"),{code:"INVALID_TOTAL"});
+  assert.equal(await db.checkoutAttempt.count(),0);
+  assert.equal(posts.length,0);
+  assert.equal(reserveCalls,0);
+});
+
 test("unknown and expired guest credentials cannot freeze or access another checkout", async () => {
   await assert.rejects(service().freezeCart("b".repeat(64), "checkout-request-1"), { code: "CART_NOT_FOUND" });
   const frozen = await service().freezeCart(token, "checkout-request-1");

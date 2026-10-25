@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { CollectionListing } from "@/components/collection-listing";
+import { canOrder, pricedVariants } from "@/lib/product-availability";
 import { getProducts } from "@/lib/catalog";
 import {
   collectionTitles,
@@ -36,6 +37,7 @@ export default async function Collection({
     query.page,
     Math.max(1, Math.ceil(filtered.length / limit)),
   );
+  const knownPrices = members.flatMap(product => pricedVariants(product).map(variant => variant.pricePaise));
   return (
     <CollectionListing
       handle={handle}
@@ -46,15 +48,12 @@ export default async function Collection({
       collectionTotal={members.length}
       limit={limit}
       inStock={
-        members.filter((p) => p.variants.some((v) => v.available)).length
+        members.filter((p) => p.variants.some(canOrder)).length
       }
       outOfStock={
-        members.filter((p) => p.variants.some((v) => !v.available)).length
+        members.filter((p) => !p.variants.length || p.variants.some(v => !canOrder(v))).length
       }
-      highestPrice={Math.max(
-        0,
-        ...members.flatMap((p) => p.variants.map((v) => v.pricePaise)),
-      )}
+      highestPrice={knownPrices.length ? Math.max(...knownPrices) : null}
     />
   );
 }

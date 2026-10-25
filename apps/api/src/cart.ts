@@ -51,15 +51,15 @@ export async function readCart(
     image: v.product.images[0] ?? "",
     pricePaise: v.pricePaise,
     quantity,
-    lineTotalPaise: v.pricePaise * quantity,
+    lineTotalPaise: v.pricePaise === null ? null : v.pricePaise * quantity,
     available:
-      v.available && v.published && v.product.published && v.stockPolicy !== "made_to_order",
+      v.pricePaise !== null && v.available && v.published && v.product.published && v.stockPolicy !== "made_to_order",
     stockPolicy: v.stockPolicy,
   }));
   return {
     items,
     itemCount: items.reduce((sum, x) => sum + x.quantity, 0),
-    subtotalPaise: items.reduce((sum, x) => sum + x.lineTotalPaise, 0),
+    subtotalPaise: items.some(x => x.lineTotalPaise === null) ? null : items.reduce((sum, x) => sum + x.lineTotalPaise!, 0),
     currency: "INR",
     checkoutEnabled: false,
     mode: "preview",
@@ -85,7 +85,7 @@ export async function setCartQuantity(
         "PRODUCT_NOT_FOUND",
         "This item is no longer available.",
       );
-    if (!variant.available || !variant.published || variant.stockPolicy === "made_to_order")
+    if (variant.pricePaise === null || !variant.available || !variant.published || variant.stockPolicy === "made_to_order")
       throw new HttpError(
         409,
         "ENQUIRY_REQUIRED",

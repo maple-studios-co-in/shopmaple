@@ -98,6 +98,40 @@ export const keeriExportSchema = z
       .max(150000),
   })
   .strict();
+const shopifyId = z
+  .string()
+  .regex(/^[1-9][0-9]{0,30}$/)
+  .nullable();
+export const keeriExportV2Schema = keeriExportSchema.extend({
+  schemaVersion: z.literal(2),
+  models: z
+    .array(
+      keeriExportSchema.shape.models.element.extend({
+        channelPublished: z.boolean(),
+        shopifyProductId: shopifyId,
+        variants: z
+          .array(
+            variantSchema.extend({
+              channelPublished: z.boolean(),
+              sku: z.string().trim().max(300).nullable(),
+              stockPolicy: z.enum([
+                "stocked",
+                "made_to_order",
+                "dropship",
+                "unverified",
+              ]),
+              shopifyProductId: shopifyId,
+              shopifyVariantId: shopifyId,
+            }),
+          )
+          .max(500),
+      }),
+    )
+    .max(5000),
+});
+export function adaptKeeriExportV2(input: unknown, expectedTenantId: string) {
+  return adaptValidated(keeriExportV2Schema.parse(input), expectedTenantId);
+}
 export type KeeriExport = z.infer<typeof keeriExportSchema>;
 
 function unique(values: string[], label: string) {
@@ -107,12 +141,20 @@ function unique(values: string[], label: string) {
 
 /** Explicit projection of Keeri's schema, not the admin API response shape. */
 export function adaptKeeriExport(input: unknown, expectedTenantId: string) {
-  const data = keeriExportSchema.parse(input);
+  return adaptValidated(keeriExportSchema.parse(input), expectedTenantId);
+}
+function adaptValidated(
+  data: KeeriExport | z.infer<typeof keeriExportV2Schema>,
+  expectedTenantId: string,
+) {
   if (data.tenantId !== expectedTenantId)
     throw new Error("Keeri tenant mismatch");
   const source = `keeri:${data.tenantId}`;
   const identity = (value: string) => `keeri:${data.tenantId}:${value}`;
-  const variants = data.models.flatMap((m) => m.variants);
+  const variants = data.models.flatMap<
+    | KeeriExport["models"][number]["variants"][number]
+    | z.infer<typeof keeriExportV2Schema>["models"][number]["variants"][number]
+  >((m) => m.variants);
   unique(
     data.models.map((m) => m.id),
     "model identity",
@@ -121,10 +163,11 @@ export function adaptKeeriExport(input: unknown, expectedTenantId: string) {
     variants.map((v) => v.id),
     "variant identity",
   );
-  unique(
-    variants.map((v) => v.sku),
-    "SKU",
-  );
+  if (data.schemaVersion === 1)
+    unique(
+      variants.map((v) => v.sku).filter((sku): sku is string => sku !== null),
+      "SKU",
+    );
   unique(
     data.publication.map((p) => p.modelId),
     "publication model",
@@ -195,14 +238,22 @@ export function adaptKeeriExport(input: unknown, expectedTenantId: string) {
   const products: Product[] = [];
   for (const model of data.models) {
     const publication = data.publication.find((p) => p.modelId === model.id);
-    if (!publication || model.deletedAt || model.status !== "published")
+    if (
+      !publication ||
+      model.deletedAt ||
+      ("channelPublished" in model
+        ? !model.channelPublished
+        : model.status !== "published")
+    )
       continue;
     const eligible = model.variants.filter(
       (v) =>
         !v.deletedAt &&
-        v.status === "published" &&
-        v.published &&
-        v.prices.some((p) => p.kind === "mrp" && p.amount > 0),
+        ("channelPublished" in v
+          ? v.channelPublished
+          : v.status === "published" &&
+            v.published &&
+            v.prices.some((p) => p.kind === "mrp" && p.amount > 0)),
     );
     const eligibleIds = new Set(eligible.map((v) => v.id));
     const images = [
@@ -220,7 +271,8 @@ export function adaptKeeriExport(input: unknown, expectedTenantId: string) {
           .filter((url): url is string => Boolean(url)),
       ),
     ].slice(0, 30);
-    if (!eligible.length || !images.length) continue;
+    if (data.schemaVersion === 1 && (!eligible.length || !images.length))
+      continue;
     products.push(
       productSchema.parse({
         id: identity(model.id),
@@ -231,12 +283,15 @@ export function adaptKeeriExport(input: unknown, expectedTenantId: string) {
         images,
         published: true,
         source,
+        ...(data.schemaVersion === 2 ? { sourceStatus: model.status } : {}),
         sourceUpdatedAt: data.capturedAt,
         variants: eligible.map((v) => ({
           id: identity(v.id),
-          title: v.variantName?.trim() || v.sku,
-          sku: v.sku,
-          pricePaise: v.prices.find((p) => p.kind === "mrp")!.amount,
+          title: v.variantName?.trim() || v.sku || "Details on request",
+          sku: v.sku || null,
+          pricePaise:
+            v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ??
+            null,
           compareAtPaise: null,
           available: false,
           stockPolicy: v.stockPolicy,

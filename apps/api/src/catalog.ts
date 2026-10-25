@@ -37,16 +37,26 @@ export async function listProducts(db: PrismaClient, input: unknown) {
   // Catalogue is bounded for the initial channel; prices sort by the cheapest displayed variant.
   const all = await db.product.findMany({
     where,
-    include: { variants: { where: { published: true }, orderBy: { id: "asc" } } },
-    orderBy: { title: "asc" },
+    include: {
+      variants: { where: { published: true }, orderBy: { id: "asc" } },
+    },
+    orderBy: [{ title: "asc" }, { id: "asc" }],
   });
-  if (q.sort.startsWith("price"))
-    all.sort(
-      (a, b) =>
-        (Math.min(...a.variants.map((v) => v.pricePaise)) -
-          Math.min(...b.variants.map((v) => v.pricePaise))) *
-        (q.sort === "price-desc" ? -1 : 1),
-    );
+  if (q.sort.startsWith("price")) {
+    const minimum = (variants: { pricePaise: number | null }[]) => {
+      const prices = variants.flatMap((v) =>
+        v.pricePaise === null ? [] : [v.pricePaise],
+      );
+      return prices.length ? Math.min(...prices) : null;
+    };
+    all.sort((a, b) => {
+      const left = minimum(a.variants),
+        right = minimum(b.variants);
+      if (left === null) return right === null ? 0 : 1;
+      if (right === null) return -1;
+      return (left - right) * (q.sort === "price-desc" ? -1 : 1);
+    });
+  }
   return {
     products: all
       .slice((q.page - 1) * q.limit, q.page * q.limit)

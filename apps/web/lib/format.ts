@@ -1,4 +1,5 @@
-export function money(paise: number) {
+export function money(paise: number | null) {
+  if (paise === null) return "Price on request";
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -19,7 +20,8 @@ export const shopFile = (filename: string) =>
   "https://shop.maplefurnishers.com/cdn/shop/files/" + filename;
 
 // The existing shop displays decimal rupees with international grouping.
-export function shopMoney(paise: number) {
+export function shopMoney(paise: number | null) {
+  if (paise === null) return "Price on request";
   return (
     "Rs. " +
     (paise / 100).toLocaleString("en-US", {
