@@ -32,18 +32,22 @@ export function ProductDetail({
   presentation?: Presentation;
 }) {
   const router = useRouter();
+  const variantImage = (id: string) => {
+    const src = presentation?.variantImages[id];
+    return src && product.images.includes(src) ? src : undefined;
+  };
   const initial =
-    product.variants.find(
-      (v) => v.id === initialVariant || v.id === "preview-" + initialVariant,
-    )?.id ??
-    product.variants.find(canOrder)?.id ??
+    product.variants.find((v) => v.id === initialVariant)?.id ??
+    product.variants.find((v) => v.id === "preview-" + initialVariant)?.id ??
+    product.variants.find((v) => variantImage(v.id))?.id ??
+    product.variants.find((v) => v.pricePaise !== null)?.id ??
     product.variants[0]?.id ??
     "";
   const [variantId, setVariantId] = useState(initial);
   const [image, setImage] = useState(() =>
       Math.max(
         0,
-        product.images.indexOf(presentation?.variantImages[initial] ?? ""),
+        product.images.indexOf(variantImage(initial) ?? ""),
       ),
     ),
     [quantity, setQuantityValue] = useState(1),
@@ -83,7 +87,7 @@ export function ProductDetail({
   }
   function selectVariant(id: string) {
     setVariantId(id);
-    const src = presentation?.variantImages[id];
+    const src = variantImage(id);
     if (src) {
       const index = product.images.indexOf(src);
       if (index >= 0) setImage(index);
@@ -119,6 +123,11 @@ export function ProductDetail({
           />
           <div className="product-information pdp-info">
             <h1>{product.title}</h1>
+            {variant && !variantImage(variant.id) && (
+              <p className="pdp-option-photo-note" role="status">
+                Photo for this option unavailable
+              </p>
+            )}
             {presentation?.reviewLabel === "No reviews" && (
               <a className="pdp-rating" href="#product-reviews">
                 {stars}
@@ -162,16 +171,24 @@ export function ProductDetail({
                         onChange={() => selectVariant(v.id)}
                       />
                       <span className="pdp-variant-image">
-                        {presentation?.variantImages[v.id] && (
+                        {variantImage(v.id) ? (
                           <ProductImage
-                            src={presentation.variantImages[v.id]!}
+                            src={variantImage(v.id)!}
                             alt=""
                             fill
                             sizes="143px"
                           />
+                        ) : (
+                          <span className="pdp-variant-placeholder">Photo unavailable</span>
                         )}
                       </span>
                       <span>{v.title}</span>
+                      {v.sku?.trim() && product.variants.some(
+                        (other) => other.id !== v.id && other.title === v.title &&
+                          other.sku?.trim() && other.sku !== v.sku,
+                      ) && (
+                        <small className="pdp-variant-code">Item code: {v.sku}</small>
+                      )}
                       <small>{shopMoney(v.pricePaise)}</small>
                     </label>
                   ))}

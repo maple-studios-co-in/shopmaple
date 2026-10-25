@@ -4,7 +4,9 @@ The active goal and next work are tracked in [Shop Content and Motion](superpowe
 
 Completed and deployed in PR #17: category copy/order/visibility controls, private media library and transactional publication, and a separately authorized enquiry inbox. The first publisher is `aditya@maplefurnishers.com`; private password setup and enquiry capability approval remain pending. The deployed runtime is `b38d9a0` (same tree as merge `7eda8c6`).
 
-Current increment: gallery keyboard/swipe/load transitions, optional section reveals, source-aligned hero destinations, offline uploaded-media recovery tools, and a [bounded page parity audit](audits/2026-10-26-page-parity.md). Local implementation does not imply deployment.
+PR #18 is merged and deployed: gallery keyboard/swipe/load transitions, optional section reveals (default off), source-aligned hero destinations, offline uploaded-media recovery tools, and a [bounded page parity audit](audits/2026-10-26-page-parity.md). Runtime 9522ab8 has the identical tree to merge 8a29804; 350 tests, CI, scanners, independent review, restored database backup and public/browser probes passed. Automated security inventory metadata remained unavailable; all 19 changed files received manual review.
+
+Current increment: restore Shopify display copy for exact product matches, improve variant photo/default/item-code presentation without identity merges, restore the original blog index layout/excerpts/order, and remove the obsolete chairs self-link. These changes are local pending release verification.
 
 Priority order remaining:
 

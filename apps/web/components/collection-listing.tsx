@@ -363,12 +363,6 @@ export function CollectionListing(props: Props) {
             A selection from our catalogue. Prices and availability are from the
             preview snapshot.
           </p>
-          {handle === "chairs" && (
-            <p className="collection-preview-note">
-              Browse the complete chair collection on{" "}
-              <a href="/collections/chairs">our current shop</a>.
-            </p>
-          )}
         </div>
       </div>
       <dialog

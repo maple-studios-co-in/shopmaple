@@ -143,3 +143,64 @@ test("raw Keeri MRP cannot overwrite verified public prices across repeated sync
   });
   assert.equal(revoked.products[0]!.variants[0]!.pricePaise, null);
 });
+
+test("exactly mapped products retain Shopify display copy and photos over populated Keeri presentation", () => {
+  const { k } = fixtures();
+  k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
+  const plan = planCatalogueUnion(shopifyPricedFixture(), k, "maple");
+  const p = plan.products[0]!;
+  assert.equal(p.title, "Real chair");
+  assert.equal(p.description, "Actual description");
+  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg"]);
+  assert.equal(p.id, "preview-101");
+  assert.equal(p.handle, "real-chair");
+  assert.deepEqual(p.variants.map(v => [v.id, v.pricePaise, v.compareAtPaise, v.available, v.stockPolicy]),
+    [["preview-201", 12345, 15000, false, "stocked"]]);
+  assert.deepEqual(plan.variantBindings, [
+    { source: "shopify", externalId: "preview-201", targetId: "preview-201" },
+    { source: "keeri:maple", externalId: "keeri:maple:variant1", targetId: "preview-201" },
+  ]);
+});
+
+test("empty current Shopify copy and photos are not replaced with Keeri or historical presentation", () => {
+  const { k } = fixtures();
+  k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
+  const s = shopifyPricedFixture();
+  const prior = planCatalogueUnion(s, k, "maple");
+  s.products[0]!.description = "";
+  s.products[0]!.media.nodes = [];
+  const next = planCatalogueUnion(s, k, "maple", {
+    products: prior.products, productBindings: prior.productBindings, variantBindings: prior.variantBindings,
+  });
+  assert.equal(next.products[0]!.description, "");
+  assert.deepEqual(next.products[0]!.images, []);
+});
+
+test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct and unpriced", () => {
+  const { k } = fixtures();
+  const extra = structuredClone(k.models[0]!.variants[0]!);
+  extra.id = "variant2";
+  extra.sku = "UNMATCHED-OAK";
+  extra.variantName = "Oak";
+  k.models[0]!.variants.push(extra);
+  const plan = planCatalogueUnion(shopifyPricedFixture(), k, "maple");
+  assert.deepEqual(plan.products[0]!.variants.map(v => [v.id, v.title, v.sku, v.pricePaise, v.available]), [
+    ["preview-201", "Oak", "CHAIR-OAK", 12345, false],
+    ["keeri:maple:variant2", "Oak", "UNMATCHED-OAK", null, false],
+  ]);
+});
+
+test("Keeri-only products retain their current display copy and approved photos", () => {
+  const { k } = fixtures();
+  k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
+  const s = shopifyPricedFixture();
+  s.products = [];
+  s.publicPrices.products = [];
+  const p = planCatalogueUnion(s, k, "maple").products[0]!;
+  assert.equal(p.title, "Zyro");
+  assert.equal(p.description, "Solid wood chair");
+  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/keeri.jpg"]);
+  assert.equal(p.variants[0]!.title, "Linen / Walnut");
+  assert.equal(p.variants[0]!.pricePaise, null);
+  assert.equal(p.variants[0]!.available, false);
+});

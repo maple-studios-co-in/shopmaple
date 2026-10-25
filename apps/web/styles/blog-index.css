@@ -1,0 +1,111 @@
+/* Source Recent Stories composition: lead story, two columns, then three. */
+.blog-index {
+  max-width: 1512px;
+  margin: 0 auto;
+  padding: 40px 36px 48px;
+}
+.blog-index > h1 {
+  margin: 0 0 40px;
+  color: var(--burgundy);
+  text-align: center;
+  font-family: Newsreader, Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(48.67px, 4vw, 56px);
+  line-height: 1.4;
+}
+.blog-index-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 36px;
+}
+.blog-index-card {
+  grid-column: span 2;
+  min-width: 0;
+}
+.blog-index-card:first-child {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
+}
+.blog-index-card:nth-child(2),
+.blog-index-card:nth-child(3) {
+  grid-column: span 3;
+}
+.blog-index-image {
+  display: block;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.blog-index-image img {
+  display: block;
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+}
+.blog-index-card:first-child .blog-index-image img {
+  height: 400px;
+}
+.blog-index-card:nth-child(2) .blog-index-image img,
+.blog-index-card:nth-child(3) .blog-index-image img {
+  height: 320px;
+}
+.blog-index-copy {
+  padding-top: 6.4px;
+  overflow-wrap: anywhere;
+}
+.blog-index-card:first-child .blog-index-copy {
+  padding-left: 36px;
+}
+.blog-index-copy h2 {
+  margin: 12px 0 10px;
+  color: var(--burgundy);
+  font-family: "Red Hat Display", Manrope, sans-serif;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+.blog-index-copy p {
+  margin: 16px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.blog-index-copy a {
+  text-decoration: none;
+}
+.blog-index-copy > a {
+  display: inline-block;
+  padding-top: 12px;
+  color: var(--burgundy);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.blog-index-copy a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.blog-index a:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 4px;
+}
+@media (max-width: 749px) {
+  .blog-index {
+    padding: 40px 16px 32px;
+  }
+  .blog-index-card,
+  .blog-index-card:nth-child(2),
+  .blog-index-card:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .blog-index-card:first-child {
+    display: block;
+  }
+  .blog-index-card:first-child .blog-index-copy {
+    padding-left: 0;
+  }
+  .blog-index-image img,
+  .blog-index-card:nth-child(2) .blog-index-image img,
+  .blog-index-card:nth-child(3) .blog-index-image img {
+    height: 200px;
+  }
+}

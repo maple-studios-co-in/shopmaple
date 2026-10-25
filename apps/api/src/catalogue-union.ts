@@ -169,6 +169,7 @@ export function planCatalogueUnion(
       variants.set(variantId, {
         ...v,
         id: variantId,
+        title: before?.title ?? v.title,
         // V2 MRP has no reliable tax/market basis. Keep it in Keeri, never label it a buyer price.
         pricePaise: before?.pricePaise ?? null,
         compareAtPaise: before?.compareAtPaise ?? null,
@@ -180,9 +181,12 @@ export function planCatalogueUnion(
       ...c.p,
       id,
       handle: prior?.handle ?? c.p.handle,
-      description: c.p.description || base?.description || "",
+      // Shopify owns display presentation for exact matches, including empty
+      // current fields. Keeri remains the source of operational variant data.
+      title: base ? base.title : c.p.title,
+      description: base ? base.description : c.p.description,
       category: c.p.category ?? base?.category ?? null,
-      images: c.p.images.length ? c.p.images : (base?.images ?? []),
+      images: base ? base.images : c.p.images,
       source: base ? "shopify-preview" : source,
       variants: [...variants.values()],
     });
