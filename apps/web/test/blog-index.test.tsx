@@ -6,7 +6,11 @@ import BlogPage from "../app/blogs/[blog]/page";
 import source from "../data/store-content.json";
 
 async function render(blog = "recent-stories") {
-  return new JSDOM(renderToStaticMarkup(await BlogPage({ params: Promise.resolve({ blog }) }))).window.document;
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+  try {
+    return new JSDOM(renderToStaticMarkup(await BlogPage({ params: Promise.resolve({ blog }) }))).window.document;
+  } finally { globalThis.fetch = previous; }
 }
 function normalize(value: string | null | undefined) {
   return (value ?? "").replace(/\s+/g, " ").trim();

@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import { ContentEditor } from "../components/admin/editor";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
@@ -11,6 +9,8 @@ Object.assign(globalThis, {
   window: dom.window, document: dom.window.document,
   HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true,
 });
+const { createRoot } = await import("react-dom/client");
+const { ContentEditor } = await import("../components/admin/editor");
 const container = document.getElementById("root")!;
 function button(name: string) {
   const found = [...container.querySelectorAll<HTMLButtonElement>("button")]

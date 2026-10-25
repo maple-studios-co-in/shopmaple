@@ -18,7 +18,9 @@ PR #25 is merged asb7df7a1 after all eight exact-head CI checks at91bcaf1. Its e
 
 PR #26 is merged as7aec707 after all eight exact-head CI checks at26d276a. The [Nimbus increment](releases/2026-10-26-nimbus-content.md) adds nine section order/visibility controls, copy editing and source typography/paragraph fidelity.492 integrated tests, types/build, scanners, independent review and bounded desktop/mobile browser checks pass. Not deployed.
 
-The current [Contact, Bulk Enquiry and Returns increment](releases/2026-10-26-service-pages.md) adds typed existing-page content controls while preserving forms, fixed destinations and operational warnings.510 integrated tests, types/build, scanners and independent review pass; bounded desktop/mobile keyboard and rendering checks pass. Exact-head CI/merge pending. Remaining CMS coverage includes structured policy/blog content and further media/merchandising controls. No production deployment claimed.
+PR #27 is merged as65113a5 after all eight exact-head CI checks atdec9a40. The [Contact, Bulk Enquiry and Returns increment](releases/2026-10-26-service-pages.md) adds typed existing-page content controls while preserving forms, fixed destinations and operational warnings.510 integrated tests, types/build, scanners, independent review and bounded desktop/mobile checks pass. Not deployed.
+
+The current [policy/blog increment](releases/2026-10-26-editorial-content.md) adds sparse structured copy controls for the existing policies, blog titles and articles. Original text and layouts remain defaults, and imported tables now render valid structure with readable keyboard scrolling.536 integrated tests, types/build, scanners, independent review and bounded browser checks pass. Exact-head CI/merge pending. New article authoring, structural editing and further media/merchandising controls remain open. No production deployment claimed.
 
 Priority order remaining:
 

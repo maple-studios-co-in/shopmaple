@@ -125,7 +125,9 @@ Remaining after this increment: assignment/notes/notifications, campaign schedul
 
 - [x] PR24: Our Story copy/order/visibility and source page fidelity; merged, not deployed.
 - [x] PR25: eight homepage copy groups;475 local tests and eight CI checks; merged, not deployed.
-- [ ] Nimbus fixed-template copy/order/visibility and source typography: implemented; final verification/release gate in progress.
-- [ ] Contact/Bulk Enquiry/Returns, policy and blog copy controls; further media and merchandising controls.
+- [x] PR26: Nimbus fixed-template copy/order/visibility and source typography;492 tests and eight CI checks; merged, not deployed.
+- [x] PR27: Contact/Bulk Enquiry/Returns copy and section controls;510 tests and eight CI checks; merged, not deployed.
+- [ ] Existing policy/blog copy controls and readable keyboard tables: implemented,536 integrated tests and local gates pass; exact-head CI/merge pending. No deployment claimed.
+- [ ] New article authoring/structural editing; further media and merchandising controls.
 
 Private owner activation and capacity resolution are still pending. These implementation increments do not complete live staff acceptance, full visual/performance acceptance or commerce readiness.

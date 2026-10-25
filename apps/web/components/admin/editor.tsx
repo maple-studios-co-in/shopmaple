@@ -9,6 +9,7 @@ import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
 import { ServicePageFields } from "./service-page-fields";
+import { EditorialFields } from "./editorial-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
@@ -34,6 +35,7 @@ const tabs = [
   "Instagram",
   "Pages",
   "Existing pages",
+  "Policies & blogs",
   "Category pages",
   "Media",
   "Enquiries",
@@ -560,6 +562,9 @@ export function ContentEditor({
               )}
               {tab === "Media" && (
                 <MediaLibrary session={session} onExpired={onExpired} />
+              )}
+              {tab === "Policies & blogs" && (
+                <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
               )}
               {tab === "Enquiries" &&
                 session.user.canManageEnquiries === true && (
