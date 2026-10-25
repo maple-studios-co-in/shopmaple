@@ -33,7 +33,7 @@ flowchart TB
   end
   DB[("Shop Maple PostgreSQL\nSeparate from Keeri")]
   Snapshot["85-product public preview snapshot"]
-  Export["Validated Keeri export file\nAuthorized producer still needed"]
+  Export["Validated Keeri export file\nProducer implemented in Keeri PR #778; configuration pending"]
   Images["Existing Shopify image hosts"]
   Customer -->|"Pages and same-origin /api requests"| Web
   Web -->|"Server fetches + /api rewrite"| API
@@ -201,7 +201,7 @@ Current manual paths:
 3. Keeri import checks tenant/identity ownership, publication, MRP and approved public media; it serializes tenant imports with a transaction advisory lock and atomically updates the cursor/read model. Older/conflicting snapshots fail; identical snapshots are replay-safe. Omitted source records are retired.
 4. **All Keeri-imported variants remain unavailable for purchase** until inventory guarantees exist. Preview-source handle collisions require an explicit cutover mapping; imports cannot silently take over another source's identity.
 
-Target: authenticated consistent Keeri export producer → scheduled import → local catalogue → cache invalidation/freshness monitoring. The producer, service credential, schedule, invalidation, approved media hosting and source cutover are still required. See [Keeri integration](keeri-integration.md).
+Target: authenticated consistent Keeri export producer → scheduled import → local catalogue → cache invalidation/freshness monitoring. The producer is implemented in Keeri PR #778; deployment, reviewed publication/media manifest, service credential, schedule, invalidation and source cutover are still required. See [Keeri integration](keeri-integration.md).
 
 ## 5. Order and payment architecture
 
@@ -301,7 +301,7 @@ Production requires migration execution, process supervision, health/readiness c
 | --- | --- | --- |
 | Public catalogue and guest cart | **Yes, for preview** | Implemented HTTP endpoints and database tests. Source is a dated snapshot; no authoritative stock guarantee. |
 | Enquiry persistence | **Yes, for preview** | Idempotent storage and honest receipt. Staff inbox, notifications, privacy lifecycle and production abuse controls remain. |
-| Offline Keeri transformation/import | **Yes, locally** | Validated schema, tenant isolation, replay/staleness and transactional import. Real export transport/producer and deployment validation remain. |
+| Offline Keeri transformation/import | **Yes, locally** | Validated schema, tenant isolation, replay/staleness and transactional import. Fetch consumer and Keeri producer code exist; configured transport and deployment validation remain. |
 | Frozen orders and payment-event persistence | **Service foundation ready** | Callable and database-tested; no public activation or complete customer/fulfilment flow. |
 | Razorpay adapter | **Boundary tested** | Deterministic fixtures/mock transport. Current merchant, test/live mode, capture settings and real sandbox flow are unverified. |
 | Inventory reservation | **No** | Interface and fail-closed gate exist; no cross-channel stock adapter or last-item production proof. |
@@ -333,3 +333,22 @@ This architecture was checked against:
 - [Preview snapshot](../apps/api/data/preview-catalog.json), [landing content provenance](../apps/web/data/landing-PROVENANCE.md), [UI parity status](ui-parity-progress.md).
 
 CI installs dependencies on Node 22, starts PostgreSQL 17, creates/migrates a dedicated test database, imports the preview, runs tests/typechecks and builds both apps. The prior merged checkpoint passed 74 tests; current integration results are recorded in the PR and roadmap, not proof of merchant/Keeri integration. Check the latest commit's CI before merging. Manual browser checks and production integration checks remain distinct from unit/integration test success.
+
+
+## 10. Dedicated Keeri service boundary
+
+[Keeri PR #778](https://github.com/maple-studios-co-in/Keeri/pull/778) implements the producer and stock side in the separate Keeri repository. These endpoints have no live configuration in this project:
+
+| Endpoint | Authority and responsibility |
+| --- | --- |
+| `GET /api/storefront/catalogue` | Scoped bearer credential; consistent tenant snapshot with reviewed public publication/media mapping and MRP-only prices. No private media keys or admin sessions. |
+| `POST /api/storefront/reservations` | Freeze-bound, idempotent stock hold under shared inventory locks. The service derives tenant/product/variant quantities from the snapshot. |
+| `POST /api/storefront/reservations/verify` | Check exact reservation/attempt/digest binding, live expiry and physical stock backing. |
+| `POST /api/storefront/reservations/release` | Release only the bound unpaid hold. Paid holds require commercial reconciliation. |
+| `POST /api/storefront/orders` | Idempotent captured-order intake bound to merchant, attempt, reservation and payload digest; returns a distinct intake receipt. |
+
+Credentials are hashed, expiring and scoped to a configured tenant and merchant. Exact route/method exemptions in Keeri's Next proxy delegate authentication to these handlers; all adjacent routes retain their existing session gate. Missing configuration fails closed. Deployment must supply HTTPS, ingress limits and a verified environment reload/credential-rotation procedure.
+
+The intake enters `pending_commercial_review`, retaining its stock as `paid_pending_review`. It does not create a SalesOrder, invent a customer/address, or return ShopMaple's required `externalOrderId`. Consequently, the ShopMaple order delivery adapter remains disconnected until the commercial handoff is completed or its protocol explicitly distinguishes intake from sales-order creation. Paid holds must not expire automatically while that handoff is unresolved.
+
+Keeri's quotation issuance now checks finite stocked-item availability under the shared row locks used by storefront holds. Made-to-order quotation semantics are retained. Real database contention, replay, cross-tenant and lifecycle tests cover the implemented paths; this does not prove all production stock policies or operational recovery flows.

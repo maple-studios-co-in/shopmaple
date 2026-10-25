@@ -18,7 +18,7 @@ Updated 25 October 2026. This is the implementation queue for replacing Shopify 
 - [x] Frozen pricing/order service, payment signature/capture verification and transactional inbox/outbox foundation.
 - [x] Baseline: 74 tests, typechecks and both builds passed before this wave; PR #1 merged. Full UI parity, live integrations and deployment remain incomplete.
 
-## Wave 1 — implemented; final review underway
+## Wave 1 — verified; PR #2 open
 
 | Work item | Owner | Acceptance / dependencies | Status |
 | --- | --- | --- | --- |
@@ -26,12 +26,12 @@ Updated 25 October 2026. This is the implementation queue for replacing Shopify 
 | Durable payment inbox / Keeri order-outbox processors | Worker agent | Atomic leases, crash recovery, fencing, bounded retries, acknowledgement binding and merchant isolation; PostgreSQL concurrency tests | Implemented; focused tests passed |
 | TDD project policy and repeatable security gates | Quality agent | Root guidance, PR evidence template, audit/secret/static checks, least-privilege CI and dependency update checks | Implemented; focused tests passed |
 | Safe Keeri export fetch boundary | Integrator | Fixed trusted HTTPS destination, credential isolation, no redirects, timeout/size limits, tenant/schema validation; no unverified endpoint activation | Implemented; focused tests passed |
-| Combined verification and security review | Integrator | Full test suite, typechecks, builds, immutable-diff security review, CI on the exact PR head | 106 tests, typechecks, builds and scanner checks passed; final diff review pending |
+| Combined verification and security review | Integrator | Full test suite, typechecks, builds, immutable-diff security review, CI on the exact PR head | 106 tests, typechecks, builds, scanners and immutable source-diff review passed; PR #2 CI passed |
 
 ## Wave 2 — Keeri and payment integration
 
-- [ ] Add or verify a dedicated Keeri service API contract: authenticated full catalogue export, atomic stock reservations/expiry/consumption and idempotent captured-order intake. **Authorized:** user approved dedicated APIs. Two agents are implementing them in the isolated `codex/shopmaple-service-api` Keeri branch; live configuration remains pending.
-- [ ] Implement Keeri producer endpoints with tenant-scoped service authorization, minimum public product projection and consistent full-snapshot semantics. Tests reject other tenants, drafts, private media and partial exports.
+- [ ] Add or verify a dedicated Keeri service API contract: authenticated full catalogue export, atomic stock reservations/expiry/consumption and idempotent captured-order intake. **Authorized:** user approved dedicated APIs. Implemented in Keeri PR #778 (`feature/shopmaple-service-api`), with full verification in progress. Consumption into a complete sales order and live configuration remain pending.
+- [x] Implement Keeri producer endpoints with tenant-scoped service authorization, minimum public product projection and consistent full-snapshot semantics. Tests reject other tenants, drafts, private media and partial exports. Reviewed publication/media configuration is still required before use.
 - [ ] Connect catalogue pull/import with freshness visibility and publication-triggered cache invalidation. Test stale snapshots, replay, source collisions, interrupted imports and retirement.
 - [ ] Implement cross-channel stock reservation adapter. Test two buyers competing for the last item, expiry, made-to-order policy and idempotent reserve/consume/release.
 - [ ] Connect authenticated order delivery to Keeri. Test lost responses, duplicate acknowledgements, revoked credentials and repeated delivery without duplicate sales orders.
@@ -66,3 +66,9 @@ Updated 25 October 2026. This is the implementation queue for replacing Shopify 
 Keep credentials out of chat and git. Required before live activation: Keeri endpoint ownership and service identity, authoritative stock policy, gateway merchant/test mode, shipping/tax/serviceability rules, customer-data/retention requirements, notification channel and deployment destination. Independent code work continues while these are resolved.
 
 Related: [architecture](architecture.md), [UI parity](ui-parity-progress.md), [Keeri contract](keeri-integration.md), [orders](order-flow.md), [payments](payments.md).
+
+## Current review links
+
+- [ShopMaple PR #2](https://github.com/maple-studios-co-in/shopmaple/pull/2): commerce boundaries, TDD policy and security CI; source revision `db81bf58` passed the immutable security review with no reportable findings.
+- [Keeri PR #778](https://github.com/maple-studios-co-in/Keeri/pull/778): dedicated service APIs, shared stock guard and dependency security updates. Draft until final checks finish. Intake remains `pending_commercial_review`, not a completed sales order.
+- No production deployment, live payment or Shopify cutover has occurred.
