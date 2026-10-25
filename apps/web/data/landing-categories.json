@@ -1,0 +1,591 @@
+{
+  "sofas": {
+    "title": "Sofas",
+    "description": "A sofa is not just the most used piece in a living room. It is where the home slows down.\nFrom morning coffee to family conversations, movie nights, guests, celebrations, and quiet moments alone, the sofa becomes the centre of everyday living. At Maple Furnishers, we design sofa sets that bring comfort, durability, and quiet luxury into your home.\nExplore premium sofa sets for living rooms in different sizes, from compact 2-seater sofas to spacious 8-seater sofa sets. Each piece can be customised in fabric, finish, size, and seating style to match your space and lifestyle.\nOur sofas are crafted in-house using quality materials, strong frames, refined upholstery, and carefully selected finishes. Choose from fabric options such as velvet, leatherette, cotton, polyester, and more, designed to balance comfort, style, and long-term use.\nWhether you want a modern sofa, luxury sofa set, wooden sofa, recliner sofa, or a fully customised design, Maple helps you create a piece that feels personal to your home.\nBring home a sofa that looks beautiful on day one and feels even better with time.",
+    "sections": [
+      {
+        "type": "banner",
+        "desktop": "1_Sofa_web_banner_Occasion_1.png",
+        "mobile": "1_Sofa_Mobile_banner_Occasionl.png",
+        "width": 1392,
+        "height": 350
+      },
+      {
+        "type": "categories",
+        "items": [
+          {
+            "href": "/collections/sofa-set-designs",
+            "title": "Designer Sofa Sets",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Sofa_set.png?v=1776249000"
+          },
+          {
+            "href": "/collections/wooden-sofas",
+            "title": "Wooden Sofas",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Wooden_Sofa.png?v=1776247851"
+          },
+          {
+            "href": "/collections/sofa-cum-beds",
+            "title": "Sofa Cum Beds",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_20.png?v=1776247665"
+          },
+          {
+            "href": "/collections/recliners",
+            "title": "Recliners",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_19.png?v=1776247512"
+          },
+          {
+            "href": "/collections/l-shape-sofa",
+            "title": "L Shape Sofa",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/L_shape_sofa.png?v=1776248195"
+          },
+          {
+            "href": "/collections/fabric-sofas",
+            "title": "Fabric Sofas",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Fabric_Sofas.png?v=1776248870"
+          },
+          {
+            "href": "/collections/chesterfield-sofas",
+            "title": "Chesterfield Sofas",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Chesterfield.png?v=1776248511"
+          },
+          {
+            "href": "/collections/3-seater-sofas",
+            "title": "3 Seater Sofas",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageApr27_2025_09_20_42PM.png?v=1776249398"
+          },
+          {
+            "href": "/collections/2-seater-sofas",
+            "title": "2 Seater Sofas",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_26.png?v=1776249363"
+          },
+          {
+            "href": "/collections/bedroom-sofa",
+            "title": "Bedroom Sofa",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_16_d3d49430-cb5a-493e-8cf5-eb94d060881a.png?v=1777277928"
+          }
+        ],
+        "columns": 5
+      },
+      {
+        "type": "banner",
+        "desktop": "2_-_Sofa_web_banner_Occasion_e1a561f6-0ea9-4de8-9df5-3efb1ece7e87.png",
+        "mobile": "2_-_Sofa_Mobile_banner_Occasionl_9b793796-3dc9-427d-a28d-0b0484fe8dc1.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Best Sellers",
+        "collection": "5-seater-sofa",
+        "viewAll": false,
+        "handles": [
+          "sora-5-seater-sofa",
+          "estelle-5-seater-sofa",
+          "zaria-5-seater-sofa",
+          "nysa-5-seater-sofa",
+          "vivienne-5-seater-sofa"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "2_-_Sofa_web_banner_Outddor_17dc7073-c9f4-44fe-bd25-b79867474b48.png",
+        "mobile": "2_-_Sofa_Mobile_banner_Outdoor_2375edf8-48f2-4a7a-83fd-2516fc6e307d.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Sofas",
+        "collection": "sofas",
+        "viewAll": false,
+        "handles": [
+          "selene-2-seater-sofa",
+          "alcyone-7-seater-sofa",
+          "vesper-7-seater-sofa",
+          "rhea-7-seater-sofa",
+          "eira-7-seater-sofa",
+          "vela-7-seater-sofa"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "2_-_Sofa_web_banner_Bedroom_18e4633f-045c-42b7-a2cf-bc67177c59a7.png",
+        "mobile": "2_-_Sofa_Mobile_banner_Bedroom_a3f4a36e-2de4-44ca-b0e1-db1ff9e6a315.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Bedrooms",
+        "collection": "chair-collection",
+        "viewAll": false,
+        "handles": [
+          "caro",
+          "ario",
+          "nola",
+          "tara",
+          "arno",
+          "rollo"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "2_-_Sofa_web_banner_Living_room_a10a44d9-f04b-4c14-8469-f6adf14f229e.png",
+        "mobile": "2_-_Sofa_Mobile_banner_Living_room_eae1abfd-c5e3-48e6-8e6e-6ecf274daf85.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Living",
+        "collection": "7-seater-sofa",
+        "viewAll": false,
+        "handles": [
+          "alcyone-7-seater-sofa",
+          "vesper-7-seater-sofa",
+          "rhea-7-seater-sofa",
+          "eira-7-seater-sofa",
+          "vela-7-seater-sofa",
+          "alina-7-seater-sofa"
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "heading",
+        "eyebrow": "The Maple Difference",
+        "heading": "Every element is yours to reshape"
+      },
+      {
+        "type": "values",
+        "items": [
+          {
+            "image": "Cover_Image_Maple_3.svg",
+            "title": "Grain",
+            "body": "Where nature begins the story — raw, real, and rooted in beauty."
+          },
+          {
+            "image": "Cover_Image_Maple_2.svg",
+            "title": "Edge",
+            "body": "Precision that defines perfection. Every line, intentional."
+          },
+          {
+            "image": "Cover_Image_Maple_4.svg",
+            "title": "Fabric",
+            "body": "Softness you can feel before you even touch it."
+          },
+          {
+            "image": "Cover_Image_Maple_5.svg",
+            "title": "Polish",
+            "body": "The quiet glow of craftsmanship perfected."
+          }
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "products",
+        "heading": "Paired Together",
+        "collection": "center-tables-1",
+        "viewAll": false,
+        "handles": [
+          "kynor-sofa-table",
+          "xarvo-sofa-table",
+          "veylo-sofa-table",
+          "elrik-sofa-table",
+          "zayro-sofa-table",
+          "noryx-sofa-table"
+        ]
+      }
+    ]
+  },
+  "tables": {
+    "title": "Tables",
+    "description": "Discover timeless craftsmanship and contemporary elegance with Maple Furnishers’ exclusive Tables Collection. From sophisticated bar tables and stylish side tables to luxurious dining tables and modern sofa tables, our range is designed to complement every corner of your home. Crafted with premium materials, refined finishes, and attention to detail, each piece blends functionality with aesthetic appeal. Whether you’re creating a cozy dining space, an elegant living room, or a statement entertainment area, Maple Furnishers offers versatile designs that bring warmth, style, and durability to your interiors.",
+    "sections": [
+      {
+        "type": "banner",
+        "desktop": "1Table_web_banner_Occasionl_8035619e-9062-4852-9257-b6b482b37c59.png",
+        "mobile": "1Table_Mobile_banner_Occasionl_bf7e6e02-7db8-44c4-ac8e-245c787f1a95.png",
+        "width": 2784,
+        "height": 700
+      },
+      {
+        "type": "categories",
+        "items": [
+          {
+            "href": "/collections/side-table",
+            "title": "Side Table",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?v=1780689228"
+          },
+          {
+            "href": "/collections/dinings",
+            "title": "Dinings",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.svg?v=1780689685"
+          },
+          {
+            "href": "/collections/bar",
+            "title": "Bar",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?v=1780690251"
+          },
+          {
+            "href": "/collections/consoles",
+            "title": "Consoles",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?v=1780690666"
+          },
+          {
+            "href": "/collections/sofa-table",
+            "title": "Sofa Table",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_9.webp?v=1780691008"
+          },
+          {
+            "href": "/collections/tv-media-units",
+            "title": "TV & Media Units",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?v=1780691418"
+          }
+        ],
+        "columns": 6
+      },
+      {
+        "type": "banner",
+        "desktop": "2_Table_web_banner_Occasionl_24519f91-7602-419c-8b42-d47082e7bafb.png",
+        "mobile": "2Table_Mobile_banner_Occasionl_d1a08b22-3403-4f5d-b7eb-45ae9d5dfc73.png",
+        "width": 2784,
+        "height": 700
+      },
+      {
+        "type": "products",
+        "heading": "Best Sellers",
+        "collection": "tables",
+        "viewAll": true,
+        "handles": [
+          "aven-side-table",
+          "cirque-luxe-marble-dining-table-emperador-gold",
+          "elora",
+          "elowen-1",
+          "elowen-3",
+          "elrik-sofa-table"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Table_web_banner_Outddor_5c4232f3-b7cf-4ea4-9085-70fbde3096e6.png",
+        "mobile": "Table_Mobile_banner_Outdoor_03bdf84a-672b-47b4-a97a-eb45ad6312f1.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Dinings",
+        "collection": "dining",
+        "viewAll": false,
+        "handles": [
+          "varyn-dining-table",
+          "veyro-dining-table",
+          "nova-dining-table",
+          "velor-dining-table",
+          "seno-dining-table",
+          "runo-dining-table"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Table_web_banner_bedroom_dee1a8ee-914c-4a2c-8335-2c1d484c8011.png",
+        "mobile": "Table_Mobile_banner_Bedroom_e872b1ba-4cfc-494c-a734-a1a979d3f922.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Bedroom",
+        "collection": "side-table",
+        "viewAll": false,
+        "handles": [
+          "veya-1",
+          "elowen-3",
+          "elowen-1",
+          "orven-side-table",
+          "aven-side-table",
+          "zenvo-side-table"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Table_web_banner_bedroom_1_14a6d7d3-c3cf-4590-b74c-518047b640c4.png",
+        "mobile": "Table_Mobile_banner_Bedroom_1.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Living",
+        "collection": "sofa-table",
+        "viewAll": false,
+        "handles": [
+          "oryx-sofa-table",
+          "velon-sofa-table",
+          "zarek-sofa-table",
+          "kyvik-sofa-table",
+          "noryx-sofa-table",
+          "elrik-sofa-table"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Web_banner_Dining_Table_Set.png",
+        "mobile": "Mobile_banner_Dining_Table_Set.png",
+        "width": 1392,
+        "height": 350
+      },
+      {
+        "type": "products",
+        "heading": "Consoles",
+        "collection": "console-tables",
+        "viewAll": false,
+        "handles": [
+          "tavik-console-table",
+          "lyro-console-table",
+          "zovik-console-table",
+          "ovalo-modern-console-walnut-white",
+          "oslo-retro-console-walnut-ivory",
+          "winston-wooden-console-table-with-brass-trim-mirror"
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "heading",
+        "eyebrow": "The Maple Difference",
+        "heading": "Every element is yours to reshape"
+      },
+      {
+        "type": "values",
+        "items": [
+          {
+            "image": "Icon_maple_3.svg",
+            "title": "Quiet Luxury",
+            "body": "Furniture that doesn’t shout, but makes the room feel complete"
+          },
+          {
+            "image": "Cover_Image_Maple_2.svg",
+            "title": "Built for Real Living",
+            "body": "Not made only for photographs. Made for everyday comfort and use"
+          },
+          {
+            "image": "Icon_maple_1.svg",
+            "title": "Ages Beautifully",
+            "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
+          },
+          {
+            "image": "Cover_Image_Maple_5.svg",
+            "title": "Strength You Don’t See",
+            "body": "A solid frame, lasting structure, and details that stay quiet for years."
+          }
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "products",
+        "heading": "Paired Together",
+        "collection": "chairs",
+        "viewAll": false,
+        "handles": [
+          "naro-dining-chair",
+          "arven",
+          "vellora",
+          "elowen-2",
+          "arco",
+          "zeno"
+        ]
+      }
+    ]
+  },
+  "chairs": {
+    "title": "Chairs",
+    "description": "Chairs do more than complete a room — they shape the way a space feels. Whether placed around a dining table, beside a coffee corner, or as a statement piece in the living room, the right chair brings together comfort, style, and everyday functionality.\nAt Maple Furnishers, our chair collection is designed to suit the evolving needs of contemporary Indian homes. Each piece is carefully crafted with a focus on ergonomic comfort, refined detailing, and enduring quality using premium woods, fabrics, and finishes.\nFrom sleek modern silhouettes to rich upholstered designs, our range offers versatile options for dining, lounging, working, and entertaining. With customizable fabrics, finishes, and designs, you can create seating that reflects your personal taste and complements your interiors effortlessly.\nBuilt with precision and designed to be lived in every day, Maple chairs combine timeless aesthetics with dependable craftsmanship creating pieces that remain comfortable, elegant, and relevant for years to come.",
+    "sections": [
+      {
+        "type": "banner",
+        "desktop": "1Chir_web_banner_Occasionl_3a97833b-120c-4740-a312-ec1f4d090d9e.png",
+        "mobile": "1Chair_Mobile_banner_Occasionl_abc9ba01-bb03-47b8-b404-cf2e37509e86.png",
+        "width": 2784,
+        "height": 700
+      },
+      {
+        "type": "categories",
+        "items": [
+          {
+            "href": "/collections/accent-chair",
+            "title": "Accent Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM.png?v=1776235338"
+          },
+          {
+            "href": "/collections/bedroom-chair",
+            "title": "Bedroom Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Bedroom_Chair.png?v=1776247016"
+          },
+          {
+            "href": "/collections/dining-chair",
+            "title": "Dining Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600"
+          },
+          {
+            "href": "/collections/iconic-bar-chair",
+            "title": "Iconic/Bar Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Bar_chair.png?v=1776246640"
+          },
+          {
+            "href": "/collections/lounge-wing-chair",
+            "title": "Lounge/Wing Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM_51b94d48-f9ef-48b0-912f-81334c0a61d7.png?v=1776246868"
+          },
+          {
+            "href": "/collections/rocking-chair",
+            "title": "Rocking Chair",
+            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Rocking_Chair.png?v=1776236017"
+          }
+        ],
+        "columns": 6
+      },
+      {
+        "type": "banner",
+        "desktop": "2_Chair_web_banner_Occasionl_288bd690-f49d-4785-b840-ea4fc0a87e40.png",
+        "mobile": "2_Chair_Mobile_banner_Occasionl_d52a82fa-6acd-4efa-a031-7ab377557193.png",
+        "width": 2764,
+        "height": 478
+      },
+      {
+        "type": "products",
+        "heading": "Best Sellers",
+        "collection": "chair-collection",
+        "viewAll": true,
+        "handles": [
+          "caro",
+          "ario",
+          "nola",
+          "tara",
+          "arno",
+          "rollo"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Chairs_web_banner_Outddor_b48281ef-c42e-4c88-85cc-7ddef0e31af6.png",
+        "mobile": "Chair_Mobile_banner_Outdoor_287d024a-95e7-4fb3-80e5-583ca4b8db1e.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Chairs",
+        "collection": "bestseller-chairs",
+        "viewAll": false,
+        "handles": [
+          "orlen-accent-chair",
+          "luma-haven-accent-chair",
+          "orvane-accent-chair",
+          "valen-accent-chair",
+          "tara",
+          "elyra-accent-chair"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "2_-_Sofa_web_banner_Bedroom_0c605e04-a498-4dca-ab2a-e6bc67118458.png",
+        "mobile": "2_-_Sofa_Mobile_banner_Bedroom_8389ee92-1652-4f28-a61a-822305d6eb4c.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Bedrooms",
+        "collection": "arm-chair",
+        "viewAll": false,
+        "handles": [
+          "vellora",
+          "arco",
+          "zeno",
+          "beno",
+          "rollo",
+          "vela"
+        ]
+      },
+      {
+        "type": "banner",
+        "desktop": "Sofa_Mobile_banner_Living_room_2.png",
+        "mobile": "Sofa_Mobile_banner_Living_room_1.png",
+        "width": 2784,
+        "height": 400
+      },
+      {
+        "type": "products",
+        "heading": "Living",
+        "collection": "chairs",
+        "viewAll": false,
+        "handles": [
+          "naro-dining-chair",
+          "arven",
+          "vellora",
+          "elowen-2",
+          "arco",
+          "zeno"
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "heading",
+        "eyebrow": "The Maple Difference",
+        "heading": "Every element is yours to reshape"
+      },
+      {
+        "type": "values",
+        "items": [
+          {
+            "image": "Icon_maple_3.svg",
+            "title": "Quiet Luxury",
+            "body": "Furniture that doesn’t shout, but makes the room feel complete"
+          },
+          {
+            "image": "Cover_Image_Maple_2.svg",
+            "title": "Built for Real Living",
+            "body": "Not made only for photographs. Made for everyday comfort and use"
+          },
+          {
+            "image": "Icon_maple_1.svg",
+            "title": "Ages Beautifully",
+            "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
+          },
+          {
+            "image": "Cover_Image_Maple_5.svg",
+            "title": "Strength You Don’t See",
+            "body": "A solid frame, lasting structure, and details that stay quiet for years."
+          }
+        ]
+      },
+      {
+        "type": "divider"
+      },
+      {
+        "type": "products",
+        "heading": "Paired Together",
+        "collection": "center-tables-1",
+        "viewAll": false,
+        "handles": [
+          "kynor-sofa-table",
+          "xarvo-sofa-table",
+          "veylo-sofa-table",
+          "elrik-sofa-table",
+          "zayro-sofa-table",
+          "noryx-sofa-table"
+        ]
+      }
+    ]
+  }
+}

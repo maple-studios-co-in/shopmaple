@@ -1,63 +1,335 @@
-# Custom commerce architecture
+# Shop Maple architecture
 
-Decision recorded: 25 October 2026.
+Code inspected on 25 October 2026. This document describes the current implementation and the remaining production design separately. **The backend supports a local storefront preview; it is not ready to accept live orders.** Checkout is deliberately disabled, even when both applications are built in production mode.
 
-The product owner selected an independent storefront with an owned commerce backend and Keeri as the product source. Medusa is excluded. The technical defaults below guide implementation; they do not represent completed or tested integrations.
+The frontend and backend live in **one npm-workspace repository and run as separate processes**. There is no Medusa dependency. Keeri is the intended product and operational source; Shop Maple owns the customer shopping experience and online commerce state. The current catalogue is a dated Shopify preview snapshot containing **85 products and 115 variants**, not a live Keeri or Shopify inventory feed.
 
-## Components
+## 1. Components and boundaries
 
-| Component | Choice | Responsibility |
-|---|---|---|
-| Storefront | Next.js, React, TypeScript | Server-rendered catalogue pages and interactive shopping UI matching the current shop. |
-| Commerce API | Node.js, Express, Zod | Carts, checkout attempts, orders, gateway integration, refunds and reservation coordination. |
-| Persistence | PostgreSQL, Prisma | Transactions, uniqueness constraints, immutable commercial snapshots and a durable integration outbox. |
-| Product source | Keeri service API | Approved products, stable variant IDs, price inputs, stock policy, product specifications and media references. |
-| Media | Cloudflare R2/CDN plus image processing | Versioned responsive image variants, modern formats and caching. |
-| Payments | Hosted gateway with server adapter | Provider handles payment credentials; our API verifies payment state and reconciles events. |
+| Component | Current technology | Responsibility and status |
+| --- | --- | --- |
+| `apps/web` | Next.js 16.4.3, React 19.3.1, TypeScript | Server-rendered catalogue and content routes; interactive menus, product variants, favourites, cart and enquiry forms. Shopify layout/content references guide parity; full parity is ongoing. |
+| `apps/api` | Node.js 22+, Express 5, Zod 4 | Public catalogue, guest cart, enquiry persistence, health endpoint and explicit checkout refusal. Separate callable order and payment modules are not connected to HTTP routes. |
+| `packages/contracts` | Shared TypeScript and Zod schemas | Validates API input/output, product/cart/enquiry structures and catalogue imports across both applications. |
+| Shop Maple database | PostgreSQL 17, Prisma 6.19.3 | Catalogue read model, guest carts, enquiries, sync cursor, frozen checkout attempts, payment-event inbox and Keeri outbox. This is separate from Keeri's database. |
+| Catalogue tools | TypeScript CLI scripts | Manual public-preview import and validated offline Keeri export import. No live sync scheduler or authenticated Keeri transport exists. |
+| Media and presentation | Next Image configuration, Shopify-hosted images, checked-in presentation JSON, local font packages | AVIF/WebP are enabled for optimized images. Existing remote image dependencies remain; no R2 migration or custom media pipeline is implemented. |
+| Gateway module | Server-only Razorpay adapter | Order creation, signature validation and captured-payment verification with injected credentials/transport. Not constructed by the running server. Razorpay is supported by historical Shopify order evidence; the current merchant configuration still needs confirmation. |
+| Verification | Node test runner/tsx, PostgreSQL test database, TypeScript, GitHub Actions | Automated API/component checks and both builds. Browser parity checks are manual. CI is verification, not deployment. |
 
-Use the existing Maple TypeScript/Express/Prisma conventions. Keep the commerce module separate from Keeri's admin interface and database migrations. Redis is not a first-release prerequisite; durable work is recorded in PostgreSQL.
+### Current application connections
 
-## Ownership and integration
+Solid connections below are wired in the application or available manual import commands. The isolated service block exists in source and tests; it is not a running background service.
 
-Keeri remains the product and operational system. The commerce API owns online carts, checkout attempts, payment/refund transitions and online order snapshots. Paid orders are handed to Keeri through a durable, idempotent integration keyed by the commerce order ID. Reuse Keeri's sales-order and invoice capabilities rather than build another ERP.
+```mermaid
+flowchart TB
+  Customer["Customer browser"]
+  subgraph Repo["One repository: shopmaple"]
+    Web["Next.js frontend :3000\nServer pages + client interactions"]
+    API["Express API :4100\nCatalogue / cart / enquiries\nCheckout returns 503"]
+    Contracts["Shared Zod contracts"]
+    Import["Manual import CLIs\nPreview / offline Keeri export"]
+    Services["Isolated order + Razorpay modules\nCallable and tested\nNo routes or workers"]
+  end
+  DB[("Shop Maple PostgreSQL\nSeparate from Keeri")]
+  Snapshot["85-product public preview snapshot"]
+  Export["Validated Keeri export file\nAuthorized producer still needed"]
+  Images["Existing Shopify image hosts"]
+  Customer -->|"Pages and same-origin /api requests"| Web
+  Web -->|"Server fetches + /api rewrite"| API
+  API --> DB
+  Contracts --- Web
+  Contracts --- API
+  Snapshot --> Import
+  Export --> Import
+  Import --> DB
+  Web -->|"Image optimization where used"| Images
+  Customer -->|"Some direct image / external feature links"| Images
+  Services -. "Tests and explicit server callers only" .-> DB
+```
 
-Publish approved catalogue data into a local read model so browsing does not depend on Keeri's availability. Revalidate prices and availability at checkout. Historical order totals do not change when catalogue prices change. Persist money in integer paise with explicit currency.
+Keeri is not in the live request path. Browsing reads the local product model; there is no browser access to Keeri admin APIs or either database.
 
-Stock reservation must work across online and offline sales. A periodically copied stock count is insufficient. Require either a shared atomic reservation operation or a protected online stock allocation that offline sales cannot consume. Otherwise the affected item stays enquiry-only. Define expiration, cancellation and late-payment reconciliation for reservations.
+## 2. Repository and frontend design
 
-## Checkout correctness
+```text
+apps/
+  web/
+    app/                  Next routes, layout and shared loading/error states
+    components/           Header, product, collection, cart and enquiry UI
+    lib/                  Server catalogue client and enquiry request client
+    data/                 Landing content, collections and product presentation
+    styles/               Page-specific Shopify parity styling
+    test/                 React/client behavior tests
+    next.config.ts        API rewrite, image allowlist and response headers
+  api/
+    src/app.ts            Exposed HTTP application
+    src/server.ts         Runtime configuration and lifecycle
+    src/catalog.ts        Published catalogue reads, filtering and sorting
+    src/cart.ts           Guest credential, persistent cart and current totals
+    src/enquiries.ts      Validated, idempotent enquiry persistence
+    src/keeri*.ts          Offline export validation and transactional import
+    src/orders/service.ts Durable checkout/event/outbox service
+    src/payments/         Razorpay transport and verification adapter
+    prisma/               Shop Maple schema and versioned migrations
+    data/                 Public preview catalogue
+    test/                 API, gateway and database integration tests
+packages/contracts/       Shared runtime schemas and types
+scripts/                  Manual catalogue import commands
+docs/                     Integration contracts, status and architecture
+.github/workflows/ci.yml  Automated verification
+compose.yaml              Local PostgreSQL service
+```
 
-- Calculate prices, shipping and taxes on the server. Freeze the commercial facts accepted by the buyer.
-- Scope guest carts and order access with opaque credentials; public order numbers are not authentication.
-- Persist checkout attempts and deduplicate repeat submissions before creating gateway orders.
-- Verify gateway callbacks, expected amount/currency and provider order identity. Do not mark an order paid solely from a browser redirect.
-- Deduplicate events and handle retries, timeouts and out-of-order delivery transactionally.
-- Persist Keeri handoff and notification jobs alongside order transitions; recover and alert when downstream delivery fails.
-- Track refunds separately from cancellations and reconcile provider confirmation before updating operational payment records.
+Current route families include `/`, `/collections/[handle]`, `/products/[handle]`, `/cart`, `/checkout`, `/favourites`, generic `/pages/[slug]`, and dedicated sofas, tables, chairs, Nimbus and Our Story pages. Some Shopify-owned features or destinations remain external links; route existence alone does not establish feature or visual parity.
 
-## UI and performance
+Catalogue pages call the API from the server using `API_URL`, validate its response with shared contracts, and use a 30-second Next fetch revalidation window with a six-second timeout. The API advertises `public, max-age=30, s-maxage=60` for catalogue responses. There is no implemented publication-triggered cache invalidation or measured production CDN behavior.
 
-Reproduce the current storefront's layout, typography, spacing, product cards, variants, menus and cart behavior. Compare rendered pages at matching desktop and mobile viewports. Theme files are references, not proof of visual parity; product media and app-owned widgets/data are separate migration work.
+Interactive cart state lives in `ShopProvider`, then persists through the API. Favourites are a browser-only list of product IDs in localStorage, not a customer account service. Enquiry inputs remain in form memory; the server persists accepted submissions. Public routes have preview/noindex metadata and headers, and the layout displays the checkout-unavailable notice.
 
-Server-render and cache public catalogue pages; invalidate on publication. Generate responsive image sizes, prioritise visible hero media, lazy-load below-fold content and reserve media dimensions. Avoid shared caches for carts, checkout and account responses. Load third-party functionality only where needed while preserving required customer behavior.
+The current API loads matching catalogue rows before sorting and slicing results. This is bounded preview behavior, not a full-catalogue search architecture. Move sorting/pagination into indexed database queries and profile actual catalogue size before scaling.
 
-Initial performance targets are LCP at most 2.5 seconds, CLS at most 0.1 and INP at most 200 milliseconds. These are targets, not measurements or guarantees.
+## 3. Public API that exists today
 
-## First implementation slice
+Browser requests use Next's `/api/:path*` rewrite; there are no Next route handlers for these endpoints. The rewrite destination is configured at build time, so changing `API_URL` requires rebuilding the frontend.
 
-1. Catalogue adapter and matching home, collection and product pages.
-2. Guest cart and server-calculated checkout for one approved ready-stock variant.
-3. One payment gateway in sandbox, verified payment confirmation and one Keeri order handoff.
-4. Refund, duplicate-event, last-item concurrency and handoff-retry verification.
-5. Made-to-order enquiries with the correct selected variant context.
+| Method and path | Current behavior | Boundary |
+| --- | --- | --- |
+| `GET /api/health` | Checks PostgreSQL with `SELECT 1`; returns status, preview mode and `checkoutEnabled: false`. | Database reachability, not integration readiness. |
+| `GET /api/products` | Published products/variants; optional query/category/sort/page/limit. Maximum page size 50. | Public cacheable read model. |
+| `GET /api/products/:handle` | One published product or 404. | Public cacheable read model. |
+| `GET /api/cart` | Guest's persisted cart or an empty cart. | Opaque cookie; private/no-store. |
+| `PUT /api/cart/items/:variantId` | Sets absolute quantity 0–20; maximum 50 distinct lines; server reads prices. | Configured Origin required; private/no-store. |
+| `POST /api/enquiries` | Validates and saves contact, bulk or project enquiry; requires UUID `Idempotency-Key`. Returns 201 or 200 for replay. | Origin check, body/rate limits, private/no-store. Returns `notificationSent: false`. |
+| `POST /api/checkout` | Always returns 503 `CHECKOUT_NOT_AVAILABLE`. | No provider call or order created through this endpoint. |
 
-The initial development target is a release candidate on 26 October 2026. Live switching depends on successful end-to-end verification, shipping rules, stock safety, URL coverage and a rollback path. Existing accounts, order history, reviews, discounts and app functionality require a migration inventory before claiming replacement parity.
+There are no public order-status, payment-callback, gateway-webhook, refund, customer-login or staff-enquiry endpoints. There is no public enquiry read endpoint.
 
-## Decisions needed before live checkout
+## 4. Data ownership and persistence
 
-- Confirm the payment provider, merchant access and webhook configuration.
-- Confirm shipping serviceability, charges and product purchase/enquiry rules.
-- Establish the reservation contract and authenticated order handoff with Keeri.
-- Verify hosting capacity, backups, monitoring and final deployment configuration.
+| Data | System of record / current storage | Rules |
+| --- | --- | --- |
+| Product identity, approved publication, MRP, media, operational stock | Intended: Keeri. Current preview: dated public Shopify snapshot. | Do not infer stock reservations from catalogue availability. Public handles/categories and media URLs require reviewed mappings for Keeri. |
+| Public catalogue | Shop Maple `Product`, `Variant` | Read model with source identity, publication and source timestamp. Prices are integer paise; public currency is INR. |
+| Import progress | `CatalogueSyncState` | Tenant source, capture timestamp and validated-payload digest; detects stale or conflicting snapshots. |
+| Guest cart | `Cart`, `CartItem` | Database holds SHA-256 of a 32-byte random guest token; cookie expires after 30 days. Cart uses current catalogue prices. |
+| Enquiry | `Enquiry` | Validated contact/context data plus hashed idempotency key and payload digest. No team notification or staff workflow yet. |
+| Logical online order | `CheckoutAttempt` | Frozen items, quantities, prices, charges, policy ID, merchant scope, reservation, gateway IDs and state. There is not yet a separate complete customer/fulfilment order model. |
+| Payment-event acceptance | `PaymentWebhookInbox` | Authenticated event metadata and body digest, not raw payment payload/signature. Unique per merchant/event and merchant/digest. |
+| Intended Keeri handoff | `OrderOutbox` | Unique attempt/kind and frozen capture payload. Pending record proves delivery intent, not delivery to Keeri. |
+| Payment instrument and provider payment status | Gateway | Server verifies captured evidence. The application does not collect card credentials. |
+| Sales operations, invoices and fulfilment | Intended: Keeri | Delivery, reservation consumption and acknowledgement are not implemented. |
 
-None of these pending integrations prevents implementing the catalogue and storefront in isolation.
+```mermaid
+erDiagram
+  Product ||--o{ Variant : contains
+  Variant ||--o{ CartItem : referenced_by
+  Cart ||--o{ CartItem : contains
+  Cart ||..o{ CheckoutAttempt : "logical cartId reference"
+  CheckoutAttempt ||..o{ PaymentWebhookInbox : "merchant and provider ID lookup"
+  CheckoutAttempt ||..o{ OrderOutbox : "logical attemptId reference"
+  Product {
+    string id PK
+    string handle UK
+    string source
+    boolean published
+  }
+  Variant {
+    string id PK
+    string productId FK
+    int pricePaise
+    string stockPolicy
+    boolean available
+  }
+  Cart {
+    string id PK
+    string tokenHash UK
+    datetime expiresAt
+  }
+  CartItem {
+    string cartId PK,FK
+    string variantId PK,FK
+    int quantity
+  }
+  CheckoutAttempt {
+    string id PK
+    string cartId
+    string merchantScope
+    json snapshot
+    int amountPaise
+    string state
+    string reservationId UK
+    string providerOrderId UK
+    string paymentId UK
+  }
+  PaymentWebhookInbox {
+    string id PK
+    string merchantScope
+    string eventId
+    string bodySha256
+    string state
+  }
+  OrderOutbox {
+    string id PK
+    string attemptId
+    string kind
+    json payload
+    string state
+  }
+  CatalogueSyncState {
+    string source PK
+    datetime capturedAt
+    string payloadHash
+  }
+  Enquiry {
+    string id PK
+    string idempotencyHash UK
+    string payloadHash
+    json context
+    string status
+  }
+```
+
+Dashed relationships are application-level references, not Prisma foreign keys. Checkout snapshots retain their commercial facts independently of later catalogue/cart changes. Cart items restrict variant deletion; import retirement preserves referenced records.
+
+### Catalogue publication flow
+
+Current manual paths:
+
+1. `scripts/import-preview.ts` validates the checked-in Shopify preview snapshot and writes only the preview source/identity namespace. It refuses production mode.
+2. `scripts/import-keeri.ts` validates a supplied full tenant export. Dry run makes no network/database write. Apply is restricted to designated local Shop Maple databases and refuses production mode.
+3. Keeri import checks tenant/identity ownership, publication, MRP and approved public media; it serializes tenant imports with a transaction advisory lock and atomically updates the cursor/read model. Older/conflicting snapshots fail; identical snapshots are replay-safe. Omitted source records are retired.
+4. **All Keeri-imported variants remain unavailable for purchase** until inventory guarantees exist. Preview-source handle collisions require an explicit cutover mapping; imports cannot silently take over another source's identity.
+
+Target: authenticated consistent Keeri export producer → scheduled import → local catalogue → cache invalidation/freshness monitoring. The producer, service credential, schedule, invalidation, approved media hosting and source cutover are still required. See [Keeri integration](keeri-integration.md).
+
+## 5. Order and payment architecture
+
+The order module already implements durable service methods, but the running API never constructs it. It needs server-owned gateway configuration, a verified reservation adapter and a real pricing policy. Tests inject those dependencies; test doubles are not production integrations.
+
+The sequence below is the **activation design**. Service methods and storage exist; HTTP wiring, hosted browser checkout, reservation implementation, workers and Keeri delivery do not.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant A as Future checkout HTTP layer
+  participant O as Existing order service
+  participant D as PostgreSQL
+  participant S as Required stock reservation service
+  participant P as Razorpay merchant
+  participant W as Required inbox/outbox workers
+  participant K as Keeri
+  B->>A: Cart credential + idempotency key + required customer data
+  A->>O: freezeCart(guestToken, key)
+  O->>D: Authenticate guest; persist immutable priced snapshot
+  A->>O: createProviderOrder(guestToken, attemptId)
+  O->>D: Claim attempt once
+  O->>S: Reserve exact snapshot across sales channels
+  S-->>O: Verified durable binding and expiry
+  O->>D: Persist reservation guarantee
+  O->>P: Create order with frozen amount and receipt
+  O->>D: Persist provider order identity
+  A-->>B: Hosted checkout configuration
+  B->>P: Complete provider-hosted payment
+  P->>A: Raw signed webhook
+  A->>O: ingestWebhook(raw bytes, signature, event ID)
+  O->>D: Persist authenticated deduplicated inbox record
+  A-->>P: Acknowledge only after durable acceptance
+  W->>O: processWebhook(inboxId)
+  O->>S: Verify reservation binding and expiry
+  O->>P: Fetch current captured payment evidence
+  O->>D: One transaction: captured + inbox processed + outbox
+  W->>K: Idempotent handoff and reservation consumption
+  K-->>W: Durable acknowledgement
+  W->>D: Record delivery outcome
+```
+
+The final two delivery steps require new consumer/state handling. The current outbox has no scheduler, retry counter, lease, acknowledgement or dead-letter workflow. The frozen snapshot currently has no shipping address, customer contact or complete fulfilment fields; those must be validated and designed before the HTTP layer is enabled.
+
+### Existing correctness guarantees
+
+- `freezeCart` uses an unexpired guest token, current database prices and a trusted pricing function. Repeat keys on the same cart return the original snapshot. Charges, totals and line values must fit the PostgreSQL integer range; currency is INR.
+- Only published, available `stocked` variants qualify for the order service. Preview cart acceptance of an `unverified` item does not make it checkout eligible.
+- Reservation identity binds the attempt and canonical snapshot digest to an expiry. There is no production implementation of that contract.
+- A conditional claim prevents concurrent calls from creating multiple provider orders. Ambiguous provider creation or a lost persistence result requires reconciliation; it is not automatically retried with a new receipt.
+- Webhook authentication verifies original bytes before parsing. The inbox deduplicates both merchant/event ID and merchant/body digest. A signed event is a lookup hint, not authority to fulfil.
+- Capture processing fetches payment evidence and checks provider order, payment identity, exact amount/currency, captured status, absence of refunds and a valid reservation. Unresolved cases remain reconciliation work.
+- One serializable transaction records capture, inbox completion and the unique Keeri handoff intent. Database failures roll back the transition.
+
+Normal attempt path: `reservation_required → reserving → creating_provider_order → awaiting_payment → captured`. Failed or uncertain external operations use `reconciliation_required`; crashes may leave an intermediate state requiring operator recovery. Cancellation/refund/dispute transitions, reservation release, late-payment recovery and recovery tooling are not complete. A browser success redirect must never mark an order paid.
+
+See [order flow](order-flow.md) and [gateway boundary](payments.md) for exact method contracts and tested cases.
+
+## 6. Security and runtime boundaries
+
+Implemented controls include strict shared validation, bounded inputs, Helmet headers, general API rate limiting, no-store cart/enquiry/checkout responses, sanitized API errors and Origin validation for writes. The guest cookie is HttpOnly, SameSite=Lax and Secure in production. The browser never receives the database URL or gateway secret through this design.
+
+Important deployment work remains:
+
+- Enforce HTTPS and a known trusted proxy chain. Current rate limiting is process-local and uses the direct connection IP; the Next proxy may aggregate customers into one IP. Configure shared limits and trusted forwarding deliberately.
+- Add authenticated staff access, retention/deletion and notification delivery before collecting real enquiry data. Existing preview receipts explicitly say no notification was sent.
+- Place any future raw-webhook route before general JSON parsing, apply its own body/signature limits, and bind the endpoint secret to the same merchant and environment as API credentials. The current generic Origin gate is intended for browser writes; a gateway webhook needs its separately authenticated routing boundary.
+- Keep database, Keeri and gateway secrets in server-side deployment configuration. Establish rotation and least-privilege access. No unattended Keeri credential is configured.
+- Add operational auditing, expiry cleanup, recovery tooling and alerts. Generic console errors and a database health endpoint are not full observability.
+
+## 7. Proposed production topology — not deployed by this repository
+
+Start with two application processes plus a worker process and a separate PostgreSQL database. They can be deployed together on one appropriately sized host initially; keeping process boundaries allows later separation without splitting the repository. A managed PostgreSQL service is also possible. Hosting, sizing and public routing have not been finalized here.
+
+```mermaid
+flowchart LR
+  Public["Public browser"] --> Edge["HTTPS reverse proxy / CDN\nProposed"]
+  Edge --> Web["Next.js process"]
+  Web --> API["Private Express process"]
+  Provider["Confirmed payment merchant"] -->|"Signed raw webhook"| Edge
+  Edge -->|"Dedicated webhook path"| API
+  API --> PG[("Private PostgreSQL\nBackups + restore verification")]
+  Worker["New worker process\nImport / inbox / outbox / expiry"] --> PG
+  Worker --> Keeri["Authenticated Keeri integration"]
+  Worker --> Provider
+  API --> Stock["Authoritative cross-channel reservation"]
+  Web --> Media["Approved durable image origin + caching"]
+```
+
+This diagram proposes capabilities, not a claim that a CDN, worker fleet, object store or queue has been provisioned. Redis, Cloudflare R2 and a particular hosting vendor are **not prerequisites or implemented infrastructure**. PostgreSQL can hold durable work for the initial deployment; workers still need claiming, retries, visibility and alerting.
+
+Production requires migration execution, process supervision, health/readiness checks, TLS, secrets, backup retention and restore testing, logs/metrics, error alerts and rollback procedures. Catalogue freshness, stuck checkout attempts, unprocessed inbox events, undelivered outbox entries and expiring reservations need explicit monitoring. Preserve current Shopify operation until sandbox/end-to-end tests and a reversible domain cutover are approved and verified.
+
+## 8. Backend readiness and release gates
+
+| Capability | Ready now? | Evidence boundary / remaining work |
+| --- | --- | --- |
+| Public catalogue and guest cart | **Yes, for preview** | Implemented HTTP endpoints and database tests. Source is a dated snapshot; no authoritative stock guarantee. |
+| Enquiry persistence | **Yes, for preview** | Idempotent storage and honest receipt. Staff inbox, notifications, privacy lifecycle and production abuse controls remain. |
+| Offline Keeri transformation/import | **Yes, locally** | Validated schema, tenant isolation, replay/staleness and transactional import. Real export transport/producer and deployment validation remain. |
+| Frozen orders and payment-event persistence | **Service foundation ready** | Callable and database-tested; no public activation or complete customer/fulfilment flow. |
+| Razorpay adapter | **Boundary tested** | Deterministic fixtures/mock transport. Current merchant, test/live mode, capture settings and real sandbox flow are unverified. |
+| Inventory reservation | **No** | Interface and fail-closed gate exist; no cross-channel stock adapter or last-item production proof. |
+| Public checkout and payment callbacks/webhooks | **No** | Checkout returns 503. No gateway HTTP wiring or hosted checkout integration. |
+| Keeri order delivery | **No** | Transactional outbox intent only; no delivery consumer or acknowledgement. |
+| Refunds, disputes, cancellation and support recovery | **No** | Reconciliation boundaries exist, not a complete operational workflow. |
+| Deployment and production performance | **No release evidence here** | CI builds/tests; no deployment pipeline, measured live Core Web Vitals or production restore test. |
+
+Suggested activation order:
+
+1. Confirm current gateway merchant/mode and business rules for shipping, tax, serviceability, purchase versus enquiry, and required customer/order data.
+2. Implement authenticated Keeri catalogue publication and authoritative reservation/expiry/consumption across online and offline sales.
+3. Add protected checkout/status and separately authenticated raw-webhook HTTP boundaries around the existing service; implement hosted checkout and required customer data.
+4. Implement inbox scheduling, ambiguous-creation recovery, Keeri outbox delivery/acknowledgement, notifications and operational retries/alerts.
+5. Complete refund/dispute/cancellation handling and validate provider sandbox, last-item contention, duplicate/out-of-order events, delayed capture and failed handoff recovery end to end.
+6. Verify deployment, restore/rollback, media/URL migration, browser parity and measured performance before a live cutover. Remove preview/noindex only as part of that controlled release.
+
+The earlier targets of LCP ≤2.5s, CLS ≤0.1 and INP ≤200ms are acceptance targets, not current measurements. Matching screenshots also does not establish interactive parity; menu, keyboard, mobile, cart, account and app behavior require their own verification.
+
+## 9. Source map and verification
+
+This architecture was checked against:
+
+- [Workspace commands](../package.json), [frontend package](../apps/web/package.json), [API package](../apps/api/package.json).
+- [Runtime and mode gate](../apps/api/src/server.ts), [actual HTTP routes](../apps/api/src/app.ts), [database schema](../apps/api/prisma/schema.prisma).
+- [Server catalogue client](../apps/web/lib/catalog.ts), [API proxy/image settings](../apps/web/next.config.ts), [browser shop state](../apps/web/components/shop-provider.tsx).
+- [Catalogue queries](../apps/api/src/catalog.ts), [cart](../apps/api/src/cart.ts), [enquiries](../apps/api/src/enquiries.ts), [offline Keeri adapter](../apps/api/src/keeri.ts), [transactional sync](../apps/api/src/keeri-sync.ts).
+- [Order service](../apps/api/src/orders/service.ts), [Razorpay adapter](../apps/api/src/payments/razorpay.ts), [CI workflow](../.github/workflows/ci.yml).
+- [Preview snapshot](../apps/api/data/preview-catalog.json), [landing content provenance](../apps/web/data/landing-PROVENANCE.md), [UI parity status](ui-parity-progress.md).
+
+CI installs dependencies on Node 22, starts PostgreSQL 17, creates/migrates a dedicated test database, imports the preview, runs tests/typechecks and builds both apps. The prior implementation checkpoint reported 71 tests; that is a historical local/CI result, not a fresh test run performed for this document or proof of merchant/Keeri integration. Check the latest commit's CI before merging. Manual browser checks and production integration checks remain distinct from unit/integration test success.

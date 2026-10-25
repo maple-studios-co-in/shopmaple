@@ -1,0 +1,43 @@
+name: Verify storefront foundation
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: shopmaple
+          POSTGRES_PASSWORD: shopmaple
+          POSTGRES_DB: shopmaple
+        ports: ['55439:5432']
+        options: >-
+          --health-cmd "pg_isready -U shopmaple"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - name: Prepare dedicated test database
+        env:
+          PGPASSWORD: shopmaple
+        run: |
+          createdb -h 127.0.0.1 -p 55439 -U shopmaple shopmaple_test
+          DATABASE_URL=postgresql://shopmaple:shopmaple@127.0.0.1:55439/shopmaple_test npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+      - run: npm run catalog:import
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build

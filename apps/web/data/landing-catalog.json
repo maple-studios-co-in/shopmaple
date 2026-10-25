@@ -1,0 +1,513 @@
+{
+  "sora-5-seater-sofa": {
+    "handle": "sora-5-seater-sofa",
+    "title": "Sora 5-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/6.1_1.png?v=1783923471",
+    "price": "Rs. 116,820.00",
+    "compareAt": "Rs. 123,900.00"
+  },
+  "estelle-5-seater-sofa": {
+    "handle": "estelle-5-seater-sofa",
+    "title": "Estelle 5-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/5.1_7fd66c1e-b690-4a80-909a-0277f0d4e5ae.png?v=1783923268",
+    "price": "Rs. 115,640.00",
+    "compareAt": "Rs. 118,000.00"
+  },
+  "zaria-5-seater-sofa": {
+    "handle": "zaria-5-seater-sofa",
+    "title": "Zaria 5-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/4.2_8598f826-7db9-492f-b00c-e8f8a1d590a6.png?v=1783923085",
+    "price": "Rs. 118,000.00",
+    "compareAt": "Rs. 129,800.00"
+  },
+  "nysa-5-seater-sofa": {
+    "handle": "nysa-5-seater-sofa",
+    "title": "Nysa 5-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/3.1_2_a65d58ff-0563-4871-8b4e-34a20ff28227.png?v=1783922847",
+    "price": "Rs. 118,000.00",
+    "compareAt": "Rs. 141,600.00"
+  },
+  "vivienne-5-seater-sofa": {
+    "handle": "vivienne-5-seater-sofa",
+    "title": "Vivienne 5-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Product1.jpg?v=1783922121",
+    "price": "Rs. 120,360.00",
+    "compareAt": "Rs. 123,900.00"
+  },
+  "selene-2-seater-sofa": {
+    "handle": "selene-2-seater-sofa",
+    "title": "Selene 2-Seater Sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/1.5.png?v=1783773087",
+    "price": "Rs. 92,040.00",
+    "compareAt": "Rs. 96,760.00"
+  },
+  "alcyone-7-seater-sofa": {
+    "handle": "alcyone-7-seater-sofa",
+    "title": "Alcyone 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/6.1_c465fd24-ee30-43c5-a0d6-37735b3d45bb.png?v=1783924721",
+    "price": "Rs. 112,100.00",
+    "compareAt": "Rs. 118,000.00"
+  },
+  "vesper-7-seater-sofa": {
+    "handle": "vesper-7-seater-sofa",
+    "title": "Vesper 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Product5.jpg?v=1783924534",
+    "price": "Rs. 116,820.00",
+    "compareAt": "Rs. 141,600.00"
+  },
+  "rhea-7-seater-sofa": {
+    "handle": "rhea-7-seater-sofa",
+    "title": "Rhea 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Product4.jpg?v=1783924360",
+    "price": "Rs. 141,600.00",
+    "compareAt": "Rs. 153,400.00"
+  },
+  "eira-7-seater-sofa": {
+    "handle": "eira-7-seater-sofa",
+    "title": "Eira 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Product3.jpg?v=1783924164",
+    "price": "Rs. 141,600.00",
+    "compareAt": "Rs. 147,500.00"
+  },
+  "vela-7-seater-sofa": {
+    "handle": "vela-7-seater-sofa",
+    "title": "Vela 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/2.1_22f1c30b-9b81-425a-8f66-dd9ef064ccf8.png?v=1783923979",
+    "price": "Rs. 115,640.00",
+    "compareAt": "Rs. 118,000.00"
+  },
+  "caro": {
+    "handle": "caro",
+    "title": "Caro",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/01_front_view_912e8752-8517-46f7-9a1d-cddccd3ae821.webp?v=1788546672",
+    "price": "Rs. 23,010.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "ario": {
+    "handle": "ario",
+    "title": "Ario",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/03_45_degree_view_60324058-05ce-4f87-b9b1-dd17780c6c36.webp?v=1788542719",
+    "price": "Rs. 23,600.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "nola": {
+    "handle": "nola",
+    "title": "Nola",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/03_45_degree_view_c2cfc64e-78c3-4dd6-b271-d87ea5b42a45.webp?v=1788542868",
+    "price": "Rs. 29,500.00",
+    "compareAt": "Rs. 35,400.00"
+  },
+  "tara": {
+    "handle": "tara",
+    "title": "Tara",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/03_45_degree_view_757e06a1-ce18-43b5-9937-7895063fd0af.webp?v=1788541673",
+    "price": "Rs. 17,700.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "arno": {
+    "handle": "arno",
+    "title": "Arno",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/warm_walnut_framed_lounge_chair.webp?v=1788540780",
+    "price": "Rs. 22,420.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "rollo": {
+    "handle": "rollo",
+    "title": "Rollo",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/01_front_view_8b848ea6-e568-4e75-bc11-3c4dcf5e511f.webp?v=1788540561",
+    "price": "Rs. 23,600.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "alina-7-seater-sofa": {
+    "handle": "alina-7-seater-sofa",
+    "title": "Alina 7+-seater sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/1.4_1_141c98c8-19e6-4691-bc86-8e690f37eede.png?v=1783923766",
+    "price": "Rs. 141,600.00",
+    "compareAt": "Rs. 143,960.00"
+  },
+  "kynor-sofa-table": {
+    "handle": "kynor-sofa-table",
+    "title": "Kynor Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T14_03_04.712Z.webp?v=1780558877",
+    "price": "Rs. 79,060.00",
+    "compareAt": "Rs. 82,600.00"
+  },
+  "xarvo-sofa-table": {
+    "handle": "xarvo-sofa-table",
+    "title": "Xarvo Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T14_01_07.798Z.webp?v=1780558617",
+    "price": "Rs. 82,600.00",
+    "compareAt": "Rs. 89,680.00"
+  },
+  "veylo-sofa-table": {
+    "handle": "veylo-sofa-table",
+    "title": "Veylo Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T13_51_42.807Z.webp?v=1780558317",
+    "price": "Rs. 94,400.00",
+    "compareAt": "Rs. 96,760.00"
+  },
+  "elrik-sofa-table": {
+    "handle": "elrik-sofa-table",
+    "title": "Elrik Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T13_49_27.832Z.webp?v=1780557366",
+    "price": "Rs. 106,200.00",
+    "compareAt": "Rs. 108,560.00"
+  },
+  "zayro-sofa-table": {
+    "handle": "zayro-sofa-table",
+    "title": "Zayro Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T13_17_17.803Z.webp?v=1780556760",
+    "price": "Rs. 94,400.00",
+    "compareAt": "Rs. 99,120.00"
+  },
+  "noryx-sofa-table": {
+    "handle": "noryx-sofa-table",
+    "title": "Noryx Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T12_58_24.728Z.webp?v=1780556301",
+    "price": "Rs. 92,040.00",
+    "compareAt": "Rs. 95,580.00"
+  },
+  "aven-side-table": {
+    "handle": "aven-side-table",
+    "title": "Aven Side table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-25T12_07_19.508Z.webp?v=1780553140",
+    "price": "Rs. 88,500.00",
+    "compareAt": "Rs. 94,400.00"
+  },
+  "cirque-luxe-marble-dining-table-emperador-gold": {
+    "handle": "cirque-luxe-marble-dining-table-emperador-gold",
+    "title": "Cirque Luxe Dining Table – Brown Emperador Marble with Gold Accents",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageJun14_2025_07_18_57PM.png?v=1749909795",
+    "price": "Rs. 106,198.82",
+    "compareAt": "Rs. 133,338.82"
+  },
+  "elora": {
+    "handle": "elora",
+    "title": "Elora",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Inaroom_Approved_5.png?v=1788930179",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "elowen-1": {
+    "handle": "elowen-1",
+    "title": "ELOWEN",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Inaroom_Approved_1.png?v=1788929215",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "elowen-3": {
+    "handle": "elowen-3",
+    "title": "ELOWEN",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Inaroom_Approved_3.png?v=1788929630",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "varyn-dining-table": {
+    "handle": "varyn-dining-table",
+    "title": "Varyn Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T11_29_17.560Z.webp?v=1780471840",
+    "price": "Rs. 106,200.00",
+    "compareAt": "Rs. 112,100.00"
+  },
+  "veyro-dining-table": {
+    "handle": "veyro-dining-table",
+    "title": "Veyro Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T11_19_05.484Z.webp?v=1780471536",
+    "price": "Rs. 141,600.00",
+    "compareAt": "Rs. 147,500.00"
+  },
+  "nova-dining-table": {
+    "handle": "nova-dining-table",
+    "title": "Nova Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T11_38_29.709Z.webp?v=1780471191",
+    "price": "Rs. 118,000.00",
+    "compareAt": "Rs. 129,800.00"
+  },
+  "velor-dining-table": {
+    "handle": "velor-dining-table",
+    "title": "Velor Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T10_48_11.083Z.webp?v=1780470717",
+    "price": "Rs. 129,800.00",
+    "compareAt": "Rs. 130,980.00"
+  },
+  "seno-dining-table": {
+    "handle": "seno-dining-table",
+    "title": "Seno Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T11_09_10.656Z.webp?v=1780470231",
+    "price": "Rs. 141,600.00",
+    "compareAt": "Rs. 147,500.00"
+  },
+  "runo-dining-table": {
+    "handle": "runo-dining-table",
+    "title": "Runo Dining table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T10_42_35.368Z.webp?v=1780469859",
+    "price": "Rs. 118,000.00",
+    "compareAt": "Rs. 123,900.00"
+  },
+  "veya-1": {
+    "handle": "veya-1",
+    "title": "Veya",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Inaroom_Approved_6.png?v=1788930538",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "orven-side-table": {
+    "handle": "orven-side-table",
+    "title": "Orven Side table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-25T12_13_03.637Z.webp?v=1780553488",
+    "price": "Rs. 76,700.00",
+    "compareAt": "Rs. 82,600.00"
+  },
+  "zenvo-side-table": {
+    "handle": "zenvo-side-table",
+    "title": "Zenvo Side table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-25T12_03_38.500Z.webp?v=1780552770",
+    "price": "Rs. 70,800.00",
+    "compareAt": "Rs. 76,700.00"
+  },
+  "oryx-sofa-table": {
+    "handle": "oryx-sofa-table",
+    "title": "Oryx Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T12_35_08.487Z.webp?v=1780554583",
+    "price": "Rs. 159,300.00",
+    "compareAt": "Rs. 165,200.00"
+  },
+  "velon-sofa-table": {
+    "handle": "velon-sofa-table",
+    "title": "Velon Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T12_42_45.785Z.webp?v=1780554989",
+    "price": "Rs. 118,000.00",
+    "compareAt": "Rs. 129,800.00"
+  },
+  "zarek-sofa-table": {
+    "handle": "zarek-sofa-table",
+    "title": "Zarek Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T12_46_14.722Z.webp?v=1780555392",
+    "price": "Rs. 106,200.00",
+    "compareAt": "Rs. 112,100.00"
+  },
+  "kyvik-sofa-table": {
+    "handle": "kyvik-sofa-table",
+    "title": "Kyvik Sofa table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-27T12_51_40.555Z.webp?v=1780555726",
+    "price": "Rs. 115,640.00",
+    "compareAt": "Rs. 118,000.00"
+  },
+  "tavik-console-table": {
+    "handle": "tavik-console-table",
+    "title": "Tavik Console table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-26T10_59_58.025Z.webp?v=1780473317",
+    "price": "Rs. 92,040.00",
+    "compareAt": "Rs. 94,400.00"
+  },
+  "lyro-console-table": {
+    "handle": "lyro-console-table",
+    "title": "Lyro Console table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-25T12_38_18.675Z.webp?v=1780472634",
+    "price": "Rs. 88,500.00",
+    "compareAt": "Rs. 94,400.00"
+  },
+  "zovik-console-table": {
+    "handle": "zovik-console-table",
+    "title": "Zovik Console table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/File_2026-05-25T12_32_55.890Z.webp?v=1780472254",
+    "price": "Rs. 145,140.00",
+    "compareAt": "Rs. 147,500.00"
+  },
+  "ovalo-modern-console-walnut-white": {
+    "handle": "ovalo-modern-console-walnut-white",
+    "title": "Ovalo Console – Modern Walnut Base with White Stone Top",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageJun13_2025_07_34_23PM.png?v=1749834522",
+    "price": "Rs. 27,138.82",
+    "compareAt": "Rs. 33,038.82"
+  },
+  "oslo-retro-console-walnut-ivory": {
+    "handle": "oslo-retro-console-walnut-ivory",
+    "title": "Oslo Retro Curve Console Table – Walnut & Ivory",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageMay20_2025_12_40_52PM.png?v=1747725687",
+    "price": "Rs. 38,348.82",
+    "compareAt": "Rs. 58,998.82"
+  },
+  "winston-wooden-console-table-with-brass-trim-mirror": {
+    "handle": "winston-wooden-console-table-with-brass-trim-mirror",
+    "title": "Winston Wooden Console Table with Brass Trim & Mirror",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageMay20_2025_09_46_37AM.png?v=1747714743",
+    "price": "Rs. 44,248.82",
+    "compareAt": "Rs. 62,538.82"
+  },
+  "naro-dining-chair": {
+    "handle": "naro-dining-chair",
+    "title": "Naro Dining Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame209.png?v=1777315408",
+    "price": "Rs. 70,800.00",
+    "compareAt": ""
+  },
+  "arven": {
+    "handle": "arven",
+    "title": "ARVEN",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/c45ab93d-d7d2-47f8-aea7-763b6739ebf8.webp?v=1788944648",
+    "price": "Rs. 16,520.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "vellora": {
+    "handle": "vellora",
+    "title": "Vellora",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Inaroom_Approved_9_36bbaf7a-c3c3-4a0e-ade0-38a6426c8bec.png?v=1788931141",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "elowen-2": {
+    "handle": "elowen-2",
+    "title": "ELOWEN",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Front_Approved_2.png?v=1788929430",
+    "price": "Rs. 29,500.00",
+    "compareAt": ""
+  },
+  "arco": {
+    "handle": "arco",
+    "title": "Arco",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Ivory_Walnut_Chair_View_3_45_Degree.webp?v=1788546489",
+    "price": "Rs. 26,550.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "zeno": {
+    "handle": "zeno",
+    "title": "Zeno",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/03_45_degree_view_a809cb0d-5629-492d-9a1e-81c5974152e7.webp?v=1788542196",
+    "price": "Rs. 16,520.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "orlen-accent-chair": {
+    "handle": "orlen-accent-chair",
+    "title": "Orlen Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame44_2.png?v=1776171106",
+    "price": "Rs. 11,800.00",
+    "compareAt": "Rs. 15,340.00"
+  },
+  "luma-haven-accent-chair": {
+    "handle": "luma-haven-accent-chair",
+    "title": "Luma Haven Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/both.png?v=1775909672",
+    "price": "Rs. 18,880.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "orvane-accent-chair": {
+    "handle": "orvane-accent-chair",
+    "title": "Orvane Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/single_1.png?v=1776159214",
+    "price": "Rs. 17,700.00",
+    "compareAt": "Rs. 21,240.00"
+  },
+  "valen-accent-chair": {
+    "handle": "valen-accent-chair",
+    "title": "Valen Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame37_2.png?v=1776160180",
+    "price": "Rs. 17,700.00",
+    "compareAt": "Rs. 25,960.00"
+  },
+  "elyra-accent-chair": {
+    "handle": "elyra-accent-chair",
+    "title": "Elyra Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame118_0fbb97d8-c12e-4bc3-9f16-86e8e1993c44.png?v=1777279841",
+    "price": "Rs. 21,240.00",
+    "compareAt": "Rs. 23,600.00"
+  },
+  "beno": {
+    "handle": "beno",
+    "title": "Beno",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/01_front_view_0202b71e-27bc-4341-9711-90b818b38b58.webp?v=1788541085",
+    "price": "Rs. 23,600.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "vela": {
+    "handle": "vela",
+    "title": "Vela",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/8e93653b-9c82-44a4-bc83-43c74e92686b.webp?v=1788540262",
+    "price": "Rs. 23,600.00",
+    "compareAt": "Rs. 29,500.00"
+  },
+  "aurevon-sectional-sofa": {
+    "handle": "aurevon-sectional-sofa",
+    "title": "Aurevon Sectional Sofa",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame223.webp?v=1778922820",
+    "price": "Rs. 236,000.00",
+    "compareAt": "Rs. 247,800.00"
+  },
+  "opelle-accent-chair": {
+    "handle": "opelle-accent-chair",
+    "title": "Opelle Accent Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame24.webp?v=1778922359",
+    "price": "Rs. 354,000.00",
+    "compareAt": "Rs. 359,900.00"
+  },
+  "elysian-marble-living-room-set": {
+    "handle": "elysian-marble-living-room-set",
+    "title": "Elysian Marble Living Room Set",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame99_1.png?v=1778219356",
+    "price": "Rs. 295,000.00",
+    "compareAt": "Rs. 300,900.00"
+  },
+  "aeris-marble-nesting-center-table": {
+    "handle": "aeris-marble-nesting-center-table",
+    "title": "Avelon Marble Nesting Center Table",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame83_8934a00d-a77f-4c62-ae4f-fc6824e6a404.png?v=1778218975",
+    "price": "Rs. 38,940.00",
+    "compareAt": "Rs. 41,300.00"
+  },
+  "aeris-sculpt-lounge-chair": {
+    "handle": "aeris-sculpt-lounge-chair",
+    "title": "Avelon Sculpt Lounge Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame89_2.png?v=1778218649",
+    "price": "Rs. 115,640.00",
+    "compareAt": "Rs. 118,000.00"
+  },
+  "aeris-living-room-set": {
+    "handle": "aeris-living-room-set",
+    "title": "Avelon Living Room Set",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame78.png?v=1778218250",
+    "price": "Rs. 413,000.00",
+    "compareAt": ""
+  },
+  "luna-curve-lounge-chair": {
+    "handle": "luna-curve-lounge-chair",
+    "title": "Luna Curve Lounge Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame57_1.png?v=1778174946",
+    "price": "Rs. 76,700.00",
+    "compareAt": "Rs. 80,240.00"
+  },
+  "oryon-fluted-console-unit": {
+    "handle": "oryon-fluted-console-unit",
+    "title": "Oryon Fluted Console Unit",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame66_6a174867-094c-408f-af50-fb79e04e3788.png?v=1778173577",
+    "price": "Rs. 88,500.00",
+    "compareAt": "Rs. 89,680.00"
+  },
+  "aileron-upholstered-bench": {
+    "handle": "aileron-upholstered-bench",
+    "title": "Aileron Upholstered Bench",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame53.png?v=1778162146",
+    "price": "Rs. 37,760.00",
+    "compareAt": "Rs. 41,300.00"
+  },
+  "orbicular-lounge-chair": {
+    "handle": "orbicular-lounge-chair",
+    "title": "Orbicular Lounge Chair",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame51_3111d8df-15cd-4006-9816-c3f921168c4e.png?v=1778161419",
+    "price": "Rs. 63,720.00",
+    "compareAt": "Rs. 70,800.00"
+  },
+  "aileron-signature-bed": {
+    "handle": "aileron-signature-bed",
+    "title": "Aileron Signature Bed",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame20_1.png?v=1778160419",
+    "price": "Rs. 295,000.00",
+    "compareAt": "Rs. 304,440.00"
+  },
+  "velata-pillow-drift-bed": {
+    "handle": "velata-pillow-drift-bed",
+    "title": "Velata Pillow Drift Bed",
+    "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame13.png?v=1778155910",
+    "price": "Rs. 271,400.00",
+    "compareAt": "Rs. 283,200.00"
+  }
+}

@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model Product {
+  id String @id
+  handle String @unique
+  title String
+  description String
+  category String
+  images String[]
+  published Boolean @default(false)
+  source String
+  sourceUpdatedAt DateTime
+  variants Variant[]
+  updatedAt DateTime @updatedAt
+}
+model Variant {
+  id String @id
+  productId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title String
+  sku String?
+  pricePaise Int
+  compareAtPaise Int?
+  published Boolean @default(true)
+  available Boolean @default(false)
+  stockPolicy String @default("unverified")
+  cartItems CartItem[]
+}
+model Cart {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items CartItem[]
+}
+model CartItem {
+  cartId String
+  variantId String
+  quantity Int
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  @@id([cartId, variantId])
+}
+
+// One durable cursor per tenant source, including completely empty snapshots.
+model CatalogueSyncState {
+  source String @id
+  capturedAt DateTime
+  payloadHash String
+  importedAt DateTime @default(now())
+}
+
+model Enquiry {
+  id String @id
+  idempotencyHash String @unique
+  payloadHash String
+  kind String
+  name String
+  email String
+  phone String
+  message String
+  context Json
+  status String @default("new")
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+}
+
+model CheckoutAttempt {
+  id String @id
+  cartId String
+  merchantScope String
+  idempotencyKey String
+  receipt String @unique
+  snapshot Json
+  amountPaise Int
+  currency String @default("INR")
+  state String @default("reservation_required")
+  reservationId String? @unique
+  reservationExpiresAt DateTime?
+  providerOrderId String? @unique
+  paymentId String? @unique
+  capturedAt DateTime?
+  failureCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([cartId, idempotencyKey])
+}
+
+model PaymentWebhookInbox {
+  id String @id @default(cuid())
+  merchantScope String
+  eventId String
+  bodySha256 String
+  eventType String
+  providerOrderId String?
+  paymentId String?
+  state String @default("pending")
+  failureCode String?
+  receivedAt DateTime @default(now())
+  processedAt DateTime?
+  @@unique([merchantScope, eventId])
+  @@unique([merchantScope, bodySha256])
+  @@index([state, receivedAt])
+}
+
+model OrderOutbox {
+  id String @id @default(cuid())
+  attemptId String
+  kind String
+  payload Json
+  state String @default("pending")
+  createdAt DateTime @default(now())
+  @@unique([attemptId, kind])
+  @@index([state, createdAt])
+}

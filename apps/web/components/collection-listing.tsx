@@ -1,0 +1,337 @@
+"use client";
+import { useRef, useState } from "react";
+import Link from "next/link";
+import {
+  ChevronDown,
+  Grid2X2,
+  Grid3X3,
+  SlidersHorizontal,
+  X,
+  Search,
+} from "lucide-react";
+import type { Product } from "@shopmaple/contracts";
+import { ProductCard } from "./product-card";
+import {
+  collectionHref,
+  sortOptions,
+  type CollectionQuery,
+} from "@/lib/collections";
+import { categoryNames, money } from "@/lib/format";
+
+type Props = {
+  handle: string;
+  title: string;
+  query: CollectionQuery;
+  products: Product[];
+  total: number;
+  collectionTotal: number;
+  limit: number;
+  inStock: number;
+  outOfStock: number;
+  highestPrice: number;
+};
+function FilterFields({
+  handle,
+  query,
+  inStock,
+  outOfStock,
+  highestPrice,
+  id,
+}: Props & { id: string }) {
+  return (
+    <form
+      action={`/collections/${handle}`}
+      method="get"
+      className="collection-filter-form"
+    >
+      <input type="hidden" name="sort" value={query.sort} />
+      <details open={Boolean(query.q)} className="collection-facet">
+        <summary>
+          Search <Search size={15} />
+        </summary>
+        <label className="sr-only" htmlFor={`${id}-q`}>
+          Search this collection
+        </label>
+        <input
+          id={`${id}-q`}
+          name="q"
+          type="search"
+          maxLength={80}
+          placeholder="Search furniture"
+          defaultValue={query.q}
+        />
+      </details>
+      <details open className="collection-facet">
+        <summary>
+          Availability <ChevronDown size={15} />
+        </summary>
+        <label className="collection-check">
+          <input
+            type="radio"
+            name="availability"
+            value=""
+            defaultChecked={!query.availability}
+          />{" "}
+          All items
+        </label>
+        <label className="collection-check">
+          <input
+            type="radio"
+            name="availability"
+            value="in"
+            defaultChecked={query.availability === "in"}
+          />{" "}
+          In stock <span>{inStock}</span>
+        </label>
+        <label className="collection-check">
+          <input
+            type="radio"
+            name="availability"
+            value="out"
+            defaultChecked={query.availability === "out"}
+          />{" "}
+          Out of stock <span>{outOfStock}</span>
+        </label>
+      </details>
+      <details open className="collection-facet">
+        <summary>
+          Price <ChevronDown size={15} />
+        </summary>
+        <div className="collection-price-fields">
+          <label>
+            <span className="sr-only">Minimum price in rupees</span>
+            <span aria-hidden="true">₹</span>
+            <input
+              aria-label="Minimum price in rupees"
+              name="min"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              defaultValue={query.min}
+            />
+          </label>
+          <span>to</span>
+          <label>
+            <span className="sr-only">Maximum price in rupees</span>
+            <span aria-hidden="true">₹</span>
+            <input
+              aria-label="Maximum price in rupees"
+              name="max"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder={String(highestPrice / 100)}
+              defaultValue={query.max}
+            />
+          </label>
+        </div>
+        <p className="collection-price-caption">
+          The highest price is {money(highestPrice)}
+        </p>
+      </details>
+      {handle === "all" && (
+        <details className="collection-facet" open={Boolean(query.category)}>
+          <summary>
+            Category <ChevronDown size={15} />
+          </summary>
+          <label className="sr-only" htmlFor={`${id}-category`}>
+            Furniture category
+          </label>
+          <select
+            id={`${id}-category`}
+            name="category"
+            defaultValue={query.category}
+          >
+            <option value="">All furniture</option>
+            {Object.entries(categoryNames)
+              .filter(([key]) => key !== "all")
+              .map(([key, name]) => (
+                <option key={key} value={key}>
+                  {name}
+                </option>
+              ))}
+          </select>
+        </details>
+      )}
+      <button className="button collection-apply" type="submit">
+        Apply filters
+      </button>
+      <Link href={`/collections/${handle}`} className="collection-clear">
+        Clear all
+      </Link>
+    </form>
+  );
+}
+export function CollectionListing(props: Props) {
+  const { handle, title, query, products, total, collectionTotal, limit } =
+    props;
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [dense, setDense] = useState(false);
+  const filtered = Boolean(
+    query.q || query.min || query.max || query.category || query.availability,
+  );
+  return (
+    <section className="collection-parity" aria-label={title}>
+      <h1 className="sr-only">{title}</h1>
+      <div className="collection-parity-toolbar">
+        <h2>Filters</h2>
+        <button
+          className="collection-mobile-filter"
+          onClick={() => dialog.current?.showModal()}
+        >
+          <SlidersHorizontal size={18} /> Filter
+        </button>
+        <p className="collection-item-count" aria-live="polite">
+          {total} items <span>in preview</span>
+        </p>
+        <form
+          action={`/collections/${handle}`}
+          method="get"
+          className="collection-sort"
+        >
+          {Object.entries(query)
+            .filter(([key, value]) => !["page", "sort"].includes(key) && value)
+            .map(([key, value]) => (
+              <input key={key} type="hidden" name={key} value={value} />
+            ))}
+          <label htmlFor="collection-sort">Sort</label>
+          <select
+            id="collection-sort"
+            name="sort"
+            defaultValue={query.sort}
+            onChange={(event) => event.currentTarget.form?.requestSubmit()}
+          >
+            {sortOptions.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <noscript>
+            <button type="submit">Apply sort</button>
+          </noscript>
+        </form>
+        <div
+          className="collection-density"
+          role="group"
+          aria-label="Product grid size"
+        >
+          <button
+            aria-label="Standard grid"
+            aria-pressed={!dense}
+            onClick={() => setDense(false)}
+          >
+            <Grid2X2 size={19} />
+          </button>
+          <button
+            aria-label="Compact grid"
+            aria-pressed={dense}
+            onClick={() => setDense(true)}
+          >
+            <Grid3X3 size={19} />
+          </button>
+        </div>
+      </div>
+      <div className="collection-parity-layout">
+        <aside
+          className="collection-desktop-filters"
+          aria-label="Collection filters"
+        >
+          <FilterFields {...props} id="desktop" />
+        </aside>
+        <div className="collection-results" id="collection-results">
+          {filtered && (
+            <p className="collection-filter-summary">
+              {query.q ? `Results for “${query.q}” · ` : ""}
+              {total} of {collectionTotal} preview pieces{" "}
+              <Link href={`/collections/${handle}`}>Clear filters</Link>
+            </p>
+          )}
+          {products.length ? (
+            <div
+              className={`product-grid collection-products${dense ? " is-compact" : ""}`}
+            >
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h2>
+                {filtered
+                  ? "No matching pieces"
+                  : "More pieces are on their way"}
+              </h2>
+              <p>
+                {filtered
+                  ? "Try a different search or clear your filters."
+                  : "This collection has no products in the current preview."}
+              </p>
+              <Link
+                className="button"
+                href={filtered ? `/collections/${handle}` : "/collections/all"}
+              >
+                {filtered ? "Clear filters" : "Browse all furniture"}
+              </Link>
+            </div>
+          )}
+          {total > limit && (
+            <nav
+              className="pagination collection-pagination"
+              aria-label="Collection pages"
+            >
+              {query.page > 1 && (
+                <Link href={collectionHref(handle, query, query.page - 1)}>
+                  Previous
+                </Link>
+              )}
+              <span>
+                Page {query.page} of {Math.ceil(total / limit)}
+              </span>
+              {total > query.page * limit && (
+                <Link href={collectionHref(handle, query, query.page + 1)}>
+                  Next
+                </Link>
+              )}
+            </nav>
+          )}
+          <p className="collection-preview-note">
+            A selection from our catalogue. Prices and availability are from the
+            preview snapshot.
+          </p>
+          {handle === "chairs" && (
+            <p className="collection-preview-note">
+              Browse the complete chair collection on{" "}
+              <a href="https://shop.maplefurnishers.com/collections/chairs">
+                our current shop
+              </a>
+              .
+            </p>
+          )}
+        </div>
+      </div>
+      <dialog
+        ref={dialog}
+        className="collection-filter-dialog"
+        aria-labelledby="collection-filter-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) dialog.current?.close();
+        }}
+      >
+        <div className="collection-filter-dialog-content">
+          <div className="collection-filter-dialog-heading">
+            <h2 id="collection-filter-title">Filter</h2>
+            <button
+              aria-label="Close filters"
+              onClick={() => dialog.current?.close()}
+            >
+              <X size={22} />
+            </button>
+          </div>
+          <FilterFields {...props} id="mobile" />
+        </div>
+      </dialog>
+    </section>
+  );
+}

@@ -1,0 +1,258 @@
+/* Shopify main-menu snapshot, 25 Oct 2026: full-width panels and nested mobile drawer. */
+.maple-desktop-nav {
+  position: relative;
+  z-index: 35;
+  height: 38px;
+  gap: 24px;
+  font:
+    700 16px/1.5 "Red Hat Display",
+    sans-serif;
+}
+.maple-menu-trigger-wrap {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+.maple-menu-trigger {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.maple-desktop-nav > a {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.maple-menu-trigger:hover,
+.maple-menu-trigger[aria-expanded="true"],
+.maple-desktop-nav > a:hover {
+  color: #555;
+}
+.maple-mega {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: var(--paper);
+  border-bottom: 1px solid #e2e2e2;
+}
+.maple-mega-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px;
+  padding: 28px 40px 28px;
+}
+.maple-mega-column {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-right: 20px;
+}
+.maple-mega-column:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #e2e2e2;
+}
+.maple-mega-column:not(:first-child) {
+  padding-left: 34px;
+}
+.maple-menu-link,
+.maple-menu-parent {
+  display: block;
+  padding: 4px 0;
+  font:
+    700 14px/23.4px "Red Hat Display",
+    sans-serif;
+  color: #555;
+}
+.maple-menu-parent {
+  font-size: 16px;
+  line-height: 25.6px;
+  color: #000;
+}
+.maple-menu-link:hover,
+.maple-menu-parent:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.maple-desktop-nav :focus-visible,
+.maple-mobile-drawer :focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.maple-mobile-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: calc(100% - 20px);
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Red Hat Display", sans-serif;
+  overflow: hidden;
+}
+.maple-mobile-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.maple-mobile-drawer::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.maple-drawer-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.maple-drawer-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.maple-drawer-back {
+  gap: 10px;
+  padding: 0 14px;
+  font:
+    400 14px/1.4 "Red Hat Display",
+    sans-serif;
+}
+.maple-drawer-back + .maple-drawer-close {
+  margin-left: auto;
+  margin-right: 16px;
+}
+.maple-drawer-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b8b1a5 var(--paper);
+}
+.maple-drawer-main {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px 0;
+}
+.maple-drawer-main > a,
+.maple-drawer-main > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: #555;
+  text-align: left;
+  font:
+    700 28px/1.2 "Red Hat Display",
+    sans-serif;
+  cursor: pointer;
+}
+.maple-drawer-submenu {
+  padding: 4px 18px 0;
+}
+.maple-drawer-group + .maple-drawer-group {
+  margin-top: 10px;
+}
+.maple-menu-products {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0 20px 10px;
+  margin-top: 50px;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b8b1a5 var(--paper);
+}
+.maple-menu-product {
+  flex: 0 0 130px;
+  font:
+    400 16px/1.25 "Red Hat Display",
+    sans-serif;
+}
+.maple-menu-product img {
+  width: 130px;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 8px;
+}
+.maple-menu-product span,
+.maple-menu-product del {
+  display: block;
+}
+.maple-menu-product > span:first-of-type {
+  margin-bottom: 4px;
+}
+.maple-menu-product del {
+  color: #666;
+}
+@media (min-width: 750px) and (max-width: 1000px) {
+  .maple-mega-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .maple-mega-column:not(:first-child) {
+    padding-left: 8px;
+  }
+}
+@media (max-width: 749px) {
+  .maple-desktop-nav,
+  .utility-links,
+  .account-button {
+    display: none;
+  }
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+  .header-main {
+    height: 76px;
+    padding: 0 14px;
+  }
+  .brand,
+  .brand img {
+    width: 128px;
+    height: 64px;
+  }
+  .header-actions {
+    gap: 2px;
+  }
+  .header-actions .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.maple-drawer-main + .maple-menu-products {
+  margin-top: auto;
+  padding-top: 50px;
+  padding-bottom: 30px;
+}
+.maple-drawer-submenu .maple-menu-parent {
+  color: #555;
+  line-height: 23.4px;
+}
