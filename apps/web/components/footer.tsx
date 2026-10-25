@@ -76,11 +76,11 @@ export function Footer() {
         </div>
         <div>
           <h3>For Bulk Order/Collaboration:</h3>
-          <a href="tel:+918796130252">
-            <Phone size={24} strokeWidth={1} /> +91 87961 30252
+          <a href="tel:+919262968727">
+            <Phone size={24} strokeWidth={1} /> +91 92629 68727
           </a>
-          <a href="mailto:aayushi@maplefurnishers.com">
-            <Mail size={24} strokeWidth={1} /> aayushi@maplefurnishers.com
+          <a href="mailto:aditya@maplefurnishers.com">
+            <Mail size={24} strokeWidth={1} /> aditya@maplefurnishers.com
           </a>
         </div>
         <div>

@@ -87,14 +87,20 @@ test("footer exposes callable customer-care and bulk-order contacts", async () =
     assert.ok(document.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
   });
 });
-test("footer phone links dial the current business number shown to customers", async () => {
+test("footer routes customer care and bulk collaboration to their respective business contacts", async () => {
   await mount(<Footer />, () => {
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
     assert.equal(links.length, 3);
-    for (const link of links) {
-      assert.equal(link.getAttribute("href"), "tel:+918796130252");
-      assert.equal(link.textContent?.trim(), "+91 87961 30252");
-    }
+    assert.deepEqual(links.map((link) => [link.getAttribute("href"), link.textContent?.trim()]), [
+      ["tel:+918796130252", "+91 87961 30252"],
+      ["tel:+919262968727", "+91 92629 68727"],
+      ["tel:+918796130252", "+91 87961 30252"],
+    ]);
+    const bulk = [...document.querySelectorAll(".maple-footer-contact > div")]
+      .find((section) => section.querySelector("h3")?.textContent === "For Bulk Order/Collaboration:");
+    const email = bulk?.querySelector<HTMLAnchorElement>('a[href^="mailto:"]');
+    assert.equal(email?.getAttribute("href"), "mailto:aditya@maplefurnishers.com");
+    assert.equal(email?.textContent?.trim(), "aditya@maplefurnishers.com");
   });
 });
 test("contact page phone action dials the current business number", async () => {
