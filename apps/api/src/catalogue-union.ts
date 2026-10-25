@@ -119,6 +119,17 @@ export function planCatalogueUnion(
       }
       const sameSku = v.sku ? skuIndex.get(v.sku) : undefined;
       if (sameSku?.length === 1 && keeriSkuCounts.get(v.sku!) === 1) {
+        // A current SKU cannot override explicit stable identity evidence, even
+        // when that former Shopify item is absent from the current snapshot.
+        if (
+          (rawV.shopifyVariantId &&
+            shopVariant(rawV.shopifyVariantId)?.v.id !== sameSku[0]!.v.id) ||
+          (rawV.shopifyProductId &&
+            shopProduct(rawV.shopifyProductId)?.id !== sameSku[0]!.p.id) ||
+          (model.shopifyProductId &&
+            shopProduct(model.shopifyProductId)?.id !== sameSku[0]!.p.id)
+        )
+          ambiguous = true;
         targets.add(sameSku[0]!.v.id);
         targetProducts.add(sameSku[0]!.p.id);
       }
