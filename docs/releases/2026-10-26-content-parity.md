@@ -1,6 +1,6 @@
 # Content and page parity increment — 26 October 2026
 
-Status: local implementation and verification; production storefront remains 26bd9aa. PR #24 is a draft. Checkout remains disabled. This is not a pixel-perfect or complete CMS claim.
+Status: PR #24 merged as39ff224 after all eight exact-head CI checks ataa00108; production storefront remains26bd9aa. This increment is not deployed. Checkout remains disabled. This is not a pixel-perfect or complete CMS claim.
 
 ## Delivered code
 
@@ -27,7 +27,7 @@ Production capacity is unresolved: approximately1.25GiB free cannot safely stage
 ## Remaining scope
 
 - Publisher private password/account activation and production staff acceptance; enquiry capability decision separate.
-- Homepage copy beyond six current fields; remaining informational templates, Nimbus and existing policy/contact copy controls.
+- Homepage copy expansion is covered by the subsequent homepage-content increment; remaining informational templates, Nimbus page and existing policy/contact controls continue.
 - Remaining source/suggested layout comparisons and measured LCP/CLS/INP/accessibility across routes.
 - Real review/newsletter/account/returns services and notification delivery.
 - Capacity resolution, exact-head CI, deployment, ordinary public browser verification.

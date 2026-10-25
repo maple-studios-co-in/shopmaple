@@ -7,6 +7,7 @@ import {
 import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
+import { HomeDetailsFields } from "./home-details-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
 import type { StaffSession } from "./dashboard";
@@ -452,6 +453,7 @@ export function ContentEditor({
                       />
                     ))}
                   </div>
+                  <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
                   <h3>Motion</h3>
                   <label className="admin-check">
                     <input

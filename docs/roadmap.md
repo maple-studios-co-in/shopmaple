@@ -12,7 +12,9 @@ PR #20 campaign scheduling and PR #21 original Shopify product disclosure copy a
 
 PR #22/#23 operations release: [paired database/media backups](releases/2026-10-26-paired-backups.md) are installed at tool revision3906413, with a verified production restore and one-time off-host copy. The 02:47 UTC daily schedule now invokes the paired job; its next scheduled run and automated off-host retention/alerts remain pending. A fresh [category-route parity audit](audits/2026-10-26-category-routes.md) confirms `/collections/chairs` has its own legacy source template, distinct from `/pages/chairs`; a redirect would not satisfy parity.
 
-PR #24 remains in local/CI verification, not deployed: restored legacy Chairs editorial sections, article featured images/dates, corrected Nimbus responsive artwork, and typed Our Story copy/order/visibility controls. Browser access recovered in the parent task; desktop/mobile checks are in progress. Original copy remains the default. Publishing Story content adds a new validated document field: older binaries require compatible content recovery before rollback. See [verification and remaining gaps](releases/2026-10-26-content-parity.md).
+PR #24 is merged as39ff224 after464 local tests and all eight exact-head CI checks ataa00108. It is not deployed. It restores the legacy Chairs editorial route, article images/dates, responsive Nimbus artwork, typed Our Story controls and dynamic reduced-motion video pause. Desktop/mobile browser checks passed. See [verification and remaining gaps](releases/2026-10-26-content-parity.md).
+
+The next increment adds eight groups of [homepage content controls](releases/2026-10-26-home-content.md), preserving source copy and published-only reads.475 integrated tests, types/build, scanners and independent manual review pass locally; exact-head CI remains pending. Existing strict-schema rollback compatibility applies to both storyPage and homeDetails. Server capacity and private publisher setup remain unresolved.
 
 Priority order remaining:
 

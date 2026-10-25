@@ -168,3 +168,6 @@ export type { CheckoutInput, QuoteRequest, QuoteSnapshot } from "./checkout";
 export * from "./category-content";
 export * from "./story-content";
 export * from "./enquiry-admin";
+
+export { homeDetailsSchema } from "./home-details";
+export type { HomeDetails } from "./home-details";

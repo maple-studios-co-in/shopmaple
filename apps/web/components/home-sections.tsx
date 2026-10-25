@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowRight, Instagram } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
+import type { HomeDetails } from "@shopmaple/contracts";
+import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
 export function HomeBanner({
   desktop,
@@ -51,24 +53,26 @@ export function HomeBanner({
   );
 }
 
-export function HomeDifference() {
-  const items: [string, string][] = [
-    ["Custom_F.svg", "Fully Customizable"],
-    ["Del_mf.svg", "Delivery Across India"],
-    ["Icon_homepage.svg", "In-House Crafted in Delhi"],
-    ["Maple_Banner_5.svg", "36-Month Warranty"],
+export function HomeDifference({
+  content = defaultHomeDetails.difference,
+}: { content?: HomeDetails["difference"] } = {}) {
+  const icons = [
+    "Custom_F.svg",
+    "Del_mf.svg",
+    "Icon_homepage.svg",
+    "Maple_Banner_5.svg",
   ];
   return (
     <section className="home-difference home-container">
-      <p className="home-eyebrow">The Maple Difference</p>
-      <h2>Every element is yours to reshape</h2>
+      <p className="home-eyebrow">{content.eyebrow}</p>
+      <h2>{content.heading}</h2>
       <Link className="button" href="/pages/contact">
-        Tell Us About Your Space <ArrowRight size={18} />
+        {content.cta} <ArrowRight size={18} />
       </Link>
       <ul>
-        {items.map(([icon, text]) => (
-          <li key={text}>
-            <Image src={shopFile(icon)} width={60} height={60} alt="" />
+        {content.promises.map((text, index) => (
+          <li key={index}>
+            <Image src={shopFile(icons[index]!)} width={60} height={60} alt="" />
             <span>{text}</span>
           </li>
         ))}
@@ -109,9 +113,14 @@ export function HomeSocial({
 }
 
 export function HomeTestimonial({
+  content = defaultHomeDetails.testimonial,
   heading = "Why They Love Us",
   subheading = "Thoughtful designs. Exceptional service.",
-}: { heading?: string; subheading?: string } = {}) {
+}: {
+  content?: HomeDetails["testimonial"];
+  heading?: string;
+  subheading?: string;
+} = {}) {
   return (
     <section className="home-testimonial">
       <header>
@@ -135,32 +144,14 @@ export function HomeTestimonial({
         </video>
         <figure>
           <blockquote>
-            <h3>
-              Getting our sofa made by Maple was a completely hassle-free
-              experience.
-            </h3>
-            <p>
-              From the first conversation to the final delivery, the process
-              felt smooth and well-managed.
-            </p>
-            <p>
-              What we appreciated most was the guidance. They didn’t just take
-              the order, they helped us choose the right size, fabric, colour
-              tone, and overall look according to our space.
-            </p>
-            <p>
-              The final sofa feels premium, comfortable, and beautifully
-              finished. The quality is visible in the stitching, cushioning, and
-              overall build.
-            </p>
-            <p>
-              Delivery was on time, and everything was handled professionally.
-              Truly a no-stress experience from start to finish.
-            </p>
+            <h3>{content.title}</h3>
+            {content.paragraphs.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
           </blockquote>
           <figcaption>
-            <strong>Anjali Gupta</strong>
-            <span> — Verified Customer</span>
+            <strong>{content.name}</strong>
+            <span>{content.attribution}</span>
           </figcaption>
           <div className="home-review-stars" aria-label="5 out of 5 stars">
             ★ ★ ★ ★ ★
@@ -171,7 +162,9 @@ export function HomeTestimonial({
   );
 }
 
-export function HomeNewsletter() {
+export function HomeNewsletter({
+  content = defaultHomeDetails.newsletter,
+}: { content?: HomeDetails["newsletter"] } = {}) {
   return (
     <section className="home-newsletter" id="newsletter">
       <div className="home-container">
@@ -184,11 +177,11 @@ export function HomeNewsletter() {
         />
         <div className="home-newsletter-row">
           <div>
-            <h2>Soft presence. Strong craftsmanship.</h2>
-            <p>Furniture made for rooms that feel as good as they look.</p>
+            <h2>{content.heading}</h2>
+            <p>{content.body}</p>
           </div>
           <div>
-            <h3>New Collections. Early Access. No Noise.</h3>
+            <h3>{content.signupHeading}</h3>
             <HomeNewsletterForm />
           </div>
         </div>
@@ -197,37 +190,23 @@ export function HomeNewsletter() {
   );
 }
 
-export function HomeValues() {
-  const values: [string, string, string][] = [
-    [
-      "Icon_maple_3.svg",
-      "Quiet Luxury",
-      "Furniture that doesn’t shout, but makes the room feel complete",
-    ],
-    [
-      "Cover_Image_Maple_2.svg",
-      "Built for Real Living",
-      "Not made only for photographs. Made for everyday comfort and use",
-    ],
-    [
-      "Icon_maple_1.svg",
-      "Ages Beautifully",
-      "Wood grains deepen. Fabrics soften. The piece becomes better with time",
-    ],
-    [
-      "Cover_Image_Maple_5.svg",
-      "Strength You Don’t See",
-      "A solid frame, lasting structure, and details that stay quiet for years.",
-    ],
-  ];
+export function HomeValues({
+  content = defaultHomeDetails.values,
+}: { content?: HomeDetails["values"] } = {}) {
+  const images = {
+    "quiet-luxury": "Icon_maple_3.svg",
+    "real-living": "Cover_Image_Maple_2.svg",
+    "ages-beautifully": "Icon_maple_1.svg",
+    strength: "Cover_Image_Maple_5.svg",
+  };
   return (
     <section
       className="home-values home-container"
       aria-label="Made for real living"
     >
-      {values.map(([image, title, body]) => (
-        <div key={title}>
-          <Image src={shopFile(image)} alt="" width={80} height={80} />
+      {content.map(({ key, title, body }) => (
+        <div key={key}>
+          <Image src={shopFile(images[key])} alt="" width={80} height={80} />
           <h3>{title}</h3>
           <p>{body}</p>
         </div>
@@ -236,7 +215,10 @@ export function HomeValues() {
   );
 }
 
-export function HomeCities({ autoplay = true }: { autoplay?: boolean } = {}) {
+export function HomeCities({
+  content = defaultHomeDetails.cities,
+  autoplay = true,
+}: { content?: HomeDetails["cities"]; autoplay?: boolean } = {}) {
   const cities: [string, string][] = [
     ["Delhi.svg", "Delhi"],
     ["Kolkata.svg", "Kolkata"],
@@ -260,8 +242,8 @@ export function HomeCities({ autoplay = true }: { autoplay?: boolean } = {}) {
   return (
     <section className="home-cities home-container">
       <header>
-        <p className="home-eyebrow">We Are Serving</p>
-        <h2>20+ Cities</h2>
+        <p className="home-eyebrow">{content.eyebrow}</p>
+        <h2>{content.heading}</h2>
       </header>
       <MovingCities autoplay={autoplay}>
         {cities.map(([image, city]) => (
@@ -278,19 +260,19 @@ export function HomeCities({ autoplay = true }: { autoplay?: boolean } = {}) {
   );
 }
 
-export function HomeProject() {
+export function HomeProject({
+  content = defaultHomeDetails.project,
+}: { content?: HomeDetails["project"] } = {}) {
   return (
     <section className="home-project home-container">
       <div>
-        <h2>Have a Space in Mind?</h2>
+        <h2>{content.heading}</h2>
         <p>
-          Describe your project to us and our team will come back within{" "}
-          <strong>24 hours</strong> with options, pricing, and a clear timeline.
+          {content.introBefore.trimEnd()}{" "}
+          <strong>{content.responseTime}</strong>{" "}
+          {content.introAfter.trimStart()}
         </p>
-        <p>
-          Whether the brief is a single statement chair or a complete room, the
-          process starts the same way: with a conversation.
-        </p>
+        <p>{content.body}</p>
       </div>
       <HomeProjectForm />
     </section>

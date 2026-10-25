@@ -238,3 +238,49 @@ test("Our Story drafts publish and restore through the existing authorized revis
     assert.equal(invalid.status, 400);
     assert.equal((await agent.get("/api/admin/content")).body.version, restored.body.version);
 });
+
+test("homepage details retain draft isolation, publisher authority, stale protection and restoration", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const previousPublic = (await request(createApp(db, config)).get("/api/content/storefront")).body;
+    const homeDetails = {
+        hero: { cta: "Discover Maple", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: `Our ${key}`, priceLabel: "Ask for a quote" })) },
+        difference: { eyebrow: "Maple craft", heading: "Made for you", cta: "Plan your room", promises: ["Custom", "Comfort", "Care", "Craft"] },
+        nimbus: { heading: "Nimbus furniture", tagline: "Cloud comfort", features: ["Soft", "Airy", "Modern", "Relaxed"], cta: "Discover Nimbus" },
+        testimonial: { title: "A happy home", paragraphs: ["<script>plain text only</script>", "Thoughtful service."], name: "A customer", attribution: " — Homeowner" },
+        newsletter: { heading: "Fresh ideas", body: "Keep in touch.", signupHeading: "Join us" },
+        values: ["quiet-luxury", "real-living", "ages-beautifully", "strength"].map(key => ({ key, title: "Careful craft", body: "Made with care." })),
+        cities: { eyebrow: "Delivery", heading: "Across India" },
+        project: { heading: "Your project", introBefore: "Reply within ", responseTime: "two days", introAfter: " with ideas.", body: "Tell us more." },
+    };
+    const next = { ...content, homeDetails };
+    const saved = await save(editor.agent, editor.csrf, initial.version, next);
+    assert.equal(saved.status, 200, "bounded homepage details must save as a private draft");
+    assert.equal(saved.body.draft.homeDetails.hero.cta, "Discover Maple");
+    assert.deepEqual((await request(createApp(db, config)).get("/api/content/storefront?draft=true")).body, previousPublic);
+    const revision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(revision.actorEmail, "editor@example.invalid");
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    const publish = await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version });
+    assert.equal(publish.status, 200);
+    const published = (await request(createApp(db, config)).get("/api/content/storefront")).body;
+    assert.deepEqual(published.content.homeDetails, homeDetails);
+    assert.equal((await save(editor.agent, editor.csrf, saved.body.version, next)).status, 409);
+    const changed = await save(editor.agent, editor.csrf, published.version, { ...next, homeDetails: { ...homeDetails, hero: { ...homeDetails.hero, cta: "Private change" } } });
+    assert.equal(changed.status, 200);
+    assert.equal((await request(createApp(db, config)).get("/api/content/storefront")).body.content.homeDetails.hero.cta, "Discover Maple");
+    const restored = await publisher.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: changed.body.version, revisionId: revision.id });
+    assert.equal(restored.status, 200);
+    assert.deepEqual(restored.body.draft.homeDetails, homeDetails);
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await request(createApp(db, config)).get("/api/content/storefront")).body, published);
+    for (const invalid of [
+        { ...homeDetails, image: "/media/uploads/unreviewed.webp" },
+        { ...homeDetails, hero: { ...homeDetails.hero, tiles: [{ ...homeDetails.hero.tiles[0], pricePaise: 1 }, ...homeDetails.hero.tiles.slice(1)] } },
+        { ...homeDetails, project: { ...homeDetails.project, checkoutEnabled: true } },
+        { ...homeDetails, values: [...homeDetails.values.slice(0, 3), homeDetails.values[0]] },
+        { ...homeDetails, cities: { ...homeDetails.cities, heading: " " } },
+    ]) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, homeDetails: invalid })).status, 400);
+    assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
+});

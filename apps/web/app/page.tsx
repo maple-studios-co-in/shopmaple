@@ -18,6 +18,7 @@ import {
   HomeProject,
 } from "@/components/home-sections";
 import { getProduct } from "@/lib/catalog";
+import { resolveHomeDetails } from "@/lib/home-details-defaults";
 
 export const dynamic = "force-dynamic";
 
@@ -103,10 +104,11 @@ async function HomeProducts({
 export default async function Home() {
   const content = await getPublishedContent();
   const copy = content.homeCopy;
+  const details = resolveHomeDetails(content.homeDetails);
   const sections: Record<string, ReactNode> = {
-    hero: <Hero />,
+    hero: <Hero content={details.hero} />,
     announcement: <CampaignBanner campaign="landing-announcement" />,
-    difference: <HomeDifference />,
+    difference: <HomeDifference content={details.difference} />,
     categories: (
       <section className="home-category-section home-container">
         <h2>{copy.categoryHeading}</h2>
@@ -143,7 +145,7 @@ export default async function Home() {
         />
       </section>
     ),
-    nimbus: <HomeNimbus />,
+    nimbus: <HomeNimbus content={details.nimbus} />,
     "dining-banner": <CampaignBanner campaign="landing-dining-table" />,
     instagram: (
       <HomeSocial
@@ -182,14 +184,17 @@ export default async function Home() {
     ),
     testimonial: (
       <HomeTestimonial
+        content={details.testimonial}
         heading={copy.testimonialHeading}
         subheading={copy.testimonialSubheading}
       />
     ),
-    newsletter: <HomeNewsletter />,
-    values: <HomeValues />,
-    cities: <HomeCities autoplay={content.motion.autoplayCities} />,
-    project: <HomeProject />,
+    newsletter: <HomeNewsletter content={details.newsletter} />,
+    values: <HomeValues content={details.values} />,
+    cities: (
+      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} />
+    ),
+    project: <HomeProject content={details.project} />,
   };
   return (
     <SectionReveal enabled={content.motion.revealSections}>
