@@ -8,7 +8,9 @@ import { shopFile } from "@/lib/format";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
 import { CategoryIntroduction } from "@/components/category-controls";
-import categories from "@/data/landing-categories.json";
+import type { CategoryPageSlug } from "@shopmaple/contracts";
+import { resolveCategoryPage } from "@/lib/category-content-defaults";
+import { getPublishedContent } from "@/lib/content";
 import sourceCatalog from "@/data/landing-catalog.json";
 type SourceProduct = {
   handle: string;
@@ -18,25 +20,6 @@ type SourceProduct = {
   compareAt: string;
 };
 const sourceProducts: Record<string, SourceProduct> = sourceCatalog;
-type LandingSection = {
-  type: string;
-  columns?: number;
-  width?: number;
-  height?: number;
-  desktop?: string;
-  mobile?: string;
-  items?: {
-    href?: string;
-    title: string;
-    image: string;
-    body?: string;
-  }[];
-  heading?: string;
-  eyebrow?: string;
-  handles?: string[];
-  collection?: string;
-  viewAll?: boolean;
-};
 export function landingCollectionHref(path: string) {
   const handle = path.split("/").filter(Boolean).at(-1) || "all";
   return Object.hasOwn(collectionTitles, handle)
@@ -208,19 +191,26 @@ export function CategoryValues({
     </section>
   );
 }
-export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
-  const data = categories[slug];
-  let campaignSlot = 0;
+export async function CategoryLanding({ slug }: { slug: CategoryPageSlug }) {
+  const content = await getPublishedContent();
+  const data = resolveCategoryPage(slug, content.landingPages);
+  const heroVisible = data.sections.some((section) => section.key === "hero");
   return (
     <div className="home-parity landing-parity">
-      {(data.sections as LandingSection[]).map((section, index) => {
+      {!heroVisible && (
+        <CategoryIntroduction
+          title={data.title}
+          description={data.description}
+        />
+      )}
+      {data.sections.map((section) => {
         if (section.type === "banner") {
           const campaign =
-            campaignSlot++ < 2
-              ? (`${slug}-${campaignSlot === 1 ? "hero" : "sale"}` as const)
+            section.key === "hero" || section.key === "sale"
+              ? (`${slug}-${section.key}` as const)
               : null;
           return (
-            <div key={index}>
+            <div key={section.key}>
               {campaign ? (
                 <CampaignBanner campaign={campaign} />
               ) : (
@@ -229,11 +219,11 @@ export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
                   mobile={section.mobile!}
                   width={section.width!}
                   height={section.height!}
-                  eager={index === 0}
-                  alt={`${data.title} — ${index === 0 ? "furniture for every occasion" : "find furniture for your space"}`}
+                  eager={section.key === "hero"}
+                  alt={`${data.title} — ${section.key === "hero" ? "furniture for every occasion" : "find furniture for your space"}`}
                 />
               )}
-              {index === 0 && (
+              {section.key === "hero" && (
                 <CategoryIntroduction
                   title={data.title}
                   description={data.description}
@@ -245,7 +235,7 @@ export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
         if (section.type === "categories")
           return (
             <nav
-              key={index}
+              key={section.key}
               className="landing-categories home-container"
               style={{ "--landing-columns": section.columns } as CSSProperties}
               aria-label={`${data.title} categories`}
@@ -268,7 +258,7 @@ export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
         if (section.type === "products")
           return (
             <CategoryProducts
-              key={index}
+              key={section.key}
               handles={section.handles!}
               heading={section.heading}
               collection={section.collection}
@@ -276,16 +266,19 @@ export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
             />
           );
         if (section.type === "divider")
-          return <div key={index} className="home-divider" />;
+          return <div key={section.key} className="home-divider" />;
         if (section.type === "heading")
           return (
-            <header key={index} className="landing-difference home-container">
+            <header
+              key={section.key}
+              className="landing-difference home-container"
+            >
               <p className="home-eyebrow">{section.eyebrow}</p>
               <h2>{section.heading}</h2>
             </header>
           );
         if (section.type === "values")
-          return <CategoryValues key={index} items={section.items!} />;
+          return <CategoryValues key={section.key} items={section.items!} />;
         return null;
       })}
     </div>

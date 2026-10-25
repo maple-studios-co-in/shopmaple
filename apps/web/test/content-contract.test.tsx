@@ -153,3 +153,57 @@ test("content bounds text and rejects duplicate social posts", () => {
     false,
   );
 });
+
+test("legacy content normalizes new page and artwork fields without losing copy", () => {
+  const legacy = {
+    ...contentFixture(),
+    campaigns: [
+      {
+        key: "sofas-hero",
+        label: "Original label",
+        headline: ["Original headline"],
+        supporting: "",
+        offer: [],
+        eligibility: "",
+        cta: "Explore",
+        href: "/pages/sofas",
+      },
+    ],
+  };
+  const parsed = storefrontContentSchema.parse(legacy);
+  assert.deepEqual(parsed.landingPages, []);
+  assert.equal(parsed.campaigns[0]?.artwork, null);
+  assert.equal(parsed.campaigns[0]?.headline[0], "Original headline");
+});
+test("campaign artwork accepts managed images and rejects remote executable artwork", () => {
+  const campaign = {
+    key: "sofas-hero",
+    label: "Maple",
+    headline: ["Sofas"],
+    supporting: "",
+    offer: [],
+    eligibility: "",
+    cta: "Explore",
+    href: "/pages/sofas",
+    artwork: {
+      desktopImage: "/media/uploads/" + "a".repeat(64) + ".webp",
+      mobileImage: "/media/uploads/" + "b".repeat(64) + ".webp",
+      alt: "Maple sofas",
+    },
+  };
+  assert.equal(
+    storefrontContentSchema.safeParse({
+      ...contentFixture(),
+      campaigns: [campaign],
+    }).success,
+    true,
+  );
+  campaign.artwork.desktopImage = "https://evil.invalid/image.svg";
+  assert.equal(
+    storefrontContentSchema.safeParse({
+      ...contentFixture(),
+      campaigns: [campaign],
+    }).success,
+    false,
+  );
+});

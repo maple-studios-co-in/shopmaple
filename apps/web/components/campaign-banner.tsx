@@ -70,8 +70,33 @@ export async function CampaignBanner({
       style={vars}
     >
       <div className="campaign-scene">
-        <ArtworkLayer artwork={data.desktop} mobile={false} />
-        <ArtworkLayer artwork={data.mobile} mobile />
+        {data.artwork ? (
+          <>
+            <div className="campaign-art-desktop" data-artwork="desktop">
+              <Image
+                src={data.artwork.desktopImage}
+                alt={data.artwork.alt}
+                fill
+                sizes="100vw"
+                style={{ objectFit: "cover" }}
+              />
+            </div>
+            <div className="campaign-art-mobile" data-artwork="mobile">
+              <Image
+                src={data.artwork.mobileImage}
+                alt={data.artwork.alt}
+                fill
+                sizes="100vw"
+                style={{ objectFit: "cover" }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <ArtworkLayer artwork={data.desktop} mobile={false} />
+            <ArtworkLayer artwork={data.mobile} mobile />
+          </>
+        )}
         <div className="campaign-shade" aria-hidden="true" />
         {campaign.startsWith("landing-") && (
           <div className="campaign-bottom-shade" aria-hidden="true" />

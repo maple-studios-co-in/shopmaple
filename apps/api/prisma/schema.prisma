@@ -88,6 +88,8 @@ model Enquiry {
   message String
   context Json
   status String @default("new")
+  version Int @default(0)
+  reviews EnquiryReviewAudit[]
   createdAt DateTime @default(now())
   @@index([status, createdAt])
 }
@@ -167,11 +169,14 @@ model ShopAdmin {
   passwordHash String
   role ShopAdminRole
   active Boolean @default(true)
+  canManageEnquiries Boolean @default(false)
   failedAttempts Int @default(0)
   lockedUntil DateTime?
   createdAt DateTime @default(now())
   sessions ShopAdminSession[]
   revisions ShopContentRevision[]
+  mediaAssets ShopMediaAsset[]
+  enquiryReviews EnquiryReviewAudit[]
 }
 model ShopAdminSession {
   id String @id @default(cuid())
@@ -202,4 +207,31 @@ model ShopContentRevision {
   actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   @@unique([documentId, version])
+}
+
+model ShopMediaAsset {
+  id String @id @default(cuid())
+  sha256 String @unique
+  storageKey String @unique
+  label String
+  width Int
+  height Int
+  bytes Int
+  mimeType String
+  createdById String
+  createdBy ShopAdmin @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  publicAt DateTime?
+  @@index([createdAt, id])
+}
+model EnquiryReviewAudit {
+  id String @id @default(cuid())
+  enquiryId String
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  actorId String
+  actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  version Int
+  action String
+  createdAt DateTime @default(now())
+  @@unique([enquiryId, version])
 }

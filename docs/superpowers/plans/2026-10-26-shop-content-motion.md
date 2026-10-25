@@ -49,7 +49,7 @@ Document response `{version,draft,publishedVersion,updatedAt}`; absent document 
 - [x] GREEN auth/session and isolated models; test expiry/logout/fixation/role downgrade/rate limits.
 - [x] RED draft/publication isolation, stale/concurrent writes, restore-as-draft and content validation.
 - [x] GREEN transactions/revisions; run dedicated DB and API suites.
-- [ ] Document secure owner provisioning and deployment rollback; independent final security review.
+- [x] Document secure owner provisioning and deployment rollback; independent final security review.
 
 ### 3. Shop Admin forms — dashboard agent
 
@@ -74,9 +74,9 @@ Exports `InstagramRail({posts,autoplay?})`, `MovingCities({children,autoplay?})`
 ### 5. Integration and release — parent
 
 - [x] Verified agent boundaries and recorded RED/GREEN evidence in the release note.
-- [ ] Complete test suite, types, builds, dependency/secret/static scans and final security review.
+- [x] Complete test suite, types, builds, dependency/secret/static scans and final security review.
 - [x] Local browser verified draft/save/publish/restore using an isolated synthetic staff fixture; no production test content/orders. Final logout regression verification remains part of the release gate.
-- [ ] PR/CI/merge then backup/migration/runtime verification if production setup is ready; otherwise clearly separate implemented from activated.
+- [x] PR/CI/merge then backup/migration/runtime verification if production setup is ready; otherwise clearly separate implemented from activated.
 - [ ] Update this backlog and goal; do not mark the broader goal complete while roadmap work remains.
 
 ## Next increments
@@ -86,3 +86,20 @@ Exports `InstagramRail({posts,autoplay?})`, `MovingCities({children,autoplay?})`
 - [ ] More product image transitions, menus and reveal effects with performance evidence.
 - [ ] Source catalogue refresh and complete photos/details/price-basis normalization.
 - [ ] Shipping/merchant/payment/Keeri order/recovery gates and sandbox proof before checkout activation.
+
+
+## First release evidence
+
+PR #16 merged to main 76a6e21; reviewed runtime 67a05d3 deployed with identical tree. 268 integrated tests plus 4 deployment database tests, typechecks, builds and scanners passed. Database backup restored to disposable database with matching counts. Public store and admin login checked separately. Publisher account activation remains pending private setup; no production content or users were seeded. See docs/releases/2026-10-26-shop-content-motion.md.
+
+## Current increment: category controls, media and customer enquiries
+
+- [x] Category agent: source-preserving sofas/tables/chairs controls; stable section and campaign identities, title/copy/visibility/order edits. Assertion RED then focused GREEN.
+- [x] Inbox agent: separate deny-by-default enquiry capability, metadata-only paginated list, authorized detail and versioned review audit. No outbound messages.
+- [x] Media agent: bounded authenticated image uploads, persistent private originals normalized to WebP, library/picker and transactional publication. Final adversarial checks in progress.
+- [x] Root: compatible content normalization, responsive artwork rendering, forms/tabs, models/migration and publishing hook.
+- [ ] Final integrated suite/build/security review and browser evidence.
+- [ ] PR/CI/merge and separately verified deployment with persistent media configuration.
+- [ ] Activate owner privately and grant enquiry access only after pending scope decision.
+
+Remaining after this increment: assignment/notes/notifications, campaign scheduling, product gallery/menu/reveal effects and measured performance, remaining page parity, catalogue completeness, shipping/payment/Keeri checkout gates. Checkout stays disabled.

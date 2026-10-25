@@ -1,6 +1,18 @@
 import { z } from "zod";
-export { storefrontContentSchema, homeSectionKeys, campaignKeys, campaignContentSchema, contentPageSchema, contentLinkSchema, contentImageSchema } from "./content";
-export type { StorefrontContent, CampaignContent, ContentPage } from "./content";
+export {
+  storefrontContentSchema,
+  homeSectionKeys,
+  campaignKeys,
+  campaignContentSchema,
+  contentPageSchema,
+  contentLinkSchema,
+  contentImageSchema,
+} from "./content";
+export type {
+  StorefrontContent,
+  CampaignContent,
+  ContentPage,
+} from "./content";
 export const categories = [
   "sofas",
   "chairs",
@@ -95,22 +107,41 @@ export const catalogueImportSchema = z
     }
   });
 
-const enquiryContextSchema = z.object({
-  product: z.string().trim().max(500).default(""),
-  variant: z.string().trim().max(300).default(""),
-  sku: z.string().trim().max(160).default(""),
-  pincode: z.union([z.literal(""), z.string().regex(/^[1-9][0-9]{5}$/)]).default(""),
-}).strict();
-export const enquiryInputSchema = z.object({
-  kind: z.enum(["contact", "project", "bulk"]),
-  name: z.string().trim().max(100).default(""),
-  email: z.email().max(254).transform(value => value.trim().toLowerCase()),
-  phone: z.string().trim().max(30).default(""),
-  message: z.string().trim().max(5000).default(""),
-  context: enquiryContextSchema.default({product:"",variant:"",sku:"",pincode:""}),
-}).strict().superRefine((value,ctx)=>{
-  if(value.kind==="bulk" && (!value.name || !value.phone)) ctx.addIssue({code:"custom",message:"Name and phone are required for bulk enquiries"});
-});
+const enquiryContextSchema = z
+  .object({
+    product: z.string().trim().max(500).default(""),
+    variant: z.string().trim().max(300).default(""),
+    sku: z.string().trim().max(160).default(""),
+    pincode: z
+      .union([z.literal(""), z.string().regex(/^[1-9][0-9]{5}$/)])
+      .default(""),
+  })
+  .strict();
+export const enquiryInputSchema = z
+  .object({
+    kind: z.enum(["contact", "project", "bulk"]),
+    name: z.string().trim().max(100).default(""),
+    email: z
+      .email()
+      .max(254)
+      .transform((value) => value.trim().toLowerCase()),
+    phone: z.string().trim().max(30).default(""),
+    message: z.string().trim().max(5000).default(""),
+    context: enquiryContextSchema.default({
+      product: "",
+      variant: "",
+      sku: "",
+      pincode: "",
+    }),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.kind === "bulk" && (!value.name || !value.phone))
+      ctx.addIssue({
+        code: "custom",
+        message: "Name and phone are required for bulk enquiries",
+      });
+  });
 export type EnquiryInput = z.infer<typeof enquiryInputSchema>;
 export const enquiryReceiptSchema = z.object({
   reference: z.string().regex(/^enq_[a-f0-9-]{36}$/),
@@ -119,5 +150,14 @@ export const enquiryReceiptSchema = z.object({
 });
 export type EnquiryReceipt = z.infer<typeof enquiryReceiptSchema>;
 
-export { checkoutInputSchema, checkoutAddressSchema, quoteRequestSchema, quoteSnapshotSchema, quoteResponseSchema } from "./checkout";
+export {
+  checkoutInputSchema,
+  checkoutAddressSchema,
+  quoteRequestSchema,
+  quoteSnapshotSchema,
+  quoteResponseSchema,
+} from "./checkout";
 export type { CheckoutInput, QuoteRequest, QuoteSnapshot } from "./checkout";
+
+export * from "./category-content";
+export * from "./enquiry-admin";
