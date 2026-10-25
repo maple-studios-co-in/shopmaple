@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": "shopify-preview",
-  "capturedAt": "2026-10-25T16:10:59.195Z",
+  "capturedAt": "2026-10-25T16:27:34.633934+00:00",
   "products": [
     {
       "id": "preview-7990430073021",
@@ -25,6 +25,96 @@
           "sku": "MF-SC-312",
           "pricePaise": 3146470,
           "compareAtPaise": 6489882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8297226207421",
+      "handle": "aeris-living-room-set",
+      "title": "Avelon Living Room Set",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame78.png?v=1778218250",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame75_a6e86fdb-a4e0-4f20-9658-a09c4978bcc3.png?v=1778218250",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame79_591faefa-3e52-4ce5-9b9a-2049b46bb085.png?v=1778218250",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame80_9057a2f1-fb20-4c62-a65c-30b6143bec1c.png?v=1778218249",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame81_f100cdbd-fe9c-4a11-b097-f804bd5ec04b.png?v=1778218249",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame78_1.png?v=1778218249",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame77.png?v=1778218249",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame76_4c91412e-9bbd-441c-888d-67f297c37499.png?v=1778218249",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame82_c0b2a0d5-8b5b-4b51-b216-dea20ec6ff2b.png?v=1778218250"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46754951233725",
+          "title": "Standard",
+          "sku": "MPL-LIV-NIM-AER-01",
+          "pricePaise": 41300000,
+          "compareAtPaise": 40710000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8297226600637",
+      "handle": "aeris-marble-nesting-center-table",
+      "title": "Avelon Marble Nesting Center Table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame83_8934a00d-a77f-4c62-ae4f-fc6824e6a404.png?v=1778218975",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame87_1.png?v=1778218975",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame85_1.png?v=1778218975",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame84_284f459d-a101-4d37-822c-9ca3ae46bbee.png?v=1778218975",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame86_1.png?v=1778218979"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46754953625789",
+          "title": "Standard",
+          "sku": "MPL-CT-NIM-AER-01",
+          "pricePaise": 3894000,
+          "compareAtPaise": 4130000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8297226404029",
+      "handle": "aeris-sculpt-lounge-chair",
+      "title": "Avelon Sculpt Lounge Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame89_2.png?v=1778218649",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame75_1.png?v=1778218649",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame93.png?v=1778218649",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame92.png?v=1778218651",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame91.png?v=1778218649",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame88_1.png?v=1778218649",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame90_1.png?v=1778218650"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46754952315069",
+          "title": "Standard",
+          "sku": "MPL-CH-NIM-AER-01",
+          "pricePaise": 11564000,
+          "compareAtPaise": 11800000,
           "available": true,
           "stockPolicy": "unverified"
         }
@@ -669,6 +759,88 @@
       ]
     },
     {
+      "id": "preview-8307574735037",
+      "handle": "aurevon-sectional-sofa",
+      "title": "Aurevon Sectional Sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame223.webp?v=1778922820",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame224.webp?v=1778922820",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame232.webp?v=1778922820",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame230.webp?v=1778922820"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46798934638781",
+          "title": "Standard",
+          "sku": "MPL-NB-LV-03-SF",
+          "pricePaise": 23600000,
+          "compareAtPaise": 24780000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8319946391741",
+      "handle": "aven-side-table",
+      "title": "Aven Side table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_07_19.508Z.webp?v=1780553140",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_07_24.257Z.webp?v=1780553140",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_50_20.388Z.webp?v=1780553141",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_48_41.244Z.webp?v=1780553140",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_45_21.907Z.webp?v=1780553141"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846088380605",
+          "title": "Standard",
+          "sku": "MPL-TB-TC-NOR-08",
+          "pricePaise": 8850000,
+          "compareAtPaise": 9440000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486955385021",
+      "handle": "beno",
+      "title": "Beno",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/01_front_view_0202b71e-27bc-4341-9711-90b818b38b58.webp?v=1788541085",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/03_45_degree_view_d7df1bf2-cec3-44a4-a4ac-e57ef9aeae03.webp?v=1788541086",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/04_detail_closeup.webp?v=1788541085",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/05_dimension_view.webp?v=1788541086"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48384962199741",
+          "title": "Standard",
+          "sku": "MPL-CH-ACC-BENO-BSRWLBN",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
       "id": "preview-8487096877245",
       "handle": "caro",
       "title": "Caro",
@@ -692,6 +864,557 @@
           "sku": "MPL-CH-ARM-CARO-IVRWLBN",
           "pricePaise": 2301000,
           "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8024090575037",
+      "handle": "cirque-luxe-marble-dining-table-emperador-gold",
+      "title": "Cirque Luxe Dining Table – Brown Emperador Marble with Gold Accents",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun14_2025_07_18_57PM.png?v=1749909795",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun14_2025_07_31_04PM.png?v=1749909795",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun14_2025_07_31_20PM.png?v=1749909795"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-45148744319165",
+          "title": "Standard",
+          "sku": "MF-CDT-301",
+          "pricePaise": 10619882,
+          "compareAtPaise": 13333882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395248697533",
+      "handle": "eira-7-seater-sofa",
+      "title": "Eira 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Product3.jpg?v=1783924164",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.2_1b618a72-2963-4705-a53a-343e77c47f2d.png?v=1783924165",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.3_afaad33c-1294-4ea1-8abc-51f50a67b281.png?v=1783924165",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.4_e379a722-899e-40c0-b65b-317818ae4e33.png?v=1783924165",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.5_faa20309-0307-49a1-bb83-c2d5551ab9cd.png?v=1783924165"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637446164669",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-EIRA-GYGMV",
+          "pricePaise": 14160000,
+          "compareAtPaise": 14750000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491304419517",
+      "handle": "elora",
+      "title": "Elora",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_5.png?v=1788930179",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Front_Approved_5.png?v=1788930177",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Angle_Approved_5.png?v=1788930177",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_5.png?v=1788930177",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_5.png?v=1788930177",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_5.png?v=1788930177"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404116537533",
+          "title": "Standard",
+          "sku": "MPL-ST-ELORA-WBNLNG",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491295965373",
+      "handle": "elowen-1",
+      "title": "ELOWEN",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_1.png?v=1788929215",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Angle_Approved_1.png?v=1788929215",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Front_Approved_1.png?v=1788929215",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_1.png?v=1788929215",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_1.png?v=1788929215",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_1.png?v=1788929215"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404064108733",
+          "title": "Standard",
+          "sku": "MPL-NS-ELOWEN-WINWN",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491297439933",
+      "handle": "elowen-2",
+      "title": "ELOWEN",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Front_Approved_2.png?v=1788929430",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_2.png?v=1788929429",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Angle_Approved_2.png?v=1788929429",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_2.png?v=1788929430",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_2.png?v=1788929429",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_2.png?v=1788929429"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404071841981",
+          "title": "Standard",
+          "sku": "MPL-CH-ACC-ELOWEN-BPDWVN",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491299635389",
+      "handle": "elowen-3",
+      "title": "ELOWEN",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_3.png?v=1788929630",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_3.png?v=1788929630",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Angle_Approved_3.png?v=1788929630",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_3.png?v=1788929629",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_3.png?v=1788929630"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404089864381",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-ELOWEN-WINW",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320457179325",
+      "handle": "elrik-sofa-table",
+      "title": "Elrik Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_49_27.832Z.webp?v=1780557366",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_44_36.591Z.webp?v=1780557366",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_46_32.733Z.webp?v=1780557367",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_46_37.163Z.webp?v=1780557366",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_47_47.478Z.webp?v=1780557366"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846662967485",
+          "title": "Standard",
+          "sku": "",
+          "pricePaise": 10620000,
+          "compareAtPaise": 10856000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8283870855357",
+      "handle": "elyra-accent-chair",
+      "title": "Elyra Accent Chair",
+      "description": "A sculptural seat where mid-century soul meets modern restraint. The Elyra is a chair that doesn't just sit in your room. It composes it.",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame118_0fbb97d8-c12e-4bc3-9f16-86e8e1993c44.png?v=1777279841",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame117_cbe80a02-97f8-47a2-a0bd-e060d24e4691.png?v=1777279841",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame116_c0cbff1e-3a15-44af-875c-84c172378a50.png?v=1777279840",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame114_ca25f528-ac8d-4b3e-a70e-14ee05985e7b.png?v=1777279840",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame113_b6f67161-502c-483e-bfbd-02f2ecbf9fe2.png?v=1777279840",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame115_2c98fbf8-f085-4577-8589-ba068d6ab0b4.png?v=1777279844"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46697698230461",
+          "title": "Ivory Cream + Mocha Brown",
+          "sku": "MPL-CH-ACC-NOR-07-01",
+          "pricePaise": 2124000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697698263229",
+          "title": "Taupe Gray + Light Beige",
+          "sku": "MPL-CH-ACC-NOR-07-02",
+          "pricePaise": 2124000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697698295997",
+          "title": "Navy Blue + Gray",
+          "sku": "MPL-CH-ACC-NOR-07-03",
+          "pricePaise": 2124000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697698328765",
+          "title": "Olive Green + Beige",
+          "sku": "MPL-CH-ACC-NOR-07-04",
+          "pricePaise": 2124000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8297228337341",
+      "handle": "elysian-marble-living-room-set",
+      "title": "Elysian Marble Living Room Set",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame99_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame95_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame98_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame101_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame100_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame97_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame96_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame102_1.png?v=1778219356",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame94.png?v=1778219357"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46754957820093",
+          "title": "Standard",
+          "sku": "MPL-LIV-NIM-ELY-02",
+          "pricePaise": 29500000,
+          "compareAtPaise": 30090000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395241357501",
+      "handle": "estelle-5-seater-sofa",
+      "title": "Estelle 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.1_7fd66c1e-b690-4a80-909a-0277f0d4e5ae.png?v=1783923268",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.3_0eed2a8c-6903-437f-a739-f8f872caf3f7.png?v=1783923268",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.2_eaae8139-cb3b-439e-9550-c1eab8aaeffc.png?v=1783923268",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.4_7addae34-d8f9-4dfa-9559-c8f0fe92c520.png?v=1783923268",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.5.png?v=1783923268"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637427683517",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ESTELLE-CRCBV",
+          "pricePaise": 11564000,
+          "compareAtPaise": 11800000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320463405245",
+      "handle": "kynor-sofa-table",
+      "title": "Kynor Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T14_03_04.712Z.webp?v=1780558877",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T14_09_34.389Z.webp?v=1780558877",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T14_11_22.670Z.webp?v=1780558877"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846679679165",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-014",
+          "pricePaise": 7906000,
+          "compareAtPaise": 8260000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320441745597",
+      "handle": "kyvik-sofa-table",
+      "title": "Kyvik Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_51_40.555Z.webp?v=1780555726",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_53_03.247Z.webp?v=1780555726",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_54_10.720Z.webp?v=1780555726",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_55_35.171Z.webp?v=1780555726"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846617845949",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-07",
+          "pricePaise": 11564000,
+          "compareAtPaise": 11800000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8270983692477",
+      "handle": "luma-haven-accent-chair",
+      "title": "Luma Haven Accent Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/both.png?v=1775909672",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/MPL-CH-ACC-NOR-01.jpg?v=1775909672",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Single.png?v=1775888380",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/back.png?v=1775888380",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions2.png?v=1775888380",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions1.png?v=1775888380",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/fabric.png?v=1775888380"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46658198732989",
+          "title": "Himalayan Ivory",
+          "sku": "MPL-CH-ACC-NOR-01-01",
+          "pricePaise": 1888000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46658198765757",
+          "title": "Cognac Brown",
+          "sku": "MPL-CH-ACC-NOR-01-02",
+          "pricePaise": 1770000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46658198798525",
+          "title": "Olive Green",
+          "sku": "MPL-CH-ACC-NOR-01-03",
+          "pricePaise": 1770000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46658198831293",
+          "title": "Charcoal Gray",
+          "sku": "MPL-CH-ACC-NOR-01-04",
+          "pricePaise": 1770000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296789180605",
+      "handle": "luna-curve-lounge-chair",
+      "title": "Luna Curve Lounge Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame57_1.png?v=1778174946",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame58_ab288ca3-21ab-48ea-ac89-3e7f90fad35b.png?v=1778174946",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame61_d37719a0-2ccd-4a6b-bcbb-8b3f4d2e2ced.png?v=1778174947",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame59_41fba6d2-d53c-44f8-97b3-bc90e4ae86bd.png?v=1778174946",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame60.png?v=1778174946",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame63_83a43436-01e8-4b6c-ae87-f45dde6e2dd1.png?v=1778174946",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame62_1_a176695c-b368-4ed2-ab91-9b51eeefab08.png?v=1778174946"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46753265975485",
+          "title": "Standard",
+          "sku": "MPL-CH-NIM-LNG-03",
+          "pricePaise": 7670000,
+          "compareAtPaise": 8024000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318647763133",
+      "handle": "lyro-console-table",
+      "title": "Lyro Console table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_38_18.675Z.webp?v=1780472634",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_38_20.872Z.webp?v=1780472634",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_38_23.013Z.webp?v=1780472634",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T10_55_05.020Z.webp?v=1780472634"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842709541053",
+          "title": "Standard",
+          "sku": "MPL-TB-CT-NOR-04",
+          "pricePaise": 8850000,
+          "compareAtPaise": 9440000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8283873247421",
+      "handle": "naro-dining-chair",
+      "title": "Naro Dining Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame209.png?v=1777315408",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame207.png?v=1777315408",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame210.png?v=1777315408",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame208.png?v=1777315408",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_213.png?v=1777315869",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_211.png?v=1777315868",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_214.png?v=1777315869",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_212.png?v=1777315868",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_217.png?v=1777317598",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_215.png?v=1777317597",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_218.png?v=1777317597",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_216.png?v=1777317597"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46697715269821",
+          "title": "Sage Gray Suede/Espresso",
+          "sku": "",
+          "pricePaise": 7080000,
+          "compareAtPaise": 2537000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697715302589",
+          "title": "Azure Blue Velvet/Dark Walnut",
+          "sku": "",
+          "pricePaise": 5900000,
+          "compareAtPaise": 2537000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697715335357",
+          "title": "Charcoal Suede/Piano Black",
+          "sku": "",
+          "pricePaise": 5310000,
+          "compareAtPaise": 2537000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697715368125",
+          "title": "Blush Pink Boucle/Natural Oak",
+          "sku": "",
+          "pricePaise": 4956000,
+          "compareAtPaise": 2537000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697715400893",
+          "title": "Ruby Red Leather/Mahogany",
+          "sku": "",
+          "pricePaise": 5074000,
+          "compareAtPaise": 2537000,
           "available": true,
           "stockPolicy": "unverified"
         }
@@ -727,29 +1450,418 @@
       ]
     },
     {
-      "id": "preview-8486961316029",
-      "handle": "tara",
-      "title": "Tara",
-      "description": "A curved accent chair with a wraparound back in rust-terracotta weave, held by sculpted blond ash legs — warm and enveloping",
-      "category": "chairs",
+      "id": "preview-8320452165821",
+      "handle": "noryx-sofa-table",
+      "title": "Noryx Sofa table",
+      "description": "",
+      "category": "tables",
       "images": [
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/03_45_degree_view_757e06a1-ce18-43b5-9937-7895063fd0af.webp?v=1788541673",
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/01_front_view_6fa36589-ee74-4d3a-9085-84df396bbff2.webp?v=1788541673",
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/05_dimension_view_f30eb5f1-36ba-4a3e-a8ec-b38ca36a1897.webp?v=1788541674",
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/02_back_view_9368b154-5a3f-4f13-b629-020e202d6413.webp?v=1788541673",
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/04_detail_closeup_9742f107-8b05-4835-bd28-f3e3336e1c8d.webp?v=1788541673",
-        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/06_model_scale_comparison_f1ee67ef-2b6b-47d1-913d-76b7753f28cf.webp?v=1788541673"
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_58_24.728Z.webp?v=1780556301",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_59_27.495Z.webp?v=1780556302",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_03_11.199Z.webp?v=1780556301",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_05_00.502Z.webp?v=1780556301",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_06_26.880Z.webp?v=1780556301",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_09_41.889Z.webp?v=1780556302"
       ],
       "published": true,
       "source": "shopify-preview",
-      "sourceUpdatedAt": "2026-10-25T16:10:59.195Z",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
       "variants": [
         {
-          "id": "preview-48384972095677",
+          "id": "preview-46846643208381",
           "title": "Standard",
-          "sku": "MPL-CH-ACC-TARA-RTLATN",
+          "sku": "MPL-TB-SCT-NOR-08",
+          "pricePaise": 9204000,
+          "compareAtPaise": 9558000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318637801661",
+      "handle": "nova-dining-table",
+      "title": "Nova Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_38_29.709Z.webp?v=1780471191",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_42_27.516Z.webp?v=1780471191",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_43_29.603Z.webp?v=1780471191",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_46_37.382Z.webp?v=1780471191"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842441531581",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-021",
+          "pricePaise": 11800000,
+          "compareAtPaise": 12980000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395237523645",
+      "handle": "nysa-5-seater-sofa",
+      "title": "Nysa 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.1_2_a65d58ff-0563-4871-8b4e-34a20ff28227.png?v=1783922847",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.2_7ea11cf0-fe9b-4309-bdc4-5080f8135c63.png?v=1783922846",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.3_5a7dc3f4-8397-4102-b9ad-2a1cae992d9b.png?v=1783922846",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.5_6622b5bd-2419-4f5d-ba6e-1f297dbde755.png?v=1783922847",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.4_1a34b264-3e63-4da4-a664-2d13316ea116.png?v=1783922847"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637415723197",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-NYSA-GEEWL",
+          "pricePaise": 11800000,
+          "compareAtPaise": 14160000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8297229091005",
+      "handle": "opelle-accent-chair",
+      "title": "Opelle Accent Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame24.webp?v=1778922359",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame25.webp?v=1778922359",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame23.webp?v=1778922358",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame39.webp?v=1778922359",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/diamentions4.webp?v=1778922360",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame26.webp?v=1778922359"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46754960212157",
+          "title": "Standard",
+          "sku": "MPL-NB-LV-03-CH",
+          "pricePaise": 35400000,
+          "compareAtPaise": 35990000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296715452605",
+      "handle": "orbicular-lounge-chair",
+      "title": "Orbicular Lounge Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame51_3111d8df-15cd-4006-9816-c3f921168c4e.png?v=1778161419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame52.png?v=1778161419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame50_7c112c58-d438-465b-a439-a9d7450fcdf7.png?v=1778161419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame49_2_20301a62-a240-4031-8f1c-140f62c6a8f4.png?v=1778161418",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame20_1_14e691da-2cfa-4902-bb83-2568f32851ea.png?v=1778161419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPT_Image_Apr_15_2026_01_57_14_PM.png?v=1778161458",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Gemini_Generated_Image_l2z2i9l2z2i9l2z2_1.png?v=1778161588",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPT_Image_Apr_15_2026_01_58_33_PM.png?v=1778161600"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46752977846461",
+          "title": "Standard",
+          "sku": "MPL-CH-NIM-LNG-03",
+          "pricePaise": 6372000,
+          "compareAtPaise": 7080000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8272501768381",
+      "handle": "orlen-accent-chair",
+      "title": "Orlen Accent Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame44_2.png?v=1776171106",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame41_3.png?v=1776171212",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame42_2.png?v=1776171212",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame_45_2.png?v=1776171212",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/diamentions5.png?v=1776171212",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame43.png?v=1776171212"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46666336174269",
+          "title": "Teal",
+          "sku": "MPL-CH-ACC-LOU-01-01",
+          "pricePaise": 1180000,
+          "compareAtPaise": 1534000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666336207037",
+          "title": "Ivory",
+          "sku": "MPL-CH-ACC-LOU-01-02",
+          "pricePaise": 1180000,
+          "compareAtPaise": 1534000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666336239805",
+          "title": "Midnight Blue",
+          "sku": "MPL-CH-ACC-LOU-01-03",
+          "pricePaise": 1180000,
+          "compareAtPaise": 1534000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666336272573",
+          "title": "Forest Green",
+          "sku": "MPL-CH-ACC-LOU-01-04",
+          "pricePaise": 1180000,
+          "compareAtPaise": 1534000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8272450617533",
+      "handle": "orvane-accent-chair",
+      "title": "Orvane Accent Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/single_1.png?v=1776159214",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/both_0c29b634-10a2-4ebc-9ca3-28188d47a02d.png?v=1776159321",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/back_2.png?v=1776159321",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions1_2.png?v=1776159321",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions2_2.png?v=1776159321",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/fabric_1.png?v=1776159321"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46666021568701",
+          "title": "Ebony Black + Houndstooth (EB/HT)",
+          "sku": "MPL-CH-ACC-NOR-03-01",
           "pricePaise": 1770000,
-          "compareAtPaise": 2360000,
+          "compareAtPaise": 2124000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666021601469",
+          "title": "Ivory Cream + Pattern (IC/PT)",
+          "sku": "MPL-CH-ACC-NOR-03-02",
+          "pricePaise": 1770000,
+          "compareAtPaise": 2124000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666021634237",
+          "title": "Cognac Brown + Beige (CB/BG)",
+          "sku": "MPL-CH-ACC-NOR-03-03",
+          "pricePaise": 1770000,
+          "compareAtPaise": 2124000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666021667005",
+          "title": "Olive Green + Neutral (OL/NT)",
+          "sku": "MPL-CH-ACC-NOR-03-04",
+          "pricePaise": 1770000,
+          "compareAtPaise": 2124000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320020742333",
+      "handle": "orven-side-table",
+      "title": "Orven Side table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_13_03.637Z.webp?v=1780553488",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_13_06.357Z.webp?v=1780553487",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_13_09.397Z.webp?v=1780553487",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_54_38.026Z.webp?v=1780553487"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846170628285",
+          "title": "Standard",
+          "sku": "",
+          "pricePaise": 7670000,
+          "compareAtPaise": 8260000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296786100413",
+      "handle": "oryon-fluted-console-unit",
+      "title": "Oryon Fluted Console Unit",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame66_6a174867-094c-408f-af50-fb79e04e3788.png?v=1778173577",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame64_4eebfac2-fd08-4fe2-8c1f-b289de65d653.png?v=1778173576",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame67_25ffdd39-5a9c-4dfc-990a-e3db56d94549.png?v=1778173576",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame65_b4f110ba-5a82-4bb1-825b-01c5979c29c4.png?v=1778173576",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame68_f5ad1987-b0f0-4fe0-94b0-5d1764acc173.png?v=1778173576"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46753234944189",
+          "title": "Standard",
+          "sku": "MPL-CNSL-NIM-ORY-01",
+          "pricePaise": 8850000,
+          "compareAtPaise": 8968000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320221610173",
+      "handle": "oryx-sofa-table",
+      "title": "Oryx Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_35_08.487Z.webp?v=1780554583",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_38_27.659Z.webp?v=1780554583",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_39_21.437Z.webp?v=1780554583"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846379655357",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-02",
+          "pricePaise": 15930000,
+          "compareAtPaise": 16520000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8008570306749",
+      "handle": "oslo-retro-console-walnut-ivory",
+      "title": "Oslo Retro Curve Console Table – Walnut & Ivory",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_12_40_52PM.png?v=1747725687",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_12_51_00PM.png?v=1747725687",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_12_48_26PM.png?v=1747725687",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_12_45_34PM.png?v=1747725687"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-45078485008573",
+          "title": "Standard",
+          "sku": "MF-CNS-207",
+          "pricePaise": 3834882,
+          "compareAtPaise": 5899882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8023528997053",
+      "handle": "ovalo-modern-console-walnut-white",
+      "title": "Ovalo Console – Modern Walnut Base with White Stone Top",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun13_2025_07_34_23PM.png?v=1749834522",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun13_2025_07_34_34PM.png?v=1749834522",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun13_2025_07_34_30PM.png?v=1749834522"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-45147142160573",
+          "title": "Standard",
+          "sku": "MF-OC-101",
+          "pricePaise": 2713882,
+          "compareAtPaise": 3303882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395253219517",
+      "handle": "rhea-7-seater-sofa",
+      "title": "Rhea 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Product4.jpg?v=1783924360",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.3_563134f0-4ab6-45f1-bee8-b7f166657461.png?v=1783924360",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.2_1691b633-e70c-42f8-a970-5c33571dfb74.png?v=1783924360",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4_4.png?v=1783924360",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.1_ac6cd132-f70f-40d0-a64e-5372c67e3665.png?v=1783924360"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637454258365",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-RHEA-EMEWV",
+          "pricePaise": 14160000,
+          "compareAtPaise": 15340000,
           "available": true,
           "stockPolicy": "unverified"
         }
@@ -779,6 +1891,788 @@
           "sku": "MPL-CH-ARM-ROLLO-MGNVM",
           "pricePaise": 2360000,
           "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318614438077",
+      "handle": "runo-dining-table",
+      "title": "Runo Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_42_35.368Z.webp?v=1780469859",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_33_09.503Z.webp?v=1780469859",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_34_13.243Z.webp?v=1780469859",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_40_17.496Z.webp?v=1780469859"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842040778941",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-017",
+          "pricePaise": 11800000,
+          "compareAtPaise": 12390000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8392703410365",
+      "handle": "selene-2-seater-sofa",
+      "title": "Selene 2-Seater Sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.5.png?v=1783773087",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.3.png?v=1783773087",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.4.png?v=1783773087",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.2.png?v=1783773087",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.1.png?v=1783773087"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47631962996925",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-SELENE-ICMGB",
+          "pricePaise": 9204000,
+          "compareAtPaise": 9676000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318621352125",
+      "handle": "seno-dining-table",
+      "title": "Seno Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_09_10.656Z.webp?v=1780470231",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_00_47.975Z.webp?v=1780470231",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_02_57.286Z.webp?v=1780470231",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_04_25.110Z.webp?v=1780470231",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_07_04.457Z.webp?v=1780470231"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842122076349",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-018",
+          "pricePaise": 14160000,
+          "compareAtPaise": 14750000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395242406077",
+      "handle": "sora-5-seater-sofa",
+      "title": "Sora 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.1_1.png?v=1783923471",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.3_1.png?v=1783923471",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.4_1.png?v=1783923471",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.5_1.png?v=1783923471"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637430272189",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-SORA-OLGMB",
+          "pricePaise": 11682000,
+          "compareAtPaise": 12390000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486961316029",
+      "handle": "tara",
+      "title": "Tara",
+      "description": "A curved accent chair with a wraparound back in rust-terracotta weave, held by sculpted blond ash legs — warm and enveloping",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/03_45_degree_view_757e06a1-ce18-43b5-9937-7895063fd0af.webp?v=1788541673",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/01_front_view_6fa36589-ee74-4d3a-9085-84df396bbff2.webp?v=1788541673",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/05_dimension_view_f30eb5f1-36ba-4a3e-a8ec-b38ca36a1897.webp?v=1788541674",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/02_back_view_9368b154-5a3f-4f13-b629-020e202d6413.webp?v=1788541673",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/04_detail_closeup_9742f107-8b05-4835-bd28-f3e3336e1c8d.webp?v=1788541673",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/06_model_scale_comparison_f1ee67ef-2b6b-47d1-913d-76b7753f28cf.webp?v=1788541673"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:10:59.195Z",
+      "variants": [
+        {
+          "id": "preview-48384972095677",
+          "title": "Standard",
+          "sku": "MPL-CH-ACC-TARA-RTLATN",
+          "pricePaise": 1770000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318648615101",
+      "handle": "tavik-console-table",
+      "title": "Tavik Console table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T10_59_58.025Z.webp?v=1780473317",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T10_58_37.020Z.webp?v=1780473317",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_01_41.203Z.webp?v=1780473317",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T10_57_26.563Z.webp?v=1780473317"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842712424637",
+          "title": "Standard",
+          "sku": "MPL-TB-CT-NOR-08",
+          "pricePaise": 9204000,
+          "compareAtPaise": 9440000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8272457531581",
+      "handle": "valen-accent-chair",
+      "title": "Valen Accent Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame37_2.png?v=1776160180",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame38_4.png?v=1776160181",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame36_1.png?v=1776160180",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame34_1.png?v=1776160179",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/diamentions3.png?v=1776160179",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame35_1.png?v=1776160180"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46666039722173",
+          "title": "Olive Green",
+          "sku": "MPL-CH-ACC-WIN-01-01",
+          "pricePaise": 1770000,
+          "compareAtPaise": 2596000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666039754941",
+          "title": "Ivory",
+          "sku": "MPL-CH-ACC-WIN-01-02",
+          "pricePaise": 2124000,
+          "compareAtPaise": 2596000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666039787709",
+          "title": "Midnight blue",
+          "sku": "MPL-CH-ACC-WIN-01-03",
+          "pricePaise": 2242000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46666039820477",
+          "title": "Mocha Brown",
+          "sku": "MPL-CH-ACC-WIN-01-04",
+          "pricePaise": 2950000,
+          "compareAtPaise": 3186000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318642684093",
+      "handle": "varyn-dining-table",
+      "title": "Varyn Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_29_17.560Z.webp?v=1780471840",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_29_19.353Z.webp?v=1780471840",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_32_08.632Z.webp?v=1780471840"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842623230141",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-028",
+          "pricePaise": 10620000,
+          "compareAtPaise": 11210000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486943424701",
+      "handle": "vela",
+      "title": "Vela",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/8e93653b-9c82-44a4-bc83-43c74e92686b.webp?v=1788540262",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/57304e4e-300c-4c4f-9dc9-de365f1f03d0.webp?v=1788540262",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/34835b5a-9b45-475b-b9e0-c459f7e1418e.webp?v=1788540262",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/26e4fc39-5203-4221-81ac-0fc15a96c110.webp?v=1788540262",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/9c978adb-30fd-49b4-b627-6d464118d604.webp?v=1788540262",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/95d15d3c-6ee8-4d19-8690-630979086820.webp?v=1788540262"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48384948142269",
+          "title": "Standard",
+          "sku": "MPL-CH-ACC-VELA-IVRWBN",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395246010557",
+      "handle": "vela-7-seater-sofa",
+      "title": "Vela 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.1_22f1c30b-9b81-425a-8f66-dd9ef064ccf8.png?v=1783923979",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.3_ac71d028-9f6d-4fde-94d5-d5210478af06.png?v=1783923979",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.4_c6c1104d-89b8-48a1-aa41-13c8caf6dd1b.png?v=1783923979",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.2_4a30d17b-5aec-46ea-97ba-d5aacdffe02d.png?v=1783923979"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637440987325",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-VELA-EMCBV",
+          "pricePaise": 11564000,
+          "compareAtPaise": 11800000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296701690045",
+      "handle": "velata-pillow-drift-bed",
+      "title": "Velata Pillow Drift Bed",
+      "description": "",
+      "category": "beds",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame13.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame14_1.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame9.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame10.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame11.png?v=1778155912",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame12.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr16_2026_12_50_58AM.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr18_2026_03_24_23AM.png?v=1778155911",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr16_2026_12_57_16AM.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr16_2026_02_18_53AM.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr16_2026_12_58_24AM.png?v=1778155910",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr16_2026_12_55_58AM.png?v=1778155911"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46752914276541",
+          "title": "Standard",
+          "sku": "MPL-BD-NIM-VEL-02",
+          "pricePaise": 27140000,
+          "compareAtPaise": 28320000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491312578749",
+      "handle": "vellora",
+      "title": "Vellora",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_9_36bbaf7a-c3c3-4a0e-ade0-38a6426c8bec.png?v=1788931141",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Front_Approved_9_08e358d0-3975-4c33-a460-cdeb0efadff1.png?v=1788931141",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_9_787b05d2-f315-4c13-b167-d5ceb256df6e.png?v=1788931141",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_9_8c5eff58-8dc5-4d7a-854e-f626ce7e90ff.png?v=1788931141",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_9_5b108aec-2e65-41a8-a67b-9dc1da0ec491.png?v=1788931141"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404170178749",
+          "title": "Standard",
+          "sku": "MPL-CH-ARM-VELLORA-NBDWVG",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320274301117",
+      "handle": "velon-sofa-table",
+      "title": "Velon Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_42_45.785Z.webp?v=1780554989",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_42_55.885Z.webp?v=1780554988",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_44_50.729Z.webp?v=1780554988"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846440243389",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-03",
+          "pricePaise": 11800000,
+          "compareAtPaise": 12980000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318629380285",
+      "handle": "velor-dining-table",
+      "title": "Velor Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_48_11.083Z.webp?v=1780470717",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_57_03.288Z.webp?v=1780470717",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_51_53.138Z.webp?v=1780470717",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_54_29.808Z.webp?v=1780470717",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_50_06.825Z.webp?v=1780470717"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842249085117",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-019",
+          "pricePaise": 12980000,
+          "compareAtPaise": 13098000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395254268093",
+      "handle": "vesper-7-seater-sofa",
+      "title": "Vesper 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Product5.jpg?v=1783924534",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.3_6045bd05-0a7a-4897-8f5f-75d98a6887f3.png?v=1783924534",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.2_6ba070bc-115d-43ae-bac5-28e70e3e87e2.png?v=1783924534",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.4_749b761d-a67b-40dd-9493-34bc5ddbb31e.png?v=1783924534",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/5.1_ad783a7e-cdd9-4fcc-a187-56d387bafd6d.png?v=1783924534"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637457076413",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-VESPER-CAEWV",
+          "pricePaise": 11682000,
+          "compareAtPaise": 14160000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8491307335869",
+      "handle": "veya-1",
+      "title": "Veya",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Inaroom_Approved_6.png?v=1788930538",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Front_Approved_6.png?v=1788930538",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Angle_Approved_6.png?v=1788930538",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Back_Approved_6.png?v=1788930538",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Dimensions_Approved_6.png?v=1788930538",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Detail_Approved_6.png?v=1788930538"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48404132397245",
+          "title": "Standard",
+          "sku": "MPL-ST-VEYA-MBNBN",
+          "pricePaise": 2950000,
+          "compareAtPaise": null,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320462520509",
+      "handle": "veylo-sofa-table",
+      "title": "Veylo Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_51_42.807Z.webp?v=1780558317",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_53_12.320Z.webp?v=1780558317",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_54_19.670Z.webp?v=1780558317"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846675747005",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-012",
+          "pricePaise": 9440000,
+          "compareAtPaise": 9676000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318640652477",
+      "handle": "veyro-dining-table",
+      "title": "Veyro Dining table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_19_05.484Z.webp?v=1780471536",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_21_18.658Z.webp?v=1780471536",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_23_23.329Z.webp?v=1780471536",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_24_57.053Z.webp?v=1780471536",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_25_48.469Z.webp?v=1780471536"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842527514813",
+          "title": "Standard",
+          "sku": "MPL-TB-DT-NOR-022",
+          "pricePaise": 14160000,
+          "compareAtPaise": 14750000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395220091069",
+      "handle": "vivienne-5-seater-sofa",
+      "title": "Vivienne 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Product1.jpg?v=1783922121",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.5_99d03f5a-de3d-4950-a96e-9fe9b0783356.png?v=1783922121",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.4_60f92c7f-5c74-44e2-b9f8-abf9bdd57aa0.png?v=1783922121",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.3_c556b6f9-543a-4f2a-8254-c31ed053a29e.png?v=1783922121",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.2_0a91cd55-389e-4a01-b375-179223115f44.png?v=1783922121",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.1_9fd78b29-1419-44a5-b99d-e61fde67d6de.png?v=1783922121"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637264433341",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-VIVIENNE-TPEWL",
+          "pricePaise": 12036000,
+          "compareAtPaise": 12390000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8008481931453",
+      "handle": "winston-wooden-console-table-with-brass-trim-mirror",
+      "title": "Winston Wooden Console Table with Brass Trim & Mirror",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_09_46_37AM.png?v=1747714743",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_09_44_41AM.png?v=1747714743",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_09_48_13AM.png?v=1747714743",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageMay20_2025_09_47_23AM.png?v=1747714743"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-45078131802301",
+          "title": "Standard",
+          "sku": "MF-CNS-113",
+          "pricePaise": 4424882,
+          "compareAtPaise": 6253882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320462946493",
+      "handle": "xarvo-sofa-table",
+      "title": "Xarvo Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T14_01_07.798Z.webp?v=1780558617",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_55_59.643Z.webp?v=1780558617",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_57_16.960Z.webp?v=1780558617",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_58_22.556Z.webp?v=1780558617",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_59_47.966Z.webp?v=1780558617"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846679023805",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-013",
+          "pricePaise": 8260000,
+          "compareAtPaise": 8968000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320358121661",
+      "handle": "zarek-sofa-table",
+      "title": "Zarek Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_46_14.722Z.webp?v=1780555392",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_47_19.705Z.webp?v=1780555392",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T12_48_33.356Z.webp?v=1780555392"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846525440189",
+          "title": "Standard",
+          "sku": "",
+          "pricePaise": 10620000,
+          "compareAtPaise": 11210000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395239096509",
+      "handle": "zaria-5-seater-sofa",
+      "title": "Zaria 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.2_8598f826-7db9-492f-b00c-e8f8a1d590a6.png?v=1783923085",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.1_80c1eb63-8095-45b2-8e4c-df169d8e9761.png?v=1783923085",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.3_eabdace1-eadb-4ebf-9d4d-8da18f989545.png?v=1783923085",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/4.4_a746e664-1473-4586-8d78-234773fc05f5.png?v=1783923085"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-47637420245181",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ZARIA-CREWL",
+          "pricePaise": 11800000,
+          "compareAtPaise": 12980000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8320454492349",
+      "handle": "zayro-sofa-table",
+      "title": "Zayro Sofa table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_17_17.803Z.webp?v=1780556760",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_11_28.128Z.webp?v=1780556760",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_12_41.359Z.webp?v=1780556760",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_14_25.420Z.webp?v=1780556760",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T13_15_49.998Z.webp?v=1780556760"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846651269309",
+          "title": "Standard",
+          "sku": "MPL-TB-SCT-NOR-09",
+          "pricePaise": 9440000,
+          "compareAtPaise": 9912000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486965805245",
+      "handle": "zeno",
+      "title": "Zeno",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/03_45_degree_view_a809cb0d-5629-492d-9a1e-81c5974152e7.webp?v=1788542196",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/01_front_view_716764fa-e41e-4867-b48b-080c66e5449d.webp?v=1788542196",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/02_back_view_7d6e4e02-281e-4d94-913c-bfc685fb4ce0.webp?v=1788542197",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/04_detail_closeup_90d4d93d-d993-48be-8a88-95b44d02ec63.webp?v=1788542196",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/05_dimension_view_808799e8-b5db-4710-8bf9-b139c5476806.webp?v=1788542196",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/06_model_scale_comparison_b68fc220-be94-4222-906f-7548ec1bf5f1.webp?v=1788542196"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-48384976814269",
+          "title": "Standard",
+          "sku": "MPL-CH-ARM-ZENO-BSNWTN",
+          "pricePaise": 1652000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8319933743293",
+      "handle": "zenvo-side-table",
+      "title": "Zenvo Side table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_03_38.500Z.webp?v=1780552770",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_03_41.177Z.webp?v=1780552770",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_03_43.576Z.webp?v=1780552770",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_41_02.795Z.webp?v=1780552770",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_42_12.043Z.webp?v=1780552770",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T11_43_01.200Z.webp?v=1780552770"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46846071701693",
+          "title": "Standard",
+          "sku": "MPL-TB-TC-NOR-07",
+          "pricePaise": 7080000,
+          "compareAtPaise": 7670000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8318646157501",
+      "handle": "zovik-console-table",
+      "title": "Zovik Console table",
+      "description": "",
+      "category": "tables",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_32_55.890Z.webp?v=1780472254",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_32_58.523Z.webp?v=1780472254",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-25T12_33_01.192Z.webp?v=1780472254",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-26T10_53_16.299Z.webp?v=1780472254"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T16:27:34.633934+00:00",
+      "variants": [
+        {
+          "id": "preview-46842688569533",
+          "title": "Standard",
+          "sku": "MPL-TB-CT-NOR-03",
+          "pricePaise": 14514000,
+          "compareAtPaise": 14750000,
           "available": true,
           "stockPolicy": "unverified"
         }

@@ -4,6 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { listProducts, serializeProduct } from "./catalog.js";
+import { saveEnquiry } from "./enquiries.js";
 import { currentCart, readCart, setCartQuantity, HttpError } from "./cart.js";
 
 export type AppConfig = {
@@ -67,7 +68,7 @@ export function createApp(db: PrismaClient, config: AppConfig) {
       .set("Cache-Control", "public, max-age=30, s-maxage=60")
       .json(serializeProduct(p));
   });
-  app.use(["/api/cart", "/api/checkout"], (_req, res, next) => {
+  app.use(["/api/cart", "/api/checkout", "/api/enquiries"], (_req, res, next) => {
     res.set("Cache-Control", "private, no-store");
     next();
   });
@@ -83,6 +84,13 @@ export function createApp(db: PrismaClient, config: AppConfig) {
     res.json(
       await setCartQuantity(db, req, res, id, quantity, config.secureCookies),
     );
+  });
+  app.post("/api/enquiries", rateLimit({
+    windowMs: 60 * 60_000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false,
+    message: {code: "TOO_MANY_ENQUIRIES", message: "Too many submissions. Please try again later or contact us by phone."},
+  }), async (req,res) => {
+    const result=await saveEnquiry(db,req.body,req.get("Idempotency-Key"));
+    res.status(result.created ? 201 : 200).json(result.receipt);
   });
   app.post("/api/checkout", (_req, res) =>
     res
@@ -112,6 +120,10 @@ export function createApp(db: PrismaClient, config: AppConfig) {
       res
         .status(error.status)
         .json({ code: error.code, message: error.message });
+      return;
+    }
+    if (error?.type === "entity.too.large") {
+      res.status(413).json({code:"REQUEST_TOO_LARGE",message:"Your submission is too long. Please shorten it and try again."});
       return;
     }
     if (error instanceof SyntaxError && "body" in error) {

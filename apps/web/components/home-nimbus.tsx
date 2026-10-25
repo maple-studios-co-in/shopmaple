@@ -58,7 +58,7 @@ export function HomeNimbus() {
           </div>
           <Link
             className="button"
-            href="https://shop.maplefurnishers.com/pages/nimbus-collection"
+            href="/pages/nimbus-collection"
             onFocus={() => setOpen(true)}
           >
             Shop Now

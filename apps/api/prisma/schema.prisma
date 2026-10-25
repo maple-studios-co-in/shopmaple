@@ -55,3 +55,67 @@ model CatalogueSyncState {
   payloadHash String
   importedAt DateTime @default(now())
 }
+
+model Enquiry {
+  id String @id
+  idempotencyHash String @unique
+  payloadHash String
+  kind String
+  name String
+  email String
+  phone String
+  message String
+  context Json
+  status String @default("new")
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+}
+
+model CheckoutAttempt {
+  id String @id
+  cartId String
+  merchantScope String
+  idempotencyKey String
+  receipt String @unique
+  snapshot Json
+  amountPaise Int
+  currency String @default("INR")
+  state String @default("reservation_required")
+  reservationId String? @unique
+  reservationExpiresAt DateTime?
+  providerOrderId String? @unique
+  paymentId String? @unique
+  capturedAt DateTime?
+  failureCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([cartId, idempotencyKey])
+}
+
+model PaymentWebhookInbox {
+  id String @id @default(cuid())
+  merchantScope String
+  eventId String
+  bodySha256 String
+  eventType String
+  providerOrderId String?
+  paymentId String?
+  state String @default("pending")
+  failureCode String?
+  receivedAt DateTime @default(now())
+  processedAt DateTime?
+  @@unique([merchantScope, eventId])
+  @@unique([merchantScope, bodySha256])
+  @@index([state, receivedAt])
+}
+
+model OrderOutbox {
+  id String @id @default(cuid())
+  attemptId String
+  kind String
+  payload Json
+  state String @default("pending")
+  createdAt DateTime @default(now())
+  @@unique([attemptId, kind])
+  @@index([state, createdAt])
+}

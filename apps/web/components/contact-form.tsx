@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import { useEnquiry } from "@/components/use-enquiry";
 import { shopFile } from "@/lib/format";
 
 export type EnquiryContext = {
@@ -20,41 +21,17 @@ export function ContactForm({
   context: EnquiryContext;
 }) {
   const id = useId();
-  function openEmail(event: FormEvent<HTMLFormElement>) {
+  const enquiry = useEnquiry();
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const body = [
-      `Name: ${form.get("name") ?? ""}`,
-      `Email: ${form.get("email") ?? ""}`,
-      `Phone: ${form.get("phone") ?? ""}`,
-      ...(context.product
-        ? [
-            `Product: ${context.product}`,
-            `Variant: ${context.variant}`,
-            `SKU: ${context.sku}`,
-          ]
-        : []),
-      ...(context.pincode ? [`Delivery pincode: ${context.pincode}`] : []),
-      "",
-      bulk
-        ? "I would like a proposal for my furniture project."
-        : "Project details:",
-      String(form.get("message") ?? ""),
-    ].join("\n");
-    const subject = context.product
-      ? `Enquiry: ${context.product}`
-      : bulk
-        ? "Bulk furniture project enquiry"
-        : "Furniture enquiry";
-    const recipient = bulk
-      ? "aayushi@maplefurnishers.com"
-      : "contact@maplefurnishers.com";
-    window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    void enquiry.submit({kind: bulk ? "bulk" : "contact", name: String(form.get("name") ?? ""), email: String(form.get("email") ?? ""), phone: String(form.get("phone") ?? ""), message: String(form.get("message") ?? ""), context});
   }
   return (
     <form
       className={`cp-form ${bulk ? "cp-form-bulk" : ""}`}
-      onSubmit={openEmail}
+      onSubmit={submit}
+      onChange={enquiry.clear}
       aria-describedby={`${id}-email-note`}
     >
       {(context.product || context.pincode) && (
@@ -118,12 +95,13 @@ export function ContactForm({
           />
         </label>
       )}
-      <button className="button" type="submit">
-        {bulk ? "Request Proposal" : "Submit"}
+      <button className="button" type="submit" disabled={enquiry.pending}>
+        {enquiry.pending ? "Saving…" : bulk ? "Request Proposal" : "Submit"}
       </button>
       <p id={`${id}-email-note`} className="cp-email-note">
-        Opens your email app. Send your enquiry there to reach our team.
+        Development preview: enquiries are saved locally. Team notifications are not connected yet.
       </p>
+      {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="cp-email-note">{enquiry.message}</p>}
     </form>
   );
 }

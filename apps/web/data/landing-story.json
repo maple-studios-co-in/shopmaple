@@ -1,0 +1,176 @@
+{
+  "sections": [
+    {
+      "key": "1777573833269394b1",
+      "type": "_blocks",
+      "texts": [],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "divider_Vhz888",
+      "type": "divider",
+      "texts": [],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "section_AV6UjQ",
+      "type": "section",
+      "texts": [
+        "Furniture tailored to your narrative.",
+        "Fully Customizable",
+        "Delivery Across India",
+        "In-House Crafted in Delhi",
+        "36-Month Warranty"
+      ],
+      "images": [
+        "https://shop.maplefurnishers.com/cdn/shop/files/Custom_F.svg?v=1776070107",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Del_mf.svg?v=1776070922",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Icon_homepage.svg?v=1779436197",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Maple_Banner_5.svg?v=1779436331"
+      ],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "media_with_content_be4kK3",
+      "type": "media-with-content",
+      "texts": [
+        "Our Belief",
+        "Maple doesn't believe in loud luxury.It believes in presence",
+        "The weight of a table that does not wobble after five years. The way a well-upholstered chair holds its shape through an Indian summer. The quiet satisfaction of sitting in something that was built for your specific room, by people who take the craft seriously. These are not things that can be photographed well, which is partly why we think they matter more than the things that can. Maple began as a family pursuit to build something that lasts, and that intention has never changed. The workshop in Delhi is still where everything happens, the decisions still get made by people who understand materials rather than just margins, and every piece we ship still carries the same brief it started with: build it right."
+      ],
+      "images": [
+        "https://shop.maplefurnishers.com/cdn/shop/files/Frame129.png?height=4291&v=1777318243"
+      ],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "media_with_content_deBkJg",
+      "type": "media-with-content",
+      "texts": [
+        "It's what stays"
+      ],
+      "images": [
+        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000.jpg?v=1776870599",
+        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg?v=1776870599"
+      ],
+      "videos": [
+        {
+          "poster": "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg?v=1776870599",
+          "src": "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/84351f35cf124a0ab27f853cb96b817f/84351f35cf124a0ab27f853cb96b817f.HD-1080p-4.8Mbps-82384288.mp4?v=0"
+        }
+      ],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "1777584986bee6da6f",
+      "type": "_blocks",
+      "texts": [
+        "The Maple Journey"
+      ],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": [
+        {
+          "item_1_enabled": true,
+          "item_1_date": "2015",
+          "item_1_title": "The Craft Begins",
+          "item_1_description": "Our journey began in 2015, working under another brand name with a small workshop, a hands-on team, and a simple belief: good furniture should feel as strong as it looks.\nStarted by Pradeep Agrawal, the foundation came from a family business built around furniture, materials, and everyday customer needs.",
+          "item_2_enabled": true,
+          "item_2_date": "2015–2022",
+          "item_2_title": "Learning From Indian Homes",
+          "item_2_description": "In the early years, our core focus was sofas for homeowners.\nThis phase taught us what Indian homes truly need: comfort, durability, practical design, and furniture that can survive real everyday use.\n\nIt also revealed a clear gap in the market: premium furniture that felt personal, well-made, and dependable.",
+          "item_3_enabled": true,
+          "item_3_date": "2023",
+          "item_3_title": "Maple Furnishers Is Formed",
+          "item_3_description": "In 2023, Maple Furnishers was formally established as a legal entity.\n\nThis was the year we took our manufacturing vision forward with a clearer identity, stronger systems, and a deeper commitment to premium furniture made in-house.",
+          "item_4_enabled": true,
+          "item_4_date": "2024",
+          "item_4_title": "Customization Becomes Our Identity",
+          "item_4_description": "By 2024, customization became the heart of Maple.\n\nFrom sofas and beds to dining, chairs, tables, and complete furniture requirements, we started building pieces around the customer’s space, taste, comfort, and lifestyle.\n\nThe same year, we moved into a bigger workshop to support better production, improved quality control, and more refined execution.",
+          "item_5_enabled": true,
+          "item_5_date": "2026",
+          "item_5_title": "The Online Shift",
+          "item_5_description": "In 2026, Maple began expanding its digital presence through its website and social media. This marked a new chapter: making our work more accessible, telling our story better, and reaching homeowners, interior designers, architects, and furniture buyers beyond our immediate network.",
+          "item_6_enabled": true,
+          "item_6_date": "Today",
+          "item_6_title": "Quiet Luxury, Built In-House",
+          "item_6_description": "Today, Maple Furnishers stands for premium custom furniture, customer-centric execution, and quiet luxury.\n\nWe do not believe luxury has to be loud.\nWe believe it should be felt in the finish, the comfort, the proportions, and the way a piece continues to serve a home for years.",
+          "item_7_enabled": true,
+          "item_7_date": "Tomorrow",
+          "item_7_title": "Built for Homes Across India",
+          "item_7_description": "Our vision is to expand delivery across India while staying true to what built Maple in the first place: honest craftsmanship, thoughtful customization, premium work, and furniture made with real care."
+        }
+      ]
+    },
+    {
+      "key": "divider_6ETm6c",
+      "type": "divider",
+      "texts": [],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "blocks_GJgx4N",
+      "type": "_blocks",
+      "texts": [
+        "WE ARE SERVING",
+        "20+ Cities"
+      ],
+      "images": [
+        "https://shop.maplefurnishers.com/cdn/shop/files/Delhi.svg?height=120&v=1775624340",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Kolkata.svg?height=120&v=1775625216",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Hyderabad.svg?height=120&v=1775625515",
+        "https://shop.maplefurnishers.com/cdn/shop/files/VARANASI1.svg?height=120&v=1775625908",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Mumbai.svg?height=120&v=1775626007",
+        "https://shop.maplefurnishers.com/cdn/shop/files/jaipur.svg?height=120&v=1775626355",
+        "https://shop.maplefurnishers.com/cdn/shop/files/bengaluru_5d95b443-519f-4637-9d23-0cbbf2838908.svg?height=120&v=1775626628",
+        "https://shop.maplefurnishers.com/cdn/shop/files/chennai.svg?height=120&v=1775626822",
+        "https://shop.maplefurnishers.com/cdn/shop/files/gujrat.svg?height=120&v=1777272239",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_3_2d4f6db1-cb60-497e-b2a1-061b5886d0ec.svg?height=120&v=1776869677",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_5.svg?height=120&v=1776869677",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_4.svg?height=120&v=1776869677",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_11.svg?height=120&v=1776869677",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_9.svg?height=120&v=1776869676",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_10.svg?height=120&v=1776869676",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_12.svg?height=120&v=1776869676",
+        "https://shop.maplefurnishers.com/cdn/shop/files/engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg?height=120&v=1776869676",
+        "https://shop.maplefurnishers.com/cdn/shop/files/Agra.svg?height=120&v=1777272153"
+      ],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "divider_K67cEq",
+      "type": "divider",
+      "texts": [],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    },
+    {
+      "key": "1777584995c4a3e02a",
+      "type": "_blocks",
+      "texts": [],
+      "images": [],
+      "videos": [],
+      "handles": [],
+      "custom": []
+    }
+  ]
+}

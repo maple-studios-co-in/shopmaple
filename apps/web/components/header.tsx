@@ -46,7 +46,7 @@ export function Header() {
       <header className="site-header">
         <div className="header-main">
           <div className="utility-links">
-            <a href="https://shop.maplefurnishers.com/pages/our-story">
+            <a href="/pages/our-story">
               Our Story
             </a>
             <Link href="/pages/bulk-enquiry">Bulk Enquiry</Link>
@@ -116,7 +116,7 @@ export function Header() {
                 {group.items.map(([title, category]) => (
                   <Link
                     key={category}
-                    href={"/collections/" + category}
+                    href={( ["sofas", "chairs", "tables"].includes(category!) ? "/pages/" : "/collections/") + category}
                     onClick={(e) =>
                       e.currentTarget
                         .closest("details")
@@ -179,7 +179,7 @@ export function Header() {
           {["sofas", "chairs", "tables", "beds", "storage", "outdoors"].map(
             (category) => (
               <Link
-                href={"/collections/" + category}
+                href={( ["sofas", "chairs", "tables"].includes(category!) ? "/pages/" : "/collections/") + category}
                 key={category}
                 onClick={() => setMobile(false)}
               >

@@ -138,7 +138,7 @@ export default function Home() {
         desktop="1_Sofa_web_banner_Hompage_44dfb940-c378-4980-9268-f6d79c2d5ac0.png?v=1791220477"
         mobile="2_-_Sofa_Mobile_banner_Announcment_9330e4f1-cd1c-464c-9331-43d1d0493619.png"
         alt="Festive Seating. Warm seating for festive moments together. Explore chairs."
-        href="https://shop.maplefurnishers.com/collections/chair-collection"
+        href="/collections/chair-collection"
       />
       <div className="home-divider home-divider-short" />
       <HomeDifference />
@@ -160,7 +160,7 @@ export default function Home() {
         desktop="1_Sofa_web_banner_Occasion_49c3c263-028f-4c30-aaf1-8a6958341d03.png"
         mobile="2_-_Sofa_Mobile_banner_Hompage_6a17e9ed-de09-45fe-bd0f-0326bc909f88.png"
         alt="Furniture for every occasion — explore tables"
-        href="https://shop.maplefurnishers.com/pages/tables"
+        href="/pages/tables"
       />
       <HomeSocial />
       <HomeProducts
@@ -179,7 +179,7 @@ export default function Home() {
         desktop="1_Sofa_web_banner_Hompage_f6b7af18-c1b6-43c3-99cd-979b550ad92c.png"
         mobile="2_-_Sofa_Mobile_banner_Homepage_51dae10b-a774-4a27-8dca-8f21aa99bf5d.png"
         alt="Sofas for your home — explore the sofa collection"
-        href="https://shop.maplefurnishers.com/pages/sofas"
+        href="/pages/sofas"
         flush
       />
       <HomeProducts

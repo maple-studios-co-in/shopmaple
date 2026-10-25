@@ -29,7 +29,7 @@ export function Footer() {
         </Link>
         <nav aria-label="About Maple">
           <h2>SHOP</h2>
-          <Link href="https://shop.maplefurnishers.com/pages/our-story">
+          <Link href="/pages/our-story">
             Our Story
           </Link>
           <Link href="/pages/bulk-enquiry">Bulk Enquiry</Link>

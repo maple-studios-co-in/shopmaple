@@ -5,13 +5,13 @@ Maple Furnishers' independent ecommerce storefront and commerce API in one repos
 ## Running storefront
 
 - `apps/web`: Next.js 16 / React 19 storefront, collections/search, product variants, favourites and cart.
-- `apps/api`: Express / Prisma / PostgreSQL catalogue and persistent guest carts.
+- `apps/api`: Express / Prisma / PostgreSQL catalogue, persistent guest carts, local enquiries and isolated order/payment services.
 - `packages/contracts`: shared Zod validation and TypeScript contracts.
 - `scripts/import-preview.ts`: validated import of the dated public preview catalogue.
 
-The storefront recreates the Shopify homepage sections, product gallery and variant layout, collection filters, contact/help and bulk-enquiry pages using the original public media and theme settings. It is **not complete visual or functional parity**: bespoke category landings and Shopify app integrations remain separate work.
+The storefront recreates the Shopify homepage sections, product gallery and variant layout, collection filters, contact/help and bulk-enquiry pages using the original public media and theme settings. It is **not complete visual or functional parity**: additional templates and Shopify app integrations remain separate work. Sofas, tables, chairs, Nimbus and Our Story now have local landing pages.
 
-**Preview only:** 24 public Shopify products captured on 25 October 2026. Keeri remains the intended product source. Price and availability are snapshot data; checkout deliberately returns `503 CHECKOUT_NOT_AVAILABLE`. No payments or orders can be placed. Existing accounts/policies still link to the current shop.
+**Preview only:** 85 public Shopify products in the dated preview snapshot. Keeri remains the intended product source. Price and availability are snapshot data; checkout deliberately returns `503 CHECKOUT_NOT_AVAILABLE`. No payments or orders can be placed. Existing accounts/policies still link to the current shop.
 
 ## Start locally
 
@@ -35,7 +35,9 @@ The [Keeri adapter](docs/keeri-integration.md) validates explicit offline export
 
 The [Razorpay adapter](docs/payments.md) creates and validates provider orders through an injectable transport, verifies callback/webhook signatures and checks captured payment evidence. It is isolated from public routes; no payment is enabled.
 
-Enquiry forms compose an email and require the visitor to send it in their email app. Newsletter, reviews, Nimbus and account flows continue on the existing shop; Instagram links to the real profile.
+The [order service](docs/order-flow.md) freezes server-priced quotes, gates payment creation on verified reservations and persists authenticated payment events plus an atomic Keeri handoff outbox. It has no public checkout routes or active workers.
+
+[Enquiry forms](docs/enquiries.md) save locally with idempotent retries and a receipt. No team notification is sent. Newsletter, reviews, accounts and unsupported collection aliases continue on the existing shop; Instagram links to the real profile.
 
 ## Next integrations
 

@@ -1,12 +1,39 @@
 # Storefront UI progress — 25 October 2026
 
-The development preview now includes the homepage's extended section sequence, product presentation, collection filters, contact/help, bulk enquiry and the shared footer. This is an ordinary extension of the existing Shopify-preserving direction in `PRODUCT.md`; it is not a redesign or a claim of complete visual or functional parity.
+The development preview includes the homepage, product presentation, collection filters, contact/help, bulk enquiry, shared footer and five added landing pages: Sofas, Tables, Chairs, Nimbus and Our Story. This is an ordinary extension of the existing Shopify-preserving direction in `PRODUCT.md`; it is not a redesign or a claim of complete visual or functional parity.
 
 The visual authority remains [Maple's existing shop](https://shop.maplefurnishers.com) and the owner's exported theme, retained outside version control at `reference/shopify-153432359101/theme/` in the original workspace. Relevant source templates are `index.json`, `product.json`, `collection.json`, `collection.chairs.json`, `page.chairs.json`, `page.contact.json` and `page.bulk-enquiry.json`. Source templates are references, not proof that every section or app behavior has been reproduced.
 
-## Implemented surfaces
+## Phase 3 — current extension and evidence
 
-| Route or surface | Current implementation | Boundary |
+The five new local routes are `/pages/sofas`, `/pages/tables`, `/pages/chairs`, `/pages/nimbus-collection` and `/pages/our-story`. Their section order, enabled copy, media and page-specific typography follow the published storefront and exported theme settings, as recorded in `apps/web/data/landing-PROVENANCE.md`. The homepage promotional links and story link now reach these local pages. The bespoke Chairs landing is `/pages/chairs`; `/collections/chairs` remains a filtered collection. Unsupported specialist collection destinations retain links to the exact original Shopify collection.
+
+The dated public snapshot now contains **85 products**, captured at `2026-10-25T16:27:34.633934+00:00`; **all 73 products used by the landing pages resolve locally**. This covers those landing products, not an independently verified complete Shopify inventory or live Keeri stock. Category product rows share a `React.cache` catalogue lookup that makes two paginated API requests per server render at the current catalogue size. Missing products retain exact source-product links, and API failures propagate rather than silently substituting fallback cards.
+
+Contact, bulk and home/Nimbus project forms now POST to `/api/enquiries` through the same-origin proxy. The backend durably stores validated enquiries and returns an idempotent reference with `mode: preview` and `notificationSent: false`. The UI says that the enquiry was saved in this development preview and has not been sent to the team. This supersedes the Phase 2 email-app handoff. There is no team notification, staff inbox or verified email delivery; see `enquiries.md` for retry and production-readiness limits.
+
+The unmounted order foundation freezes server-calculated pricing, gates provider-order creation on a verified reservation, persists authenticated webhook events in an inbox, and atomically records capture with a pending Keeri outbox entry. It has no real reservation adapter, running inbox/outbox worker, merchant gateway access or confirmed Keeri delivery. Checkout remains unavailable and continues to return `503 CHECKOUT_NOT_AVAILABLE`. These are local service foundations, not completed checkout or order fulfillment; see `order-flow.md` and `payments.md`.
+
+The integration run reported **71 passing tests: 60 API and 11 web**, with workspace typecheck and production build passing. The browser checks covered all five new routes at desktop and mobile widths and found no horizontal overflow or broken images among loaded images. Read-more expanded and collapsed, Nimbus pause worked, the next-room control responded, and a synthetic local enquiry submission displayed a preview reference. HTTP smoke checks passed for **92 unique internal destinations**; reachability does not prove every destination's behavior.
+
+Phase 3 screenshots are retained under `.impeccable/review/phase3/`:
+
+- `sofas-desktop.png`, `sofas-mobile.png`, `sofas-reference-desktop.png`.
+- `tables-desktop.png`, `tables-mobile.png`.
+- `chairs-desktop.png`, `chairs-mobile.png`.
+- `nimbus-desktop.png`, `nimbus-collection-mobile.png`.
+- `our-story-desktop.png`, `our-story-mobile.png`.
+- `enquiry-mobile.png`.
+
+The reviewer accepted the screenshots as valid evidence and a bounded first-viewport visual match. The packet records actual widths of 1269px desktop and 379px mobile (390px requested), with a supplied desktop Sofas source comparison; other routes use recorded theme/public-source settings. This is not full-page, all-viewport or complete Shopify parity. The review's remaining documentation corrections were the obsolete Red Hat Display statement in `DESIGN.md` and the obsolete email-app handoff in landing provenance; both are corrected by this documentation pass. No detector rerun or broader design-system rewrite is part of that disposition.
+
+## Phase 2 — historical implementation record
+
+The sections below retain the earlier Phase 2 implementation and evidence. Product counts, handoffs, route coverage and test totals in this historical record describe that earlier state; the Phase 3 section above supersedes them where behavior has changed.
+
+### Implemented surfaces at Phase 2
+
+| Route or surface | Phase 2 implementation | Phase 2 boundary |
 | --- | --- | --- |
 | `/` | Existing workshop/category hero; responsive promotional artwork; Maple Difference; category and offer tiles; Nimbus reveal; social links; bestseller and chair product rails; collection tiles; testimonial; newsletter handoff; values; city imagery; project enquiry. | Instagram is a profile link, not a live feed. Promotional category landing pages and Nimbus continue on Shopify. Product rails use the available preview records. |
 | `/products/[handle]` | Desktop vertical thumbnails and image stage, mobile gallery controls, image enlargement, variant image cards, selected price, quantity/cart, save control, custom enquiry, pincode enquiry context, accordions and review handoff. | Only imported products resolve locally. Serviceability is an enquiry prompt, not a live delivery result. Reviews and review writing remain on Shopify. Made-to-order or unavailable variants use enquiry. |
@@ -17,7 +44,7 @@ The visual authority remains [Maple's existing shop](https://shop.maplefurnisher
 
 The collection aliases include dining chairs, center tables, accent chairs, dining sets, clearance, minimum-discount, price-band, dining and console-table collections. Membership is recorded in `apps/web/data/collection-membership.json`; it does not import the products named there. Unknown collection handles and unsupported `/pages/*` routes remain not-found responses.
 
-## Content and media provenance
+### Phase 2: Content and media provenance
 
 - The dated public snapshot in `apps/api/data/preview-catalog.json` contains **24 products**, captured at `2026-10-25T16:10:59.195Z`. Prices and availability are snapshot values, not live Keeri stock.
 - Homepage copy, banners, icons, category imagery, testimonial content, contact/help content, bulk-page imagery and footer assets follow the public theme and original Shopify media. Product presentation supplements are in `apps/web/data/product-presentation.json`.
@@ -25,7 +52,7 @@ The collection aliases include dining chairs, center tables, accent chairs, dini
 - Red Hat Display weights 400, 500 and 600 are now self-hosted alongside Manrope and Newsreader. The added home accents, footer and bulk-page treatment use it where assigned in the parity stylesheets.
 - Next.js image handling supplies responsive optimization for supported image elements. Some original media remains direct video or picture content. This is not a completed asset-hosting migration or a production performance certification; R2 migration and production Core Web Vitals remain pending.
 
-## Deliberate handoffs and unavailable behavior
+### Phase 2: Deliberate handoffs and unavailable behavior
 
 Newsletter submission reveals a link to the live store and explicitly says the email has not been submitted. Reviews, account services and newsletter enrollment remain on Shopify. Instagram opens the actual profile. Nimbus, table and sofa promotional banners open their existing Shopify landing pages; the festive chair banner opens the current chair collection. These links preserve usable destinations while local bespoke templates and integrations remain incomplete.
 
@@ -33,7 +60,7 @@ Contact and homepage project forms compose email to `contact@maplefurnishers.com
 
 The frontend keeps the development-preview disclosure visible. Checkout is disabled, and the API retains `503 CHECKOUT_NOT_AVAILABLE`. Cart interaction does not reserve stock, collect payment or create a production order. The isolated backend adapters described in `keeri-integration.md` and `payments.md` do not enable live checkout, live Keeri publication or order handoff.
 
-## Verification evidence
+### Phase 2: Verification evidence
 
 The integration run reported **44 passing tests: 37 API and 7 web**, followed by a passing workspace typecheck and production build. The web tests cover returning-cart initialization and failure handling, collection membership, same-variant price/availability filtering, malformed query handling, price sorting without list mutation, and pagination query preservation. Those checks do not certify visual parity or third-party service behavior.
 
@@ -63,14 +90,14 @@ The final UI review reported its three findings closed: four promotional link de
 
 ## Design-document scope and remaining drift
 
-`DESIGN.md` and `.impeccable/design.json` are preserved as the incumbent design snapshot. No new visual system was approved, and this progress record does not rewrite their tokens, component previews or narrative. The following implementation differences were present when this documentation pass began:
+`DESIGN.md` frontmatter and `.impeccable/design.json` remain the historical incumbent design snapshot. No new visual system was approved. This pass narrowly corrects the obsolete font claim and records extension provenance in `DESIGN.md`; it preserves all existing token values and leaves the sidecar untouched. The following pre-existing drift remains documented rather than broadly repaired:
 
-- Their statement that Red Hat Display is not loaded is now historical; `app/layout.tsx` loads it and the new home/contact styles assign it.
+- The obsolete Red Hat Display statement in `DESIGN.md` is corrected: `app/layout.tsx` self-hosts weights 400, 500, 600 and 800, and the parity stylesheets assign it. The preserved frontmatter and sidecar do not provide a complete inventory of these page-specific typography roles.
 - Their text-footer description predates the source-image footer now rendered by `components/footer.tsx`.
 - Their initial product sizes, rounded image treatment and abbreviated layout inventory do not describe the new product overrides, vertical gallery or variant cards. For example, the current product title is 28px on desktop and 26px below 750px.
-- Their 700px banner breakpoint and local `/collections/chairs` destination predate the current 749px responsive banner and Shopify destination. The added templates also use their own 749px, 767px, 990px and 1100px adjustments; these are not a silently approved replacement global breakpoint scale.
-- Their original screenshot references and component samples describe the earlier implementation. The phase-two evidence above is the newer review set.
+- Their 700px banner breakpoint and local `/collections/chairs` destination predate the current 749px responsive banner and `/collections/chair-collection` destination. The added templates also use their own 749px, 767px, 990px and 1100px adjustments; these are not a silently approved replacement global breakpoint scale.
+- Their original screenshot references and component samples describe the earlier implementation. The Phase 2 and Phase 3 evidence above provides the later review sets; neither certifies full parity.
 
 This drift is recorded rather than broadly repaired. Any future design-spec refresh should reconcile the current source and rendered templates deliberately, keeping the existing Shopify identity as authority and avoiding promotion of page-specific overrides into universal tokens.
 
-Remaining work includes bespoke category landings, full catalogue coverage, live integrations for reviews/account/newsletter and social feeds, durable enquiry submission, complete responsive/template comparison, URL migration, asset hosting, live Keeri publication/reservations/order handoff, gateway activation and production deployment. No production deploy, DNS switch or modification to the live Shopify shop is included in this UI progress claim.
+Remaining work includes verifying catalogue coverage beyond the landing-page snapshot, live integrations for reviews/account/newsletter and social feeds, production enquiry operations and notifications, complete responsive/template comparison, URL migration, asset hosting, live Keeri publication/reservations/order handoff, gateway activation and production deployment. No production deploy, DNS switch or modification to the live Shopify shop is included in this UI progress claim.

@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useEnquiry } from "@/components/use-enquiry";
 import { ArrowRight } from "lucide-react";
 
 export function HomeProjectForm() {
-  function openEmail(event: FormEvent<HTMLFormElement>) {
+  const enquiry = useEnquiry();
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const body = `Name: ${data.get("name")}\nEmail: ${data.get("email")}\nPhone: ${data.get("phone")}\n\nProject details:\n${data.get("message")}`;
-    window.location.href = `mailto:contact@maplefurnishers.com?subject=${encodeURIComponent("Furniture project enquiry")}&body=${encodeURIComponent(body)}`;
+    void enquiry.submit({kind: "project", name: String(data.get("name") ?? ""), email: String(data.get("email") ?? ""), phone: String(data.get("phone") ?? ""), message: String(data.get("message") ?? ""), context: {product:"",variant:"",sku:"",pincode:""}});
   }
   return (
-    <form className="home-project-form" onSubmit={openEmail}>
+    <form className="home-project-form" onSubmit={submit} onChange={enquiry.clear}>
       <div className="home-form-pair">
         <label>
           <span className="sr-only">Name</span>
@@ -53,13 +54,13 @@ export function HomeProjectForm() {
           maxLength={5000}
         />
       </label>
-      <button className="button" type="submit">
-        Submit
+      <button className="button" type="submit" disabled={enquiry.pending}>
+        {enquiry.pending ? "Saving…" : "Submit"}
       </button>
       <p className="home-preview-detail">
-        Opens your email app with your enquiry. Send the email to
-        contact@maplefurnishers.com to reach our team.
+        Development preview: enquiries are saved locally. Team notifications are not connected yet.
       </p>
+      {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="home-preview-detail">{enquiry.message}</p>}
     </form>
   );
 }

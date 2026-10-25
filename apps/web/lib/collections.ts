@@ -4,6 +4,14 @@ import { categoryNames } from "./format";
 
 export const collectionTitles: Record<string, string> = {
   ...categoryNames,
+  "5-seater-sofa": "5 Seater Sofas",
+  "7-seater-sofa": "7 Seater Sofas",
+  "chair-collection": "Chairs",
+  "center-tables-1": "Center Tables",
+  "side-table": "Side Tables",
+  "sofa-table": "Sofa Tables",
+  "bestseller-chairs": "Bestseller Chairs",
+  "arm-chair": "Arm Chairs",
   "dining-chair": "Dining Chairs",
   "center-tables": "Center Tables",
   "accent-chair": "Accent Chairs",
