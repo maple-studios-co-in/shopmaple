@@ -1,16 +1,14 @@
 "use client";
 import { useState } from "react";
 import { ProductImage } from "./product-image";
+import { ProductGallery } from "./product-gallery";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Heart,
   Minus,
   Plus,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   Truck,
   Ruler,
   MessageCircle,
@@ -110,80 +108,15 @@ export function ProductDetail({
           </Link>
         </nav>
         <div className="product-detail pdp-detail">
-          <div className="product-gallery pdp-gallery">
-            <div className="product-thumbnails">
-              {product.images.map((src, i) => (
-                <button
-                  key={src}
-                  onClick={() => setImage(i)}
-                  aria-label={"Show product image " + (i + 1)}
-                  aria-pressed={image === i}
-                >
-                  <ProductImage src={src} alt="" width={76} height={76} />
-                </button>
-              ))}
-            </div>
-            <div className="pdp-gallery-stage">
-              {product.images.length ? (
-                <button
-                  className="product-main-image"
-                  aria-label="Enlarge product image"
-                  onClick={() => setZoom(true)}
-                >
-                  <ProductImage
-                    src={product.images[image]}
-                    alt={product.title + " — view " + (image + 1)}
-                    fill
-                    sizes="(max-width:749px) 100vw, 44vw"
-                    preload
-                  />
-                </button>
-              ) : (
-                <div className="product-main-image">
-                  <ProductImage alt={product.title} />
-                </div>
-              )}
-              <button
-                className={"icon-button pdp-save" + (saved ? " saved" : "")}
-                onClick={() => toggleFavourite(product.handle)}
-                aria-label={
-                  saved ? "Remove from saved furniture" : "Save furniture"
-                }
-                aria-pressed={saved}
-              >
-                <Heart />
-              </button>
-              {product.images.length > 1 && (
-                <div className="pdp-gallery-controls">
-                  <button
-                    className="icon-button"
-                    aria-label="Previous product image"
-                    onClick={() =>
-                      setImage(
-                        (i) =>
-                          (i - 1 + product.images.length) %
-                          product.images.length,
-                      )
-                    }
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <span>
-                    {image + 1} / {product.images.length}
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="Next product image"
-                    onClick={() =>
-                      setImage((i) => (i + 1) % product.images.length)
-                    }
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <ProductGallery
+            images={product.images}
+            title={product.title}
+            selected={image}
+            onSelect={setImage}
+            onZoom={() => setZoom(true)}
+            saved={saved}
+            onSave={() => toggleFavourite(product.handle)}
+          />
           <div className="product-information pdp-info">
             <h1>{product.title}</h1>
             {presentation?.reviewLabel === "No reviews" && (

@@ -2,15 +2,20 @@
 
 The active goal and next work are tracked in [Shop Content and Motion](superpowers/plans/2026-10-26-shop-content-motion.md). This wave adds a protected Shop Admin and restores the original moving Instagram layout. Keeri remains the product/order authority; checkout remains disabled. The older checklist below records previous milestones and must not be read as the current deployment status.
 
-Priority order after the first content-admin release:
+Completed and deployed in PR #17: category copy/order/visibility controls, private media library and transactional publication, and a separately authorized enquiry inbox. The first publisher is `aditya@maplefurnishers.com`; private password setup and enquiry capability approval remain pending. The deployed runtime is `b38d9a0` (same tree as merge `7eda8c6`).
 
-1. Private publisher activation and staff workflow verification.
-2. Remaining Shopify page/layout parity; extend page copy controls without changing original copy by default.
-3. Banner/media library, replacement artwork and scheduled campaigns.
-4. Shop enquiries CRM: restricted inbox, assignment, notes and notification delivery with retries.
-5. Product gallery transitions, menu feedback and optional section reveals; reduced-motion and performance checks for each.
-6. Catalogue details/media and verified buyer-price normalization.
-7. Approved shipping/packing, merchant verification and end-to-end payment/Keeri order recovery before checkout activation.
+Current increment: gallery keyboard/swipe/load transitions, optional section reveals, source-aligned hero destinations, offline uploaded-media recovery tools, and a [bounded page parity audit](audits/2026-10-26-page-parity.md). Local implementation does not imply deployment.
+
+Priority order remaining:
+
+1. Private publisher activation and production staff workflow verification; decide enquiry access.
+2. Resolve merged variant identity/default image mismatch and preserve Shopify presentation copy, without guessing prices or stock.
+3. Fix remaining page parity: chairs self-link/route behavior, blog ordering/excerpts/layout, then mobile and remaining states.
+4. Install paired database/media backups, restore/reconcile a pair and arrange off-host retention/alerts.
+5. Campaign scheduling; enquiry assignment/notes and notification delivery with retries.
+6. Measured performance/accessibility; product hover/menu feedback where useful, preserving reduced-motion and source layout.
+7. Reviews, newsletter, account/order history and returns integration.
+8. Approved shipping/packing, merchant verification and sandbox payment/Keeri order recovery before checkout activation.
 
 Each increment requires assertion-based RED/GREEN evidence, integrated checks, security review and separate deployment proof.
 

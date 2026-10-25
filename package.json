@@ -17,7 +17,7 @@
     "build": "npm run build -w @shopmaple/api && npm run build -w @shopmaple/web",
     "typecheck": "npm run typecheck --workspaces --if-present && tsc --noEmit -p deploy/tsconfig.json",
     "test": "npm run test --workspaces --if-present && npm run test:deploy",
-    "test:deploy": "tsx --test deploy/public-preview.test.ts deploy/bootstrap-shop-admin.test.ts",
+    "test:deploy": "tsx --test deploy/public-preview.test.ts deploy/bootstrap-shop-admin.test.ts && node --test deploy/media-backup.test.mjs",
     "test:deploy:db": "tsx --env-file=.env --test deploy/public-preview.db.test.ts deploy/bootstrap-shop-admin.db.test.ts",
     "db:generate": "npm run db:generate -w @shopmaple/api",
     "db:migrate": "npm run db:migrate -w @shopmaple/api",

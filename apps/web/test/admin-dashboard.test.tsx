@@ -888,3 +888,33 @@ test("campaign editor lets staff select artwork without changing campaign copy",
     globalThis.fetch = previous;
   }
 });
+
+test("section reveal preference can be edited and saved without publishing", async () => {
+  const previous = globalThis.fetch;
+  const writes: { url: string; body: any }[] = [];
+  globalThis.fetch = async (url, options) => {
+    if (String(url).endsWith("/session")) return Response.json(staff());
+    if (options?.method === "PUT") {
+      const body = JSON.parse(String(options.body));
+      writes.push({url: String(url), body});
+      return Response.json({...doc(5), draft: body.content});
+    }
+    return Response.json(doc());
+  };
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+    await click("Homepage");
+    const label = [...container.querySelectorAll("label")].find(label => label.textContent?.includes("Section reveal effects"));
+    const input = label?.querySelector("input");
+    assert.ok(input);
+    await act(async () => input.click());
+    assert.equal(input.checked, true, "Publisher should be able to choose section reveals");
+    await click("Save draft");
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0]!.url, "/api/admin/content");
+    assert.equal(writes[0]!.body.content.motion.revealSections, true);
+    assert.equal(writes[0]!.body.content.motion.autoplaySocial, true);
+    assert.equal(writes[0]!.body.expectedVersion, 4);
+  } finally {await act(async () => root.unmount()); globalThis.fetch = previous;}
+});
