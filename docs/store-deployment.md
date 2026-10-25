@@ -68,8 +68,21 @@ node -e 'console.log(require("./deploy/ecosystem.config.cjs").apps.map(a => a.na
 
 The public hostname is not considered deployed until the final release evidence is recorded. A provisioned database or successful build alone is not deployment.
 
+## Live release evidence — 2026-10-26
+
+- Deployed tested commit `f5246c6f3aa939f5be10679f3436c9f0c8639419` (PR #9, merged as `04afb6f374dbb4804fe1cd3427c185ea6efee40c`). Prior retained release: `824c5b911776dbf422383befea81ffc7401161b2`.
+- Server Node22 lockfile install, Prisma generation/migrations, API build and Next.js production build passed. `current` points to the exact tested release; only the two shop application processes were restarted. PM2 saved all three shop processes.
+- `API_TRUST_PROXY_LOOPBACK=true` is enabled with `API_HOST=127.0.0.1`. A synthetic loopback Next-to-API probe verified independent visitor rate-limit counters (`299, 298, 299`); changing the leftmost forwarded address cannot reset the actual rightmost visitor's counter.
+- Cloudflare published route 12 maps `store.maplefurnishers.com` to `http://127.0.0.1:3110`. The previous 11 Maple routes are unchanged. DNS targets the existing tunnel. Both public resolvers 1.1.1.1 and 8.8.8.8 resolve the hostname.
+- Ordinary public HTTPS from the VPS passed certificate verification and returned 200 for home, chairs collection, Aera product, favourites, contact, API health/catalogue/cart. Three optimized homepage images returned 200 (AVIF: 12,736 / 22,224 / 64,128 bytes). Disallowed image origins return 400. Checkout POST returns the expected safe 503. Shopify's existing home remains 200.
+- The 85 public preview products contain 115 variants, all unavailable/unverified; zero enquiry and checkout rows existed at prelaunch backup time. No live payment test, stock write, synthetic customer submission or order was performed.
+- Populated backup `/home/deploy/shopmaple/backups/shopmaple-prelaunch-20261025T192438Z.dump` was restored into a disposable database and validated. SHA-256: `49eaa263ca8a6c4cf45aafa545bbf912fd7f50f00aaae79631e101df092303fc`.
+- Raw public release checks: `/home/deploy/shopmaple/shared/public-release-evidence.json`; restore evidence: `shared/prelaunch-restore.json`. A local copy is retained under `.local/store-release-20261026/`.
+
+The user's upstream resolver initially cached NXDOMAIN; after it expired, macOS retained a separate negative lookup. The user cleared the local system DNS cache. Ordinary local HTTPS then returned 200 with successful certificate verification, and the public URL rendered fully in the in-app browser, including navigation, category tiles and images. The health endpoint confirmed `catalogMode=preview` and `checkoutEnabled=false`. Browser evidence: `/Users/adityaagrawal/.codex/verification/shiprocket-setup-20261026/store-public-live.jpg`. No DNS settings, VPN configuration or security protections were changed.
+
 ### Client rate-limit identity
 
-The production API binds only127.0.0.1 and opts into `API_TRUST_PROXY_LOOPBACK=true`. Express trusts loopback proxy hops only and selects the nearest untrusted address from right to left. Cloudflare appends the connecting visitor/proxy to `X-Forwarded-For`; the local Next rewrite preserves that chain. Never use blanket `trust proxy=true`, expose theAPIport, or enable this setting on a publicAPIlistener. Startup rejects this setting with any non-loopback API_HOST. The enquiry regression test exhausts one visitor's quota, proves a forged earlier address cannot bypass it, and allows a different visitor through.
+The production API binds only to `127.0.0.1` and opts into `API_TRUST_PROXY_LOOPBACK=true`. Express trusts loopback proxy hops only and selects the nearest untrusted address from right to left. Cloudflare appends the connecting visitor/proxy to `X-Forwarded-For`; the local Next rewrite preserves that chain. Never use blanket `trust proxy=true`, expose the API port, or enable this setting on a public API listener. Startup rejects this setting with any non-loopback `API_HOST`. The enquiry regression test exhausts one visitor's quota, proves a forged earlier address cannot bypass it, and allows a different visitor through.
 
 Cloudflare header behavior: https://developers.cloudflare.com/fundamentals/reference/http-headers/#x-forwarded-for . Confirm the actual tunnel/proxy configuration on deployment; this trust setting assumes that trusted ingress.
