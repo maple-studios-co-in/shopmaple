@@ -1,6 +1,6 @@
 # Keeri catalogue integration boundary
 
-Implemented on 25 October 2026: a validated **offline export adapter and local read-model importer**. It does not authenticate to Keeri, fetch a live catalogue, reserve stock, create orders, or enable checkout. The API still reports `mode: preview` and `checkoutEnabled: false`.
+The export adapter, atomic read-model importer and authenticated HTTPS transport are implemented. The guarded deployment command below connects those components, defaulting to a read-only dry run. Production credentials and publication activation remain pending. The API still reports `mode: preview` and `checkoutEnabled: false`.
 
 ## Verified source contract
 
@@ -87,6 +87,41 @@ The printed result includes source, capture time, imported and omitted model cou
 
 ## Remaining live integration work
 
-This local snapshot format is not an authenticated transport. A verified Keeri export/read endpoint, dedicated read credential, consistent snapshot/pagination semantics, deployed schema verification, freshness monitoring and media hosting are still needed. The approved media domain must also be configured in the frontend image allowlist before those images render there. Product/variant-specific specifications, variant image selection and migration of existing Shopify handles remain separate work.
+Keeri now supplies the dedicated authenticated complete-snapshot endpoint. Production activation still needs a scoped read credential, reviewed channel publication, deployed schema verification, freshness monitoring and public media hosting. The approved media domain must also be configured in the frontend image allowlist before those images render there. Product/variant-specific specifications, variant image selection and migration of existing Shopify handles remain separate work.
 
 No real tenant export or live public media URLs were supplied in this slice. Tests use synthetic schema-shaped fixtures and the dedicated local PostgreSQL test database; they establish transformation, publication, transaction, replay, concurrency and guard behavior, not production sync. Reservation, payment/order persistence and durable Keeri order handoff remain release blockers.
+
+## Guarded catalogue pull — activation pending
+
+`deploy/sync-keeri-catalogue.ts` calls the dedicated `GET /api/storefront/catalogue` endpoint using a server-only bearer credential, validates the complete tenant snapshot and imports it through the existing transaction. No browser or public endpoint accepts the credential or database target.
+
+Configure `KEERI_ORIGIN`, `KEERI_CATALOGUE_TOKEN` and `KEERI_TENANT_ID` in the private deployment environment. The live Keeri origin is `https://maplefurnishers.keeri.in`; the credential must be scoped to the intended tenant/merchant and `catalogue:read`. Do not use an administrator session, expose credentials in command arguments, or enable unrelated order/payment scopes.
+
+```sh
+# Default: fetch and validate only; no database client or writes.
+node --env-file=/home/deploy/shopmaple/shared/store.env \
+  --import tsx deploy/sync-keeri-catalogue.ts
+
+# Only after reviewed source publication, image configuration and identity mapping:
+APPROVE_KEERI_CATALOGUE=publish-selected-keeri-no-checkout \
+node --env-file=/home/deploy/shopmaple/shared/store.env \
+  --import tsx deploy/sync-keeri-catalogue.ts --apply
+```
+
+Apply accepts only `shopmaple_store` on `127.0.0.1:55440` or the dedicated `shopmaple_test` on `127.0.0.1:55439`, without URL query overrides. A snapshot older than 15 minutes or over one minute in the future is rejected. Images must match the current deployed Next.js allowlist (`cdn.shopify.com/s/files/` or `shop.maplefurnishers.com/cdn/shop/`); add a newly approved public host to both guards before using it. An empty applied snapshot additionally requires `--allow-empty`, because it retires the matching Keeri source. Shopify preview products remain untouched. A handle/identity collision fails the transaction and keeps the prior catalogue and cursor.
+
+Output contains only source, capture time, eligible product count, dry-run state and disabled checkout. Errors deliberately omit credentials, source rows, upstream bodies and database details. Dry run does not claim that handles will apply without conflict; the transactional apply remains authoritative.
+
+### Observed readiness and remaining staff workflow
+
+Read-only production checks on 26 October 2026 found 85 published Shopify preview products in ShopMaple, no sync cursor and no Keeri integration environment keys. Keeri source publication and channel selection, scoped service credentials, reviewed handles/categories/public media and exact identity mapping must be ready before activation. Catalogue counts are time-sensitive and must be rechecked at release.
+
+The current Keeri channel screen selects variants but does not complete publication. Staff still need source approval plus deployment-owned publication/media metadata; a selected SKU alone must not bypass these checks. An ongoing staff-operated flow still needs editable reviewed channel metadata, publication validation/errors, scheduled or event-driven pulls, visible last successful sync/failures and freshness monitoring. This command is an incremental transport/write tool, not completion of that workflow. No sync schedule is enabled by this change.
+
+Keeri's global model/variant publication flags also affect subsequent Shopify publishing and stock synchronization. Do not flip those global flags to activate the new storefront. The Keeri producer needs a reviewed channel-specific publication workflow before previously draft models can be exported for this channel independently. Consumer guards must remain in place until that producer contract is reviewed.
+
+### Preview identity migration review
+
+Match only exact current SKU or stable Shopify identifiers, requiring consistent one-to-one model/variant evidence. Never infer matches from similar titles or nonunique legacy SKUs. Keep unmatched previews available until an approved replacement exists. A partial mapping must not retire unmatched variants.
+
+Before switching a matched product, preserve its public handle (used by URLs and browser favourites), require complete approved variant mapping, and check for existing Keeri IDs/handles. Preview and Keeri rows currently have different primary keys; a normal import cannot take over a preview handle. A separate reviewed transactional migration must update identities and dependent cart references together, verify quantities and collisions, keep historical checkout snapshots immutable, retain a recoverable mapping, and fail without partial updates. Test existing carts, replay, rollback and mixed matched/unmatched catalogues before applying that migration. No identity migration is performed by this pull command.
