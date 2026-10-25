@@ -1,3 +1,21 @@
+# Current delivery queue — 26 October 2026
+
+The active goal and next work are tracked in [Shop Content and Motion](superpowers/plans/2026-10-26-shop-content-motion.md). This wave adds a protected Shop Admin and restores the original moving Instagram layout. Keeri remains the product/order authority; checkout remains disabled. The older checklist below records previous milestones and must not be read as the current deployment status.
+
+Priority order after the first content-admin release:
+
+1. Private publisher activation and staff workflow verification.
+2. Remaining Shopify page/layout parity; extend page copy controls without changing original copy by default.
+3. Banner/media library, replacement artwork and scheduled campaigns.
+4. Shop enquiries CRM: restricted inbox, assignment, notes and notification delivery with retries.
+5. Product gallery transitions, menu feedback and optional section reveals; reduced-motion and performance checks for each.
+6. Catalogue details/media and verified buyer-price normalization.
+7. Approved shipping/packing, merchant verification and end-to-end payment/Keeri order recovery before checkout activation.
+
+Each increment requires assertion-based RED/GREEN evidence, integrated checks, security review and separate deployment proof.
+
+---
+
 # Shop Maple delivery checklist
 
 Updated 25 October 2026. This is the implementation queue for replacing Shopify with the custom storefront and Keeri as the operational source. A checked box means code and its stated checks exist; it does not mean deployed or approved for live sales. Frontend and API remain in one repository. No Medusa.

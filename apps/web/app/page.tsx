@@ -1,4 +1,6 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
+import { getPublishedContent } from "@/lib/content";
 import Link from "next/link";
 import { CampaignBanner } from "@/components/campaign-banner";
 import { Hero } from "@/components/hero";
@@ -97,29 +99,59 @@ async function HomeProducts({
   );
 }
 
-export default function Home() {
-  return (
-    <div className="home-parity home-refined">
-      <Hero />
-      <CampaignBanner campaign="landing-announcement" />
-      <HomeDifference />
+export default async function Home() {
+  const content = await getPublishedContent();
+  const copy = content.homeCopy;
+  const sections: Record<string, ReactNode> = {
+    hero: <Hero />,
+    announcement: <CampaignBanner campaign="landing-announcement" />,
+    difference: <HomeDifference />,
+    categories: (
       <section className="home-category-section home-container">
-        <h2>Shop By Category</h2>
+        <h2>{copy.categoryHeading}</h2>
         <CollectionTiles items={categories} className="home-categories" />
       </section>
-
-      <p className="home-ticker">Elegance isn&apos;t found. At Maple, it is custom-built.</p>
+    ),
+    ticker: <p className="home-ticker">{copy.ticker}</p>,
+    offers: (
       <section className="home-container" aria-label="Offer collections">
-        <CollectionTiles className="home-offers home-offer-tiles" items={[
-          ["Clearance Sale", "clearance-sale", "Clearance_Sale.webp?v=1778257635"],
-          ["Minimum 30% Off", "minimum-60-off", "min_30_off_sale_banner.webp?v=1778255612"],
-          ["Best Buy Under Rs.50,000", "best-buy-under-rs-50-000", "Maple_Banner_1.webp?v=1778268771"],
-          ["Furniture Store under Rs. 25,000", "furniture-store-under-rs-25-000", "Maple_Banner_2.webp?v=1778269923"],
-        ]} />
+        <CollectionTiles
+          className="home-offers home-offer-tiles"
+          items={[
+            [
+              "Clearance Sale",
+              "clearance-sale",
+              "Clearance_Sale.webp?v=1778257635",
+            ],
+            [
+              "Minimum 30% Off",
+              "minimum-60-off",
+              "min_30_off_sale_banner.webp?v=1778255612",
+            ],
+            [
+              "Best Buy Under Rs.50,000",
+              "best-buy-under-rs-50-000",
+              "Maple_Banner_1.webp?v=1778268771",
+            ],
+            [
+              "Furniture Store under Rs. 25,000",
+              "furniture-store-under-rs-25-000",
+              "Maple_Banner_2.webp?v=1778269923",
+            ],
+          ]}
+        />
       </section>
-      <HomeNimbus />
-      <CampaignBanner campaign="landing-dining-table" />
-      <HomeSocial />
+    ),
+    nimbus: <HomeNimbus />,
+    "dining-banner": <CampaignBanner campaign="landing-dining-table" />,
+    instagram: (
+      <HomeSocial
+        posts={content.instagramPosts}
+        heading={copy.socialHeading}
+        autoplay={content.motion.autoplaySocial}
+      />
+    ),
+    bestsellers: (
       <HomeProducts
         handles={[
           "aera-swivel-lounge-chair",
@@ -129,24 +161,48 @@ export default function Home() {
           "alcyone-7-seater-sofa",
           "alina-7-seater-sofa",
         ]}
-        heading="Bestsellers"
+        heading={copy.bestsellersHeading}
         label="Bestsellers"
       />
-      <CampaignBanner campaign="landing-sofa-accent-chair" />
+    ),
+    "seating-banner": <CampaignBanner campaign="landing-sofa-accent-chair" />,
+    chairs: (
       <HomeProducts
         handles={["caro", "ario", "nola", "tara", "arno", "rollo"]}
         label="Chair collection"
       />
+    ),
+    promos: (
       <div className="campaign-promo-grid home-container">
         <CampaignBanner campaign="landing-dining" compact />
         <CampaignBanner campaign="landing-storage" compact />
         <CampaignBanner campaign="landing-consoles" compact />
       </div>
-      <HomeTestimonial />
-      <HomeNewsletter />
-      <HomeValues />
-      <HomeCities />
-      <HomeProject />
+    ),
+    testimonial: (
+      <HomeTestimonial
+        heading={copy.testimonialHeading}
+        subheading={copy.testimonialSubheading}
+      />
+    ),
+    newsletter: <HomeNewsletter />,
+    values: <HomeValues />,
+    cities: <HomeCities autoplay={content.motion.autoplayCities} />,
+    project: <HomeProject />,
+  };
+  return (
+    <div className="home-parity home-refined">
+      {content.homeSections
+        .filter((section) => section.enabled)
+        .map((section) => (
+          <div
+            className="managed-home-section"
+            key={section.key}
+            data-home-section={section.key}
+          >
+            {sections[section.key]}
+          </div>
+        ))}
     </div>
   );
 }

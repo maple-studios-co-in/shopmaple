@@ -3,6 +3,8 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { registerStaffRoutes } from "./admin/auth.js";
+import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
 import { saveEnquiry } from "./enquiries.js";
 import { currentCart, readCart, setCartQuantity, HttpError } from "./cart.js";
@@ -20,6 +22,10 @@ export function createApp(db: PrismaClient, config: AppConfig, commerce?: Commer
   app.disable("x-powered-by");
   if (config.trustProxyLoopback) app.set("trust proxy", "loopback");
   app.use(helmet());
+  app.use("/api/admin", (_req, res, next) => {
+    res.set("Cache-Control", "private, no-store");
+    next();
+  });
   app.use(
     "/api",
     rateLimit({
@@ -30,6 +36,7 @@ export function createApp(db: PrismaClient, config: AppConfig, commerce?: Commer
     }),
   );
   if (commerce) registerPaymentWebhook(app, commerce);
+  app.use("/api/admin/content", express.json({ limit: "128kb" }));
   app.use(express.json({ limit: "16kb" }));
   app.use("/api", (req, res, next) => {
     if (
@@ -46,6 +53,8 @@ export function createApp(db: PrismaClient, config: AppConfig, commerce?: Commer
     }
     next();
   });
+  registerStaffRoutes(app, db, config.secureCookies);
+  registerContentRoutes(app, db, config.secureCookies);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({

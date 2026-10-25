@@ -155,3 +155,51 @@ model OrderOutbox {
   @@index([state, createdAt])
   @@index([state, nextAttemptAt])
 }
+
+// Shop presentation authority is separate from Keeri commerce data.
+enum ShopAdminRole {
+  editor
+  publisher
+}
+model ShopAdmin {
+  id String @id @default(cuid())
+  email String @unique
+  passwordHash String
+  role ShopAdminRole
+  active Boolean @default(true)
+  failedAttempts Int @default(0)
+  lockedUntil DateTime?
+  createdAt DateTime @default(now())
+  sessions ShopAdminSession[]
+  revisions ShopContentRevision[]
+}
+model ShopAdminSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  adminId String
+  admin ShopAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+model ShopContent {
+  id String @id
+  version Int @default(0)
+  draft Json
+  published Json?
+  publishedVersion Int?
+  updatedAt DateTime @updatedAt
+  revisions ShopContentRevision[]
+}
+model ShopContentRevision {
+  id String @id @default(cuid())
+  documentId String
+  document ShopContent @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  version Int
+  action String
+  content Json
+  actorId String
+  actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@unique([documentId, version])
+}

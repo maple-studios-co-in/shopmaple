@@ -1,0 +1,430 @@
+"use client";
+import { useState } from "react";
+import type {
+  StorefrontContent,
+  CampaignContent,
+  ContentPage,
+} from "@shopmaple/contracts";
+export function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  maxLength = 1000,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+  maxLength?: number;
+}) {
+  const props = {
+    "aria-label": label,
+    value,
+    maxLength,
+    onInput: (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      onChange(event.currentTarget.value),
+  };
+  return (
+    <label className="admin-field">
+      <span>{label}</span>
+      {multiline ? (
+        <textarea {...props} rows={4} />
+      ) : (
+        <input {...props} type="text" />
+      )}
+    </label>
+  );
+}
+type Props = {
+  content: StorefrontContent;
+  onChange: (content: StorefrontContent) => void;
+};
+export function CampaignFields({ content, onChange }: Props) {
+  const [selected, setSelected] = useState(0);
+  const campaign = content.campaigns[selected];
+  function update(patch: Partial<CampaignContent>) {
+    onChange({
+      ...content,
+      campaigns: content.campaigns.map((value, index) =>
+        index === selected ? { ...value, ...patch } : value,
+      ),
+    });
+  }
+  return (
+    <>
+      <h2>Campaigns</h2>
+      <p>
+        Update the copy and destination for each existing campaign. The original
+        artwork stays in place.
+      </p>
+      {!campaign ? (
+        <p>No campaigns are configured in this draft.</p>
+      ) : (
+        <>
+          <label className="admin-field">
+            <span>Campaign</span>
+            <select
+              aria-label="Campaign"
+              value={selected}
+              onChange={(event) => setSelected(Number(event.target.value))}
+            >
+              {content.campaigns.map((value, index) => (
+                <option key={value.key} value={index}>
+                  {value.key.replace(/-/g, " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="admin-editor-preview">
+            <div className="admin-fields">
+              <Field
+                label="Campaign label"
+                value={campaign.label}
+                maxLength={120}
+                onChange={(label) => update({ label })}
+              />
+              <Field
+                label="Campaign headline"
+                value={campaign.headline.join("\n")}
+                maxLength={362}
+                multiline
+                onChange={(headline) =>
+                  update({ headline: headline.split("\n") })
+                }
+              />
+              <Field
+                label="Campaign supporting copy"
+                value={campaign.supporting}
+                maxLength={300}
+                multiline
+                onChange={(supporting) => update({ supporting })}
+              />
+              <Field
+                label="Campaign offer"
+                value={campaign.offer.join("\n")}
+                maxLength={362}
+                multiline
+                onChange={(offer) =>
+                  update({ offer: offer ? offer.split("\n") : [] })
+                }
+              />
+              <Field
+                label="Campaign eligibility"
+                value={campaign.eligibility}
+                maxLength={300}
+                onChange={(eligibility) => update({ eligibility })}
+              />
+              <Field
+                label="Campaign button label"
+                value={campaign.cta}
+                maxLength={80}
+                onChange={(cta) => update({ cta })}
+              />
+              <Field
+                label="Campaign destination"
+                value={campaign.href}
+                maxLength={500}
+                onChange={(href) => update({ href })}
+              />
+              <p>
+                Use one line per headline or offer line, up to three.
+                Destinations must be store links such as /collections/chairs.
+              </p>
+            </div>
+            <aside
+              className="admin-preview admin-campaign-preview"
+              aria-label="Campaign preview"
+            >
+              <h3>Copy preview</h3>
+              <p>{campaign.label}</p>
+              <h4>
+                {campaign.headline.map((line, index) => (
+                  <span key={index}>
+                    {line}
+                    <br />
+                  </span>
+                ))}
+              </h4>
+              <p>{campaign.supporting}</p>
+              <p>{campaign.offer.join(" · ")}</p>
+              <p>{campaign.eligibility}</p>
+              <span className="admin-preview-cta">{campaign.cta}</span>
+              <small>Local preview · Artwork is unchanged</small>
+            </aside>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+export function InstagramFields({ content, onChange }: Props) {
+  function update(
+    index: number,
+    patch: Partial<StorefrontContent["instagramPosts"][number]>,
+  ) {
+    onChange({
+      ...content,
+      instagramPosts: content.instagramPosts.map((value, i) =>
+        i === index ? { ...value, ...patch } : value,
+      ),
+    });
+  }
+  return (
+    <>
+      <div className="admin-section-heading">
+        <h2>Instagram</h2>
+        <button
+          disabled={content.instagramPosts.length >= 30}
+          onClick={() =>
+            onChange({
+              ...content,
+              instagramPosts: [
+                ...content.instagramPosts,
+                { href: "", src: "", alt: "" },
+              ],
+            })
+          }
+        >
+          Add Instagram post
+        </button>
+      </div>
+      <p>
+        Posts appear in this order. Use a public Instagram post or reel link and
+        an approved Maple image. Image descriptions help visitors using screen
+        readers.
+      </p>
+      <div className="admin-posts">
+        {content.instagramPosts.map((post, index) => (
+          <div className="admin-post" key={index}>
+            <h3>Post {index + 1}</h3>
+            <div className="admin-fields">
+              <Field
+                label={`Post ${index + 1} link`}
+                value={post.href}
+                maxLength={300}
+                onChange={(href) => update(index, { href })}
+              />
+              <Field
+                label={`Post ${index + 1} image`}
+                value={post.src}
+                maxLength={1000}
+                onChange={(src) => update(index, { src })}
+              />
+              <Field
+                label={`Post ${index + 1} alt text`}
+                value={post.alt}
+                maxLength={200}
+                onChange={(alt) => update(index, { alt })}
+              />
+            </div>
+            <button
+              disabled={content.instagramPosts.length <= 1}
+              onClick={() =>
+                onChange({
+                  ...content,
+                  instagramPosts: content.instagramPosts.filter(
+                    (_, i) => i !== index,
+                  ),
+                })
+              }
+            >
+              Remove post {index + 1}
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+export function PageFields({ content, onChange }: Props) {
+  const [selected, setSelected] = useState(0);
+  const page = content.pages[selected];
+  function update(patch: Partial<ContentPage>) {
+    onChange({
+      ...content,
+      pages: content.pages.map((value, index) =>
+        index === selected ? { ...value, ...patch } : value,
+      ),
+    });
+  }
+  function banner(patch: Partial<NonNullable<ContentPage["banner"]>>) {
+    if (page?.banner) update({ banner: { ...page.banner, ...patch } });
+  }
+  return (
+    <>
+      <div className="admin-section-heading">
+        <h2>Informational pages</h2>
+        <button
+          disabled={content.pages.length >= 20}
+          onClick={() => {
+            setSelected(content.pages.length);
+            onChange({
+              ...content,
+              pages: [
+                ...content.pages,
+                {
+                  slug: "",
+                  title: "",
+                  description: "",
+                  body: "",
+                  banner: null,
+                },
+              ],
+            });
+          }}
+        >
+          Add page
+        </button>
+      </div>
+      <p>
+        Create a simple informational page at /pages/your-slug. Existing
+        storefront and enquiry routes are reserved.
+      </p>
+      {content.pages.length > 0 && (
+        <label className="admin-field">
+          <span>Page</span>
+          <select
+            aria-label="Page"
+            value={selected}
+            onChange={(event) => setSelected(Number(event.target.value))}
+          >
+            {content.pages.map((value, index) => (
+              <option key={index} value={index}>
+                {value.title || "Untitled page"}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {!page ? (
+        <div className="admin-empty">
+          <p>No custom pages yet. Add a page to start writing.</p>
+        </div>
+      ) : (
+        <div className="admin-editor-preview">
+          <div>
+            <div className="admin-fields">
+              <Field
+                label="Page title"
+                value={page.title}
+                maxLength={160}
+                onChange={(title) => update({ title })}
+              />
+              <Field
+                label="Page slug"
+                value={page.slug}
+                maxLength={80}
+                onChange={(slug) => update({ slug })}
+              />
+              <Field
+                label="Page description"
+                value={page.description}
+                maxLength={300}
+                multiline
+                onChange={(description) => update({ description })}
+              />
+              <Field
+                label="Page body"
+                value={page.body}
+                maxLength={8000}
+                multiline
+                onChange={(body) => update({ body })}
+              />
+            </div>
+            <p>
+              Use plain text, with blank lines between paragraphs. HTML and
+              scripts display as text.
+            </p>
+            {page.banner ? (
+              <>
+                <h3>Page banner</h3>
+                <div className="admin-fields">
+                  <Field
+                    label="Desktop image"
+                    value={page.banner.desktopImage}
+                    onChange={(desktopImage) => banner({ desktopImage })}
+                  />
+                  <Field
+                    label="Mobile image"
+                    value={page.banner.mobileImage}
+                    onChange={(mobileImage) => banner({ mobileImage })}
+                  />
+                  <Field
+                    label="Banner alt text"
+                    value={page.banner.alt}
+                    maxLength={200}
+                    onChange={(alt) => banner({ alt })}
+                  />
+                  <Field
+                    label="Banner link"
+                    value={page.banner.href}
+                    maxLength={500}
+                    onChange={(href) => banner({ href })}
+                  />
+                  <Field
+                    label="Banner button label"
+                    value={page.banner.label}
+                    maxLength={80}
+                    onChange={(label) => banner({ label })}
+                  />
+                </div>
+                <button onClick={() => update({ banner: null })}>
+                  Remove page banner
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() =>
+                  update({
+                    banner: {
+                      desktopImage: "",
+                      mobileImage: "",
+                      alt: "",
+                      href: "/collections/all",
+                      label: "Explore",
+                    },
+                  })
+                }
+              >
+                Add page banner
+              </button>
+            )}
+            <div className="admin-delete">
+              <button
+                onClick={() => {
+                  onChange({
+                    ...content,
+                    pages: content.pages.filter(
+                      (_, index) => index !== selected,
+                    ),
+                  });
+                  setSelected(0);
+                }}
+              >
+                Remove page
+              </button>
+              <p>
+                Removal stays in your draft until it is published. Earlier saved
+                versions remain in History.
+              </p>
+            </div>
+          </div>
+          <aside className="admin-preview" aria-label="Page preview">
+            <h3>Text preview</h3>
+            <h4>{page.title || "Untitled page"}</h4>
+            <p>{page.description}</p>
+            <div className="admin-plain-copy">{page.body}</div>
+            {page.banner && (
+              <p>
+                Banner: {page.banner.alt || "Add an image description"} ·{" "}
+                {page.banner.label}
+              </p>
+            )}
+            <small>Local preview · /pages/{page.slug || "your-slug"}</small>
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

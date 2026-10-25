@@ -12,6 +12,8 @@ import "@fontsource/red-hat-display/700.css";
 import "@fontsource/red-hat-display/800.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
+import "@/styles/motion-rail.css";
+import "@/styles/content-pages.css";
 import "@/styles/campaign-banners.css";
 import "@/styles/product-parity.css";
 import "@/styles/contact-parity.css";
@@ -21,10 +23,7 @@ import "@/styles/navigation-parity.css";
 import "@/styles/suggested-pages.css";
 import "@/styles/campaign-banners.css";
 import { ShopProvider } from "@/components/shop-provider";
-import { Header } from "@/components/header";
-import { CartDrawer } from "@/components/cart";
-import { Footer } from "@/components/footer";
-import { WhatsAppLink } from "@/components/whatsapp-link";
+import { StoreChrome } from "@/components/admin/store-chrome";
 export const metadata: Metadata = {
   title: { default: "Maple Furnishers", template: "%s | Maple Furnishers" },
   description: "Explore Maple furniture for your home.",
@@ -35,14 +34,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <body>
         <ShopProvider>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-          <CartDrawer />
-          <WhatsAppLink />
-          <aside className="preview-note" aria-label="Preview status">
-            Development preview · Checkout unavailable
-          </aside>
+          <StoreChrome>{children}</StoreChrome>
         </ShopProvider>
       </body>
     </html>

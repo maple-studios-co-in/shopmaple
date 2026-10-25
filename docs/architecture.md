@@ -1,5 +1,44 @@
 # Shop Maple architecture
 
+Updated 26 October 2026. The current source adds a dedicated Shop Admin at `/admin`, in the existing shop repository and runtime. This increment is pending release verification; account activation needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
+
+```mermaid
+flowchart LR
+  Customer[Customer] --> Web[Next.js storefront]
+  Staff[Content team] --> Admin[Shop Admin /admin]
+  Admin -->|Session + CSRF / draft / publish| Content[Express content API]
+  Content --> ShopDB[(Isolated shop PostgreSQL)]
+  ShopDB -->|Published content only| Web
+  Web --> API[Shop commerce API]
+  API --> ShopDB
+  Keeri[Keeri dashboard and service APIs] -->|Authenticated catalogue sync| ShopDB
+  API -. Reservations and paid-order delivery: activation gates .-> Keeri
+  Shopify[Existing Shopify channel] -->|Verified public catalogue snapshot| ShopDB
+  Maple[Maple corporate website/dashboard]
+```
+
+| Surface | Owns | Does not own |
+| --- | --- | --- |
+| Shop Admin | Homepage section order/visibility, selected headings, campaign copy/destinations, Instagram posts, custom content pages, drafts/publication/revisions | Product stock, invoices or delivery operations |
+| Keeri | Products, channel publication, inventory, confirmed sales orders, invoices and fulfilment operations | Storefront layout and campaign editing |
+| Maple corporate dashboard | Corporate website functions in its existing application | A second store order or inventory database |
+
+Shop Admin is a separate staff interface, but **not another infrastructure stack**: Next.js serves it and the existing Express service enforces permissions. Its tables are `ShopAdmin`, `ShopAdminSession`, `ShopContent` and immutable `ShopContentRevision`. Editors save drafts; publishers explicitly publish. Restoring a revision creates a new draft. Public rendering never queries draft content and falls back to checked-in source content when no valid publication exists.
+
+Staff sessions use opaque HttpOnly cookies and hashed tokens, bounded lifetime, scrypt password hashes, login throttling, role checks and CSRF/origin checks. Concurrent edits use version checks. Content accepts bounded text and approved media/internal links, not executable HTML. The CLI creates the first publisher privately; there is no public signup. See [admin release and provisioning](admin-release.md).
+
+The deployed catalogue baseline before this increment is 539 products / 1,050 variants, combining Keeri and the Shopify snapshot. A scheduled Keeri pull updates the read model; unverified buyer prices remain “Price on request”. Product counts and runtime revisions must be rechecked during release, rather than treated as architecture guarantees.
+
+Instagram uses a 24-post responsive native scroll rail, automatic advance and explicit pause/manual controls. Hover, keyboard interaction, background tabs and reduced-motion preferences suspend automatic movement. No animation dependency is needed for this increment. Media upload, scheduling, enquiry CRM, remaining template controls, extra effects and commerce activation remain in the [current work plan](superpowers/plans/2026-10-26-shop-content-motion.md).
+
+---
+
+## Historical implementation snapshot — 25 October 2026
+
+The remainder records the earlier foundation and is not a current deployment/readiness claim. Later release records and the current work plan supersede its counts and integration status.
+
+# Shop Maple architecture — historical foundation
+
 Code inspected on 25 October 2026. This document describes the current implementation and the remaining production design separately. **The backend supports a local storefront preview; it is not ready to accept live orders.** Checkout is deliberately disabled, even when both applications are built in production mode.
 
 The frontend and backend live in **one npm-workspace repository and run as separate processes**. There is no Medusa dependency. Keeri is the intended product and operational source; Shop Maple owns the customer shopping experience and online commerce state. The current catalogue is a dated Shopify preview snapshot containing **85 products and 115 variants**, not a live Keeri or Shopify inventory feed.
