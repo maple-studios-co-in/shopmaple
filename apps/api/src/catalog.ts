@@ -60,7 +60,10 @@ export async function listProducts(db: PrismaClient, input: unknown) {
   return {
     products: all
       .slice((q.page - 1) * q.limit, q.page * q.limit)
-      .map(serializeProduct),
+      .map((product) => {
+        const { pdpContent: _pdpContent, ...card } = serializeProduct(product);
+        return card;
+      }),
     total: all.length,
     page: q.page,
     limit: q.limit,

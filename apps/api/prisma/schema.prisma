@@ -10,6 +10,7 @@ model Product {
   handle String @unique
   title String
   description String
+  pdpContent Json?
   category String?
   images String[]
   published Boolean @default(false)

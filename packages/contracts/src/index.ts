@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { productPdpContentSchema } from "./product-pdp-content";
+export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
+export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
 export type { CampaignSchedule } from "./campaign-schedule";
 export {
@@ -40,6 +43,7 @@ export const productSchema = z.object({
     .max(200),
   title: z.string().min(1).max(500),
   description: z.string().max(50000),
+  pdpContent: productPdpContentSchema.nullable().optional(),
   category: z.enum(categories).nullable(),
   images: z
     .array(z.url().refine((url) => new URL(url).protocol === "https:"))

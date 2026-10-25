@@ -8,7 +8,9 @@ PR #18 is merged and deployed: gallery keyboard/swipe/load transitions, optional
 
 PR #19 is merged and deployed: Shopify display fields after exact matches, honest variant photo/default/item-code presentation, original blog index layout/excerpts/order and removal of the obsolete Chairs self-link. Runtime26a7826 matches merge99efc65;369tests, CI, scanners, independent review, restore-tested backup and public/browser checks passed. All539products/1050variants and identity/pricing/stock hashes were preserved.
 
-Current increment: [campaign visibility scheduling](campaign-scheduling.md), with India-time admin controls, draft/publication gates, open-page transitions and promotional fallback protection. It is local pending integrated verification/release. A separate source audit confirmed that PDP Details uses Shopify custom.description metafields rather than the standard product.description; importing those safely remains next copy-parity work.
+PR #20 campaign scheduling is merged (`94020fc`, reviewed head `d65916f`) and awaits server capacity before deployment. 393 tests, builds, typechecks, eight CI checks, final-commit scanners, independent review and a local publisher/browser workflow passed. Production remains runtime26a7826. Private publisher activation remains pending.
+
+Current increment: [Shopify product disclosure copy](shopify-product-copy.md), importing source rich-text metafields with exact identities, explicit empty sections, safe semantic rendering and database persistence. Local implementation is under integrated verification; it is not deployed.
 
 Priority order remaining:
 

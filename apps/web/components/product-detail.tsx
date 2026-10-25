@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ProductImage } from "./product-image";
 import { ProductGallery } from "./product-gallery";
+import { ProductRichText } from "./product-rich-text";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -328,26 +329,30 @@ export function ProductDetail({
             <div className="product-accordions">
               <details open>
                 <summary>Details</summary>
-                <p>
+                {product.pdpContent ? <ProductRichText content={product.pdpContent.details} /> : <p>
                   {product.description ||
                     "Our team can help with materials, dimensions, finishes and customization for this piece."}
-                </p>
+                </p>}
               </details>
               <details>
                 <summary>Materials + Care</summary>
+                {product.pdpContent ? <ProductRichText content={product.pdpContent.materialsCare} /> : <>
                 <p>
                   Contact our team for the materials and care guidance for your
                   selected finish.
                 </p>
                 <Link href={enquiryHref}>Request care guidance</Link>
+                </>}
               </details>
               <details>
                 <summary>Shipping + Returns</summary>
+                {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
                 <p>
                   Confirm delivery serviceability, charges, lead time and
                   applicable return terms before ordering.
                 </p>
                 <Link href={enquiryHref}>Ask about delivery</Link>
+                </>}
               </details>
               <details id="product-specifications" open>
                 <summary>Dimensions & specifications</summary>

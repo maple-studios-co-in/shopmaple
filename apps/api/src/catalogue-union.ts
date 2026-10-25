@@ -185,6 +185,7 @@ export function planCatalogueUnion(
       // current fields. Keeri remains the source of operational variant data.
       title: base ? base.title : c.p.title,
       description: base ? base.description : c.p.description,
+      pdpContent: base?.pdpContent ?? null,
       category: c.p.category ?? base?.category ?? null,
       images: base ? base.images : c.p.images,
       source: base ? "shopify-preview" : source,

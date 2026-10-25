@@ -300,6 +300,19 @@
   font-size: 14px;
   line-height: 1.8;
 }
+.pdp-rich-text {
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.pdp-rich-text ul,
+.pdp-rich-text ol {
+  padding-left: 1.5em;
+  margin-block: 1em;
+}
+.pdp-rich-text ul { list-style: disc; }
+.pdp-rich-text ol { list-style: decimal; }
 .pdp-phone {
   display: block;
   margin: 28px 0;

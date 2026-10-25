@@ -1,5 +1,5 @@
 import { catalogueImportSchema } from "@shopmaple/contracts";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 export function preparePublicPreview(input: unknown) {
   const parsed = catalogueImportSchema.parse(input);
@@ -31,7 +31,7 @@ export async function bootstrapPublicPreview(db: PrismaClient, input: unknown) {
       throw new Error("Public preview bootstrap requires an empty catalogue");
     for (const product of payload.products) {
       const { variants, sourceUpdatedAt, ...fields } = product;
-      await tx.product.create({ data: { ...fields, sourceUpdatedAt: new Date(sourceUpdatedAt), variants: { create: variants } } });
+      await tx.product.create({ data: { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceUpdatedAt: new Date(sourceUpdatedAt), variants: { create: variants } } });
     }
   }, { isolationLevel: "Serializable", timeout: 30_000 });
   return payload.products.length;

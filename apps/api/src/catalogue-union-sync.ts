@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { productSchema } from "@shopmaple/contracts";
 import { planCatalogueUnion } from "./catalogue-union.js";
 export async function syncCatalogueUnion(
@@ -57,6 +57,7 @@ export async function syncCatalogueUnion(
         const { variants, ...fields } = product;
         const data = {
           ...fields,
+          pdpContent: fields.pdpContent ?? Prisma.DbNull,
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };
         await tx.product.upsert({

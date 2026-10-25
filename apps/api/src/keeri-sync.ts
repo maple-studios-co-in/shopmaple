@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { adaptKeeriExport } from "./keeri.js";
 
 /** Only writes the Shop Maple read model; never connects to Keeri. */
@@ -52,7 +52,7 @@ export async function syncKeeriExport(
             "Variant identity belongs to another product or source",
           );
         const { variants, ...fields } = product;
-        const data = { ...fields, sourceUpdatedAt: capturedAt };
+        const data = { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceUpdatedAt: capturedAt };
         await tx.product.upsert({
           where: { id: product.id },
           create: data,

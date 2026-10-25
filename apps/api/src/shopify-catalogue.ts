@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { productSchema } from "@shopmaple/contracts";
+import { productSchema, productRichTextSchema, type ProductPdpContent } from "@shopmaple/contracts";
 export function approvedCatalogueImage(value: string) {
   const u = new URL(value);
   return (
@@ -21,12 +21,23 @@ const money = z
     if (amount > 1_000_000_000) throw new Error("PRICE_OUT_OF_RANGE");
     return amount > 0 ? amount : null;
   });
+const metafield = z.object({ type: z.literal("rich_text_field"), jsonValue: productRichTextSchema }).strict().nullable();
+const pdpMetafieldsSchema = z.object({
+  source: z.literal("shopify-admin-metafields"),
+  capturedAt: z.iso.datetime({ offset: true }),
+  complete: z.literal(true),
+  products: z.array(z.object({
+    id: z.string().regex(/^gid:\/\/shopify\/Product\/[1-9][0-9]*$/),
+    details: metafield, materialsCare: metafield, shippingReturns: metafield,
+  }).strict()).max(5000),
+}).strict();
 const schema = z
   .object({
     schemaVersion: z.literal(1),
     source: z.literal("shopify-admin"),
     capturedAt: z.iso.datetime({ offset: true }),
     complete: z.literal(true),
+    pdpMetafields: pdpMetafieldsSchema.optional(),
     // Captured from the public INR buyer context; raw Admin money is not a display price.
     publicPrices: z
       .object({
@@ -180,6 +191,24 @@ export function adaptShopifyCatalogue(input: unknown) {
       }
     }
   }
+  const pdpContent = new Map<string, ProductPdpContent>();
+  if (data.pdpMetafields) {
+    const captured = Date.parse(data.pdpMetafields.capturedAt);
+    if (captured < Date.parse(data.capturedAt) || captured > Date.now() + 60_000)
+      throw new Error("INVALID_PDP_METAFIELD_CAPTURE");
+    for (const entry of data.pdpMetafields.products) {
+      if (!products.has(entry.id) || pdpContent.has(entry.id))
+        throw new Error("INVALID_PDP_METAFIELD_PRODUCT");
+      pdpContent.set(entry.id, {
+        source: "shopify-metafields", sourceProductId: entry.id,
+        capturedAt: data.pdpMetafields.capturedAt,
+        details: entry.details?.jsonValue ?? null,
+        materialsCare: entry.materialsCare?.jsonValue ?? null,
+        shippingReturns: entry.shippingReturns?.jsonValue ?? null,
+      });
+    }
+    if (pdpContent.size !== products.size) throw new Error("INCOMPLETE_PDP_METAFIELD_CAPTURE");
+  }
   const category: Record<string, string> = {
     chair: "chairs",
     chairs: "chairs",
@@ -203,6 +232,7 @@ export function adaptShopifyCatalogue(input: unknown) {
           handle: p.handle,
           title: p.title,
           description: p.description,
+          pdpContent: pdpContent.get(p.id) ?? null,
           category: category[p.productType.toLowerCase()] ?? null,
           images: p.media.nodes.flatMap((m) => (m.image ? [m.image.url] : [])),
           published: true,
