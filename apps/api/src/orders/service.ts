@@ -176,6 +176,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
               throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
             if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20)
               throw new OrderFlowError("INVALID_CART");
+            if (v.pricePaise === null) throw new OrderFlowError("INVALID_TOTAL");
             const lineTotalPaise = quantity * v.pricePaise;
             if (!validAmount(v.pricePaise) || !validAmount(lineTotalPaise))
               throw new OrderFlowError("INVALID_TOTAL");

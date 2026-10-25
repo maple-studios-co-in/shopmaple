@@ -30,6 +30,7 @@ export const productSchema = z.object({
     .max(30),
   published: z.boolean(),
   source: z.string().min(1).max(100),
+  sourceStatus: z.string().max(80).nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });

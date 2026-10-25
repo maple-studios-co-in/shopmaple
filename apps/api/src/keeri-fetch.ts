@@ -1,6 +1,7 @@
-import { adaptKeeriExport } from "./keeri.js";
+import { adaptKeeriExport, adaptKeeriExportV2 } from "./keeri.js";
 export interface KeeriFetchOptions {
   endpoint: string;
+  schemaVersion?: 1 | 2;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -97,7 +98,7 @@ export async function fetchKeeriExport(
       const text = new TextDecoder("utf-8", { fatal: true }).decode(
         Buffer.concat(chunks),
       );
-      return adaptKeeriExport(JSON.parse(text), options.tenantId);
+      return (options.schemaVersion === 2 ? adaptKeeriExportV2 : adaptKeeriExport)(JSON.parse(text), options.tenantId);
     } catch {
       throw new KeeriFetchError("INVALID_EXPORT");
     }
