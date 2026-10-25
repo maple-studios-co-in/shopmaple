@@ -52,3 +52,12 @@ test("enquiries enforce body size and a bounded submission rate",async()=>{
  const result=await http.post("/api/enquiries").set("Origin",origin).set("Idempotency-Key",key).send(sample);
  assert.equal(result.status,429);assert.equal(result.body.code,"TOO_MANY_ENQUIRIES");
 });
+
+test("loopback proxy rate limits separate visitors and ignore attacker-controlled earlier forwarded addresses",async()=>{
+ const settings={webOrigin:origin,catalogMode:"preview" as const,secureCookies:false,trustProxyLoopback:true};
+ const http=request(createApp(db,settings));const key=randomUUID();
+ const send=(forwarded:string)=>http.post("/api/enquiries").set("Origin",origin).set("X-Forwarded-For",forwarded).set("Idempotency-Key",key).send(sample);
+ for(let i=0;i<10;i++)assert.equal((await send("198.51.100.10")).status,i===0?201:200);
+ assert.equal((await send("203.0.113.88, 198.51.100.10")).status,429,"leftmost spoof cannot evade the actual client's limit");
+ assert.equal((await send("198.51.100.11")).status,200,"another visitor must not inherit the first visitor's limit");
+});

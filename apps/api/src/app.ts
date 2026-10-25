@@ -12,10 +12,13 @@ export type AppConfig = {
   webOrigin: string;
   catalogMode: "preview";
   secureCookies: boolean;
+  /** Only opt in for a loopback-bound API behind the trusted local Next/Tunnel proxy. */
+  trustProxyLoopback?: boolean;
 };
 export function createApp(db: PrismaClient, config: AppConfig, commerce?: CommerceHttpService) {
   const app = express();
   app.disable("x-powered-by");
+  if (config.trustProxyLoopback) app.set("trust proxy", "loopback");
   app.use(helmet());
   app.use(
     "/api",

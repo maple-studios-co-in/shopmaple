@@ -67,3 +67,9 @@ node -e 'console.log(require("./deploy/ecosystem.config.cjs").apps.map(a => a.na
 ```
 
 The public hostname is not considered deployed until the final release evidence is recorded. A provisioned database or successful build alone is not deployment.
+
+### Client rate-limit identity
+
+The production API binds only127.0.0.1 and opts into `API_TRUST_PROXY_LOOPBACK=true`. Express trusts loopback proxy hops only and selects the nearest untrusted address from right to left. Cloudflare appends the connecting visitor/proxy to `X-Forwarded-For`; the local Next rewrite preserves that chain. Never use blanket `trust proxy=true`, expose theAPIport, or enable this setting on a publicAPIlistener. Startup rejects this setting with any non-loopback API_HOST. The enquiry regression test exhausts one visitor's quota, proves a forged earlier address cannot bypass it, and allows a different visitor through.
+
+Cloudflare header behavior: https://developers.cloudflare.com/fundamentals/reference/http-headers/#x-forwarded-for . Confirm the actual tunnel/proxy configuration on deployment; this trust setting assumes that trusted ingress.
