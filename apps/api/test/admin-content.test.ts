@@ -284,3 +284,62 @@ test("homepage details retain draft isolation, publisher authority, stale protec
     ]) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, homeDetails: invalid })).status, 400);
     assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
 });
+
+test("Nimbus drafts retain public isolation, publisher authority, stale protection and draft-only restoration", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const publicRequest = () => request(createApp(db, config)).get("/api/content/storefront?draft=true");
+    const previousPublic = await publicRequest();
+    const nimbusPage = {
+        title: "Nimbus for your home",
+        sections: ["project", "hero", "intro", "rooms-grid", "origin", "principles", "rooms-slideshow", "series", "promises"].map(key => ({ key, enabled: key !== "hero" })),
+        intro: { heading: "Cloud comfort", body: "Furniture for everyday living." },
+        roomTiles: ["dining", "bedroom", "living"].map(key => ({ key, title: `Our ${key}` })),
+        origin: { eyebrow: "Our inspiration", heading: "Designed for comfort", body: "<script>plain text only</script>\nMade for life." },
+        principles: { heading: "Our principles", items: ["spaces", "comfort", "silhouettes", "luxury"].map(key => ({ key, title: `Our ${key}`, body: "Careful design." })) },
+        roomSlides: ["dining", "living", "bedroom"].map(key => ({ key, label: `Explore ${key}` })),
+        series: { eyebrow: "Everyday spaces", heading: "Explore Nimbus" },
+        project: { heading: "Your home", body: "Tell us about your project." },
+        promises: ["warranty", "custom", "delivery", "craft"].map(key => ({ key, title: `Our ${key}` })),
+    };
+    const next = { ...content, nimbusPage };
+    const saved = await save(editor.agent, editor.csrf, initial.version, next);
+    assert.equal(saved.status, 200, "typed Nimbus content must save as a private draft");
+    assert.deepEqual(saved.body.draft.nimbusPage, nimbusPage);
+    const afterSave = await publicRequest();
+    assert.equal(afterSave.status, previousPublic.status);
+    assert.deepEqual(afterSave.body, previousPublic.body);
+    const revision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(revision.actorEmail, "editor@example.invalid");
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    const publish = await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version });
+    assert.equal(publish.status, 200);
+    const published = (await publicRequest()).body;
+    assert.deepEqual(published.content.nimbusPage, nimbusPage);
+    assert.equal((await save(editor.agent, editor.csrf, saved.body.version, next)).status, 409);
+    const edited = await save(editor.agent, editor.csrf, published.version, { ...next, nimbusPage: { ...nimbusPage, title: "Private Nimbus edit" } });
+    assert.equal(edited.status, 200);
+    assert.equal((await publicRequest()).body.content.nimbusPage.title, "Nimbus for your home");
+    const restored = await publisher.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: edited.body.version, revisionId: revision.id });
+    assert.equal(restored.status, 200);
+    assert.deepEqual(restored.body.draft.nimbusPage, nimbusPage);
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await publicRequest()).body, published);
+    const historyCount = await db.shopContentRevision.count();
+    for (const invalid of [
+        { ...nimbusPage, html: "<script>alert(1)</script>" },
+        { ...nimbusPage, image: "/media/uploads/unreviewed.webp" },
+        { ...nimbusPage, roomTiles: [{ ...nimbusPage.roomTiles[0], href: "javascript:alert(1)" }, ...nimbusPage.roomTiles.slice(1)] },
+        { ...nimbusPage, promises: [{ ...nimbusPage.promises[0], pricePaise: 1 }, ...nimbusPage.promises.slice(1)] },
+        { ...nimbusPage, roomSlides: [{ ...nimbusPage.roomSlides[0], stock: 999 }, ...nimbusPage.roomSlides.slice(1)] },
+        { ...nimbusPage, project: { ...nimbusPage.project, checkoutEnabled: true } },
+        { ...nimbusPage, sections: [...nimbusPage.sections.slice(1), nimbusPage.sections[1]] },
+        { ...nimbusPage, principles: { ...nimbusPage.principles, items: [...nimbusPage.principles.items.slice(1), nimbusPage.principles.items[1]] } },
+        { ...nimbusPage, origin: { ...nimbusPage.origin, body: "bad\u0000text" } },
+        { ...nimbusPage, series: { ...nimbusPage.series, heading: " " } },
+    ]) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, nimbusPage: invalid })).status, 400);
+    assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
+    assert.equal(await db.shopContentRevision.count(), historyCount);
+    assert.deepEqual((await publicRequest()).body, published);
+});

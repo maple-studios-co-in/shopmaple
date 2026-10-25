@@ -1,6 +1,11 @@
 import { NimbusLanding } from "@/components/category-nimbus";
+import { getPublishedContent } from "@/lib/content";
+import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 export const dynamic = "force-dynamic";
-export const metadata = { title: "The Nimbus Collection" };
-export default function Page() {
-  return <NimbusLanding />;
+export async function generateMetadata() {
+  const content = resolveNimbusPageContent((await getPublishedContent()).nimbusPage);
+  return { title: content.title };
+}
+export default async function Page() {
+  return <NimbusLanding content={(await getPublishedContent()).nimbusPage} />;
 }

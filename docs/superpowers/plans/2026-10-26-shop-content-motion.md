@@ -119,3 +119,13 @@ Remaining after this increment: assignment/notes/notifications, campaign schedul
 - [x] PDP mapped-photo default, explicit variant precedence, honest missing-photo state and public item codes for duplicated names; RED then GREEN.
 - [x] Blog newest-first source excerpts/artwork and editorial layout; chairs obsolete self-link removed; RED then GREEN.
 - [ ] Integrated build, security review, browser and release evidence.
+
+
+## Current content coverage — 26 October follow-up
+
+- [x] PR24: Our Story copy/order/visibility and source page fidelity; merged, not deployed.
+- [x] PR25: eight homepage copy groups;475 local tests and eight CI checks; merged, not deployed.
+- [ ] Nimbus fixed-template copy/order/visibility and source typography: implemented; final verification/release gate in progress.
+- [ ] Contact/Bulk Enquiry/Returns, policy and blog copy controls; further media and merchandising controls.
+
+Private owner activation and capacity resolution are still pending. These implementation increments do not complete live staff acceptance, full visual/performance acceptance or commerce readiness.

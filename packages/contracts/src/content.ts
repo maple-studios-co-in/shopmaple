@@ -3,6 +3,7 @@ import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
 import { storyPageContentSchema } from "./story-content";
 import { homeDetailsSchema } from "./home-details";
+import { nimbusPageContentSchema } from "./nimbus-content";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -191,6 +192,8 @@ export const storefrontContentSchema = z
     storyPage: storyPageContentSchema.optional(),
     // Legacy revisions retain the original homepage template copy.
     homeDetails: homeDetailsSchema.optional(),
+    // Legacy revisions retain the original Nimbus collection template copy.
+    nimbusPage: nimbusPageContentSchema.optional(),
     motion: z
       .object({
         autoplaySocial: z.boolean(),

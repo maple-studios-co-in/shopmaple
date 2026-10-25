@@ -14,7 +14,9 @@ PR #22/#23 operations release: [paired database/media backups](releases/2026-10-
 
 PR #24 is merged as39ff224 after464 local tests and all eight exact-head CI checks ataa00108. It is not deployed. It restores the legacy Chairs editorial route, article images/dates, responsive Nimbus artwork, typed Our Story controls and dynamic reduced-motion video pause. Desktop/mobile browser checks passed. See [verification and remaining gaps](releases/2026-10-26-content-parity.md).
 
-The next increment adds eight groups of [homepage content controls](releases/2026-10-26-home-content.md), preserving source copy and published-only reads.475 integrated tests, types/build, scanners and independent manual review pass locally; exact-head CI remains pending. Existing strict-schema rollback compatibility applies to both storyPage and homeDetails. Server capacity and private publisher setup remain unresolved.
+PR #25 is merged asb7df7a1 after all eight exact-head CI checks at91bcaf1. Its eight groups of [homepage content controls](releases/2026-10-26-home-content.md) preserve source copy and published-only reads.475 integrated tests, types/build, scanners and independent review pass; it is not deployed. Existing strict-schema rollback compatibility applies to both storyPage and homeDetails. Server capacity and private publisher setup remain unresolved.
+
+The current [Nimbus increment](releases/2026-10-26-nimbus-content.md) adds nine section order/visibility controls, copy editing and source typography/paragraph fidelity. Final verification/CI is in progress; no deployment claimed.
 
 Priority order remaining:
 
