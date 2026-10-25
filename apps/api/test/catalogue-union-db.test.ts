@@ -156,3 +156,29 @@ test("scheduled refresh persists verified public prices and never restores raw M
   assert.equal(unknown.pricePaise, null);
   assert.equal(unknown.compareAtPaise, null);
 });
+
+test("newer union refresh restores Shopify presentation without moving cart or source identities", async () => {
+  const { k } = fixtures();
+  const s = shopifyPricedFixture();
+  k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
+  await syncCatalogueUnion(db, s, k, "maple");
+  // Simulate a persisted row from the former Keeri-first presentation policy.
+  await db.product.update({ where: { id: "preview-101" }, data: {
+    title: "Zyro", description: "Solid wood chair", images: ["https://cdn.shopify.com/s/files/1/keeri.jpg"],
+  } });
+  const cart = await db.cart.create({ data: {
+    tokenHash: "synthetic-display-refresh", expiresAt: new Date(Date.now() + 60000),
+    items: { create: { variantId: "preview-201", quantity: 2 } },
+  } });
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  const p = await db.product.findUniqueOrThrow({ where: { id: "preview-101" }, include: { variants: true } });
+  assert.equal(p.title, "Real chair");
+  assert.equal(p.description, "Actual description");
+  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg"]);
+  assert.equal(p.handle, "real-chair");
+  assert.deepEqual(p.variants.map(v => [v.id, v.title, v.pricePaise, v.available]), [["preview-201", "Oak", 12345, false]]);
+  assert.deepEqual((await db.cartItem.findMany({ where: { cartId: cart.id } })).map(i => [i.variantId, i.quantity]), [["preview-201", 2]]);
+  assert.equal(await db.productSourceIdentity.count({ where: { productId: "preview-101" } }), 2);
+  assert.equal(await db.variantSourceIdentity.count({ where: { variantId: "preview-201" } }), 2);
+});

@@ -141,3 +141,12 @@ test("Shopify-origin details keep review and support navigation internal", async
     },
   );
 });
+
+test("chair results do not send shoppers back to the same page as a complete collection", async () => {
+  await mount(<CollectionListing handle="chairs" title="Chairs" query={collectionQuery({})} products={[model]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
+    const destinations = [...document.querySelectorAll<HTMLAnchorElement>('a')].map(a => a.getAttribute('href'));
+    assert.ok(destinations.includes('/products/new-model'), 'The actual product remains discoverable');
+    const discovery = [...document.querySelectorAll<HTMLAnchorElement>('.collection-preview-note a')].map(a => a.getAttribute('href'));
+    assert.equal(discovery.filter(href => href === '/collections/chairs').length, 0, 'A discovery link must not loop back to these same results');
+  });
+});

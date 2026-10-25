@@ -111,4 +111,11 @@ Remaining after this increment: assignment/notes/notifications, campaign schedul
 - [x] Optional section reveals controlled by existing CMS field, default off; visible without JavaScript, reduced-motion and focus interruption. Focused RED/GREEN recorded.
 - [x] Offline private media backup/verify/restore tools, adversarial filesystem tests and runbook; nightly paired integration still pending.
 - [x] Bounded source/live page audit with remaining catalogue, chairs and blog parity findings.
-- [ ] Integrated build, final review/scanners, browser and release evidence for this increment.
+- [x] PR #18: 350 tests, types/builds, scanners and independent review; all CI passed, merged 8a29804, identical runtime 9522ab8 deployed with restored backup and public/browser proof.
+
+## Current increment: source copy and remaining page parity
+
+- [x] Exact mapped products/variants retain original Shopify display copy; no identity or price inference. Unit/database RED then GREEN.
+- [x] PDP mapped-photo default, explicit variant precedence, honest missing-photo state and public item codes for duplicated names; RED then GREEN.
+- [x] Blog newest-first source excerpts/artwork and editorial layout; chairs obsolete self-link removed; RED then GREEN.
+- [ ] Integrated build, security review, browser and release evidence.

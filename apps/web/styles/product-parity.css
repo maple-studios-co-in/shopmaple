@@ -506,3 +506,28 @@
     transition: none;
   }
 }
+
+.pdp-option-photo-note {
+  margin: -14px 0 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.pdp-variant-placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 8px;
+  color: var(--muted);
+  background: #eeece7;
+  border-radius: 7px 7px 0 0;
+  text-align: center;
+  font-size: 11px;
+}
+.pdp-variants .pdp-variant-code {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.4;
+}
