@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { beforeEach, after, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { syncCatalogueUnion } from "../src/catalogue-union-sync.js";
-import { shopifyFixture } from "./fixtures/shopify-admin.js";
+import {
+  shopifyFixture,
+  shopifyPricedFixture,
+} from "./fixtures/shopify-admin.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test")
@@ -126,4 +129,30 @@ test("complete Keeri snapshot revokes former price and approved images instead o
       .pricePaise,
     null,
   );
+});
+
+test("scheduled refresh persists verified public prices and never restores raw MRP", async () => {
+  const { k } = fixtures();
+  const s = shopifyPricedFixture();
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal(
+    (await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } }))
+      .pricePaise,
+    12345,
+  );
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal(
+    (await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } }))
+      .pricePaise,
+    12345,
+  );
+  s.publicPrices.products = [];
+  k.capturedAt = "2026-10-25T12:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  const unknown = await db.variant.findUniqueOrThrow({
+    where: { id: "preview-201" },
+  });
+  assert.equal(unknown.pricePaise, null);
+  assert.equal(unknown.compareAtPaise, null);
 });

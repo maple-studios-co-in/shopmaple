@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { planCatalogueUnion } from "../src/catalogue-union.js";
-import { shopifyFixture } from "./fixtures/shopify-admin.js";
+import {
+  shopifyFixture,
+  shopifyPricedFixture,
+} from "./fixtures/shopify-admin.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";
 function fixtures() {
   const k = v2Fixture();
@@ -14,7 +17,7 @@ test("exact SKU union preserves Shopify product/cart identities and missing pres
   k.publicMedia = [];
   k.models[0]!.description = null;
   k.models[0]!.variants[0]!.prices = [];
-  const plan = planCatalogueUnion(s, k, "maple");
+  const plan = planCatalogueUnion(shopifyPricedFixture(), k, "maple");
   assert.equal(plan.products.length, 1);
   const p = plan.products[0]!;
   assert.equal(p.id, "preview-101");
@@ -111,4 +114,32 @@ test("a reused SKU cannot override stable Shopify identifiers missing from the c
     assert.equal(plan.products.length, 2);
     assert.equal(plan.report.ambiguousModels, 1);
   }
+});
+
+test("Keeri raw MRP with unknown tax basis is not presented as a customer price", () => {
+  const { s, k } = fixtures();
+  s.products = [];
+  const result = planCatalogueUnion(s, k, "maple");
+  assert.equal(result.products[0]!.variants[0]!.pricePaise, null);
+});
+
+test("raw Keeri MRP cannot overwrite verified public prices across repeated sync plans", () => {
+  const { k } = fixtures();
+  const s = shopifyPricedFixture();
+  const first = planCatalogueUnion(s, k, "maple");
+  assert.equal(first.products[0]!.variants[0]!.pricePaise, 12345);
+  assert.equal(first.products[0]!.variants[0]!.compareAtPaise, 15000);
+  const repeated = planCatalogueUnion(s, k, "maple", {
+    products: first.products,
+    productBindings: first.productBindings,
+    variantBindings: first.variantBindings,
+  });
+  assert.equal(repeated.products[0]!.variants[0]!.pricePaise, 12345);
+  s.publicPrices.products = [];
+  const revoked = planCatalogueUnion(s, k, "maple", {
+    products: repeated.products,
+    productBindings: repeated.productBindings,
+    variantBindings: repeated.variantBindings,
+  });
+  assert.equal(revoked.products[0]!.variants[0]!.pricePaise, null);
 });
