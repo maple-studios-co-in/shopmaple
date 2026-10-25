@@ -5,7 +5,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ArticlePage from "../app/blogs/[blog]/[article]/page";
 
 async function render(article = "how-to-measure-furniture-before-ordering-online", blog = "recent-stories") {
-  return new JSDOM(renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ blog, article }) }))).window.document;
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+  try {
+    return new JSDOM(renderToStaticMarkup(await ArticlePage({ params: Promise.resolve({ blog, article }) }))).window.document;
+  } finally { globalThis.fetch = previous; }
 }
 
 test("article preserves original title, body, and local breadcrumb destinations", async () => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { editorialContentSchema } from "./editorial-content";
 import { servicePagesContentSchema } from "./service-pages";
 import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
@@ -156,6 +157,7 @@ export const contentPageSchema = z
 export const storefrontContentSchema = z
   .object({
     schemaVersion: z.literal(1),
+    editorialContent: editorialContentSchema.optional(),
     homeSections: z
       .array(
         z

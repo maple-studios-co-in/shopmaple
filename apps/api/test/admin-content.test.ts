@@ -415,3 +415,57 @@ test("service page drafts enforce public isolation, publisher authority, stale c
     assert.equal(await db.shopContentRevision.count(), historyCount);
     assert.deepEqual((await publicRequest()).body, published);
 });
+
+test("editorial drafts require publisher authority and retain isolated, conflict-safe revision history", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const publicRequest = () => request(createApp(db, config)).get("/api/content/storefront?draft=true");
+    const previousPublic = await publicRequest();
+    const editorialContent = {
+        policies: [{ slug: "privacy-policy", title: "Your privacy", content: [{ tag: "p", children: ["Updated policy copy"] }] }],
+        blogs: [{ handle: "recent-stories", title: "Studio stories" }],
+        articles: [{ blog: "recent-stories", handle: "how-to-measure-furniture-before-ordering-online", title: "Measure your room", excerpt: "A measured introduction", content: [{ tag: "p", children: ["Start with your doorway."] }] }],
+    };
+    const next = { ...content, editorialContent };
+    const saved = await save(editor.agent, editor.csrf, initial.version, next);
+    assert.equal(saved.status, 200, "editorial overrides must save as a private draft");
+    assert.deepEqual(saved.body.draft.editorialContent, editorialContent);
+    assert.deepEqual((await publicRequest()).body, previousPublic.body);
+    const revision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(revision.actorEmail, "editor@example.invalid");
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    assert.equal((await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version })).status, 200);
+    const published = (await publicRequest()).body;
+    assert.deepEqual(published.content.editorialContent, editorialContent);
+    assert.equal((await save(editor.agent, editor.csrf, saved.body.version, next)).status, 409);
+    const privateCopy = structuredClone(editorialContent);
+    privateCopy.policies[0]!.title = "Private policy title";
+    privateCopy.articles[0]!.excerpt = "Private excerpt";
+    const edited = await save(editor.agent, editor.csrf, published.version, { ...next, editorialContent: privateCopy });
+    assert.equal(edited.status, 200);
+    assert.deepEqual((await publicRequest()).body, published);
+    const restored = await publisher.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: edited.body.version, revisionId: revision.id });
+    assert.equal(restored.status, 200);
+    assert.deepEqual(restored.body.draft.editorialContent, editorialContent);
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await publicRequest()).body, published);
+    const historyCount = await db.shopContentRevision.count();
+    const invalidNodes = [
+        { tag: "script", children: ["alert(1)"] },
+        { tag: "p", children: [{ tag: "a", href: "javascript:alert(1)", children: ["Unsafe"] }] },
+        { tag: "p", children: [{ tag: "span", children: ["Injected"], onclick: "alert(1)" }] },
+        { tag: "img", children: [], src: "/media/uploads/unreviewed.webp", alt: "Unapproved" },
+    ];
+    const invalid = [
+        ...invalidNodes.map(node => ({ ...editorialContent, policies: [{ ...editorialContent.policies[0], content: [node] }] })),
+        { ...editorialContent, policies: [...editorialContent.policies, ...editorialContent.policies] },
+        { ...editorialContent, articles: [{ ...editorialContent.articles[0], publishedAt: "2030-01-01" }] },
+        { ...editorialContent, articles: [{ ...editorialContent.articles[0], blog: "news" }] },
+        { ...editorialContent, blogs: [{ handle: "checkout", title: "Checkout" }] },
+    ];
+    for (const value of invalid) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, editorialContent: value })).status, 400);
+    assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
+    assert.equal(await db.shopContentRevision.count(), historyCount);
+    assert.deepEqual((await publicRequest()).body, published);
+});

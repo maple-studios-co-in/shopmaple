@@ -51,6 +51,11 @@
   border-collapse: collapse;
   display: block;
   overflow: auto;
+  overflow-wrap: normal;
+}
+.store-prose table:focus-visible {
+  outline: 2px solid #741a14;
+  outline-offset: 3px;
 }
 .store-prose td,
 .store-prose th {

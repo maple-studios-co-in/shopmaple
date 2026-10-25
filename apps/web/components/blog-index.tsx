@@ -5,6 +5,7 @@ import index from "@/data/blog-index.json";
 type Article = {
   handle: string;
   title: string;
+  excerpt?: string;
   publishedAt: string | null;
 };
 type IndexPresentation = {
@@ -27,6 +28,7 @@ export function BlogIndex({ blog, title, articles }: {
       <div className="blog-index-grid">
         {newestFirst.map((article, position) => {
           const details = presentation[blog]?.[article.handle];
+          const excerpt = article.excerpt ?? details?.excerpt;
           const href = `/blogs/${blog}/${article.handle}`;
           return (
             <article key={article.handle} className="blog-index-card">
@@ -45,7 +47,7 @@ export function BlogIndex({ blog, title, articles }: {
               )}
               <div className="blog-index-copy">
                 <h2><Link href={href}>{article.title}</Link></h2>
-                {details?.excerpt && <p>{details.excerpt}</p>}
+                {excerpt && <p>{excerpt}</p>}
                 <Link href={href} aria-label={`Read ${article.title}`}>
                   Read more...
                 </Link>

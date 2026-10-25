@@ -4,6 +4,8 @@ import Image from "next/image";
 import source from "@/data/store-content.json";
 import index from "@/data/blog-index.json";
 import { StoreContent } from "@/components/store-content";
+import { getPublishedContent } from "@/lib/content";
+import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 
 const presentation: Record<
   string,
@@ -26,9 +28,11 @@ export async function generateMetadata({
   }>;
 }) {
   const { blog, article } = await params;
+  const content = await getPublishedContent();
+  const { blogs } = resolveEditorialContent(content.editorialContent);
   return {
     title:
-      source.blogs
+      blogs
         .find((item) => item.handle === blog)
         ?.articles.find((item) => item.handle === article)?.title || "Article",
   };
@@ -42,9 +46,12 @@ export default async function ArticlePage({
   }>;
 }) {
   const { blog, article } = await params;
-  const record = source.blogs.find((item) => item.handle === blog);
-  const post = record?.articles.find((item) => item.handle === article);
-  if (!post) notFound();
+  const original = source.blogs.find((item) => item.handle === blog);
+  if (!original?.articles.some((item) => item.handle === article)) notFound();
+  const content = await getPublishedContent();
+  const { blogs } = resolveEditorialContent(content.editorialContent);
+  const record = blogs.find((item) => item.handle === blog)!;
+  const post = record.articles.find((item) => item.handle === article)!;
   const image = presentation[blog]?.[article]?.image;
   return (
     <section className="editorial-page">
