@@ -99,3 +99,16 @@ test("a persisted identity from another Keeri tenant cannot merge through shared
     /FOREIGN_TENANT/,
   );
 });
+
+test("a reused SKU cannot override stable Shopify identifiers missing from the current snapshot", () => {
+  for (const evidence of [
+    { shopifyProductId: "999", shopifyVariantId: "9999" },
+    { shopifyProductId: "101", shopifyVariantId: "9999" },
+  ]) {
+    const { s, k } = fixtures();
+    Object.assign(k.models[0]!.variants[0]!, evidence);
+    const plan = planCatalogueUnion(s, k, "maple");
+    assert.equal(plan.products.length, 2);
+    assert.equal(plan.report.ambiguousModels, 1);
+  }
+});
