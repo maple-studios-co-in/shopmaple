@@ -135,13 +135,23 @@
   padding-block: 48px;
 }
 .landing-nimbus-intro h2 {
-  font-size: 48px;
-  font-style: italic;
-  margin: 0 0 16px;
+  color: #000;
+  font-family: "Red Hat Display", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
 }
 .landing-nimbus-intro p {
+  color: #741a14;
+  font-family: Newsreader, serif;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.2;
   margin: 0;
-  font-size: 18px;
 }
 .landing-nimbus-bento {
   max-width: 1600px;
@@ -216,6 +226,9 @@
 }
 .landing-nimbus-origin {
   background: transparent;
+}
+.landing-nimbus-origin > div > p:last-child {
+  white-space: pre-line;
 }
 .landing-nimbus-principles {
   background: #741a14;
@@ -524,9 +537,6 @@
   }
   .landing-nimbus-intro {
     padding-block: 32px;
-  }
-  .landing-nimbus-intro h2 {
-    font-size: 36px;
   }
   .landing-nimbus-bento {
     display: flex;

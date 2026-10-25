@@ -165,6 +165,7 @@ export function CategoryValues({
   items,
 }: {
   items: {
+    key?: string;
     title: string;
     body?: string;
     image: string;
@@ -173,7 +174,7 @@ export function CategoryValues({
   return (
     <section className="landing-values home-values home-container">
       {items.map((item) => (
-        <div key={item.title}>
+        <div key={item.key ?? item.title}>
           <Image
             src={
               item.image.startsWith("https:")

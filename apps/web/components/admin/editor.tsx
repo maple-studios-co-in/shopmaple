@@ -7,6 +7,7 @@ import {
 import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
+import { NimbusFields } from "./nimbus-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
@@ -87,6 +88,7 @@ export function ContentEditor({
 }) {
   const adminRequest = useAdminRequest();
   const [tab, setTab] = useState<Tab>("Overview");
+  const [existingPage, setExistingPage] = useState<"story" | "nimbus">("story");
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<StorefrontContent | null>(null);
   const [busy, setBusy] = useState(false);
@@ -534,7 +536,18 @@ export function ContentEditor({
                 />
               )}
               {tab === "Existing pages" && (
-                <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
+                <>
+                  <label className="admin-field">
+                    <span>Existing page</span>
+                    <select aria-label="Existing page" value={existingPage} onChange={event => setExistingPage(event.target.value === "nimbus" ? "nimbus" : "story")}>
+                      <option value="story">Our Story</option>
+                      <option value="nimbus">The Nimbus Collection</option>
+                    </select>
+                  </label>
+                  {existingPage === "story"
+                    ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
+                    : <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />}
+                </>
               )}
               {tab === "Media" && (
                 <MediaLibrary session={session} onExpired={onExpired} />

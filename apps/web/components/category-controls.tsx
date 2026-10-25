@@ -104,7 +104,7 @@ export function CategoryVideo({
 export function CategorySlideshow({
   slides,
 }: {
-  slides: { desktop: string; mobile: string; alt: string }[];
+  slides: { key?: string; desktop: string; mobile: string; alt: string }[];
 }) {
   const [index, setIndex] = useState(0);
   const slide = slides[index]!;
@@ -128,7 +128,7 @@ export function CategorySlideshow({
         </button>
         {slides.map((item, i) => (
           <button
-            key={item.alt}
+            key={item.key ?? item.alt}
             type="button"
             onClick={() => setIndex(i)}
             aria-label={`Show ${item.alt}`}
