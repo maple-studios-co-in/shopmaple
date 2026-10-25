@@ -12,6 +12,8 @@ PR #20 campaign scheduling and PR #21 original Shopify product disclosure copy a
 
 PR #22/#23 operations release: [paired database/media backups](releases/2026-10-26-paired-backups.md) are installed at tool revision3906413, with a verified production restore and one-time off-host copy. The 02:47 UTC daily schedule now invokes the paired job; its next scheduled run and automated off-host retention/alerts remain pending. A fresh [category-route parity audit](audits/2026-10-26-category-routes.md) confirms `/collections/chairs` has its own legacy source template, distinct from `/pages/chairs`; a redirect would not satisfy parity.
 
+PR #24 remains in local/CI verification, not deployed: restored legacy Chairs editorial sections, article featured images/dates, corrected Nimbus responsive artwork, and typed Our Story copy/order/visibility controls. Browser access recovered in the parent task; desktop/mobile checks are in progress. Original copy remains the default. Publishing Story content adds a new validated document field: older binaries require compatible content recovery before rollback. See [verification and remaining gaps](releases/2026-10-26-content-parity.md).
+
 Priority order remaining:
 
 1. Private publisher activation and production staff workflow verification; decide enquiry access.

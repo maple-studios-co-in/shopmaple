@@ -118,7 +118,8 @@ test('an actual concurrent uploader finishes after a failed attempt and fresh re
 
 test('insufficient free-space reserve fails before creating a run', async t => {
   const { options } = fixture(t); const space = statfsSync(options.backupRoot);
-  options.minimumFreeBytes = space.bavail * space.bsize + 1;
+  // Total filesystem capacity is a stable upper bound even when unrelated writers free blocks.
+  options.minimumFreeBytes = space.blocks * space.bsize + 1;
   await assert.rejects(backupPair(options), /free space/);
   assert.deepEqual(readdirSync(options.backupRoot), []);
 });

@@ -140,8 +140,9 @@ export function NimbusLanding() {
       <CategorySlideshow
         slides={["Living room", "Bedroom", "Dining room"].map((alt, i) => ({
           alt,
-          desktop: rooms.images[i * 2]!,
-          mobile: rooms.images[i * 2 + 1]!,
+          // The imported slideshow stores each mobile image before its desktop counterpart.
+          desktop: rooms.images[i * 2 + 1]!,
+          mobile: rooms.images[i * 2]!,
         }))}
       />
       <header className="landing-series home-container">

@@ -6,6 +6,7 @@ import {
 } from "@shopmaple/contracts";
 import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
 import { CategoryFields } from "./category-fields";
+import { StoryFields } from "./story-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
 import type { StaffSession } from "./dashboard";
@@ -29,6 +30,7 @@ const tabs = [
   "Campaigns",
   "Instagram",
   "Pages",
+  "Existing pages",
   "Category pages",
   "Media",
   "Enquiries",
@@ -528,6 +530,9 @@ export function ContentEditor({
                     edit({ ...content, landingPages })
                   }
                 />
+              )}
+              {tab === "Existing pages" && (
+                <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
               )}
               {tab === "Media" && (
                 <MediaLibrary session={session} onExpired={onExpired} />
