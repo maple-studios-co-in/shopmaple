@@ -1,0 +1,33 @@
+{
+  "name": "shopmaple",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev -w @shopmaple/api",
+    "dev:web": "npm run dev -w @shopmaple/web",
+    "build": "npm run build -w @shopmaple/api && npm run build -w @shopmaple/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @shopmaple/api",
+    "db:generate": "npm run db:generate -w @shopmaple/api",
+    "db:migrate": "npm run db:migrate -w @shopmaple/api",
+    "catalog:import": "tsx --env-file=.env scripts/import-preview.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.6",
+    "@types/node": "^22.18.0"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}

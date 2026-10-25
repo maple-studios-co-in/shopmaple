@@ -61,3 +61,7 @@ The initial development target is a release candidate on 26 October 2026. Live s
 - Verify hosting capacity, backups, monitoring and final deployment configuration.
 
 None of these pending integrations prevents implementing the catalogue and storefront in isolation.
+
+## Foundation implementation status
+
+The first branch now supplies the workspace apps, PostgreSQL catalogue read model, validated public preview import, persistent guest cart and an initial source-backed storefront. Payments and order creation remain disabled; the checkout/integration requirements above are future work. Historical Shopify order records identify Razorpay, which is the integration target under the owner's instruction to retain the existing gateway. Verify current merchant configuration before implementation. No merchant records are stored in this repository.

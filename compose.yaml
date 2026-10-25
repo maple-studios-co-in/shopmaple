@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: shopmaple
+      POSTGRES_PASSWORD: shopmaple
+      POSTGRES_DB: shopmaple
+    ports:
+      - "127.0.0.1:55439:5432"
+    volumes:
+      - shopmaple_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopmaple"]
+      interval: 5s
+      retries: 10
+volumes:
+  shopmaple_pg:

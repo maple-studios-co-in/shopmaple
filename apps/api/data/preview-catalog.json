@@ -1,0 +1,672 @@
+{
+  "schemaVersion": 1,
+  "source": "shopify-preview",
+  "capturedAt": "2026-10-25T13:59:17.494686+00:00",
+  "products": [
+    {
+      "id": "preview-7990430073021",
+      "handle": "aera-swivel-lounge-chair",
+      "title": "Aera Swivel Lounge Chair – Cream Fabric",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/WhatsAppImage2025-04-05at12.05.41AM_2.jpg?v=1747212326",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/WhatsAppImage2025-04-05at12.05.41AM.jpg?v=1747212326",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/WhatsAppImage2025-04-05at12.05.41AM_1.jpg?v=1747212326",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPT_Image_May_17_2025_10_21_40_PM.png?v=1747500739"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:12.841578+00:00",
+      "variants": [
+        {
+          "id": "preview-44972853985469",
+          "title": "Standard",
+          "sku": "MF-SC-312",
+          "pricePaise": 3146470,
+          "compareAtPaise": 6489882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8292121215165",
+      "handle": "aero-dining-chair",
+      "title": "Aero Dining Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame175.png?v=1777655455",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame176.png?v=1777655455",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame173.png?v=1777655455"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:12.902346+00:00",
+      "variants": [
+        {
+          "id": "preview-46728293843133",
+          "title": "Deep Atlantic",
+          "sku": "MPL-CH-DIN-NOR-07-01",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2714000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46728293908669",
+          "title": "Desert Taupe",
+          "sku": "MPL-CH-DIN-NOR-07-03",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2714000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46728293941437",
+          "title": "Slate Modern",
+          "sku": "MPL-CH-DIN-NOR-07-04",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2714000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296711323837",
+      "handle": "aileron-signature-bed",
+      "title": "Aileron Signature Bed",
+      "description": "",
+      "category": "beds",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame20_1.png?v=1778160419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr15_2026_09_27_16AM_1.png?v=1778160419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Gemini_Generated_Image_omfoktomfoktomfo.png?v=1778160420",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame18.png?v=1778160419",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame19.png?v=1778160419"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:12.858792+00:00",
+      "variants": [
+        {
+          "id": "preview-46752966901949",
+          "title": "Standard",
+          "sku": "MPL-BD-NIM-AIL-03",
+          "pricePaise": 29500000,
+          "compareAtPaise": 30444000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296717156541",
+      "handle": "aileron-upholstered-bench",
+      "title": "Aileron Upholstered Bench",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame53.png?v=1778162146",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame56_1.png?v=1778162146",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame55.png?v=1778162146",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame54.png?v=1778162146",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageApr15_2026_01_54_25PM.png?v=1778162145"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:12.893733+00:00",
+      "variants": [
+        {
+          "id": "preview-46752984203453",
+          "title": "Standard",
+          "sku": "MPL-BNCH-NIM-AIL-03",
+          "pricePaise": 3776000,
+          "compareAtPaise": 4130000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395255480509",
+      "handle": "alcyone-7-seater-sofa",
+      "title": "Alcyone 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.1_c465fd24-ee30-43c5-a0d6-37735b3d45bb.png?v=1783924721",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Product6.jpg?v=1783924720",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.3_cc5adff4-7d91-462b-b937-a0daa27bd03e.png?v=1783924720",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.2_67a160e0-4e6f-43b3-8ff5-546a6b67a10f.png?v=1783924720",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.4_b3ffa522-9136-4fa1-9794-d8b9adba3f68.png?v=1783924721",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/6.5_88dfd141-6284-4c9f-978a-982f51420848.png?v=1783924721"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:13.971505+00:00",
+      "variants": [
+        {
+          "id": "preview-47637460025533",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ALCYONE-EMGMV",
+          "pricePaise": 11210000,
+          "compareAtPaise": 11800000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395243978941",
+      "handle": "alina-7-seater-sofa",
+      "title": "Alina 7+-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.4_1_141c98c8-19e6-4691-bc86-8e690f37eede.png?v=1783923766",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.3_1.png?v=1783923766",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.1_1.png?v=1783923766",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.2_1.png?v=1783923766",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/1.6.png?v=1783923765"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:14.012229+00:00",
+      "variants": [
+        {
+          "id": "preview-47637436334269",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ALINA-GEEWL",
+          "pricePaise": 14160000,
+          "compareAtPaise": 14396000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8026050068669",
+      "handle": "alto-luxe-lounge-chair-gold-charcoal",
+      "title": "Alto Luxe Lounge Chair – Matte Gold Frame with Charcoal Upholstery",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun18_2025_01_57_44PM.png?v=1750235663",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun18_2025_02_00_19PM_1.png?v=1750235663",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun18_2025_02_02_02PM.png?v=1750235663",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun18_2025_02_01_06PM.png?v=1750235663",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/ChatGPTImageJun18_2025_01_56_19PM.png?v=1750235663"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:14.252779+00:00",
+      "variants": [
+        {
+          "id": "preview-45156460757181",
+          "title": "Standard",
+          "sku": "MF-ALC-205",
+          "pricePaise": 1710882,
+          "compareAtPaise": 2123882,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8487096025277",
+      "handle": "arco",
+      "title": "Arco",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_3_45_Degree.webp?v=1788546489",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_1_Front.webp?v=1788546489",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_2_Back.webp?v=1788546489",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_4_Detail.webp?v=1788546489",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_5_Dimensions.webp?v=1788546489",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Ivory_Walnut_Chair_View_6_Scale.webp?v=1788546488"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:14.477693+00:00",
+      "variants": [
+        {
+          "id": "preview-48385496678589",
+          "title": "Standard",
+          "sku": "MPL-CH-ARM-ARCO-IVRWLNN",
+          "pricePaise": 2655000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8346683769021",
+      "handle": "arden-console-cabinet",
+      "title": "Arden Console Cabinet",
+      "description": "",
+      "category": "storage",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/9D25AA03-9581-46B1-B8BC-749AE7B9A95C.webp?v=1781938509",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/081f0b7570d4305af6fb36ad38455952.webp?v=1781938510",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/744A9BEB-27FB-4C26-9E94-12A1777C80A1.webp?v=1781938510",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/B3612AB0-3018-4195-848C-E84A7B775D86.webp?v=1781938509",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/F1C1640D-4731-47F1-B782-55AD52D5DE6B.webp?v=1781938509"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:15.198578+00:00",
+      "variants": [
+        {
+          "id": "preview-46964383776957",
+          "title": "Standard",
+          "sku": "Arden Console Cabinet",
+          "pricePaise": 10620000,
+          "compareAtPaise": 11800000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8395229659325",
+      "handle": "aria-5-seater-sofa",
+      "title": "Aria 5-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.1_05395d32-eee4-420c-b3fd-d66df462f2bb.png?v=1783922389",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.3_e6f6db39-255a-469b-8c71-92db97c1c9b1.png?v=1783922389",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.2_ee66afc2-09ff-449a-b84f-b011897078c7.png?v=1783922389",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.4_86202a6d-3b9d-4514-9f69-f8edce370efe.png?v=1783922389",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.5_d7204ed1-7f85-47c4-9373-d610fde90c41.png?v=1783922389"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:15.223797+00:00",
+      "variants": [
+        {
+          "id": "preview-47637358444733",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ARIA-GYEWV",
+          "pricePaise": 11800000,
+          "compareAtPaise": 12980000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486974423229",
+      "handle": "ario",
+      "title": "Ario",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/03_45_degree_view_60324058-05ce-4f87-b9b1-dd17780c6c36.webp?v=1788542719",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/01_front_view_c4cf37a3-15df-4540-9a1e-f14c6e945751.webp?v=1788542719",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/02_back_view_2abc9baa-607b-4fa9-a56d-623115689b6b.webp?v=1788542719",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/04_detail_closeup_720e1f95-09e2-4c5b-8258-497b9421f54c.webp?v=1788542719",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/06_model_scale_comparison_c8a65ff1-8248-4ee5-bcbd-89b75e4dcc7d.webp?v=1788542719"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:15.298014+00:00",
+      "variants": [
+        {
+          "id": "preview-48384986349757",
+          "title": "Standard",
+          "sku": "MPL-CH-ARM-ARIO-WALOLN",
+          "pricePaise": 2360000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8276071809213",
+      "handle": "arko-bar-chair",
+      "title": "Arko Bar Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame81.png?v=1776327893",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame80.png?v=1776327893",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame82.png?v=1776327894",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame84.png?v=1776327894",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame79.png?v=1776327892",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame83.png?v=1776327893"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:15.742012+00:00",
+      "variants": [
+        {
+          "id": "preview-46675808583869",
+          "title": "Soft Ivory/Natural Oak",
+          "sku": "MPL-CH-BAR-NOR-01-01",
+          "pricePaise": 2006000,
+          "compareAtPaise": 2478000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46675808616637",
+          "title": "Deep Navy/Dark Walnut",
+          "sku": "MPL-CH-BAR-NOR-01-02",
+          "pricePaise": 2006000,
+          "compareAtPaise": 2478000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46675808649405",
+          "title": "Mocha Brown/Black Stained Ash",
+          "sku": "MPL-CH-BAR-NOR-01-03",
+          "pricePaise": 2006000,
+          "compareAtPaise": 2478000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46675808682173",
+          "title": "Warm Beige/Smoked Ash",
+          "sku": "MPL-CH-BAR-NOR-01-04",
+          "pricePaise": 2006000,
+          "compareAtPaise": 2478000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8486951420093",
+      "handle": "arno",
+      "title": "Arno",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/warm_walnut_framed_lounge_chair.webp?v=1788540780",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/warm_minimalist_walnut_armchair.webp?v=1788540780",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/walnut_framed_armchair_in_a_warm_interior.webp?v=1788540780",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/warm_beige_armchair_with_walnut_detailing.webp?v=1788540780",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/beige_upholstered_lounge_chair_with_dimensions.webp?v=1788540780",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/height_reference_and_lounge_chair.webp?v=1788540780"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:16.229955+00:00",
+      "variants": [
+        {
+          "id": "preview-48384958202045",
+          "title": "Standard",
+          "sku": "MPL-CH-ARM-ARNO-NGRWLBN",
+          "pricePaise": 2242000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8283872329917",
+      "handle": "aro-dining-chair",
+      "title": "Aro Dining Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame90.png?v=1777319771",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame89.png?v=1777319772",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame88.png?v=1777319771",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame87.png?v=1777319771",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame85.png?v=1777319771",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame86.png?v=1777319771"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:16.080470+00:00",
+      "variants": [
+        {
+          "id": "preview-46697709502653",
+          "title": "Graphite Gray/Gold",
+          "sku": "MPL-CH-DIN-NOR-03-01",
+          "pricePaise": 2714000,
+          "compareAtPaise": 2950000,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697709535421",
+          "title": "Ivory/Rose Gold",
+          "sku": "MPL-CH-DIN-NOR-03-02",
+          "pricePaise": 2714000,
+          "compareAtPaise": 2950000,
+          "available": false,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697709568189",
+          "title": "Navy Blue/Black",
+          "sku": "MPL-CH-DIN-NOR-03-03",
+          "pricePaise": 2714000,
+          "compareAtPaise": 2950000,
+          "available": false,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697709600957",
+          "title": "Mocha Brown/Black",
+          "sku": "MPL-CH-DIN-NOR-03-04",
+          "pricePaise": 2714000,
+          "compareAtPaise": 2950000,
+          "available": false,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8492650135741",
+      "handle": "arven",
+      "title": "ARVEN",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/c45ab93d-d7d2-47f8-aea7-763b6739ebf8.webp?v=1788944648",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/f84ab24a-b039-4ac6-916c-1ff50c7b81de.webp?v=1788944648",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/c7bb99e1-d518-49da-8c39-3d267c1edb46.webp?v=1788944648",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/19167ac8-177c-411e-9ae6-a1930254d52c.webp?v=1788944648",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/cef77c72-76c0-431a-9ff2-a80ac6b9db0d.webp?v=1788944648",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/e13b7112-ab33-4cda-ac9f-fcafbc8bd48c.webp?v=1788944648"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:16.298462+00:00",
+      "variants": [
+        {
+          "id": "preview-48410209452221",
+          "title": "Standard",
+          "sku": "MPL-CH-DIN-ARVEN-WWBDWLNN",
+          "pricePaise": 1652000,
+          "compareAtPaise": 2360000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8283653603517",
+      "handle": "arvon-rocking-chair",
+      "title": "Arvon Rocking Chair",
+      "description": "",
+      "category": "chairs",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame97.png?v=1776981067",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame96.png?v=1776981068",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame95.png?v=1776981065",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame100.png?v=1776981064",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame98.png?v=1776981064",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame99.png?v=1776981065"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:16.459955+00:00",
+      "variants": [
+        {
+          "id": "preview-46697016983741",
+          "title": "Light Beige",
+          "sku": null,
+          "pricePaise": 1180000,
+          "compareAtPaise": 1321600,
+          "available": true,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697017016509",
+          "title": "Tan Brown",
+          "sku": null,
+          "pricePaise": 1180000,
+          "compareAtPaise": 1321600,
+          "available": false,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697017049277",
+          "title": "Olive Green",
+          "sku": null,
+          "pricePaise": 1180000,
+          "compareAtPaise": 1321600,
+          "available": false,
+          "stockPolicy": "unverified"
+        },
+        {
+          "id": "preview-46697017082045",
+          "title": "warm off white",
+          "sku": null,
+          "pricePaise": 1180000,
+          "compareAtPaise": 1321600,
+          "available": false,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8296691433661",
+      "handle": "aspen-bed",
+      "title": "Aspen Bed",
+      "description": "",
+      "category": "beds",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame7.webp?v=1778921749",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame5.webp?v=1778921749",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame1.webp?v=1778921749",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame2.webp?v=1778921749",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame182.webp?v=1778921749",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame179.webp?v=1778921749"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:17.253789+00:00",
+      "variants": [
+        {
+          "id": "preview-46752850706621",
+          "title": "Standard",
+          "sku": "MPL-NB-BR-01-BD",
+          "pricePaise": 6999900,
+          "compareAtPaise": 7080000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8392707670205",
+      "handle": "astraea-3-seater-sofa",
+      "title": "Astraea 3-seater sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.1.jpg?v=1783773710",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.2.jpg?v=1783773710",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.3.jpg?v=1783773710",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.5_73eaf541-22a7-40f4-a321-ee5b49f40732.png?v=1783773710",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/2.4.jpg?v=1783773710"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:17.290313+00:00",
+      "variants": [
+        {
+          "id": "preview-47631967518909",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-ASTRAEA-CGMC",
+          "pricePaise": 10266000,
+          "compareAtPaise": 10502000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8367834529981",
+      "handle": "aurelia-2-seater-sofa",
+      "title": "Aurelia 2-Seater Sofa",
+      "description": "",
+      "category": "sofas",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.1_2.png?v=1783772561",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.2.png?v=1783772562",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.3.png?v=1783772562",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/f5925d23-6490-4588-8ab3-852d6f7e6a45.jpg?v=1783772561",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.5.png?v=1783772561",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/3.4.png?v=1783772562"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:17.307372+00:00",
+      "variants": [
+        {
+          "id": "preview-47011581231293",
+          "title": "Standard",
+          "sku": "MPL-SF-TWS-AURELIA-DRGMV",
+          "pricePaise": 8260000,
+          "compareAtPaise": 9440000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "preview-8392684273853",
+      "handle": "aurelia-bed",
+      "title": "Aurelia Bed",
+      "description": "",
+      "category": "beds",
+      "images": [
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/8EB1481E-71E9-407A-8272-3D9B25BDF9F6.png?v=1783770843",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/8E00E44B-AE83-4901-80FB-2146BFB0EA58.png?v=1783770843",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/E7D35C73-3F0C-4054-B43B-03A12E53AE63.png?v=1783770843",
+        "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/9C62BA88-52FE-4317-AA1F-BC1591EE182A.png?v=1783770843"
+      ],
+      "published": true,
+      "source": "shopify-preview",
+      "sourceUpdatedAt": "2026-10-25T13:59:17.494322+00:00",
+      "variants": [
+        {
+          "id": "preview-47631932784829",
+          "title": "Standard",
+          "sku": "MPL-BED-FB-VCXK-Aurelia",
+          "pricePaise": 10620000,
+          "compareAtPaise": 10738000,
+          "available": true,
+          "stockPolicy": "unverified"
+        }
+      ]
+    }
+  ]
+}

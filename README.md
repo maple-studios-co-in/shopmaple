@@ -1,30 +1,40 @@
 # Shop Maple
 
-Maple Furnishers' independent ecommerce storefront, using Keeri as the product source and an owned commerce backend.
+Maple Furnishers' independent ecommerce storefront and commerce API in one repository. No Medusa.
 
-## Project status
+## Running foundation
 
-Repository foundation and architecture only. Application code, dependencies, database migrations, CI and deployment have not been created. There is no runnable storefront yet.
+- `apps/web`: Next.js 16 / React 19 storefront, collections/search, product variants, favourites and cart.
+- `apps/api`: Express / Prisma / PostgreSQL catalogue and persistent guest carts.
+- `packages/contracts`: shared Zod validation and TypeScript contracts.
+- `scripts/import-preview.ts`: validated import of the dated public preview catalogue.
 
-## Stack
+The homepage preserves the current shop's cream/burgundy header, Maple logo, workshop video and category tiles. It is an initial recreation, **not complete visual or functional parity** with Shopify.
 
-- Next.js, React and TypeScript for the storefront.
-- Node.js, Express and Zod for the commerce API.
-- PostgreSQL and Prisma for persistence.
-- Keeri integration for approved product data and operational order handoff.
-- Cloudflare R2/CDN and responsive image processing for media delivery.
-- A hosted payment gateway with server-side verification; provider selection is pending.
+**Preview only:** 20 public Shopify products captured on 25 October 2026. Keeri remains the intended product source. Price and availability are snapshot data; checkout deliberately returns `503 CHECKOUT_NOT_AVAILABLE`. No payments or orders can be placed. Existing accounts/policies still link to the current shop.
 
-The project does not use Medusa. Exact supported dependency versions will be pinned during implementation.
+## Start locally
 
-## Experience
+Requires Node 22+, npm and Docker Compose (or PostgreSQL 17).
 
-Preserve the existing Shopify storefront's appearance and interactions across desktop and mobile. The locally exported theme provides a reference; third-party theme implementation, app data and externally hosted media require separate treatment.
+```sh
+npm ci
+cp .env.example .env
+docker compose up -d --wait
+npm run db:generate
+npm run db:migrate
+npm run catalog:import
+npm run dev
+```
 
-## Architecture
+Open http://localhost:3000. The API listens on 127.0.0.1:4100; the browser uses the frontend's same-origin `/api` proxy. Keep `WEB_ORIGIN` consistent with the URL used in the browser. See [development and verification](docs/development.md) for the isolated test database and commands.
 
-Read [the architecture decision](docs/architecture.md) for component ownership, checkout requirements and the first implementation slice.
+## Next integrations
 
-## Reference material
+Keeri publication, atomic stock reservation and order handoff; the existing merchant gateway (Razorpay is present in historical Shopify order records); shipping/tax rules; payment verification and reconciliation; accounts/history/reviews; complete template fidelity and URL migration. Merchant access and current gateway configuration still need verification.
 
-Raw store exports and local research are intentionally excluded from this public repository. Do not commit customer/order exports, credentials, merchant configuration or third-party theme source without checking its permitted distribution and reuse.
+Images currently use Shopify CDN sources with Next.js responsive AVIF/WebP optimization. Fonts are self-hosted; the local workshop clip is compressed and deferred. R2 migration and production Core Web Vitals measurement are still pending.
+
+Read [architecture](docs/architecture.md) and [the implementation plan](docs/superpowers/plans/2026-10-25-storefront-foundation.md). This branch does not change the live Shopify store, Keeri, DNS or deployment.
+
+Raw theme exports, customer/order records, merchant configuration and credentials must stay out of this public repository. Public preview product data and Maple brand media are the only store assets included; see [media provenance](apps/web/public/media/PROVENANCE.md).
