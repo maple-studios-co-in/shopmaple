@@ -16,7 +16,7 @@ Object.assign(globalThis, {
   HTMLElement: dom.window.HTMLElement,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
-test("menu destinations preserve local pages, bridge missing collections and avoid dead source anchors", () => {
+test("menu destinations stay local and avoid dead source anchors", () => {
   assert.equal(navigationHref("/pages/sofas", "Sofas"), "/pages/sofas");
   assert.equal(
     navigationHref("/collections/arm-chair", "Arm Chairs"),
@@ -24,7 +24,7 @@ test("menu destinations preserve local pages, bridge missing collections and avo
   );
   assert.equal(
     navigationHref("/collections/recliners", "Recliners"),
-    "https://shop.maplefurnishers.com/collections/recliners",
+    "/collections/recliners",
   );
   assert.equal(navigationHref("#", "Dining Table"), "/collections/dining");
   assert.match(navigationHref("#", "Kids Beds"), /^\/pages\/contact\?product=/);
@@ -65,7 +65,6 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
     await act(async () => root.unmount());
   }
 });
-
 test("mobile drawer drills down, goes back, closes on Escape and restores scrolling", async () => {
   const root = createRoot(document.getElementById("root")!);
   Object.assign(dom.window, {
@@ -133,7 +132,6 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
     assert.equal(document.body.style.overflow, "");
   }
 });
-
 test("desktop menu includes visual discovery and a working custom furniture enquiry", async () => {
   const root = createRoot(document.getElementById("root")!);
   try {

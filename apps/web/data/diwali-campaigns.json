@@ -1,0 +1,1210 @@
+{
+  "landing-announcement": {
+    "label": "THE MAPLE DIWALI SALE",
+    "headline": [
+      "Decked for Diwali"
+    ],
+    "supporting": "Make room for celebrations.",
+    "offer": [
+      "Up to 40% off"
+    ],
+    "eligibility": "On selected furniture.",
+    "cta": "Shop the Diwali Sale",
+    "href": "/collections/all",
+    "desktop": {
+      "nodeId": "973:440",
+      "layers": [
+        {
+          "nodeId": "973:441",
+          "src": "/media/diwali/973-441.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:442",
+          "src": "/media/diwali/973-442.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:443",
+          "src": "/media/diwali/973-443.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:444",
+          "src": "/media/diwali/973-444.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:452",
+      "layers": [
+        {
+          "nodeId": "973:453",
+          "src": "/media/diwali/973-453.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:454",
+          "src": "/media/diwali/973-454.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "landing-dining-table": {
+    "label": "DECKED FOR DIWALI · DINING TABLES",
+    "headline": [
+      "Make room for",
+      "one more."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 35% off"
+    ],
+    "eligibility": "On selected dining tables.",
+    "cta": "Shop Dining Tables",
+    "href": "/collections/dining",
+    "desktop": {
+      "nodeId": "973:464",
+      "layers": [
+        {
+          "nodeId": "973:465",
+          "src": "/media/diwali/973-465.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:466",
+          "src": "/media/diwali/973-466.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:467",
+          "src": "/media/diwali/973-467.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:468",
+          "src": "/media/diwali/973-468.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:476",
+      "layers": [
+        {
+          "nodeId": "973:477",
+          "src": "/media/diwali/973-477.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:478",
+          "src": "/media/diwali/973-478.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "landing-sofa-accent-chair": {
+    "label": "DECKED FOR DIWALI · SOFAS & CHAIRS",
+    "headline": [
+      "Good company.",
+      "Great seats."
+    ],
+    "supporting": null,
+    "offer": [
+      "Sofas up to 40% off",
+      "Chairs up to 20% off"
+    ],
+    "eligibility": "On selected sofas & chairs.",
+    "cta": "Shop Sofas & Chairs",
+    "href": "/collections/sofas-and-chairs",
+    "desktop": {
+      "nodeId": "973:488",
+      "layers": [
+        {
+          "nodeId": "973:489",
+          "src": "/media/diwali/973-489.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:490",
+          "src": "/media/diwali/973-490.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:491",
+          "src": "/media/diwali/973-491.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:492",
+          "src": "/media/diwali/973-492.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:500",
+      "layers": [
+        {
+          "nodeId": "973:501",
+          "src": "/media/diwali/973-501.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:502",
+          "src": "/media/diwali/973-502.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "landing-dining": {
+    "label": "DECKED FOR DIWALI · DINING SETS",
+    "headline": [
+      "Come together.",
+      "Stay a little longer."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 40% off"
+    ],
+    "eligibility": "On selected dining sets.",
+    "cta": "Shop Dining Sets",
+    "href": "/collections/dinings",
+    "desktop": {
+      "nodeId": "973:512",
+      "layers": [
+        {
+          "nodeId": "973:513",
+          "src": "/media/diwali/973-513.png",
+          "x": 452.0,
+          "y": 0,
+          "width": 362.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:514",
+          "src": "/media/diwali/973-514.png",
+          "x": 814.0,
+          "y": 0,
+          "width": 362.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:515",
+          "src": "/media/diwali/973-515.png",
+          "x": 1176.0,
+          "y": 0,
+          "width": 362.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:516",
+          "src": "/media/diwali/973-516.png",
+          "x": 1538.0,
+          "y": 0,
+          "width": 362.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 55.5%, rgba(116, 26, 20, 0.55) 78%, rgba(116, 26, 20, 0) 100%)",
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:524",
+      "layers": [
+        {
+          "nodeId": "973:525",
+          "src": "/media/diwali/973-525.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:526",
+          "src": "/media/diwali/973-526.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "landing-storage": {
+    "label": "DECKED FOR DIWALI · STORAGE",
+    "headline": [
+      "Less clutter.",
+      "More celebration."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 25% off"
+    ],
+    "eligibility": "On selected storage furniture.",
+    "cta": "Shop Storage",
+    "href": "/collections/storage",
+    "desktop": {
+      "nodeId": "973:536",
+      "layers": [
+        {
+          "nodeId": "973:537",
+          "src": "/media/diwali/973-537.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:538",
+          "src": "/media/diwali/973-538.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:539",
+          "src": "/media/diwali/973-539.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:540",
+          "src": "/media/diwali/973-540.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:548",
+      "layers": [
+        {
+          "nodeId": "973:549",
+          "src": "/media/diwali/973-549.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:550",
+          "src": "/media/diwali/973-550.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "landing-consoles": {
+    "label": "DECKED FOR DIWALI · CONSOLES",
+    "headline": [
+      "Make an entrance",
+      "this Diwali."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 20% off"
+    ],
+    "eligibility": "On selected consoles.",
+    "cta": "Shop Consoles",
+    "href": "/collections/console-tables",
+    "desktop": {
+      "nodeId": "973:560",
+      "layers": [
+        {
+          "nodeId": "973:561",
+          "src": "/media/diwali/973-561.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:562",
+          "src": "/media/diwali/973-562.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:563",
+          "src": "/media/diwali/973-563.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:564",
+          "src": "/media/diwali/973-564.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:572",
+      "layers": [
+        {
+          "nodeId": "973:573",
+          "src": "/media/diwali/973-573.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:574",
+          "src": "/media/diwali/973-574.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "sofas-hero": {
+    "label": "DECKED FOR DIWALI · SOFAS",
+    "headline": [
+      "Settle in for",
+      "the celebrations."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 40% off"
+    ],
+    "eligibility": "On selected sofas.",
+    "cta": "Shop Sofas",
+    "href": "/collections/sofas",
+    "desktop": {
+      "nodeId": "973:584",
+      "layers": [
+        {
+          "nodeId": "973:585",
+          "src": "/media/diwali/973-585.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:586",
+          "src": "/media/diwali/973-586.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:587",
+          "src": "/media/diwali/973-587.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:588",
+          "src": "/media/diwali/973-588.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:594",
+      "layers": [
+        {
+          "nodeId": "973:595",
+          "src": "/media/diwali/973-595.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:596",
+          "src": "/media/diwali/973-596.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "sofas-sale": {
+    "label": "DECKED FOR DIWALI · SOFA OFFERS",
+    "headline": [
+      "Up to 40% off",
+      "sofas"
+    ],
+    "supporting": "Your next favourite place to unwind.",
+    "offer": [],
+    "eligibility": "On selected sofas.",
+    "cta": "Shop Sofa Offers",
+    "href": "/collections/sofas",
+    "desktop": {
+      "nodeId": "973:603",
+      "layers": [
+        {
+          "nodeId": "973:604",
+          "src": "/media/diwali/973-604.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:605",
+          "src": "/media/diwali/973-605.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:606",
+          "src": "/media/diwali/973-606.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:607",
+          "src": "/media/diwali/973-607.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:613",
+      "layers": [
+        {
+          "nodeId": "973:614",
+          "src": "/media/diwali/973-614.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:615",
+          "src": "/media/diwali/973-615.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "tables-hero": {
+    "label": "DECKED FOR DIWALI · TABLES",
+    "headline": [
+      "Sweets, stories and",
+      "a new centrepiece."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 25% off"
+    ],
+    "eligibility": "On selected tables.",
+    "cta": "Shop Tables",
+    "href": "/collections/tables",
+    "desktop": {
+      "nodeId": "973:622",
+      "layers": [
+        {
+          "nodeId": "973:623",
+          "src": "/media/diwali/973-623.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:624",
+          "src": "/media/diwali/973-624.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:625",
+          "src": "/media/diwali/973-625.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:626",
+          "src": "/media/diwali/973-626.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:632",
+      "layers": [
+        {
+          "nodeId": "973:633",
+          "src": "/media/diwali/973-633.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:634",
+          "src": "/media/diwali/973-634.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "tables-sale": {
+    "label": "DECKED FOR DIWALI · TABLE OFFERS",
+    "headline": [
+      "Up to 25% off",
+      "tables"
+    ],
+    "supporting": "A new centrepiece for your celebrations.",
+    "offer": [],
+    "eligibility": "On selected tables.",
+    "cta": "Shop Table Offers",
+    "href": "/collections/tables",
+    "desktop": {
+      "nodeId": "973:641",
+      "layers": [
+        {
+          "nodeId": "973:642",
+          "src": "/media/diwali/973-642.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:643",
+          "src": "/media/diwali/973-643.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:644",
+          "src": "/media/diwali/973-644.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:645",
+          "src": "/media/diwali/973-645.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:655",
+      "layers": [
+        {
+          "nodeId": "973:656",
+          "src": "/media/diwali/973-656.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:657",
+          "src": "/media/diwali/973-657.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "chairs-hero": {
+    "label": "DECKED FOR DIWALI · CHAIRS",
+    "headline": [
+      "Save a seat for",
+      "someone special."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 20% off"
+    ],
+    "eligibility": "On selected chairs.",
+    "cta": "Shop Chairs",
+    "href": "/collections/chairs",
+    "desktop": {
+      "nodeId": "973:666",
+      "layers": [
+        {
+          "nodeId": "973:667",
+          "src": "/media/diwali/973-667.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:668",
+          "src": "/media/diwali/973-668.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:669",
+          "src": "/media/diwali/973-669.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:670",
+          "src": "/media/diwali/973-670.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 1050.0
+    },
+    "mobile": {
+      "nodeId": "973:683",
+      "layers": [
+        {
+          "nodeId": "973:684",
+          "src": "/media/diwali/973-684.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:685",
+          "src": "/media/diwali/973-685.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "chairs-sale": {
+    "label": "DECKED FOR DIWALI · CHAIR OFFERS",
+    "headline": [
+      "Up to 20% off",
+      "chairs"
+    ],
+    "supporting": "Make room for your new favourite seat.",
+    "offer": [],
+    "eligibility": "On selected chairs.",
+    "cta": "Shop Chair Offers",
+    "href": "/collections/chairs",
+    "desktop": {
+      "nodeId": "973:694",
+      "layers": [
+        {
+          "nodeId": "973:695",
+          "src": "/media/diwali/973-695.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:696",
+          "src": "/media/diwali/973-696.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:697",
+          "src": "/media/diwali/973-697.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:698",
+          "src": "/media/diwali/973-698.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 55.366%, rgba(116, 26, 20, 0.55) 77.683%, rgba(116, 26, 20, 0) 100%)",
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:708",
+      "layers": [
+        {
+          "nodeId": "973:709",
+          "src": "/media/diwali/973-709.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:710",
+          "src": "/media/diwali/973-710.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "beds-hero": {
+    "label": "DECKED FOR DIWALI · BEDS",
+    "headline": [
+      "A fresh beginning",
+      "for your bedroom."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 30% off"
+    ],
+    "eligibility": "On selected beds.",
+    "cta": "Shop Beds",
+    "href": "/collections/beds",
+    "desktop": {
+      "nodeId": "973:719",
+      "layers": [
+        {
+          "nodeId": "973:720",
+          "src": "/media/diwali/973-720.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:721",
+          "src": "/media/diwali/973-721.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:722",
+          "src": "/media/diwali/973-722.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:723",
+          "src": "/media/diwali/973-723.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:729",
+      "layers": [
+        {
+          "nodeId": "973:730",
+          "src": "/media/diwali/973-730.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:731",
+          "src": "/media/diwali/973-731.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "beds-sale": {
+    "label": "DECKED FOR DIWALI · BED OFFERS",
+    "headline": [
+      "Up to 30% off",
+      "beds"
+    ],
+    "supporting": "Bring home a little more comfort.",
+    "offer": [],
+    "eligibility": "On selected beds.",
+    "cta": "Shop Bed Offers",
+    "href": "/collections/beds",
+    "desktop": {
+      "nodeId": "973:738",
+      "layers": [
+        {
+          "nodeId": "973:739",
+          "src": "/media/diwali/973-739.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:740",
+          "src": "/media/diwali/973-740.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:741",
+          "src": "/media/diwali/973-741.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:742",
+          "src": "/media/diwali/973-742.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:748",
+      "layers": [
+        {
+          "nodeId": "973:749",
+          "src": "/media/diwali/973-749.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:750",
+          "src": "/media/diwali/973-750.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "outdoors-hero": {
+    "label": "DECKED FOR DIWALI · OUTDOORS",
+    "headline": [
+      "Take the",
+      "celebrations outside."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 25% off"
+    ],
+    "eligibility": "On selected outdoor furniture.",
+    "cta": "Shop Outdoor Furniture",
+    "href": "/collections/outdoor-furnitures",
+    "desktop": {
+      "nodeId": "973:757",
+      "layers": [
+        {
+          "nodeId": "973:758",
+          "src": "/media/diwali/973-758.png",
+          "x": 1425.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:759",
+          "src": "/media/diwali/973-759.png",
+          "x": 950.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:760",
+          "src": "/media/diwali/973-760.png",
+          "x": 475.0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:761",
+          "src": "/media/diwali/973-761.png",
+          "x": 0,
+          "y": 0,
+          "width": 475.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:771",
+      "layers": [
+        {
+          "nodeId": "973:772",
+          "src": "/media/diwali/973-772.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:773",
+          "src": "/media/diwali/973-773.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  },
+  "tv-units-hero": {
+    "label": "DECKED FOR DIWALI · TV UNITS",
+    "headline": [
+      "Set the scene for",
+      "evenings together."
+    ],
+    "supporting": null,
+    "offer": [
+      "Up to 25% off"
+    ],
+    "eligibility": "On selected TV units.",
+    "cta": "Shop TV Units",
+    "href": "/collections/tv-media-units",
+    "desktop": {
+      "nodeId": "973:782",
+      "layers": [
+        {
+          "nodeId": "973:783",
+          "src": "/media/diwali/973-783.png",
+          "x": 535.0,
+          "y": 0,
+          "width": 341.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:784",
+          "src": "/media/diwali/973-784.png",
+          "x": 876.0,
+          "y": 0,
+          "width": 341.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:785",
+          "src": "/media/diwali/973-785.png",
+          "x": 1217.0,
+          "y": 0,
+          "width": 341.0,
+          "height": 350.0
+        },
+        {
+          "nodeId": "973:786",
+          "src": "/media/diwali/973-786.png",
+          "x": 1558.0,
+          "y": 0,
+          "width": 342.0,
+          "height": 350.0
+        }
+      ],
+      "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 65.5%, rgba(116, 26, 20, 0.65) 80%, rgba(116, 26, 20, 0) 100%)",
+      "gradientWidth": 820.0
+    },
+    "mobile": {
+      "nodeId": "973:792",
+      "layers": [
+        {
+          "nodeId": "973:793",
+          "src": "/media/diwali/973-793.png",
+          "x": 0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        },
+        {
+          "nodeId": "973:794",
+          "src": "/media/diwali/973-794.png",
+          "x": 250.0,
+          "y": 0,
+          "width": 250.0,
+          "height": 500.0
+        }
+      ],
+      "gradient": null,
+      "gradientWidth": 820
+    }
+  }
+}

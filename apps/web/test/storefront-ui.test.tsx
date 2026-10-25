@@ -246,11 +246,11 @@ test("hero keeps product discovery clear and only downloads its film when reques
     );
     assert.match(
       document.querySelector(".hero-film")!.textContent!,
-      /Made for the way you live/,
+      /Explore Collection/,
     );
-    assert.doesNotMatch(
+    assert.match(
       document.querySelector(".hero-categories")!.textContent!,
-      /Starting from/,
+      /Starting from ₹25,000/,
     );
     await act(async () =>
       document

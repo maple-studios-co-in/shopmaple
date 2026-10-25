@@ -1,10 +1,26 @@
 import { canOrder, lowestPrice } from "./product-availability";
 import type { Product } from "@shopmaple/contracts";
-import membership from "../data/collection-membership.json";
+import oldMembership from "../data/collection-membership.json";
+import sourceCollections from "../data/source-collections.json";
+const membership: Record<string, string[]> = {
+  ...oldMembership,
+  ...Object.fromEntries(
+    Object.entries(sourceCollections).map(([handle, collection]) => [
+      handle,
+      collection.handles,
+    ]),
+  ),
+};
 import { categoryNames } from "./format";
-
 export const collectionTitles: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(sourceCollections).map(([handle, collection]) => [
+      handle,
+      collection.title,
+    ]),
+  ),
   ...categoryNames,
+  "sofas-and-chairs": "Sofas & Chairs",
   "5-seater-sofa": "5 Seater Sofas",
   "7-seater-sofa": "7 Seater Sofas",
   "chair-collection": "Chairs",
@@ -75,13 +91,16 @@ export function collectionQuery(
 }
 export function collectionMembers(products: Product[], handle: string) {
   if (handle === "all") return products;
+  if (handle === "sofas-and-chairs")
+    return products.filter(
+      (product) =>
+        product.category === "sofas" || product.category === "chairs",
+    );
   if (Object.hasOwn(categoryNames, handle))
     return products.filter((product) => product.category === handle);
   if (Object.hasOwn(membership, handle)) {
     const byHandle = new Map(
-      products
-        .filter((product) => product.category !== null)
-        .map((product) => [product.handle, product]),
+      products.map((product) => [product.handle, product]),
     );
     return ((membership as Record<string, string[]>)[handle] ?? [])
       .map((member) => byHandle.get(member))

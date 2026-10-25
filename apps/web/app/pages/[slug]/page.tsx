@@ -9,26 +9,28 @@ import {
 import { HomeCities } from "@/components/home-sections";
 import { shopFile } from "@/lib/format";
 import { contactCategories } from "../contact-content";
-
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{
+    slug: string;
+  }>;
 }) {
   const { slug } = await params;
   return {
     title:
       slug === "bulk-enquiry"
-        ? "Bulk Enquiry | Maple Furnishers"
-        : "Contact Us | Maple Furnishers",
+        ? "Bulk Enquiry"
+        : "Contact Us",
   };
 }
-
 export default async function ContactPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{
+    slug: string;
+  }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
@@ -53,10 +55,8 @@ export default async function ContactPage({
     <Contact context={context} />
   );
 }
-
 function Contact({ context }: { context: EnquiryContext }) {
-  const mapAddress =
-    "B3, Timber Block, WHS Block, Ware Housing Scheme, Kirti Nagar, New Delhi, Delhi, 110015";
+  const mapAddress = "A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015";
   return (
     <div className="cp-page">
       <div className="cp-divider cp-divider-top" />
@@ -108,7 +108,6 @@ function Contact({ context }: { context: EnquiryContext }) {
     </div>
   );
 }
-
 const steps = [
   {
     image: "1_c060f484-f1f4-4f8a-826e-228632252413.jpg",

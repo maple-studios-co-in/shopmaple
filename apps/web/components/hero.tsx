@@ -46,10 +46,8 @@ export function Hero() {
           aria-label="Maple furniture craftsmanship"
         />
         <div className="hero-introduction">
-          <p>Thoughtfully made. Unmistakably yours.</p>
-          <h1>Made for the way you live.</h1>
-          <Link className="hero-cta" href="/collections/all">
-            Explore furniture <ArrowUpRight size={17} />
+          <Link className="hero-cta" href="/pages/nimbus-collection">
+            Explore Collection <ArrowUpRight size={17} />
           </Link>
         </div>
         <button
@@ -61,7 +59,7 @@ export function Hero() {
         </button>
       </div>
       <div className="hero-categories">
-        {tiles.map(([name, , category, image]) => (
+        {tiles.map(([name, price, category, image]) => (
           <Link
             href={"/collections/" + category}
             className="category-tile"
@@ -76,7 +74,7 @@ export function Hero() {
             />
             <div>
               <h2>{name}</h2>
-              <p>Explore collection</p>
+              <p>Starting from ₹{price}</p>
             </div>
             <ArrowUpRight aria-hidden size={21} />
           </Link>

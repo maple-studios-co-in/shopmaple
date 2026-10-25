@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
 import { CollectionListing } from "@/components/collection-listing";
 import { canOrder, pricedVariants } from "@/lib/product-availability";
 import { getProducts } from "@/lib/catalog";
@@ -9,6 +10,14 @@ import {
   filterCollection,
 } from "@/lib/collections";
 export const dynamic = "force-dynamic";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ handle: string }>;
+}) {
+  const { handle } = await params;
+  return { title: collectionTitles[handle] ?? "Furniture" };
+}
 type Query = Record<string, string | string[] | undefined>;
 export default async function Collection({
   params,
@@ -37,23 +46,40 @@ export default async function Collection({
     query.page,
     Math.max(1, Math.ceil(filtered.length / limit)),
   );
-  const knownPrices = members.flatMap(product => pricedVariants(product).map(variant => variant.pricePaise));
+  const knownPrices = members.flatMap((product) =>
+    pricedVariants(product).map((variant) => variant.pricePaise),
+  );
+  const campaign: CampaignKey | undefined = (
+    {
+      beds: "beds-hero",
+      "outdoor-furnitures": "outdoors-hero",
+      "tv-media-units": "tv-units-hero",
+    } as Record<string, CampaignKey>
+  )[handle];
   return (
-    <CollectionListing
-      handle={handle}
-      title={collectionTitles[handle]!}
-      query={{ ...query, page }}
-      products={filtered.slice((page - 1) * limit, page * limit)}
-      total={filtered.length}
-      collectionTotal={members.length}
-      limit={limit}
-      inStock={
-        members.filter((p) => p.variants.some(canOrder)).length
-      }
-      outOfStock={
-        members.filter((p) => !p.variants.length || p.variants.some(v => !canOrder(v))).length
-      }
-      highestPrice={knownPrices.length ? Math.max(...knownPrices) : null}
-    />
+    <>
+      {campaign && (
+        <CampaignBanner campaign={campaign} href="#collection-products" />
+      )}
+      <CollectionListing
+        handle={handle}
+        title={collectionTitles[handle]!}
+        query={{ ...query, page }}
+        products={filtered.slice((page - 1) * limit, page * limit)}
+        total={filtered.length}
+        collectionTotal={members.length}
+        limit={limit}
+        inStock={members.filter((p) => p.variants.some(canOrder)).length}
+        outOfStock={
+          members.filter(
+            (p) => !p.variants.length || p.variants.some((v) => !canOrder(v)),
+          ).length
+        }
+        highestPrice={knownPrices.length ? Math.max(...knownPrices) : null}
+      />
+      {handle === "beds" && (
+        <CampaignBanner campaign="beds-sale" href="#collection-products" />
+      )}
+    </>
   );
 }

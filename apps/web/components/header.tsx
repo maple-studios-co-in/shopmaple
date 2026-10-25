@@ -5,12 +5,14 @@ import { useState } from "react";
 import { Search, UserRound, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
+import { Favourites } from "./favourites";
 import { shopFile } from "@/lib/format";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
 export function Header() {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
     [account, setAccount] = useState(false),
+    [wishlist, setWishlist] = useState(false),
     [mobile, setMobile] = useState(false);
   return (
     <>
@@ -60,16 +62,16 @@ export function Header() {
             >
               <UserRound />
             </button>
-            <Link
+            <button
               className="icon-button favourite-link"
-              href="/favourites"
+              onClick={() => setWishlist(true)}
               aria-label={"Saved furniture (" + favourites.length + ")"}
             >
               <Heart />
               {favourites.length > 0 && (
                 <span className="count">{favourites.length}</span>
               )}
-            </Link>
+            </button>
             <button
               className="icon-button"
               aria-label={"Open cart (" + cart.itemCount + " items)"}
@@ -112,13 +114,30 @@ export function Header() {
         onClose={() => setAccount(false)}
         title="Your Maple account"
       >
-        <p>
-          Existing orders and account details are still available in our current
-          shop while we prepare the new experience.
-        </p>
-        <a className="button" href="https://shop.maplefurnishers.com/account">
-          Open existing account
-        </a>
+        <p>Online sign-in and order history are not available here yet.</p>
+        <nav className="account-actions" aria-label="Account support">
+          <Link href="/account" onClick={() => setAccount(false)}>
+            Account <span>Orders, profile and addresses →</span>
+          </Link>
+          <Link href="/favourites" onClick={() => setAccount(false)}>
+            Wishlist <span>View your saved items →</span>
+          </Link>
+          <Link
+            href="/pages/contact?product=Order%20support"
+            onClick={() => setAccount(false)}
+          >
+            Help Center <span>Contact support →</span>
+          </Link>
+        </nav>
+      </Modal>
+      <Modal
+        open={wishlist}
+        onClose={() => setWishlist(false)}
+        title="My Wishlist"
+        drawer
+        side="left"
+      >
+        <Favourites onNavigate={() => setWishlist(false)} compact />
       </Modal>
       <MobileNavigation open={mobile} onClose={() => setMobile(false)} />
     </>

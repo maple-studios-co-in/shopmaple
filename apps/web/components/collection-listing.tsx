@@ -17,7 +17,6 @@ import {
   type CollectionQuery,
 } from "@/lib/collections";
 import { categoryNames, money } from "@/lib/format";
-
 type Props = {
   handle: string;
   title: string;
@@ -37,7 +36,9 @@ function FilterFields({
   outOfStock,
   highestPrice,
   id,
-}: Props & { id: string }) {
+}: Props & {
+  id: string;
+}) {
   return (
     <form
       action={`/collections/${handle}`}
@@ -121,13 +122,17 @@ function FilterFields({
               type="number"
               min="0"
               step="0.01"
-              placeholder={highestPrice === null ? "Any price" : String(highestPrice / 100)}
+              placeholder={
+                highestPrice === null ? "Any price" : String(highestPrice / 100)
+              }
               defaultValue={query.max}
             />
           </label>
         </div>
         <p className="collection-price-caption">
-          {highestPrice === null ? "Prices available on request" : `The highest listed price is ${money(highestPrice)}`}
+          {highestPrice === null
+            ? "Prices available on request"
+            : `The highest listed price is ${money(highestPrice)}`}
         </p>
       </details>
       {handle === "all" && (
@@ -172,7 +177,7 @@ export function CollectionListing(props: Props) {
     query.q || query.min || query.max || query.category || query.availability,
   );
   return (
-    <section className="collection-parity" aria-label={title}>
+    <section id="collection-products" className="collection-parity" aria-label={title}>
       <header className="collection-heading">
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
@@ -180,10 +185,6 @@ export function CollectionListing(props: Props) {
           <span>{title}</span>
         </nav>
         <h1>{title}</h1>
-        <p>
-          Find a piece that feels at home. Explore the collection and choose
-          your preferred options.
-        </p>
       </header>
       <div className="collection-parity-toolbar">
         <h2>Filters</h2>
@@ -365,10 +366,7 @@ export function CollectionListing(props: Props) {
           {handle === "chairs" && (
             <p className="collection-preview-note">
               Browse the complete chair collection on{" "}
-              <a href="https://shop.maplefurnishers.com/collections/chairs">
-                our current shop
-              </a>
-              .
+              <a href="/collections/chairs">our current shop</a>.
             </p>
           )}
         </div>

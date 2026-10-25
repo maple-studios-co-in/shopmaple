@@ -1,0 +1,900 @@
+{
+  "frontpage": {
+    "title": "Home page",
+    "handles": [
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "aurum-blossom-dining-set-ivory-gold-floral"
+    ]
+  },
+  "chair-collection": {
+    "title": "Accent Chair",
+    "handles": [
+      "caro",
+      "ario",
+      "nola",
+      "tara",
+      "arno",
+      "rollo",
+      "vela",
+      "cora",
+      "oro",
+      "elyra-accent-chair-ivory-mocha-walnut",
+      "havren-accent-chair",
+      "elyra-accent-chair",
+      "lurex-accent-chair",
+      "solvane-accent-chair",
+      "velmora-accent-chair",
+      "elvara-accent-chair",
+      "orlen-accent-chair",
+      "valen-accent-chair",
+      "orvane-accent-chair",
+      "veyra-accent-chair",
+      "luma-haven-accent-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "regent-tufted-club-chair",
+      "maple-majestic-velvet-armchair",
+      "solis-curved-velvet-lounge-chairs",
+      "ava-pleated-velvet-lounge-chair",
+      "emerald-tufted-velvet-accent-chair",
+      "lira-barrel-accent-chair",
+      "nova-boucle-barrel-lounge-chair",
+      "aera-swivel-lounge-chair"
+    ]
+  },
+  "beds": {
+    "title": "Beds",
+    "handles": [
+      "noven",
+      "elowen",
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed",
+      "rosemont-bed-rosewood",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "winslow-bed-walnut-oatmeal",
+      "marlow-bed-walnut-wheat",
+      "aspen-bed"
+    ]
+  },
+  "living-room": {
+    "title": "Living Room",
+    "handles": [
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "ovalo-modern-console-walnut-white",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "oslo-retro-console-walnut-ivory",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "windsor-blue-tufted-sofa",
+      "elano-burgundy-sectional",
+      "maple-verona-champagne-bench"
+    ]
+  },
+  "bedroom-accents": {
+    "title": "Bedroom Accents",
+    "handles": [
+      "maple-verona-champagne-bench",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "oslo-retro-console-walnut-ivory",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "ovalo-modern-console-walnut-white"
+    ]
+  },
+  "l-shape-sofa-set": {
+    "title": "L Shape Sofa Set",
+    "handles": [
+      "elano-burgundy-sectional"
+    ]
+  },
+  "luxe-velvet-hotel-lounge": {
+    "title": "Luxe Velvet, Hotel Lounge",
+    "handles": [
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "aurum-blossom-dining-set-ivory-gold-floral",
+      "celesta-grand-dining-white-marble-gold-velvet",
+      "hexa-luxe-dining-set-honey-oak-velvet-gold",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "ovalo-modern-console-walnut-white",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "oslo-retro-console-walnut-ivory",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "windsor-blue-tufted-sofa"
+    ]
+  },
+  "console-tables": {
+    "title": "Console Tables",
+    "handles": [
+      "tavik-console-table",
+      "lyro-console-table",
+      "zovik-console-table",
+      "ovalo-modern-console-walnut-white",
+      "oslo-retro-console-walnut-ivory",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold"
+    ]
+  },
+  "center-tables": {
+    "title": "Coffee Tables",
+    "handles": [
+      "ralvo-sofa-table",
+      "kynor-sofa-table",
+      "xarvo-sofa-table",
+      "veylo-sofa-table",
+      "elrik-sofa-table",
+      "zayro-sofa-table",
+      "noryx-sofa-table",
+      "kyvik-sofa-table",
+      "zarek-sofa-table",
+      "velon-sofa-table",
+      "oryx-sofa-table",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "aurelia-fluted-coffee-table-white-marble-gold"
+    ]
+  },
+  "center-tables-1": {
+    "title": "Center Tables",
+    "handles": [
+      "ralvo-sofa-table",
+      "kynor-sofa-table",
+      "xarvo-sofa-table",
+      "veylo-sofa-table",
+      "elrik-sofa-table",
+      "zayro-sofa-table",
+      "noryx-sofa-table",
+      "kyvik-sofa-table",
+      "zarek-sofa-table",
+      "velon-sofa-table",
+      "oryx-sofa-table",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "aurelia-fluted-coffee-table-white-marble-gold"
+    ]
+  },
+  "bed-room": {
+    "title": "Bed Room",
+    "handles": [
+      "lira-barrel-accent-chair"
+    ]
+  },
+  "office-suite": {
+    "title": "Office Suite",
+    "handles": [
+      "winston-wooden-console-table-with-brass-trim-mirror"
+    ]
+  },
+  "hotel-luxury": {
+    "title": "Hotel Luxury",
+    "handles": [
+      "solis-curved-velvet-lounge-chairs"
+    ]
+  },
+  "minimum-60-off": {
+    "title": "Minimum 30% Off",
+    "handles": [
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "emerald-tufted-velvet-accent-chair",
+      "maple-verona-champagne-bench",
+      "ovalo-modern-console-walnut-white",
+      "aera-swivel-lounge-chair",
+      "ava-pleated-velvet-lounge-chair",
+      "nova-boucle-barrel-lounge-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "lira-barrel-accent-chair",
+      "oslo-retro-console-walnut-ivory",
+      "maple-majestic-velvet-armchair",
+      "regent-tufted-club-chair",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "solis-curved-velvet-lounge-chairs",
+      "windsor-blue-tufted-sofa",
+      "elano-burgundy-sectional",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "hexa-luxe-dining-set-honey-oak-velvet-gold",
+      "celesta-grand-dining-white-marble-gold-velvet",
+      "aurum-blossom-dining-set-ivory-gold-floral"
+    ]
+  },
+  "best-buy-under-rs-50-000": {
+    "title": "Best Buy Under Rs.50,000",
+    "handles": [
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "aurum-blossom-dining-set-ivory-gold-floral",
+      "celesta-grand-dining-white-marble-gold-velvet",
+      "hexa-luxe-dining-set-honey-oak-velvet-gold",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "ovalo-modern-console-walnut-white",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "oslo-retro-console-walnut-ivory",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "windsor-blue-tufted-sofa",
+      "elano-burgundy-sectional",
+      "maple-verona-champagne-bench",
+      "regent-tufted-club-chair",
+      "maple-majestic-velvet-armchair",
+      "solis-curved-velvet-lounge-chairs",
+      "ava-pleated-velvet-lounge-chair",
+      "emerald-tufted-velvet-accent-chair",
+      "lira-barrel-accent-chair",
+      "nova-boucle-barrel-lounge-chair",
+      "aera-swivel-lounge-chair"
+    ]
+  },
+  "furniture-store-under-rs-25-000": {
+    "title": "Furniture Store under Rs. 25,000",
+    "handles": [
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "emerald-tufted-velvet-accent-chair",
+      "maple-verona-champagne-bench",
+      "ovalo-modern-console-walnut-white",
+      "aera-swivel-lounge-chair",
+      "ava-pleated-velvet-lounge-chair",
+      "nova-boucle-barrel-lounge-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "lira-barrel-accent-chair",
+      "oslo-retro-console-walnut-ivory",
+      "maple-majestic-velvet-armchair",
+      "regent-tufted-club-chair",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "solis-curved-velvet-lounge-chairs",
+      "windsor-blue-tufted-sofa",
+      "elano-burgundy-sectional",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "hexa-luxe-dining-set-honey-oak-velvet-gold",
+      "celesta-grand-dining-white-marble-gold-velvet",
+      "aurum-blossom-dining-set-ivory-gold-floral"
+    ]
+  },
+  "clearance-sale": {
+    "title": "Clearance Sale",
+    "handles": [
+      "aurum-blossom-dining-set-ivory-gold-floral",
+      "celesta-grand-dining-white-marble-gold-velvet",
+      "hexa-luxe-dining-set-honey-oak-velvet-gold",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "elano-burgundy-sectional",
+      "windsor-blue-tufted-sofa",
+      "solis-curved-velvet-lounge-chairs",
+      "elanora-rose-gold-console-table-with-mirror-black-glass-top",
+      "aurelia-fluted-coffee-table-white-marble-gold",
+      "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
+      "aurelia-luxe-console-table-with-mirror-black-marble-gold",
+      "winston-wooden-console-table-with-brass-trim-mirror",
+      "maple-bloom-petal-coffee-table-white-marble-brass-finish",
+      "regent-tufted-club-chair",
+      "maple-majestic-velvet-armchair",
+      "oslo-retro-console-walnut-ivory",
+      "lira-barrel-accent-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "nova-boucle-barrel-lounge-chair",
+      "ava-pleated-velvet-lounge-chair",
+      "aera-swivel-lounge-chair",
+      "ovalo-modern-console-walnut-white",
+      "maple-verona-champagne-bench",
+      "emerald-tufted-velvet-accent-chair",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal"
+    ]
+  },
+  "bentley-chair": {
+    "title": "Bentley Chair",
+    "handles": []
+  },
+  "dining-chair": {
+    "title": "Dining Chair",
+    "handles": [
+      "naro-dining-chair",
+      "arven",
+      "aero-dining-chair",
+      "evo-dining-chair",
+      "aven-dining-chair",
+      "aro-dining-chair",
+      "vero-dining-chair",
+      "eira-dining-chair",
+      "varo-dining-chair",
+      "karo-dining-chair",
+      "liro-dining-chair",
+      "rivo-dining-chair"
+    ]
+  },
+  "sleek-chair": {
+    "title": "Sleek Chair",
+    "handles": [
+      "karo-dining-chair"
+    ]
+  },
+  "bedroom-chair": {
+    "title": "Bedroom Chair",
+    "handles": [
+      "solis-curved-velvet-lounge-chairs",
+      "lira-barrel-accent-chair"
+    ]
+  },
+  "arm-chair": {
+    "title": "Arm Chair",
+    "handles": [
+      "vellora",
+      "arco",
+      "zeno",
+      "beno",
+      "rollo",
+      "vela",
+      "cora",
+      "oro",
+      "orvelle-chair",
+      "veyra-arm-chair"
+    ]
+  },
+  "accent-chair": {
+    "title": "Accent Chair",
+    "handles": [
+      "caro",
+      "ario",
+      "nola",
+      "tara",
+      "arno",
+      "rollo",
+      "vela",
+      "cora",
+      "oro",
+      "elyra-accent-chair-ivory-mocha-walnut",
+      "havren-accent-chair",
+      "elyra-accent-chair",
+      "lurex-accent-chair",
+      "solvane-accent-chair",
+      "velmora-accent-chair",
+      "elvara-accent-chair",
+      "orlen-accent-chair",
+      "valen-accent-chair",
+      "orvane-accent-chair",
+      "veyra-accent-chair",
+      "luma-haven-accent-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "solis-curved-velvet-lounge-chairs",
+      "emerald-tufted-velvet-accent-chair"
+    ]
+  },
+  "lounge-wing-chair": {
+    "title": "Lounge/Wing Chair",
+    "handles": [
+      "elowen-2",
+      "rino",
+      "cova",
+      "lano",
+      "nero",
+      "arno",
+      "ivo",
+      "aeris-sculpt-lounge-chair",
+      "valen-accent-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "aurelia-luxe-accent-chair-walnut-mocha",
+      "alto-luxe-lounge-chair-gold-charcoal",
+      "solis-curved-velvet-lounge-chairs",
+      "ava-pleated-velvet-lounge-chair",
+      "lira-barrel-accent-chair",
+      "nova-boucle-barrel-lounge-chair",
+      "aera-swivel-lounge-chair"
+    ]
+  },
+  "rocking-chair": {
+    "title": "Rocking Chair",
+    "handles": [
+      "arvon-rocking-chair"
+    ]
+  },
+  "iconic-bar-chair": {
+    "title": "Iconic/Bar Chair",
+    "handles": [
+      "bar-chair-ivory-boucle-1",
+      "arko-bar-chair"
+    ]
+  },
+  "bentley": {
+    "title": "bentley",
+    "handles": [
+      "carolina-bentley-chair-ginger-bread"
+    ]
+  },
+  "sofa-set-designs": {
+    "title": "Designer Sofa Sets",
+    "handles": []
+  },
+  "wooden-sofas": {
+    "title": "Wooden Sofas",
+    "handles": []
+  },
+  "fabric-sofas": {
+    "title": "Fabric Sofas",
+    "handles": []
+  },
+  "l-shape-sofa": {
+    "title": "L Shape Sofa",
+    "handles": []
+  },
+  "chesterfield-sofas": {
+    "title": "Chesterfield Sofas",
+    "handles": []
+  },
+  "sofas": {
+    "title": "Sofas",
+    "handles": [
+      "alcyone-7-seater-sofa",
+      "vesper-7-seater-sofa",
+      "rhea-7-seater-sofa",
+      "eira-7-seater-sofa",
+      "vela-7-seater-sofa",
+      "alina-7-seater-sofa",
+      "sora-5-seater-sofa",
+      "estelle-5-seater-sofa",
+      "zaria-5-seater-sofa",
+      "nysa-5-seater-sofa",
+      "aria-5-seater-sofa",
+      "vivienne-5-seater-sofa",
+      "seraphine-3-seater-sofa",
+      "valencia-3-seater-sofa",
+      "nova-3-seater-sofa",
+      "vega-3-seater-sofa",
+      "lunae-3-seater-sofa",
+      "astraea-3-seater-sofa",
+      "elara-3-seater-sofa",
+      "selene-2-seater-sofa",
+      "lyra-2-seater-sofa",
+      "aurelia-2-seater-sofa",
+      "celeste-sofa",
+      "novaire-sofa",
+      "aurevon-sectional-sofa"
+    ]
+  },
+  "sofa-cum-beds": {
+    "title": "Sofa Cum Beds",
+    "handles": []
+  },
+  "recliners": {
+    "title": "Recliners",
+    "handles": []
+  },
+  "3-seater-sofas": {
+    "title": "3 Seater Sofas",
+    "handles": [
+      "seraphine-3-seater-sofa",
+      "valencia-3-seater-sofa",
+      "nova-3-seater-sofa",
+      "vega-3-seater-sofa",
+      "lunae-3-seater-sofa",
+      "astraea-3-seater-sofa",
+      "elara-3-seater-sofa"
+    ]
+  },
+  "2-seater-sofas": {
+    "title": "2 Seater Sofas",
+    "handles": [
+      "selene-2-seater-sofa",
+      "lyra-2-seater-sofa",
+      "aurelia-2-seater-sofa"
+    ]
+  },
+  "dining-chairs-1": {
+    "title": "Dining-Chairs",
+    "handles": [
+      "naro-dining-chair",
+      "arven",
+      "aero-dining-chair",
+      "evo-dining-chair",
+      "aven-dining-chair",
+      "aro-dining-chair",
+      "vero-dining-chair",
+      "eira-dining-chair",
+      "varo-dining-chair",
+      "karo-dining-chair",
+      "liro-dining-chair",
+      "rivo-dining-chair"
+    ]
+  },
+  "rocking-chairs": {
+    "title": "Rocking Chairs",
+    "handles": []
+  },
+  "wing-chair": {
+    "title": "Wing Chair",
+    "handles": [
+      "valen-accent-chair"
+    ]
+  },
+  "bedroom-sofa": {
+    "title": "Bedroom Sofa",
+    "handles": []
+  },
+  "5-seater-sofa": {
+    "title": "5-Seater Sofa",
+    "handles": [
+      "sora-5-seater-sofa",
+      "estelle-5-seater-sofa",
+      "zaria-5-seater-sofa",
+      "nysa-5-seater-sofa",
+      "vivienne-5-seater-sofa"
+    ]
+  },
+  "7-seater-sofa": {
+    "title": "7+ Seater Sofa",
+    "handles": [
+      "alcyone-7-seater-sofa",
+      "vesper-7-seater-sofa",
+      "rhea-7-seater-sofa",
+      "eira-7-seater-sofa",
+      "vela-7-seater-sofa",
+      "alina-7-seater-sofa"
+    ]
+  },
+  "sofa-sets": {
+    "title": "Sofa Sets",
+    "handles": []
+  },
+  "sofa-chairs": {
+    "title": "Sofa Chairs",
+    "handles": []
+  },
+  "bedroom-nimbus": {
+    "title": "Bedroom-Nimbus",
+    "handles": [
+      "aileron-upholstered-bench",
+      "orbicular-lounge-chair",
+      "aileron-signature-bed",
+      "velata-pillow-drift-bed",
+      "loft-bench",
+      "cozy-cot-baby-bed",
+      "aspen-bed"
+    ]
+  },
+  "dining-room-nimbus": {
+    "title": "Dining Room - Nimbus",
+    "handles": [
+      "virello-marble-table",
+      "luna-curve-lounge-chair",
+      "oryon-fluted-console-unit",
+      "oryon-fluted-bar-counter-set",
+      "oryon-dining-table-set"
+    ]
+  },
+  "living-room-nimbus": {
+    "title": "Living Room Nimbus",
+    "handles": [
+      "orvelle-chair",
+      "celeste-sofa",
+      "lunor-nesting-table",
+      "novaire-sofa",
+      "marbelle-center-table",
+      "velune-lounge-chair",
+      "aurevon-sectional-sofa",
+      "virello-marble-table",
+      "opelle-accent-chair",
+      "elysian-marble-living-room-set",
+      "aeris-marble-nesting-center-table",
+      "aeris-sculpt-lounge-chair",
+      "aeris-living-room-set"
+    ]
+  },
+  "dining": {
+    "title": "Dining",
+    "handles": [
+      "varyn-dining-table",
+      "veyro-dining-table",
+      "nova-dining-table",
+      "velor-dining-table",
+      "seno-dining-table",
+      "runo-dining-table",
+      "xylo-dining-table",
+      "vexa-dining-table",
+      "tylo-dining-table",
+      "sova-dining-table",
+      "cirque-luxe-marble-dining-table-emperador-gold"
+    ]
+  },
+  "storage": {
+    "title": "Storage",
+    "handles": [
+      "veyra-chest-of-drawers",
+      "rowan-bookcase",
+      "elion-storage-cabinet",
+      "arden-console-cabinet"
+    ]
+  },
+  "tables": {
+    "title": "Tables",
+    "handles": [
+      "aven-side-table",
+      "cirque-luxe-marble-dining-table-emperador-gold",
+      "elora",
+      "elowen-1",
+      "elowen-3",
+      "elrik-sofa-table",
+      "kiro-bar-table",
+      "kynor-sofa-table",
+      "kyvik-sofa-table",
+      "lyro-console-table",
+      "mavik-side-table",
+      "morik-media-unit",
+      "nexo-bar-table",
+      "norik-side-table",
+      "noryx-sofa-table",
+      "nova-dining-table",
+      "orven-side-table",
+      "oryx-sofa-table",
+      "ralvo-sofa-table",
+      "runo-dining-table",
+      "seno-dining-table",
+      "solen-side-table",
+      "sova-dining-table",
+      "tavik-console-table",
+      "tylo-dining-table",
+      "varyn-dining-table",
+      "velon-sofa-table",
+      "velor-dining-table",
+      "vexa-dining-table",
+      "veya-1",
+      "veylo-sofa-table",
+      "veyro-dining-table",
+      "xarvo-sofa-table",
+      "xylo-dining-table",
+      "yuno-bar-table",
+      "zarek-sofa-table",
+      "zayro-sofa-table",
+      "zento-side-table",
+      "zenvo-side-table",
+      "zovik-console-table",
+      "zylen-media-unit"
+    ]
+  },
+  "bar": {
+    "title": "Bar",
+    "handles": [
+      "yuno-bar-table",
+      "kiro-bar-table",
+      "nexo-bar-table"
+    ]
+  },
+  "tv-media-units": {
+    "title": "TV & Media Units",
+    "handles": [
+      "morik-media-unit",
+      "zylen-media-unit"
+    ]
+  },
+  "sofa-table": {
+    "title": "Sofa Table",
+    "handles": [
+      "oryx-sofa-table",
+      "velon-sofa-table",
+      "zarek-sofa-table",
+      "kyvik-sofa-table",
+      "noryx-sofa-table",
+      "elrik-sofa-table",
+      "veylo-sofa-table",
+      "xarvo-sofa-table",
+      "kynor-sofa-table",
+      "ralvo-sofa-table"
+    ]
+  },
+  "side-table": {
+    "title": "Side Table",
+    "handles": [
+      "veya-1",
+      "elowen-3",
+      "elowen-1",
+      "orven-side-table",
+      "aven-side-table",
+      "zenvo-side-table",
+      "solen-side-table",
+      "mavik-side-table",
+      "zento-side-table",
+      "norik-side-table"
+    ]
+  },
+  "dinings": {
+    "title": "Dinings",
+    "handles": [
+      "varyn-dining-table",
+      "veyro-dining-table",
+      "nova-dining-table",
+      "velor-dining-table",
+      "seno-dining-table",
+      "runo-dining-table",
+      "xylo-dining-table",
+      "vexa-dining-table",
+      "tylo-dining-table",
+      "sova-dining-table",
+      "cirque-luxe-marble-dining-table-emperador-gold"
+    ]
+  },
+  "consoles": {
+    "title": "Consoles",
+    "handles": [
+      "tavik-console-table",
+      "lyro-console-table",
+      "zovik-console-table"
+    ]
+  },
+  "outdoor-furnitures": {
+    "title": "Outdoor Furnitures",
+    "handles": [
+      "tavira-bistro-outdoor-set",
+      "elowen-outdoor-chair-set",
+      "verdanza-outdoor-lounge-set",
+      "solace-outdoor-lounge-set"
+    ]
+  },
+  "nimbus": {
+    "title": "Nimbus",
+    "handles": [
+      "orvelle-chair",
+      "celeste-sofa",
+      "lunor-nesting-table",
+      "novaire-sofa",
+      "marbelle-center-table",
+      "velune-lounge-chair",
+      "aurevon-sectional-sofa",
+      "virello-marble-table",
+      "opelle-accent-chair",
+      "elysian-marble-living-room-set",
+      "aeris-marble-nesting-center-table",
+      "aeris-sculpt-lounge-chair",
+      "aeris-living-room-set",
+      "luna-curve-lounge-chair",
+      "oryon-fluted-console-unit",
+      "oryon-fluted-bar-counter-set",
+      "oryon-dining-table-set",
+      "aileron-upholstered-bench",
+      "orbicular-lounge-chair",
+      "aileron-signature-bed",
+      "velata-pillow-drift-bed",
+      "loft-bench",
+      "cozy-cot-baby-bed",
+      "aspen-bed"
+    ]
+  },
+  "king-size-beds": {
+    "title": "King Size Beds",
+    "handles": [
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed",
+      "rosemont-bed-rosewood",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "winslow-bed-walnut-oatmeal",
+      "marlow-bed-walnut-wheat"
+    ]
+  },
+  "queen-size-beds": {
+    "title": "Queen Size Beds",
+    "handles": [
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed",
+      "rosemont-bed-rosewood",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "winslow-bed-walnut-oatmeal",
+      "marlow-bed-walnut-wheat"
+    ]
+  },
+  "double-size-beds": {
+    "title": "Double Size Beds",
+    "handles": [
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed",
+      "rosemont-bed-rosewood",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "winslow-bed-walnut-oatmeal",
+      "marlow-bed-walnut-wheat"
+    ]
+  },
+  "single-size-beds": {
+    "title": "Single Size Beds",
+    "handles": [
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "winslow-bed-walnut-oatmeal",
+      "marlow-bed-walnut-wheat"
+    ]
+  },
+  "solid-wood-beds": {
+    "title": "Solid Wood Beds",
+    "handles": [
+      "rosemont-bed-rosewood",
+      "odeon-bed-oak",
+      "harlow-beds-walnut-oatmeal",
+      "marlow-bed-walnut-wheat"
+    ]
+  },
+  "fabric-beds": {
+    "title": "Fabric Beds",
+    "handles": [
+      "noven",
+      "elowen",
+      "sable-bed",
+      "haven-bed",
+      "dune-bed",
+      "aurelia-bed",
+      "monarch-bed"
+    ]
+  },
+  "bestseller-chairs": {
+    "title": "Bestseller chairs",
+    "handles": [
+      "orlen-accent-chair",
+      "luma-haven-accent-chair",
+      "orvane-accent-chair",
+      "valen-accent-chair",
+      "tara",
+      "elyra-accent-chair",
+      "elyra-accent-chair-ivory-mocha-walnut",
+      "solvane-accent-chair",
+      "oro",
+      "cora",
+      "arno",
+      "caro",
+      "havren-accent-chair",
+      "vela",
+      "rollo",
+      "ario",
+      "emerald-tufted-velvet-accent-chair",
+      "velmora-accent-chair",
+      "lurex-accent-chair",
+      "veyra-accent-chair",
+      "nola",
+      "elvara-accent-chair",
+      "nimbus-cloud-lounge-chair-grey-boucle-walnut",
+      "solis-curved-velvet-lounge-chairs"
+    ]
+  }
+}
