@@ -2,34 +2,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import {
-  Search,
-  UserRound,
-  Heart,
-  ShoppingBag,
-  Menu,
-  ChevronDown,
-} from "lucide-react";
+import { Search, UserRound, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { shopFile } from "@/lib/format";
-const nav = [
-  {
-    title: "Living Room",
-    items: [
-      ["Sofas", "sofas"],
-      ["Chairs", "chairs"],
-      ["Tables", "tables"],
-    ],
-  },
-  {
-    title: "Bedroom",
-    items: [
-      ["Beds", "beds"],
-      ["Storage", "storage"],
-    ],
-  },
-];
+import { DesktopNavigation, MobileNavigation } from "./navigation";
 export function Header() {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
@@ -46,15 +23,15 @@ export function Header() {
       <header className="site-header">
         <div className="header-main">
           <div className="utility-links">
-            <a href="/pages/our-story">
-              Our Story
-            </a>
+            <a href="/pages/our-story">Our Story</a>
             <Link href="/pages/bulk-enquiry">Bulk Enquiry</Link>
             <Link href="/pages/contact">Help Center</Link>
           </div>
           <button
             className="icon-button mobile-menu-button"
             aria-label="Open navigation"
+            aria-expanded={mobile}
+            aria-controls="maple-mobile-navigation"
             onClick={() => setMobile(true)}
           >
             <Menu />
@@ -105,34 +82,7 @@ export function Header() {
             </button>
           </div>
         </div>
-        <nav className="desktop-nav" aria-label="Main navigation">
-          {nav.map((group) => (
-            <details className="nav-group" key={group.title}>
-              <summary>
-                {group.title}
-                <ChevronDown size={12} />
-              </summary>
-              <div className="nav-dropdown">
-                {group.items.map(([title, category]) => (
-                  <Link
-                    key={category}
-                    href={( ["sofas", "chairs", "tables"].includes(category!) ? "/pages/" : "/collections/") + category}
-                    onClick={(e) =>
-                      e.currentTarget
-                        .closest("details")
-                        ?.removeAttribute("open")
-                    }
-                  >
-                    {title}
-                  </Link>
-                ))}
-              </div>
-            </details>
-          ))}
-          <Link href="/collections/storage">Storage</Link>
-          <Link href="/collections/outdoors">Outdoors</Link>
-          <Link href="/pages/contact">Contact</Link>
-        </nav>
+        <DesktopNavigation />
       </header>
       <Modal
         open={search}
@@ -170,34 +120,7 @@ export function Header() {
           Open existing account
         </a>
       </Modal>
-      <Modal
-        open={mobile}
-        onClose={() => setMobile(false)}
-        title="Explore Maple"
-      >
-        <nav className="mobile-nav" aria-label="Mobile navigation">
-          {["sofas", "chairs", "tables", "beds", "storage", "outdoors"].map(
-            (category) => (
-              <Link
-                href={( ["sofas", "chairs", "tables"].includes(category!) ? "/pages/" : "/collections/") + category}
-                key={category}
-                onClick={() => setMobile(false)}
-              >
-                {category}
-              </Link>
-            ),
-          )}
-          <Link href="/favourites" onClick={() => setMobile(false)}>
-            Saved furniture ({favourites.length})
-          </Link>
-          <a href="https://shop.maplefurnishers.com/account">
-            Existing account
-          </a>
-          <Link href="/pages/contact" onClick={() => setMobile(false)}>
-            Contact us
-          </Link>
-        </nav>
-      </Modal>
+      <MobileNavigation open={mobile} onClose={() => setMobile(false)} />
     </>
   );
 }

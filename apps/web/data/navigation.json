@@ -1,0 +1,257 @@
+[
+  {
+    "title": "Living Room",
+    "href": "#",
+    "columns": [
+      {
+        "links": [
+          {
+            "title": "Sofas",
+            "href": "/pages/sofas",
+            "parent": true
+          },
+          {
+            "title": "Recliners",
+            "href": "/collections/recliners",
+            "parent": false
+          },
+          {
+            "title": "All Recliners",
+            "href": "/collections/recliners",
+            "parent": false
+          },
+          {
+            "title": "Fabric Sofas",
+            "href": "/collections/fabric-sofas",
+            "parent": false
+          },
+          {
+            "title": "3-Seater Sofa",
+            "href": "/collections/3-seater-sofas",
+            "parent": false
+          },
+          {
+            "title": "5-Seater Sofa",
+            "href": "/collections/5-seater-sofa",
+            "parent": false
+          },
+          {
+            "title": "7+ Seater Sofa",
+            "href": "/collections/7-seater-sofa",
+            "parent": false
+          },
+          {
+            "title": "Sofa Sets",
+            "href": "/collections/sofa-sets",
+            "parent": false
+          }
+        ]
+      },
+      {
+        "links": [
+          {
+            "title": "Chairs",
+            "href": "/pages/chairs",
+            "parent": true
+          },
+          {
+            "title": "All Chairs",
+            "href": "/pages/chairs",
+            "parent": false
+          },
+          {
+            "title": "Accent Chairs",
+            "href": "/collections/accent-chair",
+            "parent": false
+          },
+          {
+            "title": "Lounge Chairs",
+            "href": "/collections/lounge-wing-chair",
+            "parent": false
+          },
+          {
+            "title": "Wing Chairs",
+            "href": "/collections/lounge-wing-chair",
+            "parent": false
+          },
+          {
+            "title": "Arm Chairs",
+            "href": "/collections/arm-chair",
+            "parent": false
+          },
+          {
+            "title": "Rocking Chairs",
+            "href": "/collections/rocking-chair",
+            "parent": false
+          },
+          {
+            "title": "Dining Chairs",
+            "href": "/collections/dining-chair",
+            "parent": false
+          },
+          {
+            "title": "Sofa Chairs",
+            "href": "/collections/sofa-chairs",
+            "parent": false
+          }
+        ]
+      },
+      {
+        "links": [
+          {
+            "title": "Tables",
+            "href": "/pages/tables",
+            "parent": true
+          },
+          {
+            "title": "All Tables",
+            "href": "/pages/tables",
+            "parent": false
+          },
+          {
+            "title": "Center Table",
+            "href": "/collections/center-tables-1",
+            "parent": false
+          },
+          {
+            "title": "Side Table",
+            "href": "/collections/side-table",
+            "parent": false
+          },
+          {
+            "title": "Coffee Table",
+            "href": "/collections/center-tables",
+            "parent": false
+          },
+          {
+            "title": "Dining Table",
+            "href": "#",
+            "parent": false
+          },
+          {
+            "title": "Dining Table Set",
+            "href": "/collections/dining",
+            "parent": false
+          },
+          {
+            "title": "Console Tables",
+            "href": "/collections/console-tables",
+            "parent": false
+          }
+        ]
+      },
+      {
+        "links": [
+          {
+            "title": "TV & Media Units",
+            "href": "/collections/tv-media-units",
+            "parent": true
+          },
+          {
+            "title": "All TV & Media Units",
+            "href": "/collections/tv-media-units",
+            "parent": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Bedroom",
+    "href": "#",
+    "columns": [
+      {
+        "links": [
+          {
+            "title": "Beds",
+            "href": "#",
+            "parent": true
+          },
+          {
+            "title": "All Beds",
+            "href": "/collections/beds",
+            "parent": false
+          },
+          {
+            "title": "Fabric Bed",
+            "href": "/collections/fabric-beds",
+            "parent": false
+          },
+          {
+            "title": "Solid Wood Beds",
+            "href": "/collections/solid-wood-beds",
+            "parent": false
+          },
+          {
+            "title": "Kids Beds",
+            "href": "#",
+            "parent": false
+          }
+        ]
+      },
+      {
+        "links": [
+          {
+            "title": "By Size",
+            "href": "#",
+            "parent": true
+          },
+          {
+            "title": "King Size Beds",
+            "href": "/collections/king-size-beds",
+            "parent": false
+          },
+          {
+            "title": "Queen Size Beds",
+            "href": "/collections/queen-size-beds",
+            "parent": false
+          },
+          {
+            "title": "Double Beds",
+            "href": "/collections/double-size-beds",
+            "parent": false
+          },
+          {
+            "title": "Single Beds",
+            "href": "/collections/single-size-beds",
+            "parent": false
+          }
+        ]
+      },
+      {
+        "links": [
+          {
+            "title": "Bedroom Tables",
+            "href": "#",
+            "parent": false
+          },
+          {
+            "title": "Bedside Table",
+            "href": "#",
+            "parent": false
+          },
+          {
+            "title": "Dressing table",
+            "href": "#",
+            "parent": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Storage",
+    "href": "/collections/storage",
+    "columns": []
+  },
+  {
+    "title": "Outdoors",
+    "href": "/collections/outdoor-furnitures",
+    "columns": []
+  },
+  {
+    "title": "Contact",
+    "href": "/pages/contact",
+    "columns": []
+  }
+]

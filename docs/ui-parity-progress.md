@@ -4,7 +4,24 @@ The development preview includes the homepage, product presentation, collection 
 
 The visual authority remains [Maple's existing shop](https://shop.maplefurnishers.com) and the owner's exported theme, retained outside version control at `reference/shopify-153432359101/theme/` in the original workspace. Relevant source templates are `index.json`, `product.json`, `collection.json`, `collection.chairs.json`, `page.chairs.json`, `page.contact.json` and `page.bulk-enquiry.json`. Source templates are references, not proof that every section or app behavior has been reproduced.
 
-## Phase 3 — current extension and evidence
+## Menu correction — current extension and evidence
+
+The shared navigation now follows the public Shopify menu structure rather than the earlier abbreviated dropdown and flat mobile popup. This is an ordinary extension of the existing source-preservation direction, with no new visual identity. Desktop Living Room opens a full-width panel containing four category columns; Bedroom contains three. The mobile menu is a left-side drawer with the same category hierarchy, nested views, a Back control and horizontally scrolling product previews. The mobile breakpoint is 749px. The source and destination adaptations are recorded in [navigation provenance](../apps/web/data/navigation-PROVENANCE.md).
+
+The navigation uses Red Hat Display, the source's gray links and thin column dividers, and the existing cream canvas. The layout now self-hosts Red Hat Display weight 700 as well. Pointer hover, click and keyboard interaction open desktop groups one at a time; Escape, outside pointer interaction and focus leaving the navigation dismiss them. The mobile drawer locks background scrolling, closes on Escape and returns focus to the opening control; Back returns to the selected category control. Supported local destinations remain local, unsupported collections retain their exact Shopify URLs, and previously dead source anchors receive local category or contextual-enquiry destinations. The six featured product cards continue to link to Shopify and display dated snapshot prices, not live Keeri prices or stock.
+
+The focused review disposition is **SHIP for this menu correction only**. The valid source/implementation screenshot pairs show the Bedroom desktop panel, mobile root drawer and Living Room mobile submenu. Their structure and presentation are source-aligned, with minor font and line-position differences still visible; this is not a claim of pixel-identical navigation or whole-site parity. Evidence is retained locally under `.impeccable/review/menu/`:
+
+- `source-bedroom.png` and `implementation-bedroom.png`.
+- `source-mobile.png` and `implementation-mobile.png`.
+- `source-mobile-submenu.png` and `implementation-mobile-submenu.png`.
+- `implementation-desktop.png` records the Living Room desktop panel. `source-desktop.png` is excluded from visual acceptance because a newsletter overlay obscures that capture.
+
+The integrating agent reported desktop opening/dismissal checks, both mobile groups and Back navigation, plus Escape closure, trigger focus restoration and body-scroll restoration. The final local suite passed 74 tests (14 web and 60 API); workspace typechecks and production builds passed. The JSDOM harness substitutes only Next Image rendering; actual optimized image loading was checked in the browser. Latest-commit CI and merge status are verified separately. These tests establish the checked behaviors, not exhaustive viewport or live-service equivalence.
+
+`DESIGN.md` and `.impeccable/design.json` are unchanged by this correction. Their historical native-disclosure navigation, generic mobile dialog, 700px header breakpoint and earlier font inventory do not describe this menu. The current implementation is in `components/navigation.tsx`, `lib/navigation.ts` and `styles/navigation-parity.css` under `apps/web/`; this scoped record does not silently refresh the broader design specification.
+
+## Phase 3 — landing extension and evidence
 
 The five new local routes are `/pages/sofas`, `/pages/tables`, `/pages/chairs`, `/pages/nimbus-collection` and `/pages/our-story`. Their section order, enabled copy, media and page-specific typography follow the published storefront and exported theme settings, as recorded in `apps/web/data/landing-PROVENANCE.md`. The homepage promotional links and story link now reach these local pages. The bespoke Chairs landing is `/pages/chairs`; `/collections/chairs` remains a filtered collection. Unsupported specialist collection destinations retain links to the exact original Shopify collection.
 
@@ -90,7 +107,7 @@ The final UI review reported its three findings closed: four promotional link de
 
 ## Design-document scope and remaining drift
 
-`DESIGN.md` frontmatter and `.impeccable/design.json` remain the historical incumbent design snapshot. No new visual system was approved. This pass narrowly corrects the obsolete font claim and records extension provenance in `DESIGN.md`; it preserves all existing token values and leaves the sidecar untouched. The following pre-existing drift remains documented rather than broadly repaired:
+`DESIGN.md` frontmatter and `.impeccable/design.json` remain the historical incumbent design snapshot. No new visual system was approved. The Phase 3 documentation pass narrowly corrected the obsolete font claim and recorded extension provenance in `DESIGN.md`; it preserved all existing token values and left the sidecar untouched. The subsequent menu correction leaves both files unchanged and records its differences above. The following pre-existing drift remains documented rather than broadly repaired:
 
 - The obsolete Red Hat Display statement in `DESIGN.md` is corrected: `app/layout.tsx` self-hosts weights 400, 500, 600 and 800, and the parity stylesheets assign it. The preserved frontmatter and sidecar do not provide a complete inventory of these page-specific typography roles.
 - Their text-footer description predates the source-image footer now rendered by `components/footer.tsx`.
