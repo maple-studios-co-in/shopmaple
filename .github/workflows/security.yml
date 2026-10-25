@@ -63,4 +63,4 @@ jobs:
           "$RUNNER_TEMP/semgrep/bin/python" -m pip install --disable-pip-version-check semgrep==1.182.0
           echo "$RUNNER_TEMP/semgrep/bin" >> "$GITHUB_PATH"
       - name: Scan source locally without uploading code or metrics
-        run: semgrep scan --config p/javascript --config p/typescript --config p/nodejs --metrics=off --disable-version-check --error --strict apps packages scripts
+        run: semgrep scan --config p/javascript --config p/typescript --config p/nodejs --metrics=off --disable-version-check --error --strict apps packages scripts deploy
