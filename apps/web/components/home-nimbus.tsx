@@ -5,8 +5,12 @@ import Link from "next/link";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { shopFile } from "@/lib/format";
+import type { HomeDetails } from "@shopmaple/contracts";
+import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-export function HomeNimbus() {
+export function HomeNimbus({
+  content = defaultHomeDetails.nimbus,
+}: { content?: HomeDetails["nimbus"] } = {}) {
   const [open, setOpen] = useState(false);
   return (
     <section className="home-nimbus-wrap" aria-label="The Nimbus Collection">
@@ -36,16 +40,11 @@ export function HomeNimbus() {
           {open ? <ChevronDown /> : <ChevronUp />}
         </button>
         <div className="home-nimbus-content" id="nimbus-details">
-          <h2>The Nimbus Collection</h2>
-          <p>Comfort Shaped Like Clouds</p>
+          <h2>{content.heading}</h2>
+          <p>{content.tagline}</p>
           <div className="home-nimbus-icons">
-            {[
-              "Cloud Like Comfort",
-              "Soft Silhouettes",
-              "Airy Luxury",
-              "Modern Spaces",
-            ].map((label, i) => (
-              <div key={label}>
+            {content.features.map((label, i) => (
+              <div key={i}>
                 <Image
                   src={shopFile(`Maple_Banner_${13 + i}.svg`)}
                   alt=""
@@ -61,7 +60,7 @@ export function HomeNimbus() {
             href="/pages/nimbus-collection"
             onFocus={() => setOpen(true)}
           >
-            Shop Now
+            {content.cta}
           </Link>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import campaigns from "@/data/diwali-campaigns.json";
 import { defaultCategoryPages } from "./category-content-defaults";
 import { defaultStoryPage } from "./story-content-defaults";
+import { defaultHomeDetails } from "./home-details-defaults";
 import posts from "@/data/instagram-posts.json";
 import { homeSectionKeys, type StorefrontContent } from "@shopmaple/contracts";
 
@@ -19,6 +20,7 @@ export const defaultStorefrontContent: StorefrontContent = {
   schemaVersion: 1,
   landingPages: defaultCategoryPages,
   storyPage: defaultStoryPage,
+  homeDetails: defaultHomeDetails,
   homeSections: homeSectionKeys.map((key) => ({ key, enabled: true })),
   homeCopy: {
     categoryHeading: "Shop By Category",

@@ -4,13 +4,18 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import { shopFile } from "@/lib/format";
-const tiles = [
-  ["Sofas", "25,000", "sofas", "engaged_5.jpg?v=1767435623"],
-  ["Chairs", "8,000", "chairs", "engaged_6_1.jpg?v=1767444019"],
-  ["Tables", "12,000", "tables", "engaged_8_1.jpg?v=1767444598"],
-  ["Beds", "55,000", "beds", "engaged_9_1.jpg?v=1767448207"],
-];
-export function Hero() {
+import type { HomeDetails } from "@shopmaple/contracts";
+import { defaultHomeDetails } from "@/lib/home-details-defaults";
+
+const tileImages = {
+  sofas: "engaged_5.jpg?v=1767435623",
+  chairs: "engaged_6_1.jpg?v=1767444019",
+  tables: "engaged_8_1.jpg?v=1767444598",
+  beds: "engaged_9_1.jpg?v=1767448207",
+};
+export function Hero({
+  content = defaultHomeDetails.hero,
+}: { content?: HomeDetails["hero"] } = {}) {
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   function toggle() {
@@ -47,7 +52,7 @@ export function Hero() {
         />
         <div className="hero-introduction">
           <Link className="hero-cta" href="/pages/nimbus-collection">
-            Explore Collection <ArrowUpRight size={17} />
+            {content.cta} <ArrowUpRight size={17} />
           </Link>
         </div>
         <button
@@ -59,22 +64,22 @@ export function Hero() {
         </button>
       </div>
       <div className="hero-categories">
-        {tiles.map(([name, price, category, image]) => (
+        {content.tiles.map(({ key, label, priceLabel }) => (
           <Link
-            href={(category === "beds" ? "/collections/" : "/pages/") + category}
+            href={(key === "beds" ? "/collections/" : "/pages/") + key}
             className="category-tile"
-            key={category}
+            key={key}
           >
             <Image
-              src={shopFile(image!)}
+              src={shopFile(tileImages[key])}
               alt=""
               fill
               sizes="(max-width: 700px) 48vw, 25vw"
               preload
             />
             <div>
-              <h2>{name}</h2>
-              <p>Starting from ₹{price}</p>
+              <h2>{label}</h2>
+              <p>{priceLabel}</p>
             </div>
             <ArrowUpRight aria-hidden size={21} />
           </Link>

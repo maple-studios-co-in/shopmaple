@@ -2,6 +2,7 @@ import { z } from "zod";
 import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
 import { storyPageContentSchema } from "./story-content";
+import { homeDetailsSchema } from "./home-details";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -188,6 +189,8 @@ export const storefrontContentSchema = z
     landingPages: z.array(categoryPageContentSchema).max(3).default([]),
     // Legacy revisions omit this field and retain the original Our Story template.
     storyPage: storyPageContentSchema.optional(),
+    // Legacy revisions retain the original homepage template copy.
+    homeDetails: homeDetailsSchema.optional(),
     motion: z
       .object({
         autoplaySocial: z.boolean(),
