@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import { shopFile } from "@/lib/format";
 const tiles = [
@@ -13,20 +13,6 @@ const tiles = [
 export function Hero() {
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setTimeout(() => {
-      const v = video.current;
-      if (v) {
-        v.src = "/media/workshop.mp4";
-        void v
-          .play()
-          .then(() => setPlaying(true))
-          .catch(() => {});
-      }
-    }, 1500);
-    return () => window.clearTimeout(timer);
-  }, []);
   function toggle() {
     const v = video.current;
     if (!v) return;
@@ -59,9 +45,13 @@ export function Hero() {
           preload="none"
           aria-label="Maple furniture craftsmanship"
         />
-        <Link className="hero-cta" href="/collections/all">
-          Explore Collection
-        </Link>
+        <div className="hero-introduction">
+          <p>Thoughtfully made. Unmistakably yours.</p>
+          <h1>Made for the way you live.</h1>
+          <Link className="hero-cta" href="/collections/all">
+            Explore furniture <ArrowUpRight size={17} />
+          </Link>
+        </div>
         <button
           className="video-control"
           onClick={toggle}
@@ -71,7 +61,7 @@ export function Hero() {
         </button>
       </div>
       <div className="hero-categories">
-        {tiles.map(([name, price, category, image]) => (
+        {tiles.map(([name, , category, image]) => (
           <Link
             href={"/collections/" + category}
             className="category-tile"
@@ -86,7 +76,7 @@ export function Hero() {
             />
             <div>
               <h2>{name}</h2>
-              <p>Starting from ₹{price}</p>
+              <p>Explore collection</p>
             </div>
             <ArrowUpRight aria-hidden size={21} />
           </Link>

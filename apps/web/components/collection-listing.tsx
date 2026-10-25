@@ -173,7 +173,18 @@ export function CollectionListing(props: Props) {
   );
   return (
     <section className="collection-parity" aria-label={title}>
-      <h1 className="sr-only">{title}</h1>
+      <header className="collection-heading">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span aria-hidden="true">/</span>
+          <span>{title}</span>
+        </nav>
+        <h1>{title}</h1>
+        <p>
+          Find a piece that feels at home. Explore the collection and choose
+          your preferred options.
+        </p>
+      </header>
       <div className="collection-parity-toolbar">
         <h2>Filters</h2>
         <button
@@ -242,11 +253,62 @@ export function CollectionListing(props: Props) {
         </aside>
         <div className="collection-results" id="collection-results">
           {filtered && (
-            <p className="collection-filter-summary">
-              {query.q ? `Results for “${query.q}” · ` : ""}
-              {total} of {collectionTotal} preview pieces{" "}
-              <Link href={`/collections/${handle}`}>Clear filters</Link>
-            </p>
+            <div className="collection-applied" aria-label="Applied filters">
+              <p className="collection-filter-summary">
+                {total} of {collectionTotal} pieces
+              </p>
+              <div>
+                {(
+                  [
+                    ["q", query.q ? `Search: ${query.q}` : "", "search"],
+                    [
+                      "availability",
+                      query.availability
+                        ? query.availability === "in"
+                          ? "In stock"
+                          : "Out of stock"
+                        : "",
+                      "availability",
+                    ],
+                    [
+                      "min",
+                      query.min ? `From ${money(Number(query.min) * 100)}` : "",
+                      "minimum price",
+                    ],
+                    [
+                      "max",
+                      query.max
+                        ? `Up to ${money(Number(query.max) * 100)}`
+                        : "",
+                      "maximum price",
+                    ],
+                    [
+                      "category",
+                      query.category ? categoryNames[query.category] : "",
+                      "category",
+                    ],
+                  ] as const
+                )
+                  .filter(([, label]) => label)
+                  .map(([key, label, name]) => (
+                    <Link
+                      className="collection-filter-chip"
+                      key={key}
+                      href={collectionHref(handle, { ...query, [key]: "" })}
+                      aria-label={`Remove ${name} filter`}
+                    >
+                      {label}
+                      <X size={13} aria-hidden="true" />
+                    </Link>
+                  ))}
+                <Link
+                  className="collection-reset"
+                  href={`/collections/${handle}`}
+                >
+                  Clear all
+                </Link>
+              </div>
+            </div>
           )}
           {products.length ? (
             <div

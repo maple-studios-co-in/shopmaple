@@ -37,7 +37,12 @@ jobs:
         run: |
           createdb -h 127.0.0.1 -p 55439 -U shopmaple shopmaple_test
           DATABASE_URL=postgresql://shopmaple:shopmaple@127.0.0.1:55439/shopmaple_test npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          createdb -h 127.0.0.1 -p 55439 -U shopmaple shopmaple_preview_import_test
+          DATABASE_URL=postgresql://shopmaple:shopmaple@127.0.0.1:55439/shopmaple_preview_import_test npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
       - run: npm run catalog:import
       - run: npm test
+      - run: npm run test:deploy:db
+        env:
+          PREVIEW_IMPORT_TEST_DATABASE_URL: postgresql://shopmaple:shopmaple@127.0.0.1:55439/shopmaple_preview_import_test
       - run: npm run typecheck
       - run: npm run build

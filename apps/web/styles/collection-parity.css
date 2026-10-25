@@ -360,3 +360,107 @@
     display: none;
   }
 }
+
+.collection-heading {
+  padding: 6px 0 28px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.collection-heading .breadcrumb {
+  margin-bottom: 20px;
+  font-size: 12px;
+}
+.collection-heading h1 {
+  font-size: clamp(32px, 4vw, 48px);
+}
+.collection-heading > p {
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 540px;
+  margin-top: 14px;
+}
+.collection-desktop-filters {
+  align-self: start;
+  background: #fff9;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.collection-applied {
+  margin: 0 0 20px;
+}
+.collection-applied .collection-filter-summary {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.collection-applied > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.collection-filter-chip {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  background: #fff;
+  padding: 7px 12px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+}
+.collection-reset {
+  font-size: 12px;
+  text-decoration: underline;
+  padding: 8px;
+}
+.collection-products .product-card-image {
+  border-radius: 10px;
+}
+.product-card-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 32px;
+}
+.product-card-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.product-card-price del {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+@media (max-width: 749px) {
+  .collection-heading {
+    padding-bottom: 16px;
+    margin-bottom: 14px;
+  }
+  .collection-heading .breadcrumb {
+    margin-bottom: 14px;
+  }
+  .collection-heading > p {
+    font-size: 12px;
+  }
+  .collection-products.is-compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .collection-products.is-compact .save-button {
+    display: grid;
+  }
+  .collection-products .save-button {
+    width: 38px;
+    height: 38px;
+    top: 6px;
+    right: 6px;
+  }
+  .collection-density {
+    display: none;
+  }
+}

@@ -116,3 +116,6 @@ export const enquiryReceiptSchema = z.object({
   notificationSent: z.literal(false),
 });
 export type EnquiryReceipt = z.infer<typeof enquiryReceiptSchema>;
+
+export { checkoutInputSchema, checkoutAddressSchema, quoteRequestSchema, quoteSnapshotSchema, quoteResponseSchema } from "./checkout";
+export type { CheckoutInput, QuoteRequest, QuoteSnapshot } from "./checkout";

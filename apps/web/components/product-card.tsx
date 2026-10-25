@@ -49,6 +49,16 @@ export function ProductCard({ product }: { product: Product }) {
         </span>
         {sale ? <del>{shopMoney(cheapest.compareAtPaise!)}</del> : null}
       </p>
+      {product.variants.length > 1 && (
+        <Link
+          className="product-card-options"
+          href={"/products/" + product.handle}
+          aria-label={`View ${product.variants.length} options for ${product.title}`}
+        >
+          {product.variants.length} options{" "}
+          <ArrowUpRight size={13} aria-hidden="true" />
+        </Link>
+      )}
     </article>
   );
 }

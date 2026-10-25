@@ -1,0 +1,21 @@
+title = "Shopmaple secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public Shopify theme section IDs, not credentials; imported landing-page content"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^apps/web/data/landing-(story|nimbus)\.json$''']
+regexTarget = "secret"
+regexes = ['''^(section_AV6UjQ|divider_K67cEq|section_E3gzag|section_BBYid8|section_hrKc6w)$''']
+
+[[allowlists]]
+description = "Exact public Razorpay HMAC example fixture; verified in official Standard Checkout integration docs on 2026-10-25"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^apps/api/test/razorpay\.test\.ts$''']
+regexTarget = "secret"
+# https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/
+regexes = ['''^EnLs21M47BllR3X8PSFtjtbd$''']

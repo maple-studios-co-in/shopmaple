@@ -1,0 +1,230 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { JSDOM } from "jsdom";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import type { Product } from "@shopmaple/contracts";
+import { CollectionListing } from "../components/collection-listing";
+import { ProductCard } from "../components/product-card";
+import { Hero } from "../components/hero";
+import { ProductDetail } from "../components/product-detail";
+import { ShopProvider } from "../components/shop-provider";
+import { collectionQuery } from "../lib/collections";
+
+const dom = new JSDOM("<!doctype html><div id='root'></div>", {
+  url: "http://localhost:3000",
+});
+Object.assign(globalThis, {
+  window: dom.window,
+  self: dom.window,
+  document: dom.window.document,
+  localStorage: dom.window.localStorage,
+  HTMLElement: dom.window.HTMLElement,
+  IS_REACT_ACT_ENVIRONMENT: true,
+});
+const product: Product = {
+  id: "chair",
+  handle: "chair",
+  title: "Aero Dining Chair",
+  description: "A dining chair.",
+  category: "chairs",
+  images: ["https://example.com/blue.jpg", "https://example.com/red.jpg"],
+  published: true,
+  source: "shopify-preview",
+  sourceUpdatedAt: "2026-10-26T00:00:00Z",
+  variants: [
+    {
+      id: "blue",
+      title: "Blue",
+      sku: "BLUE",
+      pricePaise: 1000000,
+      compareAtPaise: null,
+      available: false,
+      stockPolicy: "unverified",
+    },
+    {
+      id: "red",
+      title: "Red",
+      sku: "RED",
+      pricePaise: 1200000,
+      compareAtPaise: null,
+      available: false,
+      stockPolicy: "unverified",
+    },
+  ],
+};
+async function mount(
+  children: React.ReactNode,
+  check: () => Promise<void> | void,
+) {
+  const root = createRoot(document.getElementById("root")!);
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    Response.json({
+      items: [],
+      itemCount: 0,
+      subtotalPaise: 0,
+      currency: "INR",
+      checkoutEnabled: false,
+      mode: "preview",
+    });
+  try {
+    await act(async () => root.render(<ShopProvider>{children}</ShopProvider>));
+    await check();
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previousFetch;
+  }
+}
+test("collection identifies its category and each applied filter can be removed without clearing the others", async () => {
+  await mount(
+    <CollectionListing
+      handle="all"
+      title="All Furniture"
+      query={collectionQuery({
+        q: "chair",
+        min: "100",
+        category: "chairs",
+        availability: "out",
+        sort: "price-desc",
+        page: "2",
+      })}
+      products={[product]}
+      total={1}
+      collectionTotal={20}
+      limit={24}
+      inStock={0}
+      outOfStock={20}
+      highestPrice={1200000}
+    />,
+    () => {
+      assert.equal(
+        document.querySelector("h1")?.classList.contains("sr-only"),
+        false,
+        "collection name must be visible",
+      );
+      const remove = document.querySelector<HTMLAnchorElement>(
+        'a[aria-label="Remove category filter"]',
+      );
+      assert.ok(remove, "an individual category filter can be removed");
+      const url = new URL(remove.href);
+      assert.equal(url.searchParams.get("category"), null);
+      assert.equal(url.searchParams.get("q"), "chair");
+      assert.equal(url.searchParams.get("min"), "100");
+      assert.equal(url.searchParams.get("availability"), "out");
+      assert.equal(url.searchParams.get("sort"), "price-desc");
+      assert.equal(url.searchParams.get("page"), null);
+    },
+  );
+});
+test("product card exposes variant choice and persists its saved state", async () => {
+  localStorage.clear();
+  await mount(<ProductCard product={product} />, async () => {
+    assert.ok(
+      document.querySelector(
+        'a[aria-label="View 2 options for Aero Dining Chair"]',
+      ),
+      "variant choices should be discoverable from the card",
+    );
+    const save = document.querySelector<HTMLButtonElement>(
+      'button[aria-label="Save Aero Dining Chair"]',
+    )!;
+    await act(async () => save.click());
+    assert.equal(save.getAttribute("aria-pressed"), "true");
+    assert.deepEqual(JSON.parse(localStorage.getItem("maple-favourites")!), [
+      "chair",
+    ]);
+  });
+});
+test("product variants update price, gallery and enquiry while delivery stays an enquiry", async () => {
+  const replacements: string[] = [];
+  const router = {
+    bfcacheId: "test",
+    back() {},
+    forward() {},
+    refresh() {},
+    hmrRefresh() {},
+    push() {},
+    replace(href: string) {
+      replacements.push(href);
+    },
+    prefetch() {},
+  };
+  await mount(
+    <AppRouterContext.Provider value={router}>
+      <ProductDetail
+        product={product}
+        presentation={{
+          variantImages: { blue: product.images[0]!, red: product.images[1]! },
+          reviewLabel: "No reviews",
+        }}
+      />
+    </AppRouterContext.Provider>,
+    async () => {
+      assert.match(
+        document.querySelector(".pdp-serviceability label")!.textContent!,
+        /Delivery enquiry/,
+        "a postcode field must not promise an availability lookup",
+      );
+      assert.doesNotMatch(
+        document.querySelector(".pdp-info")!.textContent!,
+        /Taxes included|36 Month|Delivery Across India/,
+      );
+      const option =
+        document.querySelector<HTMLInputElement>('input[value="red"]')!;
+      await act(async () => option.click());
+      assert.match(
+        document.querySelector(".pdp-price-block strong")!.textContent!,
+        /12,000/,
+      );
+      assert.equal(
+        document.querySelector(".product-main-image img")?.getAttribute("src"),
+        product.images[1],
+      );
+      assert.equal(replacements.at(-1), "?variant=red");
+      const enquiry =
+        document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+      assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");
+      assert.equal(new URL(enquiry.href).searchParams.get("sku"), "RED");
+      assert.ok(
+        document.querySelector('a[href="#product-specifications"]'),
+        "dimensions should be easy to find before enquiring",
+      );
+    },
+  );
+});
+
+test("hero keeps product discovery clear and only downloads its film when requested", async () => {
+  Object.assign(dom.window, { matchMedia: () => ({ matches: false }) });
+  dom.window.HTMLMediaElement.prototype.play = async function () {};
+  dom.window.HTMLMediaElement.prototype.pause = function () {};
+  await mount(<Hero />, async () => {
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 1700)));
+    const video = document.querySelector("video")!;
+    assert.equal(
+      video.getAttribute("src"),
+      null,
+      "the film should not consume bandwidth before a shopper requests it",
+    );
+    assert.match(
+      document.querySelector(".hero-film")!.textContent!,
+      /Made for the way you live/,
+    );
+    assert.doesNotMatch(
+      document.querySelector(".hero-categories")!.textContent!,
+      /Starting from/,
+    );
+    await act(async () =>
+      document
+        .querySelector<HTMLButtonElement>(
+          'button[aria-label="Play workshop video"]',
+        )!
+        .click(),
+    );
+    assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
+    assert.ok(
+      document.querySelector('button[aria-label="Pause workshop video"]'),
+    );
+  });
+});

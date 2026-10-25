@@ -1,0 +1,87 @@
+{
+  "request": {
+    "version": 2,
+    "items": [
+      {
+        "variantId": "keeri:maple:variant",
+        "quantity": 2
+      }
+    ],
+    "customer": {
+      "name": "Example Buyer",
+      "email": "buyer@example.test",
+      "phone": "+919876543210"
+    },
+    "billingAddress": {
+      "line1": "1 Example Road",
+      "line2": "",
+      "city": "Mumbai",
+      "stateCode": "27",
+      "pincode": "400001",
+      "country": "IN"
+    },
+    "shippingAddress": {
+      "line1": "1 Example Road",
+      "line2": "",
+      "city": "Mumbai",
+      "stateCode": "27",
+      "pincode": "400001",
+      "country": "IN"
+    },
+    "deliveryMethodId": "standard"
+  },
+  "response": {
+    "version": 2,
+    "quoteId": "example_quote",
+    "expiresAt": "2026-11-01T12:15:00.000Z",
+    "snapshotSha256": "5c7557c5604c3c3f555fcb05654bd8d726c369446f66198344a88725ba061d9a",
+    "snapshot": {
+      "version": 2,
+      "currency": "INR",
+      "policyId": "reviewed_test_v1",
+      "quoteId": "example_quote",
+      "expiresAt": "2026-11-01T12:15:00.000Z",
+      "customer": {
+        "name": "Example Buyer",
+        "email": "buyer@example.test",
+        "phone": "+919876543210"
+      },
+      "billingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "shippingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "deliveryMethodId": "standard",
+      "gstMode": "excluded",
+      "items": [
+        {
+          "variantId": "keeri:maple:variant",
+          "productId": "keeri:maple:model",
+          "title": "Example Chair",
+          "variantTitle": "Oak",
+          "sku": "EXAMPLE_CHAIR",
+          "quantity": 2,
+          "unitPricePaise": 100000,
+          "lineTotalPaise": 200000,
+          "hsn": "9403",
+          "taxRateBps": 1800
+        }
+      ],
+      "subtotalPaise": 200000,
+      "shippingPaise": 10000,
+      "taxPaise": 36000,
+      "totalPaise": 246000
+    }
+  }
+}

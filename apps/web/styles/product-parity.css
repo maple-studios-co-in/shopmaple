@@ -441,3 +441,47 @@
 .pdp-info .product-accordions details[open] {
   padding-bottom: 18px;
 }
+
+.pdp-gallery .product-main-image {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.pdp-thumbnails button,
+.pdp-variants label {
+  border-radius: 8px;
+}
+.pdp-variants legend > span {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 12px;
+  font-size: 12px;
+}
+.pdp-help-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0 4px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.pdp-serviceability > p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.pdp-serviceability button {
+  white-space: nowrap;
+}
+.pdp-custom {
+  border-radius: 10px;
+}
+#product-specifications,
+#delivery-enquiry {
+  scroll-margin-top: 24px;
+}
+@media (max-width: 749px) {
+  .pdp-benefits {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}

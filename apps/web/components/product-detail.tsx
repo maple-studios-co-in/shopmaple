@@ -11,8 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Truck,
-  ShieldCheck,
-  LockKeyhole,
+  Ruler,
+  MessageCircle,
   Star,
 } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
@@ -179,7 +179,7 @@ export function ProductDetail({
             {presentation?.reviewLabel === "No reviews" && (
               <a className="pdp-rating" href="#product-reviews">
                 {stars}
-                <span>No reviews</span>
+                <span>No reviews yet</span>
               </a>
             )}
             <div className="pdp-price-block">
@@ -196,14 +196,14 @@ export function ProductDetail({
               </div>
               {discounted && <del>{shopMoney(variant.compareAtPaise!)}</del>}
               <p>
-                {product.source === "shopify-preview"
-                  ? "Taxes included. Shipping calculated at checkout."
-                  : "Delivery and applicable taxes will be confirmed by our team."}
+                Delivery and applicable taxes will be confirmed by our team.
               </p>
             </div>
             {product.variants.length > 1 && (
               <fieldset className="pdp-variants">
-                <legend>Variants</legend>
+                <legend>
+                  Choose your option <span>{variant.title}</span>
+                </legend>
                 <div>
                   {product.variants.map((v) => (
                     <label
@@ -234,6 +234,10 @@ export function ProductDetail({
                 </div>
               </fieldset>
             )}
+            <div className="pdp-help-links">
+              <a href="#product-specifications">Dimensions & specifications</a>
+              <a href="#delivery-enquiry">Delivery enquiry</a>
+            </div>
             <div className="pdp-purchase">
               {!enquiry && (
                 <div className="quantity-control">
@@ -283,7 +287,10 @@ export function ProductDetail({
             )}
             <div className="pdp-custom">
               <h2>Customization Available</h2>
-              <p>100% Bespoke - Every element is yours to reshape.</p>
+              <p>
+                Have a size, fabric or finish in mind? Let’s discuss what’s
+                possible.
+              </p>
               <Link className="button" href={enquiryHref}>
                 SPEAK TO OUR TEAM
               </Link>
@@ -292,24 +299,25 @@ export function ProductDetail({
               <div>
                 <Truck />
                 <span>
-                  Delivery Across India
-                  <br />& Installation
+                  Delivery enquiry
+                  <br />
+                  Check your postcode
                 </span>
               </div>
               <div>
-                <ShieldCheck />
+                <Ruler />
                 <span>
-                  36 Month
+                  Your space
                   <br />
-                  Warranty*
+                  Ask about sizing
                 </span>
               </div>
               <div>
-                <LockKeyhole />
+                <MessageCircle />
                 <span>
-                  Safe & Secure
+                  Need a hand?
                   <br />
-                  Payment
+                  Speak to our team
                 </span>
               </div>
             </div>
@@ -319,12 +327,17 @@ export function ProductDetail({
             </p>
             <form
               className="pdp-serviceability"
+              id="delivery-enquiry"
               onSubmit={(e) => {
                 e.preventDefault();
                 setCheckedPin(pin);
               }}
             >
-              <label htmlFor="delivery-pincode">Check Availability</label>
+              <label htmlFor="delivery-pincode">Delivery enquiry</label>
+              <p>
+                Add your Indian postcode so our team can confirm charges and
+                lead time.
+              </p>
               <div>
                 <input
                   id="delivery-pincode"
@@ -339,7 +352,7 @@ export function ProductDetail({
                     setCheckedPin("");
                   }}
                 />
-                <button type="submit">Check</button>
+                <button type="submit">Add postcode</button>
               </div>
               {checkedPin && (
                 <p role="status">
@@ -375,8 +388,8 @@ export function ProductDetail({
                 </p>
                 <Link href={enquiryHref}>Ask about delivery</Link>
               </details>
-              <details>
-                <summary>Product Specification</summary>
+              <details id="product-specifications" open>
+                <summary>Dimensions & specifications</summary>
                 <Link href={enquiryHref}>
                   Request dimensions and specifications
                 </Link>
