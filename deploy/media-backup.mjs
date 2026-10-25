@@ -144,7 +144,10 @@ export function restoreMediaBackup(bundle, destination) {
   } finally { closeSync(verified.fd); }
 }
 
-if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+let entryPath;
+try { if (process.argv[1] && process.argv[1] !== '-') entryPath = realpathSync(process.argv[1]); }
+catch { /* Library imports can have arbitrary non-file process arguments. */ }
+if (entryPath === fileURLToPath(import.meta.url)) {
   try {
     const [command, first, second, ...extra] = process.argv.slice(2);
     let result;

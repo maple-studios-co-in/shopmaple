@@ -166,7 +166,10 @@ export async function verifyPair(pairDirectory, { pgRestorePath, timeoutMs = 30 
   await validateArtifacts(pairDirectory, record, pgRestorePath, timeoutMs); return record;
 }
 
-if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+let entryPath;
+try { if (process.argv[1] && process.argv[1] !== '-') entryPath = realpathSync(process.argv[1]); }
+catch { /* Library imports can have arbitrary non-file process arguments. */ }
+if (entryPath === fileURLToPath(import.meta.url)) {
   try {
     if (process.argv.length !== 3 || process.argv[2] !== 'production') fail('Usage: paired-backup.mjs production');
     const toolRoot = dirname(dirname(fileURLToPath(import.meta.url))), toolRevision = basename(toolRoot);
