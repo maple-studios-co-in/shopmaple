@@ -169,11 +169,9 @@ export function planCatalogueUnion(
       variants.set(variantId, {
         ...v,
         id: variantId,
-        pricePaise: v.pricePaise ?? before?.pricePaise ?? null,
-        compareAtPaise:
-          v.pricePaise === null
-            ? (before?.compareAtPaise ?? null)
-            : v.compareAtPaise,
+        // V2 MRP has no reliable tax/market basis. Keep it in Keeri, never label it a buyer price.
+        pricePaise: before?.pricePaise ?? null,
+        compareAtPaise: before?.compareAtPaise ?? null,
         available: false,
       });
       variantBindings.push({ source, externalId: v.id, targetId: variantId });
@@ -212,6 +210,7 @@ export function planCatalogueUnion(
     source,
     capturedAt: keeri.capturedAt,
     shopifyCapturedAt: shopify.capturedAt,
+    publicPricesCapturedAt: shopify.publicPricesCapturedAt,
     report: {
       shopifyProducts: shopify.products.length,
       keeriProducts: keeri.products.length,

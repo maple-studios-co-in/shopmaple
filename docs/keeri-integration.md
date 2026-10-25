@@ -47,3 +47,11 @@ Back up and checksum the isolated database before migrations/import. Restore-tes
 **After nullable catalogue rows are imported, switching the symlink to the older runtime alone is unsafe:** that version rejects null prices/categories and empty variants/images. Rollback must either retain the new compatible runtime or stop the scheduled sync, restore the exact pre-import database backup, then activate the previous release. Rehearse the database restore before activation and retain both release directories. Do not delete releases or reset Keeri/Shopify data.
 
 The legacy `deploy/sync-keeri-catalogue.ts` remains a V1-only incremental tool. Do not schedule it alongside the union runner.
+
+### Buyer-facing price evidence
+
+Shopify Admin `variant.price` is not necessarily the price an Indian buyer sees. On 2026-10-26, Aera's raw Admin amount was INR 26,665 while its exact-variant public product JSON and `contextualPricing(country: IN)` both returned INR 31,464.70. Keeri raw MRP values also have mixed, undocumented tax bases. Never apply a blanket multiplier or treat these amounts as confirmed customer prices.
+
+The pinned Shopify export may include `publicPrices`: source `shopify-product-json`, origin `https://shop.maplefurnishers.com`, country `IN`, currency `INR`, capture timestamp, and products/variants keyed by full Shopify IDs with integer `pricePaise` and `compareAtPaise`. Capture prices from the public product JSON in the verified INR buyer context. The consumer rejects foreign contexts, duplicate identities, prices attached to another product, out-of-range money, and evidence captured before the source snapshot or in the future. Missing evidence becomes null; compare-at must come from the same public payload. Raw Admin price fields remain in the source snapshot, and raw Keeri MRPs remain unchanged in Keeri.
+
+For an exactly matched Keeri variant, the verified current Shopify public price is retained. Unmatched Keeri variants without an explicit verified buyer-price basis show **Price on request**. Five-minute Keeri refreshes cannot overwrite these amounts with raw MRP or resurrect revoked public-price evidence. Refresh the public-price evidence together with the pinned Shopify snapshot; `publicPricesCapturedAt` is reported separately. This does not establish tax-ready quoting or permit checkout.

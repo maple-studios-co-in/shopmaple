@@ -34,3 +34,28 @@ export function shopifyFixture() {
     ],
   };
 }
+
+export function shopifyPricedFixture() {
+  return {
+    ...shopifyFixture(),
+    publicPrices: {
+      source: "shopify-product-json",
+      origin: "https://shop.maplefurnishers.com",
+      country: "IN",
+      currency: "INR",
+      capturedAt: "2026-10-25T10:00:00Z",
+      products: [
+        {
+          id: "gid://shopify/Product/101",
+          variants: [
+            {
+              id: "gid://shopify/ProductVariant/201",
+              pricePaise: 12345,
+              compareAtPaise: 15000 as number | null,
+            },
+          ],
+        },
+      ],
+    },
+  };
+}

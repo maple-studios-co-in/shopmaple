@@ -27,6 +27,51 @@ const schema = z
     source: z.literal("shopify-admin"),
     capturedAt: z.iso.datetime({ offset: true }),
     complete: z.literal(true),
+    // Captured from the public INR buyer context; raw Admin money is not a display price.
+    publicPrices: z
+      .object({
+        source: z.literal("shopify-product-json"),
+        origin: z.literal("https://shop.maplefurnishers.com"),
+        country: z.literal("IN"),
+        currency: z.literal("INR"),
+        capturedAt: z.iso.datetime({ offset: true }),
+        products: z
+          .array(
+            z
+              .object({
+                id: z.string().regex(/^gid:\/\/shopify\/Product\/[1-9][0-9]*$/),
+                variants: z
+                  .array(
+                    z
+                      .object({
+                        id: z
+                          .string()
+                          .regex(
+                            /^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]*$/,
+                          ),
+                        pricePaise: z
+                          .number()
+                          .int()
+                          .min(1)
+                          .max(1_000_000_000)
+                          .nullable(),
+                        compareAtPaise: z
+                          .number()
+                          .int()
+                          .min(1)
+                          .max(1_000_000_000)
+                          .nullable(),
+                      })
+                      .strict(),
+                  )
+                  .max(500),
+              })
+              .strict(),
+          )
+          .max(5000),
+      })
+      .strict()
+      .optional(),
     products: z
       .array(
         z
@@ -106,6 +151,35 @@ export function adaptShopifyCatalogue(input: unknown) {
       variants.add(v.id);
     }
   }
+  const displayPrices = new Map<
+    string,
+    { pricePaise: number | null; compareAtPaise: number | null }
+  >();
+  if (data.publicPrices) {
+    const captured = Date.parse(data.publicPrices.capturedAt);
+    if (
+      captured < Date.parse(data.capturedAt) ||
+      captured > Date.now() + 60_000
+    )
+      throw new Error("INVALID_PUBLIC_PRICE_CAPTURE");
+    const seenProducts = new Set<string>();
+    for (const publicProduct of data.publicPrices.products) {
+      const sourceProduct = data.products.find(
+        (p) => p.id === publicProduct.id,
+      );
+      if (!sourceProduct || seenProducts.has(publicProduct.id))
+        throw new Error("INVALID_PUBLIC_PRICE_PRODUCT");
+      seenProducts.add(publicProduct.id);
+      for (const variant of publicProduct.variants) {
+        if (
+          !sourceProduct.variants.nodes.some((v) => v.id === variant.id) ||
+          displayPrices.has(variant.id)
+        )
+          throw new Error("INVALID_PUBLIC_PRICE_VARIANT");
+        displayPrices.set(variant.id, variant);
+      }
+    }
+  }
   const category: Record<string, string> = {
     chair: "chairs",
     chairs: "chairs",
@@ -120,6 +194,7 @@ export function adaptShopifyCatalogue(input: unknown) {
   };
   return {
     capturedAt: data.capturedAt,
+    publicPricesCapturedAt: data.publicPrices?.capturedAt ?? null,
     products: data.products
       .filter((p) => p.status !== "ARCHIVED")
       .map((p) =>
@@ -138,8 +213,11 @@ export function adaptShopifyCatalogue(input: unknown) {
             id: `preview-${v.id.split("/").at(-1)}`,
             title: v.title || "Details on request",
             sku: v.sku?.trim() || null,
-            pricePaise: v.price,
-            compareAtPaise: v.compareAtPrice,
+            pricePaise: displayPrices.get(v.id)?.pricePaise ?? null,
+            compareAtPaise:
+              displayPrices.get(v.id)?.pricePaise == null
+                ? null
+                : (displayPrices.get(v.id)?.compareAtPaise ?? null),
             available: false,
             stockPolicy: "unverified",
           })),

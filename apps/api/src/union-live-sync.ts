@@ -75,6 +75,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     ...report,
     capturedAt: snapshot.capturedAt,
     shopifySnapshotCapturedAt: plan.shopifyCapturedAt,
+    publicPricesCapturedAt: plan.publicPricesCapturedAt,
     shopifyRefreshMode: "pinned-snapshot",
     dryRun: !options.apply,
     checkoutEnabled: false,
