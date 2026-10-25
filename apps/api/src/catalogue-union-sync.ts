@@ -20,15 +20,6 @@ export async function syncCatalogueUnion(
       const previous = await tx.catalogueSyncState.findUnique({
         where: { source },
       });
-      if (previous) {
-        if (previous.capturedAt > capturedAt)
-          throw new Error("STALE_UNION_SNAPSHOT");
-        if (previous.capturedAt.getTime() === capturedAt.getTime()) {
-          if (previous.payloadHash !== payloadHash)
-            throw new Error("CONFLICTING_UNION_SNAPSHOT");
-          return { replayed: true, ...validated.report };
-        }
-      }
       const [rows, pBindings, vBindings] = await Promise.all([
         tx.product.findMany({ include: { variants: true } }),
         tx.productSourceIdentity.findMany(),
@@ -50,6 +41,15 @@ export async function syncCatalogueUnion(
           targetId: b.variantId,
         })),
       });
+      if (previous) {
+        if (previous.capturedAt > capturedAt)
+          throw new Error("STALE_UNION_SNAPSHOT");
+        if (previous.capturedAt.getTime() === capturedAt.getTime()) {
+          if (previous.payloadHash !== payloadHash)
+            throw new Error("CONFLICTING_UNION_SNAPSHOT");
+          return { replayed: true, ...plan.report };
+        }
+      }
       for (const product of plan.products) {
         const prior = rows.find((p) => p.id === product.id);
         if (prior && !["shopify-preview", plan.source].includes(prior.source))

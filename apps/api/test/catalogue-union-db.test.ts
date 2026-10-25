@@ -43,6 +43,7 @@ test("atomic union preserves cart references, identity bindings and handles acro
     (await db.cartItem.findFirst({ where: { cartId: cart.id } }))!.variantId,
     "preview-201",
   );
+  assert.equal((await syncCatalogueUnion(db, s, k, "maple")).totalProducts, 1);
   assert.equal(await db.productSourceIdentity.count(), 2);
   assert.equal(await db.variantSourceIdentity.count(), 2);
 });
