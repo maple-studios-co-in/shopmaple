@@ -6,17 +6,17 @@ import { z } from "zod";
 import { listProducts, serializeProduct } from "./catalog.js";
 import { saveEnquiry } from "./enquiries.js";
 import { currentCart, readCart, setCartQuantity, HttpError } from "./cart.js";
+import { commerceHttpError, registerCheckoutRoutes, registerPaymentWebhook, type CommerceHttpService } from "./commerce-http.js";
 
 export type AppConfig = {
   webOrigin: string;
   catalogMode: "preview";
   secureCookies: boolean;
 };
-export function createApp(db: PrismaClient, config: AppConfig) {
+export function createApp(db: PrismaClient, config: AppConfig, commerce?: CommerceHttpService) {
   const app = express();
   app.disable("x-powered-by");
   app.use(helmet());
-  app.use(express.json({ limit: "16kb" }));
   app.use(
     "/api",
     rateLimit({
@@ -26,6 +26,8 @@ export function createApp(db: PrismaClient, config: AppConfig) {
       legacyHeaders: false,
     }),
   );
+  if (commerce) registerPaymentWebhook(app, commerce);
+  app.use(express.json({ limit: "16kb" }));
   app.use("/api", (req, res, next) => {
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
@@ -92,6 +94,7 @@ export function createApp(db: PrismaClient, config: AppConfig) {
     const result=await saveEnquiry(db,req.body,req.get("Idempotency-Key"));
     res.status(result.created ? 201 : 200).json(result.receipt);
   });
+  if (commerce) registerCheckoutRoutes(app, commerce);
   app.post("/api/checkout", (_req, res) =>
     res
       .status(503)
@@ -116,6 +119,7 @@ export function createApp(db: PrismaClient, config: AppConfig) {
         });
       return;
     }
+    error = commerceHttpError(error) ?? error;
     if (error instanceof HttpError) {
       res
         .status(error.status)

@@ -1,0 +1,23 @@
+# Project engineering rules
+
+These rules apply across the monorepo. Read any more-specific `AGENTS.md` before changing that area.
+
+## Test-driven development
+
+- Every new feature, defect fix, behavior change, and refactor uses the RED → GREEN → REFACTOR loop in [docs/testing.md](docs/testing.md).
+- Before implementation, write a behavior test and run it. Record the exact command and the expected failing assertion. An import error, broken fixture, missing database, or accidental syntax error is not adequate RED evidence.
+- Implement only enough to pass. Run the focused test, then affected integration tests and the entire project suite before completion. Refactor only while green.
+- Tests assert observable behavior with independent expected values. Do not assert source text, mock existence, or implementation structure merely to increase coverage.
+- Use real business logic and the dedicated test database. Mock only external transport boundaries; never send test orders, messages, or payments to live systems.
+- Existing code is not retroactively TDD. Add characterization tests for behavior being changed, then a failing regression test for the intended change. Report remaining untested areas honestly.
+- Pure prose, generated output, and declarative configuration do not need artificial unit tests. Validate with the actual parser, build, scanner, or workflow. Any custom executable logic still requires behavior tests first.
+- Include RED/GREEN commands, results, and limitations in the PR. Do not claim a failing suite passed or omit unrelated failures. Never change a test only to conceal a real failure.
+
+## Security and delivery
+
+- Follow [SECURITY.md](SECURITY.md). Run dependency, secret, and static checks for each implementation increment and again on the final commit. Review findings before merge.
+- Changes to authorization, checkout, payments, webhooks, synchronization, or persistence require adversarial regression cases and a security review of the final diff.
+- Keep credentials, personal customer data, and production database URLs out of source, logs, fixtures, and reports. Scan with redaction. Do not weaken gates or add broad allowlists to make CI green.
+- Use Node.js 22. Install from the lockfile. Never run destructive integration tests against development or production data.
+- Keep checkout disabled until the documented live integration and operational release gates pass. A passing local suite or merged PR is not a production deployment or proof of a working merchant account.
+- Parallel agents must have explicit, separate file ownership. Coordinate shared contracts and migrations before editing; the integrating agent runs the complete suite after all changes land.

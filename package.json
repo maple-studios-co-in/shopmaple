@@ -19,7 +19,12 @@
     "test": "npm run test --workspaces --if-present",
     "db:generate": "npm run db:generate -w @shopmaple/api",
     "db:migrate": "npm run db:migrate -w @shopmaple/api",
-    "catalog:import": "tsx --env-file=.env scripts/import-preview.ts"
+    "catalog:import": "tsx --env-file=.env scripts/import-preview.ts",
+    "security:dependencies": "npm audit --audit-level=high",
+    "security:secrets": "gitleaks git --redact --no-banner --log-opts=--all .",
+    "security:secrets:staged": "gitleaks git --redact --no-banner --pre-commit --staged .",
+    "security:static": "semgrep scan --config p/javascript --config p/typescript --config p/nodejs --metrics=off --disable-version-check --error --strict apps packages scripts",
+    "security:check": "npm run security:dependencies && npm run security:secrets && npm run security:static"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

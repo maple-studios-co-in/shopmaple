@@ -211,42 +211,61 @@ export function createOrderService(db: PrismaClient, options: Options) {
   function binding(attempt: CheckoutAttempt) {
     return { attemptId: attempt.id, reservationId: attempt.reservationId!, snapshotSha256: hash(canonical(attempt.snapshot)) };
   }
-  async function reconcile(inboxId: string, failureCode: string) {
-    // A delayed failing worker cannot undo a concurrent successful worker's completion.
-    await db.paymentWebhookInbox.updateMany({ where: { id: inboxId, merchantScope, state: { in: ["pending", "reconciliation_required"] } }, data: { state: "reconciliation_required", failureCode } });
-    return db.paymentWebhookInbox.findUniqueOrThrow({ where: { id: inboxId } });
+  type WorkerClaim = { leaseToken: string };
+  function assertLease(inbox: { leaseToken: string | null; leaseExpiresAt: Date | null }, claim?: WorkerClaim) {
+    if (claim) {
+      if (inbox.leaseToken !== claim.leaseToken || !inbox.leaseExpiresAt || inbox.leaseExpiresAt <= now())
+        throw new OrderFlowError("WORKER_LEASE_LOST");
+    } else if (inbox.leaseToken !== null) throw new OrderFlowError("WORKER_LEASE_REQUIRED");
   }
-  async function processWebhook(inboxId: string) {
+  const leaseWhere = (claim?: WorkerClaim) => claim
+    ? { leaseToken: claim.leaseToken, leaseExpiresAt: { gt: now() } }
+    : { leaseToken: null };
+  async function reconcile(inboxId: string, failureCode: string, claim?: WorkerClaim) {
+    // A delayed failing worker cannot undo a concurrent successful worker's completion.
+    await db.paymentWebhookInbox.updateMany({ where: { id: inboxId, merchantScope, ...leaseWhere(claim), state: { in: ["pending", "reconciliation_required"] } }, data: { state: "reconciliation_required", failureCode } });
+    const current = await db.paymentWebhookInbox.findUniqueOrThrow({ where: { id: inboxId } });
+    assertLease(current, claim);
+    return current;
+  }
+  async function processWebhook(inboxId: string, claim?: WorkerClaim) {
     const inbox = await db.paymentWebhookInbox.findFirst({ where: { id: inboxId, merchantScope } });
     if (!inbox) throw new OrderFlowError("WEBHOOK_NOT_FOUND");
+    assertLease(inbox, claim);
     if (["processed", "ignored"].includes(inbox.state)) return inbox;
     const attempt = await db.checkoutAttempt.findFirst({ where: { providerOrderId: inbox.providerOrderId, merchantScope } });
-    if (!attempt || !inbox.providerOrderId || !inbox.paymentId) return reconcile(inboxId, "UNKNOWN_PROVIDER_ORDER");
-    if (attempt.state === "captured" && attempt.paymentId !== inbox.paymentId) return reconcile(inboxId, "PAYMENT_ID_CONFLICT");
-    if (!["awaiting_payment", "captured"].includes(attempt.state)) return reconcile(inboxId, "ORDER_STATE_REQUIRES_RECONCILIATION");
+    if (!attempt || !inbox.providerOrderId || !inbox.paymentId) return reconcile(inboxId, "UNKNOWN_PROVIDER_ORDER", claim);
+    if (attempt.state === "captured" && attempt.paymentId !== inbox.paymentId) return reconcile(inboxId, "PAYMENT_ID_CONFLICT", claim);
+    if (!["awaiting_payment", "captured"].includes(attempt.state)) return reconcile(inboxId, "ORDER_STATE_REQUIRES_RECONCILIATION", claim);
     if (attempt.state !== "captured") {
       if (!reservations || !attempt.reservationId || !attempt.reservationExpiresAt || attempt.reservationExpiresAt <= now())
-        return reconcile(inboxId, "RESERVATION_EXPIRED_OR_UNAVAILABLE");
+        return reconcile(inboxId, "RESERVATION_EXPIRED_OR_UNAVAILABLE", claim);
       try {
-        if (!(await reservations.verify(binding(attempt)))) return reconcile(inboxId, "RESERVATION_INVALID");
+        if (!(await reservations.verify(binding(attempt)))) return reconcile(inboxId, "RESERVATION_INVALID", claim);
       } catch {
-        return reconcile(inboxId, "RESERVATION_UNCERTAIN");
+        return reconcile(inboxId, "RESERVATION_UNCERTAIN", claim);
       }
     }
     try {
       // Event data is only a lookup hint. Persisted money and a fresh authenticated fetch authorize capture.
       await gateway.verifyCapturedPayment({ orderId: inbox.providerOrderId, amountPaise: attempt.amountPaise, currency: "INR" }, inbox.paymentId);
     } catch (error) {
-      return reconcile(inboxId, error instanceof PaymentGatewayError ? error.code : "PAYMENT_VERIFICATION_UNAVAILABLE");
+      return reconcile(inboxId, error instanceof PaymentGatewayError ? error.code : "PAYMENT_VERIFICATION_UNAVAILABLE", claim);
     }
     try {
       return await transaction(db, async tx => {
         const currentInbox = await tx.paymentWebhookInbox.findUniqueOrThrow({ where: { id: inboxId } });
+        assertLease(currentInbox, claim);
         if (currentInbox.state === "processed") return currentInbox;
         const current = await tx.checkoutAttempt.findUniqueOrThrow({ where: { id: attempt.id } });
-        const finish = (state: string, failureCode: string | null = null) => tx.paymentWebhookInbox.update({
-          where: { id: inboxId }, data: { state, failureCode, ...(state === "processed" ? { processedAt: now() } : {}) },
-        });
+        const finish = async (state: string, failureCode: string | null = null) => {
+          const updated = await tx.paymentWebhookInbox.updateMany({
+            where: { id: inboxId, merchantScope, ...leaseWhere(claim) },
+            data: { state, failureCode, ...(state === "processed" ? { processedAt: now() } : {}) },
+          });
+          if (updated.count !== 1) throw new OrderFlowError(claim ? "WORKER_LEASE_LOST" : "WORKER_LEASE_REQUIRED");
+          return tx.paymentWebhookInbox.findUniqueOrThrow({ where: { id: inboxId } });
+        };
         if (current.state === "captured") {
           return current.paymentId === inbox.paymentId ? finish("processed") : finish("reconciliation_required", "PAYMENT_ID_CONFLICT");
         }
@@ -263,10 +282,10 @@ export function createOrderService(db: PrismaClient, options: Options) {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
-        return reconcile(inboxId, "PAYMENT_ID_CONFLICT");
+        return reconcile(inboxId, "PAYMENT_ID_CONFLICT", claim);
       // Operational database failure propagates: the transaction rolls back, leaving the inbox retryable.
       throw error;
     }
   }
-  return { freezeCart, createProviderOrder, ingestWebhook, processWebhook };
+  return { freezeCart, getAttempt: ownedAttempt, createProviderOrder, ingestWebhook, processWebhook };
 }

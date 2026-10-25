@@ -104,9 +104,16 @@ model PaymentWebhookInbox {
   failureCode String?
   receivedAt DateTime @default(now())
   processedAt DateTime?
+  workerState String @default("pending")
+  deliveryAttempts Int @default(0)
+  nextAttemptAt DateTime @default(dbgenerated("timezone('UTC'::text, now())"))
+  leaseToken String?
+  leaseExpiresAt DateTime?
+  workerFailureCode String?
   @@unique([merchantScope, eventId])
   @@unique([merchantScope, bodySha256])
   @@index([state, receivedAt])
+  @@index([merchantScope, workerState, nextAttemptAt])
 }
 
 model OrderOutbox {
@@ -115,7 +122,15 @@ model OrderOutbox {
   kind String
   payload Json
   state String @default("pending")
+  deliveryAttempts Int @default(0)
+  nextAttemptAt DateTime @default(dbgenerated("timezone('UTC'::text, now())"))
+  leaseToken String?
+  leaseExpiresAt DateTime?
+  failureCode String?
+  deliveredAt DateTime?
+  externalOrderId String?
   createdAt DateTime @default(now())
   @@unique([attemptId, kind])
   @@index([state, createdAt])
+  @@index([state, nextAttemptAt])
 }
