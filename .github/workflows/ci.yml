@@ -8,6 +8,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      PG_BIN_DIRECTORY: /usr/lib/postgresql/17/bin
     services:
       postgres:
         image: postgres:17-alpine
@@ -27,6 +29,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Install PostgreSQL 17 recovery clients
+        run: |
+          if test -x /usr/lib/postgresql/17/bin/pg_dump && test -x /usr/lib/postgresql/17/bin/pg_restore; then exit 0; fi
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error --location https://www.postgresql.org/media/keys/ACCC4CF8.asc --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          . /etc/os-release
+          printf 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/shopmaple-pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client-17
       - run: npm ci
       - run: cp .env.example .env
       - run: npm run db:generate

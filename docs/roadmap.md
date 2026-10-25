@@ -8,17 +8,17 @@ PR #18 is merged and deployed: gallery keyboard/swipe/load transitions, optional
 
 PR #19 is merged and deployed: Shopify display fields after exact matches, honest variant photo/default/item-code presentation, original blog index layout/excerpts/order and removal of the obsolete Chairs self-link. Runtime26a7826 matches merge99efc65;369tests, CI, scanners, independent review, restore-tested backup and public/browser checks passed. All539products/1050variants and identity/pricing/stock hashes were preserved.
 
-PR #20 campaign scheduling is merged (`94020fc`, reviewed head `d65916f`) and awaits server capacity before deployment. 393 tests, builds, typechecks, eight CI checks, final-commit scanners, independent review and a local publisher/browser workflow passed. Production remains runtime26a7826. Private publisher activation remains pending.
+PR #20 campaign scheduling and PR #21 original Shopify product disclosure copy are merged and deployed together at runtime26bd9aa, identical tree to main8e83717. Application verification:414 tests, types/builds, CI, scanners and independent review. Operational importer7 tests and disk guard9 tests passed. Exactly186 source PDP captures persisted;539 products/1050 variants and identity/price/stock hashes were preserved. Public and mobile browser checks passed. Publisher activation remains pending.
 
-Current increment: [Shopify product disclosure copy](shopify-product-copy.md), importing source rich-text metafields with exact identities, explicit empty sections, safe semantic rendering and database persistence. Local implementation is under integrated verification; it is not deployed.
+Current increment: [paired database/media backups](paired-backups.md), including an isolated real application restore drill. The prior release has a verified one-time pair and checksum-verified off-host local copy; automated scheduling/off-host retention must be evidenced separately. A fresh [category-route parity audit](audits/2026-10-26-category-routes.md) confirms `/collections/chairs` has its own legacy source template, distinct from `/pages/chairs`; a redirect would not satisfy parity.
 
 Priority order remaining:
 
 1. Private publisher activation and production staff workflow verification; decide enquiry access.
-2. Deliberately reconcile remaining duplicate variant identities; import source PDP rich-text metafields without guessing prices, stock or missing copy.
+2. Deliberately reconcile remaining duplicate variant identities without guessing prices or stock. Source PDP rich-text import is deployed.
 3. Verify remaining route/mobile/state parity, including the source Chairs collection landing route. Blog and obsolete self-link fixes are deployed.
 4. Install paired database/media backups, restore/reconcile a pair and arrange off-host retention/alerts.
-5. Campaign scheduling; enquiry assignment/notes and notification delivery with retries.
+5. Enquiry assignment/notes and notification delivery with retries. Campaign scheduling is deployed.
 6. Measured performance/accessibility; product hover/menu feedback where useful, preserving reduced-motion and source layout.
 7. Reviews, newsletter, account/order history and returns integration.
 8. Approved shipping/packing, merchant verification and sandbox payment/Keeri order recovery before checkout activation.

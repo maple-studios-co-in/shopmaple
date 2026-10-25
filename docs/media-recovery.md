@@ -4,6 +4,8 @@
 
 ## Scope and current operational gap
 
+The new [paired backup job](paired-backups.md) implements database/media orchestration and completion verification. It does not retroactively establish deployment; consult the latest release evidence for the installed schedule. The standalone file-tool details below remain applicable.
+
 The production upload root is `/home/deploy/shopmaple/shared/media` (0700). A read-only check on 2026-10-26 found zero uploaded files. This does not establish recovery for future uploads.
 
 The existing ShopMaple nightly job runs at 02:47 UTC. It uses PostgreSQL 16 `pg_dump -Fc` against the isolated socket/port, writes a `.partial` file, renames it after success, and writes a SHA-256 sidecar. It backs up the database only. No media backup schedule was installed by this change. The separate Keeri backup job is not a ShopMaple uploaded-media backup.
