@@ -141,6 +141,10 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   hashes.add(match[1]!);
  }
  const document = record(content);
+ const merchandising = record(document.homeMerchandising);
+ // Hidden tiles remain part of the published document and use the same private-media gate.
+ for (const rail of [merchandising.categories, merchandising.offers])
+  for (const item of list(rail)) image(record(item).image);
  for (const item of list(document.instagramPosts)) image(record(item).src);
  for (const item of list(document.campaigns)) { const artwork = record(record(item).artwork); image(artwork.desktopImage); image(artwork.mobileImage); }
  for (const item of list(document.pages)) { const banner = record(record(item).banner); image(banner.desktopImage); image(banner.mobileImage); }

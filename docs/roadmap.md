@@ -20,7 +20,9 @@ PR #26 is merged as7aec707 after all eight exact-head CI checks at26d276a. The [
 
 PR #27 is merged as65113a5 after all eight exact-head CI checks atdec9a40. The [Contact, Bulk Enquiry and Returns increment](releases/2026-10-26-service-pages.md) adds typed existing-page content controls while preserving forms, fixed destinations and operational warnings.510 integrated tests, types/build, scanners, independent review and bounded desktop/mobile checks pass. Not deployed.
 
-The current [policy/blog increment](releases/2026-10-26-editorial-content.md) adds sparse structured copy controls for the existing policies, blog titles and articles. Original text and layouts remain defaults, and imported tables now render valid structure with readable keyboard scrolling.536 integrated tests, types/build, scanners, independent review and bounded browser checks pass. Exact-head CI/merge pending. New article authoring, structural editing and further media/merchandising controls remain open. No production deployment claimed.
+PR #28 is merged as284be7a after eight exact-head CI checks atf3c85e6. The [policy/blog increment](releases/2026-10-26-editorial-content.md) adds sparse structured copy controls for the existing policies, blog titles and articles. Original text and layouts remain defaults, and imported tables now render valid structure with readable keyboard scrolling.536 integrated tests, types/build, scanners, independent review and bounded browser checks pass. Not deployed.
+
+The [homepage merchandising increment](releases/2026-10-26-home-merchandising.md) adds two product rails and category/offer tile controls. Staff select and reorder catalogue handles, edit tile artwork and canonical collection destinations, and save drafts through the existing publishing workflow. Original source defaults remain; Keeri prices and stock are not editable in this CMS.557 tests, types/build, scanners, independent review and bounded browser checks pass. Exact-head CI/merge pending; not deployed.
 
 Priority order remaining:
 

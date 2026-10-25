@@ -282,6 +282,17 @@
   font-size: 12px;
   padding: 8px 12px;
 }
+.admin-home-merchandising .admin-section-list li > div:first-child {
+  display: grid;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  align-self: stretch;
+}
+.admin-home-merchandising .admin-section-list li > .admin-actions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
 .admin-check {
   display: flex;
   gap: 12px;

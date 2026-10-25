@@ -12,9 +12,13 @@ export {
   contentPageSchema,
   contentLinkSchema,
   contentImageSchema,
+  homeMerchandisingSchema,
+  homeCollectionTileSchema,
 } from "./content";
 export type {
   StorefrontContent,
+  HomeMerchandising,
+  HomeCollectionTile,
   CampaignContent,
   ContentPage,
 } from "./content";

@@ -89,6 +89,33 @@ export const contentImageSchema = z
       return false;
     }
   }, "Use approved Maple media");
+const merchandisingSlug = (max: number) => z.string().max(max).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const merchandisingText = (max: number) => z.string().max(max).refine(
+  value => value.trim().length > 0 && !/[\u0000-\u001f\u007f]/.test(value),
+  "Use nonblank text without control characters",
+);
+export const homeCollectionTileSchema = z.object({
+  key: merchandisingSlug(80),
+  title: merchandisingText(120),
+  collectionHandle: merchandisingSlug(200),
+  image: contentImageSchema,
+  alt: merchandisingText(200),
+  enabled: z.boolean(),
+}).strict();
+const productRailSchema = z.array(merchandisingSlug(200)).max(12).refine(
+  handles => new Set(handles).size === handles.length, "Product handles must be unique",
+);
+const collectionRailSchema = z.array(homeCollectionTileSchema).max(12).refine(
+  tiles => new Set(tiles.map(tile => tile.key)).size === tiles.length, "Collection tile keys must be unique",
+);
+export const homeMerchandisingSchema = z.object({
+  bestsellers: productRailSchema,
+  chairs: productRailSchema,
+  categories: collectionRailSchema,
+  offers: collectionRailSchema,
+}).strict();
+export type HomeCollectionTile = z.infer<typeof homeCollectionTileSchema>;
+export type HomeMerchandising = z.infer<typeof homeMerchandisingSchema>;
 const socialLink = z
   .string()
   .max(300)
@@ -195,6 +222,7 @@ export const storefrontContentSchema = z
     storyPage: storyPageContentSchema.optional(),
     // Legacy revisions retain the original homepage template copy.
     homeDetails: homeDetailsSchema.optional(),
+    homeMerchandising: homeMerchandisingSchema.optional(),
     // Legacy revisions retain the original Nimbus collection template copy.
     nimbusPage: nimbusPageContentSchema.optional(),
     // Legacy revisions retain the original service page templates.
