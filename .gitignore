@@ -27,3 +27,7 @@ coverage/
 /uploads/
 playwright-report/
 test-results/
+
+.local/
+.superpowers/
+.impeccable/review/
