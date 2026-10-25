@@ -31,7 +31,22 @@ test("V2 rejects cross-tenant and malformed Shopify evidence, and respects chann
   assert.equal(adaptKeeriExportV2(data, "maple").products.length, 0);
 });
 
-test('V2 source empty SKU becomes unknown rather than suppressing the product',()=>{
- const x=v2Fixture(); x.models[0]!.variants[0]!.sku='';
- assert.equal(adaptKeeriExportV2(x,'maple').products[0]!.variants[0]!.sku,null);
+test("V2 source empty SKU becomes unknown rather than suppressing the product", () => {
+  const x = v2Fixture();
+  x.models[0]!.variants[0]!.sku = "";
+  assert.equal(
+    adaptKeeriExportV2(x, "maple").products[0]!.variants[0]!.sku,
+    null,
+  );
+});
+
+test("V2 unknown stock policy stays unverified and never implies availability", () => {
+  const x = v2Fixture();
+  const variant = { ...x.models[0]!.variants[0]!, stockPolicy: "unverified" };
+  const p = adaptKeeriExportV2(
+    { ...x, models: [{ ...x.models[0]!, variants: [variant] }] },
+    "maple",
+  ).products[0]!;
+  assert.equal(p.variants[0]!.stockPolicy, "unverified");
+  assert.equal(p.variants[0]!.available, false);
 });

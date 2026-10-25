@@ -49,8 +49,8 @@ export function planCatalogueUnion(
       ...p,
       id,
       handle: prior?.handle ?? p.handle,
-      description: p.description || prior?.description || "",
-      images: p.images.length ? p.images : (prior?.images ?? []),
+      description: p.description,
+      images: p.images,
       category: p.category ?? prior?.category ?? null,
       variants: p.variants.map((v) => ({
         ...v,
@@ -154,9 +154,7 @@ export function planCatalogueUnion(
     const variants = new Map((base?.variants ?? []).map((v) => [v.id, v]));
     for (const v of c.p.variants) {
       const variantId = !ambiguous ? (c.variantMap.get(v.id) ?? v.id) : v.id;
-      const before =
-        variants.get(variantId) ??
-        prior?.variants.find((v) => v.id === variantId);
+      const before = base?.variants.find((v) => v.id === variantId);
       variants.set(variantId, {
         ...v,
         id: variantId,
@@ -173,9 +171,9 @@ export function planCatalogueUnion(
       ...c.p,
       id,
       handle: prior?.handle ?? c.p.handle,
-      description: c.p.description || prior?.description || "",
-      category: c.p.category ?? prior?.category ?? null,
-      images: c.p.images.length ? c.p.images : (prior?.images ?? []),
+      description: c.p.description || base?.description || "",
+      category: c.p.category ?? base?.category ?? null,
+      images: c.p.images.length ? c.p.images : (base?.images ?? []),
       source: base ? "shopify-preview" : source,
       variants: [...variants.values()],
     });

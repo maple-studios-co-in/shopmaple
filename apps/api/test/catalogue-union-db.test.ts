@@ -95,3 +95,34 @@ test("handle collision rolls back catalogue and watermark; foreign tenant never 
   assert.deepEqual(await db.catalogueSyncState.findMany(), cursor);
   assert.equal(await db.product.count(), 2);
 });
+
+test("complete Keeri snapshot revokes former price and approved images instead of resurrecting old Keeri data", async () => {
+  const { s, k } = fixtures();
+  k.models[0]!.variants[0]!.sku = "KEERI-ONLY";
+  k.publicMedia = [
+    {
+      assetId: k.models[0]!.media[0]!.id,
+      url: "https://cdn.shopify.com/s/files/1/approved.jpg",
+    },
+  ];
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal(
+    (await db.product.findUnique({ where: { id: "keeri:maple:model1" } }))!
+      .images.length,
+    1,
+  );
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  k.publicMedia = [];
+  k.models[0]!.variants[0]!.prices = [];
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.deepEqual(
+    (await db.product.findUnique({ where: { id: "keeri:maple:model1" } }))!
+      .images,
+    [],
+  );
+  assert.equal(
+    (await db.variant.findUnique({ where: { id: "keeri:maple:variant1" } }))!
+      .pricePaise,
+    null,
+  );
+});

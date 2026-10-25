@@ -114,6 +114,12 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
             variantSchema.extend({
               channelPublished: z.boolean(),
               sku: z.string().trim().max(300).nullable(),
+              stockPolicy: z.enum([
+                "stocked",
+                "made_to_order",
+                "dropship",
+                "unverified",
+              ]),
               shopifyProductId: shopifyId,
               shopifyVariantId: shopifyId,
             }),
