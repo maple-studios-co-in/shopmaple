@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { servicePagesContentSchema } from "./service-pages";
 import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
 import { storyPageContentSchema } from "./story-content";
@@ -194,6 +195,8 @@ export const storefrontContentSchema = z
     homeDetails: homeDetailsSchema.optional(),
     // Legacy revisions retain the original Nimbus collection template copy.
     nimbusPage: nimbusPageContentSchema.optional(),
+    // Legacy revisions retain the original service page templates.
+    servicePages: servicePagesContentSchema.optional(),
     motion: z
       .object({
         autoplaySocial: z.boolean(),

@@ -1,17 +1,22 @@
 import Link from "next/link";
 import { ContactForm } from "@/components/contact-form";
-export const metadata = { title: "Return & Exchange" };
-export default function ReturnsPage() {
+import { getPublishedContent } from "@/lib/content";
+import { resolveServicePages } from "@/lib/service-page-defaults";
+export async function generateMetadata() {
+  return { title: resolveServicePages((await getPublishedContent()).servicePages).returns.title };
+}
+export default async function ReturnsPage() {
+  const content = resolveServicePages((await getPublishedContent()).servicePages).returns;
   return (
     <section className="editorial-page">
-      <h1>Return &amp; Exchange</h1>
+      <h1>{content.heading}</h1>
       <p>
         <Link href="/policies/refund-policy">
-          Cancellation, Return &amp; Refund Policy
+          {content.policyLabel}
         </Link>
       </p>
       <p>
-        Contact our team about your order. This form saves an enquiry; it does
+        {content.intro}{" "}This form saves an enquiry; it does
         not automatically approve a return or issue a refund.
       </p>
       <ContactForm

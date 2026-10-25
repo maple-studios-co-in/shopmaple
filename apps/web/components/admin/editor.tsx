@@ -8,6 +8,7 @@ import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
+import { ServicePageFields } from "./service-page-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
@@ -88,7 +89,7 @@ export function ContentEditor({
 }) {
   const adminRequest = useAdminRequest();
   const [tab, setTab] = useState<Tab>("Overview");
-  const [existingPage, setExistingPage] = useState<"story" | "nimbus">("story");
+  const [existingPage, setExistingPage] = useState<"story" | "nimbus" | "contact" | "bulk" | "returns">("story");
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<StorefrontContent | null>(null);
   const [busy, setBusy] = useState(false);
@@ -539,14 +540,22 @@ export function ContentEditor({
                 <>
                   <label className="admin-field">
                     <span>Existing page</span>
-                    <select aria-label="Existing page" value={existingPage} onChange={event => setExistingPage(event.target.value === "nimbus" ? "nimbus" : "story")}>
+                    <select aria-label="Existing page" value={existingPage} onChange={event => {
+                      const value = event.target.value;
+                      setExistingPage(value === "nimbus" || value === "contact" || value === "bulk" || value === "returns" ? value : "story");
+                    }}>
                       <option value="story">Our Story</option>
                       <option value="nimbus">The Nimbus Collection</option>
+                      <option value="contact">Contact</option>
+                      <option value="bulk">Bulk Enquiry</option>
+                      <option value="returns">Return &amp; Exchange</option>
                     </select>
                   </label>
                   {existingPage === "story"
                     ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
-                    : <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />}
+                    : existingPage === "nimbus"
+                      ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
+                      : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
                 </>
               )}
               {tab === "Media" && (

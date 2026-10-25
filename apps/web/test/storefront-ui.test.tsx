@@ -104,7 +104,14 @@ test("footer routes customer care and bulk collaboration to their respective bus
   });
 });
 test("contact page phone action dials the current business number", async () => {
-  const page = await ContactPage({params: Promise.resolve({slug: "contact"}), searchParams: Promise.resolve({})});
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+  let page;
+  try {
+    page = await ContactPage({params: Promise.resolve({slug: "contact"}), searchParams: Promise.resolve({})});
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
   await mount(page, () => {
     const link = document.querySelector<HTMLAnchorElement>('.cp-contact-links a[href^="tel:"]');
     assert.equal(link?.getAttribute("href"), "tel:+918796130252");

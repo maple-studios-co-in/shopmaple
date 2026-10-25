@@ -115,16 +115,18 @@ export function ContactForm({
   );
 }
 type HelpCategory = {
+  key?: string;
   title: string;
   subtitle: string;
   icon: string;
   questions: {
+    key?: string;
     question: string;
     answer: string;
   }[];
 };
 export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState<string | number>(categories[0]?.key ?? 0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -137,13 +139,17 @@ export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
     };
   }, [mobileOpen]);
   const id = useId();
-  const category = categories[active];
+  const activeIndex = typeof active === "string"
+    ? categories.findIndex(category => category.key === active)
+    : active;
+  const selectedIndex = activeIndex < 0 ? 0 : activeIndex;
+  const category = categories[selectedIndex];
   if (!category) return null;
   const answers = (
     <>
-      <div key={category.title}>
+      <div key={category.key ?? category.title}>
         {category.questions.map((item) => (
-          <details key={item.question} className="cp-faq">
+          <details key={item.key ?? item.question} className="cp-faq">
             <summary>
               {item.question}
               <Plus size={20} aria-hidden="true" />
@@ -174,13 +180,13 @@ export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
       <div className="cp-help-categories" aria-label="Help categories">
         {categories.map((item, index) => (
           <button
-            key={item.title}
+            key={item.key ?? item.title}
             type="button"
-            aria-pressed={active === index}
+            aria-pressed={selectedIndex === index}
             aria-controls={`${id}-answers`}
-            className={active === index ? "is-active" : ""}
+            className={selectedIndex === index ? "is-active" : ""}
             onClick={() => {
-              setActive(index);
+              setActive(item.key ?? index);
               if (window.matchMedia("(max-width: 990px)").matches)
                 setMobileOpen(true);
             }}
