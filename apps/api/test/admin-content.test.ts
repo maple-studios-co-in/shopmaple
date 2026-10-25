@@ -343,3 +343,75 @@ test("Nimbus drafts retain public isolation, publisher authority, stale protecti
     assert.equal(await db.shopContentRevision.count(), historyCount);
     assert.deepEqual((await publicRequest()).body, published);
 });
+
+const serviceFixture = () => ({
+  contact: {
+    title: "Contact our studio", eyebrow: "Here to help", heading: "Tell us about your space",
+    helpEyebrow: "Questions answered", helpHeading: "Find some help",
+    cities: { eyebrow: "Delivery", heading: "Across India" },
+    sections: ["cities", "intro", "help"].map(key => ({ key, enabled: key !== "cities" })),
+    categories: [["tracking", 5], ["payment", 4], ["account", 2], ["warranty", 1], ["damage", 1]].map(([key, count]) => ({
+      key, title: `Help with ${key}`, subtitle: "Answers from the team",
+      questions: Array.from({ length: Number(count) }, (_, index) => ({ key: `q${index + 1}`, question: `Question ${index + 1}?`, answer: "<script>Plain text</script>\nAsk our team." })),
+    })),
+  },
+  bulk: {
+    title: "Projects with Maple", eyebrow: "Your next project", heading: "Made for your space", subtitle: "Talk to a designer",
+    sections: ["business", "hero", "trust", "process", "cities"].map(key => ({ key, enabled: key !== "cities" })),
+    cities: { eyebrow: "Serving", heading: "Across India" },
+    trust: { heading: "Care for every project", metricValue: "200+", metricLabel: "Spaces furnished", items: ["price", "quality", "materials", "custom"].map(key => ({ key, title: `Our ${key}` })) },
+    process: { eyebrow: "How we help", heading: "Your design journey", steps: ["meet", "design", "deliver"].map(key => ({ key, title: `We ${key}`, body: "Thoughtful support throughout." })) },
+    business: { badge: "Business enquiries", heading: "Furnish your project", body: "Talk to our project team.", features: ["Design", "Materials", "Craft", "Delivery", "Care"], cta: "Request details", trust: "Trusted support" },
+  },
+  returns: { title: "Order support", heading: "Return enquiries", policyLabel: "Read our policy", intro: "Ask our team about your order." },
+});
+
+test("service page drafts enforce public isolation, publisher authority, stale conflicts and draft-only restore", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const publicRequest = () => request(createApp(db, config)).get("/api/content/storefront?draft=true");
+    const previousPublic = await publicRequest();
+    const servicePages = serviceFixture();
+    const next = { ...content, servicePages };
+    const saved = await save(editor.agent, editor.csrf, initial.version, next);
+    assert.equal(saved.status, 200, "typed service pages must save as a private draft");
+    assert.deepEqual(saved.body.draft.servicePages, servicePages);
+    assert.deepEqual((await publicRequest()).body, previousPublic.body);
+    const revision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(revision.actorEmail, "editor@example.invalid");
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    const publish = await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version });
+    assert.equal(publish.status, 200);
+    const published = (await publicRequest()).body;
+    assert.deepEqual(published.content.servicePages, servicePages);
+    assert.equal((await save(editor.agent, editor.csrf, saved.body.version, next)).status, 409);
+    const privatePages = structuredClone(servicePages);
+    privatePages.contact.heading = "Private contact heading";
+    privatePages.bulk.heading = "Private bulk heading";
+    privatePages.returns.heading = "Private returns heading";
+    const edited = await save(editor.agent, editor.csrf, published.version, { ...next, servicePages: privatePages });
+    assert.equal(edited.status, 200);
+    assert.deepEqual((await publicRequest()).body, published);
+    const restored = await publisher.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: edited.body.version, revisionId: revision.id });
+    assert.equal(restored.status, 200);
+    assert.deepEqual(restored.body.draft.servicePages, servicePages);
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await publicRequest()).body, published);
+    const historyCount = await db.shopContentRevision.count();
+    for (const invalid of [
+        { ...servicePages, html: "<script>alert(1)</script>" },
+        { ...servicePages, contact: { ...servicePages.contact, phone: "+1 555" } },
+        { ...servicePages, contact: { ...servicePages.contact, categories: [...servicePages.contact.categories.slice(1), servicePages.contact.categories[1]] } },
+        { ...servicePages, contact: { ...servicePages.contact, categories: servicePages.contact.categories.map((category, index) => index === 0 ? { ...category, questions: category.questions.slice(1) } : category) } },
+        { ...servicePages, bulk: { ...servicePages.bulk, sections: [...servicePages.bulk.sections.slice(1), servicePages.bulk.sections[1]] } },
+        { ...servicePages, bulk: { ...servicePages.bulk, trust: { ...servicePages.bulk.trust, items: [{ ...servicePages.bulk.trust.items[0], key: "stock" }, ...servicePages.bulk.trust.items.slice(1)] } } },
+        { ...servicePages, bulk: { ...servicePages.bulk, business: { ...servicePages.bulk.business, href: "javascript:alert(1)" } } },
+        { ...servicePages, returns: { ...servicePages.returns, checkoutEnabled: true } },
+        { ...servicePages, returns: { ...servicePages.returns, intro: "bad\u0000text" } },
+        { ...servicePages, returns: { ...servicePages.returns, heading: " " } },
+    ]) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, servicePages: invalid })).status, 400);
+    assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
+    assert.equal(await db.shopContentRevision.count(), historyCount);
+    assert.deepEqual((await publicRequest()).body, published);
+});

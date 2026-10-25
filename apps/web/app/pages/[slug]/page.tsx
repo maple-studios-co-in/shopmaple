@@ -1,4 +1,7 @@
 import Image from "next/image";
+import { Fragment } from "react";
+import type { BulkPageContent, ContactPageContent } from "@shopmaple/contracts";
+import { resolveServicePages } from "@/lib/service-page-defaults";
 import { notFound } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import {
@@ -8,7 +11,6 @@ import {
 } from "@/components/contact-form";
 import { HomeCities } from "@/components/home-sections";
 import { shopFile } from "@/lib/format";
-import { contactCategories } from "../contact-content";
 import { getPublishedContent } from "@/lib/content";
 import { ContentPage } from "@/components/content-page";
 export async function generateMetadata({
@@ -28,9 +30,8 @@ export async function generateMetadata({
       description: page?.description,
     };
   }
-  return {
-    title: slug === "bulk-enquiry" ? "Bulk Enquiry" : "Contact Us",
-  };
+  const content = resolveServicePages((await getPublishedContent()).servicePages);
+  return { title: slug === "bulk-enquiry" ? content.bulk.title : content.contact.title };
 }
 export default async function ContactPage({
   params,
@@ -63,21 +64,28 @@ export default async function ContactPage({
         ? query.pincode
         : "",
   };
+  const content = resolveServicePages((await getPublishedContent()).servicePages);
   return slug === "bulk-enquiry" ? (
-    <BulkEnquiry context={context} />
+    <BulkEnquiry context={context} content={content.bulk} />
   ) : (
-    <Contact context={context} />
+    <Contact context={context} content={content.contact} />
   );
 }
-function Contact({ context }: { context: EnquiryContext }) {
+const helpIcons = {
+  tracking: "Del_mf.svg",
+  payment: "engaged_3.svg",
+  account: "engaged_2.svg",
+  warranty: "qc_mf.svg",
+  damage: "qc_mf.svg",
+};
+function Contact({ context, content }: { context: EnquiryContext; content: ContactPageContent }) {
   const mapAddress = "A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015";
-  return (
-    <div className="cp-page">
-      <div className="cp-divider cp-divider-top" />
-      <section className="cp-contact-intro cp-container">
+  const sections = {
+    intro: (
+      <section className="cp-contact-intro cp-container" data-service-section="intro">
         <div className="cp-contact-details">
-          <p className="cp-contact-eyebrow">GET IN TOUCH</p>
-          <h1>Tell us what you need. We’ll help you shape it</h1>
+          <p className="cp-contact-eyebrow">{content.eyebrow}</p>
+          <h1>{content.heading}</h1>
           <div className="cp-contact-links">
             <a href="tel:+918796130252">
               <Image src={shopFile("Call.svg")} alt="" width={40} height={40} />
@@ -110,39 +118,56 @@ function Contact({ context }: { context: EnquiryContext }) {
         </div>
         <ContactForm context={context} />
       </section>
-      <div className="cp-divider" />
-      <section className="cp-help-section">
+    ),
+    help: (
+      <section className="cp-help-section" data-service-section="help">
         <header className="cp-container cp-section-title">
-          <p>Everything we do starts with why</p>
-          <h2>Browse from category</h2>
+          <p>{content.helpEyebrow}</p>
+          <h2>{content.helpHeading}</h2>
         </header>
-        <ContactHelp categories={contactCategories} />
+        <ContactHelp
+          categories={content.categories.map(category => ({
+            ...category,
+            icon: helpIcons[category.key],
+          }))}
+        />
       </section>
-      <HomeCities />
+    ),
+    cities: (
+      <div data-service-section="cities">
+        <HomeCities content={content.cities} />
+      </div>
+    ),
+  };
+  const visible = content.sections.filter(section => section.enabled);
+  return (
+    <div className="cp-page">
+      {!visible.some(section => section.key === "intro") && <h1 className="sr-only">{content.heading}</h1>}
+      {visible.map((section, index) => (
+        <Fragment key={section.key}>
+          {index === 0 && section.key === "intro" && <div className="cp-divider cp-divider-top" />}
+          {index > 0 && visible[index - 1]?.key === "intro" && <div className="cp-divider" />}
+          {sections[section.key]}
+        </Fragment>
+      ))}
     </div>
   );
 }
-const steps = [
-  {
-    image: "1_c060f484-f1f4-4f8a-826e-228632252413.jpg",
-    title: "Meet Your Designer",
-    text: "Bring your ideas, inspirations, and budget. Our expert designer will understand your needs and start shaping a plan that fits your lifestyle.",
-  },
-  {
-    image: "2.jpg",
-    title: "Finalize Your Design",
-    text: "Work one-on-one with your designer to refine the details. Get realistic 3D renders so you can visualize your space before it comes to life.",
-  },
-  {
-    image: "3.jpg",
-    title: "Bring It Home",
-    text: "Relax while we handle the rest — from crafting to installation. Shop directly from your design and watch your dream home come alive.",
-  },
-];
-function BulkEnquiry({ context }: { context: EnquiryContext }) {
-  return (
-    <div className="cp-page cp-bulk-page">
-      <section className="cp-bulk-hero">
+const stepImages = {
+  meet: "1_c060f484-f1f4-4f8a-826e-228632252413.jpg",
+  design: "2.jpg",
+  deliver: "3.jpg",
+};
+const trustIcons = {
+  price: "price-tag-svgrepo-com_1.svg",
+  quality: "icon_maple.svg",
+  materials: "Cover_Image_Maple_4.svg",
+  custom: "Cover_Image_Maple_2.svg",
+};
+function BulkEnquiry({ context, content }: { context: EnquiryContext; content: BulkPageContent }) {
+  const sections = {
+    hero: (
+      <section className="cp-bulk-hero" data-service-section="hero">
         <div className="cp-bulk-scene">
           <div className="cp-bulk-image">
             <Image
@@ -158,10 +183,10 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
           <div className="cp-bulk-shade" />
           <div className="cp-bulk-content">
             <div className="cp-bulk-card">
-              <p className="cp-bulk-eyebrow">Place Your Bulk Orders</p>
-              <h1>Home Interior</h1>
+              <p className="cp-bulk-eyebrow">{content.eyebrow}</p>
+              <h1>{content.heading}</h1>
               <p className="cp-bulk-subtitle">
-                Work 1:1 with expert interior designers
+                {content.subtitle}
               </p>
               <div className="cp-bulk-rule" />
               <div className="cp-bulk-form-wrap">
@@ -171,38 +196,36 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
           </div>
         </div>
       </section>
-      <section className="cp-container cp-bulk-trust">
-        <h2>Trusted By Designers, Businesses &amp; Modern Spaces</h2>
+    ),
+    trust: (
+      <section className="cp-container cp-bulk-trust" data-service-section="trust">
+        <h2>{content.trust.heading}</h2>
         <div className="cp-bulk-proof">
           <div>
-            <strong>100+</strong>
-            <p>Projects Delivered</p>
+            <strong>{content.trust.metricValue}</strong>
+            <p>{content.trust.metricLabel}</p>
           </div>
-          {[
-            ["price-tag-svgrepo-com_1.svg", "Price match guarantee"],
-            ["icon_maple.svg", "250+ Steps Quality Check"],
-            ["Cover_Image_Maple_4.svg", "Premium Materials"],
-            ["Cover_Image_Maple_2.svg", "Custom Solutions"],
-          ].map(([image, title]) => (
-            <div key={title}>
-              <Image src={shopFile(image!)} alt="" width={80} height={80} />
-              <p>{title}</p>
+          {content.trust.items.map(item => (
+            <div key={item.key}>
+              <Image src={shopFile(trustIcons[item.key])} alt="" width={80} height={80} />
+              <p>{item.title}</p>
             </div>
           ))}
         </div>
       </section>
-      <div className="cp-divider cp-divider-inset" />
-      <section className="cp-container cp-bulk-process">
+    ),
+    process: (
+      <section className="cp-container cp-bulk-process" data-service-section="process">
         <header className="cp-section-title">
-          <p>Here’s How We Bring Your Dream Space to Life</p>
-          <h2>How it Works</h2>
+          <p>{content.process.eyebrow}</p>
+          <h2>{content.process.heading}</h2>
         </header>
         <div className="cp-process-grid">
-          {steps.map((step, index) => (
-            <article key={step.title}>
+          {content.process.steps.map((step, index) => (
+            <article key={step.key}>
               <div className="cp-process-image">
                 <Image
-                  src={shopFile(step.image)}
+                  src={shopFile(stepImages[step.key])}
                   alt={step.title}
                   width={600}
                   height={400}
@@ -212,32 +235,22 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
               </div>
               <div className="cp-process-text">
                 <h3>{step.title}</h3>
-                <p>{step.text}</p>
+                <p>{step.body}</p>
               </div>
             </article>
           ))}
         </div>
       </section>
-      <div className="cp-divider" />
-      <section className="cp-indiamart">
+    ),
+    business: (
+      <section className="cp-indiamart" data-service-section="business">
         <div className="cp-indiamart-copy">
-          <p className="cp-business-badge">★ TRUSTED BY BUSINESSES</p>
-          <h2>Looking for Bulk Orders?</h2>
-          <p>
-            Source directly from one of India&apos;s trusted furnishing
-            suppliers. Hotels, Interior Designers, Contractors, Offices,
-            Retailers &amp; Project Buyers can place large-volume requirements
-            through our IndiaMART business channel.
-          </p>
+          <p className="cp-business-badge">{content.business.badge}</p>
+          <h2>{content.business.heading}</h2>
+          <p>{content.business.body}</p>
           <ul>
-            {[
-              "Factory & Wholesale Pricing",
-              "Bulk Quantity Support",
-              "Custom Sizes & Specifications",
-              "Dedicated Business Assistance",
-              "PAN India Delivery",
-            ].map((feature) => (
-              <li key={feature}>
+            {content.business.features.map((feature, index) => (
+              <li key={index}>
                 <span>
                   <Check size={16} aria-hidden="true" />
                 </span>
@@ -252,7 +265,7 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
               target="_blank"
               rel="noreferrer"
             >
-              Request Bulk Quote <ArrowRight size={18} />
+              {content.business.cta} <ArrowRight size={18} />
             </a>
             <Image
               src={shopFile("indiamart-logo.png")}
@@ -262,7 +275,7 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
             />
           </div>
           <p className="cp-business-trust">
-            Secure • Verified • Trusted by Businesses
+            {content.business.trust}
           </p>
         </div>
         <div className="cp-indiamart-image">
@@ -275,8 +288,27 @@ function BulkEnquiry({ context }: { context: EnquiryContext }) {
           />
         </div>
       </section>
-      <div className="cp-divider" />
-      <HomeCities />
+    ),
+    cities: (
+      <div data-service-section="cities">
+        <HomeCities content={content.cities} />
+      </div>
+    ),
+  };
+  const visible = content.sections.filter(section => section.enabled);
+  return (
+    <div className="cp-page cp-bulk-page">
+      {!visible.some(section => section.key === "hero") && <h1 className="sr-only">{content.heading}</h1>}
+      {visible.map((section, index) => {
+        const previous = visible[index - 1]?.key;
+        return (
+          <Fragment key={section.key}>
+            {previous === "trust" && <div className="cp-divider cp-divider-inset" />}
+            {(previous === "process" || previous === "business") && <div className="cp-divider" />}
+            {sections[section.key]}
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

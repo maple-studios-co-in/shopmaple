@@ -2,19 +2,23 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateMetadata } from "../app/pages/[slug]/page";
 test("contact page titles allow the root layout to add the brand once", async () => {
-  assert.equal(
-    (await generateMetadata({ params: Promise.resolve({ slug: "contact" }) }))
-      .title,
-    "Contact Us",
-  );
-  assert.equal(
-    (
-      await generateMetadata({
-        params: Promise.resolve({ slug: "bulk-enquiry" }),
-      })
-    ).title,
-    "Bulk Enquiry",
-  );
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+  try {
+    assert.equal(
+      (await generateMetadata({ params: Promise.resolve({ slug: "contact" }) }))
+        .title,
+      "Contact Us",
+    );
+    assert.equal(
+      (
+        await generateMetadata({
+          params: Promise.resolve({ slug: "bulk-enquiry" }),
+        })
+      ).title,
+      "Bulk Enquiry",
+    );
+  } finally { globalThis.fetch = previous; }
 });
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";

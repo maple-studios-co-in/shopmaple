@@ -1,3 +1,4 @@
+import { defaultServicePages } from "./service-page-defaults";
 import campaigns from "@/data/diwali-campaigns.json";
 import { defaultCategoryPages } from "./category-content-defaults";
 import { defaultStoryPage } from "./story-content-defaults";
@@ -19,6 +20,7 @@ const collectionCampaignDestinations: Partial<
 /** Original bundled copy is the explicit starting draft, never auto-published. */
 export const defaultStorefrontContent: StorefrontContent = {
   schemaVersion: 1,
+  servicePages: defaultServicePages,
   landingPages: defaultCategoryPages,
   storyPage: defaultStoryPage,
   homeDetails: defaultHomeDetails,

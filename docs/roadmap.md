@@ -16,7 +16,9 @@ PR #24 is merged as39ff224 after464 local tests and all eight exact-head CI chec
 
 PR #25 is merged asb7df7a1 after all eight exact-head CI checks at91bcaf1. Its eight groups of [homepage content controls](releases/2026-10-26-home-content.md) preserve source copy and published-only reads.475 integrated tests, types/build, scanners and independent review pass; it is not deployed. Existing strict-schema rollback compatibility applies to both storyPage and homeDetails. Server capacity and private publisher setup remain unresolved.
 
-The current [Nimbus increment](releases/2026-10-26-nimbus-content.md) adds nine section order/visibility controls, copy editing and source typography/paragraph fidelity. Final verification/CI is in progress; no deployment claimed.
+PR #26 is merged as7aec707 after all eight exact-head CI checks at26d276a. The [Nimbus increment](releases/2026-10-26-nimbus-content.md) adds nine section order/visibility controls, copy editing and source typography/paragraph fidelity.492 integrated tests, types/build, scanners, independent review and bounded desktop/mobile browser checks pass. Not deployed.
+
+The current [Contact, Bulk Enquiry and Returns increment](releases/2026-10-26-service-pages.md) adds typed existing-page content controls while preserving forms, fixed destinations and operational warnings.510 integrated tests, types/build, scanners and independent review pass; bounded desktop/mobile keyboard and rendering checks pass. Exact-head CI/merge pending. Remaining CMS coverage includes structured policy/blog content and further media/merchandising controls. No production deployment claimed.
 
 Priority order remaining:
 
