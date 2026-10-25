@@ -44,7 +44,7 @@ Files: README.md, .env.example, compose.yaml, .github/workflows/ci.yml, docs/dev
 - [x] Document installation, database migration/import, dual-app commands, preview-data limitations and integration boundaries.
 - [x] Run tests, typecheck, production builds and API/browser smoke checks.
 - [x] Obtain a fresh branch review, fix important findings with regression tests.
-- [ ] Commit and push the feature branch with a draft PR; keep the local preview available.
+- [x] Commit and push the feature branch with a draft PR; keep the local preview available.
 
 ## Execution choices
 The user explicitly instructed starting implementation. Execute natively without another design/plan approval round. Work in a managed worktree on codex/storefront-foundation. No live Shopify, Keeri, DNS or payment writes.
@@ -53,3 +53,5 @@ The user explicitly instructed starting implementation. Execute natively without
 ## Verification record
 
 The initial code review found cart hydration and importer identity collisions. Regression tests reproduced both before fixes; the automated suite now has 10 PostgreSQL/API tests and 2 React provider tests. TypeScript and both production builds pass. Desktop/mobile browser interactions and screenshot review are separate from automated checks; production performance is not measured.
+
+Draft handoff: https://github.com/maple-studios-co-in/shopmaple/pull/1. Local preview remains on localhost:3000.
