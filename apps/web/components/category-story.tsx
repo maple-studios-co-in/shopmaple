@@ -4,15 +4,17 @@ import { CategoryVideo } from "@/components/category-controls";
 import { MaplePromises } from "@/components/category-nimbus";
 import story from "@/data/landing-story.json";
 import { Fragment, type ReactNode } from "react";
-import type { StoryPageContent, StorySectionKey } from "@shopmaple/contracts";
+import type { StoryPageContent, StorySectionKey, TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 const section = (key: string) =>
   story.sections.find((item) => item.key === key)!;
 function Lines({ lines }: { lines: string[] }) {
   return lines.map((line, index) => <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>);
 }
-export function StoryLanding({ content }: { content?: StoryPageContent } = {}) {
-  const belief = section("media_with_content_be4kK3");
+export function StoryLanding({ content, media }: { content?: StoryPageContent; media?: TemplateMedia } = {}) {
+  const belief = resolveTemplateMedia("story-hero", media);
+  const poster = resolveTemplateMedia("story-film-poster", media);
   const film = section("media_with_content_deBkJg");
   const page = resolveStoryPageContent(content);
   const regions: Record<StorySectionKey, ReactNode> = {
@@ -28,8 +30,8 @@ export function StoryLanding({ content }: { content?: StoryPageContent } = {}) {
           <MaplePromises />
         </div>
         <Image
-          src={belief.images[0]!}
-          alt="Maple furniture craftsmanship"
+          src={belief.image}
+          alt={belief.alt}
           width={1200}
           height={1200}
           sizes="(max-width:749px) 92vw, 50vw"
@@ -50,8 +52,8 @@ export function StoryLanding({ content }: { content?: StoryPageContent } = {}) {
         </section>
         <section className="landing-story-film">
           <CategoryVideo
-            desktop={film.videos[0]!}
-            label="The Maple workshop"
+            desktop={{ ...film.videos[0]!, poster: poster.image }}
+            label={poster.alt}
             autoPlay={false}
           />
           <h2>

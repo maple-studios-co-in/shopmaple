@@ -89,6 +89,34 @@ export const contentImageSchema = z
       return false;
     }
   }, "Use approved Maple media");
+export const templateMediaKeys = [
+  "home-workshop-poster", "home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds",
+  "home-nimbus", "home-newsletter", "home-testimonial-poster",
+  "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining", "nimbus-room-collection",
+  "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project",
+  "nimbus-hero-poster", "nimbus-craft-poster", "story-hero", "story-film-poster",
+] as const;
+export const templateMediaResponsiveKeys = [
+  "home-nimbus", "nimbus-room-collection", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-hero-poster",
+] as const;
+export type TemplateMediaKey = typeof templateMediaKeys[number];
+const templateMediaItemSchema = z.object({
+  key: z.enum(templateMediaKeys),
+  image: contentImageSchema,
+  mobileImage: contentImageSchema.optional(),
+  alt: z.string().max(200).refine(value => !/[\u0000-\u001f\u007f]/.test(value), "Use text without control characters"),
+}).strict().superRefine((value, ctx) => {
+  const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(value.key);
+  if (responsive !== (value.mobileImage !== undefined))
+    ctx.addIssue({ code: "custom", path: ["mobileImage"], message: responsive ? "Choose both desktop and mobile artwork" : "This artwork has one image" });
+  if (!value.alt.trim() && !["home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds"].includes(value.key))
+    ctx.addIssue({ code: "custom", path: ["alt"], message: "Describe this artwork" });
+});
+export const templateMediaSchema = z.array(templateMediaItemSchema).max(21).refine(
+  items => new Set(items.map(item => item.key)).size === items.length, "Artwork placements must be unique",
+);
+export type TemplateMediaItem = z.infer<typeof templateMediaItemSchema>;
+export type TemplateMedia = z.infer<typeof templateMediaSchema>;
 const merchandisingSlug = (max: number) => z.string().max(max).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const merchandisingText = (max: number) => z.string().max(max).refine(
   value => value.trim().length > 0 && !/[\u0000-\u001f\u007f]/.test(value),
@@ -223,6 +251,7 @@ export const storefrontContentSchema = z
     // Legacy revisions retain the original homepage template copy.
     homeDetails: homeDetailsSchema.optional(),
     homeMerchandising: homeMerchandisingSchema.optional(),
+    templateMedia: templateMediaSchema.optional(),
     // Legacy revisions retain the original Nimbus collection template copy.
     nimbusPage: nimbusPageContentSchema.optional(),
     // Legacy revisions retain the original service page templates.

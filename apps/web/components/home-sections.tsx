@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowRight, Instagram } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
-import type { HomeDetails } from "@shopmaple/contracts";
+import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
 export function HomeBanner({
@@ -114,13 +115,16 @@ export function HomeSocial({
 
 export function HomeTestimonial({
   content = defaultHomeDetails.testimonial,
+  media,
   heading = "Why They Love Us",
   subheading = "Thoughtful designs. Exceptional service.",
 }: {
   content?: HomeDetails["testimonial"];
+  media?: TemplateMedia;
   heading?: string;
   subheading?: string;
 } = {}) {
+  const poster = resolveTemplateMedia("home-testimonial-poster", media);
   return (
     <section className="home-testimonial">
       <header>
@@ -132,10 +136,8 @@ export function HomeTestimonial({
           controls
           playsInline
           preload="none"
-          poster={shopFile(
-            "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960",
-          )}
-          aria-label="Maple customer testimonial"
+          poster={poster.image}
+          aria-label={poster.alt}
         >
           <source
             src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
@@ -164,13 +166,15 @@ export function HomeTestimonial({
 
 export function HomeNewsletter({
   content = defaultHomeDetails.newsletter,
-}: { content?: HomeDetails["newsletter"] } = {}) {
+  media,
+}: { content?: HomeDetails["newsletter"]; media?: TemplateMedia } = {}) {
+  const artwork = resolveTemplateMedia("home-newsletter", media);
   return (
     <section className="home-newsletter" id="newsletter">
       <div className="home-container">
         <Image
-          src={shopFile("Cover_Image_Maple_1.png")}
-          alt="Maple Furnishers"
+          src={artwork.image}
+          alt={artwork.alt}
           width={1080}
           height={500}
           sizes="(max-width:749px) 75vw, 35vw"

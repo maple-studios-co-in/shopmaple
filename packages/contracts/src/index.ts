@@ -14,11 +14,17 @@ export {
   contentImageSchema,
   homeMerchandisingSchema,
   homeCollectionTileSchema,
+  templateMediaKeys,
+  templateMediaResponsiveKeys,
+  templateMediaSchema,
 } from "./content";
 export type {
   StorefrontContent,
   HomeMerchandising,
   HomeCollectionTile,
+  TemplateMediaKey,
+  TemplateMediaItem,
+  TemplateMedia,
   CampaignContent,
   ContentPage,
 } from "./content";

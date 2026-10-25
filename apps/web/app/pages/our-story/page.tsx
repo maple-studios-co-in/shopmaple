@@ -7,5 +7,6 @@ export async function generateMetadata() {
   return { title: content.title };
 }
 export default async function Page() {
-  return <StoryLanding content={(await getPublishedContent()).storyPage} />;
+  const content = await getPublishedContent();
+  return <StoryLanding content={content.storyPage} media={content.templateMedia} />;
 }
