@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
+import { storyPageContentSchema } from "./story-content";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -185,6 +186,8 @@ export const storefrontContentSchema = z
       .max(30),
     pages: z.array(contentPageSchema).max(20),
     landingPages: z.array(categoryPageContentSchema).max(3).default([]),
+    // Legacy revisions omit this field and retain the original Our Story template.
+    storyPage: storyPageContentSchema.optional(),
     motion: z
       .object({
         autoplaySocial: z.boolean(),

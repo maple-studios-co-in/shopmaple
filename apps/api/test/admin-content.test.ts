@@ -200,3 +200,41 @@ test("strict content validation rejects malicious links, oversized bodies and in
     assert.equal((await save(agent, csrf, 7, large)).status, 200, "admin content accepts its scoped body size above the commerce 16 KiB cap");
     assert.equal((await request(createApp(db, config)).post("/api/enquiries").set("Origin", origin).send({ message: "x".repeat(20000) })).status, 413);
 });
+
+test("Our Story drafts publish and restore through the existing authorized revision boundary", async () => {
+    const { agent, csrf } = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await agent.get("/api/admin/content")).body;
+    const oldPublic = await request(createApp(db, config)).get("/api/content/storefront");
+    const storyPage = {
+        title: "Our workshop story", heroHeading: ["Crafted for you"], tagline: "Made in Delhi",
+        beliefEyebrow: "Our belief", beliefHeading: ["Made with care"], beliefBody: "Craft matters.",
+        filmHeading: ["Our workshop"], journeyHeading: "Our journey",
+        sections: ["hero", "belief-film", "journey", "cities"].map(key => ({ key, enabled: true })),
+        timeline: Array.from({ length: 7 }, (_, index) => ({ key: `chapter-${index + 1}`, date: `${2010 + index}`, title: `Chapter ${index + 1}`, body: "Our story continues." })),
+    };
+    const next = { ...content, storyPage };
+    const saved = await save(editor.agent, editor.csrf, initial.version, next);
+    assert.equal(saved.status, 200, "typed Our Story content saves through the draft contract");
+    assert.equal(saved.body.draft.storyPage.title, "Our workshop story");
+    assert.deepEqual((await request(createApp(db, config)).get("/api/content/storefront")).body, oldPublic.body);
+    const firstRevision = (await agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(firstRevision.actorEmail, "editor@example.invalid");
+    const publish = (version: number) => agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: version });
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    assert.equal((await publish(saved.body.version)).status, 200);
+    const published = (await request(createApp(db, config)).get("/api/content/storefront")).body;
+    assert.equal(published.content.storyPage.title, "Our workshop story");
+    assert.equal((await save(agent, csrf, saved.body.version, next)).status, 409);
+    const edited = await save(agent, csrf, published.version, { ...next, storyPage: { ...storyPage, title: "Private story edit" } });
+    assert.equal(edited.status, 200);
+    assert.equal((await request(createApp(db, config)).get("/api/content/storefront?draft=true")).body.content.storyPage.title, "Our workshop story");
+    const restored = await agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: edited.body.version, revisionId: firstRevision.id });
+    assert.equal(restored.status, 200);
+    assert.equal(restored.body.draft.storyPage.title, "Our workshop story");
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await request(createApp(db, config)).get("/api/content/storefront")).body, published);
+    const invalid = await save(agent, csrf, restored.body.version, { ...next, storyPage: { ...storyPage, image: "/media/uploads/unreviewed.webp" } });
+    assert.equal(invalid.status, 400);
+    assert.equal((await agent.get("/api/admin/content")).body.version, restored.body.version);
+});

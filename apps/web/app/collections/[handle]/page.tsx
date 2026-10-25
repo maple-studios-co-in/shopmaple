@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
 import { CollectionListing } from "@/components/collection-listing";
+import { LegacyChairs } from "@/components/legacy-chairs";
 import { canOrder, pricedVariants } from "@/lib/product-availability";
 import { getProducts } from "@/lib/catalog";
 import {
@@ -28,7 +29,8 @@ export default async function Collection({
 }) {
   const { handle } = await params;
   if (!Object.hasOwn(collectionTitles, handle)) notFound();
-  const query = collectionQuery(await searchParams);
+  const rawQuery = await searchParams;
+  const query = collectionQuery(rawQuery);
   // Membership and facets must run over the entire preview, not just its first API page.
   const first = await getProducts({ limit: "50", sort: "featured" });
   const pages = await Promise.all(
@@ -36,10 +38,25 @@ export default async function Collection({
       getProducts({ limit: "50", sort: "featured", page: String(index + 2) }),
     ),
   );
-  const members = collectionMembers(
-    [...first.products, ...pages.flatMap((page) => page.products)],
-    handle,
-  );
+  const products = [
+    ...first.products,
+    ...pages.flatMap((page) => page.products),
+  ];
+  // Explicit browsing controls retain the historical chair grid, including
+  // empty or malformed values handled by the existing query normalizer.
+  const browsingRequested = [
+    "q",
+    "sort",
+    "sort_by",
+    "availability",
+    "min",
+    "max",
+    "category",
+    "page",
+  ].some((key) => Object.hasOwn(rawQuery, key));
+  if (handle === "chairs" && !browsingRequested)
+    return <LegacyChairs products={products} />;
+  const members = collectionMembers(products, handle);
   const filtered = filterCollection(members, query);
   const limit = 24;
   const page = Math.min(

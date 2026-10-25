@@ -58,14 +58,17 @@ export function CategoryVideo({
   const selected = small && mobile ? mobile : desktop;
   useEffect(() => {
     const video = ref.current;
-    if (
-      !video ||
-      !autoPlay ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
-      return;
-    video.play().catch(() => {});
-    return () => video.pause();
+    if (!video || !autoPlay) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pauseForReducedMotion = () => {
+      if (motion.matches) video.pause();
+    };
+    motion.addEventListener("change", pauseForReducedMotion);
+    if (!motion.matches) video.play().catch(() => {});
+    return () => {
+      motion.removeEventListener("change", pauseForReducedMotion);
+      video.pause();
+    };
   }, [selected.src, autoPlay]);
   return (
     <div className={`landing-video ${className}`}>

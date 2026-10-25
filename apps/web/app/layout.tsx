@@ -19,6 +19,7 @@ import "@/styles/product-parity.css";
 import "@/styles/contact-parity.css";
 import "@/styles/collection-parity.css";
 import "@/styles/landing-parity.css";
+import "@/components/legacy-chairs.css";
 import "@/styles/navigation-parity.css";
 import "@/styles/suggested-pages.css";
 import "@/styles/campaign-banners.css";

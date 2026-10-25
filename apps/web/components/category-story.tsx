@@ -3,26 +3,27 @@ import { HomeCities } from "@/components/home-sections";
 import { CategoryVideo } from "@/components/category-controls";
 import { MaplePromises } from "@/components/category-nimbus";
 import story from "@/data/landing-story.json";
+import { Fragment, type ReactNode } from "react";
+import type { StoryPageContent, StorySectionKey } from "@shopmaple/contracts";
+import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 const section = (key: string) =>
   story.sections.find((item) => item.key === key)!;
-export function StoryLanding() {
+function Lines({ lines }: { lines: string[] }) {
+  return lines.map((line, index) => <Fragment key={index}>{index > 0 && <br />}{line}</Fragment>);
+}
+export function StoryLanding({ content }: { content?: StoryPageContent } = {}) {
   const belief = section("media_with_content_be4kK3");
   const film = section("media_with_content_deBkJg");
-  const timeline = section("1777584986bee6da6f").custom[0] as Record<
-    string,
-    string | boolean | number
-  >;
-  return (
-    <div className="home-parity landing-parity landing-story">
-      <section className="suggested-story-hero home-container">
+  const page = resolveStoryPageContent(content);
+  const regions: Record<StorySectionKey, ReactNode> = {
+    hero: (
+      <section className="suggested-story-hero home-container" data-story-section="hero">
         <div>
           <h1 className="landing-story-title">
-            MADE DIFFERENT,
-            <br />
-            BY DESIGN
+            <Lines lines={page.heroHeading} />
           </h1>
           <h2 className="landing-story-tagline">
-            Furniture tailored to your narrative.
+            {page.tagline}
           </h2>
           <MaplePromises />
         </div>
@@ -35,16 +36,16 @@ export function StoryLanding() {
           priority
         />
       </section>
-      <div className="suggested-story-belief home-container">
+    ),
+    "belief-film": (
+      <div className="suggested-story-belief home-container" data-story-section="belief-film">
         <section className="landing-media-content landing-story-belief">
           <div>
-            <p className="home-eyebrow">{belief.texts[0]}</p>
+            <p className="home-eyebrow">{page.beliefEyebrow}</p>
             <h2>
-              Maple doesn&apos;t believe in loud luxury.
-              <br />
-              It believes in presence
+              <Lines lines={page.beliefHeading} />
             </h2>
-            <p>{belief.texts[2]}</p>
+            <p>{page.beliefBody}</p>
           </div>
         </section>
         <section className="landing-story-film">
@@ -54,31 +55,43 @@ export function StoryLanding() {
             autoPlay={false}
           />
           <h2>
-            It&apos;s
-            <br />
-            what
-            <br />
-            stays
+            <Lines lines={page.filmHeading} />
           </h2>
         </section>
       </div>
-      <section className="landing-journey home-container">
-        <h2>The Maple Journey</h2>
+    ),
+    journey: (
+      <section className="landing-journey home-container" data-story-section="journey">
+        <h2>{page.journeyHeading}</h2>
         <ol>
-          {Array.from({ length: 7 }, (_, i) => i + 1).map((i) => (
-            <li key={i}>
-              <time>{String(timeline[`item_${i}_date`])}</time>
+          {page.timeline.map(item => (
+            <li key={item.key}>
+              <time>{item.date}</time>
               <div>
-                <h3>{String(timeline[`item_${i}_title`])}</h3>
-                <p>{String(timeline[`item_${i}_description`])}</p>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
               </div>
             </li>
           ))}
         </ol>
       </section>
-      <div className="home-divider" />
-      <HomeCities />
-      <div className="home-divider" />
+    ),
+    cities: (
+      <div data-story-section="cities">
+        <div className="home-divider" />
+        <HomeCities />
+        <div className="home-divider" />
+      </div>
+    ),
+  };
+  return (
+    <div className="home-parity landing-parity landing-story">
+      {!page.sections.some(item => item.key === "hero" && item.enabled) && (
+        <h1 className="sr-only"><Lines lines={page.heroHeading} /></h1>
+      )}
+      {page.sections.filter(item => item.enabled).map(item => (
+        <Fragment key={item.key}>{regions[item.key]}</Fragment>
+      ))}
     </div>
   );
 }
