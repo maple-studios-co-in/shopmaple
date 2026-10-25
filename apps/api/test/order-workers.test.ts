@@ -235,3 +235,14 @@ test("lowering the retry budget quarantines a crash without reducing its attempt
   const row = await db.orderOutbox.findUniqueOrThrow({ where: { id: "outbox_history" } });
   assert.equal(row.state, "failed"); assert.equal(row.deliveryAttempts, 5);
 });
+
+
+test("v2 paid snapshots are delivered with their own version and require an actual order acknowledgement",async()=>{
+ const row=await captured("versiontwo");
+ const body={...payload("versiontwo"),version:2,snapshot:{...payload("versiontwo").snapshot,version:2}};
+ await db.checkoutAttempt.update({where:{id:row.attemptId},data:{snapshot:body.snapshot}});
+ await db.orderOutbox.update({where:{id:row.id},data:{kind:"keeri.order.captured.v2",payload:body}});
+ const stats=await worker(async request=>{assert.equal((request.payload as any).version,2);return ack(request);}).runKeeriBatch();
+ assert.equal(stats.complete,1);
+ assert.equal((await db.orderOutbox.findUniqueOrThrow({where:{id:row.id}})).externalOrderId,"keeri_versiontwo");
+});
