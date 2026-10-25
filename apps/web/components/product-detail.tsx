@@ -20,7 +20,6 @@ import type { Product } from "@shopmaple/contracts";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { shopMoney, categoryNames } from "@/lib/format";
-
 type Presentation = {
   variantImages: Record<string, string>;
   reviewLabel: string | null;
@@ -40,7 +39,8 @@ export function ProductDetail({
       (v) => v.id === initialVariant || v.id === "preview-" + initialVariant,
     )?.id ??
     product.variants.find(canOrder)?.id ??
-    product.variants[0]?.id ?? "";
+    product.variants[0]?.id ??
+    "";
   const [variantId, setVariantId] = useState(initial);
   const [image, setImage] = useState(() =>
       Math.max(
@@ -75,7 +75,9 @@ export function ProductDetail({
       ...(checkedPin ? { pincode: checkedPin } : {}),
     });
   const discounted =
-    variant?.pricePaise != null && !!variant.compareAtPaise && variant.compareAtPaise > variant.pricePaise;
+    variant?.pricePaise != null &&
+    !!variant.compareAtPaise &&
+    variant.compareAtPaise > variant.pricePaise;
   async function add() {
     if (enquiry || !variant) return;
     if (await setQuantity(variantId, selectedQuantity + quantity))
@@ -122,19 +124,25 @@ export function ProductDetail({
               ))}
             </div>
             <div className="pdp-gallery-stage">
-              {product.images.length ? <button
-                className="product-main-image"
-                aria-label="Enlarge product image"
-                onClick={() => setZoom(true)}
-              >
-                <ProductImage
-                  src={product.images[image]}
-                  alt={product.title + " — view " + (image + 1)}
-                  fill
-                  sizes="(max-width:749px) 100vw, 44vw"
-                  preload
-                />
-              </button> : <div className="product-main-image"><ProductImage alt={product.title} /></div>}
+              {product.images.length ? (
+                <button
+                  className="product-main-image"
+                  aria-label="Enlarge product image"
+                  onClick={() => setZoom(true)}
+                >
+                  <ProductImage
+                    src={product.images[image]}
+                    alt={product.title + " — view " + (image + 1)}
+                    fill
+                    sizes="(max-width:749px) 100vw, 44vw"
+                    preload
+                  />
+                </button>
+              ) : (
+                <div className="product-main-image">
+                  <ProductImage alt={product.title} />
+                </div>
+              )}
               <button
                 className={"icon-button pdp-save" + (saved ? " saved" : "")}
                 onClick={() => toggleFavourite(product.handle)}
@@ -190,7 +198,8 @@ export function ProductDetail({
                 {discounted && (
                   <span className="pdp-discount">
                     {Math.round(
-                      (1 - variant!.pricePaise! / variant!.compareAtPaise!) * 100,
+                      (1 - variant!.pricePaise! / variant!.compareAtPaise!) *
+                        100,
                     )}
                     %Off
                   </span>
@@ -403,41 +412,19 @@ export function ProductDetail({
             </a>
           </div>
         </div>
-        {product.source.startsWith("shopify") && <section id="product-reviews" className="pdp-reviews">
-          <h2>Customer Reviews</h2>
-          {presentation?.reviewLabel === "No reviews" ? (
-            <>
-              <div>
-                {stars}
-                <p>Be the first to write a review</p>
-              </div>
-              <a
-                className="button"
-                href={
-                  "https://shop.maplefurnishers.com/products/" +
-                  product.handle +
-                  "#judgeme_product_reviews"
-                }
-              >
-                Write a review on our current shop
-              </a>
-            </>
-          ) : (
+        {product.source.startsWith("shopify") && (
+          <section id="product-reviews" className="pdp-reviews">
+            <h2>Customer Reviews</h2>
             <p>
-              Customer reviews are available on{" "}
-              <a
-                href={
-                  "https://shop.maplefurnishers.com/products/" +
-                  product.handle +
-                  "#judgeme_product_reviews"
-                }
-              >
-                our current shop
-              </a>
-              .
+              {presentation?.reviewLabel === "No reviews"
+                ? "No reviews yet"
+                : "Customer reviews are not available on this storefront yet."}
             </p>
-          )}
-        </section>}
+            <Link className="button button-outline" href={enquiryHref}>
+              Contact Support
+            </Link>
+          </section>
+        )}
       </div>
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div className="pdp-zoom">

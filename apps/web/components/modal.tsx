@@ -7,12 +7,14 @@ export function Modal({
   title,
   children,
   drawer = false,
+  side = "right",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   drawer?: boolean;
+  side?: "left" | "right";
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -31,7 +33,11 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      className={drawer ? "modal cart-drawer" : "modal"}
+      className={
+        drawer
+          ? `modal cart-drawer ${side === "left" ? "wishlist-drawer" : ""}`
+          : "modal"
+      }
       aria-label={title}
       onClose={onClose}
       onClick={(event) => {

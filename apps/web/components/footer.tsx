@@ -2,14 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react";
 import { shopFile } from "@/lib/format";
-
 const policies = [
   ["Privacy Policy", "privacy-policy"],
   ["Terms of Service", "terms-of-service"],
   ["Shipping Policy", "shipping-policy"],
   ["Refund Policy", "refund-policy"],
 ];
-
 export function Footer() {
   return (
     <footer className="maple-footer">
@@ -29,28 +27,19 @@ export function Footer() {
         </Link>
         <nav aria-label="About Maple">
           <h2>SHOP</h2>
-          <Link href="/pages/our-story">
-            Our Story
-          </Link>
+          <Link href="/pages/our-story">Our Story</Link>
           <Link href="/pages/bulk-enquiry">Bulk Enquiry</Link>
           <Link href="/pages/contact">Help Center</Link>
-          <a href="https://shop.maplefurnishers.com/blogs/recent-stories">
-            Blogs
-          </a>
+          <a href="/blogs/recent-stories">Blogs</a>
         </nav>
         <nav aria-label="Help and policies">
           <h2>HELP</h2>
           {policies.map(([title, slug]) => (
-            <a
-              key={slug}
-              href={`https://shop.maplefurnishers.com/policies/${slug}`}
-            >
+            <a key={slug} href={`/policies/${slug}`}>
               {title}
             </a>
           ))}
-          <a href="https://uhnuqi-tu.myshopify.com/apps/return_prime">
-            Return &amp; Exchange
-          </a>
+          <a href="/pages/returns">Return &amp; Exchange</a>
         </nav>
         <div className="maple-footer-care">
           <h2>CUSTOMER CARE</h2>
@@ -106,10 +95,7 @@ export function Footer() {
         <span>© {new Date().getFullYear()} Maple Furnishers</span>
         <nav aria-label="Store policies">
           {policies.map(([title, slug]) => (
-            <a
-              key={slug}
-              href={`https://shop.maplefurnishers.com/policies/${slug}`}
-            >
+            <a key={slug} href={`/policies/${slug}`}>
               {title}
             </a>
           ))}

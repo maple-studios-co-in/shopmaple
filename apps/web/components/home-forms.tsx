@@ -92,12 +92,12 @@ export function HomeNewsletterForm() {
         </button>
       </div>
       <p className="home-preview-detail">
-        Complete your subscription on our live store.
+        Newsletter signup is not available yet.
       </p>
       {continueSignup && (
         <p role="status">
-          <a href="https://shop.maplefurnishers.com/#shopify-section-template--20718709178557__section_kffDfT">
-            Continue to newsletter signup <ArrowRight size={16} />
+          <a href="/pages/contact">
+            Contact <ArrowRight size={16} />
           </a>
           <span className="home-preview-detail">
             {" "}

@@ -1,18 +1,15 @@
 "use client";
-
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { useEnquiry } from "@/components/use-enquiry";
 import { shopFile } from "@/lib/format";
-
 export type EnquiryContext = {
   product: string;
   variant: string;
   sku: string;
   pincode: string;
 };
-
 export function ContactForm({
   bulk = false,
   context,
@@ -25,7 +22,14 @@ export function ContactForm({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    void enquiry.submit({kind: bulk ? "bulk" : "contact", name: String(form.get("name") ?? ""), email: String(form.get("email") ?? ""), phone: String(form.get("phone") ?? ""), message: String(form.get("message") ?? ""), context});
+    void enquiry.submit({
+      kind: bulk ? "bulk" : "contact",
+      name: String(form.get("name") ?? ""),
+      email: String(form.get("email") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      message: String(form.get("message") ?? ""),
+      context,
+    });
   }
   return (
     <form
@@ -99,18 +103,25 @@ export function ContactForm({
         {enquiry.pending ? "Saving…" : bulk ? "Request Proposal" : "Submit"}
       </button>
       <p id={`${id}-email-note`} className="cp-email-note">
-        Development preview: enquiries are saved locally. Team notifications are not connected yet.
+        Development preview: enquiries are saved locally. Team notifications are
+        not connected yet.
       </p>
-      {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="cp-email-note">{enquiry.message}</p>}
+      {enquiry.message && (
+        <p role={enquiry.failed ? "alert" : "status"} className="cp-email-note">
+          {enquiry.message}
+        </p>
+      )}
     </form>
   );
 }
-
 type HelpCategory = {
   title: string;
   subtitle: string;
   icon: string;
-  questions: { question: string; answer: string }[];
+  questions: {
+    question: string;
+    answer: string;
+  }[];
 };
 export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
   const [active, setActive] = useState(0);
@@ -141,13 +152,21 @@ export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
           </details>
         ))}
       </div>
-      <p className="cp-account-note">
-        For existing orders and account services, visit{" "}
-        <a href="https://shop.maplefurnishers.com/account">
-          your account on our live store
-        </a>{" "}
-        or <a href="mailto:contact@maplefurnishers.com">contact our team</a>.
-      </p>
+      <div className="cp-account-note">
+        <div>
+          <strong>Still need help?</strong>
+          <p>
+            Account sign-in and order tracking are not available on this
+            storefront yet. Contact support for help with an existing order.
+          </p>
+        </div>
+        <a
+          className="button button-outline"
+          href="mailto:contact@maplefurnishers.com"
+        >
+          Contact Support →
+        </a>
+      </div>
     </>
   );
   return (

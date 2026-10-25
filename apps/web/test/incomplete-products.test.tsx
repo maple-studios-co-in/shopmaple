@@ -126,3 +126,18 @@ test("an unverified stock policy never offers purchase even when a price and ava
     assert.ok(document.querySelector(".pdp-purchase a"));
   });
 });
+
+test("Shopify-origin details keep review and support navigation internal", async () => {
+  await mount(
+    <ProductDetail product={{ ...model, source: "shopify-preview" }} />,
+    () => {
+      assert.equal(
+        Boolean(document.querySelector('a[href*="shop.maplefurnishers.com"]')),
+        false,
+      );
+      assert.ok(
+        document.querySelector('#product-reviews a[href^="/pages/contact"]'),
+      );
+    },
+  );
+});

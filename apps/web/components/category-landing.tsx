@@ -1,4 +1,5 @@
 import Image, { getImageProps } from "next/image";
+import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
 import { cache, type CSSProperties } from "react";
 import { getProducts } from "@/lib/catalog";
@@ -9,7 +10,6 @@ import { HomeCarousel } from "@/components/home-carousel";
 import { CategoryIntroduction } from "@/components/category-controls";
 import categories from "@/data/landing-categories.json";
 import sourceCatalog from "@/data/landing-catalog.json";
-
 type SourceProduct = {
   handle: string;
   title: string;
@@ -25,21 +25,24 @@ type LandingSection = {
   height?: number;
   desktop?: string;
   mobile?: string;
-  items?: { href?: string; title: string; image: string; body?: string }[];
+  items?: {
+    href?: string;
+    title: string;
+    image: string;
+    body?: string;
+  }[];
   heading?: string;
   eyebrow?: string;
   handles?: string[];
   collection?: string;
   viewAll?: boolean;
 };
-
 export function landingCollectionHref(path: string) {
   const handle = path.split("/").filter(Boolean).at(-1) || "all";
   return Object.hasOwn(collectionTitles, handle)
     ? `/collections/${handle}`
-    : `https://shop.maplefurnishers.com/collections/${handle}`;
+    : `/collections/all?q=${encodeURIComponent(handle.replaceAll("-", " "))}`;
 }
-
 export function CategoryBanner({
   desktop,
   mobile,
@@ -88,10 +91,9 @@ export function CategoryBanner({
     </div>
   );
 }
-
 function SourceProductCard({ product }: { product: SourceProduct }) {
-  // A product absent from the owned catalogue remains a truthful link to the source store.
-  const href = `https://shop.maplefurnishers.com/products/${product.handle}`;
+  // Keep editorial products absent from the live catalogue enquiry-only.
+  const href = `/pages/contact?product=${encodeURIComponent(product.title)}`;
   return (
     <article className="product-card landing-source-product">
       <div className="product-card-image">
@@ -103,19 +105,16 @@ function SourceProductCard({ product }: { product: SourceProduct }) {
             sizes="(max-width: 749px) 48vw, 25vw"
           />
         </a>
-        {product.compareAt && <span className="card-sale">Sale</span>}
       </div>
       <a className="product-card-name" href={href}>
         {product.title}
       </a>
       <p className="product-card-price">
-        <span>{product.price}</span>
-        {product.compareAt && <del>{product.compareAt}</del>}
+        <span>Price on request</span>
       </p>
     </article>
   );
 }
-
 const landingCatalogue = cache(async () => {
   const first = await getProducts({ limit: "50", sort: "featured" });
   const remaining = await Promise.all(
@@ -131,7 +130,6 @@ const landingCatalogue = cache(async () => {
     ),
   );
 });
-
 export async function CategoryProducts({
   handles,
   heading,
@@ -180,11 +178,14 @@ export async function CategoryProducts({
     </section>
   );
 }
-
 export function CategoryValues({
   items,
 }: {
-  items: { title: string; body?: string; image: string }[];
+  items: {
+    title: string;
+    body?: string;
+    image: string;
+  }[];
 }) {
   return (
     <section className="landing-values home-values home-container">
@@ -207,23 +208,31 @@ export function CategoryValues({
     </section>
   );
 }
-
 export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
   const data = categories[slug];
+  let campaignSlot = 0;
   return (
     <div className="home-parity landing-parity">
       {(data.sections as LandingSection[]).map((section, index) => {
-        if (section.type === "banner")
+        if (section.type === "banner") {
+          const campaign =
+            campaignSlot++ < 2
+              ? (`${slug}-${campaignSlot === 1 ? "hero" : "sale"}` as const)
+              : null;
           return (
             <div key={index}>
-              <CategoryBanner
-                desktop={section.desktop!}
-                mobile={section.mobile!}
-                width={section.width!}
-                height={section.height!}
-                eager={index === 0}
-                alt={`${data.title} — ${index === 0 ? "furniture for every occasion" : "find furniture for your space"}`}
-              />
+              {campaign ? (
+                <CampaignBanner campaign={campaign} />
+              ) : (
+                <CategoryBanner
+                  desktop={section.desktop!}
+                  mobile={section.mobile!}
+                  width={section.width!}
+                  height={section.height!}
+                  eager={index === 0}
+                  alt={`${data.title} — ${index === 0 ? "furniture for every occasion" : "find furniture for your space"}`}
+                />
+              )}
               {index === 0 && (
                 <CategoryIntroduction
                   title={data.title}
@@ -232,6 +241,7 @@ export function CategoryLanding({ slug }: { slug: keyof typeof categories }) {
               )}
             </div>
           );
+        }
         if (section.type === "categories")
           return (
             <nav

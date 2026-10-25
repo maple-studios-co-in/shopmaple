@@ -4,7 +4,14 @@ import { productSchema, type Product } from "@shopmaple/contracts";
 import { useShop } from "./shop-provider";
 import { ProductCard } from "./product-card";
 import Link from "next/link";
-export function Favourites() {
+import { Heart } from "lucide-react";
+export function Favourites({
+  onNavigate,
+  compact = false,
+}: {
+  onNavigate?: () => void;
+  compact?: boolean;
+}) {
   const { favourites, toggleFavourite } = useShop();
   const [products, setProducts] = useState<Product[]>([]),
     [missing, setMissing] = useState<string[]>([]),
@@ -53,7 +60,12 @@ export function Favourites() {
     );
   return favourites.length ? (
     <>
-      <div className="product-grid">
+      <div
+        className={`product-grid ${compact ? "wishlist-preview" : ""}`}
+        onClick={(event) => {
+          if ((event.target as HTMLElement).closest("a")) onNavigate?.();
+        }}
+      >
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
@@ -71,14 +83,15 @@ export function Favourites() {
       ))}
     </>
   ) : (
-    <div className="empty-state">
-      <h2>A little room for inspiration</h2>
+    <div className="empty-state wishlist-empty">
+      <Heart size={44} strokeWidth={1} aria-hidden="true" />
+      <h2>Your wishlist is empty</h2>
       <p>
         Tap the heart on a piece to keep it here. Saved furniture stays in this
         browser.
       </p>
-      <Link className="button" href="/collections/all">
-        Explore furniture
+      <Link className="button" href="/collections/all" onClick={onNavigate}>
+        Explore Collections
       </Link>
     </div>
   );

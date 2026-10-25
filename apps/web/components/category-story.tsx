@@ -5,7 +5,6 @@ import { MaplePromises } from "@/components/category-nimbus";
 import story from "@/data/landing-story.json";
 const section = (key: string) =>
   story.sections.find((item) => item.key === key)!;
-
 export function StoryLanding() {
   const belief = section("media_with_content_be4kK3");
   const film = section("media_with_content_deBkJg");
@@ -15,48 +14,54 @@ export function StoryLanding() {
   >;
   return (
     <div className="home-parity landing-parity landing-story">
-      <h1 className="landing-story-title">
-        MADE DIFFERENT,
-        <br />
-        BY DESIGN
-      </h1>
-      <div className="home-divider home-divider-short" />
-      <h2 className="landing-story-tagline">
-        Furniture tailored to your narrative.
-      </h2>
-      <MaplePromises />
-      <section className="landing-media-content landing-story-belief">
+      <section className="suggested-story-hero home-container">
+        <div>
+          <h1 className="landing-story-title">
+            MADE DIFFERENT,
+            <br />
+            BY DESIGN
+          </h1>
+          <h2 className="landing-story-tagline">
+            Furniture tailored to your narrative.
+          </h2>
+          <MaplePromises />
+        </div>
         <Image
           src={belief.images[0]!}
           alt="Maple furniture craftsmanship"
           width={1200}
           height={1200}
-          sizes="(max-width:749px) 100vw, 50vw"
+          sizes="(max-width:749px) 92vw, 50vw"
+          priority
         />
-        <div>
-          <p className="home-eyebrow">{belief.texts[0]}</p>
+      </section>
+      <div className="suggested-story-belief home-container">
+        <section className="landing-media-content landing-story-belief">
+          <div>
+            <p className="home-eyebrow">{belief.texts[0]}</p>
+            <h2>
+              Maple doesn&apos;t believe in loud luxury.
+              <br />
+              It believes in presence
+            </h2>
+            <p>{belief.texts[2]}</p>
+          </div>
+        </section>
+        <section className="landing-story-film">
+          <CategoryVideo
+            desktop={film.videos[0]!}
+            label="The Maple workshop"
+            autoPlay={false}
+          />
           <h2>
-            Maple doesn&apos;t believe in loud luxury.
+            It&apos;s
             <br />
-            It believes in presence
+            what
+            <br />
+            stays
           </h2>
-          <p>{belief.texts[2]}</p>
-        </div>
-      </section>
-      <section className="landing-story-film">
-        <CategoryVideo
-          desktop={film.videos[0]!}
-          label="The Maple workshop"
-          autoPlay={false}
-        />
-        <h2>
-          It&apos;s
-          <br />
-          what
-          <br />
-          stays
-        </h2>
-      </section>
+        </section>
+      </div>
       <section className="landing-journey home-container">
         <h2>The Maple Journey</h2>
         <ol>

@@ -10,7 +10,6 @@ import {
 } from "../lib/navigation";
 import products from "../data/navigation-products.json";
 import { shopFile, shopMoney } from "../lib/format";
-
 function CategoryLink({
   item,
   onNavigate,
@@ -28,7 +27,6 @@ function CategoryLink({
     </Link>
   );
 }
-
 export function DesktopNavigation() {
   const [active, setActive] = useState<string | null>(null);
   const nav = useRef<HTMLElement>(null);
@@ -119,7 +117,7 @@ export function DesktopNavigation() {
                     sizes="220px"
                   />
                   <span>{item.title}</span>
-                  <h2>Made for your everyday.</h2>
+                  <h2>{item.title}</h2>
                   <Link
                     href={
                       item.title === "Bedroom"
@@ -128,7 +126,7 @@ export function DesktopNavigation() {
                     }
                     onClick={() => setActive(null)}
                   >
-                    Explore the collection <ArrowUpRight size={15} />
+                    View all <ArrowUpRight size={15} />
                   </Link>
                 </div>
                 <div className="maple-mega-grid">
@@ -148,13 +146,13 @@ export function DesktopNavigation() {
                   <Link href="/collections/all" onClick={() => setActive(null)}>
                     <strong>All furniture</strong>
                     <span>
-                      Find your next piece <ArrowUpRight size={15} />
+                      View all <ArrowUpRight size={15} />
                     </span>
                   </Link>
                   <Link href="/pages/our-story" onClick={() => setActive(null)}>
-                    <strong>Behind the craft</strong>
+                    <strong>Our Story</strong>
                     <span>
-                      Get to know Maple <ArrowUpRight size={15} />
+                      Read More <ArrowUpRight size={15} />
                     </span>
                   </Link>
                   <Link
@@ -162,9 +160,9 @@ export function DesktopNavigation() {
                     aria-label="Enquire about custom furniture"
                     onClick={() => setActive(null)}
                   >
-                    <strong>Need a custom size?</strong>
+                    <strong>Fully Customizable</strong>
                     <span>
-                      Tell us about your space <ArrowUpRight size={15} />
+                      Contact <ArrowUpRight size={15} />
                     </span>
                   </Link>
                 </div>
@@ -185,14 +183,13 @@ export function DesktopNavigation() {
     </nav>
   );
 }
-
 function ProductRail({ living = false }: { living?: boolean }) {
   return (
     <div className="maple-menu-products" aria-label="Featured furniture">
       {products.slice(living ? 4 : 0, living ? 6 : 4).map((product) => (
         <Link
           key={product.handle}
-          href={`https://shop.maplefurnishers.com/products/${product.handle}`}
+          href={`/products/${product.handle}`}
           className="maple-menu-product"
         >
           <Image
@@ -216,7 +213,6 @@ function ProductRail({ living = false }: { living?: boolean }) {
     </div>
   );
 }
-
 export function MobileNavigation({
   open,
   onClose,
@@ -368,11 +364,8 @@ export function MobileNavigation({
               >
                 Custom furniture <ArrowUpRight size={16} />
               </Link>
-              <a
-                href="https://shop.maplefurnishers.com/account"
-                onClick={onClose}
-              >
-                Existing Shopify orders <ArrowUpRight size={16} />
+              <a href="/account" onClick={onClose}>
+                Account <ArrowUpRight size={16} />
               </a>
             </nav>
             <ProductRail />

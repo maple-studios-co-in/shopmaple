@@ -1,3 +1,4 @@
+import instagramPosts from "@/data/instagram-posts.json";
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { ArrowRight, Instagram } from "lucide-react";
@@ -89,9 +90,9 @@ export function HomeSocial({ second = false }: { second?: boolean }) {
       >
         <Instagram size={20} /> @the_maple_experience <ArrowRight size={18} />
       </a>
-      <p className="home-preview-detail">
-        The live Instagram feed is available on our Instagram profile.
-      </p>
+      <div className="home-instagram-posts">
+        {instagramPosts.map(post => <a key={post.href} href={post.href} target="_blank" rel="noopener noreferrer" aria-label={post.alt ?? "Maple on Instagram"}><Image src={post.src} alt={post.alt ?? "Maple on Instagram"} fill sizes="(max-width:749px) 75vw, 25vw" /><Instagram aria-hidden="true" size={22} /></a>)}
+      </div>
     </section>
   );
 }
@@ -109,7 +110,7 @@ export function HomeTestimonial() {
           playsInline
           preload="none"
           poster={shopFile(
-            "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000_small.jpg?v=1778852379",
+            "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960",
           )}
           aria-label="Maple customer testimonial"
         >
