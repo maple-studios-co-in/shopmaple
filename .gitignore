@@ -1,0 +1,29 @@
+# Dependencies and generated output
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+*.log
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+
+# Store exports and local research are private reference material.
+/reference/
+/commerce-stack-recommendation-2026-10-25.md
+/competitor-analysis-2026-10-25.md
+
+# Local runtime data and browser test artifacts
+/data/
+/backups/
+/uploads/
+playwright-report/
+test-results/
