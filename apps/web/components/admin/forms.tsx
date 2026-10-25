@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
+import { CampaignScheduleFields } from "./campaign-schedule-fields";
 import type {
   StorefrontContent,
   CampaignContent,
@@ -43,14 +44,21 @@ type Props = {
   onChange: (content: StorefrontContent) => void;
   session?: StaffSession;
   onExpired?: () => void;
+  onScheduleEditingChange?: (editing: boolean) => void;
 };
 export function CampaignFields({
   content,
   onChange,
   session,
   onExpired,
+  onScheduleEditingChange,
 }: Props) {
   const [selected, setSelected] = useState(0);
+  const [scheduleEditing, setScheduleEditing] = useState(false);
+  useEffect(() => {
+    onScheduleEditingChange?.(scheduleEditing);
+    return () => onScheduleEditingChange?.(false);
+  }, [scheduleEditing, onScheduleEditingChange]);
   const campaign = content.campaigns[selected];
   function update(patch: Partial<CampaignContent>) {
     onChange({
@@ -76,6 +84,7 @@ export function CampaignFields({
             <select
               aria-label="Campaign"
               value={selected}
+              disabled={scheduleEditing}
               onChange={(event) => setSelected(Number(event.target.value))}
             >
               {content.campaigns.map((value, index) => (
@@ -92,6 +101,12 @@ export function CampaignFields({
                 value={campaign.label}
                 maxLength={120}
                 onChange={(label) => update({ label })}
+              />
+              <CampaignScheduleFields
+                key={campaign.key}
+                value={campaign.schedule}
+                onChange={(schedule) => update({ schedule })}
+                onEditingChange={setScheduleEditing}
               />
               <Field
                 label="Campaign headline"

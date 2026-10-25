@@ -16,8 +16,8 @@ async function documentFor(element: React.ReactNode) {
 }
 test("category landings replace their two seasonal slots with current hero and sale campaigns", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () =>
-    Response.json({
+  globalThis.fetch = async (url) =>
+    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({
       products: [],
       total: 0,
       page: 1,
@@ -46,8 +46,8 @@ test("category landings replace their two seasonal slots with current hero and s
 });
 test("collection campaigns keep their CTA on the visible product grid", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () =>
-    Response.json({
+  globalThis.fetch = async (url) =>
+    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({
       products: [],
       total: 0,
       page: 1,
