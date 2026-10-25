@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
+import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -38,8 +39,8 @@ export function ProductDetail({
     product.variants.find(
       (v) => v.id === initialVariant || v.id === "preview-" + initialVariant,
     )?.id ??
-    product.variants.find((v) => v.available)?.id ??
-    product.variants[0]!.id;
+    product.variants.find(canOrder)?.id ??
+    product.variants[0]?.id ?? "";
   const [variantId, setVariantId] = useState(initial);
   const [image, setImage] = useState(() =>
       Math.max(
@@ -60,8 +61,8 @@ export function ProductDetail({
     favourites,
     toggleFavourite,
   } = useShop();
-  const variant = product.variants.find((v) => v.id === variantId)!;
-  const enquiry = variant.stockPolicy === "made_to_order" || !variant.available;
+  const variant = product.variants.find((v) => v.id === variantId);
+  const enquiry = !canOrder(variant);
   const selectedQuantity =
     cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
@@ -69,13 +70,14 @@ export function ProductDetail({
     "/pages/contact?" +
     new URLSearchParams({
       product: product.title,
-      variant: variant.title,
-      sku: variant.sku ?? variant.id,
+      ...(variant ? { variant: variant.title } : {}),
+      ...(variant?.sku ? { sku: variant.sku } : {}),
       ...(checkedPin ? { pincode: checkedPin } : {}),
     });
   const discounted =
-    !!variant.compareAtPaise && variant.compareAtPaise > variant.pricePaise;
+    variant?.pricePaise != null && !!variant.compareAtPaise && variant.compareAtPaise > variant.pricePaise;
   async function add() {
+    if (enquiry || !variant) return;
     if (await setQuantity(variantId, selectedQuantity + quantity))
       setCartOpen(true);
   }
@@ -101,8 +103,8 @@ export function ProductDetail({
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
           <span>›</span>
-          <Link href={"/collections/" + product.category}>
-            {categoryNames[product.category]}
+          <Link href={"/collections/" + (product.category ?? "all")}>
+            {categoryNames[product.category ?? "all"]}
           </Link>
         </nav>
         <div className="product-detail pdp-detail">
@@ -115,24 +117,24 @@ export function ProductDetail({
                   aria-label={"Show product image " + (i + 1)}
                   aria-pressed={image === i}
                 >
-                  <Image src={src} alt="" width={76} height={76} />
+                  <ProductImage src={src} alt="" width={76} height={76} />
                 </button>
               ))}
             </div>
             <div className="pdp-gallery-stage">
-              <button
+              {product.images.length ? <button
                 className="product-main-image"
                 aria-label="Enlarge product image"
                 onClick={() => setZoom(true)}
               >
-                <Image
-                  src={product.images[image]!}
+                <ProductImage
+                  src={product.images[image]}
                   alt={product.title + " — view " + (image + 1)}
                   fill
                   sizes="(max-width:749px) 100vw, 44vw"
                   preload
                 />
-              </button>
+              </button> : <div className="product-main-image"><ProductImage alt={product.title} /></div>}
               <button
                 className={"icon-button pdp-save" + (saved ? " saved" : "")}
                 onClick={() => toggleFavourite(product.handle)}
@@ -184,17 +186,17 @@ export function ProductDetail({
             )}
             <div className="pdp-price-block">
               <div>
-                <strong>{shopMoney(variant.pricePaise)}</strong>
+                <strong>{shopMoney(variant?.pricePaise ?? null)}</strong>
                 {discounted && (
                   <span className="pdp-discount">
                     {Math.round(
-                      (1 - variant.pricePaise / variant.compareAtPaise!) * 100,
+                      (1 - variant!.pricePaise! / variant!.compareAtPaise!) * 100,
                     )}
                     %Off
                   </span>
                 )}
               </div>
-              {discounted && <del>{shopMoney(variant.compareAtPaise!)}</del>}
+              {discounted && <del>{shopMoney(variant!.compareAtPaise!)}</del>}
               <p>
                 Delivery and applicable taxes will be confirmed by our team.
               </p>
@@ -202,7 +204,7 @@ export function ProductDetail({
             {product.variants.length > 1 && (
               <fieldset className="pdp-variants">
                 <legend>
-                  Choose your option <span>{variant.title}</span>
+                  Choose your option <span>{variant?.title}</span>
                 </legend>
                 <div>
                   {product.variants.map((v) => (
@@ -219,7 +221,7 @@ export function ProductDetail({
                       />
                       <span className="pdp-variant-image">
                         {presentation?.variantImages[v.id] && (
-                          <Image
+                          <ProductImage
                             src={presentation.variantImages[v.id]!}
                             alt=""
                             fill
@@ -393,7 +395,7 @@ export function ProductDetail({
                 <Link href={enquiryHref}>
                   Request dimensions and specifications
                 </Link>
-                {variant.sku && <p>SKU: {variant.sku}</p>}
+                {variant?.sku && <p>SKU: {variant.sku}</p>}
               </details>
             </div>
             <a className="pdp-phone" href="tel:+918796130252">
@@ -401,7 +403,7 @@ export function ProductDetail({
             </a>
           </div>
         </div>
-        <section id="product-reviews" className="pdp-reviews">
+        {product.source.startsWith("shopify") && <section id="product-reviews" className="pdp-reviews">
           <h2>Customer Reviews</h2>
           {presentation?.reviewLabel === "No reviews" ? (
             <>
@@ -435,12 +437,12 @@ export function ProductDetail({
               .
             </p>
           )}
-        </section>
+        </section>}
       </div>
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div className="pdp-zoom">
-          <Image
-            src={product.images[image]!}
+          <ProductImage
+            src={product.images[image]}
             alt={product.title}
             width={1200}
             height={1200}

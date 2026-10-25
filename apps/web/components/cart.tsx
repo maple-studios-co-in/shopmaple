@@ -1,5 +1,6 @@
 "use client";
-import Image from "next/image";
+import { ProductImage } from "./product-image";
+import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useShop } from "./shop-provider";
@@ -39,7 +40,7 @@ export function CartContents() {
               onClick={() => setCartOpen(false)}
               className="cart-image"
             >
-              <Image src={item.image} alt={item.title} fill sizes="100px" />
+              <ProductImage src={item.image} alt={item.title} fill sizes="100px" />
             </Link>
             <div>
               <Link
@@ -50,15 +51,15 @@ export function CartContents() {
               </Link>
               <p className="muted">{item.variantTitle}</p>
               <p>{money(item.pricePaise)}</p>
-              {!item.available && (
+              {!canOrder(item) && (
                 <p className="error-text">
-                  Currently unavailable. Please remove this item or contact us.
+                  Please contact us to confirm price and availability.
                 </p>
               )}
               <div className="quantity-row">
                 <div className="quantity-control">
                   <button
-                    disabled={busy}
+                    disabled={busy || !canOrder(item)}
                     onClick={() =>
                       void setQuantity(item.variantId, item.quantity - 1)
                     }
@@ -68,7 +69,7 @@ export function CartContents() {
                   </button>
                   <span>{item.quantity}</span>
                   <button
-                    disabled={busy || item.quantity >= 20 || !item.available}
+                    disabled={busy || item.quantity >= 20 || !canOrder(item)}
                     onClick={() =>
                       void setQuantity(item.variantId, item.quantity + 1)
                     }
@@ -104,10 +105,10 @@ export function CartContents() {
         <p>Shipping and availability will be confirmed before payment.</p>
         <Link
           className="button full-width"
-          href="/checkout"
+          href={cart.items.every(canOrder) && cart.subtotalPaise !== null ? "/checkout" : "/pages/contact"}
           onClick={() => setCartOpen(false)}
         >
-          Continue to checkout
+          {cart.items.every(canOrder) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
         </Link>
         <p className="preview-disclosure">
           Preview only. Online payment is not available yet.

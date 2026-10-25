@@ -1,3 +1,4 @@
+import { canOrder, lowestPrice } from "./product-availability";
 import type { Product } from "@shopmaple/contracts";
 import membership from "../data/collection-membership.json";
 import { categoryNames } from "./format";
@@ -73,17 +74,20 @@ export function collectionQuery(
   };
 }
 export function collectionMembers(products: Product[], handle: string) {
+  if (handle === "all") return products;
+  if (Object.hasOwn(categoryNames, handle))
+    return products.filter((product) => product.category === handle);
   if (Object.hasOwn(membership, handle)) {
     const byHandle = new Map(
-      products.map((product) => [product.handle, product]),
+      products
+        .filter((product) => product.category !== null)
+        .map((product) => [product.handle, product]),
     );
     return ((membership as Record<string, string[]>)[handle] ?? [])
       .map((member) => byHandle.get(member))
       .filter((product): product is Product => Boolean(product));
   }
-  return handle === "all"
-    ? products
-    : products.filter((product) => product.category === handle);
+  return products.filter((product) => product.category === handle);
 }
 export function filterCollection(products: Product[], query: CollectionQuery) {
   const min = query.min ? Math.round(Number(query.min) * 100) : 0;
@@ -92,27 +96,35 @@ export function filterCollection(products: Product[], query: CollectionQuery) {
     const text = `${product.title} ${product.description}`.toLowerCase();
     if (query.q && !text.includes(query.q.toLowerCase())) return false;
     if (query.category && product.category !== query.category) return false;
+    const hasPriceFilter = Boolean(query.min || query.max);
+    if (!hasPriceFilter && !query.availability) return true;
+    if (!product.variants.length)
+      return !hasPriceFilter && query.availability === "out";
     return product.variants.some(
       (variant) =>
-        variant.pricePaise >= min &&
-        variant.pricePaise <= max &&
+        (!hasPriceFilter ||
+          (variant.pricePaise !== null &&
+            variant.pricePaise >= min &&
+            variant.pricePaise <= max)) &&
         (!query.availability ||
           (query.availability === "in"
-            ? variant.available
-            : !variant.available)),
+            ? canOrder(variant)
+            : !canOrder(variant))),
     );
   });
-  const price = (product: Product) =>
-    Math.min(...product.variants.map((v) => v.pricePaise));
   if (query.sort === "title" || query.sort === "title-desc")
     filtered.sort(
       (a, b) =>
         a.title.localeCompare(b.title) * (query.sort === "title-desc" ? -1 : 1),
     );
   if (query.sort === "price-asc" || query.sort === "price-desc")
-    filtered.sort(
-      (a, b) => (price(a) - price(b)) * (query.sort === "price-desc" ? -1 : 1),
-    );
+    filtered.sort((a, b) => {
+      const first = lowestPrice(a);
+      const second = lowestPrice(b);
+      if (first === null) return second === null ? 0 : 1;
+      if (second === null) return -1;
+      return (first - second) * (query.sort === "price-desc" ? -1 : 1);
+    });
   return filtered;
 }
 export function collectionHref(

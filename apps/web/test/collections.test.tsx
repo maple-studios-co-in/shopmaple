@@ -28,7 +28,7 @@ const makeProduct = (
     pricePaise,
     compareAtPaise: null,
     available: availability[i]!,
-    stockPolicy: "unverified",
+    stockPolicy: "stocked",
   })),
 });
 test("price and availability must match the same variant", () => {

@@ -28,7 +28,7 @@ type Props = {
   limit: number;
   inStock: number;
   outOfStock: number;
-  highestPrice: number;
+  highestPrice: number | null;
 };
 function FilterFields({
   handle,
@@ -81,7 +81,7 @@ function FilterFields({
             value="in"
             defaultChecked={query.availability === "in"}
           />{" "}
-          In stock <span>{inStock}</span>
+          Available to order <span>{inStock}</span>
         </label>
         <label className="collection-check">
           <input
@@ -90,7 +90,7 @@ function FilterFields({
             value="out"
             defaultChecked={query.availability === "out"}
           />{" "}
-          Out of stock <span>{outOfStock}</span>
+          Enquiry only <span>{outOfStock}</span>
         </label>
       </details>
       <details open className="collection-facet">
@@ -121,13 +121,13 @@ function FilterFields({
               type="number"
               min="0"
               step="0.01"
-              placeholder={String(highestPrice / 100)}
+              placeholder={highestPrice === null ? "Any price" : String(highestPrice / 100)}
               defaultValue={query.max}
             />
           </label>
         </div>
         <p className="collection-price-caption">
-          The highest price is {money(highestPrice)}
+          {highestPrice === null ? "Prices available on request" : `The highest listed price is ${money(highestPrice)}`}
         </p>
       </details>
       {handle === "all" && (
@@ -265,8 +265,8 @@ export function CollectionListing(props: Props) {
                       "availability",
                       query.availability
                         ? query.availability === "in"
-                          ? "In stock"
-                          : "Out of stock"
+                          ? "Available to order"
+                          : "Enquiry only"
                         : "",
                       "availability",
                     ],
