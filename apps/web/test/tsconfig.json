@@ -4,7 +4,8 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": ["../*"],
-      "next/image": ["./support/next-image.tsx"]
+      "next/image": ["./support/next-image.tsx"],
+      "server-only": ["./support/server-only.ts"]
     }
   }
 }

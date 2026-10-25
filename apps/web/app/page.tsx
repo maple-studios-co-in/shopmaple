@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
 import { HomeNimbus } from "@/components/home-nimbus";
 import {
+  HomeBanner,
   HomeTestimonial,
   HomeNewsletter,
   HomeProject,
@@ -99,6 +100,12 @@ export default function Home() {
   return (
     <div className="home-parity home-refined">
       <Hero />
+      <HomeBanner
+        desktop="1_Sofa_web_banner_Hompage_44dfb940-c378-4980-9268-f6d79c2d5ac0.png?v=1791220477"
+        mobile="2_-_Sofa_Mobile_banner_Announcment_9330e4f1-cd1c-464c-9331-43d1d0493619.png?v=1791220728"
+        alt="Festive Seating. Warm seating for festive moments together. Explore chairs."
+        href="/collections/chairs"
+      />
       <section className="home-category-section home-container">
         <h2>Find your favourite corner</h2>
         <p className="home-section-intro">
@@ -106,6 +113,12 @@ export default function Home() {
         </p>
         <CollectionTiles items={categories} className="home-categories" />
       </section>
+      <HomeBanner
+        desktop="1_Sofa_web_banner_Occasion_49c3c263-028f-4c30-aaf1-8a6958341d03.png?v=1791221199"
+        mobile="2_-_Sofa_Mobile_banner_Hompage_6a17e9ed-de09-45fe-bd0f-0326bc909f88.png?v=1791221212"
+        alt="Dine Together. Make every shared meal special. Explore dining."
+        href="/collections/dinings"
+      />
       <HomeProducts
         handles={[
           "aera-swivel-lounge-chair",
@@ -119,6 +132,12 @@ export default function Home() {
         label="Selected furniture"
       />
       <HomeNimbus />
+      <HomeBanner
+        desktop="1_Sofa_web_banner_Hompage_f6b7af18-c1b6-43c3-99cd-979b550ad92c.png?v=1791221013"
+        mobile="2_-_Sofa_Mobile_banner_Homepage_51dae10b-a774-4a27-8dca-8f21aa99bf5d.png?v=1791221068"
+        alt="Gather in Comfort. A refined corner for slow, happy moments. Explore sofas."
+        href="/collections/sofas"
+      />
       <HomeProducts
         handles={["caro", "ario", "nola", "tara", "arno", "rollo"]}
         heading="A seat for every space"
