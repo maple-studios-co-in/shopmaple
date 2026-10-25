@@ -5,6 +5,9 @@ import {
   type StorefrontContent,
 } from "@shopmaple/contracts";
 import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
+import { CategoryFields } from "./category-fields";
+import { MediaLibrary } from "./media-library";
+import { EnquiryInbox } from "./enquiry-inbox";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 type Document = {
@@ -26,6 +29,9 @@ const tabs = [
   "Campaigns",
   "Instagram",
   "Pages",
+  "Category pages",
+  "Media",
+  "Enquiries",
   "History",
 ] as const;
 type Tab = (typeof tabs)[number];
@@ -302,17 +308,23 @@ export function ContentEditor({
       ) : (
         <div className="admin-workspace">
           <nav aria-label="Content sections">
-            {tabs.map((name) => (
-              <button
-                key={name}
-                aria-current={tab === name ? "page" : undefined}
-                onClick={() =>
-                  name === "History" ? void history() : setTab(name)
-                }
-              >
-                {name}
-              </button>
-            ))}
+            {tabs
+              .filter(
+                (name) =>
+                  name !== "Enquiries" ||
+                  session.user.canManageEnquiries === true,
+              )
+              .map((name) => (
+                <button
+                  key={name}
+                  aria-current={tab === name ? "page" : undefined}
+                  onClick={() =>
+                    name === "History" ? void history() : setTab(name)
+                  }
+                >
+                  {name}
+                </button>
+              ))}
           </nav>
           <div className="admin-panel">
             <fieldset disabled={busy || conflict}>
@@ -480,14 +492,44 @@ export function ContentEditor({
                 </>
               )}
               {tab === "Campaigns" && (
-                <CampaignFields content={content} onChange={edit} />
+                <CampaignFields
+                  content={content}
+                  onChange={edit}
+                  session={session}
+                  onExpired={onExpired}
+                />
               )}
               {tab === "Instagram" && (
-                <InstagramFields content={content} onChange={edit} />
+                <InstagramFields
+                  content={content}
+                  onChange={edit}
+                  session={session}
+                  onExpired={onExpired}
+                />
               )}
               {tab === "Pages" && (
-                <PageFields content={content} onChange={edit} />
+                <PageFields
+                  content={content}
+                  onChange={edit}
+                  session={session}
+                  onExpired={onExpired}
+                />
               )}
+              {tab === "Category pages" && (
+                <CategoryFields
+                  value={content.landingPages}
+                  onChange={(landingPages) =>
+                    edit({ ...content, landingPages })
+                  }
+                />
+              )}
+              {tab === "Media" && (
+                <MediaLibrary session={session} onExpired={onExpired} />
+              )}
+              {tab === "Enquiries" &&
+                session.user.canManageEnquiries === true && (
+                  <EnquiryInbox session={session} onExpired={onExpired} />
+                )}
               {tab === "History" && (
                 <>
                   <h2>Revision history</h2>

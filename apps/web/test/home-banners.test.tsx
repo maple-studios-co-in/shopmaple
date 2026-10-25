@@ -157,3 +157,35 @@ test("homepage preserves the original brand ticker and four offer collections", 
     globalThis.fetch = previousFetch;
   }
 });
+
+test("published responsive campaign artwork replaces default layers while preserving copy and destination", async () => {
+  const { defaultStorefrontContent } = await import("../lib/content-defaults");
+  const content = structuredClone(defaultStorefrontContent);
+  const campaign = content.campaigns.find((c) => c.key === "sofas-hero")!;
+  campaign.artwork = {
+    desktopImage: "/media/uploads/" + "a".repeat(64) + ".webp",
+    mobileImage: "/media/uploads/" + "b".repeat(64) + ".webp",
+    alt: "Approved Maple artwork",
+  };
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ version: 4, content });
+  try {
+    const stream = await renderToReadableStream(
+      <CampaignBanner campaign="sofas-hero" />,
+    );
+    const doc = new JSDOM(await new Response(stream).text()).window.document;
+    assert.equal(
+      doc.querySelector('[data-artwork="desktop"] img')?.getAttribute("src"),
+      campaign.artwork.desktopImage,
+    );
+    assert.equal(
+      doc.querySelector('[data-artwork="mobile"] img')?.getAttribute("src"),
+      campaign.artwork.mobileImage,
+    );
+    assert.equal(doc.querySelectorAll("[data-figma-node]").length, 0);
+    assert.equal(doc.querySelector("a")?.getAttribute("href"), campaign.href);
+    assert.ok(doc.body.textContent?.includes(campaign.headline[0]!));
+  } finally {
+    globalThis.fetch = previous;
+  }
+});

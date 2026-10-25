@@ -16,6 +16,7 @@ Object.assign(globalThis, {
 });
 const initialContent: StorefrontContent = {
   schemaVersion: 1,
+  landingPages: [],
   homeSections: [
     { key: "hero", enabled: true },
     { key: "categories", enabled: true },
@@ -31,6 +32,7 @@ const initialContent: StorefrontContent = {
   campaigns: [
     {
       key: "landing-announcement",
+      artwork: null,
       label: "Original label",
       headline: ["Original headline"],
       supporting: "Original supporting",
@@ -815,6 +817,71 @@ test("logout succeeds when the transport exposes an empty stream for HTTP 204", 
     assert.ok(
       !container.querySelector('[role="alert"]'),
       "Successful logout must not show a network error",
+    );
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous;
+  }
+});
+
+test("publisher sees media and category controls but enquiry inbox needs its own capability", async () => {
+  const previous = globalThis.fetch;
+  for (const allowed of [false, true]) {
+    globalThis.fetch = async (url) =>
+      String(url).endsWith("/session")
+        ? Response.json({
+            ...staff("publisher"),
+            user: { ...staff("publisher").user, canManageEnquiries: allowed },
+          })
+        : String(url).endsWith("/media")
+          ? Response.json({ assets: [], nextCursor: null })
+          : Response.json(doc());
+    const root = createRoot(container);
+    try {
+      await act(async () =>
+        root.render(<AdminDashboard initialContent={initialContent} />),
+      );
+      assert.ok(button("Category pages"));
+      assert.ok(button("Media"));
+      assert.equal(
+        [...container.querySelectorAll("button")].some(
+          (b) => b.textContent === "Enquiries",
+        ),
+        allowed,
+      );
+      await click("Category pages");
+      assert.ok(container.querySelector('input[value="Sofas"]'));
+    } finally {
+      await act(async () => root.unmount());
+    }
+  }
+  globalThis.fetch = previous;
+});
+
+test("campaign editor lets staff select artwork without changing campaign copy", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (url) =>
+    String(url).endsWith("/session")
+      ? Response.json(staff("publisher"))
+      : Response.json(doc());
+  const root = createRoot(container);
+  try {
+    await act(async () =>
+      root.render(<AdminDashboard initialContent={initialContent} />),
+    );
+    await click("Campaigns");
+    await click("Replace campaign artwork");
+    assert.ok(container.textContent?.includes("Campaign desktop artwork"));
+    assert.ok(container.textContent?.includes("Campaign mobile artwork"));
+    assert.equal(
+      container.querySelector('textarea[aria-label="Campaign headline"]')
+        ?.textContent,
+      "Original headline",
+    );
+    await click("Restore original campaign artwork");
+    assert.equal(
+      container.textContent?.includes("Campaign desktop artwork"),
+      false,
     );
   } finally {
     await act(async () => root.unmount());

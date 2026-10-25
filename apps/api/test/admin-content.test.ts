@@ -51,6 +51,7 @@ test("staff endpoints reject anonymous access and mark all admin responses priva
 test("staff login creates opaque durable sessions with CSRF and logout invalidates them", async () => {
     const { agent, response, csrf } = await login();
     assert.equal(response.body.user.role, "publisher");
+    assert.equal(response.body.user.canManageEnquiries, false);
     assert.equal(response.body.user.passwordHash, undefined);
     assert.match(csrf, /^[a-f0-9]{64}$/);
     const cookie = staffCookie(response);
@@ -123,7 +124,7 @@ test("local staff bootstrap reads a private stdin password, hashes it and refuse
     assert.notEqual((await run(["invalid-role@example.invalid", "owner"], password)).code, 0);
     assert.equal(await db.shopAdmin.count({ where: { email: { in: ["short@example.invalid", "invalid-role@example.invalid"] } } }), 0);
 });
-const content = { schemaVersion: 1, homeSections: [{ key: "hero", enabled: true }], homeCopy: { categoryHeading: "Pick a room", bestsellersHeading: "Customer favourites", socialHeading: "At home", ticker: "Furniture made thoughtfully", testimonialHeading: "Our customers", testimonialSubheading: "Stories from home" }, campaigns: [], instagramPosts: [{ href: "https://www.instagram.com/p/test/", src: "/media/test.webp", alt: "Test scene" }], pages: [{ slug: "care-guide", title: "Care guide", description: "Caring for furniture", body: "Keep dry.", banner: null }], motion: { autoplaySocial: false, autoplayCities: false, revealSections: true } };
+const content = { schemaVersion: 1, landingPages: [], homeSections: [{ key: "hero", enabled: true }], homeCopy: { categoryHeading: "Pick a room", bestsellersHeading: "Customer favourites", socialHeading: "At home", ticker: "Furniture made thoughtfully", testimonialHeading: "Our customers", testimonialSubheading: "Stories from home" }, campaigns: [], instagramPosts: [{ href: "https://www.instagram.com/p/test/", src: "/media/test.webp", alt: "Test scene" }], pages: [{ slug: "care-guide", title: "Care guide", description: "Caring for furniture", body: "Keep dry.", banner: null }], motion: { autoplaySocial: false, autoplayCities: false, revealSections: true } };
 async function save(agent: ReturnType<typeof request.agent>, csrf: string, expectedVersion: number, body: object = content) { return agent.put("/api/admin/content").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion, content: body }); }
 test("drafts remain private, explicit publication persists and rollback creates a new unpublished draft", async () => {
     const { agent, csrf } = await login();

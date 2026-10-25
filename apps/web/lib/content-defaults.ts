@@ -1,4 +1,5 @@
 import campaigns from "@/data/diwali-campaigns.json";
+import { defaultCategoryPages } from "./category-content-defaults";
 import posts from "@/data/instagram-posts.json";
 import { homeSectionKeys, type StorefrontContent } from "@shopmaple/contracts";
 
@@ -15,6 +16,7 @@ const collectionCampaignDestinations: Partial<
 /** Original bundled copy is the explicit starting draft, never auto-published. */
 export const defaultStorefrontContent: StorefrontContent = {
   schemaVersion: 1,
+  landingPages: defaultCategoryPages,
   homeSections: homeSectionKeys.map((key) => ({ key, enabled: true })),
   homeCopy: {
     categoryHeading: "Shop By Category",
@@ -27,6 +29,7 @@ export const defaultStorefrontContent: StorefrontContent = {
   campaigns: Object.entries(campaigns).map(([key, c]) => ({
     key: key as StorefrontContent["campaigns"][number]["key"],
     label: c.label,
+    artwork: null,
     headline: c.headline,
     supporting: c.supporting ?? "",
     offer: c.offer,

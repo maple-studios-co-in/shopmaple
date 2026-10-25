@@ -516,3 +516,58 @@
     transition: none;
   }
 }
+
+.admin-media-library,
+.admin-media-picker,
+.admin-enquiry-inbox {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-media-grid article,
+.admin-enquiry-inbox article {
+  padding: 1rem;
+  border: 1px solid #dedbd5;
+  border-radius: 12px;
+  background: #fff;
+}
+.admin-media-picker {
+  padding: 1rem 0;
+  border-bottom: 1px solid #dedbd5;
+}
+.admin-media-picker > p {
+  margin: 0.5rem 0;
+}
+.admin-media-library input[type="file"] {
+  display: block;
+  max-width: 100%;
+  margin: 0.75rem 0;
+}
+.admin-enquiry-inbox .admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.admin-enquiry-inbox .admin-toolbar label {
+  display: grid;
+  gap: 0.4rem;
+}
+.admin-enquiry-inbox ul {
+  padding: 0;
+  list-style: none;
+}
+.admin-enquiry-inbox li {
+  padding: 1rem 0;
+  border-bottom: 1px solid #dedbd5;
+}
+.admin-enquiry-inbox dl {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) minmax(0, 3fr);
+  gap: 0.6rem 1rem;
+}
+.admin-enquiry-inbox dd {
+  margin: 0;
+}
+.admin-enquiry-inbox article {
+  margin-top: 1rem;
+}

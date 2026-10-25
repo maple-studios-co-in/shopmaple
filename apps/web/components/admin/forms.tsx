@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import type { StaffSession } from "./dashboard";
+import { MediaPicker } from "./media-picker";
 import type {
   StorefrontContent,
   CampaignContent,
@@ -39,8 +41,15 @@ export function Field({
 type Props = {
   content: StorefrontContent;
   onChange: (content: StorefrontContent) => void;
+  session?: StaffSession;
+  onExpired?: () => void;
 };
-export function CampaignFields({ content, onChange }: Props) {
+export function CampaignFields({
+  content,
+  onChange,
+  session,
+  onExpired,
+}: Props) {
   const [selected, setSelected] = useState(0);
   const campaign = content.campaigns[selected];
   function update(patch: Partial<CampaignContent>) {
@@ -55,8 +64,8 @@ export function CampaignFields({ content, onChange }: Props) {
     <>
       <h2>Campaigns</h2>
       <p>
-        Update the copy and destination for each existing campaign. The original
-        artwork stays in place.
+        Update campaign copy, destination and artwork. Original artwork stays in
+        place until you choose a replacement.
       </p>
       {!campaign ? (
         <p>No campaigns are configured in this draft.</p>
@@ -127,6 +136,63 @@ export function CampaignFields({ content, onChange }: Props) {
                 maxLength={500}
                 onChange={(href) => update({ href })}
               />
+              {session &&
+                onExpired &&
+                (campaign.artwork ? (
+                  <>
+                    <MediaPicker
+                      label="Campaign desktop artwork"
+                      value={campaign.artwork.desktopImage}
+                      onChange={(desktopImage) =>
+                        update({
+                          artwork: { ...campaign.artwork!, desktopImage },
+                        })
+                      }
+                      session={session}
+                      onExpired={onExpired}
+                    />
+                    <MediaPicker
+                      label="Campaign mobile artwork"
+                      value={campaign.artwork.mobileImage}
+                      onChange={(mobileImage) =>
+                        update({
+                          artwork: { ...campaign.artwork!, mobileImage },
+                        })
+                      }
+                      session={session}
+                      onExpired={onExpired}
+                    />
+                    <Field
+                      label="Campaign artwork alt text"
+                      value={campaign.artwork.alt}
+                      maxLength={200}
+                      onChange={(alt) =>
+                        update({ artwork: { ...campaign.artwork!, alt } })
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => update({ artwork: null })}
+                    >
+                      Restore original campaign artwork
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      update({
+                        artwork: {
+                          desktopImage: "",
+                          mobileImage: "",
+                          alt: campaign.label,
+                        },
+                      })
+                    }
+                  >
+                    Replace campaign artwork
+                  </button>
+                ))}
               <p>
                 Use one line per headline or offer line, up to three.
                 Destinations must be store links such as /collections/chairs.
@@ -150,7 +216,7 @@ export function CampaignFields({ content, onChange }: Props) {
               <p>{campaign.offer.join(" · ")}</p>
               <p>{campaign.eligibility}</p>
               <span className="admin-preview-cta">{campaign.cta}</span>
-              <small>Local preview · Artwork is unchanged</small>
+              <small>Local copy preview · Artwork is managed separately</small>
             </aside>
           </div>
         </>
@@ -158,7 +224,12 @@ export function CampaignFields({ content, onChange }: Props) {
     </>
   );
 }
-export function InstagramFields({ content, onChange }: Props) {
+export function InstagramFields({
+  content,
+  onChange,
+  session,
+  onExpired,
+}: Props) {
   function update(
     index: number,
     patch: Partial<StorefrontContent["instagramPosts"][number]>,
@@ -211,6 +282,15 @@ export function InstagramFields({ content, onChange }: Props) {
                 maxLength={1000}
                 onChange={(src) => update(index, { src })}
               />
+              {session && onExpired && (
+                <MediaPicker
+                  label={`Post ${index + 1} library image`}
+                  value={post.src}
+                  onChange={(src) => update(index, { src })}
+                  session={session}
+                  onExpired={onExpired}
+                />
+              )}
               <Field
                 label={`Post ${index + 1} alt text`}
                 value={post.alt}
@@ -237,7 +317,7 @@ export function InstagramFields({ content, onChange }: Props) {
     </>
   );
 }
-export function PageFields({ content, onChange }: Props) {
+export function PageFields({ content, onChange, session, onExpired }: Props) {
   const [selected, setSelected] = useState(0);
   const page = content.pages[selected];
   function update(patch: Partial<ContentPage>) {
@@ -350,6 +430,24 @@ export function PageFields({ content, onChange }: Props) {
                     value={page.banner.mobileImage}
                     onChange={(mobileImage) => banner({ mobileImage })}
                   />
+                  {session && onExpired && (
+                    <>
+                      <MediaPicker
+                        label="Page desktop library image"
+                        value={page.banner.desktopImage}
+                        onChange={(desktopImage) => banner({ desktopImage })}
+                        session={session}
+                        onExpired={onExpired}
+                      />
+                      <MediaPicker
+                        label="Page mobile library image"
+                        value={page.banner.mobileImage}
+                        onChange={(mobileImage) => banner({ mobileImage })}
+                        session={session}
+                        onExpired={onExpired}
+                      />
+                    </>
+                  )}
                   <Field
                     label="Banner alt text"
                     value={page.banner.alt}

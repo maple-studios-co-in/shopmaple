@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { categoryPageContentSchema } from "./category-content";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -96,6 +97,15 @@ export const campaignContentSchema = z
     eligibility: text(300),
     cta: text(80),
     href: contentLinkSchema,
+    artwork: z
+      .object({
+        desktopImage: contentImageSchema,
+        mobileImage: contentImageSchema,
+        alt: text(200).min(1),
+      })
+      .strict()
+      .nullable()
+      .default(null),
   })
   .strict();
 export const contentPageSchema = z
@@ -172,6 +182,7 @@ export const storefrontContentSchema = z
       .min(1)
       .max(30),
     pages: z.array(contentPageSchema).max(20),
+    landingPages: z.array(categoryPageContentSchema).max(3).default([]),
     motion: z
       .object({
         autoplaySocial: z.boolean(),
@@ -187,6 +198,7 @@ export const storefrontContentSchema = z
       value.campaigns.map((c) => c.key),
       value.instagramPosts.map((p) => p.href.replace("www.", "")),
       value.pages.map((p) => p.slug),
+      value.landingPages.map((p) => p.slug),
     ])
       if (new Set(list).size !== list.length)
         ctx.addIssue({

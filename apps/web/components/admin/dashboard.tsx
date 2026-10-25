@@ -4,7 +4,12 @@ import type { StorefrontContent } from "@shopmaple/contracts";
 import { ContentEditor } from "./editor";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 export type StaffSession = {
-  user: { id: string; email: string; role: "editor" | "publisher" };
+  user: {
+    id: string;
+    email: string;
+    role: "editor" | "publisher";
+    canManageEnquiries?: boolean;
+  };
   csrfToken: string;
 };
 function parseSession(value: unknown): StaffSession | null {
@@ -25,7 +30,12 @@ function parseSession(value: unknown): StaffSession | null {
   )
     return null;
   return {
-    user: { id: user.id, email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      canManageEnquiries: user.canManageEnquiries === true,
+    },
     csrfToken: candidate.csrfToken,
   };
 }
