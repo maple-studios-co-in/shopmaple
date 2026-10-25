@@ -3,19 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
-import { shopFile } from "@/lib/format";
-import type { HomeDetails } from "@shopmaple/contracts";
+import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-const tileImages = {
-  sofas: "engaged_5.jpg?v=1767435623",
-  chairs: "engaged_6_1.jpg?v=1767444019",
-  tables: "engaged_8_1.jpg?v=1767444598",
-  beds: "engaged_9_1.jpg?v=1767448207",
-};
 export function Hero({
   content = defaultHomeDetails.hero,
-}: { content?: HomeDetails["hero"] } = {}) {
+  media,
+}: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
+  const poster = resolveTemplateMedia("home-workshop-poster", media);
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   function toggle() {
@@ -36,8 +32,8 @@ export function Hero({
     <section className="hero-grid" aria-label="Explore Maple furniture">
       <div className="hero-film">
         <Image
-          src="/media/workshop-poster.webp"
-          alt="Furniture craftsmanship at Maple"
+          src={poster.image}
+          alt={poster.alt}
           fill
           sizes="(max-width: 700px) 100vw, 50vw"
           preload
@@ -64,15 +60,16 @@ export function Hero({
         </button>
       </div>
       <div className="hero-categories">
-        {content.tiles.map(({ key, label, priceLabel }) => (
-          <Link
+        {content.tiles.map(({ key, label, priceLabel }) => {
+          const artwork = resolveTemplateMedia(`home-hero-${key}`, media);
+          return <Link
             href={(key === "beds" ? "/collections/" : "/pages/") + key}
             className="category-tile"
             key={key}
           >
             <Image
-              src={shopFile(tileImages[key])}
-              alt=""
+              src={artwork.image}
+              alt={artwork.alt}
               fill
               sizes="(max-width: 700px) 48vw, 25vw"
               preload
@@ -82,8 +79,8 @@ export function Hero({
               <p>{priceLabel}</p>
             </div>
             <ArrowUpRight aria-hidden size={21} />
-          </Link>
-        ))}
+          </Link>;
+        })}
       </div>
     </section>
   );

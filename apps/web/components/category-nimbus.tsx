@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { NimbusPageContent, NimbusSectionKey } from "@shopmaple/contracts";
+import type { NimbusPageContent, NimbusSectionKey, TemplateMedia } from "@shopmaple/contracts";
 import {
   CategoryProducts,
   CategoryValues,
@@ -12,6 +12,7 @@ import { CategoryVideo, CategorySlideshow } from "@/components/category-controls
 import { HomeProjectForm } from "@/components/home-forms";
 import nimbus from "@/data/landing-nimbus.json";
 import { shopFile } from "@/lib/format";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 
 const section = (key: string) => nimbus.sections.find((item) => item.key === key)!;
@@ -43,30 +44,30 @@ export function MaplePromises({ items }: { items?: NimbusPageContent["promises"]
   );
 }
 
-const roomTileMedia = {
-  bedroom: { handle: "bedroom-nimbus", image: "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png" },
-  living: { handle: "living-room-nimbus", image: "Untitled_design_6.svg" },
-  dining: { handle: "dining-room-nimbus", image: "Chairs.svg" },
+const roomTileHandles = {
+  bedroom: "bedroom-nimbus",
+  living: "living-room-nimbus",
+  dining: "dining-room-nimbus",
 };
 const principleImageIndices = { comfort: 0, silhouettes: 1, luxury: 2, spaces: 3 };
-const roomImageIndices = { living: 0, bedroom: 1, dining: 2 };
 
-export function NimbusLanding({ content }: { content?: NimbusPageContent } = {}) {
+export function NimbusLanding({ content, media }: { content?: NimbusPageContent; media?: TemplateMedia } = {}) {
   const page = resolveNimbusPageContent(content);
   const hero = section("hero_section_pfEKq3");
   const bento = section("blocks_6WyRMx");
-  const origin = section("media_with_content_JLVGCA");
+  const origin = resolveTemplateMedia("nimbus-origin", media);
+  const heroPoster = resolveTemplateMedia("nimbus-hero-poster", media);
+  const craftPoster = resolveTemplateMedia("nimbus-craft-poster", media);
   const principles = section("section_aGJjhK");
-  const rooms = section("slideshow_PnGjbg");
-  const project = section("section_PYMfcR");
-  const tiles: { key: string; title: string; handle: string; image: string; mobile?: string }[] = [
-    ...page.roomTiles.map(item => ({ ...item, ...roomTileMedia[item.key] })),
-    { key: "collection", title: "", handle: "nimbus", image: "Chairs_1.png", mobile: "Chairs_3.png" },
+  const project = resolveTemplateMedia("nimbus-project", media);
+  const tiles = [
+    ...page.roomTiles.map(item => ({ ...item, handle: roomTileHandles[item.key], artwork: resolveTemplateMedia(`nimbus-room-${item.key}`, media, item.title) })),
+    { key: "collection", title: "", handle: "nimbus", artwork: resolveTemplateMedia("nimbus-room-collection", media) },
   ];
   function renderSection(key: NimbusSectionKey) {
     switch (key) {
       case "hero":
-        return <CategoryVideo className="landing-nimbus-hero" desktop={hero.videos[0]!} mobile={hero.videos[1]!} label="Nimbus collection film" />;
+        return <CategoryVideo className="landing-nimbus-hero" desktop={{ ...hero.videos[0]!, poster: heroPoster.image }} mobile={{ ...hero.videos[1]!, poster: heroPoster.mobileImage! }} label={heroPoster.alt} />;
       case "intro":
         return (
           <header className="landing-nimbus-intro home-container">
@@ -77,13 +78,13 @@ export function NimbusLanding({ content }: { content?: NimbusPageContent } = {})
       case "rooms-grid":
         return (
           <section className="landing-nimbus-bento" aria-label="Explore Nimbus rooms">
-            <CategoryVideo desktop={bento.videos[0]!} label="Nimbus furniture craftsmanship" />
+            <CategoryVideo desktop={{ ...bento.videos[0]!, poster: craftPoster.image }} label={craftPoster.alt} />
             <div className="landing-nimbus-tiles">
               {tiles.map(tile => (
                 <Link href={landingCollectionHref(`/collections/${tile.handle}`)} key={tile.key} aria-label={tile.title || "Shop the Nimbus collection"}>
                   <picture>
-                    {tile.mobile && <source media="(max-width:749px)" srcSet={shopFile(tile.mobile)} />}
-                    <img src={shopFile(tile.image)} alt={tile.title || "Nimbus collection"} loading="lazy" />
+                    {tile.artwork.mobileImage && <source media="(max-width:749px)" srcSet={tile.artwork.mobileImage} />}
+                    <img src={tile.artwork.image} alt={tile.artwork.alt} loading="lazy" />
                   </picture>
                   {tile.title && <h3>{tile.title}</h3>}
                   <ArrowUpRight size={24} />
@@ -97,7 +98,7 @@ export function NimbusLanding({ content }: { content?: NimbusPageContent } = {})
           <>
             <div className="home-divider home-divider-short" />
             <section className="landing-media-content landing-nimbus-origin">
-              <Image src={origin.images[0]!} alt="Nimbus sculptural lounge furniture" width={1200} height={1200} sizes="(max-width:749px) 100vw, 50vw" />
+              <Image src={origin.image} alt={origin.alt} width={1200} height={1200} sizes="(max-width:749px) 100vw, 50vw" />
               <div>
                 <p className="home-eyebrow">{page.origin.eyebrow}</p>
                 <h2>{page.origin.heading}</h2>
@@ -123,13 +124,10 @@ export function NimbusLanding({ content }: { content?: NimbusPageContent } = {})
         return (
           <>
             <div className="home-divider" />
-            <CategorySlideshow slides={page.roomSlides.map(item => ({
-              key: item.key,
-              alt: item.label,
-              // The source stores each mobile image before its desktop counterpart.
-              desktop: rooms.images[roomImageIndices[item.key] * 2 + 1]!,
-              mobile: rooms.images[roomImageIndices[item.key] * 2]!,
-            }))} />
+            <CategorySlideshow slides={page.roomSlides.map(item => {
+              const artwork = resolveTemplateMedia(`nimbus-slide-${item.key}`, media, item.label);
+              return { key: item.key, alt: artwork.alt, desktop: artwork.image, mobile: artwork.mobileImage! };
+            })} />
           </>
         );
       case "series":
@@ -150,7 +148,7 @@ export function NimbusLanding({ content }: { content?: NimbusPageContent } = {})
               <p>{page.project.body}</p>
               <HomeProjectForm />
             </div>
-            <Image src={project.images[0]!} alt="Maple furniture design details" width={1000} height={1000} sizes="(max-width:749px) 100vw, 45vw" />
+            <Image src={project.image} alt={project.alt} width={1000} height={1000} sizes="(max-width:749px) 100vw, 45vw" />
           </section>
         );
       case "promises":

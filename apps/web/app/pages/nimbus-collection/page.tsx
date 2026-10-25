@@ -7,5 +7,6 @@ export async function generateMetadata() {
   return { title: content.title };
 }
 export default async function Page() {
-  return <NimbusLanding content={(await getPublishedContent()).nimbusPage} />;
+  const content = await getPublishedContent();
+  return <NimbusLanding content={content.nimbusPage} media={content.templateMedia} />;
 }

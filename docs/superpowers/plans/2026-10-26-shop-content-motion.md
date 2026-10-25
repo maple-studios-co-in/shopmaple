@@ -138,6 +138,16 @@ Private owner activation and capacity resolution are still pending. These implem
 - [x] Renderer agent: published-only selections/order/visibility, original fallback layouts, local collection links, catalogue-owned prices and honest missing-product states.
 - [x] Admin agent: catalogue search/pagination with bounded transport and stale-result protection; keyboard selection/reorder/remove; category/offer artwork and copy fields; existing draft, conflict and permission controls.
 - [x] Parent:557 tests, types/build/scanners and independent review; desktop/mobile original defaults, local links and overflow checks; static admin layout regression corrected with browser RED/GREEN.
-- [ ] Exact-head CI/merge and separately gated deployment. No production change claimed.
+- [x] PR29: eight exact-head CI checks passed atbf8c76e; mergedf1fe854, identical tested tree. Separately gated deployment remains pending. No production change claimed.
 
 Lists are bounded at12 items each. New tile identities are stable and separate from editable collection destinations. Uploaded tile artwork must pass the same private-file checks as existing campaign/page images before a publisher makes it public. This increment does not change the catalogue, commerce rules, source copy defaults or production configuration. New article creation, remaining visual/performance work, customer-service integrations and production readiness remain in the overall goal.
+
+## Fixed-template artwork increment
+
+- [x] Contract/API agent:21 fixed image placements, six required responsive pairs, sparse overrides, original registry defaults, bounded safe media/description validation, transactional publication and adversarial database regressions.
+- [x] Renderer agent: consume published overrides on Homepage, Nimbus and Our Story; preserve original imagery/copy/links, responsive source selection, video files and playback controls.
+- [x] Admin agent: grouped Artwork tab, existing media picker/private previews, explicit desktop/mobile fields, restore-original for each placement, retained sibling/draft/conflict behavior.
+- [x] Parent: 577 tests, types/build, independent review and responsive/browser default checks. Final security and exact-head CI/merge remain release gates.
+- [ ] PR merge after exact-head CI; production deployment remains separately gated.
+
+The fixed placements cover hero category tiles, workshop/testimonial posters, the homepage Nimbus banner and newsletter illustration; Nimbus room tiles, origin/project images, room slides and film posters; Our Story hero and film poster. Defaults remain unchanged until a publisher explicitly publishes a saved override. Original descriptions that are intentionally decorative stay valid. This does not add video uploads, edit source video files, change product media authority or enable checkout.

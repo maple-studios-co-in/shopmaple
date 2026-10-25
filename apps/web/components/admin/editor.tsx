@@ -13,6 +13,7 @@ import { EditorialFields } from "./editorial-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
+import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
@@ -33,6 +34,7 @@ const tabs = [
   "Overview",
   "Homepage",
   "Merchandising",
+  "Artwork",
   "Campaigns",
   "Instagram",
   "Pages",
@@ -564,6 +566,9 @@ export function ContentEditor({
                       ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
                       : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
                 </>
+              )}
+              {tab === "Artwork" && (
+                <TemplateArtworkFields value={content.templateMedia} onChange={templateMedia => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
               )}
               {tab === "Media" && (
                 <MediaLibrary session={session} onExpired={onExpired} />
