@@ -1,4 +1,6 @@
 import { z } from "zod";
+export { storefrontContentSchema, homeSectionKeys, campaignKeys, campaignContentSchema, contentPageSchema, contentLinkSchema, contentImageSchema } from "./content";
+export type { StorefrontContent, CampaignContent, ContentPage } from "./content";
 export const categories = [
   "sofas",
   "chairs",

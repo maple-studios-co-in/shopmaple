@@ -58,9 +58,7 @@ export default async function Collection({
   )[handle];
   return (
     <>
-      {campaign && (
-        <CampaignBanner campaign={campaign} href="#collection-products" />
-      )}
+      {campaign && <CampaignBanner campaign={campaign} />}
       <CollectionListing
         handle={handle}
         title={collectionTitles[handle]!}
@@ -77,9 +75,7 @@ export default async function Collection({
         }
         highestPrice={knownPrices.length ? Math.max(...knownPrices) : null}
       />
-      {handle === "beds" && (
-        <CampaignBanner campaign="beds-sale" href="#collection-products" />
-      )}
+      {handle === "beds" && <CampaignBanner campaign="beds-sale" />}
     </>
   );
 }

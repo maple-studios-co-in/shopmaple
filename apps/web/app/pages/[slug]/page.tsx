@@ -9,6 +9,8 @@ import {
 import { HomeCities } from "@/components/home-sections";
 import { shopFile } from "@/lib/format";
 import { contactCategories } from "../contact-content";
+import { getPublishedContent } from "@/lib/content";
+import { ContentPage } from "@/components/content-page";
 export async function generateMetadata({
   params,
 }: {
@@ -17,11 +19,17 @@ export async function generateMetadata({
   }>;
 }) {
   const { slug } = await params;
+  if (!["contact", "bulk-enquiry"].includes(slug)) {
+    const page = (await getPublishedContent()).pages.find(
+      (page) => page.slug === slug,
+    );
+    return {
+      title: page?.title ?? "Page not found",
+      description: page?.description,
+    };
+  }
   return {
-    title:
-      slug === "bulk-enquiry"
-        ? "Bulk Enquiry"
-        : "Contact Us",
+    title: slug === "bulk-enquiry" ? "Bulk Enquiry" : "Contact Us",
   };
 }
 export default async function ContactPage({
@@ -34,7 +42,13 @@ export default async function ContactPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
-  if (!["contact", "bulk-enquiry"].includes(slug)) notFound();
+  if (!["contact", "bulk-enquiry"].includes(slug)) {
+    const page = (await getPublishedContent()).pages.find(
+      (page) => page.slug === slug,
+    );
+    if (!page) notFound();
+    return <ContentPage page={page} />;
+  }
   const query = await searchParams;
   const text = (name: string, limit: number) =>
     typeof query[name] === "string" ? query[name].slice(0, limit) : "";

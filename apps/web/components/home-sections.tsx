@@ -1,3 +1,4 @@
+import { InstagramRail, MovingCities } from "@/components/motion-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import Image, { getImageProps } from "next/image";
 import Link from "next/link";
@@ -76,13 +77,25 @@ export function HomeDifference() {
   );
 }
 
-export function HomeSocial({ second = false }: { second?: boolean }) {
+export function HomeSocial({
+  second = false,
+  posts = instagramPosts,
+  heading,
+  autoplay = true,
+}: {
+  second?: boolean;
+  posts?: { href: string; src: string; alt?: string }[];
+  heading?: string;
+  autoplay?: boolean;
+}) {
   return (
     <section
       className="home-social home-container"
       aria-label="Maple on Instagram"
     >
-      <h2>{second ? "See our social pressence" : "Our Social Proof"}</h2>
+      <h2>
+        {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
+      </h2>
       <a
         href="https://www.instagram.com/the_maple_experience/"
         target="_blank"
@@ -90,19 +103,20 @@ export function HomeSocial({ second = false }: { second?: boolean }) {
       >
         <Instagram size={20} /> @the_maple_experience <ArrowRight size={18} />
       </a>
-      <div className="home-instagram-posts">
-        {instagramPosts.map(post => <a key={post.href} href={post.href} target="_blank" rel="noopener noreferrer" aria-label={post.alt ?? "Maple on Instagram"}><Image src={post.src} alt={post.alt ?? "Maple on Instagram"} fill sizes="(max-width:749px) 75vw, 25vw" /><Instagram aria-hidden="true" size={22} /></a>)}
-      </div>
+      <InstagramRail posts={posts} autoplay={autoplay} />
     </section>
   );
 }
 
-export function HomeTestimonial() {
+export function HomeTestimonial({
+  heading = "Why They Love Us",
+  subheading = "Thoughtful designs. Exceptional service.",
+}: { heading?: string; subheading?: string } = {}) {
   return (
     <section className="home-testimonial">
       <header>
-        <h2>Why They Love Us</h2>
-        <p>Thoughtful designs. Exceptional service.</p>
+        <h2>{heading}</h2>
+        <p>{subheading}</p>
       </header>
       <div className="home-testimonial-grid">
         <video
@@ -222,7 +236,7 @@ export function HomeValues() {
   );
 }
 
-export function HomeCities() {
+export function HomeCities({ autoplay = true }: { autoplay?: boolean } = {}) {
   const cities: [string, string][] = [
     ["Delhi.svg", "Delhi"],
     ["Kolkata.svg", "Kolkata"],
@@ -249,23 +263,17 @@ export function HomeCities() {
         <p className="home-eyebrow">We Are Serving</p>
         <h2>20+ Cities</h2>
       </header>
-      <div
-        className="home-city-viewport"
-        tabIndex={0}
-        aria-label="Cities served"
-      >
-        <div className="home-city-track">
-          {cities.map(([image, city]) => (
-            <Image
-              key={image}
-              src={shopFile(image)}
-              alt={city}
-              width={150}
-              height={120}
-            />
-          ))}
-        </div>
-      </div>
+      <MovingCities autoplay={autoplay}>
+        {cities.map(([image, city]) => (
+          <Image
+            key={image}
+            src={shopFile(image)}
+            alt={city}
+            width={150}
+            height={120}
+          />
+        ))}
+      </MovingCities>
     </section>
   );
 }
