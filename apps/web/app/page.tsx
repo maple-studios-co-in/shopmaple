@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import type { HomeCollectionTile } from "@shopmaple/contracts";
 import { getPublishedContent } from "@/lib/content";
 import Link from "next/link";
 import { CampaignBanner } from "@/components/campaign-banner";
@@ -19,45 +20,30 @@ import {
 } from "@/components/home-sections";
 import { getProduct } from "@/lib/catalog";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
+import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
 
 export const dynamic = "force-dynamic";
 
-const categories: [string, string, string][] = [
-  ["Sofas", "sofas", "Cover_Image_Maple_6.svg?v=1778649785"],
-  [
-    "Dining Chair",
-    "dining-chair",
-    "Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600",
-  ],
-  ["Coffee Tables", "center-tables", "Cover_Image_Maple_7.svg?v=1778649944"],
-  [
-    "Accent Chair",
-    "accent-chair",
-    "ChatGPTImageJun18_2025_08_27_31PM.png?v=1776235338",
-  ],
-  ["Beds", "beds", "Cover_Image_Maple_8.svg?v=1778650094"],
-  ["Dinings", "dinings", "Cover_Image_Maple_10.svg?v=1780689685"],
-];
 function CollectionTiles({
   items,
   className,
 }: {
-  items: [string, string, string][];
+  items: HomeCollectionTile[];
   className: string;
 }) {
   return (
     <div className={className}>
-      {items.map(([name, handle, image]) => (
-        <Link href={`/collections/${handle}`} key={handle}>
+      {items.filter((item) => item.enabled).map((item) => (
+        <Link href={`/collections/${item.collectionHandle}`} key={item.key}>
           <div>
             <Image
-              src={`https://shop.maplefurnishers.com/cdn/shop/collections/${image}`}
-              alt={name}
+              src={item.image}
+              alt={item.alt}
               fill
               sizes="(max-width:749px) 50vw, 33vw"
             />
           </div>
-          {className.includes("categories") && <h3>{name}</h3>}
+          {className.includes("categories") && <h3>{item.title}</h3>}
         </Link>
       ))}
     </div>
@@ -76,7 +62,9 @@ async function HomeProducts({
   const results = await Promise.all(
     handles.map((handle) => getProduct(handle).catch(() => null)),
   );
-  const products = results.filter((product) => product !== null);
+  const products = results
+    .filter((product) => product !== null)
+    .filter((product) => product.published);
   return (
     <section className="home-products home-container" aria-label={label}>
       {heading && (
@@ -105,6 +93,7 @@ export default async function Home() {
   const content = await getPublishedContent();
   const copy = content.homeCopy;
   const details = resolveHomeDetails(content.homeDetails);
+  const merchandising = resolveHomeMerchandising(content.homeMerchandising);
   const sections: Record<string, ReactNode> = {
     hero: <Hero content={details.hero} />,
     announcement: <CampaignBanner campaign="landing-announcement" />,
@@ -112,7 +101,7 @@ export default async function Home() {
     categories: (
       <section className="home-category-section home-container">
         <h2>{copy.categoryHeading}</h2>
-        <CollectionTiles items={categories} className="home-categories" />
+        <CollectionTiles items={merchandising.categories} className="home-categories" />
       </section>
     ),
     ticker: <p className="home-ticker">{copy.ticker}</p>,
@@ -120,28 +109,7 @@ export default async function Home() {
       <section className="home-container" aria-label="Offer collections">
         <CollectionTiles
           className="home-offers home-offer-tiles"
-          items={[
-            [
-              "Clearance Sale",
-              "clearance-sale",
-              "Clearance_Sale.webp?v=1778257635",
-            ],
-            [
-              "Minimum 30% Off",
-              "minimum-60-off",
-              "min_30_off_sale_banner.webp?v=1778255612",
-            ],
-            [
-              "Best Buy Under Rs.50,000",
-              "best-buy-under-rs-50-000",
-              "Maple_Banner_1.webp?v=1778268771",
-            ],
-            [
-              "Furniture Store under Rs. 25,000",
-              "furniture-store-under-rs-25-000",
-              "Maple_Banner_2.webp?v=1778269923",
-            ],
-          ]}
+          items={merchandising.offers}
         />
       </section>
     ),
@@ -156,14 +124,7 @@ export default async function Home() {
     ),
     bestsellers: (
       <HomeProducts
-        handles={[
-          "aera-swivel-lounge-chair",
-          "aero-dining-chair",
-          "aileron-signature-bed",
-          "aileron-upholstered-bench",
-          "alcyone-7-seater-sofa",
-          "alina-7-seater-sofa",
-        ]}
+        handles={merchandising.bestsellers}
         heading={copy.bestsellersHeading}
         label="Bestsellers"
       />
@@ -171,7 +132,7 @@ export default async function Home() {
     "seating-banner": <CampaignBanner campaign="landing-sofa-accent-chair" />,
     chairs: (
       <HomeProducts
-        handles={["caro", "ario", "nola", "tara", "arno", "rollo"]}
+        handles={merchandising.chairs}
         label="Chair collection"
       />
     ),

@@ -11,6 +11,7 @@ import { NimbusFields } from "./nimbus-fields";
 import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
 import { HomeDetailsFields } from "./home-details-fields";
+import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { EnquiryInbox } from "./enquiry-inbox";
 import type { StaffSession } from "./dashboard";
@@ -31,6 +32,7 @@ type Revision = {
 const tabs = [
   "Overview",
   "Homepage",
+  "Merchandising",
   "Campaigns",
   "Instagram",
   "Pages",
@@ -504,6 +506,9 @@ export function ContentEditor({
                     Section reveal effects
                   </label>
                 </>
+              )}
+              {tab === "Merchandising" && (
+                <HomeMerchandisingFields value={content.homeMerchandising} onChange={homeMerchandising => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />
               )}
               {tab === "Campaigns" && (
                 <CampaignFields

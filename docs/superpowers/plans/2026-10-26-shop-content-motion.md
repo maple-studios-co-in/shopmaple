@@ -127,7 +127,17 @@ Remaining after this increment: assignment/notes/notifications, campaign schedul
 - [x] PR25: eight homepage copy groups;475 local tests and eight CI checks; merged, not deployed.
 - [x] PR26: Nimbus fixed-template copy/order/visibility and source typography;492 tests and eight CI checks; merged, not deployed.
 - [x] PR27: Contact/Bulk Enquiry/Returns copy and section controls;510 tests and eight CI checks; merged, not deployed.
-- [ ] Existing policy/blog copy controls and readable keyboard tables: implemented,536 integrated tests and local gates pass; exact-head CI/merge pending. No deployment claimed.
+- [x] PR28: existing policy/blog copy controls and readable keyboard tables;536 integrated tests, local gates and eight exact-head CI checks pass; merged284be7a, not deployed.
 - [ ] New article authoring/structural editing; further media and merchandising controls.
 
 Private owner activation and capacity resolution are still pending. These implementation increments do not complete live staff acceptance, full visual/performance acceptance or commerce readiness.
+
+## Homepage merchandising increment
+
+- [x] Contract/API agent: optional bounded homepage selections and tile configuration, cloned original defaults, strict safe links/media, transactional uploaded-image publication and isolated database regressions.
+- [x] Renderer agent: published-only selections/order/visibility, original fallback layouts, local collection links, catalogue-owned prices and honest missing-product states.
+- [x] Admin agent: catalogue search/pagination with bounded transport and stale-result protection; keyboard selection/reorder/remove; category/offer artwork and copy fields; existing draft, conflict and permission controls.
+- [x] Parent:557 tests, types/build/scanners and independent review; desktop/mobile original defaults, local links and overflow checks; static admin layout regression corrected with browser RED/GREEN.
+- [ ] Exact-head CI/merge and separately gated deployment. No production change claimed.
+
+Lists are bounded at12 items each. New tile identities are stable and separate from editable collection destinations. Uploaded tile artwork must pass the same private-file checks as existing campaign/page images before a publisher makes it public. This increment does not change the catalogue, commerce rules, source copy defaults or production configuration. New article creation, remaining visual/performance work, customer-service integrations and production readiness remain in the overall goal.
