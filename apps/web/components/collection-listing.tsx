@@ -17,6 +17,9 @@ import {
   type CollectionQuery,
 } from "@/lib/collections";
 import { categoryNames, money } from "@/lib/format";
+const resetHref = (handle: string) =>
+  `/collections/${handle}${handle === "chairs" ? "?page=1" : ""}`;
+
 type Props = {
   handle: string;
   title: string;
@@ -162,7 +165,7 @@ function FilterFields({
       <button className="button collection-apply" type="submit">
         Apply filters
       </button>
-      <Link href={`/collections/${handle}`} className="collection-clear">
+      <Link href={resetHref(handle)} className="collection-clear">
         Clear all
       </Link>
     </form>
@@ -302,10 +305,7 @@ export function CollectionListing(props: Props) {
                       <X size={13} aria-hidden="true" />
                     </Link>
                   ))}
-                <Link
-                  className="collection-reset"
-                  href={`/collections/${handle}`}
-                >
+                <Link className="collection-reset" href={resetHref(handle)}>
                   Clear all
                 </Link>
               </div>
@@ -333,7 +333,7 @@ export function CollectionListing(props: Props) {
               </p>
               <Link
                 className="button"
-                href={filtered ? `/collections/${handle}` : "/collections/all"}
+                href={filtered ? resetHref(handle) : "/collections/all"}
               >
                 {filtered ? "Clear filters" : "Browse all furniture"}
               </Link>

@@ -1,0 +1,189 @@
+{
+  "hero": {
+    "eyebrow": "Introducing",
+    "heading": "Our Newest Arrivals",
+    "description": "We make things that work better and last longer. Our products solve real problems with clean design and honest materials.",
+    "image": "8a81d7245088821.69a6103d3bbc4.webp"
+  },
+  "categories": [
+    {
+      "title": "Designer Sofa Sets",
+      "href": "/collections/sofa-set-designs",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Sofa_set.png?v=1776249000"
+    },
+    {
+      "title": "Wooden Sofas",
+      "href": "/collections/wooden-sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Wooden_Sofa.png?v=1776247851"
+    },
+    {
+      "title": "Fabric Sofas",
+      "href": "/collections/fabric-sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Fabric_Sofas.png?v=1776248870"
+    },
+    {
+      "title": "L Shape Sofa",
+      "href": "/collections/l-shape-sofa",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/L_shape_sofa.png?v=1776248195"
+    },
+    {
+      "title": "Sofa Cum Beds",
+      "href": "/collections/sofa-cum-beds",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_20.png?v=1776247665"
+    },
+    {
+      "title": "Recliners",
+      "href": "/collections/recliners",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_19.png?v=1776247512"
+    },
+    {
+      "title": "Chesterfield Sofas",
+      "href": "/collections/chesterfield-sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Chesterfield.png?v=1776248511"
+    },
+    {
+      "title": "3 Seater Sofas",
+      "href": "/collections/3-seater-sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageApr27_2025_09_20_42PM.png?v=1776249398"
+    },
+    {
+      "title": "2 Seater Sofas",
+      "href": "/collections/2-seater-sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_26.png?v=1776249363"
+    },
+    {
+      "title": "Sofas",
+      "href": "/collections/sofas",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.svg?v=1778649785"
+    }
+  ],
+  "tagline": "A seat so beautiful, you’ll forget it’s furniture 🪑",
+  "bestsellers": [
+    "aera-swivel-lounge-chair",
+    "aero-dining-chair",
+    "aileron-signature-bed",
+    "aileron-upholstered-bench",
+    "alcyone-7-seater-sofa",
+    "alina-7-seater-sofa"
+  ],
+  "offers": [
+    {
+      "title": "Clearance Sale",
+      "href": "/collections/clearance-sale",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Clearance_Sale.webp?v=1778257635"
+    },
+    {
+      "title": "Best Buy Under Rs.50,000",
+      "href": "/collections/best-buy-under-rs-50-000",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771"
+    },
+    {
+      "title": "Minimum 30% Off",
+      "href": "/collections/minimum-60-off",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/min_30_off_sale_banner.webp?v=1778255612"
+    },
+    {
+      "title": "Furniture Store under Rs. 25,000",
+      "href": "/collections/furniture-store-under-rs-25-000",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_2.webp?v=1778269923"
+    }
+  ],
+  "offerHeading": "Grab before they are gone!",
+  "offerExpired": "This offer has ended",
+  "rhythm": "Where Every Room Finds Its Rhythm🍁",
+  "rooms": [
+    {
+      "title": "Bed Room",
+      "collection": "bed-room",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Gray_And_White_Modern_Minimalist_Furniture_Promotion_Banner_Instagram_Post_10.png?v=1752397754"
+    },
+    {
+      "title": "Living Room",
+      "collection": "living-room",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Gray_And_White_Modern_Minimalist_Furniture_Promotion_Banner_Instagram_Post_8.png?v=1752397581"
+    }
+  ],
+  "signature": {
+    "heading": "Our signature product.",
+    "description": "Made with care and unconditionally loved by our customers, this signature bestseller exceeds all expectations.",
+    "image": "92876f232648323.68a0821508544.webp"
+  },
+  "faq": [
+    {
+      "question": "What is the return policy?",
+      "answer": "Our goal is for every customer to be totally satisfied with their purchase. If this isn’t the case, let us know and we’ll do our best to work with you to make it right."
+    },
+    {
+      "question": "Are any purchases final sale?",
+      "answer": "We are unable to accept returns on certain items. These will be carefully marked before purchase."
+    },
+    {
+      "question": "When will I get my order?",
+      "answer": "We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location."
+    },
+    {
+      "question": "Where are your products manufactured?",
+      "answer": "Our products are manufactured both locally and globally. We carefully select our manufacturing partners to ensure our products are high quality and a fair value."
+    },
+    {
+      "question": "How much does shipping cost?",
+      "answer": "Shipping is calculated based on your location and the items in your order. You will always know the shipping price before you purchase."
+    }
+  ],
+  "values": [
+    {
+      "title": "Grain",
+      "body": "Where nature begins the story — raw, real, and rooted in beauty.",
+      "image": "Cover_Image_Maple_3.svg"
+    },
+    {
+      "title": "Edge",
+      "body": "Precision that defines perfection. Every line, intentional.",
+      "image": "Cover_Image_Maple_2.svg"
+    },
+    {
+      "title": "Fabric",
+      "body": "Softness you can feel before you even touch it.",
+      "image": "Cover_Image_Maple_4.svg"
+    },
+    {
+      "title": "Polish",
+      "body": "The quiet glow of craftsmanship perfected.",
+      "image": "Cover_Image_Maple_5.svg"
+    }
+  ],
+  "sourceProducts": {
+    "aera-swivel-lounge-chair": {
+      "title": "Aera Swivel Lounge Chair – Cream Fabric",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/WhatsAppImage2025-04-05at12.05.41AM_2.jpg?v=1747212326"
+    },
+    "aero-dining-chair": {
+      "title": "Aero Dining Chair",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/Frame174.png?v=1777655455"
+    },
+    "lira-barrel-accent-chair": {
+      "title": "Lira Barrel Accent Chair – Charcoal & Gold Finish",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/WhatsAppImage2025-04-08at12.05.15AM.jpg?v=1744648703"
+    },
+    "nimbus-cloud-lounge-chair-grey-boucle-walnut": {
+      "title": "Nimbus Cloud Lounge Chair – Warm Grey Boucle",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageJun18_2025_08_03_02PM.png?v=1750258990"
+    },
+    "aurelia-luxe-accent-chair-walnut-mocha": {
+      "title": "Aurelia Luxe Accent Chair – Walnut & Mocha Leather",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageJun18_2025_02_13_39PM.png?v=1750237479"
+    },
+    "alto-luxe-lounge-chair-gold-charcoal": {
+      "title": "Alto Luxe Lounge Chair – Matte Gold Frame with Charcoal Upholstery",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageJun18_2025_01_57_44PM.png?v=1750235663"
+    },
+    "maple-bloom-petal-coffee-table-white-marble-brass-finish": {
+      "title": "Maple Bloom Petal Coffee Table – White Marble & Brass Finish",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPT_Image_May_22_2025_11_43_54_PM.png?v=1747937657"
+    },
+    "aurelia-fluted-coffee-table-white-marble-gold": {
+      "title": "Aurelia Fluted Coffee Table – White Marble & Gold",
+      "image": "https://shop.maplefurnishers.com/cdn/shop/files/IMG-20220228-WA0032.jpg?v=1747931517"
+    }
+  }
+}

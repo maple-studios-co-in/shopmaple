@@ -10,14 +10,14 @@ PR #19 is merged and deployed: Shopify display fields after exact matches, hones
 
 PR #20 campaign scheduling and PR #21 original Shopify product disclosure copy are merged and deployed together at runtime26bd9aa, identical tree to main8e83717. Application verification:414 tests, types/builds, CI, scanners and independent review. Operational importer7 tests and disk guard9 tests passed. Exactly186 source PDP captures persisted;539 products/1050 variants and identity/price/stock hashes were preserved. Public and mobile browser checks passed. Publisher activation remains pending.
 
-Current increment: [paired database/media backups](paired-backups.md), including an isolated real application restore drill. The prior release has a verified one-time pair and checksum-verified off-host local copy; automated scheduling/off-host retention must be evidenced separately. A fresh [category-route parity audit](audits/2026-10-26-category-routes.md) confirms `/collections/chairs` has its own legacy source template, distinct from `/pages/chairs`; a redirect would not satisfy parity.
+PR #22/#23 operations release: [paired database/media backups](releases/2026-10-26-paired-backups.md) are installed at tool revision3906413, with a verified production restore and one-time off-host copy. The 02:47 UTC daily schedule now invokes the paired job; its next scheduled run and automated off-host retention/alerts remain pending. A fresh [category-route parity audit](audits/2026-10-26-category-routes.md) confirms `/collections/chairs` has its own legacy source template, distinct from `/pages/chairs`; a redirect would not satisfy parity.
 
 Priority order remaining:
 
 1. Private publisher activation and production staff workflow verification; decide enquiry access.
 2. Deliberately reconcile remaining duplicate variant identities without guessing prices or stock. Source PDP rich-text import is deployed.
 3. Verify remaining route/mobile/state parity, including the source Chairs collection landing route. Blog and obsolete self-link fixes are deployed.
-4. Install paired database/media backups, restore/reconcile a pair and arrange off-host retention/alerts.
+4. Observe the installed paired-backup schedule and arrange automated off-host retention/alerts. Resolve server capacity before another full application release.
 5. Enquiry assignment/notes and notification delivery with retries. Campaign scheduling is deployed.
 6. Measured performance/accessibility; product hover/menu feedback where useful, preserving reduced-motion and source layout.
 7. Reviews, newsletter, account/order history and returns integration.
