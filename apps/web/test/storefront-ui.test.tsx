@@ -11,6 +11,8 @@ import { Hero } from "../components/hero";
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { collectionQuery } from "../lib/collections";
+import { Footer } from "../components/footer";
+import ContactPage from "../app/pages/[slug]/page";
 
 const dom = new JSDOM("<!doctype html><div id='root'></div>", {
   url: "http://localhost:3000",
@@ -77,6 +79,38 @@ async function mount(
     globalThis.fetch = previousFetch;
   }
 }
+test("footer exposes callable customer-care and bulk-order contacts", async () => {
+  await mount(<Footer />, () => {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
+    assert.equal(links.length, 3);
+    for (const link of links) assert.match(link.getAttribute("href")!, /^tel:\+91[0-9]{10}$/);
+    assert.ok(document.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
+  });
+});
+test("footer routes customer care and bulk collaboration to their respective business contacts", async () => {
+  await mount(<Footer />, () => {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
+    assert.equal(links.length, 3);
+    assert.deepEqual(links.map((link) => [link.getAttribute("href"), link.textContent?.trim()]), [
+      ["tel:+918796130252", "+91 87961 30252"],
+      ["tel:+919262968727", "+91 92629 68727"],
+      ["tel:+918796130252", "+91 87961 30252"],
+    ]);
+    const bulk = [...document.querySelectorAll(".maple-footer-contact > div")]
+      .find((section) => section.querySelector("h3")?.textContent === "For Bulk Order/Collaboration:");
+    const email = bulk?.querySelector<HTMLAnchorElement>('a[href^="mailto:"]');
+    assert.equal(email?.getAttribute("href"), "mailto:aditya@maplefurnishers.com");
+    assert.equal(email?.textContent?.trim(), "aditya@maplefurnishers.com");
+  });
+});
+test("contact page phone action dials the current business number", async () => {
+  const page = await ContactPage({params: Promise.resolve({slug: "contact"}), searchParams: Promise.resolve({})});
+  await mount(page, () => {
+    const link = document.querySelector<HTMLAnchorElement>('.cp-contact-links a[href^="tel:"]');
+    assert.equal(link?.getAttribute("href"), "tel:+918796130252");
+    assert.equal(link?.textContent?.trim(), "+91 87961 30252");
+  });
+});
 test("collection identifies its category and each applied filter can be removed without clearing the others", async () => {
   await mount(
     <CollectionListing
@@ -162,6 +196,9 @@ test("product variants update price, gallery and enquiry while delivery stays an
       />
     </AppRouterContext.Provider>,
     async () => {
+      const phone = document.querySelector<HTMLAnchorElement>(".pdp-phone");
+      assert.equal(phone?.getAttribute("href"), "tel:+918796130252");
+      assert.match(phone?.textContent ?? "", /\+91 87961 30252/);
       assert.match(
         document.querySelector(".pdp-serviceability label")!.textContent!,
         /Delivery enquiry/,
