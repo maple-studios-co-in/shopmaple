@@ -45,14 +45,12 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "false");
     assert.equal(document.querySelectorAll(".maple-mega-column").length, 3);
     await act(async () =>
-      document
-        .querySelector(".maple-mega a")!
-        .dispatchEvent(
-          new dom.window.KeyboardEvent("keydown", {
-            key: "Escape",
-            bubbles: true,
-          }),
-        ),
+      document.querySelector(".maple-mega a")!.dispatchEvent(
+        new dom.window.KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+        }),
+      ),
     );
     assert.equal(button("Bedroom").getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, button("Bedroom"));
@@ -115,6 +113,15 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
     );
     assert.equal(document.querySelectorAll(".maple-drawer-main > *").length, 5);
     assert.equal(document.querySelectorAll(".maple-menu-product").length, 4);
+    assert.ok(
+      document.querySelector('dialog a[href="/favourites"]'),
+      "saved furniture must remain reachable on mobile",
+    );
+    assert.ok(
+      document.querySelector(
+        'dialog a[aria-label="Enquire about custom furniture"]',
+      ),
+    );
     await act(async () =>
       document
         .querySelector("dialog")!
@@ -124,5 +131,29 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
   } finally {
     await act(async () => root.unmount());
     assert.equal(document.body.style.overflow, "");
+  }
+});
+
+test("desktop menu includes visual discovery and a working custom furniture enquiry", async () => {
+  const root = createRoot(document.getElementById("root")!);
+  try {
+    await act(async () => root.render(<DesktopNavigation />));
+    const living = [...document.querySelectorAll("button")].find(
+      (button) => button.textContent === "Living Room",
+    )!;
+    await act(async () => living.click());
+    const panel = document.querySelector(".maple-mega")!;
+    assert.ok(
+      panel.querySelector("img"),
+      "menu should include a real furniture discovery image",
+    );
+    const custom = panel.querySelector<HTMLAnchorElement>(
+      'a[aria-label="Enquire about custom furniture"]',
+    );
+    assert.ok(custom, "menu should expose custom furniture enquiries");
+    assert.match(custom.href, /\/pages\/contact/);
+    assert.ok(panel.querySelector('a[href="/collections/all"]'));
+  } finally {
+    await act(async () => root.unmount());
   }
 });

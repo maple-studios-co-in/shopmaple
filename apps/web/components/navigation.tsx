@@ -2,14 +2,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ChevronRight, X } from "lucide-react";
 import {
   navigation,
   navigationHref,
   type NavigationLink,
 } from "../lib/navigation";
 import products from "../data/navigation-products.json";
-import { shopMoney } from "../lib/format";
+import { shopFile, shopMoney } from "../lib/format";
 
 function CategoryLink({
   item,
@@ -102,6 +102,35 @@ export function DesktopNavigation() {
                 className="maple-mega"
                 aria-labelledby={`maple-trigger-${index}`}
               >
+                <div className="maple-mega-feature">
+                  <Image
+                    src={shopFile(
+                      item.title === "Bedroom"
+                        ? "engaged_9_1.jpg?v=1767448207"
+                        : "engaged_5.jpg?v=1767435623",
+                    )}
+                    alt={
+                      item.title === "Bedroom"
+                        ? "Upholstered bed"
+                        : "A thoughtfully furnished living room"
+                    }
+                    width={320}
+                    height={260}
+                    sizes="220px"
+                  />
+                  <span>{item.title}</span>
+                  <h2>Made for your everyday.</h2>
+                  <Link
+                    href={
+                      item.title === "Bedroom"
+                        ? "/collections/beds"
+                        : "/collections/sofas"
+                    }
+                    onClick={() => setActive(null)}
+                  >
+                    Explore the collection <ArrowUpRight size={15} />
+                  </Link>
+                </div>
                 <div className="maple-mega-grid">
                   {group?.columns.map((column, columnIndex) => (
                     <div className="maple-mega-column" key={columnIndex}>
@@ -114,6 +143,30 @@ export function DesktopNavigation() {
                       ))}
                     </div>
                   ))}
+                </div>
+                <div className="maple-mega-discovery">
+                  <Link href="/collections/all" onClick={() => setActive(null)}>
+                    <strong>All furniture</strong>
+                    <span>
+                      Find your next piece <ArrowUpRight size={15} />
+                    </span>
+                  </Link>
+                  <Link href="/pages/our-story" onClick={() => setActive(null)}>
+                    <strong>Behind the craft</strong>
+                    <span>
+                      Get to know Maple <ArrowUpRight size={15} />
+                    </span>
+                  </Link>
+                  <Link
+                    href="/pages/contact?product=Custom%20furniture"
+                    aria-label="Enquire about custom furniture"
+                    onClick={() => setActive(null)}
+                  >
+                    <strong>Need a custom size?</strong>
+                    <span>
+                      Tell us about your space <ArrowUpRight size={15} />
+                    </span>
+                  </Link>
                 </div>
               </div>
             )}
@@ -297,6 +350,30 @@ export function MobileNavigation({
                   </Link>
                 ),
               )}
+            </nav>
+            <nav
+              className="maple-drawer-quick-links"
+              aria-label="More from Maple"
+            >
+              <Link href="/collections/all" onClick={onClose}>
+                All furniture <ArrowUpRight size={16} />
+              </Link>
+              <Link href="/favourites" onClick={onClose}>
+                Saved furniture <ArrowUpRight size={16} />
+              </Link>
+              <Link
+                href="/pages/contact?product=Custom%20furniture"
+                aria-label="Enquire about custom furniture"
+                onClick={onClose}
+              >
+                Custom furniture <ArrowUpRight size={16} />
+              </Link>
+              <a
+                href="https://shop.maplefurnishers.com/account"
+                onClick={onClose}
+              >
+                Existing Shopify orders <ArrowUpRight size={16} />
+              </a>
             </nav>
             <ProductRail />
           </>
