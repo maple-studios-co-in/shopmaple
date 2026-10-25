@@ -98,8 +98,17 @@ PR #16 merged to main 76a6e21; reviewed runtime 67a05d3 deployed with identical 
 - [x] Inbox agent: separate deny-by-default enquiry capability, metadata-only paginated list, authorized detail and versioned review audit. No outbound messages.
 - [x] Media agent: bounded authenticated image uploads, persistent private originals normalized to WebP, library/picker and transactional publication. Final adversarial checks in progress.
 - [x] Root: compatible content normalization, responsive artwork rendering, forms/tabs, models/migration and publishing hook.
-- [ ] Final integrated suite/build/security review and browser evidence.
-- [ ] PR/CI/merge and separately verified deployment with persistent media configuration.
+- [x] PR #17: 311 integrated tests plus 4 deployment DB tests, types/builds/scanners and final review; local media publish/private preview and mobile browser checks.
+- [x] PR #17 CI passed and merged as 7eda8c6; identical b38d9a0 runtime deployed with persistent media root and restored DB backup evidence.
 - [ ] Activate owner privately and grant enquiry access only after pending scope decision.
 
 Remaining after this increment: assignment/notes/notifications, campaign scheduling, product gallery/menu/reveal effects and measured performance, remaining page parity, catalogue completeness, shipping/payment/Keeri checkout gates. Checkout stays disabled.
+
+
+## Current increment: interactions and media recovery
+
+- [x] Gallery keyboard arrows, horizontal swipe, load-gated image dissolve and fallback; source hero destinations restored. Focused RED/GREEN recorded.
+- [x] Optional section reveals controlled by existing CMS field, default off; visible without JavaScript, reduced-motion and focus interruption. Focused RED/GREEN recorded.
+- [x] Offline private media backup/verify/restore tools, adversarial filesystem tests and runbook; nightly paired integration still pending.
+- [x] Bounded source/live page audit with remaining catalogue, chairs and blog parity findings.
+- [ ] Integrated build, final review/scanners, browser and release evidence for this increment.

@@ -486,8 +486,11 @@ export function ContentEditor({
                     takes priority.
                   </p>
                   <label className="admin-check">
-                    <input type="checkbox" checked={false} disabled readOnly />
-                    Section reveal effects — coming later
+                    <input type="checkbox" checked={content.motion.revealSections}
+                      onChange={(event) => edit({ ...content, motion: {
+                        ...content.motion, revealSections: event.target.checked,
+                      } })} />
+                    Section reveal effects
                   </label>
                 </>
               )}

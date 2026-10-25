@@ -3,8 +3,8 @@ import { useState } from "react";
 import Image, { type ImageProps } from "next/image";
 import { ImageOff } from "lucide-react";
 
-type Props = Omit<ImageProps, "src" | "onError"> & { src?: string | null };
-export function ProductImage({ src, alt, ...props }: Props) {
+type Props = Omit<ImageProps, "src"> & { src?: string | null };
+export function ProductImage({ src, alt, onError, ...props }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   if (!src || failed === src)
     return (
@@ -22,7 +22,10 @@ export function ProductImage({ src, alt, ...props }: Props) {
       src={src}
       alt={alt}
       {...props}
-      onError={() => setFailed(src)}
+      onError={(event) => {
+        setFailed(src);
+        onError?.(event);
+      }}
     />
   );
 }

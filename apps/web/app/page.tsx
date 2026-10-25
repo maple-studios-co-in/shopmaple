@@ -6,6 +6,7 @@ import { CampaignBanner } from "@/components/campaign-banner";
 import { Hero } from "@/components/hero";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
+import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
 import {
   HomeDifference,
@@ -191,7 +192,7 @@ export default async function Home() {
     project: <HomeProject />,
   };
   return (
-    <div className="home-parity home-refined">
+    <SectionReveal enabled={content.motion.revealSections}>
       {content.homeSections
         .filter((section) => section.enabled)
         .map((section) => (
@@ -203,6 +204,6 @@ export default async function Home() {
             {sections[section.key]}
           </div>
         ))}
-    </div>
+    </SectionReveal>
   );
 }

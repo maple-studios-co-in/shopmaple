@@ -485,3 +485,24 @@
     flex-wrap: wrap;
   }
 }
+
+.pdp-gallery:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 5px;
+}
+.pdp-gallery .product-main-image {
+  touch-action: pan-y pinch-zoom;
+}
+.pdp-gallery-image {
+  position: absolute;
+  inset: 0;
+}
+.pdp-gallery-incoming {
+  z-index: 1;
+  transition: opacity 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdp-gallery-incoming {
+    transition: none;
+  }
+}

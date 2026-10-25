@@ -61,7 +61,7 @@ export function Hero() {
       <div className="hero-categories">
         {tiles.map(([name, price, category, image]) => (
           <Link
-            href={"/collections/" + category}
+            href={(category === "beds" ? "/collections/" : "/pages/") + category}
             className="category-tile"
             key={category}
           >
