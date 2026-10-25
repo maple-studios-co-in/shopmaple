@@ -30,7 +30,7 @@ Updated 25 October 2026. This is the implementation queue for replacing Shopify 
 
 ## Wave 2 — Keeri and payment integration
 
-- [ ] Add or verify a dedicated Keeri service API contract: authenticated full catalogue export, atomic stock reservations/expiry/consumption and idempotent captured-order intake. **Authorized:** user approved dedicated APIs. Implemented in Keeri PR #778 (`feature/shopmaple-service-api`), with full verification in progress. Consumption into a complete sales order and live configuration remain pending.
+- [ ] Add or verify a dedicated Keeri service API contract: authenticated full catalogue export, atomic stock reservations/expiry/consumption and idempotent captured-order intake. **Authorized:** user approved dedicated APIs. Implemented in Keeri PR #778 (`feature/shopmaple-service-api`), with local verification complete (5,992 unit tests, 1,278 database tests, lint/types/build and security review); GitHub CI remains the separate merge gate. Consumption into a complete sales order and live configuration remain pending.
 - [x] Implement Keeri producer endpoints with tenant-scoped service authorization, minimum public product projection and consistent full-snapshot semantics. Tests reject other tenants, drafts, private media and partial exports. Reviewed publication/media configuration is still required before use.
 - [ ] Connect catalogue pull/import with freshness visibility and publication-triggered cache invalidation. Test stale snapshots, replay, source collisions, interrupted imports and retirement.
 - [ ] Implement cross-channel stock reservation adapter. Test two buyers competing for the last item, expiry, made-to-order policy and idempotent reserve/consume/release.
@@ -70,5 +70,5 @@ Related: [architecture](architecture.md), [UI parity](ui-parity-progress.md), [K
 ## Current review links
 
 - [ShopMaple PR #2](https://github.com/maple-studios-co-in/shopmaple/pull/2): commerce boundaries, TDD policy and security CI; source revision `db81bf58` passed the immutable security review with no reportable findings.
-- [Keeri PR #778](https://github.com/maple-studios-co-in/Keeri/pull/778): dedicated service APIs, shared stock guard and dependency security updates. Draft until final checks finish. Intake remains `pending_commercial_review`, not a completed sales order.
+- [Keeri PR #778](https://github.com/maple-studios-co-in/Keeri/pull/778): dedicated service APIs, shared stock guard and dependency security updates. Ready for review after local verification; check the PR for current GitHub CI results. Intake remains `pending_commercial_review`, not a completed sales order.
 - No production deployment, live payment or Shopify cutover has occurred.
