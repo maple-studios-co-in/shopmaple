@@ -88,6 +88,7 @@ export function ContentEditor({
   const [content, setContent] = useState<StorefrontContent | null>(null);
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [scheduleEditing, setScheduleEditing] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -128,13 +129,13 @@ export function ContentEditor({
     void load();
   }, [session.user.id]);
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty && !scheduleEditing) return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  }, [dirty, scheduleEditing]);
   async function history() {
     setTab("History");
     setBusy(true);
@@ -171,7 +172,7 @@ export function ContentEditor({
     action: "save" | "publish" | "restore",
     revisionId?: string,
   ) {
-    if (!document || !content || busy || conflict) return;
+    if (!document || !content || busy || conflict || scheduleEditing) return;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
@@ -265,7 +266,7 @@ export function ContentEditor({
         <div className="admin-actions">
           <button
             data-action="save"
-            disabled={!content || !dirty || busy || conflict}
+            disabled={!content || !dirty || busy || conflict || scheduleEditing}
             onClick={() => void write("save")}
           >
             Save draft
@@ -273,7 +274,7 @@ export function ContentEditor({
           {session.user.role === "publisher" && (
             <button
               className="admin-primary"
-              disabled={!document?.version || dirty || busy || conflict}
+              disabled={!document?.version || dirty || busy || conflict || scheduleEditing}
               onClick={() => void write("publish")}
             >
               Publish draft
@@ -318,6 +319,7 @@ export function ContentEditor({
                 <button
                   key={name}
                   aria-current={tab === name ? "page" : undefined}
+                  disabled={scheduleEditing}
                   onClick={() =>
                     name === "History" ? void history() : setTab(name)
                   }
@@ -500,6 +502,7 @@ export function ContentEditor({
                   onChange={edit}
                   session={session}
                   onExpired={onExpired}
+                  onScheduleEditingChange={setScheduleEditing}
                 />
               )}
               {tab === "Instagram" && (

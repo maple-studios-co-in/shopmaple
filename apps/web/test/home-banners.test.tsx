@@ -9,7 +9,7 @@ import { ShopProvider } from "../components/shop-provider";
 
 test("homepage places six linked Diwali campaigns in the corresponding Shopify sections", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(null, { status: 404 });
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
   try {
     const stream = await renderToReadableStream(
       <ShopProvider>
@@ -64,7 +64,7 @@ test("homepage places six linked Diwali campaigns in the corresponding Shopify s
 
 test("homepage includes source Instagram posts and the original customer testimonial", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(null, { status: 404 });
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
   try {
     const stream = await renderToReadableStream(
       <ShopProvider>
@@ -113,7 +113,7 @@ test("homepage includes source Instagram posts and the original customer testimo
 
 test("category campaigns target the product grid from their explicit default content", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(null, { status: 404 });
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
   try {
     const stream = await renderToReadableStream(
       <CampaignBanner campaign="beds-hero" />,
@@ -130,7 +130,7 @@ test("category campaigns target the product grid from their explicit default con
 
 test("homepage preserves the original brand ticker and four offer collections", async () => {
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => new Response(null, { status: 404 });
+  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
   try {
     const stream = await renderToReadableStream(
       <ShopProvider>

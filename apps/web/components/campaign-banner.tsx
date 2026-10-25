@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { CampaignWindow } from "./campaign-window";
 import campaigns from "@/data/diwali-campaigns.json";
 import { getPublishedContent } from "@/lib/content";
 import { defaultStorefrontContent } from "@/lib/content-defaults";
@@ -51,6 +52,7 @@ export async function CampaignBanner({
   compact?: boolean;
 }) {
   const content = await getPublishedContent();
+  if (!content.campaignsAvailable) return null;
   const override = content.campaigns.find((item) => item.key === campaign);
   const fallback = defaultStorefrontContent.campaigns.find(
     (item) => item.key === campaign,
@@ -62,7 +64,7 @@ export async function CampaignBanner({
       data.desktop.gradient ??
       "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
   } as CSSProperties;
-  return (
+  const banner = (
     <section
       className={`campaign-banner${compact ? " campaign-compact" : ""}`}
       data-campaign={campaign}
@@ -127,4 +129,5 @@ export async function CampaignBanner({
       </div>
     </section>
   );
+  return data.schedule ? <CampaignWindow schedule={data.schedule} serverNow={Date.now()}>{banner}</CampaignWindow> : banner;
 }

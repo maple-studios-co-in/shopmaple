@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { categoryPageContentSchema } from "./category-content";
+import { campaignScheduleSchema } from "./campaign-schedule";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -97,6 +98,7 @@ export const campaignContentSchema = z
     eligibility: text(300),
     cta: text(80),
     href: contentLinkSchema,
+    schedule: campaignScheduleSchema.nullable().optional(),
     artwork: z
       .object({
         desktopImage: contentImageSchema,

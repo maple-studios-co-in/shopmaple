@@ -18,11 +18,15 @@ export async function readPublishedContent(transport: typeof fetch = fetch) {
     );
     if (response.ok) {
       const result = publishedSchema.safeParse(await response.json());
-      if (result.success) return result.data.content;
+      if (result.success) return { ...result.data.content, campaignsAvailable: true };
+    } else if (response.status === 404) {
+      const error = await response.json();
+      if (error?.code === "CONTENT_NOT_PUBLISHED")
+        return { ...structuredClone(defaultStorefrontContent), campaignsAvailable: true };
     }
   } catch {
     /* Original bundled public content remains available during an outage. */
   }
-  return structuredClone(defaultStorefrontContent);
+  return { ...structuredClone(defaultStorefrontContent), campaignsAvailable: false };
 }
 export const getPublishedContent = cache(() => readPublishedContent());

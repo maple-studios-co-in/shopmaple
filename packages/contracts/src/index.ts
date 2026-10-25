@@ -1,4 +1,6 @@
 import { z } from "zod";
+export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
+export type { CampaignSchedule } from "./campaign-schedule";
 export {
   storefrontContentSchema,
   homeSectionKeys,

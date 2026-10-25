@@ -6,13 +6,15 @@ Completed and deployed in PR #17: category copy/order/visibility controls, priva
 
 PR #18 is merged and deployed: gallery keyboard/swipe/load transitions, optional section reveals (default off), source-aligned hero destinations, offline uploaded-media recovery tools, and a [bounded page parity audit](audits/2026-10-26-page-parity.md). Runtime 9522ab8 has the identical tree to merge 8a29804; 350 tests, CI, scanners, independent review, restored database backup and public/browser probes passed. Automated security inventory metadata remained unavailable; all 19 changed files received manual review.
 
-Current increment: restore Shopify display copy for exact product matches, improve variant photo/default/item-code presentation without identity merges, restore the original blog index layout/excerpts/order, and remove the obsolete chairs self-link. These changes are local pending release verification.
+PR #19 is merged and deployed: Shopify display fields after exact matches, honest variant photo/default/item-code presentation, original blog index layout/excerpts/order and removal of the obsolete Chairs self-link. Runtime26a7826 matches merge99efc65;369tests, CI, scanners, independent review, restore-tested backup and public/browser checks passed. All539products/1050variants and identity/pricing/stock hashes were preserved.
+
+Current increment: [campaign visibility scheduling](campaign-scheduling.md), with India-time admin controls, draft/publication gates, open-page transitions and promotional fallback protection. It is local pending integrated verification/release. A separate source audit confirmed that PDP Details uses Shopify custom.description metafields rather than the standard product.description; importing those safely remains next copy-parity work.
 
 Priority order remaining:
 
 1. Private publisher activation and production staff workflow verification; decide enquiry access.
-2. Resolve merged variant identity/default image mismatch and preserve Shopify presentation copy, without guessing prices or stock.
-3. Fix remaining page parity: chairs self-link/route behavior, blog ordering/excerpts/layout, then mobile and remaining states.
+2. Deliberately reconcile remaining duplicate variant identities; import source PDP rich-text metafields without guessing prices, stock or missing copy.
+3. Verify remaining route/mobile/state parity, including the source Chairs collection landing route. Blog and obsolete self-link fixes are deployed.
 4. Install paired database/media backups, restore/reconcile a pair and arrange off-host retention/alerts.
 5. Campaign scheduling; enquiry assignment/notes and notification delivery with retries.
 6. Measured performance/accessibility; product hover/menu feedback where useful, preserving reduced-motion and source layout.
