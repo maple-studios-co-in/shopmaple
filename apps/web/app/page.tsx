@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import { ArrowRight, PenTool, Truck, House, Hammer } from "lucide-react";
 import { Hero } from "@/components/hero";
@@ -24,19 +24,41 @@ const cats = [
 ];
 export default async function Home() {
   const result = await getProducts({ limit: "8" }).catch(() => null);
+  const bannerAlt =
+    "Festive Seating. Warm seating for festive moments together. Explore chairs.";
+  const desktopBanner = getImageProps({
+    src: shopFile(
+      "1_Sofa_web_banner_Hompage_44dfb940-c378-4980-9268-f6d79c2d5ac0.png?v=1791220477",
+    ),
+    alt: bannerAlt,
+    width: 2784,
+    height: 700,
+    sizes: "100vw",
+  }).props;
+  const mobileBanner = getImageProps({
+    src: shopFile(
+      "2_-_Sofa_Mobile_banner_Announcment_9330e4f1-cd1c-464c-9331-43d1d0493619.png",
+    ),
+    alt: bannerAlt,
+    width: 4796,
+    height: 4796,
+    sizes: "100vw",
+  }).props;
   return (
     <>
       <h1 className="sr-only">Maple Furnishers — furniture for your home</h1>
       <Hero />
-      <Link href="/collections/sofas" className="home-banner">
-        <Image
-          src={shopFile(
-            "1_Sofa_web_banner_Hompage_44dfb940-c378-4980-9268-f6d79c2d5ac0.png?v=1791220477",
-          )}
-          alt="Discover Maple sofas"
-          fill
-          sizes="100vw"
-        />
+      <Link href="/collections/chairs" className="home-banner">
+        <picture>
+          <source
+            media="(max-width: 700px)"
+            srcSet={mobileBanner.srcSet}
+            sizes={mobileBanner.sizes}
+            width={4796}
+            height={4796}
+          />
+          <img {...desktopBanner} />
+        </picture>
       </Link>
       <section className="difference">
         <div>

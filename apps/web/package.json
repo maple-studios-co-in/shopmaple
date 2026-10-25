@@ -7,21 +7,24 @@
     "dev": "dotenv -e ../../.env -- next dev --hostname 127.0.0.1",
     "build": "dotenv -e ../../.env -- next build",
     "start": "dotenv -e ../../.env -- next start --hostname 127.0.0.1",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --tsconfig test/tsconfig.json --test test/*.test.tsx"
   },
   "dependencies": {
-    "next": "16.4.3",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "@shopmaple/contracts": "0.1.0",
-    "lucide-react": "^0.577.0",
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/newsreader": "^5.2.8",
-    "@fontsource/red-hat-display": "^5.2.8"
+    "@fontsource/red-hat-display": "^5.2.8",
+    "@shopmaple/contracts": "0.1.0",
+    "lucide-react": "^0.577.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "dotenv-cli": "^10.0.0"
+    "dotenv-cli": "^10.0.0",
+    "jsdom": "^26.1.0"
   }
 }

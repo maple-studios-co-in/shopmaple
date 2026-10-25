@@ -22,6 +22,7 @@ type ShopState = {
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   busy: boolean;
+  cartReady: boolean;
   error: string;
   setQuantity: (id: string, quantity: number) => Promise<boolean>;
   favourites: string[];
@@ -31,21 +32,31 @@ const Context = createContext<ShopState | null>(null);
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>(empty),
     [cartOpen, setCartOpen] = useState(false),
-    [busy, setBusy] = useState(false),
+    [busy, setBusy] = useState(true),
+    [cartReady, setCartReady] = useState(false),
     [error, setError] = useState("");
   const revision = useRef(0),
-    mutation = useRef(false);
+    mutation = useRef(false),
+    ready = useRef(false);
   const [favourites, setFavourites] = useState<string[]>([]);
   useEffect(() => {
     let active = true;
     const initialRevision = revision.current;
-    fetch("/api/cart", { cache: "no-store" })
+    fetch("/api/cart", {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    })
       .then(async (r) => {
         if (!r.ok) throw new Error();
         return cartSchema.parse(await r.json());
       })
       .then((c) => {
-        if (active && revision.current === initialRevision) setCart(c);
+        if (active && revision.current === initialRevision) {
+          setCart(c);
+          ready.current = true;
+          setCartReady(true);
+          setBusy(false);
+        }
       })
       .catch(() => {
         if (active && revision.current === initialRevision)
@@ -69,7 +80,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   const setQuantity = useCallback(async (id: string, quantity: number) => {
-    if (mutation.current) return false;
+    if (!ready.current || mutation.current) return false;
     mutation.current = true;
     revision.current += 1;
     setBusy(true);
@@ -115,6 +126,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         cartOpen,
         setCartOpen,
         busy,
+        cartReady,
         error,
         setQuantity,
         favourites,

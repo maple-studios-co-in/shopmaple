@@ -16,7 +16,7 @@
     "dev:web": "npm run dev -w @shopmaple/web",
     "build": "npm run build -w @shopmaple/api && npm run build -w @shopmaple/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test -w @shopmaple/api",
+    "test": "npm run test --workspaces --if-present",
     "db:generate": "npm run db:generate -w @shopmaple/api",
     "db:migrate": "npm run db:migrate -w @shopmaple/api",
     "catalog:import": "tsx --env-file=.env scripts/import-preview.ts"
@@ -28,6 +28,9 @@
     "@types/node": "^22.18.0"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.0"
+    "deepmerge-ts": "^8.0.0",
+    "tsup": {
+      "esbuild": "^0.28.2"
+    }
   }
 }

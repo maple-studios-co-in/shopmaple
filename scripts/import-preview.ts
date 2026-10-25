@@ -10,7 +10,10 @@ const parsed = catalogueImportSchema.parse(
 if (
   parsed.source !== "shopify-preview" ||
   parsed.products.some(
-    (p) => p.source !== "shopify-preview" || !p.id.startsWith("preview-"),
+    (p) =>
+      p.source !== "shopify-preview" ||
+      !p.id.startsWith("preview-") ||
+      p.variants.some((v) => !v.id.startsWith("preview-")),
   )
 )
   throw new Error("This command accepts only a Shopify preview snapshot");
@@ -19,6 +22,22 @@ try {
   await db.$transaction(
     async (tx) => {
       for (const p of parsed.products) {
+        const existing = await tx.product.findUnique({ where: { id: p.id } });
+        if (existing && existing.source !== "shopify-preview")
+          throw new Error("Preview product identity belongs to another source");
+        const existingVariants = await tx.variant.findMany({
+          where: { id: { in: p.variants.map((v) => v.id) } },
+          include: { product: true },
+        });
+        if (
+          existingVariants.some(
+            (v) =>
+              v.productId !== p.id || v.product.source !== "shopify-preview",
+          )
+        )
+          throw new Error(
+            "Preview variant identity belongs to another product or source",
+          );
         const { variants, ...product } = p;
         await tx.product.upsert({
           where: { id: p.id },
@@ -44,7 +63,7 @@ try {
         data: { published: false },
       });
     },
-    { timeout: 30000 },
+    { timeout: 30000, isolationLevel: "Serializable" },
   );
   console.log(
     "Imported " +

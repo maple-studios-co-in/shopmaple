@@ -6,7 +6,13 @@ import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { money } from "@/lib/format";
 export function CartContents() {
-  const { cart, busy, error, setQuantity, setCartOpen } = useShop();
+  const { cart, busy, cartReady, error, setQuantity, setCartOpen } = useShop();
+  if (!cartReady)
+    return (
+      <p role={error ? "alert" : "status"}>
+        {error || "Loading your saved cart…"}
+      </p>
+    );
   if (!cart.items.length)
     return (
       <div className="empty-state">

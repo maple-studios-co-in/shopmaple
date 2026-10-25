@@ -24,7 +24,7 @@ npm run build
 
 The test command refuses a database URL whose database name is not `shopmaple_test`. Tests delete only fixture data in that dedicated database. Do not run multiple copies of the suite against the same test database concurrently.
 
-The API suite covers published catalogue filtering, invalid requests, server-side pricing, cookie isolation and persistence, origin checks, quantity limits, unavailable/made-to-order items, concurrent absolute updates, expiry and disabled checkout. Browser checks additionally cover navigation, product variants, cart updates, persistence and desktop/mobile layouts. CI runs the automated API suite, typechecking and both production builds against a fresh PostgreSQL service; browser checks are currently manual.
+The API suite covers published catalogue filtering, invalid requests, server-side pricing, cookie isolation and persistence, origin checks, quantity limits, unavailable/made-to-order items, concurrent absolute updates, expiry and disabled checkout. Browser checks additionally cover navigation, product variants, cart updates, persistence and desktop/mobile layouts. React provider regression tests cover delayed/failed cart hydration. CI runs both automated suites, typechecking and both production builds against a fresh PostgreSQL service; browser checks are currently manual.
 
 ## Production build versus deployment
 
@@ -39,4 +39,14 @@ Before any release, configure trusted reverse-proxy behavior/rate limiting, TLS,
 - Carts recalculate current catalogue prices; checkout/order snapshots are not implemented. An unavailable item remains visible for removal.
 - Guest carts expire after 30 days; scheduled cleanup of expired rows is a deployment follow-up.
 - Shopify-hosted image URLs remain dependencies until media migration. Page templates, app widgets, accounts/history and full content still need migration.
-- The initial development dependency audit reports one low-severity esbuild Windows development-server advisory. This app does not expose esbuild's development server; production dependency audit is recorded separately.
+- Dependency audits are point-in-time checks; repeat them as part of release verification.
+
+## Foundation verification, 25 October 2026
+
+- 10 PostgreSQL/API integration tests and 2 React provider regression tests pass.
+- Both workspace TypeScript checks and production builds pass; built API health and catalogue smoke checks return 200.
+- `npm audit` reports zero vulnerabilities after dependency updates/overrides.
+- Manual browser checks: catalogue search, variant/SKU changes, saved furniture, mobile navigation, adding/updating/removing cart items, persistence after refresh and explicit checkout refusal.
+- Fresh code review found two important defects (cart hydration and import identity collisions), reproduced before fixing. The visual review's two banner fixes were scored resolved; its final `ship` verdict applies to those fixes in this preview, not full Shopify parity.
+
+Implementation choices: run the authorized first slice without another approval round; use an isolated local PostgreSQL instance when Docker is unavailable; use a dated public preview snapshot until the real Keeri interface is verified. The tradeoff is a usable development preview with incomplete catalogue/UI coverage and no ability to place live orders. Live integration, deployment hardening and production performance measurements remain explicit release requirements. No minor code-review findings were deferred.

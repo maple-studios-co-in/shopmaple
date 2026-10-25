@@ -255,3 +255,82 @@ test("checkout cannot imply payment completion before gateway integration", asyn
   assert.equal(r.body.code, "CHECKOUT_NOT_AVAILABLE");
   assert.equal(r.body.paid, undefined);
 });
+
+test("preview imports cannot overwrite variants owned by another source", async () => {
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join, resolve } = await import("node:path");
+  const directory = await mkdtemp(join(tmpdir(), "shopmaple-import-test-"));
+  const input = join(directory, "preview.json");
+  const payload = {
+    schemaVersion: 1,
+    source: "shopify-preview",
+    capturedAt: "2026-10-25T00:00:00Z",
+    products: [
+      {
+        id: "preview-new",
+        handle: "preview-new",
+        title: "Preview",
+        description: "",
+        category: "chairs",
+        images: ["https://cdn.shopify.com/example.jpg"],
+        published: true,
+        source: "shopify-preview",
+        sourceUpdatedAt: "2026-10-25T00:00:00Z",
+        variants: [
+          {
+            id: "chair-cream",
+            title: "Default",
+            sku: null,
+            pricePaise: 1,
+            compareAtPaise: null,
+            available: true,
+            stockPolicy: "unverified",
+          },
+        ],
+      },
+    ],
+  };
+  try {
+    await writeFile(input, JSON.stringify(payload));
+    await assert.rejects(
+      promisify(execFile)(
+        process.execPath,
+        ["--import", "tsx", resolve("../../scripts/import-preview.ts"), input],
+        { env: { ...process.env, DATABASE_URL: url } },
+      ),
+    );
+    assert.equal(
+      (await db.variant.findUniqueOrThrow({ where: { id: "chair-cream" } }))
+        .productId,
+      "chair",
+    );
+    assert.equal(await db.product.count({ where: { id: "preview-new" } }), 0);
+    // A preview-shaped ID alone must not authorize taking over a different source.
+    await db.variant.update({
+      where: { id: "chair-cream" },
+      data: { id: "preview-collision" },
+    });
+    payload.products[0]!.variants[0]!.id = "preview-collision";
+    await writeFile(input, JSON.stringify(payload));
+    await assert.rejects(
+      promisify(execFile)(
+        process.execPath,
+        ["--import", "tsx", resolve("../../scripts/import-preview.ts"), input],
+        { env: { ...process.env, DATABASE_URL: url } },
+      ),
+    );
+    assert.equal(
+      (
+        await db.variant.findUniqueOrThrow({
+          where: { id: "preview-collision" },
+        })
+      ).productId,
+      "chair",
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
