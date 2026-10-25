@@ -27,6 +27,10 @@ function run(file: string, input: string, expected = "shopmaple_test", cwd = pro
         child.stdout.on("data", v => output += v);
         child.stderr.on("data", v => output += v);
         child.on("error", reject);
+        child.stdin.on("error", (error: NodeJS.ErrnoException) => {
+            // Early validation can close stdin; the exit status still determines success.
+            if (error.code !== "EPIPE") reject(error);
+        });
         child.on("close", code => resolveResult({ code, output }));
         child.stdin.end(input);
     });
@@ -51,9 +55,14 @@ test("owner helper provisions from another working directory and refuses duplica
 test("owner helper refuses unrecognized database targets before accepting a password", async () => {
     const file = join(directory, "remote.env");
     await writeFile(file, 'DATABASE_URL="postgresql://invalid:invalid@remote.invalid:5432/shopmaple_store"\nNODE_ENV=production\n', { mode: 0o600 });
-    const result = await run(file, randomBytes(32).toString("hex"));
-    assert.notEqual(result.code, 0);
-    assert.match(result.output, /unrecognized shop database target/);
+    // Exceed the pipe buffer so target validation exits with a write still pending.
+    const input = randomBytes(1024 * 1024).toString("hex");
+    await assert.doesNotReject(async () => {
+        const result = await run(file, input);
+        assert.equal(result.code, 1);
+        assert.match(result.output, /unrecognized shop database target/);
+        assert.ok(!result.output.includes(input.slice(0, 64)));
+    }, "target rejection must return its exit status and diagnostic despite closed stdin");
 });
 test("explicit database scope refuses a different recognized target before provisioning", async () => {
     const file = join(directory, "scope.env");
