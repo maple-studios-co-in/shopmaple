@@ -23,6 +23,7 @@ const resetHref = (handle: string) =>
 type Props = {
   handle: string;
   title: string;
+  headingLevel?: "h1" | "h2";
   query: CollectionQuery;
   products: ProductCardModel[];
   total: number;
@@ -174,6 +175,7 @@ function FilterFields({
 export function CollectionListing(props: Props) {
   const { handle, title, query, products, total, collectionTotal, limit } =
     props;
+  const Heading = props.headingLevel ?? "h1";
   const dialog = useRef<HTMLDialogElement>(null);
   const [dense, setDense] = useState(false);
   const filtered = Boolean(
@@ -187,7 +189,7 @@ export function CollectionListing(props: Props) {
           <span aria-hidden="true">/</span>
           <span>{title}</span>
         </nav>
-        <h1>{title}</h1>
+        <Heading>{title}</Heading>
       </header>
       <div className="collection-parity-toolbar">
         <h2>Filters</h2>

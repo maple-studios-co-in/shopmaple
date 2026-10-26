@@ -266,6 +266,16 @@ export function ContentEditor({
       setBusy(false);
     }
   }
+  const unavailableDraft = (
+    <div className="admin-empty">
+      <p role="status">
+        {busy ? "Loading store content…" : "Your draft is unavailable."}
+      </p>
+      {!busy && (
+        <button onClick={() => void load()}>Retry loading draft</button>
+      )}
+    </div>
+  );
   return (
     <>
       <div className="admin-toolbar">
@@ -314,16 +324,7 @@ export function ContentEditor({
           Reload latest draft
         </button>
       )}
-      {!content ? (
-        <div className="admin-empty">
-          <p role="status">
-            {busy ? "Loading store content…" : "Your draft is unavailable."}
-          </p>
-          {!busy && (
-            <button onClick={() => void load()}>Retry loading draft</button>
-          )}
-        </div>
-      ) : (
+      {!content && !session.user.canManageEnquiries ? unavailableDraft : (
         <div className="admin-workspace">
           <nav aria-label="Content sections">
             {tabs
@@ -336,7 +337,7 @@ export function ContentEditor({
                 <button
                   key={name}
                   aria-current={tab === name ? "page" : undefined}
-                  disabled={scheduleEditing}
+                  disabled={scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview")}
                   onClick={() =>
                     name === "History" ? void history() : setTab(name)
                   }
@@ -346,6 +347,9 @@ export function ContentEditor({
               ))}
           </nav>
           <div className="admin-panel">
+            {tab === "Enquiries" && session.user.canManageEnquiries === true ? (
+              <EnquiryInbox session={session} onExpired={onExpired} />
+            ) : !content ? unavailableDraft : (
             <fieldset disabled={busy || conflict}>
               <legend className="admin-sr-only">{tab} editor</legend>
               {tab === "Overview" && (
@@ -601,10 +605,6 @@ export function ContentEditor({
                   <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
                 </>
               )}
-              {tab === "Enquiries" &&
-                session.user.canManageEnquiries === true && (
-                  <EnquiryInbox session={session} onExpired={onExpired} />
-                )}
               {tab === "History" && (
                 <>
                   <h2>Revision history</h2>
@@ -643,6 +643,7 @@ export function ContentEditor({
                 </>
               )}
             </fieldset>
+            )}
           </div>
         </div>
       )}

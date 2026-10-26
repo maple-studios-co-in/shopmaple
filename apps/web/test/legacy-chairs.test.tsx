@@ -23,7 +23,7 @@ const products: Product[] = Array.from({ length: 26 }, (_, i) => ({
       id: `variant-${i}`,
       title: "Standard",
       sku: null,
-      pricePaise: (i + 1) * 10000,
+      pricePaise: i === 23 ? null : (i + 1) * 10000,
       compareAtPaise: null,
       available: true,
       stockPolicy: "stocked",
@@ -50,21 +50,22 @@ async function render(
     const request = new URL(String(url));
     if (request.pathname === "/api/catalogue/cards") return Response.json({ products: [], published: true });
     if (request.pathname.startsWith("/api/catalogue/collections/")) {
+      const requestedHandle = request.pathname.split("/").at(-1)!;
       const params = request.searchParams;
       // These hand-selected fixture rows correspond to the scenarios below; the API suite owns filtering math.
       const q = params.get("q") ?? "", min = params.get("min") ?? "", max = params.get("max") ?? "";
       const sort = params.get("sort") ?? "title", availability = params.get("availability") ?? "", category = params.get("category") ?? "";
-      let rows = handle === "chairs" || category === "chairs" ? products.slice(0, 26) : [...products];
+      let rows = requestedHandle === "chairs" || category === "chairs" ? products.slice(0, 26) : [...products];
       if (q === "no-matching-products" || availability === "out") rows = [];
       else if (min === "200" && max === "400") rows = [products[1]!, products[2]!, products[3]!];
       else if (min === "200") rows = products.slice(1, 26);
       if (sort === "price-desc") rows.reverse();
       const currentPage = Math.min(Number(params.get("page") ?? 1), Math.max(1, Math.ceil(rows.length / 24)));
       return Response.json({
-        handle, query: { q, min, max, sort, availability, category, page: currentPage },
+        handle: requestedHandle, query: { q, min, max, sort, availability, category, page: currentPage },
         products: rows.slice((currentPage - 1) * 24, currentPage * 24).map(row => ({ id: row.id, handle: row.handle, title: row.title, image: "https://example.com/chair.jpg", pricePaise: row.variants[0]!.pricePaise, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1 })),
-        total: rows.length, collectionTotal: handle === "chairs" ? 26 : 27,
-        inStock: handle === "chairs" ? 26 : 27, outOfStock: 0, highestPrice: 260000,
+        total: rows.length, collectionTotal: requestedHandle === "chairs" ? 26 : 27,
+        inStock: requestedHandle === "chairs" ? 25 : 26, outOfStock: 1, highestPrice: 260000,
         limit: 24, published: true, mode: "preview", checkoutEnabled: false,
       });
     }
@@ -342,5 +343,29 @@ test("room product browsing exposes labelled previous and next navigation", asyn
         `button[aria-label="Previous ${title} featured products"]`,
       ),
     );
+  }
+});
+
+test("editorial Chairs exposes the full category catalogue, honest prices and working pagination", async () => {
+  for (const query of [{}, { utm_source: "campaign" }]) {
+    const doc = await render(query);
+    const listing = doc.querySelector("#collection-products");
+    assert.ok(listing, "The editorial page must also expose the complete chair catalogue");
+    assert.equal(doc.querySelectorAll("h1").length, 1);
+    assert.equal(doc.querySelector("h1")?.textContent, "Our Newest Arrivals");
+    assert.equal(listing.querySelector("h2")?.textContent, "Chairs");
+    assert.ok(doc.querySelector('.legacy-chairs-hero a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
+    assert.equal(listing.querySelectorAll(".product-card").length, 24);
+    assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 items/);
+    assert.ok(!listing.textContent?.includes("Chair matching table"));
+    const unpriced = [...listing.querySelectorAll(".product-card")].find(card => card.querySelector(".product-card-name")?.textContent === "Chair 23");
+    assert.equal(unpriced?.querySelector(".product-card-price")?.textContent, "Price on request");
+    assert.equal(listing.querySelector(".collection-filter-form")?.getAttribute("action"), "/collections/chairs");
+    const next = listing.querySelector<HTMLAnchorElement>(".collection-pagination a")!;
+    assert.equal(next.textContent, "Next");
+    const url = new URL(next.href);
+    assert.equal(url.pathname, "/collections/chairs");
+    const second = await render(Object.fromEntries(url.searchParams), false, "chairs");
+    assert.deepEqual(cards(second), ["Chair 24", "Chair 25"]);
   }
 });

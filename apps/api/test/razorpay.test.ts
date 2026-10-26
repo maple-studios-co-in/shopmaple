@@ -422,12 +422,7 @@ test("upstream errors are sanitized and order creation is never automatically re
 test("deadline covers both transport and response body reading", async () => {
   for (const fetch of [
     async () => new Promise<Response>(() => {}),
-    async () =>
-      ({
-        ok: true,
-        status: 200,
-        json: async () => new Promise(() => {}),
-      }) as Response,
+    async () => new Response(new ReadableStream<Uint8Array>()),
   ]) {
     const gateway = createRazorpayGateway(config, { fetch, timeoutMs: 10 });
     await assert.rejects(
@@ -445,4 +440,114 @@ test("malformed JSON responses are rejected without exposing response content", 
     gateway.createOrder(orderInput),
     errorCode("INVALID_RESPONSE"),
   );
+});
+
+// Removing stream byte accounting would accept a matching payment hidden in an oversized body.
+test("oversized provider bodies cannot authorize capture even with a missing or understated length", async () => {
+  for (const contentLength of [undefined, "1"]) {
+    const gateway = createRazorpayGateway(config, {
+      fetch: async () =>
+        new Response(
+          JSON.stringify({ ...payment, notes: "x".repeat(262_144) }),
+          { headers: contentLength ? { "content-length": contentLength } : {} },
+        ),
+    });
+    await assert.rejects(
+      gateway.verifyCapturedPayment(expected, callback.razorpay_payment_id),
+      (error: unknown) => {
+        assert.ok(error instanceof PaymentGatewayError);
+        assert.equal(error.code, "RESPONSE_TOO_LARGE");
+        assert.equal(error.operationOutcome, "not_applicable");
+        return true;
+      },
+    );
+  }
+});
+
+// The consumer must stop the stream immediately, not wait for an oversized body to finish.
+test("oversized streamed order response is cancelled and remains an unknown one-shot creation", async () => {
+  let cancelled = false;
+  let calls = 0;
+  const gateway = createRazorpayGateway(config, {
+    timeoutMs: 100,
+    fetch: async () => {
+      calls++;
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array(262_144));
+            controller.enqueue(new Uint8Array(1));
+          },
+          cancel() {
+            cancelled = true;
+          },
+        }),
+      );
+    },
+  });
+  await assert.rejects(gateway.createOrder(orderInput), (error: unknown) => {
+    assert.ok(error instanceof PaymentGatewayError);
+    assert.equal(error.code, "RESPONSE_TOO_LARGE");
+    assert.equal(error.operationOutcome, "unknown");
+    return true;
+  });
+  assert.equal(cancelled, true);
+  assert.equal(calls, 1);
+});
+
+test("declared oversized response is rejected and cancelled before waiting for body bytes", async () => {
+  let cancelled = false;
+  const gateway = createRazorpayGateway(config, {
+    timeoutMs: 100,
+    fetch: async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          cancel() {
+            cancelled = true;
+          },
+        }),
+        { headers: { "content-length": "262145" } },
+      ),
+  });
+  await assert.rejects(
+    gateway.createOrder(orderInput),
+    errorCode("RESPONSE_TOO_LARGE"),
+  );
+  assert.equal(cancelled, true);
+});
+
+test("provider JSON at the response byte limit is still accepted", async () => {
+  const json = JSON.stringify(order);
+  const gateway = createRazorpayGateway(config, {
+    fetch: async () =>
+      new Response(json + " ".repeat(262_144 - Buffer.byteLength(json))),
+  });
+  assert.deepEqual(await gateway.createOrder(orderInput), {
+    orderId: expected.orderId,
+    amountPaise: 5000,
+    currency: "INR",
+    receipt: "attempt_1",
+  });
+});
+
+test("response timeout cancels the provider body and keeps creation outcome unknown", async () => {
+  let cancelled = false;
+  const gateway = createRazorpayGateway(config, {
+    timeoutMs: 10,
+    fetch: async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          cancel() {
+            cancelled = true;
+          },
+        }),
+      ),
+  });
+  await assert.rejects(gateway.createOrder(orderInput), (error: unknown) => {
+    assert.ok(error instanceof PaymentGatewayError);
+    assert.equal(error.code, "UPSTREAM_TIMEOUT");
+    assert.equal(error.operationOutcome, "unknown");
+    return true;
+  });
+  assert.equal(cancelled, true);
 });

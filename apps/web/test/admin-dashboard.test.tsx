@@ -918,3 +918,67 @@ test("section reveal preference can be edited and saved without publishing", asy
     assert.equal(writes[0]!.body.expectedVersion, 4);
   } finally {await act(async () => root.unmount()); globalThis.fetch = previous;}
 });
+
+test("authorised enquiry staff can use the inbox when the content draft is unavailable", async () => {
+  const previous = globalThis.fetch;
+  const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, createdAt: "2026-10-26T00:00:00.000Z" };
+  try {
+    for (const failure of ["unavailable", "malformed"]) {
+      let recovered = false;
+      globalThis.fetch = async (url) => {
+        const path = String(url);
+        if (path.endsWith("/session")) return Response.json({ ...staff("publisher"), user: { ...staff("publisher").user, canManageEnquiries: true } });
+        if (path === "/api/admin/enquiries") return Response.json({ items: [row], nextCursor: null });
+        if (path === "/api/admin/content") return recovered ? Response.json(doc()) : failure === "unavailable" ? Response.json({}, { status: 503 }) : Response.json({ ...doc(), publishedVersion: 99 });
+        throw Error(`Unexpected request: ${path}`);
+      };
+      const root = createRoot(container);
+      try {
+        await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+        assert.equal(button("Save draft").disabled, true);
+        assert.equal(button("Publish draft").disabled, true);
+        await click("Enquiries");
+        assert.ok(container.querySelector('[aria-label="Customer enquiries"]'), "A content failure must not hide the separately protected inbox");
+        assert.ok(container.textContent!.includes(row.id));
+        assert.equal(button("Open enquiry").disabled, false);
+        await click("Overview");
+        recovered = true;
+        await click("Retry loading draft");
+        await click("Homepage");
+        assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Category heading"]')?.value, "Shop by category");
+      } finally { await act(async () => root.unmount()); }
+    }
+  } finally { globalThis.fetch = previous; }
+});
+
+test("unavailable content cannot expose enquiries without capability or bypass inbox denials", async () => {
+  const previous = globalThis.fetch;
+  try {
+    for (const allowed of [false, true]) {
+      for (const status of [403, 401]) {
+        let enquiryReads = 0;
+        globalThis.fetch = async (url) => {
+          const path = String(url);
+          if (path.endsWith("/session")) return Response.json({ ...staff("publisher"), user: { ...staff("publisher").user, canManageEnquiries: allowed } });
+          if (path === "/api/admin/content") return Response.json({}, { status: 503 });
+          if (path === "/api/admin/enquiries") { enquiryReads++; return Response.json({}, { status }); }
+          throw Error(`Unexpected request: ${path}`);
+        };
+        const root = createRoot(container);
+        try {
+          await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+          if (!allowed) {
+            assert.equal([...container.querySelectorAll("button")].some(item => item.textContent === "Enquiries"), false);
+            assert.equal(enquiryReads, 0);
+          } else {
+            await click("Enquiries");
+            assert.equal(enquiryReads, 1);
+            if (status === 401) assert.ok(container.querySelector('input[type="password"]'));
+            else assert.match(container.textContent!, /does not have access to customer enquiries/i);
+            assert.equal([...container.querySelectorAll("button")].some(item => item.textContent === "Open enquiry"), false);
+          }
+        } finally { await act(async () => root.unmount()); }
+      }
+    }
+  } finally { globalThis.fetch = previous; }
+});

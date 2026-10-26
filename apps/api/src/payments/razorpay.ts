@@ -35,6 +35,7 @@ type ErrorCode =
   | "INVALID_SIGNATURE"
   | "INVALID_WEBHOOK"
   | "INVALID_RESPONSE"
+  | "RESPONSE_TOO_LARGE"
   | "UPSTREAM_HTTP_ERROR"
   | "UPSTREAM_UNAVAILABLE"
   | "UPSTREAM_TIMEOUT"
@@ -147,11 +148,14 @@ export function createRazorpayGateway(
   ): Promise<unknown> {
     const outcome = method === "POST" ? "unknown" : "not_applicable";
     const controller = new AbortController();
+    const maxResponseBytes = 256 * 1024;
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(() => {
         reject(new PaymentGatewayError("UPSTREAM_TIMEOUT", outcome));
         controller.abort();
+        void reader?.cancel().catch(() => {});
       }, timeoutMs);
     });
     try {
@@ -171,6 +175,10 @@ export function createRazorpayGateway(
               ...(body ? { body: JSON.stringify(body) } : {}),
             },
           );
+          if (controller.signal.aborted) {
+            void response.body?.cancel().catch(() => {});
+            throw new PaymentGatewayError("UPSTREAM_TIMEOUT", outcome);
+          }
           if (!response.ok) {
             // Do not surface provider bodies, headers or transport errors (may contain personal data).
             void response.body?.cancel().catch(() => {});
@@ -180,9 +188,30 @@ export function createRazorpayGateway(
               response.status,
             );
           }
+          const length = response.headers.get("content-length");
+          if (length !== null && Number(length) > maxResponseBytes) {
+            void response.body?.cancel().catch(() => {});
+            throw new PaymentGatewayError("RESPONSE_TOO_LARGE", outcome);
+          }
           try {
-            return await response.json();
-          } catch {
+            if (!response.body)
+              throw new PaymentGatewayError("INVALID_RESPONSE", outcome);
+            reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let size = 0;
+            while (true) {
+              const next = await reader.read();
+              if (controller.signal.aborted)
+                throw new PaymentGatewayError("UPSTREAM_TIMEOUT", outcome);
+              if (next.done) break;
+              size += next.value.byteLength;
+              if (size > maxResponseBytes)
+                throw new PaymentGatewayError("RESPONSE_TOO_LARGE", outcome);
+              chunks.push(next.value);
+            }
+            return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+          } catch (error) {
+            if (error instanceof PaymentGatewayError) throw error;
             throw new PaymentGatewayError("INVALID_RESPONSE", outcome);
           }
         })(),
@@ -193,6 +222,8 @@ export function createRazorpayGateway(
       throw new PaymentGatewayError("UPSTREAM_UNAVAILABLE", outcome);
     } finally {
       clearTimeout(timer);
+      controller.abort();
+      void reader?.cancel().catch(() => {});
     }
   }
 
