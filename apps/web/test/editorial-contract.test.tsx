@@ -151,8 +151,15 @@ test("cyclic documents fail safely and independently valid documents still obey 
   cyclic.children.push(cyclic);
   assert.equal(parse({ policies: [{ slug: "privacy-policy", title: "Privacy", content: [cyclic] }], blogs: [], articles: [] }).success, false);
   const policy = (slug: string) => ({ slug, title: "Policy", content: Array(3).fill("x".repeat(16000)) });
-  assert.equal(parse({ policies: [policy("privacy-policy")], blogs: [], articles: [] }).success, true);
-  assert.equal(parse({ policies: [policy("privacy-policy"), policy("refund-policy")], blogs: [], articles: [] }).success, false, "Existing default payload plus two valid documents exceeds128KiB");
+  const policies = ["privacy-policy", "refund-policy", "shipping-policy"].map(policy);
+  for (const document of policies) {
+    assert.equal(parse({ policies: [document], blogs: [], articles: [] }).success, true, `${document.slug} must be independently valid`);
+  }
+  const editorialContent = { policies, blogs: [], articles: [] };
+  assert.ok(Buffer.byteLength(JSON.stringify(editorialContent), "utf8") > 128 * 1024, "Editorial documents alone must exceed the whole-store limit, independently of default copy");
+  const result = parse(editorialContent);
+  assert.equal(result.success, false, "Independently valid documents must still obey the 128 KiB whole-store limit");
+  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
 });
 
 test("the 48KiB document limit accepts the exact boundary and rejects one additional byte", () => {

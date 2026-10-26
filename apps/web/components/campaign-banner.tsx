@@ -59,6 +59,14 @@ export async function CampaignBanner({
   );
   const data = { ...campaigns[campaign], ...fallback, ...override };
   const vars = {
+    "--campaign-copy-x": `${(data.desktop.copy.x / 1900) * 100}cqw`,
+    "--campaign-copy-y": `${(data.desktop.copy.y / 1900) * 100}cqw`,
+    "--campaign-copy-width": `${(data.desktop.copy.width / 1900) * 100}cqw`,
+    "--campaign-copy-gap": `${(data.desktop.copy.gap / 1900) * 100}cqw`,
+    "--campaign-mobile-copy-x": `${(data.mobile.copy.x / 500) * 100}cqw`,
+    "--campaign-mobile-copy-y": `${(data.mobile.copy.y / 500) * 100}cqw`,
+    "--campaign-mobile-copy-width": `${(data.mobile.copy.width / 500) * 100}cqw`,
+    "--campaign-mobile-copy-gap": `${(data.mobile.copy.gap / 500) * 100}cqw`,
     "--campaign-gradient-width": `${(data.desktop.gradientWidth / 1900) * 100}%`,
     "--campaign-gradient":
       data.desktop.gradient ??
@@ -68,7 +76,7 @@ export async function CampaignBanner({
     <section
       className={`campaign-banner${compact ? " campaign-compact" : ""}`}
       data-campaign={campaign}
-      aria-label={data.label}
+      aria-label={data.label || data.headline.join(" ")}
       style={vars}
     >
       <div className="campaign-scene">
@@ -104,7 +112,7 @@ export async function CampaignBanner({
           <div className="campaign-bottom-shade" aria-hidden="true" />
         )}
         <div className="campaign-copy">
-          <p className="campaign-label">{data.label}</p>
+          {data.label && <p className="campaign-label">{data.label}</p>}
           <h2>
             {data.headline.map((line) => (
               <span key={line}>{line}</span>
@@ -120,7 +128,7 @@ export async function CampaignBanner({
               ))}
             </p>
           )}
-          <p className="campaign-eligibility">{data.eligibility}</p>
+          {data.eligibility && <p className="campaign-eligibility">{data.eligibility}</p>}
           <Link className="campaign-cta" href={data.href}>
             {data.cta}
             <span aria-hidden="true"> →</span>

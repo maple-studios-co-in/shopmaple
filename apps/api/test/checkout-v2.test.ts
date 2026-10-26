@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { after, beforeEach, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
-import { createOrderService } from "../src/orders/service.js";
+import { createOrderService, type ReservationPort } from "../src/orders/service.js";
 import { createRazorpayGateway } from "../src/payments/razorpay.js";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test")
@@ -79,18 +79,33 @@ function quotation(_request: any) {
     snapshot,
   };
 }
+let providerPosts: unknown[] = [];
+let reserveHook: (() => Promise<void>) | undefined;
+const reservations: ReservationPort = {
+  reserve: async (r) => {
+    await reserveHook?.();
+    return { ...r, reservationId: `reservation-${r.attemptId}`, verified: true, expiresAt: new Date("2026-10-26T10:10:00Z") };
+  },
+  verify: async () => true,
+};
 function service(
   authority: (request: any) => Promise<any> = async (request) =>
     quotation(request),
 ) {
-  const extra = { quoteAuthority: authority };
+  const extra = { quoteAuthority: authority, keeriTenantId: "maple" };
   return createOrderService(db, {
     merchantScope: "maple-test",
     gateway: createRazorpayGateway({
       keyId: "rzp_test_fixture",
       keySecret: "fixture",
       webhookSecret: "fixture",
-    }),
+    }, { fetch: async (_url, options) => {
+      assert.equal(options.method, "POST");
+      const body = JSON.parse(String(options.body));
+      providerPosts.push(body);
+      return Response.json({ entity: "order", id: "order_bound", ...body, status: "created", amount_paid: 0, amount_due: body.amount });
+    } }),
+    reservations,
     quote: () => ({ shippingPaise: 0, taxPaise: 0, policyId: "legacy" }),
     now: () => now,
     ...extra,
@@ -102,12 +117,13 @@ const freeze = (
   data: any = input,
 ) => flow.freezeCart(token, key, data);
 beforeEach(async () => {
+  providerPosts = []; reserveHook = undefined;
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
   await db.checkoutAttempt.deleteMany();
   await db.cartItem.deleteMany();
   await db.cart.deleteMany();
-  await db.product.deleteMany({ where: { id: "keeri:maple:chair" } });
+  await db.product.deleteMany({ where: { handle: "v2-fixture-chair" } });
   await db.product.create({
     data: {
       id: "keeri:maple:chair",
@@ -119,9 +135,11 @@ beforeEach(async () => {
       published: true,
       source: "keeri:maple",
       sourceUpdatedAt: now,
+      identities: { create: { source: "keeri", externalId: "keeri:maple:chair" } },
       variants: {
         create: {
           id: "keeri:maple:chair-v",
+          identities: { create: { source: "keeri", externalId: "keeri:maple:chair-v" } },
           title: "Cream",
           pricePaise: 9000,
           available: true,
@@ -316,6 +334,7 @@ test("quote binding compares variant sets consistently across database and produ
   await db.variant.create({
     data: {
       id: "keeri:maple:Chair-V",
+      identities: { create: { source: "keeri", externalId: "keeri:maple:Chair-V" } },
       productId: "keeri:maple:chair",
       title: "Oak",
       pricePaise: 10000,
@@ -387,4 +406,130 @@ test("changed input on a captured checkout never tells the buyer that payment is
       .state,
     "captured",
   );
+});
+
+async function previewIds() {
+  await db.product.update({ where: { id: "keeri:maple:chair" }, data: { id: "preview-chair" } });
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { id: "preview-chair-v" } });
+}
+const bindingSnapshot = {
+  version: 1, tenantId: "maple", items: [{
+    localVariantId: "preview-chair-v", localProductId: "preview-chair",
+    sourceVariantId: "keeri:maple:chair-v", sourceProductId: "keeri:maple:chair",
+  }],
+};
+test("merged preview cart quotes and reserves persisted Keeri identities while retaining local cart and immutable quote", async () => {
+  await previewIds();
+  const expected = quotation(null);
+  const flow = service(async (r) => {
+    assert.deepEqual(r.items, [{ variantId: "keeri:maple:chair-v", quantity: 2 }]);
+    return expected;
+  });
+  const result = await freeze(flow);
+  assert.deepEqual(result.snapshot, expected.snapshot);
+  assert.deepEqual((result as any).catalogueBindings, bindingSnapshot);
+  assert.equal((await db.cartItem.findFirstOrThrow()).variantId, "preview-chair-v");
+  assert.equal((await freeze(flow)).id, result.id);
+  assert.equal((await flow.createProviderOrder(token, result.id)).state, "awaiting_payment");
+  assert.equal(providerPosts.length, 1);
+});
+test("missing and wrong-tenant persisted identities refuse quotation even when local IDs look authoritative", async () => {
+  let quotes = 0;
+  const flow = service(async (r) => { quotes++; return quotation(r); });
+  await db.variantSourceIdentity.deleteMany({ where: { source: "keeri" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
+  assert.equal(quotes, 0);
+  await db.variantSourceIdentity.create({ data: { source: "keeri", externalId: "keeri:other:chair-v", variantId: "keeri:maple:chair-v" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
+  assert.equal(quotes, 0);
+});
+test("quote cannot substitute the product parent associated with a persisted variant", async () => {
+  await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:different-parent" } });
+  await assert.rejects(freeze(service()), { code: "QUOTE_INVALID" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+test("product identity changing while quote is in flight cannot freeze stale bindings", async () => {
+  const flow = service(async (r) => {
+    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:changed-parent" } });
+    return quotation(r);
+  });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+test("changed binding after quote refuses replay and provider creation without payment transport", async () => {
+  const flow = service(); const frozen = await freeze(flow);
+  await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });
+  await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "CATALOGUE_BINDING_CHANGED" });
+  assert.equal(providerPosts.length, 0);
+});
+test("mapping change during remote reservation blocks provider order and records reconciliation", async () => {
+  const flow = service(); const frozen = await freeze(flow);
+  reserveHook = async () => {
+    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:replacement-parent" } });
+  };
+  await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "CATALOGUE_BINDING_CHANGED" });
+  assert.equal(providerPosts.length, 0);
+  assert.equal((await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.id } })).state, "reconciliation_required");
+});
+test("pre-migration v2 attempts without binding snapshots fail closed before provider creation", async () => {
+  const flow = service(); const frozen = await freeze(flow);
+  // Simulate a legacy record through a fresh insert; never mutate a frozen mapping.
+  await db.checkoutAttempt.delete({ where: { id: frozen.id } });
+  const { catalogueBindings: _discard, ...legacy } = frozen as any;
+  await db.checkoutAttempt.create({ data: legacy });
+  await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "CATALOGUE_BINDING_REQUIRED" });
+  assert.equal(providerPosts.length, 0);
+});
+
+test("persisted catalogue bindings cannot be rewritten on an existing checkout attempt", async () => {
+  const frozen = await freeze(service());
+  const changed = structuredClone((frozen as any).catalogueBindings);
+  changed.items[0].sourceVariantId = "keeri:maple:replacement-v";
+  await assert.rejects(db.checkoutAttempt.update({ where: { id: frozen.id }, data: { catalogueBindings: changed } }));
+  const stored = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.id } });
+  assert.deepEqual(stored.catalogueBindings, frozen.catalogueBindings);
+  assert.deepEqual(stored.snapshot, frozen.snapshot);
+});
+
+test("missing or cross-tenant product identities never reach quote or payment transport", async () => {
+  let quotes = 0;
+  const flow = service(async (r) => { quotes++; return quotation(r); });
+  await db.productSourceIdentity.deleteMany({ where: { source: "keeri", productId: "keeri:maple:chair" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
+  await db.productSourceIdentity.create({ data: { source: "keeri", externalId: "keeri:maple-other:chair", productId: "keeri:maple:chair" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
+  assert.equal(quotes, 0);
+  assert.equal(providerPosts.length, 0);
+});
+
+test("variant remapping while a quote is in flight refuses the original quote", async () => {
+  const flow = service(async (r) => {
+    await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
+    return quotation(r);
+  });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("concurrent provider calls for translated IDs still create only one provider order", async () => {
+  await previewIds();
+  const flow = service(); const frozen = await freeze(flow);
+  const results = await Promise.allSettled([
+    flow.createProviderOrder(token, frozen.id),
+    flow.createProviderOrder(token, frozen.id),
+  ]);
+  assert.ok(results.some((r) => r.status === "fulfilled"));
+  assert.equal(providerPosts.length, 1);
+  assert.deepEqual((await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.id } })).catalogueBindings, bindingSnapshot);
+});
+
+test("quote authority requires an explicit valid tenant configuration", () => {
+  for (const keeriTenantId of [undefined, "", "maple:other", "maple/other"]) {
+    assert.throws(() => createOrderService(db, {
+      merchantScope: "maple-test", keeriTenantId,
+      quoteAuthority: async (r) => quotation(r),
+      gateway: createRazorpayGateway({ keyId: "rzp_test_fixture", keySecret: "fixture", webhookSecret: "fixture" }),
+    }), { code: "INVALID_CONFIGURATION" });
+  }
 });
