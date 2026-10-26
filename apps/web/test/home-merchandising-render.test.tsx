@@ -49,9 +49,16 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
     const url = new URL(String(input));
     requests.push({ url: url.pathname, method: init?.method ?? "GET" });
     if (url.pathname === "/api/content/storefront") return Response.json({ version: 9, content });
-    const handle = decodeURIComponent(url.pathname.slice("/api/products/".length));
-    if (handle === "broken-product") return new Response(null, { status: 503 });
-    if (url.pathname.startsWith("/api/products/") && products[handle]) return Response.json(products[handle]);
+    if (url.pathname === "/api/catalogue/cards") {
+      const handles = url.searchParams.get("handles")!.split(",");
+      if (handles.includes("broken-product")) return new Response(null, { status: 503 });
+      return Response.json({ published: true, products: handles.flatMap(handle => {
+        const item = products[handle];
+        return item?.published ? [{ id: item.id, handle, title: item.title, image: null,
+          pricePaise: item.variants[0]!.pricePaise, compareAtPaise: null,
+          priceFrom: false, otherOptionsOnRequest: false, optionCount: 1 }] : [];
+      }) });
+    }
     return new Response(null, { status: 404 });
   };
   try {
@@ -131,7 +138,7 @@ test("published rails preserve product order, omit missing, unavailable and unpu
   assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] .product-card-price'), ["Rs. 47,890.00", "Rs. 12,345.00"]);
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] .product-card-name', "href"), ["/products/custom-chair-two", "/products/custom-chair-one"]);
   assert.deepEqual(texts(doc, '[data-home-section="chairs"] .product-card-price'), ["Rs. 9,000.00", "Rs. 8,500.00"]);
-  assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|products\/[^/]+)$/.test(url)), "Rendering only reads published content and catalogue data");
+  assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|catalogue\/cards)$/.test(url)), "Rendering only reads published content and catalogue data");
   assert.equal(doc.querySelector('[href="/checkout"], button[name="checkout"]'), null);
 });
 

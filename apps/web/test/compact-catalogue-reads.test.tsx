@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getCollectionPage, getProductCards } from "../lib/catalog";
+import { getCollectionPage, getProductCards, getRelatedProductCards } from "../lib/catalog";
 import { cardFixture, pageFixture, queryFixture } from "./support/catalogue-fixtures";
 
 let sequence = 0;
@@ -10,6 +10,73 @@ async function isolated(run: () => Promise<void>) {
   try { await run(); } finally { globalThis.fetch = previous; if (api === undefined) delete process.env.API_URL; else process.env.API_URL = api; }
 }
 const page = () => ({ ...pageFixture(["oak"]), limit: 24 });
+
+test("related cards use one bounded category read, coalesce and isolate cached results", async () => {
+  await isolated(async () => {
+    let calls = 0;
+    globalThis.fetch = async input => {
+      calls++;
+      const url = new URL(String(input));
+      assert.equal(url.pathname, "/api/catalogue/related");
+      assert.equal(url.search, "?category=chairs");
+      return Response.json({ category: "chairs", products: [cardFixture("oak")], published: true });
+    };
+    const results = await Promise.all(Array.from({ length: 12 }, () => getRelatedProductCards("chairs")));
+    assert.deepEqual(results[0]!.map(card => card.handle), ["oak"]);
+    assert.equal(calls, 1);
+    results[0]![0]!.title = "Changed";
+    assert.equal(results[1]![0]!.title, "oak Chair");
+  });
+});
+
+test("related readers reject invalid category before transport", async () => {
+  await isolated(async () => {
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; return Response.json({}); };
+    for (const category of ["", "Chairs", "chairs&category=tables", "../private"])
+      await assert.rejects(getRelatedProductCards(category), /Invalid catalogue category/);
+    assert.equal(calls, 0);
+  });
+});
+
+for (const [label, patch] of [
+  ["wrong category", { category: "tables" }],
+  ["unpublished", { published: false }],
+  ["excess cards", { products: Array.from({ length: 6 }, (_, i) => cardFixture(`item-${i}`)) }],
+  ["duplicate handles", { products: [cardFixture("oak"), cardFixture("oak")] }],
+  ["full product data", { products: [{ ...cardFixture("oak"), description: "Private/full record" }] }],
+] as const) test(`related reader rejects ${label} without poisoning recovery`, async () => {
+  await isolated(async () => {
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; return Response.json(Object.assign({ category: "chairs", products: [cardFixture("oak")], published: true }, patch)); };
+    await assert.rejects(getRelatedProductCards("chairs"));
+    globalThis.fetch = async () => { calls++; return Response.json({ category: "chairs", products: [cardFixture("oak")], published: true }); };
+    assert.equal((await getRelatedProductCards("chairs"))[0]!.handle, "oak");
+    assert.equal(calls, 2);
+  });
+});
+
+test("related read times out a stalled body and accepts an empty category on retry", async t => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    await isolated(async () => {
+      let signal: AbortSignal | null | undefined;
+      globalThis.fetch = async (_input, init) => {
+        signal = init?.signal;
+        const response = Response.json({});
+        response.json = () => new Promise(() => {});
+        return response;
+      };
+      const pending = getRelatedProductCards("outdoors");
+      await Promise.resolve(); await Promise.resolve();
+      t.mock.timers.tick(6000);
+      await assert.rejects(pending, /temporarily unavailable/);
+      assert.equal(signal?.aborted, true);
+      globalThis.fetch = async () => Response.json({ category: "outdoors", products: [], published: true });
+      assert.deepEqual(await getRelatedProductCards("outdoors"), []);
+    });
+  } finally { t.mock.timers.reset(); }
+});
 
 test("compact collection readers coalesce, isolate returned values and retry invalid responses", async () => {
   await isolated(async () => {

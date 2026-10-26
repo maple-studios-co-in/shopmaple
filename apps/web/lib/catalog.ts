@@ -1,10 +1,19 @@
 import "server-only";
-import { productListSchema, productSchema, catalogueCardsResponseSchema, type CollectionQuery } from "@shopmaple/contracts";
+import { productListSchema, productSchema, catalogueCardsResponseSchema, relatedCatalogueCardsResponseSchema, categories, type CollectionQuery } from "@shopmaple/contracts";
 import { createCatalogueCache } from "./catalogue-cache";
 import { parseCataloguePage } from "./catalogue-responses";
 import { isProductHandle } from "./recent-products";
 const readCatalogue = createCatalogueCache();
 const api = () => process.env.API_URL ?? "http://127.0.0.1:4100";
+export async function getRelatedProductCards(category: string) {
+  if (!categories.some(value => value === category)) throw new Error("Invalid catalogue category");
+  const url = api() + "/api/catalogue/related?" + new URLSearchParams({ category });
+  return readCatalogue(url, async () => {
+    const result = relatedCatalogueCardsResponseSchema.parse(await readCompact(url));
+    if (result.category !== category) throw new Error("Invalid catalogue response");
+    return result.products;
+  });
+}
 export async function getProducts(query: Record<string, string> = {}) {
   const url = api() + "/api/products?" + new URLSearchParams(query);
   return readCatalogue(url, async () => {

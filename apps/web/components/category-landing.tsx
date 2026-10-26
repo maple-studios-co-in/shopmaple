@@ -1,9 +1,9 @@
-import { toProductCard } from "@/lib/product-card-model";
+import type { ProductCard as ProductCardModel } from "@shopmaple/contracts";
 import Image, { getImageProps } from "next/image";
 import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
-import { cache, type CSSProperties } from "react";
-import { getProducts } from "@/lib/catalog";
+import { type CSSProperties } from "react";
+import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
 import { shopFile } from "@/lib/format";
 import { ProductCard } from "@/components/product-card";
@@ -99,39 +99,28 @@ function SourceProductCard({ product }: { product: SourceProduct }) {
     </article>
   );
 }
-const landingCatalogue = cache(async () => {
-  const first = await getProducts({ limit: "50", sort: "featured" });
-  const remaining = await Promise.all(
-    Array.from(
-      { length: Math.max(0, Math.ceil(first.total / 50) - 1) },
-      (_, index) =>
-        getProducts({ limit: "50", sort: "featured", page: String(index + 2) }),
-    ),
-  );
-  return new Map(
-    [...first.products, ...remaining.flatMap((page) => page.products)].map(
-      (product) => [product.handle, product],
-    ),
-  );
-});
 export async function CategoryProducts({
   handles,
   heading,
   collection,
   viewAll,
   grid = false,
+  catalogue,
 }: {
   handles: string[];
   heading?: string;
   collection?: string;
   viewAll?: boolean;
   grid?: boolean;
+  catalogue?: () => Promise<ReadonlyMap<string, ProductCardModel>>;
 }) {
-  const products = await landingCatalogue();
+  const products = catalogue ? await catalogue() : new Map(
+    (await getProductCards(handles)).map((product) => [product.handle, product]),
+  );
   const cards = handles.map((handle) => {
     const product = products.get(handle);
     return product ? (
-      <ProductCard key={handle} product={toProductCard(product)} />
+      <ProductCard key={handle} product={product} />
     ) : sourceProducts[handle] ? (
       <SourceProductCard key={handle} product={sourceProducts[handle]!} />
     ) : null;
@@ -196,6 +185,14 @@ export function CategoryValues({
 export async function CategoryLanding({ slug }: { slug: CategoryPageSlug }) {
   const content = await getPublishedContent();
   const data = resolveCategoryPage(slug, content.landingPages);
+  const handles = [...new Set(data.sections
+    .filter((section) => section.type === "products")
+    .flatMap((section) => section.handles ?? []))];
+  let catalogueRequest: Promise<ReadonlyMap<string, ProductCardModel>> | undefined;
+  // Start only when a server rail renders; the hero tree need not wait for cards.
+  const catalogue = () => catalogueRequest ??= getProductCards(handles).then(
+    (products) => new Map(products.map((product) => [product.handle, product])),
+  );
   const heroVisible = data.sections.some((section) => section.key === "hero");
   return (
     <div className="home-parity landing-parity">
@@ -262,6 +259,7 @@ export async function CategoryLanding({ slug }: { slug: CategoryPageSlug }) {
             <CategoryProducts
               key={section.key}
               handles={section.handles!}
+              catalogue={catalogue}
               heading={section.heading}
               collection={section.collection}
               viewAll={section.viewAll}

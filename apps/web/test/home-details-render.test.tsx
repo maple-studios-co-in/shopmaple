@@ -42,9 +42,11 @@ async function renderHome(details?: ReturnType<typeof editedDetails>) {
     const url = String(input);
     requests.push({ url, method: init?.method ?? "GET" });
     if (url.endsWith("/api/content/storefront")) return Response.json({ version: 7, content });
-    if (url.endsWith("/api/products/aera-swivel-lounge-chair")) return Response.json({
-      id: "aera", handle: "aera-swivel-lounge-chair", title: "Aera lounge chair", description: "A chair", category: "chairs", images: [], published: true, source: "test-catalogue", sourceUpdatedAt: "2026-10-26T00:00:00Z",
-      variants: [{ id: "aera-natural", title: "Natural", sku: "AERA", pricePaise: 2360000, compareAtPaise: null, available: false, stockPolicy: "unverified" }],
+    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ published: true,
+      products: new URL(url).searchParams.get("handles")!.split(",").includes("aera-swivel-lounge-chair") ? [{
+        id: "aera", handle: "aera-swivel-lounge-chair", title: "Aera lounge chair", image: null,
+        pricePaise: 2360000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1,
+      }] : [],
     });
     return new Response(null, { status: 404 });
   };

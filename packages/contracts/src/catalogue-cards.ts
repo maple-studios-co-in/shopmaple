@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+export const categories = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"] as const;
 export const catalogueHandleSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200);
 const priceSchema = z.number().int().min(0).max(1_000_000_000).nullable();
 export const productCardSchema = z.object({
@@ -54,3 +55,7 @@ export function toProductCard(product: {
 export const catalogueCardResponseSchema = z.object({ product: productCardSchema, published: z.literal(true) }).strict();
 export const catalogueCardsResponseSchema = z.object({ products: z.array(productCardSchema).max(50), published: z.literal(true) }).strict()
   .refine(value => new Set(value.products.map(product => product.handle)).size === value.products.length, "Duplicate product handles");
+export const relatedCatalogueCardsResponseSchema = z.object({
+  category: z.enum(categories), products: z.array(productCardSchema).max(5), published: z.literal(true),
+}).strict().refine(value => new Set(value.products.map(product => product.handle)).size === value.products.length, "Duplicate product handles");
+export type RelatedCatalogueCardsResponse = z.infer<typeof relatedCatalogueCardsResponseSchema>;

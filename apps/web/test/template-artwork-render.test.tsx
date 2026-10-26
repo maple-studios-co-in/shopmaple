@@ -54,14 +54,14 @@ async function withPublished(body: unknown, run: () => Promise<void>) {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, method: init?.method ?? "GET", cache: init?.cache });
-    if (url.includes("/api/products")) return Response.json({ products: [], total: 0, page: 1, limit: 50, mode: "preview", checkoutEnabled: false });
+    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ products: [], published: true });
     if (!url.endsWith("/api/content/storefront")) throw new Error("Unexpected endpoint");
     if (body === "offline") throw new Error("offline");
     return Response.json(body);
   };
   try {
     await run();
-    assert.ok(requests.every(r => r.method === "GET" && (r.url.includes("/api/products") || r.url.endsWith("/api/content/storefront"))), "Pages must only read public content and catalogue, never drafts or writes");
+    assert.ok(requests.every(r => r.method === "GET" && (new URL(r.url).pathname === "/api/catalogue/cards" || r.url.endsWith("/api/content/storefront"))), "Pages must only read public content and catalogue, never drafts or writes");
     assert.ok(requests.filter(r => r.url.endsWith("/api/content/storefront")).every(r => r.cache === "no-store"));
   } finally { globalThis.fetch = previous; }
 }

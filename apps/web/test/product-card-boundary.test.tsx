@@ -52,7 +52,8 @@ async function withCatalogue(run: () => Promise<void>) {
     const url = new URL(String(input));
     if (url.pathname === "/api/catalogue/collections/all") return Response.json({ handle: "all", query: { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 }, products: [expected], total: 1, collectionTotal: 1, inStock: 1, outOfStock: 1, highestPrice: 25000, limit: 24, published: true, mode: "preview", checkoutEnabled: false });
     if (url.pathname === "/api/content/storefront") return Response.json({ version: 1, content: defaultStorefrontContent });
-    if (url.pathname === "/api/products") return Response.json({ products: [product], total: 1, page: 1, limit: 50, mode: "preview", checkoutEnabled: false });
+    if (url.pathname === "/api/catalogue/cards") return Response.json({ products: url.searchParams.get("handles")!.split(",").map(handle => ({ ...expected, handle })), published: true });
+    if (url.pathname === "/api/catalogue/related") return Response.json({ category: "chairs", products: [expected], published: true });
     if (url.pathname.startsWith("/api/products/")) {
       const handle = decodeURIComponent(url.pathname.split("/").at(-1)!);
       return Response.json({ ...product, id: handle === "detail-chair" ? "detail" : product.id, handle });

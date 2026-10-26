@@ -46,12 +46,12 @@ async function render(body: unknown) {
       if (body === "offline") throw new Error("offline");
       return Response.json(body);
     }
-    if (url.includes("/api/products/")) return new Response(null, { status: 404 });
+    if (new URL(url).pathname === "/api/catalogue/cards") return new Response(null, { status: 404 });
     throw new Error("Unexpected endpoint");
   };
   try {
     const html = await new Response(await renderToReadableStream(<ShopProvider><Home /></ShopProvider>)).text();
-    assert.ok(requests.every(r => r.method === "GET" && (r.url.endsWith("/api/content/storefront") || r.url.includes("/api/products/"))), "Only public content and catalogue reads; never drafts or writes");
+    assert.ok(requests.every(r => r.method === "GET" && (r.url.endsWith("/api/content/storefront") || new URL(r.url).pathname === "/api/catalogue/cards")), "Only public content and catalogue reads; never drafts or writes");
     assert.ok(requests.filter(r => r.url.endsWith("/api/content/storefront")).every(r => r.cache === "no-store"));
     return new JSDOM(html).window.document;
   } finally { globalThis.fetch = previous; }

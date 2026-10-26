@@ -3,6 +3,7 @@ import type { Express, Response } from "express";
 import { z } from "zod";
 import {
   catalogueHandleSchema, cataloguePageSchema, catalogueCardResponseSchema, catalogueCardsResponseSchema,
+  categories, relatedCatalogueCardsResponseSchema,
   collectionQuery, filterCollection,
   toProductCard, canOrder, pricedVariants,
 } from "@shopmaple/contracts";
@@ -24,6 +25,7 @@ const batchInput = z.object({
     .pipe(z.array(catalogueHandleSchema).min(1).max(50))
     .refine(handles => new Set(handles).size === handles.length, "Duplicate handles"),
 }).strict();
+const relatedInput = z.object({ category: z.enum(categories) }).strict();
 const cardSelect = {
   id: true, handle: true, title: true, images: true,
   variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true } },
@@ -45,6 +47,14 @@ function sendCatalogue<T>(res: Response, schema: z.ZodType<T>, value: unknown) {
 }
 
 export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
+  app.get("/api/catalogue/related", async (req, res) => {
+    const { category } = relatedInput.parse(req.query);
+    const products = await db.product.findMany({
+      where: { published: true, category }, select: cardSelect,
+      orderBy: [{ title: "asc" }, { id: "asc" }], take: 5,
+    });
+    sendCatalogue(res, relatedCatalogueCardsResponseSchema, { category, products: products.map(toProductCard), published: true });
+  });
   app.get("/api/catalogue/collections/:handle", async (req, res) => {
     const handle = catalogueHandleSchema.parse(req.params.handle);
     if (!Object.hasOwn(collectionTitles, handle)) throw new HttpError(404, "COLLECTION_NOT_FOUND", "We couldn't find that collection.");

@@ -28,14 +28,7 @@ function emptyCollection(input: string) {
 test("category landings replace their two seasonal slots with current hero and sale campaigns", async () => {
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async (url) =>
-    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({
-      products: [],
-      total: 0,
-      page: 1,
-      limit: 50,
-      mode: "preview",
-      checkoutEnabled: false,
-    });
+    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({ products: [], published: true });
   try {
     for (const slug of ["sofas", "tables", "chairs"] as const) {
       const doc = await documentFor(<CategoryLanding slug={slug} />);

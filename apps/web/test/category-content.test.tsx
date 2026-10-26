@@ -49,15 +49,8 @@ async function render(
   globalThis.fetch = async (url) => {
     if (String(url).endsWith("/api/content/storefront"))
       return Response.json({ version: 3, content });
-    if (String(url).includes("/api/products"))
-      return Response.json({
-        products: [],
-        total: 0,
-        page: 1,
-        limit: 50,
-        mode: "preview",
-        checkoutEnabled: false,
-      });
+    if (new URL(String(url)).pathname === "/api/catalogue/cards")
+      return Response.json({ products: [], published: true });
     throw new Error(`Unexpected network request: ${String(url)}`);
   };
   try {
