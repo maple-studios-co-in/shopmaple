@@ -1,14 +1,13 @@
-import { toProductCard } from "@/lib/product-card-model";
+import type { ProductCardModel } from "@/lib/product-card-model";
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@shopmaple/contracts";
+import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
 import { ProductCard } from "./product-card";
 import { HomeCarousel } from "./home-carousel";
 import { CategoryValues } from "./category-landing";
 import { shopFile } from "@/lib/format";
 import data from "@/data/legacy-chairs.json";
 import sourceCatalog from "@/data/landing-catalog.json";
-import sourceCollections from "@/data/source-collections.json";
 
 type EditorialProduct = { title: string; image: string };
 const sourceProducts: Record<string, EditorialProduct> = {
@@ -18,6 +17,12 @@ const sourceProducts: Record<string, EditorialProduct> = {
 const collections: Record<string, { title: string; handles: string[] }> =
   sourceCollections;
 
+export const legacyChairHandles = [...new Set([
+  ...data.bestsellers,
+  ...data.rooms.flatMap(room => collections[room.collection]!.handles.slice(0, 6)),
+  ...collections["accent-chair"]!.handles.slice(0, 6),
+])];
+
 function LegacyProducts({
   handles,
   products,
@@ -25,13 +30,13 @@ function LegacyProducts({
   room = false,
 }: {
   handles: string[];
-  products: Map<string, Product>;
+  products: Map<string, ProductCardModel>;
   label: string;
   room?: boolean;
 }) {
   const cards = handles.map((handle) => {
     const product = products.get(handle);
-    if (product) return <ProductCard key={handle} product={toProductCard(product)} />;
+    if (product) return <ProductCard key={handle} product={product} />;
     const source = sourceProducts[handle];
     if (!source) return null;
     const href = `/pages/contact?product=${encodeURIComponent(source.title)}`;
@@ -68,7 +73,7 @@ function LegacyProducts({
   );
 }
 
-export function LegacyChairs({ products }: { products: Product[] }) {
+export function LegacyChairs({ products }: { products: ProductCardModel[] }) {
   const byHandle = new Map(
     products.map((product) => [product.handle, product]),
   );

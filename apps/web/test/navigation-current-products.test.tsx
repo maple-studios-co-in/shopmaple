@@ -3,7 +3,7 @@ import { test, type TestContext } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import type { Product } from "@shopmaple/contracts";
+import { cardEnvelope } from "./support/catalogue-fixtures";
 import { MobileNavigation } from "../components/navigation";
 
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000" });
@@ -13,9 +13,11 @@ dom.window.HTMLElement.prototype.scrollTo = () => {};
 dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
 dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
 const handles = ["veyra-chest-of-drawers", "rowan-bookcase", "elion-storage-cabinet", "arden-console-cabinet", "morik-media-unit", "zylen-media-unit"];
-function product(handle: string, pricePaise: number | null = 123400): Product {
-  return { id: handle, handle, title: "Current catalogue name", description: "Current description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-option`, title: "Standard", sku: null, pricePaise, compareAtPaise: 150000, available: false, stockPolicy: "unverified" }] };
+function product(handle: string, pricePaise: number | null = 123400) {
+  const result = cardEnvelope(handle, "Current catalogue name");
+  return { ...result, product: { ...result.product, pricePaise, compareAtPaise: pricePaise !== null && pricePaise < 150000 ? 150000 : null } };
 }
+type Product = ReturnType<typeof product>;
 type Request = { handle: string; signal?: AbortSignal | null; resolve: (response: Response) => void };
 function button(label: string) {
   const element = [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === label || b.getAttribute("aria-label") === label);
@@ -28,7 +30,7 @@ async function setup(t: TestContext, open = true) {
   const original = globalThis.fetch, requests: Request[] = [];
   globalThis.fetch = async (input, init) => {
     assert.equal(init?.method ?? "GET", "GET");
-    const url = String(input); assert.match(url, /^\/api\/products\/[a-z0-9-]+$/);
+    const url = String(input); assert.match(url, /^\/api\/catalogue\/cards\/[a-z0-9-]+$/);
     return new Promise<Response>(resolve => requests.push({ handle: url.split("/").at(-1)!, signal: init?.signal, resolve }));
   };
   const root = createRoot(document.getElementById("root")!);
@@ -81,7 +83,7 @@ test("menu reports request-only and mixed option prices using the current catalo
     assert.equal(app.requests.length, 6);
     await resolveAll(app.requests, handle => {
       const p = product(handle, handle === handles[0] ? null : 123400);
-      if (handle === handles[1]) p.variants.push({...p.variants[0]!, id:"unknown", pricePaise:null});
+      if (handle === handles[1]) Object.assign(p.product, { priceFrom: true, otherOptionsOnRequest: true, optionCount: 2 });
       return Response.json(p);
     });
     assert.match(cards()[0]!.textContent!, /Price on request/); assert.equal(cards()[0]!.querySelector("del"), null);

@@ -1,3 +1,4 @@
+import { cardEnvelope } from "./support/catalogue-fixtures";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import React, { act } from "react";
@@ -104,28 +105,9 @@ test("mobile preset keeps current featured selection after rename and Back resto
   const oldFetch = globalThis.fetch;
   globalThis.fetch = async (input) => {
     const handle = String(input).split("/").at(-1)!;
-    return Response.json({
-      id: handle,
-      handle,
-      title: handle,
-      description: "Current",
-      category: "chairs",
-      images: [],
-      published: true,
-      source: "shopify-preview",
-      sourceUpdatedAt: "2026-10-26T00:00:00Z",
-      variants: [
-        {
-          id: handle + "-v",
-          title: "Standard",
-          sku: null,
-          pricePaise: 432100,
-          compareAtPaise: null,
-          available: false,
-          stockPolicy: "unverified",
-        },
-      ],
-    });
+    const result = cardEnvelope(handle, handle);
+    result.product.pricePaise = 432100;
+    return Response.json(result);
   };
   const root = createRoot(document.getElementById("root")!);
   const value = customChrome();

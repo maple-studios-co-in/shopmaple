@@ -11,7 +11,7 @@ The visual and content authority is the owner's existing [Maple Shopify storefro
 
 ## Destination adaptations
 
-`../lib/navigation.ts` keeps implemented page routes and supported collection handles local. Collection support comes from the base local categories and `collection-membership.json`; other source collection paths retain their exact `https://shop.maplefurnishers.com` destination. In particular, Outdoors keeps `/collections/outdoor-furnitures` rather than an invented local alias.
+`../lib/navigation.ts` keeps implemented page routes and supported collection handles local. Collection support comes from the base local categories and `packages/contracts/data/collection-membership.json`; other source collection paths retain their exact `https://shop.maplefurnishers.com` destination. In particular, Outdoors keeps `/collections/outdoor-furnitures` rather than an invented local alias.
 
 Source links with the literal `#` receive usable destinations: Beds and By Size open `/collections/beds`, Dining Table opens `/collections/dining`, and the other leaf anchors open `/pages/contact?product=...` with the source label as enquiry context. These are deliberate functional adaptations; they do not establish new category inventory or serviceability.
 

@@ -59,7 +59,7 @@ The sections below retain the earlier Phase 2 implementation and evidence. Produ
 | `/pages/bulk-enquiry` | Source living-room hero and proposal form, trust/proof content, three-step process, IndiaMART section and cities. | Submission composes email; IndiaMART opens the existing business channel. Source marketing claims are reproduced content, not independently validated operating metrics. |
 | Shared header/footer, `/cart`, `/favourites`, `/checkout` | Existing navigation, search, saved furniture and cart remain; footer now uses source logo artwork, shop/help links, customer care, collaboration contacts and social links. | Accounts, policies, story, blog and returns continue on existing services. Checkout remains unavailable. |
 
-The collection aliases include dining chairs, center tables, accent chairs, dining sets, clearance, minimum-discount, price-band, dining and console-table collections. Membership is recorded in `apps/web/data/collection-membership.json`; it does not import the products named there. Unknown collection handles and unsupported `/pages/*` routes remain not-found responses.
+The collection aliases include dining chairs, center tables, accent chairs, dining sets, clearance, minimum-discount, price-band, dining and console-table collections. Membership is recorded in `packages/contracts/data/collection-membership.json`; it does not import the products named there. Unknown collection handles and unsupported `/pages/*` routes remain not-found responses.
 
 ### Phase 2: Content and media provenance
 

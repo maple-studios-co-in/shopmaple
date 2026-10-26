@@ -4,6 +4,7 @@ import { JSDOM } from "jsdom";
 import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { DesktopNavigation, MobileNavigation } from "../components/navigation";
+import { cardEnvelope } from "./support/catalogue-fixtures";
 import { navigationHref } from "../lib/navigation";
 const dom = new JSDOM(
   "<!doctype html><div id='root'></div><button id='outside'>Outside</button>",
@@ -21,15 +22,9 @@ beforeEach(() => {
   // Only the public catalogue transport is replaced; menus resolve real contracts.
   globalThis.fetch = async input => {
     const url = String(input);
-    assert.match(url, /^\/api\/products\/[a-z0-9-]+$/);
+    assert.match(url, /^\/api\/catalogue\/cards\/[a-z0-9-]+$/);
     const handle = url.split("/").at(-1)!;
-    return Response.json({
-      id: handle, handle, title: handle, description: "Current catalogue fixture",
-      category: "chairs", images: [], published: true, source: "shopify-preview",
-      sourceUpdatedAt: "2026-10-26T00:00:00Z",
-      variants: [{ id: `${handle}-standard`, title: "Standard", sku: null,
-        pricePaise: 123400, compareAtPaise: null, available: false, stockPolicy: "unverified" }],
-    });
+    return Response.json(cardEnvelope(handle, handle));
   };
 });
 afterEach(() => { globalThis.fetch = originalFetch; });

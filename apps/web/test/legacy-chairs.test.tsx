@@ -47,6 +47,27 @@ async function render(
     previousApi = process.env.API_URL;
   process.env.API_URL = `http://legacy-chairs-test-${++requestId}.invalid`;
   globalThis.fetch = async (url) => {
+    const request = new URL(String(url));
+    if (request.pathname === "/api/catalogue/cards") return Response.json({ products: [], published: true });
+    if (request.pathname.startsWith("/api/catalogue/collections/")) {
+      const params = request.searchParams;
+      // These hand-selected fixture rows correspond to the scenarios below; the API suite owns filtering math.
+      const q = params.get("q") ?? "", min = params.get("min") ?? "", max = params.get("max") ?? "";
+      const sort = params.get("sort") ?? "title", availability = params.get("availability") ?? "", category = params.get("category") ?? "";
+      let rows = handle === "chairs" || category === "chairs" ? products.slice(0, 26) : [...products];
+      if (q === "no-matching-products" || availability === "out") rows = [];
+      else if (min === "200" && max === "400") rows = [products[1]!, products[2]!, products[3]!];
+      else if (min === "200") rows = products.slice(1, 26);
+      if (sort === "price-desc") rows.reverse();
+      const currentPage = Math.min(Number(params.get("page") ?? 1), Math.max(1, Math.ceil(rows.length / 24)));
+      return Response.json({
+        handle, query: { q, min, max, sort, availability, category, page: currentPage },
+        products: rows.slice((currentPage - 1) * 24, currentPage * 24).map(row => ({ id: row.id, handle: row.handle, title: row.title, image: "https://example.com/chair.jpg", pricePaise: row.variants[0]!.pricePaise, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1 })),
+        total: rows.length, collectionTotal: handle === "chairs" ? 26 : 27,
+        inStock: handle === "chairs" ? 26 : 27, outOfStock: 0, highestPrice: 260000,
+        limit: 24, published: true, mode: "preview", checkoutEnabled: false,
+      });
+    }
     if (String(url).includes("/api/products?"))
       return Response.json({
         products,
