@@ -603,3 +603,16 @@
 .admin-enquiry-inbox article {
   margin-top: 1rem;
 }
+
+/* Navigation and footer controls remain scoped to the admin workspace. */
+.admin-site-chrome .admin-chrome-list { margin-block: 1.5rem; }
+.admin-site-chrome .admin-chrome-list > ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.admin-site-chrome .admin-chrome-list > ol > li { border: 1px solid var(--admin-border, #dcd9d2); border-radius: 8px; padding: 1rem; min-width: 0; }
+.admin-site-chrome details { margin-block: 1rem; }
+.admin-site-chrome summary { cursor: pointer; font-weight: 600; padding-block: .5rem; }
+.admin-site-chrome [tabindex="-1"]:focus { outline: 2px solid currentColor; outline-offset: 3px; }
+.admin-site-chrome .admin-actions { flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .admin-site-chrome .admin-chrome-list > ol > li { padding: .65rem; }
+  .admin-site-chrome .admin-fields { grid-template-columns: 1fr; }
+}

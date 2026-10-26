@@ -452,3 +452,7 @@ Credentials are hashed, expiring and scoped to a configured tenant and merchant.
 The intake enters `pending_commercial_review`, retaining its stock as `paid_pending_review`. It does not create a SalesOrder, invent a customer/address, or return ShopMaple's required `externalOrderId`. Consequently, the ShopMaple order delivery adapter remains disconnected until the commercial handoff is completed or its protocol explicitly distinguishes intake from sales-order creation. Paid holds must not expire automatically while that handoff is unresolved.
 
 Keeri's quotation issuance now checks finite stocked-item availability under the shared row locks used by storefront holds. Made-to-order quotation semantics are retained. Real database contention, replay, cross-tenant and lifecycle tests cover the implemented paths; this does not prove all production stock policies or operational recovery flows.
+
+## Navigation and footer content
+
+Optional `siteChrome` content controls announcement, menus, footer and WhatsApp through the existing draft/publish/revision boundary. Original defaults remain when absent; the root layout reads only validated published content and passes only this slice to public chrome. Stable identities separate labels from menu state/artwork presets. Publication verifies enabled local destinations and published products inside the content transaction; hidden groups are skipped until re-enabled. No new table, permission or commerce authority is introduced. See [release evidence](releases/2026-10-26-navigation-footer.md).

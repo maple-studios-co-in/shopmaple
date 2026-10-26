@@ -13,13 +13,29 @@ const collectionHandles = new Set([
 ]);
 const originalPages = ["contact", "bulk-enquiry", "chairs", "tables", "sofas", "nimbus-collection", "our-story", "returns"];
 
+function enabledChromePaths(content: StorefrontContent): string[] {
+  const chrome = content.siteChrome;
+  if (!chrome) return [];
+  const enabled = <T extends { enabled: boolean; href: string }>(links: T[]) => links.filter(link => link.enabled);
+  const footerColumnVisible = (key: "shop" | "help") => chrome.footer.columns.some(column => column.key === key && column.enabled);
+  return [
+    ...(chrome.announcement.enabled ? [chrome.announcement] : []),
+    ...enabled(chrome.utilityLinks), ...enabled(chrome.desktopDiscovery), ...enabled(chrome.mobileQuickLinks),
+    ...enabled(chrome.navigation).flatMap(item => [item, ...item.columns.flatMap(column => enabled(column.links))]),
+    ...(footerColumnVisible("shop") ? enabled(chrome.footer.shopLinks) : []),
+    ...(footerColumnVisible("help") ? enabled(chrome.footer.helpLinks) : []),
+    ...enabled(chrome.footer.policyLinks),
+  ].map(link => link.href.split("#")[0]!);
+}
+
 export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient, content: StorefrontContent) {
   const articlePaths = new Set((content.authoredArticles ?? []).flatMap(article => article.blocks.flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
   const pagePaths = new Set(content.pages.flatMap(page => (page.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
-  const paths = new Set([...articlePaths, ...pagePaths]);
+  const chromePaths = new Set(enabledChromePaths(content));
+  const paths = new Set([...articlePaths, ...pagePaths, ...chromePaths]);
   if (!paths.size) return;
   const destinations = new Set([
-    "/", ...originalPages.map(slug => `/pages/${slug}`), ...content.pages.map(page => `/pages/${page.slug}`),
+    "/", "/account", "/favourites", ...originalPages.map(slug => `/pages/${slug}`), ...content.pages.map(page => `/pages/${page.slug}`),
     ...policySlugs.map(slug => `/policies/${slug}`), ...blogHandles.map(handle => `/blogs/${handle}`),
     ...articleHandles.map(handle => `/blogs/recent-stories/${handle}`),
     ...(content.authoredArticles ?? []).map(article => `/blogs/${article.blog}/${article.handle}`),
@@ -30,6 +46,8 @@ export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient,
     const products = await tx.product.findMany({ where: { handle: { in: productHandles }, published: true }, select: { handle: true } });
     for (const product of products) destinations.add(`/products/${product.handle}`);
   }
+  for (const path of chromePaths) if (!destinations.has(path))
+    throw new HttpError(400, "CHROME_LINK_TARGET_MISSING", "A navigation or footer link points to a page that is not available. Choose an existing destination before publishing.");
   for (const path of articlePaths) if (!destinations.has(path))
     throw new HttpError(400, "ARTICLE_LINK_TARGET_MISSING", "An article link points to a page that is not available. Choose an existing destination before publishing.");
   for (const path of pagePaths) if (!destinations.has(path))

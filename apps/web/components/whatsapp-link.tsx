@@ -1,10 +1,16 @@
 // WhatsApp glyph: Simple Icons, CC0. https://github.com/simple-icons/simple-icons
-export function WhatsAppLink() {
+import type { SiteChrome } from "@shopmaple/contracts";
+import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
+export function WhatsAppLink({
+  siteChrome = defaultSiteChrome,
+}: { siteChrome?: SiteChrome } = {}) {
+  const { whatsapp } = siteChrome;
+  if (!whatsapp.enabled) return null;
   return (
     <a
       className="whatsapp-support"
-      href="https://wa.me/918796130252"
-      aria-label="Chat with Maple Furnishers on WhatsApp"
+      href={`https://wa.me/${whatsapp.phone.replace(/^\+/, "")}`}
+      aria-label={whatsapp.label}
       title="Chat on WhatsApp"
       target="_blank"
       rel="noopener noreferrer"

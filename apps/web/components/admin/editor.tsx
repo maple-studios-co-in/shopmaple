@@ -5,6 +5,7 @@ import {
   type StorefrontContent,
 } from "@shopmaple/contracts";
 import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
+import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
@@ -35,6 +36,7 @@ type Revision = {
 const tabs = [
   "Overview",
   "Homepage",
+  "Navigation & footer",
   "Merchandising",
   "Artwork",
   "Campaigns",
@@ -385,6 +387,12 @@ export function ContentEditor({
                   </a>
                 </>
               )}
+              {tab === "Navigation & footer" && <SiteChromeFields value={content.siteChrome} onChange={siteChrome => {
+                const next = {...content};
+                if (siteChrome === undefined) delete next.siteChrome;
+                else next.siteChrome = siteChrome;
+                edit(next);
+              }} />}
               {tab === "Homepage" && (
                 <>
                   <h2>Homepage</h2>
