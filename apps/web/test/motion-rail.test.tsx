@@ -107,3 +107,36 @@ test('missing viewport observer keeps automatic movement off but retains manual 
   await act(async()=>h!.button('Next Instagram posts')!.click());assert.equal(h.rail.scrollLeft,600);
  }finally{await h?.unmount();Object.assign(globalThis,{IntersectionObserver:original});}
 });
+
+test('vertical page wheel scrolling leaves autoplay and the native event intact',async t=>{
+ t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{
+  const wheel=new dom.window.WheelEvent('wheel',{bubbles:true,cancelable:true,deltaY:120});
+  await act(async()=>h.rail.dispatchEvent(wheel));
+  assert.equal(wheel.defaultPrevented,false,'Page scrolling must remain native');
+  await act(async()=>t.mock.timers.tick(4500));
+  assert.equal(h.rail.scrollLeft,600);
+  assert.ok(h.button('Pause Instagram posts'));
+ }finally{await h.unmount();}
+});
+
+for(const gesture of [
+ {name:'horizontal trackpad',deltaX:120,deltaY:0,shiftKey:false},
+ {name:'reverse horizontal trackpad',deltaX:-120,deltaY:0,shiftKey:false},
+ {name:'shift-wheel',deltaX:0,deltaY:120,shiftKey:true},
+]){
+ test(`${gesture.name} scrolling pauses autoplay until explicitly restarted`,async t=>{
+  t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{
+   const wheel=new dom.window.WheelEvent('wheel',{bubbles:true,cancelable:true,...gesture});
+   await act(async()=>h.rail.querySelector('a')!.dispatchEvent(wheel));
+   assert.equal(wheel.defaultPrevented,false,'Visitors must retain native horizontal scrolling');
+   // JSDOM has no layout/default scrolling; represent the position chosen by the visitor.
+   h.rail.scrollLeft=240;
+   await act(async()=>t.mock.timers.tick(9000));
+   assert.equal(h.rail.scrollLeft,240,'Automatic movement must not override the visitor’s chosen position');
+   assert.ok(h.button('Play Instagram posts'));
+   await act(async()=>h.button('Play Instagram posts')!.click());
+   await act(async()=>t.mock.timers.tick(4500));
+   assert.equal(h.rail.scrollLeft,840,'Explicit Play resumes automatic movement');
+  }finally{await h.unmount();}
+ });
+}

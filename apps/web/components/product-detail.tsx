@@ -5,7 +5,7 @@ import { ProductGallery } from "./product-gallery";
 import { ProductRichText } from "./product-rich-text";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Minus,
   Plus,
@@ -32,19 +32,21 @@ export function ProductDetail({
   initialVariant?: string;
   presentation?: Presentation;
 }) {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryVariant = searchParams ? searchParams.get("variant") ?? undefined : initialVariant;
   const variantImage = (id: string) => {
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
   const initial =
-    product.variants.find((v) => v.id === initialVariant)?.id ??
-    product.variants.find((v) => v.id === "preview-" + initialVariant)?.id ??
+    product.variants.find((v) => v.id === queryVariant)?.id ??
+    product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
     product.variants.find((v) => v.pricePaise !== null)?.id ??
     product.variants[0]?.id ??
     "";
   const [variantId, setVariantId] = useState(initial);
+  const [urlVariant, setUrlVariant] = useState(initial);
   const [image, setImage] = useState(() =>
       Math.max(
         0,
@@ -55,6 +57,15 @@ export function ProductDetail({
     [zoom, setZoom] = useState(false),
     [pin, setPin] = useState(""),
     [checkedPin, setCheckedPin] = useState("");
+  if (urlVariant !== initial) {
+    setUrlVariant(initial);
+    // History navigation changes the option without remounting the enquiry.
+    if (variantId !== initial) {
+      setVariantId(initial);
+      const src = variantImage(initial);
+      if (src) setImage(product.images.indexOf(src));
+    }
+  }
   const {
     cart,
     setQuantity,
@@ -93,7 +104,9 @@ export function ProductDetail({
       const index = product.images.indexOf(src);
       if (index >= 0) setImage(index);
     }
-    router.replace("?variant=" + encodeURIComponent(id), { scroll: false });
+    const url = new URL(window.location.href);
+    url.searchParams.set("variant", id);
+    window.history.replaceState(null, "", url);
   }
   const stars = (
     <span className="product-stars" aria-hidden="true">
@@ -197,7 +210,7 @@ export function ProductDetail({
               </fieldset>
             )}
             <div className="pdp-help-links">
-              <a href="#product-specifications">Dimensions & specifications</a>
+              <a href="#product-specifications">Dimensions &amp; specifications</a>
               <a href="#delivery-enquiry">Delivery enquiry</a>
             </div>
             <div className="pdp-purchase">
@@ -355,7 +368,7 @@ export function ProductDetail({
                 </>}
               </details>
               <details id="product-specifications" open>
-                <summary>Dimensions & specifications</summary>
+                <summary>Dimensions &amp; specifications</summary>
                 <Link href={enquiryHref}>
                   Request dimensions and specifications
                 </Link>
