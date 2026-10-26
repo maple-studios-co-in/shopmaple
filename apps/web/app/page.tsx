@@ -40,7 +40,9 @@ function CollectionTiles({
               src={item.image}
               alt={item.alt}
               fill
-              sizes="(max-width:749px) 50vw, 33vw"
+              sizes={className.includes("categories")
+                ? "(max-width:749px) calc((100vw - 52px) / 2), (min-width:1440px) 210px, calc((100vw - 180px) / 6)"
+                : "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)"}
             />
           </div>
           {className.includes("categories") && <h3>{item.title}</h3>}
@@ -162,6 +164,7 @@ export default async function Home() {
   };
   return (
     <SectionReveal enabled={content.motion.revealSections}>
+      <h1 className="sr-only">Maple Furnishers</h1>
       {content.homeSections
         .filter((section) => section.enabled)
         .map((section) => (

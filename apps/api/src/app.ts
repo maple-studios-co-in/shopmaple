@@ -110,7 +110,7 @@ export function createApp(
   app.put("/api/cart/items/:variantId", async (req, res) => {
     const input = cartMutationInputSchema.parse(req.body);
     const id = z.string().min(1).max(160).parse(req.params.variantId);
-    const result = await setCartQuantity(db, req, id, input);
+    const result = await setCartQuantity(db, req, id, input, config.secureCookies);
     res.status(result.status).json(result.body);
   });
   app.post(
@@ -135,7 +135,7 @@ export function createApp(
       res.status(result.created ? 201 : 200).json(result.receipt);
     },
   );
-  if (commerce) registerCheckoutRoutes(app, commerce);
+  if (commerce) registerCheckoutRoutes(app, commerce, config.secureCookies);
   app.post("/api/checkout", (_req, res) =>
     res.status(503).json({
       code: "CHECKOUT_NOT_AVAILABLE",

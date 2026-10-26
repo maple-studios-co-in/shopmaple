@@ -6,7 +6,10 @@ import { Heart, ArrowUpRight } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { useShop } from "./shop-provider";
 import { shopMoney } from "@/lib/format";
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (max-width: 1000px) 32vw, 24vw" }: {
+  product: Product;
+  imageSizes?: string;
+}) {
   const { favourites, toggleFavourite } = useShop();
   const saved = favourites.includes(product.handle);
   const priced = pricedVariants(product);
@@ -22,7 +25,7 @@ export function ProductCard({ product }: { product: Product }) {
             src={product.images[0]}
             alt={product.title}
             fill
-            sizes="(max-width: 650px) 48vw, (max-width: 1000px) 32vw, 24vw"
+            sizes={imageSizes}
           />
         </Link>
         {sale ? <span className="card-sale">Sale</span> : null}

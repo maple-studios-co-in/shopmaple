@@ -203,6 +203,9 @@ export function CategorySlideshow({
         <source media="(max-width: 749px)" srcSet={slide.mobile} />
         <img src={slide.desktop} alt={slide.alt} loading="lazy" />
       </picture>
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {slide.alt} — {index + 1} / {slides.length}
+      </span>
       <div className="landing-slideshow-controls">
         <button
           type="button"
