@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import type { Cart, CartMutationInput } from "@shopmaple/contracts";
+import { cartCookieName, guestCartToken } from "./cart-credential.js";
 
 export class HttpError extends Error {
   constructor(
@@ -12,18 +13,11 @@ export class HttpError extends Error {
     super(message);
   }
 }
-const cookieName = "maple_cart";
 const lifetime = 30 * 24 * 60 * 60 * 1000;
-function token(req: Request) {
-  const values = (req.headers.cookie ?? "").split(";").map(value => value.trim()).filter(value => value.startsWith(cookieName + "="));
-  if (values.length !== 1) return undefined;
-  const value = values[0]!.slice(cookieName.length + 1);
-  return /^[a-f0-9]{64}$/.test(value) ? value : undefined;
-}
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
-export async function currentCart(db: PrismaClient, req: Request) {
-  const value = token(req);
+export async function currentCart(db: PrismaClient, req: Request, secure: boolean) {
+  const value = guestCartToken(req, secure);
   return value
     ? db.cart.findFirst({
         where: { tokenHash: hash(value), expiresAt: { gt: new Date() } },
@@ -65,10 +59,10 @@ export async function readCart(
 }
 const identity = (secret: string) => hash("shopmaple-cart-context-v1:" + secret);
 function setCookie(res: Response, secret: string, secure: boolean) {
-  res.cookie(cookieName, secret, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: lifetime });
+  res.cookie(cartCookieName(secure), secret, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: lifetime });
 }
 export async function bootstrapCart(db: PrismaClient, req: Request, res: Response, secure: boolean) {
-  let secret = token(req);
+  let secret = guestCartToken(req, secure);
   let rotated = false;
   const result = await db.$transaction(async tx => {
     let cart = secret ? await tx.cart.findUnique({ where: { tokenHash: hash(secret) } }) : null;
@@ -87,13 +81,14 @@ export async function setCartQuantity(
   req: Request,
   id: string,
   input: CartMutationInput,
+  secure: boolean,
 ) {
   const { quantity, mutation } = input;
   const reject = (status: number, code: string, message: string) => ({
     status,
     body: { code, message, mutationResult: { id: mutation.id, status: "rejected" as const } },
   });
-  const secret = token(req);
+  const secret = guestCartToken(req, secure);
   if (!secret || identity(secret) !== mutation.cartIdentity)
     return reject(409, "CART_SESSION_CHANGED", "Your cart session changed. Please review your cart.");
   const payloadHash = hash(JSON.stringify([id, quantity, mutation.cartIdentity, mutation.expectedRevision]));

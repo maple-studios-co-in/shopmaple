@@ -133,3 +133,86 @@ test("a pending operation cannot recreate a cart after its durable session was d
   assert.equal(await db.cart.count(), 1);
   assert.equal(await db.cartItem.count(), 0);
 });
+
+const secureApp = createApp(db, { webOrigin: origin, catalogMode: "preview", secureCookies: true });
+const responseCookie = (response: request.Response) => String(response.headers["set-cookie"]?.[0]).split(";")[0]!;
+function securePut(cookie: string, cart: any, quantity = 2) {
+  return request(secureApp).put("/api/cart/items/recovery-v").set("Origin", origin).set("Cookie", cookie).send(body(cart, quantity));
+}
+
+test("secure cart bootstrap emits a host-only credential and reuses it for reads and writes", async () => {
+  const initial = await request(secureApp).get("/api/cart");
+  const setCookie = String(initial.headers["set-cookie"]?.[0]);
+  assert.match(setCookie, /^__Host-maple_cart=[a-f0-9]{64};/);
+  assert.match(setCookie, /; Secure(?:;|$)/);
+  assert.match(setCookie, /; HttpOnly(?:;|$)/);
+  assert.match(setCookie, /; SameSite=Lax(?:;|$)/);
+  assert.match(setCookie, /; Path=\/(?:;|$)/);
+  assert.doesNotMatch(setCookie, /; Domain=/i);
+  const cookie = responseCookie(initial);
+  const updated = await securePut(cookie, initial.body);
+  assert.equal(updated.status, 200);
+  const reread = await request(secureApp).get("/api/cart").set("Cookie", cookie);
+  assert.equal(reread.body.itemCount, 2);
+  assert.equal(reread.body.mutationContext.cartIdentity, initial.body.mutationContext.cartIdentity);
+  assert.equal(reread.headers["set-cookie"], undefined);
+  assert.equal(await db.cart.count(), 1);
+});
+
+test("secure cart ignores a valid legacy credential rather than migrating a known session", async () => {
+  const legacy = await request(app).get("/api/cart");
+  const cookie = responseCookie(legacy);
+  const added = await request(app).put("/api/cart/items/recovery-v").set("Origin", origin).set("Cookie", cookie).send(body(legacy.body, 4));
+  assert.equal(added.status, 200);
+  const rejected = await securePut(cookie, added.body);
+  assert.equal(rejected.status, 409);
+  assert.equal(rejected.body.code, "CART_SESSION_CHANGED");
+  const fresh = await request(secureApp).get("/api/cart").set("Cookie", cookie);
+  assert.equal(fresh.body.itemCount, 0);
+  assert.notEqual(fresh.body.mutationContext.cartIdentity, legacy.body.mutationContext.cartIdentity);
+  assert.match(responseCookie(fresh), /^__Host-maple_cart=/);
+  assert.equal((await request(app).get("/api/cart").set("Cookie", cookie)).body.itemCount, 4);
+  assert.equal(await db.cart.count(), 2);
+});
+
+test("duplicate secure credentials cannot read or mutate either cart even if identical", async () => {
+  const first = await request(secureApp).get("/api/cart");
+  const second = await request(secureApp).get("/api/cart");
+  for (const duplicate of [responseCookie(first), responseCookie(second)]) {
+    const cookie = responseCookie(first) + "; " + duplicate;
+    const result = await securePut(cookie, first.body);
+    assert.equal(result.status, 409);
+    assert.equal(result.body.code, "CART_SESSION_CHANGED");
+    const read = await request(secureApp).get("/api/cart").set("Cookie", cookie);
+    assert.notEqual(read.body.mutationContext.cartIdentity, first.body.mutationContext.cartIdentity);
+    assert.notEqual(read.body.mutationContext.cartIdentity, second.body.mutationContext.cartIdentity);
+    assert.equal(read.body.itemCount, 0);
+  }
+  assert.equal(await db.cartItem.count(), 0);
+  assert.equal(await db.cartMutationReceipt.count(), 0);
+});
+
+test("mixed environment cookies cannot shadow the configured cart in either header order", async () => {
+  const local = await request(app).get("/api/cart");
+  const secure = await request(secureApp).get("/api/cart");
+  assert.notEqual(secure.body.mutationContext.cartIdentity, local.body.mutationContext.cartIdentity);
+  for (const cookie of [responseCookie(local) + "; " + responseCookie(secure), responseCookie(secure) + "; " + responseCookie(local)]) {
+    assert.equal((await request(secureApp).get("/api/cart").set("Cookie", cookie)).body.mutationContext.cartIdentity, secure.body.mutationContext.cartIdentity);
+    assert.equal((await request(app).get("/api/cart").set("Cookie", cookie)).body.mutationContext.cartIdentity, local.body.mutationContext.cartIdentity);
+    assert.equal((await securePut(cookie, local.body)).status, 409);
+  }
+  const mixed = responseCookie(local) + "; " + responseCookie(secure) + "; " + responseCookie(local);
+  assert.equal((await securePut(mixed, secure.body)).status, 200);
+  assert.equal((await request(app).get("/api/cart").set("Cookie", responseCookie(local))).body.itemCount, 0);
+  assert.equal((await request(secureApp).get("/api/cart").set("Cookie", responseCookie(secure))).body.itemCount, 2);
+});
+
+test("local carts retain their localhost cookie and ignore secure-only credentials", async () => {
+  const local = await request(app).get("/api/cart");
+  assert.match(responseCookie(local), /^maple_cart=[a-f0-9]{64}$/);
+  assert.doesNotMatch(String(local.headers["set-cookie"]), /; Secure(?:;|$)/);
+  const secret = responseCookie(local).split("=")[1];
+  const reset = await request(app).get("/api/cart").set("Cookie", `__Host-maple_cart=${secret}`);
+  assert.notEqual(reset.body.mutationContext.cartIdentity, local.body.mutationContext.cartIdentity);
+  assert.equal(reset.body.itemCount, 0);
+});

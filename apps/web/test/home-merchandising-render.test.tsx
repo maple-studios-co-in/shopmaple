@@ -66,6 +66,19 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
 const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(selector)].map(node => node.textContent?.trim());
 const attributes = (doc: Document, selector: string, attribute: string) => [...doc.querySelectorAll(selector)].map(node => node.getAttribute(attribute));
 
+test("category and offer images describe their different responsive slots without changing artwork", async () => {
+  const { doc } = await renderHome({ merchandising: customMerchandising() });
+  // Categories: two mobile columns, six desktop columns inside a 1440px container.
+  assert.deepEqual(attributes(doc, ".home-categories img", "sizes"), Array(2).fill(
+    "(max-width:749px) calc((100vw - 52px) / 2), (min-width:1440px) 210px, calc((100vw - 180px) / 6)",
+  ));
+  // Offers: 70% mobile rail cards, four desktop columns, with existing gaps/padding.
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("sizes"),
+    "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)");
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"),
+    "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+});
+
 test("legacy published homepage preserves original collection copy, media, links and both product orders", async () => {
   const { doc } = await renderHome();
   assert.deepEqual(texts(doc, ".home-categories h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);

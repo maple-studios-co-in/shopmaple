@@ -181,3 +181,52 @@ test("uninjected application remains fail closed with no payment or webhook side
   assert.equal(await db.checkoutAttempt.count(), 0);
   assert.equal(await db.paymentWebhookInbox.count(), 0);
 });
+
+test("secure checkout uses the host credential consistently through freeze, payment and status", async () => {
+  const secureApp = createApp(db, { ...config, secureCookies: true }, flow);
+  const hostCookie = `__Host-maple_cart=${token}`;
+  const other = "d".repeat(64);
+  await db.cart.create({ data: { tokenHash: createHash("sha256").update(other).digest("hex"), expiresAt: new Date(Date.now() + 60_000) } });
+  for (const credentials of [`maple_cart=${other}; ${hostCookie}`, `${hostCookie}; maple_cart=${other}; maple_cart=${other}`]) {
+    const frozen = await request(secureApp).post("/api/checkout").set("Origin", origin).set("Cookie", credentials).set("Idempotency-Key", "secure-request-1").send({});
+    assert.equal(frozen.status, 200);
+    assert.equal(frozen.body.amountPaise, 25190);
+    const created = await request(secureApp).post(`/api/checkout/${frozen.body.id}/payment-order`).set("Origin", origin).set("Cookie", credentials).send({});
+    assert.equal(created.status, 200);
+    assert.equal(created.body.providerOrderId, "order_http1");
+    const status = await request(secureApp).get(`/api/checkout/${frozen.body.id}`).set("Cookie", credentials);
+    assert.equal(status.status, 200);
+    assert.equal(status.body.id, frozen.body.id);
+    assert.equal(status.body.amountPaise, 25190);
+  }
+  assert.equal(await db.checkoutAttempt.count(), 1);
+});
+
+test("secure checkout rejects legacy-only and duplicated host credentials on every guest route", async () => {
+  const secureApp = createApp(db, { ...config, secureCookies: true }, flow);
+  // Create an actual attempt through the existing local flow so valid IDs do not mask credential failures.
+  const frozen = await freeze();
+  assert.equal(frozen.status, 200);
+  const hostCookie = `__Host-maple_cart=${token}`;
+  for (const credential of [cookie, `${hostCookie}; ${hostCookie}`, `${hostCookie}; __Host-maple_cart=${"d".repeat(64)}`, `__Host-maple_cart=invalid; ${cookie}`]) {
+    const rejected = await request(secureApp).post("/api/checkout").set("Origin", origin).set("Cookie", credential).set("Idempotency-Key", "secure-request-2").send({});
+    assert.equal(rejected.status, 404);
+    assert.equal(rejected.body.code, "CHECKOUT_NOT_FOUND");
+    assert.equal((await request(secureApp).get(`/api/checkout/${frozen.body.id}`).set("Cookie", credential)).status, 404);
+    assert.equal((await request(secureApp).post(`/api/checkout/${frozen.body.id}/payment-order`).set("Origin", origin).set("Cookie", credential).send({})).status, 404);
+  }
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.equal(attempt.providerOrderId, null);
+  assert.equal(attempt.state, "reservation_required");
+  assert.equal(await db.checkoutAttempt.count(), 1);
+});
+
+test("local checkout ignores host cookies and keeps legacy credentials authoritative", async () => {
+  const other = "d".repeat(64);
+  const mixed = `__Host-maple_cart=${other}; ${cookie}; __Host-maple_cart=${other}`;
+  const frozen = await request(app).post("/api/checkout").set("Origin", origin).set("Cookie", mixed).set("Idempotency-Key", "local-request-1").send({});
+  assert.equal(frozen.status, 200);
+  assert.equal((await request(app).get(`/api/checkout/${frozen.body.id}`).set("Cookie", mixed)).status, 200);
+  assert.equal((await request(app).post(`/api/checkout/${frozen.body.id}/payment-order`).set("Origin", origin).set("Cookie", mixed).send({})).status, 200);
+  assert.equal((await request(app).get(`/api/checkout/${frozen.body.id}`).set("Cookie", `__Host-maple_cart=${token}`)).status, 404);
+});

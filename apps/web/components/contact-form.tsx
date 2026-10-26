@@ -128,7 +128,21 @@ type HelpCategory = {
 export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
   const [active, setActive] = useState<string | number>(categories[0]?.key ?? 0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobile, setMobile] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      const update = () => setMobile(window.innerWidth <= 990);
+      update();
+      window.addEventListener("resize", update);
+      return () => window.removeEventListener("resize", update);
+    }
+    const viewport = window.matchMedia("(max-width: 990px)");
+    const update = () => setMobile(viewport.matches);
+    update();
+    viewport.addEventListener?.("change", update);
+    return () => viewport.removeEventListener?.("change", update);
+  }, []);
   useEffect(() => {
     if (!mobileOpen) return;
     dialog.current?.showModal();
@@ -183,12 +197,13 @@ export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
             key={item.key ?? item.title}
             type="button"
             aria-pressed={selectedIndex === index}
-            aria-controls={`${id}-answers`}
+            aria-controls={`${id}-${mobile || mobileOpen ? "dialog" : "answers"}`}
+            aria-haspopup={mobile || mobileOpen ? "dialog" : undefined}
+            aria-expanded={mobile || mobileOpen ? mobileOpen && selectedIndex === index : undefined}
             className={selectedIndex === index ? "is-active" : ""}
             onClick={() => {
               setActive(item.key ?? index);
-              if (window.matchMedia("(max-width: 990px)").matches)
-                setMobileOpen(true);
+              if (mobile) setMobileOpen(true);
             }}
           >
             <Image src={shopFile(item.icon)} alt="" width={52} height={52} />
@@ -209,6 +224,7 @@ export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
         {answers}
       </div>
       <dialog
+        id={`${id}-dialog`}
         ref={dialog}
         className="cp-help-dialog"
         aria-label={category.title}

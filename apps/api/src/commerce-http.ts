@@ -5,6 +5,7 @@ import { z } from "zod";
 import { HttpError } from "./cart.js";
 import { OrderFlowError, type createOrderService } from "./orders/service.js";
 import { PaymentGatewayError } from "./payments/razorpay.js";
+import { guestCartToken } from "./cart-credential.js";
 
 export type CommerceHttpService = Pick<
   ReturnType<typeof createOrderService>,
@@ -14,15 +15,9 @@ const emptyBody = z.object({}).strict();
 const attemptId = z.uuid();
 const idempotencyKey = z.string().regex(/^[A-Za-z0-9_-]{8,128}$/);
 
-function guestToken(req: Request) {
-  const cookies =
-    req.headers.cookie
-      ?.split(";")
-      .map((value) => value.trim())
-      .filter((value) => value.startsWith("maple_cart=")) ?? [];
-  const token = cookies[0]?.slice("maple_cart=".length);
-  if (cookies.length !== 1 || !token || !/^[a-f0-9]{64}$/.test(token))
-    throw new OrderFlowError("CART_NOT_FOUND");
+function guestToken(req: Request, secure: boolean) {
+  const token = guestCartToken(req, secure);
+  if (!token) throw new OrderFlowError("CART_NOT_FOUND");
   return token;
 }
 function publicAttempt(
@@ -108,24 +103,25 @@ export function registerPaymentWebhook(
 export function registerCheckoutRoutes(
   app: Express,
   commerce: CommerceHttpService,
+  secure: boolean,
 ) {
   app.post("/api/checkout", async (req, res) => {
     const input = checkoutInputSchema.or(emptyBody).parse(req.body);
     const key = idempotencyKey.parse(req.get("Idempotency-Key"));
     res.json(
-      publicAttempt(await commerce.freezeCart(guestToken(req), key, input)),
+      publicAttempt(await commerce.freezeCart(guestToken(req, secure), key, input)),
     );
   });
   app.post("/api/checkout/:attemptId/payment-order", async (req, res) => {
     emptyBody.parse(req.body);
     const id = attemptId.parse(req.params.attemptId);
     res.json(
-      publicAttempt(await commerce.createProviderOrder(guestToken(req), id)),
+      publicAttempt(await commerce.createProviderOrder(guestToken(req, secure), id)),
     );
   });
   app.get("/api/checkout/:attemptId", async (req, res) => {
     const id = attemptId.parse(req.params.attemptId);
-    res.json(publicAttempt(await commerce.getAttempt(guestToken(req), id)));
+    res.json(publicAttempt(await commerce.getAttempt(guestToken(req, secure), id)));
   });
 }
 

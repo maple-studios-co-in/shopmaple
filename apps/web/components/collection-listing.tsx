@@ -316,7 +316,9 @@ export function CollectionListing(props: Props) {
               className={`product-grid collection-products${dense ? " is-compact" : ""}`}
             >
               {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} imageSizes={dense
+                  ? "(max-width:749px) calc((100vw - 40px) / 2), (max-width:1100px) calc((100vw - 306px) / 5), (min-width:1920px) 309.6px, calc((100vw - 372px) / 5)"
+                  : "(max-width:749px) calc((100vw - 44px) / 2), (max-width:1100px) calc((100vw - 274px) / 2), (max-width:1599px) calc((100vw - 356px) / 3), (min-width:1920px) 387px, calc((100vw - 372px) / 4)"} />
               ))}
             </div>
           ) : (
