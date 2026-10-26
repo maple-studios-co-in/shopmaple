@@ -8,6 +8,7 @@ import Home from "../app/page";
 import NimbusPage from "../app/pages/nimbus-collection/page";
 import StoryPage from "../app/pages/our-story/page";
 import { NimbusLanding } from "../components/category-nimbus";
+import { StoryLanding } from "../components/category-story";
 import { CategorySlideshow, CategoryVideo } from "../components/category-controls";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
@@ -68,21 +69,26 @@ async function documentFor(page: "home" | "nimbus" | "story") {
   const element = page === "home" ? <ShopProvider><Home /></ShopProvider> : page === "nimbus" ? await NimbusPage() : await StoryPage();
   return new JSDOM(await new Response(await renderToReadableStream(element)).text()).window.document;
 }
-function island(node: ReactNode, component: unknown): React.ReactElement | undefined {
+function island(node: ReactNode, component: unknown, className?: string): React.ReactElement | undefined {
   for (const child of Children.toArray(node)) {
-    if (!isValidElement<{ children?: ReactNode }>(child)) continue;
-    if (child.type === component) return child;
-    const nested = island(child.props.children, component);
+    if (!isValidElement<{ children?: ReactNode; className?: string }>(child)) continue;
+    if (child.type === component && (className === undefined || (child.props.className ?? "") === className)) return child;
+    const nested = island(child.props.children, component, className);
     if (nested) return nested;
   }
 }
 async function withIsland(element: React.ReactElement, small: boolean, run: (doc: Document) => Promise<void>) {
-  const dom = new JSDOM('<!doctype html><div id="root"></div>');
+  const dom = new JSDOM('<!doctype html><div id="root"></div>', { pretendToBeVisual: true });
   const values = { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true };
   const previous = new Map(Object.keys(values).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   Object.assign(globalThis, values);
   Object.defineProperty(dom.window, "matchMedia", { value: (query: string) => ({ matches: query.includes("reduced-motion") || small, addEventListener() {}, removeEventListener() {} }) });
-  Object.defineProperty(dom.window.HTMLMediaElement.prototype, "pause", { value() {} });
+  const paused = new WeakMap<HTMLMediaElement, boolean>();
+  Object.defineProperties(dom.window.HTMLMediaElement.prototype, {
+    paused: { get(this: HTMLMediaElement) { return paused.get(this) ?? true; } },
+    play: { value(this: HTMLMediaElement) { paused.set(this, false); this.dispatchEvent(new dom.window.Event("play")); return Promise.resolve(); } },
+    pause: { value(this: HTMLMediaElement) { paused.set(this, true); this.dispatchEvent(new dom.window.Event("pause")); } },
+  });
   const root = createRoot(document.getElementById("root")!);
   try { await act(async () => root.render(element)); await run(document); }
   finally {
@@ -112,10 +118,10 @@ async function checkArtwork(edited: boolean) {
     }
     if (page === "nimbus") {
       assert.equal(doc.querySelector(".landing-nimbus-intro h2")?.textContent, "Introducing nimbus");
-      assert.ok(doc.querySelector('.landing-nimbus-bento video[src$="83728678.mp4?v=0"]'));
+      assert.equal(doc.querySelector('.landing-nimbus-bento video')?.getAttribute("src"), null, "Server markup must defer the below-fold film source");
       assert.ok(doc.querySelector(`.landing-nimbus-bento button[aria-label="Play ${edited ? "Edited nimbus-craft-poster" : "Nimbus furniture craftsmanship"}"]`));
     }
-    if (page === "story") assert.ok(doc.querySelector('.landing-story-film video[src$="82384288.mp4?v=0"]'));
+    if (page === "story") assert.equal(doc.querySelector('.landing-story-film video')?.getAttribute("src"), null, "Manual Story film must wait for Play");
   }
   const page = await NimbusPage();
   const tree = NimbusLanding(page.props);
@@ -130,9 +136,23 @@ async function checkArtwork(edited: boolean) {
   for (const small of [false, true]) await withIsland(island(tree, CategoryVideo)!, small, async doc => {
     const hero = slots.find(s => s[0] === "nimbus-hero-poster")!;
     assert.equal(doc.querySelector("video")?.getAttribute("poster"), edited ? `/media/nimbus-hero-poster${small ? "-small" : ""}.webp` : hero[small ? 5 : 3]);
-    assert.ok(doc.querySelector(`video[src$="${small ? "87921481" : "88094202"}.mp4?v=0"]`), "Poster editing must preserve the matching MP4");
+    assert.equal(doc.querySelector("video")?.getAttribute("src"), null, "Reduced motion keeps the film unloaded before deliberate playback");
     assert.equal(doc.querySelector("button")?.getAttribute("aria-label"), `Play ${edited ? "Edited nimbus-hero-poster" : "Nimbus collection film"}`, "Reduced motion retains a user-operated play control");
+    await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
+    assert.ok(doc.querySelector(`video[src$="${small ? "87921481" : "88094202"}.mp4?v=0"]`), "Deliberate playback preserves the matching source MP4");
   });
+  const story = await StoryPage();
+  for (const [element, suffix] of [
+    [island(tree, CategoryVideo, ""), "83728678"],
+    [island(StoryLanding(story.props), CategoryVideo), "82384288"],
+  ] as const) {
+    assert.ok(element, "Original film control exists");
+    await withIsland(element, false, async doc => {
+      assert.equal(doc.querySelector("video")?.getAttribute("src"), null);
+      await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
+      assert.ok(doc.querySelector(`video[src$="${suffix}.mp4?v=0"]`), "Deferred film retains its original MP4");
+    });
+  }
 }
 
 test("legacy published pages preserve all 21 original artwork slots and six responsive pairs", async () => {

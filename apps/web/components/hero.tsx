@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
 export function Hero({
   content = defaultHomeDetails.hero,
   media,
 }: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
-  const poster = resolveTemplateMedia("home-workshop-poster", media);
+  const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   function toggle() {
@@ -61,7 +61,7 @@ export function Hero({
       </div>
       <div className="hero-categories">
         {content.tiles.map(({ key, label, priceLabel }) => {
-          const artwork = resolveTemplateMedia(`home-hero-${key}`, media);
+          const artwork = resolveHomeTemplateMedia(`home-hero-${key}`, media);
           return <Link
             href={(key === "beds" ? "/collections/" : "/pages/") + key}
             className="category-tile"

@@ -95,7 +95,9 @@ export default async function Home() {
   const details = resolveHomeDetails(content.homeDetails);
   const merchandising = resolveHomeMerchandising(content.homeMerchandising);
   const sections: Record<string, ReactNode> = {
-    hero: <Hero content={details.hero} media={content.templateMedia} />,
+    hero: <Hero content={details.hero} media={content.templateMedia?.filter(item =>
+      item.key === "home-workshop-poster" || item.key.startsWith("home-hero-")
+    )} />,
     announcement: <CampaignBanner campaign="landing-announcement" />,
     difference: <HomeDifference content={details.difference} />,
     categories: (
@@ -113,7 +115,7 @@ export default async function Home() {
         />
       </section>
     ),
-    nimbus: <HomeNimbus content={details.nimbus} media={content.templateMedia} />,
+    nimbus: <HomeNimbus content={details.nimbus} media={content.templateMedia?.filter(item => item.key === "home-nimbus")} />,
     "dining-banner": <CampaignBanner campaign="landing-dining-table" />,
     instagram: (
       <HomeSocial
