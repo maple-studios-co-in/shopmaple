@@ -29,6 +29,7 @@ export const defaultStorefrontContent: StorefrontContent = {
   homeCopy: {
     categoryHeading: "Shop By Category",
     bestsellersHeading: "Bestsellers",
+    chairsHeading: "Chairs",
     socialHeading: "Our Social Proof",
     ticker: "Elegance isn't found. At Maple, it is custom-built.",
     testimonialHeading: "Why They Love Us",

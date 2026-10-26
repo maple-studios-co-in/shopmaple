@@ -139,7 +139,7 @@ test("homepage preserves the original brand ticker and four offer collections", 
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     assert.equal(
-      doc.querySelector(".home-ticker")?.textContent,
+      doc.querySelector(".home-ticker-copy")?.textContent,
       "Elegance isn't found. At Maple, it is custom-built.",
     );
     assert.deepEqual(

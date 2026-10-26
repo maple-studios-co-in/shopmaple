@@ -262,6 +262,7 @@ export const storefrontContentSchema = z
       .object({
         categoryHeading: text(160),
         bestsellersHeading: text(160),
+        chairsHeading: text(160).optional(),
         socialHeading: text(160),
         ticker: text(600),
         testimonialHeading: text(160),
@@ -299,6 +300,7 @@ export const storefrontContentSchema = z
       .object({
         autoplaySocial: z.boolean(),
         autoplayCities: z.boolean(),
+        autoplayTicker: z.boolean().optional(),
         revealSections: z.boolean(),
       })
       .strict(),

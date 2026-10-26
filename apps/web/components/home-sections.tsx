@@ -9,6 +9,7 @@ import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } f
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
+import { useId } from "react";
 
 export function HomeBanner({
   desktop,
@@ -125,26 +126,30 @@ export function HomeTestimonial({
   subheading?: string;
 } = {}) {
   const poster = resolveTemplateMedia("home-testimonial-poster", media);
+  const headingId = useId();
   return (
-    <section className="home-testimonial">
-      <header>
-        <h2>{heading}</h2>
-        <p>{subheading}</p>
-      </header>
+    <section className="home-testimonial" aria-labelledby={headingId}>
       <div className="home-testimonial-grid">
-        <video
-          controls
-          playsInline
-          preload="none"
-          poster={poster.image}
-          aria-label={poster.alt}
-        >
-          <source
-            src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
-            type="video/mp4"
-          />
-        </video>
+        <div className="home-testimonial-story">
+          <header>
+            <h2 id={headingId}>{heading}</h2>
+            <p>{subheading}</p>
+          </header>
+          <video
+            controls
+            playsInline
+            preload="none"
+            poster={poster.image}
+            aria-label={poster.alt}
+          >
+            <source
+              src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
+              type="video/mp4"
+            />
+          </video>
+        </div>
         <figure>
+          <span className="home-testimonial-quote" aria-hidden="true">“</span>
           <blockquote>
             <h3>{content.title}</h3>
             {content.paragraphs.map((paragraph, index) => (
@@ -169,22 +174,25 @@ export function HomeNewsletter({
   media,
 }: { content?: HomeDetails["newsletter"]; media?: TemplateMedia } = {}) {
   const artwork = resolveTemplateMedia("home-newsletter", media);
+  const bundledArtwork = artwork.image === resolveTemplateMedia("home-newsletter").image;
+  const headingId = useId();
   return (
-    <section className="home-newsletter" id="newsletter">
+    <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>
       <div className="home-container">
-        <Image
-          src={artwork.image}
-          alt={artwork.alt}
-          width={1080}
-          height={500}
-          sizes="(max-width:749px) 75vw, 35vw"
-        />
         <div className="home-newsletter-row">
           <div>
-            <h2>{content.heading}</h2>
+            <h2 id={headingId}>{content.heading}</h2>
             <p>{content.body}</p>
           </div>
-          <div>
+          <div className="home-newsletter-signup">
+            <Image
+              src={artwork.image}
+              alt={artwork.alt}
+              width={1080}
+              height={500}
+              sizes="(max-width:749px) 75vw, 35vw"
+              style={bundledArtwork ? { filter: "brightness(0) invert(1)" } : undefined}
+            />
             <h3>{content.signupHeading}</h3>
             <HomeNewsletterForm />
           </div>
