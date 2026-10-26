@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { productPdpContentSchema } from "./product-pdp-content";
+import { categories } from "./catalogue-cards";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
@@ -33,14 +34,6 @@ export type {
   CampaignContent,
   ContentPage,
 } from "./content";
-export const categories = [
-  "sofas",
-  "chairs",
-  "tables",
-  "beds",
-  "storage",
-  "outdoors",
-] as const;
 export const variantSchema = z.object({
   id: z.string().min(1).max(160),
   title: z.string().min(1).max(300),

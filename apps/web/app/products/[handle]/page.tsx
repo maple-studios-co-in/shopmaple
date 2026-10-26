@@ -1,6 +1,5 @@
-import { toProductCard } from "@/lib/product-card-model";
 import { notFound } from "next/navigation";
-import { getProduct, getProducts } from "@/lib/catalog";
+import { getProduct, getRelatedProductCards } from "@/lib/catalog";
 import { ProductDetail } from "@/components/product-detail";
 import { ProductCard } from "@/components/product-card";
 import { HomeNewsletter, HomeValues } from "@/components/home-sections";
@@ -17,8 +16,8 @@ export default async function ProductPage({
   const product = await getProduct(handle);
   if (!product) notFound();
   const related = product.category
-    ? await getProducts({ category: product.category, limit: "5" })
-    : { products: [] };
+    ? await getRelatedProductCards(product.category)
+    : [];
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
@@ -33,15 +32,15 @@ export default async function ProductPage({
         }
         presentation={presentation}
       />
-      {related.products.some((p) => p.id !== product.id) && (
+      {related.some((p) => p.id !== product.id) && (
         <section className="pdp-related">
           <h2>You might also like...</h2>
           <div className="product-grid">
-            {related.products
+            {related
               .filter((p) => p.id !== product.id)
               .slice(0, 4)
               .map((p) => (
-                <ProductCard key={p.id} product={toProductCard(p)} />
+                <ProductCard key={p.id} product={p} />
               ))}
           </div>
         </section>

@@ -1,4 +1,3 @@
-import { toProductCard } from "@/lib/product-card-model";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
@@ -19,7 +18,7 @@ import {
   HomeNewsletter,
   HomeProject,
 } from "@/components/home-sections";
-import { getProduct } from "@/lib/catalog";
+import { getProductCards } from "@/lib/catalog";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
 
@@ -62,12 +61,13 @@ async function HomeProducts({
   heading?: string;
   label: string;
 }) {
-  const results = await Promise.all(
-    handles.map((handle) => getProduct(handle).catch(() => null)),
-  );
-  const products = results
-    .filter((product) => product !== null)
-    .filter((product) => product.published);
+  const products = await getProductCards(handles).catch(async () => {
+    // Preserve healthy siblings when one failed card invalidates the batch.
+    const recovered = await Promise.all(
+      handles.map((handle) => getProductCards([handle]).catch(() => [])),
+    );
+    return recovered.flat();
+  });
   return (
     <section className="home-products home-container" aria-label={label}>
       {heading && (
@@ -79,7 +79,7 @@ async function HomeProducts({
       {products.length ? (
         <HomeCarousel label={label}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={toProductCard(product)} />
+            <ProductCard key={product.id} product={product} />
           ))}
         </HomeCarousel>
       ) : (

@@ -8,6 +8,8 @@ Alerts are disabled by default. A saved enquiry is available in the private inbo
 
 The API reads ENQUIRY_DELIVERY_ENABLED (default false), ENQUIRY_RESEND_API_KEY, ENQUIRY_MAIL_FROM, ENQUIRY_MAIL_TO and WEB_ORIGIN. Sender/recipient must each be a single plain email address. Production requires a public HTTPS origin. Put credentials only in the protected runtime environment; do not paste them into chat or command arguments. Use a verified sender and a deliberately chosen team inbox, then arrange a separately authorized controlled acceptance test before activation. Do not infer recipients from the first publisher's email.
 
+The operator explicitly chose `contact@maplefurnishers.com` for Shop team alerts on26October2026. The first publisher is separately `aditya@maplefurnishers.com`. The local private environment records this recipient with delivery disabled; production configuration, verified sender credentials and actual mailbox acceptance remain pending. No alert was sent by this configuration change.
+
 The alert contains only reference, kind, creation date and a link to /admin. Customer names, email addresses, phone numbers, enquiry messages and notes remain in the protected application. No customer reply or marketing message is sent by this workflow.
 
 ## Delivery and recovery
