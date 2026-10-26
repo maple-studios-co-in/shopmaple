@@ -25,7 +25,7 @@ export default async function ProductPage({
   return (
     <>
       <ProductDetail
-        key={product.id + "-" + (query.variant ?? "")}
+        key={product.id}
         product={product}
         initialVariant={
           typeof query.variant === "string" ? query.variant : undefined

@@ -79,7 +79,10 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => { if (autoplay) setPaused(true); }}>
       <div className={railClassName} id={id} ref={rail} aria-label={label} tabIndex={0}
-        onPointerDown={() => { if (autoplay) setPaused(true); }}>
+        onPointerDown={() => { if (autoplay) setPaused(true); }}
+        onWheel={event => {
+          if (autoplay && (event.deltaX !== 0 || (event.shiftKey && event.deltaY !== 0))) setPaused(true);
+        }}>
         {children}
       </div>
       <div className="home-carousel-controls" hidden={!ready}>

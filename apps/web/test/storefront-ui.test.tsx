@@ -62,6 +62,8 @@ async function mount(
 ) {
   const root = createRoot(document.getElementById("root")!);
   const previousFetch = globalThis.fetch;
+  const previousUrl = window.location.href;
+  const previousHistoryState: unknown = window.history.state;
   globalThis.fetch = async () =>
     Response.json({
       items: [],
@@ -77,6 +79,7 @@ async function mount(
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = previousFetch;
+    window.history.replaceState(previousHistoryState, "", previousUrl);
   }
 }
 test("footer exposes callable customer-care and bulk-order contacts", async () => {
@@ -217,6 +220,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
       );
       const option =
         document.querySelector<HTMLInputElement>('input[value="red"]')!;
+      window.history.replaceState(null, "", "/products/chair?campaign=diwali#delivery-enquiry");
       await act(async () => option.click());
       assert.match(
         document.querySelector(".pdp-price-block strong")!.textContent!,
@@ -226,7 +230,11 @@ test("product variants update price, gallery and enquiry while delivery stays an
         document.querySelector(".product-main-image img")?.getAttribute("src"),
         product.images[1],
       );
-      assert.equal(replacements.at(-1), "?variant=red");
+      assert.equal(window.location.pathname, "/products/chair");
+      assert.equal(new URL(window.location.href).searchParams.get("variant"), "red");
+      assert.equal(new URL(window.location.href).searchParams.get("campaign"), "diwali");
+      assert.equal(window.location.hash, "#delivery-enquiry");
+      assert.deepEqual(replacements, [], "variant changes do not request a new server route");
       const enquiry =
         document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
       assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");

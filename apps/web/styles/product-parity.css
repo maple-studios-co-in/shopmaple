@@ -378,13 +378,19 @@
   border-radius: 4px;
   background: var(--paper);
 }
+.product-card .view-product {
+  right: 58px;
+}
 @media (max-width: 749px) {
   .pdp-shell {
     padding: 14px 20px 0;
   }
   .pdp-detail.product-detail {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 28px;
+  }
+  .pdp-detail.product-detail > * {
+    min-width: 0;
   }
   .pdp-gallery.product-gallery {
     display: flex;
