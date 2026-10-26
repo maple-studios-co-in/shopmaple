@@ -1,6 +1,7 @@
 import type { TemplateMedia, TemplateMediaItem, TemplateMediaKey } from "@shopmaple/contracts";
 import nimbus from "@/data/landing-nimbus.json";
 import story from "@/data/landing-story.json";
+import { homeTemplateMedia } from "@/lib/home-template-media";
 import { shopFile } from "@/lib/format";
 
 const nimbusSection = (key: string) => nimbus.sections.find(item => item.key === key)!;
@@ -11,12 +12,12 @@ type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" 
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
-  { key: "home-workshop-poster", label: "Workshop video poster", group: "Homepage", image: "/media/workshop-poster.webp", alt: "Furniture craftsmanship at Maple" },
-  { key: "home-hero-sofas", label: "Hero sofas tile", group: "Homepage", image: shopFile("engaged_5.jpg?v=1767435623"), alt: "" },
-  { key: "home-hero-chairs", label: "Hero chairs tile", group: "Homepage", image: shopFile("engaged_6_1.jpg?v=1767444019"), alt: "" },
-  { key: "home-hero-tables", label: "Hero tables tile", group: "Homepage", image: shopFile("engaged_8_1.jpg?v=1767444598"), alt: "" },
-  { key: "home-hero-beds", label: "Hero beds tile", group: "Homepage", image: shopFile("engaged_9_1.jpg?v=1767448207"), alt: "" },
-  { key: "home-nimbus", label: "Nimbus collection feature", group: "Homepage", image: shopFile("Chairs_9.svg"), mobileImage: shopFile("Chairs_300_x_600_px.webp?width=900"), alt: "The Nimbus Collection — cloud-like upholstered furniture" },
+  { ...homeTemplateMedia["home-workshop-poster"], label: "Workshop video poster", group: "Homepage" },
+  { ...homeTemplateMedia["home-hero-sofas"], label: "Hero sofas tile", group: "Homepage" },
+  { ...homeTemplateMedia["home-hero-chairs"], label: "Hero chairs tile", group: "Homepage" },
+  { ...homeTemplateMedia["home-hero-tables"], label: "Hero tables tile", group: "Homepage" },
+  { ...homeTemplateMedia["home-hero-beds"], label: "Hero beds tile", group: "Homepage" },
+  { ...homeTemplateMedia["home-nimbus"], label: "Nimbus collection feature", group: "Homepage" },
   { key: "home-newsletter", label: "Newsletter image", group: "Homepage", image: shopFile("Cover_Image_Maple_1.png"), alt: "Maple Furnishers" },
   { key: "home-testimonial-poster", label: "Customer testimonial video poster", group: "Homepage", image: shopFile("preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960"), alt: "Maple customer testimonial" },
   { key: "nimbus-room-bedroom", label: "Bedroom room tile", group: "Nimbus", image: shopFile("ChatGPT_Image_Apr_24_2026_03_29_31_AM.png"), alt: "Bedroom" },

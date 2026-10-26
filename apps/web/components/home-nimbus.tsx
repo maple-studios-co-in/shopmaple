@@ -6,14 +6,14 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { shopFile } from "@/lib/format";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
 export function HomeNimbus({
   content = defaultHomeDetails.nimbus,
   media,
 }: { content?: HomeDetails["nimbus"]; media?: TemplateMedia } = {}) {
-  const artwork = resolveTemplateMedia("home-nimbus", media);
+  const artwork = resolveHomeTemplateMedia("home-nimbus", media);
   const [open, setOpen] = useState(false);
   return (
     <section className="home-nimbus-wrap" aria-label="The Nimbus Collection">
