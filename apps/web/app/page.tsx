@@ -7,6 +7,7 @@ import { CampaignBanner } from "@/components/campaign-banner";
 import { Hero } from "@/components/hero";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
+import { HomeTicker } from "@/components/home-ticker";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
 import {
@@ -56,10 +57,12 @@ async function HomeProducts({
   handles,
   heading,
   label,
+  browseHref,
 }: {
   handles: string[];
   heading?: string;
   label: string;
+  browseHref: string;
 }) {
   const products = await getProductCards(handles).catch(async () => {
     // Preserve healthy siblings when one failed card invalidates the batch.
@@ -71,9 +74,12 @@ async function HomeProducts({
   return (
     <section className="home-products home-container" aria-label={label}>
       {heading && (
-        <header>
-          <p className="home-eyebrow">Shop By</p>
-          <h2>{heading}</h2>
+        <header className="home-rail-heading">
+          <div>
+            <p className="home-eyebrow">Shop By</p>
+            <h2>{heading}</h2>
+          </div>
+          <Link href={browseHref} aria-label={`View all ${heading}`}>View all →</Link>
         </header>
       )}
       {products.length ? (
@@ -109,7 +115,7 @@ export default async function Home() {
         <CollectionTiles items={merchandising.categories} className="home-categories" />
       </section>
     ),
-    ticker: <p className="home-ticker">{copy.ticker}</p>,
+    ticker: <HomeTicker text={copy.ticker} autoplay={content.motion.autoplayTicker ?? true} />,
     offers: (
       <section className="home-container" aria-label="Offer collections">
         <CollectionTiles
@@ -132,13 +138,16 @@ export default async function Home() {
         handles={merchandising.bestsellers}
         heading={copy.bestsellersHeading}
         label="Bestsellers"
+        browseHref="/collections/all"
       />
     ),
     "seating-banner": <CampaignBanner campaign="landing-sofa-accent-chair" />,
     chairs: (
       <HomeProducts
         handles={merchandising.chairs}
+        heading={copy.chairsHeading ?? "Chairs"}
         label="Chair collection"
+        browseHref="/collections/chairs"
       />
     ),
     promos: (

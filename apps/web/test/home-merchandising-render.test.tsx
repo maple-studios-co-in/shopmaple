@@ -30,12 +30,14 @@ const customMerchandising = () => ({
   ],
 });
 let renderNumber = 0;
-async function renderHome({ merchandising, products = Object.fromEntries([...originalBestsellers, ...originalChairs].map(handle => [handle, product(handle)])), sections }: {
+async function renderHome({ merchandising, products = Object.fromEntries([...originalBestsellers, ...originalChairs].map(handle => [handle, product(handle)])), sections, copy }: {
   merchandising?: ReturnType<typeof customMerchandising>;
   products?: Record<string, ReturnType<typeof product>>;
   sections?: typeof defaultStorefrontContent.homeSections;
+  copy?: { chairsHeading?: string; bestsellersHeading?: string };
 } = {}) {
   const content = structuredClone(defaultStorefrontContent);
+  if (copy) Object.assign(content.homeCopy, copy);
   delete (content as Record<string, unknown>).homeMerchandising;
   if (merchandising) Object.assign(content, { homeMerchandising: merchandising });
   content.homeSections = sections ?? ["categories", "offers", "bestsellers", "chairs"].map(key => ({ key, enabled: true })) as typeof content.homeSections;
@@ -72,6 +74,28 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
 }
 const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(selector)].map(node => node.textContent?.trim());
 const attributes = (doc: Document, selector: string, attribute: string) => [...doc.querySelectorAll(selector)].map(node => node.getAttribute(attribute));
+
+test("both homepage rails expose a visible heading and a context-labelled browse destination even when empty", async () => {
+  for (const options of [{}, { merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } }]) {
+    const { doc } = await renderHome(options);
+    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
+      const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
+      assert.equal(rail.querySelector("h2")?.textContent, heading);
+      const browse = rail.querySelector("header a");
+      assert.equal(browse?.getAttribute("href"), href, "browse action must reach the source collection, not a product or Shopify");
+      assert.equal(browse?.getAttribute("aria-label"), `View all ${heading}`);
+      assert.equal(browse?.textContent, "View all →");
+    }
+  }
+});
+
+test("published rail headings are used for visible navigation without changing collection destinations", async () => {
+  const { doc } = await renderHome({ copy: { chairsHeading: "Your reading nook", bestsellersHeading: "Selected favourites" } });
+  assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
+  assert.equal(doc.querySelector('[data-home-section="chairs"] header a')?.getAttribute("aria-label"), "View all Your reading nook");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a')?.getAttribute("href"), "/collections/all");
+});
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
   const { doc } = await renderHome({ merchandising: customMerchandising() });

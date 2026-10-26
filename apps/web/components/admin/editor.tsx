@@ -53,6 +53,7 @@ type Tab = (typeof tabs)[number];
 const copyLabels: Record<keyof StorefrontContent["homeCopy"], string> = {
   categoryHeading: "Category heading",
   bestsellersHeading: "Bestsellers heading",
+  chairsHeading: "Chairs heading",
   socialHeading: "Social heading",
   ticker: "Brand ticker",
   testimonialHeading: "Testimonial heading",
@@ -454,7 +455,7 @@ export function ContentEditor({
                       <Field
                         key={key}
                         label={copyLabels[key]}
-                        value={content.homeCopy[key]}
+                        value={content.homeCopy[key] ?? "Chairs"}
                         multiline={key === "ticker"}
                         maxLength={
                           key === "ticker"
@@ -475,6 +476,16 @@ export function ContentEditor({
                   <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
                   <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={homeCitiesLayout => edit({ ...content, homeCitiesLayout })} />
                   <h3>Motion</h3>
+                  <label className="admin-check">
+                    <input
+                      type="checkbox"
+                      checked={content.motion.autoplayTicker ?? true}
+                      onChange={(event) => edit({ ...content, motion: {
+                        ...content.motion, autoplayTicker: event.target.checked,
+                      } })}
+                    />
+                    Automatically move the homepage ticker
+                  </label>
                   <label className="admin-check">
                     <input
                       type="checkbox"
