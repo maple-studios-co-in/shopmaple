@@ -1,4 +1,10 @@
 /* Shopify main-menu snapshot, 25 Oct 2026: full-width panels and nested mobile drawer. */
+.utility-links a {
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+}
 .maple-desktop-nav {
   position: relative;
   z-index: 35;
@@ -260,7 +266,7 @@
 /* Suggested design: one shared header, visual room discovery and clear category groups. */
 .maple-desktop-nav {
   height: 50px;
-  font-size: 14px;
+  font-size: 16px;
   gap: 32px;
 }
 .maple-menu-trigger {
@@ -279,8 +285,8 @@
   right: 0;
 }
 .maple-mega {
-  left: 24px;
-  width: calc(100% - 48px);
+  left: 0;
+  width: 100%;
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr) 190px;
   gap: 24px;
@@ -310,15 +316,15 @@
   background: #eeece7;
 }
 .maple-menu-link {
-  font-size: 12px;
-  line-height: 1.6;
-  font-weight: 400;
+  font-size: 14px;
+  line-height: 23.4px;
+  font-weight: 700;
   padding-block: 5px;
 }
 .maple-menu-parent {
-  font-size: 14px;
+  font-size: 16px;
   padding-bottom: 10px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .maple-mega-feature {
   background: #f6f3ef;
@@ -385,8 +391,8 @@
     grid-template-columns: 160px minmax(0, 1fr);
     gap: 18px;
     padding: 18px;
-    left: 12px;
-    width: calc(100% - 24px);
+    left: 0;
+    width: 100%;
   }
   .maple-mega-discovery {
     grid-column: 1 / -1;

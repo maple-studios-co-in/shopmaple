@@ -1091,3 +1091,61 @@
     margin-bottom: 22px;
   }
 }
+
+/* Match the published homepage's original heading treatment. */
+.home-difference h2 { font-weight: 500; font-style: normal; line-height: 1.2; }
+.home-parity .category-tile h2 { font-size: 20px; font-weight: 700; font-style: normal; line-height: 1.1; }
+
+/* The Figma cities reference groups destinations into an inset, rounded rail. */
+.home-cities.home-container {
+  width: calc(100% - 80px);
+  max-width: 1360px;
+  padding: 42px 36px;
+  background: #f0ece6;
+  border: 1px solid #e9e2d9;
+  border-radius: 22px;
+  gap: 28px;
+}
+.home-cities header { flex: 0 0 170px; }
+.home-cities .home-eyebrow { color: #741a14; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.home-cities h2 { max-width: 150px; white-space: normal; font-size: 56px; font-weight: 500; font-style: normal; line-height: 1; color: #29251f; }
+.home-cities .city-motion { flex: 1; }
+.home-city-track { gap: 20px; }
+.home-city-card { flex: 0 0 104px; width: 104px; margin: 0; text-align: center; scroll-snap-align: start; }
+.home-city-artwork { height: 170px; border: 4px solid #faf8f4; border-radius: 80px; overflow: hidden; background: #e7dfd3; display: flex; align-items: center; justify-content: center; }
+.home-city-track .home-city-card img { width: 100%; min-width: 0; max-width: 100%; height: auto; object-fit: contain; }
+.home-city-card figcaption { margin-top: 10px; color: #433625; font-size: 10px; font-weight: 700; line-height: 1.4; text-transform: uppercase; }
+.home-city-card figcaption::after { content: ""; display: block; width: 22px; height: 1px; background: #b76a54; margin: 8px auto 0; }
+@media (max-width: 749px) {
+  .home-cities.home-container { width: calc(100% - 32px); padding: 28px 18px; gap: 24px; }
+  .home-cities header { flex: auto; }
+  .home-cities h2 { max-width: none; font-size: 42px; }
+  .home-city-card { flex-basis: 96px; width: 96px; }
+  .home-city-artwork { height: 150px; }
+}
+
+/* The film itself is the touch target. Keyboard focus exposes its control. */
+.hero-film .video-control,
+.landing-video.landing-video > button {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+  pointer-events: auto;
+}
+.hero-film .video-control { z-index: 1; }
+.hero-film .video-control > svg,
+.landing-video.landing-video > button > svg { opacity: 0; }
+.hero-film .video-control:focus-visible,
+.landing-video.landing-video > button:focus-visible { outline: 2px solid white; outline-offset: -6px; }
+.hero-film .video-control:focus-visible > svg,
+.landing-video.landing-video > button:focus-visible > svg {
+  opacity: 1;
+  background: #292d28b3;
+  border-radius: 50%;
+  box-sizing: content-box;
+  padding: 14px;
+}

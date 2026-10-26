@@ -35,6 +35,9 @@
   gap: 10px;
   font-size: 14px;
 }
+.collection-sort label {
+  font-size: 24px;
+}
 .collection-sort select {
   border: 0;
   background: transparent;
@@ -42,6 +45,7 @@
   max-width: 220px;
   color: inherit;
   font: inherit;
+  font-size: 16px;
   cursor: pointer;
 }
 .collection-density {
@@ -85,7 +89,7 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 24px;
   min-height: 28px;
   gap: 8px;
 }
@@ -127,13 +131,13 @@
   border: 1px solid #292d2855;
   padding: 8px;
   font: inherit;
-  font-size: 13px;
+  font-size: 16px;
 }
 .collection-price-fields {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 16px;
 }
 .collection-price-fields label {
   display: flex;
@@ -150,7 +154,9 @@
   background: transparent;
   border: 0;
   padding: 6px 0;
-  font-size: 12px;
+  font-family: Manrope, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
   color: inherit;
   appearance: textfield;
 }

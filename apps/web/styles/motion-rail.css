@@ -10,24 +10,6 @@
   outline-offset: 4px;
 }
 .home-carousel-controls button:disabled { opacity: .45; cursor: default; }
-/* Only autoplay's first control is play/pause; navigation arrows stay visible. */
-@media (hover: hover) and (pointer: fine) {
-  .home-carousel-autoplay > .home-carousel-controls > button:first-child:not(:disabled) {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .home-carousel-autoplay:hover > .home-carousel-controls > button:first-child:not(:disabled),
-  .home-carousel-autoplay:focus-within > .home-carousel-controls > button:first-child:not(:disabled) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-@media (any-pointer: coarse) {
-  .home-carousel-autoplay > .home-carousel-controls > button:first-child:not(:disabled) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
 .instagram-motion { --social-columns: 6; --social-gap: calc(5% / var(--social-columns)); }
 .home-social .instagram-motion .home-instagram-posts {
   display: flex;
@@ -61,4 +43,31 @@
   .instagram-motion .home-instagram-posts { scroll-behavior: auto; }
   .instagram-motion .home-instagram-posts img { transition: none; }
   .instagram-motion .home-instagram-posts a:hover img { transform: none; }
+}
+
+/* No visible scrollbar or persistent play badge over the editorial rails. */
+.home-social .instagram-motion .home-instagram-posts,
+.city-motion .home-city-viewport { scrollbar-width: none; }
+.home-social .instagram-motion .home-instagram-posts::-webkit-scrollbar,
+.city-motion .home-city-viewport::-webkit-scrollbar { display: none; }
+.home-carousel-autoplay > .home-carousel-controls > button:first-child { opacity: 0; pointer-events: none; }
+/* A visitor-paused row must expose Resume even after touch focus leaves.
+   HomeCarousel's accessible Play label is the existing paused-state signal. */
+.home-carousel-autoplay:hover > .home-carousel-controls > button:first-child:not(:disabled),
+.home-carousel-autoplay:focus-within > .home-carousel-controls > button:first-child:not(:disabled),
+.home-carousel-autoplay > .home-carousel-controls > button:first-child[aria-label^="Play "]:not(:disabled),
+.home-carousel-autoplay > .home-carousel-controls > button:first-child:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.city-motion { position: relative; padding-inline: 44px; }
+.city-motion .home-carousel-controls { position: static; margin: 0; height: 0; }
+.city-motion .home-carousel-controls > button { position: absolute; top: 45%; transform: translateY(-50%); background: #fff; border: 1px solid #e7d9cc; color: #741a14; width: 36px; height: 36px; }
+.city-motion .home-carousel-controls > button:nth-last-child(2) { left: 0; }
+.city-motion .home-carousel-controls > button:last-child { right: 0; }
+.city-motion .home-carousel-controls > button:first-child:not(:nth-last-child(2)) { top: auto; bottom: -32px; left: 50%; }
+/* Keep carousel navigation comfortably tappable on touch screens. */
+.city-motion .home-carousel-controls > button {
+  min-width: 44px;
+  min-height: 44px;
 }

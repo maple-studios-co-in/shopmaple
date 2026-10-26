@@ -6,6 +6,14 @@ const id = z
   .regex(/^[A-Za-z0-9_-]+$/)
   .max(64);
 const time = z.iso.datetime({ offset: true });
+// Match only explicit source types. Product titles and descriptions are not category evidence.
+const productTypeCategories = new Map<string, Product["category"]>([
+  ["chair", "chairs"], ["chairs", "chairs"],
+  ["table", "tables"], ["tables", "tables"],
+  ["sofa", "sofas"], ["sofas", "sofas"],
+  ["bed", "beds"], ["beds", "beds"],
+  ["storage", "storage"], ["outdoors", "outdoors"],
+]);
 const mediaSchema = z
   .object({
     id,
@@ -279,7 +287,9 @@ function adaptValidated(
         handle: publication.handle,
         title: model.name,
         description: model.description ?? "",
-        category: publication.category,
+        category: publication.category ?? (data.schemaVersion === 2
+          ? productTypeCategories.get(model.productType.trim().toLowerCase()) ?? null
+          : null),
         images,
         published: true,
         source,

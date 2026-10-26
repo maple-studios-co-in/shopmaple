@@ -50,3 +50,34 @@ test("V2 unknown stock policy stays unverified and never implies availability", 
   assert.equal(p.variants[0]!.stockPolicy, "unverified");
   assert.equal(p.variants[0]!.available, false);
 });
+
+test("explicit publication categories remain authoritative and unknown product types stay uncategorized", () => {
+  const data = v2Fixture();
+  data.publication[0]!.category = "outdoors";
+  assert.equal(adaptKeeriExportV2(data, "maple").products[0]!.category, "outdoors");
+  data.publication[0]!.category = null;
+  data.models[0]!.productType = "custom";
+  data.models[0]!.name = "Chair and table collection";
+  assert.equal(adaptKeeriExportV2(data, "maple").products[0]!.category, null);
+});
+
+test("canonical Keeri product types fill missing publication categories without requiring a price or photo", () => {
+  for (const [productType, category] of [
+    ["chair", "chairs"], ["Chairs", "chairs"],
+    ["table", "tables"], ["tables", "tables"],
+    ["sofa", "sofas"], ["sofas", "sofas"],
+    ["bed", "beds"], [" Beds ", "beds"],
+    ["storage", "storage"], ["outdoors", "outdoors"],
+  ] as const) {
+    const data = v2Fixture();
+    data.publication[0]!.category = null;
+    data.publicMedia = [];
+    data.models[0]!.productType = productType;
+    data.models[0]!.variants[0]!.prices = [];
+    const p = adaptKeeriExportV2(data, "maple").products[0]!;
+    assert.equal(p.category, category, `${productType} must remain discoverable by its known category`);
+    assert.deepEqual(p.images, []);
+    assert.equal(p.variants[0]!.pricePaise, null);
+    assert.equal(p.variants[0]!.available, false);
+  }
+});
