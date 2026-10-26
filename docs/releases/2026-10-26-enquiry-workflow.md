@@ -1,0 +1,26 @@
+# Enquiry assignment and internal notes
+
+Shop Admin's enquiry inbox now supports assigning a request to an active staff member with enquiry access, returning it to the unassigned queue, filtering assigned/unassigned work, adding internal notes and paging through activity. Reviewing remains an internal acknowledgement. None of these actions sends a customer reply.
+
+Customer data access remains separate from content publishing and defaults to denied. Every read checks the current session/account/capability inside a transaction. Writes also require Origin, CSRF and the current enquiry version. Assignment checks the target's eligibility under a shared lock; assignment, review and notes share the enquiry version. Real changes append an audit record atomically. A same-owner assignment is a no-op only at the current version.
+
+Directory and activity queries are bounded and cursor-paginated. Summary lists contain metadata and owner ID, not contact details or note bodies. Notes are bounded plain text; the UI renders them literally. Access loss clears private detail/drafts. A conflict or uncertain network outcome retains the unsent note, blocks writes and requires deliberate reload and activity inspection. There is no automatic write retry or promise that a timed-out request did not commit.
+
+## Persistence and deployment
+
+The additive `20261027040000_enquiry_workflow` migration adds nullable `Enquiry.assignedToId`, restrictive staff/enquiry foreign keys and `EnquiryActivity`, with a unique enquiry/version index and action/body checks. Activity is append-only through the API; database owners can still change it. No permission grants, account creation, notification integration, retention policy or production migration is included.
+
+Deploy API and web together. Old strict clients reject the new summary field. Restore a compatible application/data pair if rolling back; do not drop activity or assignment data to force compatibility. Before production deployment, take and verify the paired database/media backup and satisfy capacity gates. The local development migration used a private database backup and preserved 85 products, 115 variants and the one existing enquiry. Those are local fixture counts, not production counts.
+
+## Verification and TDD evidence
+
+- Existing API inbox characterization: 3/3 passed before changes. Five new HTTP tests failed expected missing-endpoint/validation/CAS assertions before implementation (`tsx --env-file=../../.env --test --test-concurrency=1 test/enquiry-workflow.test.ts`, from apps/api). Focused implementation passed, then full API 218/218.
+- Fresh migration regression: the initial migration directory sorted before ShopAdmin creation. A new empty disposable database failed with `P3018/42P01`, then succeeded after renaming only this new migration after its dependencies. The dedicated local test database's applied migration-name record was reconciled, retaining its unchanged checksum. Development/production history was not rewritten. The empty-database regression now runs in the suite.
+- UI characterization: 4/4 passed before changes. Observable REDs covered missing assignment/note controls, a draft lost when reviewing, absent assignment filters, missing focus restoration, and stale rows shown under a new filter. Focused enquiry cases now pass 17/17; full web 321/321. Command: `tsx --tsconfig test/tsconfig.json --test test/admin-enquiry-workflow.test.tsx`, from apps/web.
+- A target-revocation concurrency test used actual PostgreSQL locks. Temporarily removing the shared lock caused the expected failure; this is postimplementation mutation validation, not original TDD RED evidence. Other added adversarial cases are reported as verification where no independent RED was observed.
+- Root integrated suite: 592 tests passed (218 API,321 web,53 deployment), plus five separate database recovery checks: **597 total**. Typecheck and API/web builds passed. Initial new test-array nullability errors were corrected and rechecked. The existing experimental MockTimers warning remains.
+- Independent manual source/security review found no confirmed actionable issue. Dependency, secret and static checks remain release gates on the final staged/committed files. One contributor's scanner invocation stopped at a missing Gitleaks PATH; configured API/root scanner runs are the authoritative results.
+
+Browser checks used the real hydrated inbox/workflow with synthetic transport and no persistent writes: at390/1280 pixels, long eligible email addresses and long unbroken notes stayed within the page; assignment and note feedback appeared, submitted text rendered literally and the composer cleared. This is component/browser evidence, not production staff acceptance. Built direct API and Next proxy denied anonymous directory/activity requests with401 and private,no-store. Local health retained preview mode and disabled checkout.
+
+The parallel performance audit identifies category video viewport/loading behavior and persistent manual Pause intent as the next concrete storefront targets, followed by reducing unrelated template data in the homepage client bundle. It does not claim measured Core Web Vitals or justify blanket image preload changes.

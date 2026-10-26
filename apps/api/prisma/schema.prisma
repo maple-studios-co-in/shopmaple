@@ -91,8 +91,12 @@ model Enquiry {
   status String @default("new")
   version Int @default(0)
   reviews EnquiryReviewAudit[]
+  assignedToId String?
+  assignedTo ShopAdmin? @relation("AssignedEnquiries", fields: [assignedToId], references: [id], onDelete: Restrict)
+  activity EnquiryActivity[]
   createdAt DateTime @default(now())
   @@index([status, createdAt])
+  @@index([assignedToId, createdAt, id])
 }
 
 model CheckoutAttempt {
@@ -178,6 +182,9 @@ model ShopAdmin {
   revisions ShopContentRevision[]
   mediaAssets ShopMediaAsset[]
   enquiryReviews EnquiryReviewAudit[]
+  assignedEnquiries Enquiry[] @relation("AssignedEnquiries")
+  enquiryActivity EnquiryActivity[] @relation("EnquiryActivityActor")
+  enquiryAssignments EnquiryActivity[] @relation("EnquiryActivityAssignee")
 }
 model ShopAdminSession {
   id String @id @default(cuid())
@@ -233,6 +240,21 @@ model EnquiryReviewAudit {
   actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
   version Int
   action String
+  createdAt DateTime @default(now())
+  @@unique([enquiryId, version])
+}
+
+model EnquiryActivity {
+  id String @id @default(cuid())
+  enquiryId String
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  actorId String
+  actor ShopAdmin @relation("EnquiryActivityActor", fields: [actorId], references: [id], onDelete: Restrict)
+  assigneeId String?
+  assignee ShopAdmin? @relation("EnquiryActivityAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  version Int
+  action String
+  body String?
   createdAt DateTime @default(now())
   @@unique([enquiryId, version])
 }
