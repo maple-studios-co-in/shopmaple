@@ -1,3 +1,4 @@
+import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -134,7 +135,7 @@ test("collection identifies its category and each applied filter can be removed 
         sort: "price-desc",
         page: "2",
       })}
-      products={[product]}
+      products={[toProductCard(product)]}
       total={1}
       collectionTotal={20}
       limit={24}
@@ -164,7 +165,7 @@ test("collection identifies its category and each applied filter can be removed 
 });
 test("product card exposes variant choice and persists its saved state", async () => {
   localStorage.clear();
-  await mount(<ProductCard product={product} />, async () => {
+  await mount(<ProductCard product={toProductCard(product)} />, async () => {
     assert.ok(
       document.querySelector(
         'a[aria-label="View 2 options for Aero Dining Chair"]',

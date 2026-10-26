@@ -1,3 +1,4 @@
+import { toProductCard } from "@/lib/product-card-model";
 import { notFound } from "next/navigation";
 import { getProduct, getProducts } from "@/lib/catalog";
 import { ProductDetail } from "@/components/product-detail";
@@ -40,7 +41,7 @@ export default async function ProductPage({
               .filter((p) => p.id !== product.id)
               .slice(0, 4)
               .map((p) => (
-                <ProductCard key={p.id} product={p} />
+                <ProductCard key={p.id} product={toProductCard(p)} />
               ))}
           </div>
         </section>

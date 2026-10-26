@@ -1,3 +1,4 @@
+import { toProductCard } from "@/lib/product-card-model";
 import Image, { getImageProps } from "next/image";
 import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
@@ -130,7 +131,7 @@ export async function CategoryProducts({
   const cards = handles.map((handle) => {
     const product = products.get(handle);
     return product ? (
-      <ProductCard key={handle} product={product} />
+      <ProductCard key={handle} product={toProductCard(product)} />
     ) : sourceProducts[handle] ? (
       <SourceProductCard key={handle} product={sourceProducts[handle]!} />
     ) : null;

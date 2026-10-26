@@ -1,3 +1,4 @@
+import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -32,7 +33,7 @@ async function mount(ui: React.ReactNode, check: () => void | Promise<void>, car
   }
 }
 test("model-only cards remain browsable with an honest price and image placeholder", async () => {
-  await mount(<ProductCard product={model} />, () => {
+  await mount(<ProductCard product={toProductCard(model)} />, () => {
     assert.match(document.querySelector(".product-card-price")!.textContent!, /Price on request/);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
     assert.ok(document.querySelector('a[href="/products/new-model"]'));
@@ -40,13 +41,13 @@ test("model-only cards remain browsable with an honest price and image placehold
   });
 });
 test("unknown option prices never become zero or a discount", async () => {
-  await mount(<ProductCard product={{ ...model, variants: [unknown] }} />, () => {
+  await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown] })} />, () => {
     assert.equal(document.querySelector(".product-card-price")!.textContent?.trim(), "Price on request");
     assert.equal(document.querySelector(".card-sale"), null);
   });
 });
 test("mixed known and unknown options show the known starting price and disclose other prices on request", async () => {
-  await mount(<ProductCard product={{ ...model, variants: [unknown, known] }} />, () => {
+  await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown, known] })} />, () => {
     assert.match(document.querySelector(".product-card-price")!.textContent!, /From Rs. 250.00/);
     assert.match(document.querySelector(".product-card")!.textContent!, /Other options on request/);
   });
@@ -78,7 +79,7 @@ test("selecting an unpriced option replaces cart purchase with enquiry without a
   });
 });
 test("failed product images retain a neutral accessible fallback", async () => {
-  await mount(<ProductCard product={{ ...model, images: ["https://example.com/unavailable.jpg"], variants: [known] }} />, async () => {
+  await mount(<ProductCard product={toProductCard({ ...model, images: ["https://example.com/unavailable.jpg"], variants: [known] })} />, async () => {
     await act(async () => document.querySelector(".product-card-image img")!.dispatchEvent(new dom.window.Event("error")));
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
     assert.equal(document.querySelector(".product-card-image img"), null);
@@ -110,7 +111,7 @@ test("unknown prices sort last in either direction and cannot satisfy a price bo
 });
 
 test("unknown prices do not advertise a zero-price collection maximum", async () => {
-  await mount(<CollectionListing handle="all" title="All Furniture" query={collectionQuery({})} products={[model]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
+  await mount(<CollectionListing handle="all" title="All Furniture" query={collectionQuery({})} products={[toProductCard(model)]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
     assert.match(document.querySelector(".collection-price-caption")!.textContent!, /Prices available on request/);
     assert.equal(document.querySelector<HTMLInputElement>('input[name="max"]')!.placeholder, "Any price");
     assert.match(document.querySelector(".collection-filter-form")!.textContent!, /Enquiry only/);
@@ -143,7 +144,7 @@ test("Shopify-origin details keep review and support navigation internal", async
 });
 
 test("chair results do not send shoppers back to the same page as a complete collection", async () => {
-  await mount(<CollectionListing handle="chairs" title="Chairs" query={collectionQuery({})} products={[model]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
+  await mount(<CollectionListing handle="chairs" title="Chairs" query={collectionQuery({})} products={[toProductCard(model)]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
     const destinations = [...document.querySelectorAll<HTMLAnchorElement>('a')].map(a => a.getAttribute('href'));
     assert.ok(destinations.includes('/products/new-model'), 'The actual product remains discoverable');
     const discovery = [...document.querySelectorAll<HTMLAnchorElement>('.collection-preview-note a')].map(a => a.getAttribute('href'));

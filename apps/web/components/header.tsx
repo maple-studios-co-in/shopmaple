@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Search, UserRound, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
+import { SearchDialog } from "./search-dialog";
 import { Favourites } from "./favourites";
 import { shopFile } from "@/lib/format";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
@@ -86,29 +87,7 @@ export function Header() {
         </div>
         <DesktopNavigation />
       </header>
-      <Modal
-        open={search}
-        onClose={() => setSearch(false)}
-        title="Find your next piece"
-      >
-        <form action="/collections/all" className="search-form">
-          <label className="sr-only" htmlFor="site-search">
-            Search furniture
-          </label>
-          <input
-            id="site-search"
-            name="q"
-            type="search"
-            placeholder="Search sofas, chairs, beds…"
-            maxLength={80}
-            autoFocus
-            required
-          />
-          <button className="button" type="submit">
-            Search
-          </button>
-        </form>
-      </Modal>
+      {search && <SearchDialog onClose={() => setSearch(false)} />}
       <Modal
         open={account}
         onClose={() => setAccount(false)}

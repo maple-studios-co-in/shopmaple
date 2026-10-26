@@ -1,3 +1,4 @@
+import { toProductCard } from "@/lib/product-card-model";
 import { notFound } from "next/navigation";
 import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
 import { CollectionListing } from "@/components/collection-listing";
@@ -80,7 +81,7 @@ export default async function Collection({
         handle={handle}
         title={collectionTitles[handle]!}
         query={{ ...query, page }}
-        products={filtered.slice((page - 1) * limit, page * limit)}
+        products={filtered.slice((page - 1) * limit, page * limit).map(toProductCard)}
         total={filtered.length}
         collectionTotal={members.length}
         limit={limit}

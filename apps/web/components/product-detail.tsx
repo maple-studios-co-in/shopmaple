@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { ProductImage } from "./product-image";
 import { ProductGallery } from "./product-gallery";
+import { ProductVisit } from "./product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
@@ -117,6 +118,7 @@ export function ProductDetail({
   );
   return (
     <>
+      <ProductVisit handle={product.handle} />
       <div className="pdp-shell">
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
