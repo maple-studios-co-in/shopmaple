@@ -99,7 +99,7 @@ export default async function Home() {
       item.key === "home-workshop-poster" || item.key.startsWith("home-hero-")
     )} />,
     announcement: <CampaignBanner campaign="landing-announcement" />,
-    difference: <HomeDifference content={details.difference} />,
+    difference: <HomeDifference content={details.difference} media={content.templateMedia} />,
     categories: (
       <section className="home-category-section home-container">
         <h2>{copy.categoryHeading}</h2>
@@ -154,9 +154,9 @@ export default async function Home() {
       />
     ),
     newsletter: <HomeNewsletter content={details.newsletter} media={content.templateMedia} />,
-    values: <HomeValues content={details.values} />,
+    values: <HomeValues content={details.values} media={content.templateMedia} />,
     cities: (
-      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} />
+      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} media={content.templateMedia} layout={content.homeCitiesLayout} />
     ),
     project: <HomeProject content={details.project} />,
   };

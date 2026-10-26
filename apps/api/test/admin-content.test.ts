@@ -469,3 +469,63 @@ test("editorial drafts require publisher authority and retain isolated, conflict
     assert.equal(await db.shopContentRevision.count(), historyCount);
     assert.deepEqual((await publicRequest()).body, published);
 });
+
+
+test("homepage city and icon drafts enforce authority, CSRF, conflicts and draft-only restore including legacy revisions", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const legacy = await save(publisher.agent, publisher.csrf, initial.version, content);
+    assert.equal(legacy.status, 200);
+    const legacyRevision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal((await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: legacy.body.version })).status, 200);
+    const publicRequest = () => request(createApp(db, config)).get("/api/content/storefront?draft=true");
+    const previousPublic = (await publicRequest()).body;
+    assert.equal(previousPublic.content.homeCitiesLayout, undefined);
+    const homeCitiesLayout = ["agra", "artwork-8", "artwork-7", "artwork-6", "artwork-5", "artwork-4", "artwork-3", "artwork-2", "artwork-1", "gujarat", "chennai", "bengaluru", "jaipur", "mumbai", "varanasi", "hyderabad", "kolkata", "delhi"].map(key => ({ key, enabled: key !== "artwork-8" }));
+    const templateMedia = [{ key: "home-value-strength", image: "/media/strength.webp", alt: "" }, { key: "home-city-agra", image: "/media/agra.webp", alt: "Agra landmark" }];
+    const next = { ...content, homeCitiesLayout, templateMedia };
+    const saved = await save(editor.agent, editor.csrf, previousPublic.version, next);
+    assert.equal(saved.status, 200, "Homepage icon and city controls must save as an authenticated private draft");
+    assert.equal((await save(editor.agent, "invalid-csrf", saved.body.version, next)).status, 403);
+    assert.deepEqual(saved.body.draft.homeCitiesLayout, homeCitiesLayout);
+    assert.deepEqual(saved.body.draft.templateMedia, templateMedia);
+    assert.deepEqual((await publicRequest()).body, previousPublic);
+    const revision = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    assert.equal(revision.actorEmail, "editor@example.invalid");
+    assert.equal((await editor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", editor.csrf).send({ expectedVersion: saved.body.version })).status, 403);
+    assert.equal((await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).send({ expectedVersion: saved.body.version })).status, 403);
+    assert.equal((await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version })).status, 200);
+    const published = (await publicRequest()).body;
+    assert.deepEqual(published.content.homeCitiesLayout, homeCitiesLayout);
+    assert.deepEqual(published.content.templateMedia, templateMedia);
+    assert.equal((await save(editor.agent, editor.csrf, saved.body.version, next)).status, 409);
+    const edited = await save(editor.agent, editor.csrf, published.version, { ...next, homeCitiesLayout: homeCitiesLayout.map(item => ({ ...item, enabled: false })) });
+    assert.equal(edited.status, 200, "Editors may hide all city entries");
+    assert.deepEqual((await publicRequest()).body, published);
+    const restore = (version: number, revisionId: string) => publisher.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: version, revisionId });
+    const restored = await restore(edited.body.version, revision.id);
+    assert.equal(restored.status, 200);
+    assert.deepEqual(restored.body.draft.homeCitiesLayout, homeCitiesLayout);
+    assert.deepEqual(restored.body.draft.templateMedia, templateMedia);
+    assert.equal(restored.body.publishedVersion, published.version);
+    assert.deepEqual((await publicRequest()).body, published);
+    const count = await db.shopContentRevision.count();
+    for (const invalid of [
+        { ...next, homeCitiesLayout: homeCitiesLayout.slice(1) },
+        { ...next, homeCitiesLayout: [...homeCitiesLayout.slice(1), homeCitiesLayout[1]] },
+        { ...next, homeCitiesLayout: [{ key: "unknown", enabled: true }, ...homeCitiesLayout.slice(1)] },
+        { ...next, homeCitiesLayout: [{ ...homeCitiesLayout[0], href: "javascript:alert(1)" }, ...homeCitiesLayout.slice(1)] },
+        { ...next, templateMedia: [{ ...templateMedia[0], image: "https://attacker.invalid/art.webp" }] },
+        { ...next, templateMedia: [{ ...templateMedia[0], alt: "bad\u0000text" }] },
+        { ...next, templateMedia: [{ ...templateMedia[1], alt: "" }] },
+        { ...next, templateMedia: [{ ...templateMedia[0], mobileImage: "/media/unapproved.webp" }] },
+    ]) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, invalid)).status, 400);
+    assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
+    assert.equal(await db.shopContentRevision.count(), count);
+    const legacyRestored = await restore(restored.body.version, legacyRevision.id);
+    assert.equal(legacyRestored.status, 200);
+    assert.equal(legacyRestored.body.draft.homeCitiesLayout, undefined);
+    assert.equal(legacyRestored.body.draft.templateMedia, undefined);
+    assert.deepEqual((await publicRequest()).body, published);
+});

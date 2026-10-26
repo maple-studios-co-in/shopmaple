@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
+import { templateMediaDecorativeKeys, templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./forms";
 import { MediaPicker } from "./media-picker";
 
-const groups = ["Homepage", "Nimbus", "Our Story"] as const;
+const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"] as const;
 export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
   value?: TemplateMedia;
   onChange: (value: TemplateMedia) => void;
@@ -21,7 +21,7 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
   const responsive = templateMediaResponsiveKeys.some(key => key === selected);
   const overridden = value?.some(item => item.key === selected) ?? false;
   const poster = selected.endsWith("-poster");
-  const decorative = selected.startsWith("home-hero-");
+  const decorative = templateMediaDecorativeKeys.some(key => key === selected);
   function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt">>) {
     const next = { ...artwork, ...patch };
     onChange(overridden
@@ -67,7 +67,7 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
         </div>}
       </div>
       <Field label="Image description" value={artwork.alt} maxLength={200} onChange={alt => update({ alt })} />
-      <p>{decorative ? "This tile repeats its nearby label. Leave the description blank if the image is decorative." : "Describe what the image communicates for visitors using a screen reader. A description is required."}</p>
+      <p>{decorative ? "Leave the description blank if this artwork is decorative. Otherwise describe what it communicates." : "Describe what the image communicates for visitors using a screen reader. A description is required."}</p>
       <button type="button" disabled={!overridden} onClick={() => {
         onChange((value ?? []).filter(item => item.key !== selected));
         placement.current?.focus();

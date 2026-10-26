@@ -8,7 +8,7 @@ const nimbusSection = (key: string) => nimbus.sections.find(item => item.key ===
 const storySection = (key: string) => story.sections.find(item => item.key === key)!;
 const rooms = nimbusSection("slideshow_PnGjbg");
 const hero = nimbusSection("hero_section_pfEKq3");
-type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Nimbus" | "Our Story" };
+type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" };
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
@@ -33,6 +33,32 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "nimbus-craft-poster", label: "Craftsmanship video poster", group: "Nimbus", image: nimbusSection("blocks_6WyRMx").videos[0]!.poster, alt: "Nimbus furniture craftsmanship" },
   { key: "story-hero", label: "Story hero image", group: "Our Story", image: storySection("media_with_content_be4kK3").images[0]!, alt: "Maple furniture craftsmanship" },
   { key: "story-film-poster", label: "Workshop film poster", group: "Our Story", image: storySection("media_with_content_deBkJg").videos[0]!.poster, alt: "The Maple workshop" },
+  { key: "home-difference-1", label: "Difference promise 1", group: "Homepage icons", image: shopFile("Custom_F.svg"), alt: "" },
+  { key: "home-difference-2", label: "Difference promise 2", group: "Homepage icons", image: shopFile("Del_mf.svg"), alt: "" },
+  { key: "home-difference-3", label: "Difference promise 3", group: "Homepage icons", image: shopFile("Icon_homepage.svg"), alt: "" },
+  { key: "home-difference-4", label: "Difference promise 4", group: "Homepage icons", image: shopFile("Maple_Banner_5.svg"), alt: "" },
+  { key: "home-value-quiet-luxury", label: "Quiet Luxury icon", group: "Homepage icons", image: shopFile("Icon_maple_3.svg"), alt: "" },
+  { key: "home-value-real-living", label: "Built for Real Living icon", group: "Homepage icons", image: shopFile("Cover_Image_Maple_2.svg"), alt: "" },
+  { key: "home-value-ages-beautifully", label: "Ages Beautifully icon", group: "Homepage icons", image: shopFile("Icon_maple_1.svg"), alt: "" },
+  { key: "home-value-strength", label: "Strength You Don’t See icon", group: "Homepage icons", image: shopFile("Cover_Image_Maple_5.svg"), alt: "" },
+  { key: "home-city-delhi", label: "Delhi city artwork", group: "Cities", image: shopFile("Delhi.svg"), alt: "Delhi" },
+  { key: "home-city-kolkata", label: "Kolkata city artwork", group: "Cities", image: shopFile("Kolkata.svg"), alt: "Kolkata" },
+  { key: "home-city-hyderabad", label: "Hyderabad city artwork", group: "Cities", image: shopFile("Hyderabad.svg"), alt: "Hyderabad" },
+  { key: "home-city-varanasi", label: "Varanasi city artwork", group: "Cities", image: shopFile("VARANASI1.svg"), alt: "Varanasi" },
+  { key: "home-city-mumbai", label: "Mumbai city artwork", group: "Cities", image: shopFile("Mumbai.svg"), alt: "Mumbai" },
+  { key: "home-city-jaipur", label: "Jaipur city artwork", group: "Cities", image: shopFile("jaipur.svg"), alt: "Jaipur" },
+  { key: "home-city-bengaluru", label: "Bengaluru city artwork", group: "Cities", image: shopFile("bengaluru_5d95b443-519f-4637-9d23-0cbbf2838908.svg"), alt: "Bengaluru" },
+  { key: "home-city-chennai", label: "Chennai city artwork", group: "Cities", image: shopFile("chennai.svg"), alt: "Chennai" },
+  { key: "home-city-gujarat", label: "Gujarat city artwork", group: "Cities", image: shopFile("gujrat.svg"), alt: "Gujarat" },
+  { key: "home-city-artwork-1", label: "City artwork 1", group: "Cities", image: shopFile("engaged_3_2d4f6db1-cb60-497e-b2a1-061b5886d0ec.svg"), alt: "" },
+  { key: "home-city-artwork-2", label: "City artwork 2", group: "Cities", image: shopFile("engaged_5.svg"), alt: "" },
+  { key: "home-city-artwork-3", label: "City artwork 3", group: "Cities", image: shopFile("engaged_4.svg"), alt: "" },
+  { key: "home-city-artwork-4", label: "City artwork 4", group: "Cities", image: shopFile("engaged_11.svg"), alt: "" },
+  { key: "home-city-artwork-5", label: "City artwork 5", group: "Cities", image: shopFile("engaged_9.svg"), alt: "" },
+  { key: "home-city-artwork-6", label: "City artwork 6", group: "Cities", image: shopFile("engaged_10.svg"), alt: "" },
+  { key: "home-city-artwork-7", label: "City artwork 7", group: "Cities", image: shopFile("engaged_12.svg"), alt: "" },
+  { key: "home-city-artwork-8", label: "City artwork 8", group: "Cities", image: shopFile("engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg"), alt: "" },
+  { key: "home-city-agra", label: "Agra city artwork", group: "Cities", image: shopFile("Agra.svg"), alt: "Agra" },
 ];
 
 export function resolveTemplateMedia(key: TemplateMediaKey, value?: TemplateMedia, fallbackAlt?: string): TemplateMediaItem {

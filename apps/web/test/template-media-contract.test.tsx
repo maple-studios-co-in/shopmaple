@@ -24,7 +24,7 @@ test("template artwork rejects duplicate unknown or excessive identities and ext
   assert.equal(parse([item, item]).success, false);
   for (const key of ["unknown", "Home-newsletter", "../home-newsletter", "home_newsletter"])
     assert.equal(parse([{ ...item, key }]).success, false, key);
-  assert.equal(parse(Array.from({ length: 22 }, () => item)).success, false);
+  assert.equal(parse(Array.from({ length: 48 }, () => item)).success, false);
   assert.equal(parse([{ ...item, href: "/pages/contact" }]).success, false);
 });
 test("template artwork enforces approved media and nonblank control-free bounded alternatives", () => {
@@ -57,6 +57,6 @@ test("template fallback resolution preserves original assets and caller labels w
   assert.deepEqual(selected, { key: "home-newsletter", image: "/media/override.webp", alt: "Updated room" });
   selected.alt = "Mutated";
   assert.equal(override[0]!.alt, "Updated room");
-  assert.equal(templateMediaSlots.length, 21);
+  assert.equal(templateMediaSlots.length, 47);
   assert.equal(parse(templateMediaSlots.map(({ label: _label, group: _group, ...asset }) => asset)).success, true);
 });

@@ -5,9 +5,10 @@ import Link from "next/link";
 import { ArrowRight, Instagram } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
-import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
+import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
+import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
 
 export function HomeBanner({
   desktop,
@@ -56,13 +57,9 @@ export function HomeBanner({
 
 export function HomeDifference({
   content = defaultHomeDetails.difference,
-}: { content?: HomeDetails["difference"] } = {}) {
-  const icons = [
-    "Custom_F.svg",
-    "Del_mf.svg",
-    "Icon_homepage.svg",
-    "Maple_Banner_5.svg",
-  ];
+  media,
+}: { content?: HomeDetails["difference"]; media?: TemplateMedia } = {}) {
+  const icons: TemplateMediaKey[] = ["home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4"];
   return (
     <section className="home-difference home-container">
       <p className="home-eyebrow">{content.eyebrow}</p>
@@ -71,12 +68,15 @@ export function HomeDifference({
         {content.cta} <ArrowRight size={18} />
       </Link>
       <ul>
-        {content.promises.map((text, index) => (
-          <li key={index}>
-            <Image src={shopFile(icons[index]!)} width={60} height={60} alt="" />
-            <span>{text}</span>
-          </li>
-        ))}
+        {content.promises.map((text, index) => {
+          const artwork = resolveTemplateMedia(icons[index]!, media);
+          return (
+            <li key={icons[index]}>
+              <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />
+              <span>{text}</span>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
@@ -196,25 +196,23 @@ export function HomeNewsletter({
 
 export function HomeValues({
   content = defaultHomeDetails.values,
-}: { content?: HomeDetails["values"] } = {}) {
-  const images = {
-    "quiet-luxury": "Icon_maple_3.svg",
-    "real-living": "Cover_Image_Maple_2.svg",
-    "ages-beautifully": "Icon_maple_1.svg",
-    strength: "Cover_Image_Maple_5.svg",
-  };
+  media,
+}: { content?: HomeDetails["values"]; media?: TemplateMedia } = {}) {
   return (
     <section
       className="home-values home-container"
       aria-label="Made for real living"
     >
-      {content.map(({ key, title, body }) => (
-        <div key={key}>
-          <Image src={shopFile(images[key])} alt="" width={80} height={80} />
-          <h3>{title}</h3>
-          <p>{body}</p>
-        </div>
-      ))}
+      {content.map(({ key, title, body }) => {
+        const artwork = resolveTemplateMedia(`home-value-${key}`, media);
+        return (
+          <div key={key}>
+            <Image src={artwork.image} alt={artwork.alt} width={80} height={80} />
+            <h3>{title}</h3>
+            <p>{body}</p>
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -222,27 +220,16 @@ export function HomeValues({
 export function HomeCities({
   content = defaultHomeDetails.cities,
   autoplay = true,
-}: { content?: HomeDetails["cities"]; autoplay?: boolean } = {}) {
-  const cities: [string, string][] = [
-    ["Delhi.svg", "Delhi"],
-    ["Kolkata.svg", "Kolkata"],
-    ["Hyderabad.svg", "Hyderabad"],
-    ["VARANASI1.svg", "Varanasi"],
-    ["Mumbai.svg", "Mumbai"],
-    ["jaipur.svg", "Jaipur"],
-    ["bengaluru_5d95b443-519f-4637-9d23-0cbbf2838908.svg", "Bengaluru"],
-    ["chennai.svg", "Chennai"],
-    ["gujrat.svg", "Gujarat"],
-    ["engaged_3_2d4f6db1-cb60-497e-b2a1-061b5886d0ec.svg", ""],
-    ["engaged_5.svg", ""],
-    ["engaged_4.svg", ""],
-    ["engaged_11.svg", ""],
-    ["engaged_9.svg", ""],
-    ["engaged_10.svg", ""],
-    ["engaged_12.svg", ""],
-    ["engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", ""],
-    ["Agra.svg", "Agra"],
-  ];
+  media,
+  layout = defaultHomeCitiesLayout,
+}: {
+  content?: HomeDetails["cities"];
+  autoplay?: boolean;
+  media?: TemplateMedia;
+  layout?: HomeCitiesLayout;
+} = {}) {
+  const cities = layout.filter(city => city.enabled);
+  if (!cities.length) return null;
   return (
     <section className="home-cities home-container">
       <header>
@@ -250,15 +237,18 @@ export function HomeCities({
         <h2>{content.heading}</h2>
       </header>
       <MovingCities autoplay={autoplay}>
-        {cities.map(([image, city]) => (
-          <Image
-            key={image}
-            src={shopFile(image)}
-            alt={city}
-            width={150}
-            height={120}
-          />
-        ))}
+        {cities.map(({ key }) => {
+          const artwork = resolveTemplateMedia(`home-city-${key}`, media);
+          return (
+            <Image
+              key={key}
+              src={artwork.image}
+              alt={artwork.alt}
+              width={150}
+              height={120}
+            />
+          );
+        })}
       </MovingCities>
     </section>
   );

@@ -11,6 +11,7 @@ import { NimbusFields } from "./nimbus-fields";
 import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
 import { HomeDetailsFields } from "./home-details-fields";
+import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
@@ -463,6 +464,7 @@ export function ContentEditor({
                     ))}
                   </div>
                   <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
+                  <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={homeCitiesLayout => edit({ ...content, homeCitiesLayout })} />
                   <h3>Motion</h3>
                   <label className="admin-check">
                     <input

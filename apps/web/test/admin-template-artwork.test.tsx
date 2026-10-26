@@ -69,7 +69,7 @@ test("legacy Artwork browsing shows grouped original placements without creating
   try {
     assert.equal(button("Save draft").disabled, true, "Existing clean drafts remain clean");
     await click("Artwork");
-    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Nimbus", "Our Story"]);
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"]);
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 8);
     await select("Artwork placement", "home-nimbus");
     assert.equal(input("Desktop image URL").value, originalDesktop);
@@ -180,5 +180,51 @@ test("video posters explain the unchanged video and publishing requires an expli
     await click("Publish draft");
     assert.equal(app.calls.includes("POST /api/admin/content/publish"), true);
     assert.match(container.textContent ?? "", /Draft published/);
+  } finally { await app.close(); }
+});
+
+test("homepage icons and city artwork support independent media, descriptions and restoration", async () => {
+  const app = await setup();
+  try {
+    await click("Artwork");
+    await select("Artwork group", "Homepage icons");
+    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 8);
+    await select("Artwork placement", "home-difference-1");
+    assert.match(container.textContent ?? "", /description blank.*decorative/i);
+    await fill("Desktop image URL", "/media/quality.webp");
+    await fill("Image description", "");
+    await select("Artwork placement", "home-value-strength");
+    assert.match(container.textContent ?? "", /description blank.*decorative/i);
+    const desktop = container.querySelector('[aria-label="Desktop artwork"]')!;
+    await click("Choose image", desktop);
+    await click("Use image: Living room", desktop);
+    assert.equal(document.activeElement, button("Choose image", desktop));
+    await fill("Image description", "A strong wooden joint");
+    await select("Artwork group", "Cities");
+    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 18);
+    await select("Artwork placement", "home-city-artwork-1");
+    assert.match(container.textContent ?? "", /description blank.*decorative/i);
+    await fill("Desktop image URL", "/media/skyline.webp");
+    await fill("Image description", "");
+    await select("Artwork placement", "home-city-delhi");
+    assert.match(container.textContent ?? "", /description is required/i);
+    const originalDelhi = input("Desktop image URL").value;
+    await fill("Desktop image URL", "/media/delhi.webp");
+    await fill("Image description", "");
+    await click("Save draft");
+    assert.equal(app.saved(), undefined, "Named city artwork still requires a screen-reader description");
+    await fill("Image description", "Delhi skyline");
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateMedia, [sibling,
+      {key:"home-difference-1",image:"/media/quality.webp",alt:""},
+      {key:"home-value-strength",image,alt:"A strong wooden joint"},
+      {key:"home-city-artwork-1",image:"/media/skyline.webp",alt:""},
+      {key:"home-city-delhi",image:"/media/delhi.webp",alt:"Delhi skyline"},
+    ]);
+    await click("Restore original");
+    assert.equal(input("Desktop image URL").value, originalDelhi);
+    assert.equal(document.activeElement?.getAttribute("aria-label"), "Artwork placement");
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateMedia.map((item: any) => item.key), ["story-hero", "home-difference-1", "home-value-strength", "home-city-artwork-1"]);
   } finally { await app.close(); }
 });

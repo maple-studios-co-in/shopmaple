@@ -8,6 +8,7 @@ import request from "supertest";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app.js";
+import { storefrontContentSchema, templateMediaSchema } from "@shopmaple/contracts";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
 const db = new PrismaClient({ datasources: { db: { url } } });
@@ -102,4 +103,79 @@ test("missing template files and malformed managed paths cannot publish or expos
   const malformed = await publish(malformedVersion);
   assert.equal(malformed.status, 400);
   assert.equal(malformed.body.code, "MEDIA_REFERENCE_INVALID");
+});
+
+const cityKeys = ["delhi", "kolkata", "hyderabad", "varanasi", "mumbai", "jaipur", "bengaluru", "chennai", "gujarat", "artwork-1", "artwork-2", "artwork-3", "artwork-4", "artwork-5", "artwork-6", "artwork-7", "artwork-8", "agra"];
+const newDecorativeKeys = ["home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4", "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength", ...Array.from({ length: 8 }, (_, i) => `home-city-artwork-${i + 1}`)];
+
+test("legacy content retains absent artwork and city overrides and existing accessibility rules", () => {
+  const parsed = storefrontContentSchema.parse(fixture());
+  assert.equal(Object.hasOwn(parsed, "templateMedia"), false);
+  assert.equal(Object.hasOwn(parsed, "homeCitiesLayout"), false);
+  assert.equal(templateMediaSchema.safeParse([{ key: "home-hero-sofas", image: "/media/sofa.webp", alt: "" }]).success, true);
+  assert.equal(templateMediaSchema.safeParse([{ key: "home-newsletter", image: "/media/room.webp", alt: " " }]).success, false);
+});
+
+test("homepage decorative icons accept empty descriptions while every named city needs a description", () => {
+  for (const key of newDecorativeKeys)
+    assert.equal(templateMediaSchema.safeParse([{ key, image: "/media/icon.webp", alt: "" }]).success, true, `${key} permits decorative artwork`);
+  for (const city of cityKeys.filter(key => !key.startsWith("artwork-"))) {
+    const item = { key: `home-city-${city}`, image: "/media/city.webp", alt: "City landmark" };
+    assert.equal(templateMediaSchema.safeParse([item]).success, true, `${city} accepts named city artwork`);
+    assert.equal(templateMediaSchema.safeParse([{ ...item, alt: " " }]).success, false, `${city} requires meaningful alt text`);
+  }
+});
+
+test("all 47 artwork placements coexist without weakening URL, responsive, identity or field validation", () => {
+  const legacy = ["home-workshop-poster", "home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds", "home-nimbus", "home-newsletter", "home-testimonial-poster", "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining", "nimbus-room-collection", "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project", "nimbus-hero-poster", "nimbus-craft-poster", "story-hero", "story-film-poster"];
+  const responsive = ["home-nimbus", "nimbus-room-collection", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-hero-poster"];
+  const items = [...legacy, ...newDecorativeKeys, ...cityKeys.filter(key => !key.startsWith("artwork-")).map(key => `home-city-${key}`)].map(key => ({ key, image: "/media/art.webp", alt: "Artwork", ...(responsive.includes(key) ? { mobileImage: "/media/mobile.webp" } : {}) }));
+  const result = templateMediaSchema.safeParse(items);
+  assert.equal(result.success, true, "All 47 independently identified placements must validate together");
+  if (result.success) assert.equal(result.data.length, 47);
+  const icon = { key: "home-difference-1", image: "/media/icon.webp", alt: "" };
+  for (const invalid of [
+    [...items, icon], [icon, icon], [{ ...icon, key: "home-difference-5" }],
+    [{ ...icon, image: "javascript:alert(1)" }], [{ ...icon, image: "https://attacker.invalid/image.webp" }],
+    [{ ...icon, image: "/media/../private.webp" }], [{ ...icon, image: "/media/icon%2ewebp" }],
+    [{ ...icon, mobileImage: "/media/mobile.webp" }], [{ ...icon, alt: "bad\u0000text" }], [{ ...icon, html: "<script>bad</script>" }],
+    [{ key: "home-nimbus", image: "/media/room.webp", alt: "Nimbus" }],
+  ]) assert.equal(templateMediaSchema.safeParse(invalid).success, false);
+});
+
+test("city layout accepts any order and all hidden but rejects omitted, duplicate, unknown and unsafe entries", () => {
+  const layout = [...cityKeys].reverse().map(key => ({ key, enabled: false }));
+  const result = storefrontContentSchema.safeParse({ ...fixture(), homeCitiesLayout: layout });
+  assert.equal(result.success, true, "A complete reordered, hidden rail must be a valid draft");
+  if (result.success) assert.deepEqual(result.data.homeCitiesLayout, layout);
+  for (const invalid of [
+    [], layout.slice(1), [...layout, layout[0]], [...layout.slice(1), layout[1]],
+    [{ ...layout[0], key: "unknown" }, ...layout.slice(1)], [{ ...layout[0], enabled: "false" }, ...layout.slice(1)],
+    [{ ...layout[0], href: "javascript:alert(1)" }, ...layout.slice(1)],
+    [{ ...layout[0], image: "/media/private.webp" }, ...layout.slice(1)],
+    [{ ...layout[0], checkoutEnabled: true }, ...layout.slice(1)],
+  ]) assert.equal(storefrontContentSchema.safeParse({ ...fixture(), homeCitiesLayout: invalid }).success, false);
+});
+
+test("new homepage artwork stays private until publication and missing city uploads fail atomically", async () => {
+  const icon = await upload("#613245"), city = await upload("#725346");
+  const templateMedia = [{ key: "home-difference-1", image: icon.url, alt: "" }, { key: "home-city-delhi", image: city.url, alt: "Delhi landmark" }, { key: "home-city-artwork-8", image: icon.url, alt: "" }];
+  const version = await save(templateMedia);
+  assert.equal((await http.get(icon.url)).status, 404);
+  assert.equal((await http.get(city.url)).status, 404);
+  assert.equal((await publish(version)).status, 200);
+  assert.deepEqual((await http.get("/api/content/storefront")).body.content.templateMedia, templateMedia);
+  assert.equal((await http.get(icon.url)).status, 200);
+  assert.equal((await http.get(city.url)).status, 200);
+  const privateIcon = await upload("#835447");
+  const missingVersion = await save([{ key: "home-value-strength", image: privateIcon.url, alt: "" }, { key: "home-city-agra", image: `/media/uploads/${"e".repeat(64)}.webp`, alt: "Agra landmark" }]);
+  const previous = (await http.get("/api/content/storefront")).body;
+  const revisionCount = await db.shopContentRevision.count();
+  const rejected = await publish(missingVersion);
+  assert.equal(rejected.status, 400);
+  assert.equal(rejected.body.code, "MEDIA_REFERENCE_MISSING");
+  assert.equal((await http.get(privateIcon.url)).status, 404);
+  assert.equal((await db.shopContent.findUniqueOrThrow({ where: { id: "storefront" } })).version, missingVersion);
+  assert.equal(await db.shopContentRevision.count(), revisionCount);
+  assert.deepEqual((await http.get("/api/content/storefront")).body, previous);
 });
