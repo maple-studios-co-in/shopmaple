@@ -52,10 +52,10 @@ test("saved product, unavailable piece and empty wishlist preserve their origina
     assert.equal(localStorage.getItem("maple-favourites"), "[]");
   });
 });
-test("failed requests preserve the original error copy", async () => {
+test("failed requests retain the error explanation and offer recovery", async () => {
   await mount(["alpha"], async (requests) => {
     await settle(requests, "alpha", new Response(null, { status: 503 }));
-    assert.equal(document.querySelector('[role="alert"]')?.textContent, "Saved furniture couldn’t be loaded. Please refresh to try again.");
+    assert.equal(document.querySelector('[role="alert"]')?.textContent, "Saved furniture couldn’t be loaded. Please try again. Retry failed items");
   });
 });
 test("removal retains settled cards without refetching and moves focused controls next, previous, then to Explore", async () => {

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { productSchema } from "@shopmaple/contracts";
-import { toProductCard, type ProductCardModel } from "@/lib/product-card-model";
+import type { ProductCardModel } from "@/lib/product-card-model";
+import { requestSavedProduct } from "@/lib/saved-product-request";
 import { useShop } from "./shop-provider";
 import { ProductCard } from "./product-card";
 import Link from "next/link";
@@ -18,6 +18,7 @@ export function Favourites({
 }) {
   const { favourites, toggleFavourite } = useShop();
   const [resolved, setResolved] = useState<Map<string, Resolution>>(new Map());
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const cache = useRef(new Map<string, Resolution>());
   const requests = useRef(new Map<string, AbortController>());
   const container = useRef<HTMLDivElement>(null);
@@ -47,22 +48,12 @@ export function Favourites({
         cache.current.set(handle, result);
         setResolved(new Map(cache.current));
       };
-      fetch("/api/products/" + encodeURIComponent(handle), {
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          if (response.status === 404) return null;
-          if (!response.ok) throw new Error("Saved furniture unavailable");
-          const product = productSchema.parse(await response.json());
-          if (product.handle !== handle)
-            throw new Error("Saved furniture unavailable");
-          return toProductCard(product);
-        })
+      requestSavedProduct(handle, controller.signal)
         .then((product) => settle({ product, failed: false }))
         .catch(() => settle({ product: null, failed: true }));
     }
     setResolved(new Map(cache.current));
-  }, [favourites]);
+  }, [favourites, retryAttempt]);
   useEffect(() => {
     return () => {
       for (const controller of requests.current.values()) controller.abort();
@@ -107,7 +98,20 @@ export function Favourites({
       {loading && <p role="status">Loading saved furniture…</p>}
       {error && (
         <p role="alert">
-          Saved furniture couldn’t be loaded. Please refresh to try again.
+          Saved furniture couldn’t be loaded. Please try again.{" "}
+          <button
+            className="text-button"
+            onClick={(event) => {
+              if (document.activeElement === event.currentTarget) container.current?.focus();
+              for (const handle of favourites) {
+                if (cache.current.get(handle)?.failed) cache.current.delete(handle);
+              }
+              setResolved(new Map(cache.current));
+              setRetryAttempt((attempt) => attempt + 1);
+            }}
+          >
+            Retry failed items
+          </button>
         </p>
       )}
       {favourites.length ? (

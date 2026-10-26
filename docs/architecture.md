@@ -46,6 +46,10 @@ Server collection membership, facets and filtering still use complete validated 
 
 Search opens a dedicated native dialog with original Shopify labels, product previews, recently viewed, reset/clear and local View all. Public catalogue reads debounce and have bounded header/body deadlines, cancellation, stale-response guards and explicit retry. Only current published, identity-checked records become internal product links. Query matching currently uses the catalogue API's substring search; Shopify fuzzy ranking is not reproduced.
 
+Saved furniture reads have a six-second deadline covering both headers and response bodies. A shopper can retry only failed items while loaded cards, missing-item notices and other pending requests remain. Removing a piece or closing/unmounting its surface cancels the owning request; late responses cannot repopulate it. Current published records must match the saved handle. Timeout does not clear the saved list or silently retry.
+
+Mobile navigation keeps six source merchandising identities, titles, artwork and order, but resolves current published product records for links and prices only while open. Missing records are omitted; invalid or failed reads offer explicit retry without snapshot-priced fallback. One bounded batch is reused during drilldown and discarded on close; reopening reads again. Editorial artwork/copy remains separate from catalogue price/publication authority. This still uses the full public product response before display projection.
+
 Canonical product visits retain at most eight validated handles in browser storage, never search queries, prices or customer data. Search resolves current product records for those handles. Storage corruption/denial does not prevent browsing; Clear removes only this history key. Favourites and search still fetch the existing complete public API response before projecting compact display state, so this does not claim API transfer reduction for those client requests.
 
 ```mermaid
