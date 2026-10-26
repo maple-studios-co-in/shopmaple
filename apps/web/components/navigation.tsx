@@ -46,7 +46,10 @@ export function DesktopNavigation() {
       className="desktop-nav maple-desktop-nav"
       aria-label="Main navigation"
       onPointerLeave={(event) => {
-        if (event.pointerType === "mouse") setActive(null);
+        if (event.pointerType === "mouse" &&
+            !event.currentTarget.querySelector(".maple-mega")?.contains(document.activeElement)) {
+          setActive(null);
+        }
       }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setActive(null);
@@ -183,7 +186,7 @@ export function DesktopNavigation() {
     </nav>
   );
 }
-function ProductRail({ living = false }: { living?: boolean }) {
+function ProductRail({ living = false, onNavigate }: { living?: boolean; onNavigate?: () => void }) {
   return (
     <div className="maple-menu-products" aria-label="Featured furniture">
       {products.slice(living ? 4 : 0, living ? 6 : 4).map((product) => (
@@ -191,6 +194,7 @@ function ProductRail({ living = false }: { living?: boolean }) {
           key={product.handle}
           href={`/products/${product.handle}`}
           className="maple-menu-product"
+          onClick={onNavigate}
         >
           <Image
             src={
@@ -315,7 +319,7 @@ export function MobileNavigation({
                 </div>
               ))}
             </nav>
-            {active === "Living Room" && <ProductRail living />}
+            {active === "Living Room" && <ProductRail living onNavigate={onClose} />}
           </>
         ) : (
           <>
@@ -368,7 +372,7 @@ export function MobileNavigation({
                 Account <ArrowUpRight size={16} />
               </a>
             </nav>
-            <ProductRail />
+            <ProductRail onNavigate={onClose} />
           </>
         )}
       </div>

@@ -13,11 +13,12 @@ export function CategoryIntroduction({
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const content = description.replace(/\s+/g, " ").trim();
+  const collapsible = content.length > 200;
   return (
     <section className="landing-intro">
       <h1>{title}</h1>
-      <p id={id}>{expanded ? content : `${content.slice(0, 197)}...`}</p>
-      {description.length > 200 && (
+      <p id={id}>{expanded || !collapsible ? content : `${content.slice(0, 197)}...`}</p>
+      {collapsible && (
         <button
           type="button"
           aria-controls={id}
