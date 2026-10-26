@@ -150,12 +150,12 @@
 }
 .home-offer-tiles a > div {
   position: relative;
-  aspect-ratio: 1.5;
+  aspect-ratio: 288 / 126;
   overflow: hidden;
   border-radius: 16px;
 }
 .home-offer-tiles img {
-  object-fit: cover;
+  object-fit: contain;
 }
 .home-nimbus-wrap {
   padding: 20px 40px;
@@ -358,10 +358,11 @@
   margin-bottom: 28px;
 }
 .home-testimonial header h2 {
-  font-size: clamp(32px, 3.6vw, 48px);
-  font-style: normal;
-  font-weight: 500;
-  line-height: 1.08;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 48px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.2;
   margin: 0 0 12px;
 }
 .home-testimonial header p {
@@ -854,7 +855,7 @@
     margin-bottom: 24px;
   }
   .home-testimonial header h2 {
-    font-size: 36px;
+    font-size: 32px;
   }
   .home-testimonial-grid {
     grid-template-columns: 1fr;
@@ -1053,6 +1054,23 @@
   z-index: 3;
   width: 44px;
   height: 44px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hero-film .video-control {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hero-film:hover .video-control,
+  .hero-film:focus-within .video-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (any-pointer: coarse) {
+  .hero-film .video-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 @media (max-width: 749px) {
   .home-refined .home-category-section {

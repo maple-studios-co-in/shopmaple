@@ -10,6 +10,24 @@
   outline-offset: 4px;
 }
 .home-carousel-controls button:disabled { opacity: .45; cursor: default; }
+/* Only autoplay's first control is play/pause; navigation arrows stay visible. */
+@media (hover: hover) and (pointer: fine) {
+  .home-carousel-autoplay > .home-carousel-controls > button:first-child:not(:disabled) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .home-carousel-autoplay:hover > .home-carousel-controls > button:first-child:not(:disabled),
+  .home-carousel-autoplay:focus-within > .home-carousel-controls > button:first-child:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (any-pointer: coarse) {
+  .home-carousel-autoplay > .home-carousel-controls > button:first-child:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 .instagram-motion { --social-columns: 6; --social-gap: calc(5% / var(--social-columns)); }
 .home-social .instagram-motion .home-instagram-posts {
   display: flex;

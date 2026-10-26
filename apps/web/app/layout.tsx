@@ -1,15 +1,5 @@
 import type { Metadata } from "next";
-import "@fontsource/manrope/400.css";
-import "@fontsource/manrope/500.css";
-import "@fontsource/manrope/600.css";
-import "@fontsource/newsreader/400.css";
-import "@fontsource/newsreader/500.css";
-import "@fontsource/newsreader/600.css";
-import "@fontsource/red-hat-display/400.css";
-import "@fontsource/red-hat-display/500.css";
-import "@fontsource/red-hat-display/600.css";
-import "@fontsource/red-hat-display/700.css";
-import "@fontsource/red-hat-display/800.css";
+import "@/styles/shopify-fonts.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
 import "@/styles/motion-rail.css";

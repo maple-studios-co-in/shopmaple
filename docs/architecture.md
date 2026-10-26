@@ -185,7 +185,7 @@ Current route families include `/`, `/collections/[handle]`, `/products/[handle]
 
 Catalogue pages call the API from the server using `API_URL`, validate its response with shared contracts, and use a 30-second Next fetch revalidation window with a six-second timeout. The API advertises `public, max-age=30, s-maxage=60` for catalogue responses. There is no implemented publication-triggered cache invalidation or measured production CDN behavior.
 
-Interactive cart state lives in `ShopProvider`, then persists through the API. Favourites are a browser-only list of product IDs in localStorage, not a customer account service. Enquiry inputs remain in form memory; the server persists accepted submissions. Public routes have preview/noindex metadata and headers, and the layout displays the checkout-unavailable notice.
+Interactive cart state lives in `ShopProvider`, then persists through the API. Favourites are a browser-only list of product IDs in localStorage, not a customer account service. Enquiry inputs remain in form memory; the server persists accepted submissions. Public routes retain preview/noindex metadata and headers. The floating development badge has been removed; cart and checkout still disclose unavailable purchasing until commerce activation is verified.
 
 The current API loads matching catalogue rows before sorting and slicing results. This is bounded preview behavior, not a full-catalogue search architecture. Move sorting/pagination into indexed database queries and profile actual catalogue size before scaling.
 
