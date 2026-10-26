@@ -8,37 +8,10 @@ import type {
   CampaignContent,
   ContentPage,
 } from "@shopmaple/contracts";
-export function Field({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  maxLength = 1000,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-  maxLength?: number;
-}) {
-  const props = {
-    "aria-label": label,
-    value,
-    maxLength,
-    onInput: (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      onChange(event.currentTarget.value),
-  };
-  return (
-    <label className="admin-field">
-      <span>{label}</span>
-      {multiline ? (
-        <textarea {...props} rows={4} />
-      ) : (
-        <input {...props} type="text" />
-      )}
-    </label>
-  );
-}
+import { Field } from "./field";
+export { Field } from "./field";
+import { AuthoredBlockFields, newAuthoredBlock } from "./authored-block-fields";
+import { AuthoredArticleBody } from "@/components/authored-article-body";
 type Props = {
   content: StorefrontContent;
   onChange: (content: StorefrontContent) => void;
@@ -334,6 +307,16 @@ export function InstagramFields({
 }
 export function PageFields({ content, onChange, session, onExpired }: Props) {
   const [selected, setSelected] = useState(0);
+  const [selectionRevision, setSelectionRevision] = useState(0);
+  const [conversionError, setConversionError] = useState("");
+  const [restoring, setRestoring] = useState(false);
+  function selectPage(index: number) {
+    setSelected(index);
+    // A removed page can be replaced at the same index; reset only on selection actions.
+    setSelectionRevision(value => value + 1);
+    setConversionError("");
+    setRestoring(false);
+  }
   const page = content.pages[selected];
   function update(patch: Partial<ContentPage>) {
     onChange({
@@ -346,14 +329,32 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
   function banner(patch: Partial<NonNullable<ContentPage["banner"]>>) {
     if (page?.banner) update({ banner: { ...page.banner, ...patch } });
   }
+  function convert() {
+    if (!page) return;
+    const paragraphs = page.body.split(/\n\s*\n/).filter(text => text.trim());
+    if (paragraphs.length > 60) {
+      setConversionError("Use at most 60 paragraphs before converting to structured blocks. Your plain text has not changed.");
+      return;
+    }
+    setConversionError("");
+    update({ blocks: paragraphs.length ? paragraphs.map(text => ({ ...newAuthoredBlock("paragraph"), text })) : [newAuthoredBlock("paragraph")] });
+  }
+  function restorePlainText() {
+    onChange({ ...content, pages: content.pages.map((value, index) => {
+      if (index !== selected) return value;
+      const { blocks: discarded, ...plainPage } = value;
+      return plainPage;
+    }) });
+    setRestoring(false);
+  }
   return (
-    <>
+    <section className="admin-structured-pages" aria-label="Informational pages editor">
       <div className="admin-section-heading">
         <h2>Informational pages</h2>
         <button
           disabled={content.pages.length >= 20}
           onClick={() => {
-            setSelected(content.pages.length);
+            selectPage(content.pages.length);
             onChange({
               ...content,
               pages: [
@@ -382,7 +383,7 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
           <select
             aria-label="Page"
             value={selected}
-            onChange={(event) => setSelected(Number(event.target.value))}
+            onChange={(event) => selectPage(Number(event.target.value))}
           >
             {content.pages.map((value, index) => (
               <option key={index} value={index}>
@@ -397,7 +398,7 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
           <p>No custom pages yet. Add a page to start writing.</p>
         </div>
       ) : (
-        <div className="admin-editor-preview">
+        <div className="admin-editor-preview" key={`${selected}:${selectionRevision}`}>
           <div>
             <div className="admin-fields">
               <Field
@@ -419,18 +420,27 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
                 multiline
                 onChange={(description) => update({ description })}
               />
-              <Field
+              {page.blocks === undefined && <Field
                 label="Page body"
                 value={page.body}
                 maxLength={8000}
                 multiline
                 onChange={(body) => update({ body })}
-              />
+              />}
             </div>
-            <p>
-              Use plain text, with blank lines between paragraphs. HTML and
-              scripts display as text.
-            </p>
+            {page.blocks === undefined ? <>
+              <p>Use plain text, with blank lines between paragraphs. HTML and scripts display as text.</p>
+              <button type="button" onClick={convert}>Use structured blocks</button>
+              {conversionError && <p role="alert">{conversionError}</p>}
+            </> : <>
+              <AuthoredBlockFields blockLabel="Page block" value={page.blocks} onChange={blocks => update({ blocks })} session={session} onExpired={onExpired} />
+              <button type="button" onClick={() => setRestoring(true)}>Return to plain text</button>
+              {restoring && <div role="alert">
+                <p>Return to the original plain-text body? This will discard all structured block edits. Save draft and Publish draft still apply to the whole storefront.</p>
+                <button type="button" onClick={restorePlainText}>Confirm return to plain text</button>
+                <button type="button" onClick={() => setRestoring(false)}>Keep structured blocks</button>
+              </div>}
+            </>}
             {page.banner ? (
               <>
                 <h3>Page banner</h3>
@@ -512,7 +522,7 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
                       (_, index) => index !== selected,
                     ),
                   });
-                  setSelected(0);
+                  selectPage(0);
                 }}
               >
                 Remove page
@@ -524,10 +534,10 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
             </div>
           </div>
           <aside className="admin-preview" aria-label="Page preview">
-            <h3>Text preview</h3>
+            <h3>{page.blocks === undefined ? "Text preview" : "Local page preview"}</h3>
             <h4>{page.title || "Untitled page"}</h4>
             <p>{page.description}</p>
-            <div className="admin-plain-copy">{page.body}</div>
+            {page.blocks === undefined ? <div className="admin-plain-copy">{page.body}</div> : <div className="store-prose"><AuthoredArticleBody blocks={page.blocks} preview /></div>}
             {page.banner && (
               <p>
                 Banner: {page.banner.alt || "Add an image description"} ·{" "}
@@ -538,6 +548,6 @@ export function PageFields({ content, onChange, session, onExpired }: Props) {
           </aside>
         </div>
       )}
-    </>
+    </section>
   );
 }
