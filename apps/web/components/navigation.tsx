@@ -10,6 +10,8 @@ import {
 } from "../lib/navigation";
 import products from "../data/navigation-products.json";
 import { shopFile, shopMoney } from "../lib/format";
+import { recentProduct } from "../lib/search-products";
+import type { ProductCardModel } from "../lib/product-card-model";
 function CategoryLink({
   item,
   onNavigate,
@@ -186,34 +188,80 @@ export function DesktopNavigation() {
     </nav>
   );
 }
-function ProductRail({ living = false, onNavigate }: { living?: boolean; onNavigate?: () => void }) {
+type FeaturedProduct =
+  | { state: "loading" }
+  | { state: "error" }
+  | { state: "ready"; product: ProductCardModel | null };
+function ProductRail({ living = false, visible, onNavigate }: { living?: boolean; visible: boolean; onNavigate: () => void }) {
+  const rail = useRef<HTMLDivElement>(null);
+  const [current, setCurrent] = useState<Record<string, FeaturedProduct>>({});
+  const retry = useRef<((handles: string[]) => void) | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    const pending = new Map<string, AbortController>();
+    const load = (handles: string[]) => {
+      setCurrent(previous => ({ ...previous, ...Object.fromEntries(handles.map(handle => [handle, { state: "loading" }])) }));
+      for (const handle of handles) {
+        const controller = new AbortController();
+        pending.set(handle, controller);
+        void recentProduct(handle, controller).then(
+          product => {
+            if (!disposed) setCurrent(previous => ({ ...previous, [handle]: { state: "ready", product } }));
+          },
+          () => {
+            if (!disposed) setCurrent(previous => ({ ...previous, [handle]: { state: "error" } }));
+          },
+        ).finally(() => { pending.delete(handle); });
+      }
+    };
+    retry.current = load;
+    load(products.map(product => product.handle));
+    return () => {
+      disposed = true;
+      retry.current = null;
+      pending.forEach(controller => controller.abort());
+    };
+  }, []);
+  if (!visible) return null;
+  const selection = products.slice(living ? 4 : 0, living ? 6 : 4);
+  const failures = selection.filter(product => current[product.handle]?.state === "error");
+  const loading = selection.some(product => !current[product.handle] || current[product.handle]?.state === "loading");
   return (
-    <div className="maple-menu-products" aria-label="Featured furniture">
-      {products.slice(living ? 4 : 0, living ? 6 : 4).map((product) => (
-        <Link
-          key={product.handle}
-          href={`/products/${product.handle}`}
-          className="maple-menu-product"
-          onClick={onNavigate}
-        >
-          <Image
-            src={
-              product.image.startsWith("//")
-                ? `https:${product.image}`
-                : product.image
-            }
-            width={260}
-            height={260}
-            sizes="130px"
-            alt={product.title}
-          />
-          <span>{product.title}</span>
-          {product.compareAtPaise > product.pricePaise && (
-            <del>{shopMoney(product.compareAtPaise)}</del>
-          )}
-          <span>{shopMoney(product.pricePaise)}</span>
-        </Link>
-      ))}
+    <div ref={rail} className="maple-menu-products" role="region" aria-label="Featured furniture" tabIndex={-1}>
+      {selection.map(product => {
+        const result = current[product.handle];
+        if (result?.state !== "ready" || !result.product) return null;
+        const model = result.product;
+        return (
+          <Link
+            key={product.handle}
+            href={`/products/${model.handle}`}
+            className="maple-menu-product"
+            onClick={onNavigate}
+          >
+            <Image
+              src={product.image.startsWith("//") ? `https:${product.image}` : product.image}
+              width={260}
+              height={260}
+              sizes="130px"
+              alt={product.title}
+            />
+            <span>{product.title}</span>
+            {model.compareAtPaise !== null && <del>{shopMoney(model.compareAtPaise)}</del>}
+            <span>{model.priceFrom ? "From " : ""}{shopMoney(model.pricePaise)}</span>
+            {model.otherOptionsOnRequest && <span>Other options on request</span>}
+          </Link>
+        );
+      })}
+      {loading && <p role="status">Loading featured furniture…</p>}
+      {failures.length > 0 && <div>
+        <p role="alert">Some featured furniture is temporarily unavailable.</p>
+        <button type="button" onClick={() => {
+          // The retry button can disappear as results settle; keep focus in the rail.
+          rail.current?.focus();
+          retry.current?.(failures.map(product => product.handle));
+        }}>Retry featured furniture</button>
+      </div>}
     </div>
   );
 }
@@ -319,7 +367,6 @@ export function MobileNavigation({
                 </div>
               ))}
             </nav>
-            {active === "Living Room" && <ProductRail living onNavigate={onClose} />}
           </>
         ) : (
           <>
@@ -372,9 +419,9 @@ export function MobileNavigation({
                 Account <ArrowUpRight size={16} />
               </a>
             </nav>
-            <ProductRail onNavigate={onClose} />
           </>
         )}
+        {open && <ProductRail living={active === "Living Room"} visible={active === null || active === "Living Room"} onNavigate={onClose} />}
       </div>
     </dialog>
   );

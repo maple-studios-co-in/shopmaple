@@ -139,7 +139,8 @@ export function ProductDetail({
           />
           <div className="product-information pdp-info">
             <h1>{product.title}</h1>
-            {variant && !variantImage(variant.id) && (
+            {variant && !variantImage(variant.id) &&
+              (product.variants.length > 1 || product.images.length === 0) && (
               <p className="pdp-option-photo-note" role="status">
                 Photo for this option unavailable
               </p>

@@ -123,3 +123,35 @@ test("an exact explicit option wins over an earlier legacy query alias", async (
     value: { ...product, variants: [...product.variants, { ...product.variants[0]!, id: "atlantic" }] },
   });
 });
+
+test("a single option without any product photos retains the unavailable notice", async () => {
+  await mount(async () => {
+    assert.ok(notice());
+    assert.equal(document.querySelector('.product-main-image [role="img"]')?.getAttribute("aria-label"),
+      "Aero Dining Chair — Image unavailable");
+    assert.equal(document.querySelector('[aria-label="Enlarge product image"]'), null);
+  }, { value: { ...product, variants: [product.variants[0]!], images: [] }, images: {} });
+});
+
+test("a single option keeps a readable gallery fallback when its product photo fails", async () => {
+  await mount(async () => {
+    await act(async () => {
+      document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("error"));
+    });
+    assert.equal(document.querySelector('.product-main-image [role="img"]')?.getAttribute("aria-label"),
+      "Aero Dining Chair — view 1 — Image unavailable");
+    assert.equal(document.querySelector(".product-main-image img"), null);
+  }, { value: { ...product, variants: [product.variants[0]!], images: ["https://example.com/broken.webp"] }, images: {} });
+});
+
+test("a single option uses its product gallery without a misleading missing-option-photo notice", async () => {
+  await mount(async () => {
+    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/blue.webp");
+    assert.equal(document.querySelector('input[name="variant"]'), null);
+    assert.equal(Boolean(notice()), false, "a product photo does not need a separate option mapping when there is only one option");
+    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Show product image 2"]')!.click());
+    assert.equal(document.querySelector('.product-thumbnails button[aria-pressed="true"]')?.getAttribute("aria-label"),
+      "Show product image 2");
+    assert.equal(notice(), undefined);
+  }, { value: { ...product, variants: [product.variants[0]!] }, images: {} });
+});

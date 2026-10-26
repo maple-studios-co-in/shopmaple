@@ -10,6 +10,23 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-26-shop-content-motion-design.md`
 
+## Current acceptance status (supersedes historical task snapshots)
+
+Verified source baseline: PR40, merged as53f21a4029dc265107f4f63d65ca5936937fe6ee. The checklists below retain implementation history; an old unchecked item does not override the current evidence, and a checked implementation item does not establish production acceptance.
+
+| Requirement | Current evidence | Remaining acceptance |
+| --- | --- | --- |
+| Shop content backend and dashboard | Protected content API, draft/publish/revisions/restore, role/CSRF checks; original defaults; PR16–17 and later content releases | First publisher private setup, production staff save/preview/publish/restore/logout; no account created yet |
+| Banners, pages, positions and copy | Campaign scheduling; homepage/category/Nimbus/Story/contact/policy/blog controls; merchandising and artwork; new structured articles/pages (PR25–36) | Complete source layout/state audit and live publisher acceptance; global navigation/footer authoring is still fixed source |
+| Instagram and moving sections | Source24-post rail, pause/manual/reduced-motion behavior; gallery gestures/transitions; optional reveals; deferred category films | Full-route visual/accessibility/performance acceptance, including assistive-technology testing |
+| Product discovery and interaction | PR37–40 continuity/cart recovery, image sizing, rich search and compact card projection;827 tests at PR40 | Favourites bounded retry, single-variant photo notice and current menu-product publication/prices are the active increment; fuzzy search parity remains |
+| Keeri commerce authority | Separate catalogue read model; Keeri owns products, stock, orders and delivery | Catalogue identity/price/package completeness, shipping and merchant activation, sandbox payment/order recovery proof; checkout disabled |
+| Customer services and CRM | Saved enquiries, separately authorized inbox, assignment and notes | Notification transport/retention, reviews/newsletter/accounts/order history/returns integrations |
+| Security and TDD | Assertion-based RED/GREEN, complete tests/types/build, scans, independent review and exact-commit CI per increment | Continue on every change; green checks do not establish external provider or production readiness |
+| Production operations | Earlier paired backup/restore evidence; latest changes merged only | Resolve full disk and backup temporary headroom; observe schedule; off-host/retention/alerts; deploy and verify ordinary public behavior; SEO cutover |
+
+No full-goal completion is claimed. Existing native CSS and scroll behavior remains the chosen motion approach; adding a heavy animation library is not itself an acceptance requirement.
+
 ## Global constraints
 
 - Original Shopify copy and approved contact overrides remain defaults.
