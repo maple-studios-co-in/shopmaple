@@ -1,6 +1,7 @@
-import { productListSchema, productSchema } from "@shopmaple/contracts";
-import { toProductCard, type ProductCardModel } from "./product-card-model";
+import { collectionQuery } from "@shopmaple/contracts";
+import type { ProductCardModel } from "./product-card-model";
 import { isProductHandle } from "./recent-products";
+import { parseCataloguePage, parseCatalogueCard } from "./catalogue-responses";
 
 async function readPublic(url: string, controller: AbortController): Promise<unknown> {
   if (controller.signal.aborted) throw new Error("Search interrupted");
@@ -24,20 +25,15 @@ async function readPublic(url: string, controller: AbortController): Promise<unk
   }
 }
 export async function searchProducts(query: string, controller: AbortController) {
+  const normalized = collectionQuery({ q: query });
   const params = new URLSearchParams({ limit: "4", sort: "title" });
-  if (query) params.set("q", query);
-  const result = productListSchema.parse(await readPublic("/api/products?" + params, controller));
-  if (!Number.isSafeInteger(result.total) || result.total < result.products.length || result.page !== 1 || result.limit !== 4 ||
-      result.products.length > 4 || new Set(result.products.map(product => product.handle)).size !== result.products.length ||
-      result.products.some(product => !product.published || !isProductHandle(product.handle)))
-    throw new Error("Invalid search results");
-  return { products: result.products.map(toProductCard), total: result.total };
+  if (normalized.q) params.set("q", normalized.q);
+  const result = parseCataloguePage(await readPublic("/api/catalogue/collections/all?" + params, controller), "all", normalized, 4);
+  return { products: result.products, total: result.total };
 }
 export async function recentProduct(handle: string, controller: AbortController): Promise<ProductCardModel | null> {
   if (!isProductHandle(handle)) throw new Error("Invalid recent product");
-  const data = await readPublic("/api/products/" + encodeURIComponent(handle), controller);
+  const data = await readPublic("/api/catalogue/cards/" + encodeURIComponent(handle), controller);
   if (data === null) return null;
-  const product = productSchema.parse(data);
-  if (product.handle !== handle || !product.published) throw new Error("Invalid recent product");
-  return toProductCard(product);
+  return parseCatalogueCard(data, handle);
 }

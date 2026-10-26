@@ -3,7 +3,7 @@ import { test } from "node:test";
 import React, { act } from "react";
 import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
-import type { Product } from "@shopmaple/contracts";
+import { cardEnvelope } from "./support/catalogue-fixtures";
 import { Favourites } from "../components/favourites";
 import { requestSavedProduct } from "../lib/saved-product-request";
 import { ShopProvider, useShop } from "../components/shop-provider";
@@ -11,9 +11,8 @@ import { ShopProvider, useShop } from "../components/shop-provider";
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
-function product(handle: string): Product {
-  return { id: handle, handle, title: `${handle} Chair`, description: "Original description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-variant`, title: "Default", sku: handle, pricePaise: 120000, compareAtPaise: null, available: false, stockPolicy: "unverified" }] };
-}
+const product = (handle: string) => cardEnvelope(handle);
+type Product = ReturnType<typeof product>;
 function Controls() {
   const { toggleFavourite } = useShop();
   return <button onClick={() => toggleFavourite("bravo")}>Toggle bravo elsewhere</button>;
@@ -136,8 +135,8 @@ test("retry after a timed-out body accepts the current piece and ignores the obs
       await settle(requests[0]!, response);
       await act(async () => { t.mock.timers.tick(6000); });
       await click(button(/^Retry failed items$/));
-      await settle(requests[1]!, Response.json({ ...product("bravo"), title: "Current chair" }));
-      await act(async () => release({ ...product("bravo"), title: "Obsolete chair" }));
+      await settle(requests[1]!, Response.json(cardEnvelope("bravo", "Current chair")));
+      await act(async () => release(cardEnvelope("bravo", "Obsolete chair")));
       assert.equal(document.querySelector('.product-card-name')?.textContent, "Current chair");
       assert.equal(document.querySelectorAll('.product-card').length, 1);
       assert.equal(document.querySelector('[role="alert"]'), null);

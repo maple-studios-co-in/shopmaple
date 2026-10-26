@@ -15,7 +15,7 @@ import {
   collectionHref,
   sortOptions,
   type CollectionQuery,
-} from "@/lib/collections";
+} from "@shopmaple/contracts";
 import { categoryNames, money } from "@/lib/format";
 const resetHref = (handle: string) =>
   `/collections/${handle}${handle === "chairs" ? "?page=1" : ""}`;

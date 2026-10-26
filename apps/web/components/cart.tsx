@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ProductImage } from "./product-image";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
@@ -11,6 +11,58 @@ export function CartContents() {
   const { cart, busy, cartReady, error, setQuantity, setCartOpen, cartRecovery, checkingCart, recoverCart } = useShop();
   const region = useRef<HTMLElement>(null);
   const restoreFocus = useRef(false);
+  const removalFocus = useRef<{ control: HTMLButtonElement; index: number; succeeded: boolean } | null>(null);
+  const [removalCompleted, setRemovalCompleted] = useState(0);
+  useLayoutEffect(() => {
+    const moved = (event: FocusEvent) => {
+      if (removalFocus.current && event.target !== removalFocus.current.control) removalFocus.current = null;
+    };
+    const pointedElsewhere = (event: PointerEvent) => {
+      if (removalFocus.current && !removalFocus.current.control.contains(event.target as Node)) removalFocus.current = null;
+    };
+    const tabbedAway = (event: KeyboardEvent) => {
+      if (event.key === "Tab") removalFocus.current = null;
+    };
+    // A pointer departure to nonfocusable content or Tab out of the document
+    // need not cause focusin. Do not cancel on blur alone: disabling a pending
+    // button can blur it automatically, and that still needs restoration.
+    document.addEventListener("focusin", moved);
+    document.addEventListener("pointerdown", pointedElsewhere, true);
+    document.addEventListener("keydown", tabbedAway, true);
+    return () => {
+      removalFocus.current = null;
+      document.removeEventListener("focusin", moved);
+      document.removeEventListener("pointerdown", pointedElsewhere, true);
+      document.removeEventListener("keydown", tabbedAway, true);
+    };
+  }, []);
+  useLayoutEffect(() => {
+    const removed = removalFocus.current;
+    if (!removed?.succeeded) return;
+    removalFocus.current = null;
+    const container = region.current;
+    if (!container || removed.control.isConnected || document.activeElement !== document.body) return;
+    const dialog = container.closest("dialog");
+    if (dialog && !dialog.open) return;
+    const controls = container.querySelectorAll<HTMLButtonElement>("[data-cart-remove]");
+    const next = controls[Math.min(removed.index, controls.length - 1)];
+    (next ?? container.querySelector<HTMLAnchorElement>(".empty-state a") ?? container).focus();
+  }, [cart, removalCompleted]);
+  async function updateQuantity(id: string, quantity: number, control: HTMLButtonElement) {
+    const removal = quantity === 0 && document.activeElement === control
+      ? {
+          control,
+          index: [...(region.current?.querySelectorAll(".cart-line") ?? [])].indexOf(control.closest(".cart-line")!),
+          succeeded: false,
+        }
+      : null;
+    if (removal) removalFocus.current = removal;
+    const succeeded = await setQuantity(id, quantity);
+    if (!removal || removalFocus.current !== removal) return;
+    if (!succeeded) { removalFocus.current = null; return; }
+    removal.succeeded = true;
+    setRemovalCompleted(value => value + 1);
+  }
   useLayoutEffect(() => {
     if (checkingCart || cartRecovery || !restoreFocus.current) return;
     restoreFocus.current = false;
@@ -77,8 +129,8 @@ export function CartContents() {
                 <div className="quantity-control">
                   <button
                     disabled={busy || !canOrder(item)}
-                    onClick={() =>
-                      void setQuantity(item.variantId, item.quantity - 1)
+                    onClick={(event) =>
+                      void updateQuantity(item.variantId, item.quantity - 1, event.currentTarget)
                     }
                     aria-label={"Decrease quantity of " + item.title}
                   >
@@ -97,8 +149,9 @@ export function CartContents() {
                 </div>
                 <button
                   className="icon-button"
+                  data-cart-remove
                   disabled={busy}
-                  onClick={() => void setQuantity(item.variantId, 0)}
+                  onClick={(event) => void updateQuantity(item.variantId, 0, event.currentTarget)}
                   aria-label={"Remove " + item.title}
                 >
                   <Trash2 size={17} />

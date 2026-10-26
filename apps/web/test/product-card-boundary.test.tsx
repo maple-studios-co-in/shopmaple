@@ -50,6 +50,7 @@ async function withCatalogue(run: () => Promise<void>) {
   const previous = globalThis.fetch;
   globalThis.fetch = async input => {
     const url = new URL(String(input));
+    if (url.pathname === "/api/catalogue/collections/all") return Response.json({ handle: "all", query: { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 }, products: [expected], total: 1, collectionTotal: 1, inStock: 1, outOfStock: 1, highestPrice: 25000, limit: 24, published: true, mode: "preview", checkoutEnabled: false });
     if (url.pathname === "/api/content/storefront") return Response.json({ version: 1, content: defaultStorefrontContent });
     if (url.pathname === "/api/products") return Response.json({ products: [product], total: 1, page: 1, limit: 50, mode: "preview", checkoutEnabled: false });
     if (url.pathname.startsWith("/api/products/")) {
@@ -96,8 +97,8 @@ test("homepage rails omit descriptions, galleries, source metadata and variants 
     }
   });
 });
-test("legacy chair landing projects every live-catalogue card before its carousel boundary", async () => {
-  const cards = await railCards(LegacyChairs({ products: [product] }));
+test("legacy chair landing preserves compact live-catalogue cards at its carousel boundary", async () => {
+  const cards = await railCards(LegacyChairs({ products: [expected] }));
   assert.ok(cards.length > 0);
   for (const card of cards) assert.deepEqual(JSON.parse(JSON.stringify(card)), expected);
 });

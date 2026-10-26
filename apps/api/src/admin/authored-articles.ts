@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { articleHandles, blogHandles, policySlugs, categories, type StorefrontContent } from "@shopmaple/contracts";
-import sourceCollections from "../../../web/data/source-collections.json";
+import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "../cart.js";
 
 // Match the storefront's source collection registry and established category aliases.

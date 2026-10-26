@@ -1,0 +1,31 @@
+# Compact catalogue queries and cart focus
+
+## Intent and decision
+The user requires fast original-layout browsing and accessible interactions. Current collection rendering fetches every50-product page; each API call rereads the entire matching catalogue. Search/saved/menu reads download full records. Replace this with one paginated collection response containing compact cards and facets, plus bounded card reads. Retain source membership, original copy and current ordering/filter semantics. This is an engineering choice under the existing authorized goal, not a newly selected user preference.
+
+Alternatives considered: merely increasing page size leaves full-record transfer and unbounded consumer work; compact suggestions alone leaves collection amplification; a new search service adds infrastructure without addressing existing semantics. Chosen: existing PostgreSQL/Express, one minimal catalogue read per collection query, shared pure matching/filtering/projection, no new dependency/migration. Database filtering still inspects the complete compact catalogue once to retain exact membership/facet semantics; no claim of indexed SQL query scaling.
+
+## Shared contract and engine
+API worker owns packages/contracts/src/catalogue-cards.ts, catalogue-collections.ts and index exports. Move existing collection-membership.json and source-collections.json from apps/web/data to packages/contracts/data; export sourceCollections through the explicit @shopmaple/contracts/catalogue-registry subpath so server web/API callers stop importing web data, while browser query/schema helpers do not import membership data. Preserve identical registry contents.
+
+Export productCardSchema / ProductCard / toProductCard using existing nine-field web ProductCardModel semantics exactly: id,handle,title,image,pricePaise,compareAtPaise,priceFrom,otherOptionsOnRequest,optionCount. Strict bounded schemas. Projection input is only identity/title/images/published variants; no full PDP/source metadata needed. Equal-price compare-at tie uses existing variant-id ordering; unknown-price options/zero-price behavior unchanged. ProductCardModel remains web alias; full PDP stays full record.
+
+Export CollectionQuery, collectionQuery, collectionTitles, sortOptions, collectionMembers, filterCollection, collectionHref (existing semantics), cataloguePageSchema / CataloguePage, catalogueCardResponseSchema. Move pure availability/price math only as necessary; maintain one canonical rule, no copies that drift. Registry category labels preserve current strings. Shared substring matching uses the current collection concatenated title-space-description behavior in new collection/search endpoints. Default title sorting remains unchanged; fuzzy/relevance ranking remains later work, not silently invented.
+
+## HTTP
+GET /api/catalogue/collections/:handle accepts only q,sort,availability,min,max,category,page,limit. Normalized query semantics match existing CollectionQuery; API rejects malformed/duplicate/oversized inputs. Limit only4 or24 (default24), page1..999; limit4 is search suggestions. Unknown collection404. Response strict:
+{handle,query,products:ProductCard[],total,collectionTotal,inStock,outOfStock,highestPrice,limit,published:true,mode:'preview',checkoutEnabled:false}.
+query.page is clamped exactly as existing collection route. Facets derive from all collection members before active filters. Price+availability predicates must match the same variant. No-variant products count enquiry-only. Unknown prices sort last both ways. Current featured/member order and deterministic ties retained.
+
+GET /api/catalogue/cards/:handle returns {product:ProductCard,published:true}; missing/unpublished404.
+GET /api/catalogue/cards?handles=a,b returns {products:ProductCard[],published:true} with maximum50 unique canonical handles, caller order retained, missing/unpublished omitted, strict bounded query. Empty input400. Used for editorial-chair curated handles; do not download every product for source rails.
+All routes retain existing rate limits, read-only behavior and public cache headers. No private content/customer data. DB selects only fields required for membership/filtering/card projection and published variants; no source/PDP metadata. No DB mocks for integration acceptance.
+
+## Web
+Normal collection route makes exactly one collection API read, passes returned summaries/facets to existing UI and retains source campaign layout/URL controls. Original no-query chairs editorial uses batched exact curated handles and summary cards; source-only enquiry fallback remains. Catalog response parsing validates identity, pagination/card counts, duplicate handles and true publication envelope. Keep existing bounded deadlines, cache freshness, cancellation/retry/stale-response protections. Search uses same /collections/all query with limit4/title; View all title-default results must align. Saved/recent/menu detail-summary reads retain missing/error/retry semantics. No compatibility fallback to full records on malformed summary (would hide rollout mismatch).
+
+## Cart focus
+On successful ordinary removal or decrement-to-zero, if the removed control still owned focus when its row disappeared, focus the adjacent surviving line control or empty-cart Explore furniture. Preserve focus if shopper moved elsewhere, on failure, and across drawer close/unmount. Existing uncertain-write recovery and checkout gates unchanged.
+
+## Acceptance
+Real539-product dedicated DB fixture proves one requested page of24, counts/facets, membership/filter/order correctness, omitted private/full-detail fields and bounded HTTP payload. Test first/last/overlarge page, missing/unpublished products, invalid query/handles, duplicate handles, prices/nulls/ties, same-variant filters and cross-field query. Real web components/transports prove one collection request, compact search/saved/menu usage and malformed-data rejection. Whole suite, recovery tests, build/types, scanners, independent review and exact-head CI before merge. Browser compare original default collection/search/menu, filters/pagination and cart keyboard focus at390/1280. Measure payload before/after; not a CWV claim. No production deployment/account/customer mutations; capacity gate and checkoutdisabled remain.

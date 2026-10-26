@@ -1,12 +1,14 @@
 # Restricted customer enquiry inbox
 
-The shop stores contact, project and bulk enquiries. The inbox lets explicitly authorised staff read submissions and mark new enquiries reviewed. Reviewing is an internal acknowledgement, not a reply or a delivery confirmation. There is no email/SMS transport, assignment, note editing, export, customer account management, order editing, or payment action in this increment. Keeri remains authoritative for products, orders and delivery.
+The shop stores contact, project and bulk enquiries. The inbox lets explicitly authorised staff read submissions and mark new enquiries reviewed. Reviewing is an internal acknowledgement, not a reply or a delivery confirmation. Assignment, internal notes and paginated activity were added in the [enquiry workflow increment](releases/2026-10-26-enquiry-workflow.md). There is no email/SMS transport, export, customer account management, order editing, or payment action. Keeri remains authoritative for products, orders and delivery.
 
 ## Access
 
 `ShopAdmin.canManageEnquiries` defaults to false. Content editors and publishers do not inherit access. The existing staff session and login are reused; every request checks current active staff and capability. Capability grants remain an operator decision; this increment grants no live account access. UI navigation is convenience, not the security boundary. All admin responses, including denials and validation errors, have private/no-store caching.
 
-## API contract
+## Initial inbox API contract
+
+The later workflow release linked above adds assignment filtering, eligible assignees, internal notes and activity endpoints. The original review boundary below remains in force.
 
 - `GET /api/admin/enquiries?kind=contact&status=new&limit=20&cursor=…`: optional kind (contact/project/bulk), status (new/reviewed), limit 1–50, stable descending createdAt/id pagination. List entries contain only reference, kind, status, version and creation time. Cursor contains only creation time and reference. Filters cannot contain customer contact data.
 - `GET /api/admin/enquiries/:id`: authorised full detail, bounded by the existing submission contract, including review attribution. Idempotency and payload hashes are never returned.

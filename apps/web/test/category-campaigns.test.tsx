@@ -14,6 +14,17 @@ async function documentFor(element: React.ReactNode) {
     ).text(),
   ).window.document;
 }
+function emptyCollection(input: string) {
+  const url = new URL(input);
+  assert.match(url.pathname, /^\/api\/catalogue\/collections\/[a-z0-9-]+$/);
+  assert.equal(url.searchParams.get("limit"), "24");
+  return Response.json({
+    handle: url.pathname.split("/").at(-1),
+    query: { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 },
+    products: [], total: 0, collectionTotal: 0, inStock: 0, outOfStock: 0, highestPrice: null,
+    limit: 24, published: true, mode: "preview", checkoutEnabled: false,
+  });
+}
 test("category landings replace their two seasonal slots with current hero and sale campaigns", async () => {
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async (url) =>
@@ -47,14 +58,7 @@ test("category landings replace their two seasonal slots with current hero and s
 test("collection campaigns keep their CTA on the visible product grid", async () => {
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async (url) =>
-    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({
-      products: [],
-      total: 0,
-      page: 1,
-      limit: 50,
-      mode: "preview",
-      checkoutEnabled: false,
-    });
+    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : emptyCollection(String(url));
   try {
     for (const [handle, campaign] of [
       ["beds", "beds-hero"],
@@ -95,14 +99,7 @@ test("published destinations control every collection campaign placement", async
   globalThis.fetch = async (url) =>
     String(url).includes("/api/content/storefront")
       ? Response.json({ version: 12, content })
-      : Response.json({
-          products: [],
-          total: 0,
-          page: 1,
-          limit: 50,
-          mode: "preview",
-          checkoutEnabled: false,
-        });
+      : emptyCollection(String(url));
   try {
     for (const handle of ["beds", "outdoor-furnitures", "tv-media-units"]) {
       const doc = await documentFor(

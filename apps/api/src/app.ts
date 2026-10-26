@@ -9,6 +9,7 @@ import { registerMediaRoutes } from "./admin/media.js";
 import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
 import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
+import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { saveEnquiry } from "./enquiries.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
@@ -68,6 +69,7 @@ export function createApp(
   registerStaffRoutes(app, db, config.secureCookies);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot);
   registerEnquiryAdminRoutes(app, db, config.secureCookies);
+  registerCatalogueViewRoutes(app, db);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({

@@ -213,3 +213,6 @@ export * from "./editorial-content";
 export * from "./authored-articles";
 
 export * from "./site-chrome";
+
+export * from "./catalogue-cards";
+export * from "./catalogue-collections";
