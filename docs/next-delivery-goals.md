@@ -27,7 +27,7 @@ Release 77d829e is the last verified live storefront release (PR 51, main tree e
 | G3.3 | Activate publisher and enquiry delivery | Private publisher setup; explicit capability; sender configuration; authenticated staff/browser and delivery evidence | Pending readiness facts and private setup; no live test messages |
 | G4.1 | Close remaining Figma/Shopify UI parity gaps | Route/mobile/state checklist, source copy retained; destination art resolved from authoritative assets | Pending; exact city photography remains open |
 | G4.2 | Verify interactive performance/accessibility | Measured page loading, keyboard/touch controls, reduced motion, image/video lifecycle | Pending bounded visual/performance review |
-| G5.1 | Run integrated quality/security gates | Full suite, types/build, dependency/secret/static scans, independent review | 1,067 tests, types/build and independent review pass; static/history secret scans pass; dependency audit blocked by certificate trust |
+| G5.1 | Run integrated quality/security gates | Full suite, types/build, dependency/secret/static scans, independent review | 1,067 tests, types/build and independent review pass; static/history secret scans pass; dependency audit now passes with zero vulnerabilities after connection recovery |
 | G5.2 | Resolve deployment capacity and operational evidence | Adequate free space, backup/restore and rollback, worker/alert ownership, off-host backup schedule proof | Pending; last deployment had only ~845 MiB free |
 | G5.3 | Release and verify exact revision | Exact-head CI, immutable artifact, staged/live checks, normal public browser and catalogue evidence | Pending all applicable gates; no deployment claimed |
 
@@ -51,6 +51,6 @@ Release 77d829e is the last verified live storefront release (PR 51, main tree e
 - `npm test`: 366 API, 648 web, 53 deployment/backup tests passed (1,067 total).
 - `npm run typecheck` and `npm run build` passed under Node 22.21.1. Local web server restarted on port 3000 after the build.
 - Independent reviews of the payment, collection and admin diffs found no remaining concrete regressions. An affected compact catalogue fixture initially failed after the deliberate new page request; it was corrected to assert the new request contract and bounded editorial batches before the full-suite pass.
-- Semgrep: 74 rules, 182 targets, zero findings. Gitleaks history: 83 commits, no leaks. Dependency audit failed certificate verification against registry.npmjs.org; no TLS bypass, clean-audit or release claim.
+- Semgrep: 74 rules, 182 targets, zero findings. Gitleaks history: 83 commits, no leaks. The initial dependency audit failed certificate verification against registry.npmjs.org. After the user changed connections, the retry passed with zero vulnerabilities; TLS verification stayed enabled.
 - Local browser verification: desktop 1280 px, single editorial h1 and embedded h2 listing; hero jump targets the complete listing; Next opens page 2; mobile 390 px has no horizontal page overflow and its filter/clear flow returns to page 1. Local fixture currently has 35 chair results; this is not the production category count. Existing local cart/saved state was preserved.
-- Credentials, staff capabilities, payment activation, Keeri data and production services were not changed. This increment remains local pending security/CI/release gates.
+- Credentials, staff capabilities, payment activation, Keeri data and production services were not changed. The implementation branch is pushed; exact-head CI and release gates remain separate.
