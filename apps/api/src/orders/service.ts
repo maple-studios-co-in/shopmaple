@@ -54,12 +54,9 @@ export interface ReservationPort {
     input: ReservationBinding & { reservationId: string },
   ): Promise<boolean>;
 }
-export class OrderFlowError extends Error {
-  constructor(public readonly code: string) {
-    super(`Order flow: ${code}`);
-    this.name = "OrderFlowError";
-  }
-}
+import { OrderFlowError } from "./errors.js";
+export { OrderFlowError } from "./errors.js";
+import { resolveCatalogueBindings, sameCatalogueBindings, storedCatalogueBindings, revalidateCatalogueBindings } from "./catalogue-bindings.js";
 interface Options {
   /** A stable server-side merchant + environment identity matching this gateway. */
   merchantScope: string;
@@ -71,6 +68,8 @@ interface Options {
     taxPaise: number;
     policyId: string;
   };
+  /** Configured tenant for persisted Keeri catalogue identities; required with quoteAuthority. */
+  keeriTenantId?: string;
   quoteAuthority?(request: QuoteRequest): Promise<unknown>;
   now?: () => Date;
 }
@@ -118,6 +117,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
   const now = options.now ?? (() => new Date());
   if (
     !/^[A-Za-z0-9:_-]{1,128}$/.test(merchantScope) ||
+    (options.quoteAuthority && !/^[A-Za-z0-9_-]{1,64}$/.test(options.keeriTenantId ?? "")) ||
     (typeof quote !== "function" &&
       typeof options.quoteAuthority !== "function")
   )
@@ -274,10 +274,11 @@ export function createOrderService(db: PrismaClient, options: Options) {
         )
       )
         throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
+      const bindings = await resolveCatalogueBindings(tx, rows.map((r) => r.variantId), options.keeriTenantId!);
       const items = rows
-        .map((r) => ({ variantId: r.variantId, quantity: r.quantity }))
+        .map((r) => ({ variantId: bindings.items.find((b) => b.localVariantId === r.variantId)!.sourceVariantId, quantity: r.quantity }))
         .sort((a, b) => a.variantId.localeCompare(b.variantId));
-      return { cart, rows, request: { version: 2 as const, items, ...input } };
+      return { cart, rows, bindings, request: { version: 2 as const, items, ...input } };
     }
     function snapshotRequest(s: QuoteSnapshot) {
       return {
@@ -306,15 +307,20 @@ export function createOrderService(db: PrismaClient, options: Options) {
       const parsed = quoteResponseSchema.shape.snapshot.safeParse(
         existing.snapshot,
       );
+      if (!parsed.success) throw new OrderFlowError("CHECKOUT_INPUT_CHANGED");
+      const frozenBindings = storedCatalogueBindings(existing.catalogueBindings, options.keeriTenantId!, parsed.data);
+      if (!sameCatalogueBindings(frozenBindings, current.bindings))
+        throw new OrderFlowError("CATALOGUE_BINDING_CHANGED");
       if (
-        !parsed.success ||
         canonical(snapshotRequest(parsed.data)) !== canonical(current.request)
       )
         throw new OrderFlowError("CHECKOUT_INPUT_CHANGED");
       return existing;
     }
-    const initial = await readCart(db);
-    const existing = await replay(db, initial);
+    const { initial, existing } = await transaction(db, async (tx) => {
+      const initial = await readCart(tx);
+      return { initial, existing: await replay(tx, initial) };
+    });
     if (existing) return existing;
     // Fetch before opening a transaction, then revalidate the cart under serializable isolation.
     const response = quoteResponseSchema.safeParse(
@@ -333,8 +339,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
       s.items.some(
         (i) =>
           i.lineTotalPaise !== i.unitPricePaise * i.quantity ||
-          initial.rows.find((r) => r.variantId === i.variantId)?.variant
-            .productId !== i.productId,
+          initial.bindings.items.find((b) => b.sourceVariantId === i.variantId)
+            ?.sourceProductId !== i.productId,
       ) ||
       s.subtotalPaise !== s.items.reduce((n, i) => n + i.lineTotalPaise, 0) ||
       s.totalPaise !==
@@ -346,7 +352,10 @@ export function createOrderService(db: PrismaClient, options: Options) {
     for (let retry = 0; ; retry++) {
       try {
         return await transaction(db, async (tx) => {
+          await revalidateCatalogueBindings(tx, initial.bindings);
           const current = await readCart(tx);
+          if (!sameCatalogueBindings(initial.bindings, current.bindings))
+            throw new OrderFlowError("CATALOGUE_BINDING_CHANGED");
           if (
             canonical(current.request) !== canonical(initial.request) ||
             current.cart.id !== initial.cart.id
@@ -365,6 +374,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
               idempotencyKey,
               receipt: `sm_${id.replaceAll("-", "")}`,
               snapshot: s as unknown as Prisma.InputJsonObject,
+              catalogueBindings: initial.bindings as unknown as Prisma.InputJsonObject,
               amountPaise: s.totalPaise,
               currency: "INR",
             },
@@ -397,36 +407,36 @@ export function createOrderService(db: PrismaClient, options: Options) {
       throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
     if (!reservations) throw new OrderFlowError("RESERVATION_REQUIRED");
     const snapshot = attempt.snapshot as unknown as FrozenSnapshot;
-    const variants = await db.variant.findMany({
-      where: { id: { in: snapshot.items.map((item) => item.variantId) } },
-      include: { product: true },
+    const frozenBindings = snapshot.version === 2
+      ? storedCatalogueBindings(attempt.catalogueBindings, options.keeriTenantId ?? "", snapshot)
+      : null;
+    async function eligible(tx: Prisma.TransactionClient) {
+      if (frozenBindings) {
+        await revalidateCatalogueBindings(tx, frozenBindings);
+      } else {
+        const variants = await tx.variant.findMany({
+          where: { id: { in: snapshot.items.map((item) => item.variantId) } },
+          include: { product: true },
+        });
+        if (variants.length !== snapshot.items.length || variants.some((v) =>
+          !v.published || !v.product.published || !v.available || v.stockPolicy !== "stocked"))
+          throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
+      }
+      if (snapshot.version === 2 && Date.parse(snapshot.expiresAt) <= now().getTime())
+        throw new OrderFlowError("QUOTE_EXPIRED");
+    }
+    await transaction(db, async (tx) => {
+      await eligible(tx);
+      const claim = await tx.checkoutAttempt.updateMany({
+        where: { id: attempt.id, merchantScope, state: "reservation_required" },
+        data: { state: "reserving" },
+      });
+      if (claim.count !== 1)
+        throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
     });
-    if (
-      variants.length !== snapshot.items.length ||
-      variants.some(
-        (v) =>
-          !v.published ||
-          !v.product.published ||
-          (snapshot.version === 1 && !v.available) ||
-          v.stockPolicy !== "stocked",
-      )
-    )
-      throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
-    if (
-      snapshot.version === 2 &&
-      Date.parse(snapshot.expiresAt) <= now().getTime()
-    )
-      throw new OrderFlowError("QUOTE_EXPIRED");
-    const claim = await db.checkoutAttempt.updateMany({
-      where: { id: attempt.id, merchantScope, state: "reservation_required" },
-      data: { state: "reserving" },
-    });
-    if (claim.count !== 1)
-      throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
     const snapshotSha256 = hash(canonical(snapshot));
-    let reservation;
     try {
-      reservation = await reservations.reserve({
+      const reservation = await reservations.reserve({
         attemptId: attempt.id,
         snapshotSha256,
         snapshot: structuredClone(snapshot),
@@ -442,13 +452,16 @@ export function createOrderService(db: PrismaClient, options: Options) {
       )
         throw new OrderFlowError("RESERVATION_INVALID");
       // Persist the durable guarantee BEFORE initiating an irreversible provider POST.
-      await db.checkoutAttempt.update({
-        where: { id: attempt.id },
-        data: {
-          reservationId: reservation.reservationId,
-          reservationExpiresAt: reservation.expiresAt,
-          state: "creating_provider_order",
-        },
+      await transaction(db, async (tx) => {
+        await eligible(tx);
+        await tx.checkoutAttempt.update({
+          where: { id: attempt.id },
+          data: {
+            reservationId: reservation.reservationId,
+            reservationExpiresAt: reservation.expiresAt,
+            state: "creating_provider_order",
+          },
+        });
       });
     } catch (error) {
       const code =

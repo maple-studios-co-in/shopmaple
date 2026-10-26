@@ -120,6 +120,7 @@ model CheckoutAttempt {
   idempotencyKey String
   receipt String @unique
   snapshot Json
+  catalogueBindings Json?
   amountPaise Int
   currency String @default("INR")
   state String @default("reservation_required")

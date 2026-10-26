@@ -1,14 +1,14 @@
 {
   "landing-announcement": {
-    "label": "THE MAPLE DIWALI SALE",
+    "label": "",
     "headline": [
       "Decked for Diwali"
     ],
-    "supporting": "Make room for celebrations.",
+    "supporting": null,
     "offer": [
-      "Up to 40% off"
+      "Up to 40% off selected furniture"
     ],
-    "eligibility": "On selected furniture.",
+    "eligibility": "",
     "cta": "Shop the Diwali Sale",
     "href": "/collections/all",
     "desktop": {
@@ -47,8 +47,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 104.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:452",
@@ -70,21 +76,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "landing-dining-table": {
-    "label": "DECKED FOR DIWALI · DINING TABLES",
+    "label": "",
     "headline": [
       "Make room for",
       "one more."
     ],
     "supporting": null,
     "offer": [
-      "Up to 35% off"
+      "Up to 35% off selected dining tables"
     ],
-    "eligibility": "On selected dining tables.",
+    "eligibility": "",
     "cta": "Shop Dining Tables",
     "href": "/collections/dining",
     "desktop": {
@@ -123,8 +135,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:476",
@@ -146,23 +164,28 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "landing-sofa-accent-chair": {
-    "label": "DECKED FOR DIWALI · SOFAS & CHAIRS",
+    "label": "",
     "headline": [
       "Good company.",
       "Great seats."
     ],
     "supporting": null,
     "offer": [
-      "Sofas up to 40% off",
-      "Chairs up to 20% off"
+      "Up to 40% off selected sofas"
     ],
-    "eligibility": "On selected sofas & chairs.",
-    "cta": "Shop Sofas & Chairs",
+    "eligibility": "",
+    "cta": "Shop Sofas",
     "href": "/collections/sofas-and-chairs",
     "desktop": {
       "nodeId": "973:488",
@@ -200,8 +223,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 79.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:500",
@@ -223,21 +252,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "landing-dining": {
-    "label": "DECKED FOR DIWALI · DINING SETS",
+    "label": "",
     "headline": [
       "Come together.",
       "Stay a little longer."
     ],
     "supporting": null,
     "offer": [
-      "Up to 40% off"
+      "Up to 40% off selected dining sets"
     ],
-    "eligibility": "On selected dining sets.",
+    "eligibility": "",
     "cta": "Shop Dining Sets",
     "href": "/collections/dinings",
     "desktop": {
@@ -277,7 +312,13 @@
         }
       ],
       "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 55.5%, rgba(116, 26, 20, 0.55) 78%, rgba(116, 26, 20, 0) 100%)",
-      "gradientWidth": 820.0
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:524",
@@ -299,21 +340,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "landing-storage": {
-    "label": "DECKED FOR DIWALI · STORAGE",
+    "label": "",
     "headline": [
       "Less clutter.",
       "More celebration."
     ],
     "supporting": null,
     "offer": [
-      "Up to 25% off"
+      "Up to 25% off selected storage furniture"
     ],
-    "eligibility": "On selected storage furniture.",
+    "eligibility": "",
     "cta": "Shop Storage",
     "href": "/collections/storage",
     "desktop": {
@@ -352,8 +399,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:548",
@@ -375,21 +428,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "landing-consoles": {
-    "label": "DECKED FOR DIWALI · CONSOLES",
+    "label": "",
     "headline": [
       "Make an entrance",
       "this Diwali."
     ],
     "supporting": null,
     "offer": [
-      "Up to 20% off"
+      "Up to 20% off selected consoles"
     ],
-    "eligibility": "On selected consoles.",
+    "eligibility": "",
     "cta": "Shop Consoles",
     "href": "/collections/console-tables",
     "desktop": {
@@ -428,8 +487,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:572",
@@ -451,21 +516,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "sofas-hero": {
-    "label": "DECKED FOR DIWALI · SOFAS",
+    "label": "",
     "headline": [
       "Settle in for",
       "the celebrations."
     ],
     "supporting": null,
     "offer": [
-      "Up to 40% off"
+      "Up to 40% off selected sofas"
     ],
-    "eligibility": "On selected sofas.",
+    "eligibility": "",
     "cta": "Shop Sofas",
     "href": "/collections/sofas",
     "desktop": {
@@ -475,7 +546,7 @@
           "nodeId": "973:585",
           "src": "/media/diwali/973-585.png",
           "x": 1425.0,
-          "y": 0,
+          "y": 1,
           "width": 475.0,
           "height": 350.0
         },
@@ -483,7 +554,7 @@
           "nodeId": "973:586",
           "src": "/media/diwali/973-586.png",
           "x": 950.0,
-          "y": 0,
+          "y": 1,
           "width": 475.0,
           "height": 350.0
         },
@@ -491,7 +562,7 @@
           "nodeId": "973:587",
           "src": "/media/diwali/973-587.png",
           "x": 475.0,
-          "y": 0,
+          "y": 1,
           "width": 475.0,
           "height": 350.0
         },
@@ -499,13 +570,19 @@
           "nodeId": "973:588",
           "src": "/media/diwali/973-588.png",
           "x": 0,
-          "y": 0,
+          "y": 1,
           "width": 475.0,
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:594",
@@ -527,19 +604,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "sofas-sale": {
-    "label": "DECKED FOR DIWALI · SOFA OFFERS",
+    "label": "",
     "headline": [
       "Up to 40% off",
       "sofas"
     ],
-    "supporting": "Your next favourite place to unwind.",
-    "offer": [],
-    "eligibility": "On selected sofas.",
+    "supporting": null,
+    "offer": [
+      "On selected sofas."
+    ],
+    "eligibility": "",
     "cta": "Shop Sofa Offers",
     "href": "/collections/sofas",
     "desktop": {
@@ -578,8 +663,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:613",
@@ -601,21 +692,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "tables-hero": {
-    "label": "DECKED FOR DIWALI · TABLES",
+    "label": "",
     "headline": [
       "Sweets, stories and",
       "a new centrepiece."
     ],
     "supporting": null,
     "offer": [
-      "Up to 25% off"
+      "Up to 25% off selected tables"
     ],
-    "eligibility": "On selected tables.",
+    "eligibility": "",
     "cta": "Shop Tables",
     "href": "/collections/tables",
     "desktop": {
@@ -654,8 +751,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:632",
@@ -677,19 +780,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "tables-sale": {
-    "label": "DECKED FOR DIWALI · TABLE OFFERS",
+    "label": "",
     "headline": [
       "Up to 25% off",
       "tables"
     ],
-    "supporting": "A new centrepiece for your celebrations.",
-    "offer": [],
-    "eligibility": "On selected tables.",
+    "supporting": null,
+    "offer": [
+      "On selected tables."
+    ],
+    "eligibility": "",
     "cta": "Shop Table Offers",
     "href": "/collections/tables",
     "desktop": {
@@ -728,8 +839,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:655",
@@ -751,21 +868,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "chairs-hero": {
-    "label": "DECKED FOR DIWALI · CHAIRS",
+    "label": "",
     "headline": [
       "Save a seat for",
       "someone special."
     ],
     "supporting": null,
     "offer": [
-      "Up to 20% off"
+      "Up to 20% off selected chairs"
     ],
-    "eligibility": "On selected chairs.",
+    "eligibility": "",
     "cta": "Shop Chairs",
     "href": "/collections/chairs",
     "desktop": {
@@ -804,8 +927,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 1050.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 44.231%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 1050.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:683",
@@ -827,19 +956,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "chairs-sale": {
-    "label": "DECKED FOR DIWALI · CHAIR OFFERS",
+    "label": "",
     "headline": [
       "Up to 20% off",
       "chairs"
     ],
-    "supporting": "Make room for your new favourite seat.",
-    "offer": [],
-    "eligibility": "On selected chairs.",
+    "supporting": null,
+    "offer": [
+      "On selected chairs."
+    ],
+    "eligibility": "",
     "cta": "Shop Chair Offers",
     "href": "/collections/chairs",
     "desktop": {
@@ -879,7 +1016,13 @@
         }
       ],
       "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 55.366%, rgba(116, 26, 20, 0.55) 77.683%, rgba(116, 26, 20, 0) 100%)",
-      "gradientWidth": 820.0
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:708",
@@ -901,21 +1044,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "beds-hero": {
-    "label": "DECKED FOR DIWALI · BEDS",
+    "label": "",
     "headline": [
       "A fresh beginning",
       "for your bedroom."
     ],
     "supporting": null,
     "offer": [
-      "Up to 30% off"
+      "Up to 30% off selected beds"
     ],
-    "eligibility": "On selected beds.",
+    "eligibility": "",
     "cta": "Shop Beds",
     "href": "/collections/beds",
     "desktop": {
@@ -954,8 +1103,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:729",
@@ -977,19 +1132,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "beds-sale": {
-    "label": "DECKED FOR DIWALI · BED OFFERS",
+    "label": "",
     "headline": [
       "Up to 30% off",
       "beds"
     ],
-    "supporting": "Bring home a little more comfort.",
-    "offer": [],
-    "eligibility": "On selected beds.",
+    "supporting": null,
+    "offer": [
+      "On selected beds."
+    ],
+    "eligibility": "",
     "cta": "Shop Bed Offers",
     "href": "/collections/beds",
     "desktop": {
@@ -1028,8 +1191,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:748",
@@ -1051,21 +1220,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "outdoors-hero": {
-    "label": "DECKED FOR DIWALI · OUTDOORS",
+    "label": "",
     "headline": [
       "Take the",
       "celebrations outside."
     ],
     "supporting": null,
     "offer": [
-      "Up to 25% off"
+      "Up to 25% off selected outdoor furniture"
     ],
-    "eligibility": "On selected outdoor furniture.",
+    "eligibility": "",
     "cta": "Shop Outdoor Furniture",
     "href": "/collections/outdoor-furnitures",
     "desktop": {
@@ -1104,8 +1279,14 @@
           "height": 350.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820.0
+      "gradient": "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:771",
@@ -1127,21 +1308,27 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   },
   "tv-units-hero": {
-    "label": "DECKED FOR DIWALI · TV UNITS",
+    "label": "",
     "headline": [
       "Set the scene for",
       "evenings together."
     ],
     "supporting": null,
     "offer": [
-      "Up to 25% off"
+      "Up to 25% off selected TV units"
     ],
-    "eligibility": "On selected TV units.",
+    "eligibility": "",
     "cta": "Shop TV Units",
     "href": "/collections/tv-media-units",
     "desktop": {
@@ -1181,7 +1368,13 @@
         }
       ],
       "gradient": "linear-gradient(90deg, rgb(116, 26, 20) 0%, rgb(116, 26, 20) 65.5%, rgba(116, 26, 20, 0.65) 80%, rgba(116, 26, 20, 0) 100%)",
-      "gradientWidth": 820.0
+      "gradientWidth": 820.0,
+      "copy": {
+        "x": 64.0,
+        "y": 80.0,
+        "width": 500.0,
+        "gap": 14.0
+      }
     },
     "mobile": {
       "nodeId": "973:792",
@@ -1203,8 +1396,14 @@
           "height": 500.0
         }
       ],
-      "gradient": null,
-      "gradientWidth": 820
+      "gradient": "linear-gradient(180deg, rgba(116,26,20,.91) 0%, rgba(116,26,20,.76) 46%, rgba(116,26,20,0) 100%)",
+      "gradientWidth": 500,
+      "copy": {
+        "x": 28.0,
+        "y": 32.0,
+        "width": 444.0,
+        "gap": 10.0
+      }
     }
   }
 }
