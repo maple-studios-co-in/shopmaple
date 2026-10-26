@@ -5,7 +5,7 @@ import {
   catalogueHandleSchema, cataloguePageSchema, catalogueCardResponseSchema, catalogueCardsResponseSchema,
   categories, relatedCatalogueCardsResponseSchema,
   collectionQuery, filterCollection,
-  toProductCard, canOrder, pricedVariants,
+  toProductCard, canOrder, pricedVariants, sourceTaxonomySchema,
 } from "@shopmaple/contracts";
 import { collectionTitles, collectionMembers } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "./cart.js";
@@ -31,7 +31,7 @@ const cardSelect = {
   variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true } },
 } satisfies Prisma.ProductSelect;
 const collectionSelect = {
-  ...cardSelect, description: true, category: true,
+  ...cardSelect, description: true, category: true, sourceTaxonomy: true,
   variants: { ...cardSelect.variants, select: { ...cardSelect.variants.select, available: true, stockPolicy: true } },
 } satisfies Prisma.ProductSelect;
 const cache = "public, max-age=30, s-maxage=60";
@@ -64,7 +64,7 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
     // Membership and facets need the complete compact catalogue once, not one
     // full-record database read for each API page fetched by the web server.
     const products = await db.product.findMany({ where: { published: true }, select: collectionSelect, orderBy: [{ title: "asc" }, { id: "asc" }] });
-    const members = collectionMembers(products, handle);
+    const members = collectionMembers(products.map(product => ({ ...product, sourceTaxonomy: sourceTaxonomySchema.nullable().catch(null).parse(product.sourceTaxonomy) })), handle);
     const filtered = filterCollection(members, query);
     const page = Math.min(query.page, Math.max(1, Math.ceil(filtered.length / limit)));
     const knownPrices = members.flatMap(product => pricedVariants(product).map(variant => variant.pricePaise));

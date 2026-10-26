@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+
 
 export function HomeTicker({ text, autoplay = true }: { text: string; autoplay?: boolean }) {
   const element = useRef<HTMLDivElement>(null);
@@ -53,7 +53,7 @@ export function HomeTicker({ text, autoplay = true }: { text: string; autoplay?:
       </div>
       <button type="button" className="home-ticker-control" hidden={!animated} aria-controls={id}
         aria-label={`${paused ? "Resume" : "Pause"} scrolling text`} onClick={() => setPaused(value => !value)}>
-        {paused ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+        <span className="sr-only">Toggle motion</span>
       </button>
     </div>
   );

@@ -11,6 +11,7 @@ import { registerEnquiryDeliveryAdminRoutes } from "./admin/enquiry-delivery.js"
 import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
+import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-media.js";
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { saveEnquiry } from "./enquiries.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
@@ -28,6 +29,7 @@ export type AppConfig = {
   /** Only opt in for a loopback-bound API behind the trusted local Next/Tunnel proxy. */
   trustProxyLoopback?: boolean;
   mediaRoot?: string;
+  catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
 };
 export function createApp(
@@ -74,6 +76,7 @@ export function createApp(
   registerEnquiryAdminRoutes(app, db, config.secureCookies);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
   registerCatalogueViewRoutes(app, db);
+  registerCatalogueMedia(app, db, config.catalogueMedia);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({

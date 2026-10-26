@@ -125,3 +125,22 @@ test("malicious source text stays literal and unsafe link destinations are inert
     for (let i = 0; i < unsafe.length; i++) assert.ok(details.textContent!.includes(`Unsafe ${i}`));
   });
 });
+
+test('Keeri product details show source materials, dimensions, care and warranty as escaped text', async()=>{
+ await mount({...product,source:'keeri:maple',sourceDetails:{details:'Handcrafted <script>chair</script>',materials:'Oak and linen',dimensions:'80 x 60 cm',careInstructions:'Dry cloth',warranty:'One year'}},()=>{
+  assert.match(disclosure('Details').textContent!,/Handcrafted <script>chair<\/script>/);
+  assert.equal(disclosure('Details').querySelector('script'),null);
+  assert.match(disclosure('Materials + Care').textContent!,/Oak and linen/);
+  assert.match(disclosure('Materials + Care').textContent!,/Dry cloth/);
+  assert.match(disclosure('Dimensions & specifications').textContent!,/80 x 60 cm/);
+  assert.match(document.querySelector('.product-accordions')!.textContent!,/One year/);
+ });
+});
+
+test('missing Shopify fields use real Keeri details without replacing populated Shopify copy',async()=>{
+ await mount({...captured(null,text('Original Shopify care')),sourceDetails:{details:'Keeri construction details',materials:'Keeri oak',dimensions:null,careInstructions:null,warranty:null}},()=>{
+  assert.match(disclosure('Details').textContent!,/Keeri construction details/);
+  assert.match(disclosure('Materials + Care').textContent!,/Original Shopify care/);
+  assert.doesNotMatch(disclosure('Materials + Care').textContent!,/Keeri oak/);
+ });
+});

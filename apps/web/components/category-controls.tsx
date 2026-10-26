@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Pause, Play, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export function CategoryIntroduction({
   title,
@@ -180,7 +180,7 @@ export function CategoryVideo({
         aria-label={`${playing ? "Pause" : "Play"} ${label}`}
         onClick={() => togglePlayback.current?.()}
       >
-        {playing ? <Pause size={18} /> : <Play size={18} />}
+        <span className="sr-only">Toggle motion</span>
       </button>
     </div>
   );

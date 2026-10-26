@@ -6,6 +6,7 @@ export const categoryNames: Record<string, string> = {
 };
 export type CollectionProduct = {
   handle: string; title: string; description: string; category: string | null;
+  sourceTaxonomy?: { productType: string; category: string | null; subCategory: string | null } | null;
   variants: { pricePaise: number | null; available: boolean; stockPolicy: string }[];
 };
 export const sortOptions = [

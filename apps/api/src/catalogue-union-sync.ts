@@ -57,7 +57,7 @@ export async function syncCatalogueUnion(
         const { variants, ...fields } = product;
         const data = {
           ...fields,
-          pdpContent: fields.pdpContent ?? Prisma.DbNull,
+          pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull,
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };
         await tx.product.upsert({

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { productSchema, type Product } from "@shopmaple/contracts";
+import { productSchema, sourceDetailsSchema, type Product } from "@shopmaple/contracts";
 
 const id = z
   .string()
@@ -115,6 +115,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
   models: z
     .array(
       keeriExportSchema.shape.models.element.extend({
+        content: sourceDetailsSchema.optional(),
+        taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,
         variants: z
@@ -290,6 +292,8 @@ function adaptValidated(
         category: publication.category ?? (data.schemaVersion === 2
           ? productTypeCategories.get(model.productType.trim().toLowerCase()) ?? null
           : null),
+        sourceDetails: "content" in model ? model.content ?? null : null,
+        sourceTaxonomy: "taxonomy" in model && model.taxonomy ? { productType: model.productType.length <= 200 ? model.productType : "", ...model.taxonomy } : null,
         images,
         published: true,
         source,

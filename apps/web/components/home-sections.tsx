@@ -243,6 +243,7 @@ export function HomeCities({
       <header>
         <p className="home-eyebrow">{content.eyebrow}</p>
         <h2>{content.heading}</h2>
+        <a className="city-photo-credits" href="/media/cities/credits.html">Image credits</a>
       </header>
       <MovingCities autoplay={autoplay}>
         {cities.map(({ key }) => {
@@ -253,8 +254,8 @@ export function HomeCities({
                 <Image
                   src={artwork.image}
                   alt={artwork.alt}
-                  width={150}
-                  height={120}
+                  width={400}
+                  height={600}
                 />
               </div>
               {artwork.alt && <figcaption>{artwork.alt}</figcaption>}

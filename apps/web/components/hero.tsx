@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Pause, Play } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
@@ -143,7 +143,7 @@ export function Hero({
           onClick={() => togglePlayback.current?.()}
           aria-label={playing ? "Pause workshop video" : starting ? "Cancel workshop video playback" : "Play workshop video"}
         >
-          {playing || starting ? <Pause size={16} /> : <Play size={16} />}
+          <span className="sr-only">Toggle motion</span>
         </button>
       </div>
       <div className="hero-categories">

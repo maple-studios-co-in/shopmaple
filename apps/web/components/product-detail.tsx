@@ -344,14 +344,17 @@ export function ProductDetail({
             <div className="product-accordions">
               <details open>
                 <summary>Details</summary>
-                {product.pdpContent ? <ProductRichText content={product.pdpContent.details} /> : <p>
-                  {product.description ||
+                {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p>
+                  {product.sourceDetails?.details || product.description ||
                     "Our team can help with materials, dimensions, finishes and customization for this piece."}
                 </p>}
               </details>
               <details>
                 <summary>Materials + Care</summary>
-                {product.pdpContent ? <ProductRichText content={product.pdpContent.materialsCare} /> : <>
+                {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
+                  {product.sourceDetails.materials && <p>{product.sourceDetails.materials}</p>}
+                  {product.sourceDetails.careInstructions && <p>{product.sourceDetails.careInstructions}</p>}
+                </> : <>
                 <p>
                   Contact our team for the materials and care guidance for your
                   selected finish.
@@ -371,10 +374,11 @@ export function ProductDetail({
               </details>
               <details id="product-specifications" open>
                 <summary>Dimensions &amp; specifications</summary>
-                <Link href={enquiryHref}>
+                {product.sourceDetails?.dimensions ? <p>{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>
                   Request dimensions and specifications
-                </Link>
+                </Link>}
                 {variant?.sku && <p>SKU: {variant.sku}</p>}
+                {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
               </details>
             </div>
             <a className="pdp-phone" href="tel:+918796130252">

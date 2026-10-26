@@ -189,7 +189,7 @@ export function planCatalogueUnion(
       pdpContent: base?.pdpContent ?? null,
       // Explicit channel categories outrank a fallback derived from the source type.
       category: c.publishedCategory ?? base?.category ?? c.p.category ?? null,
-      images: base ? base.images : c.p.images,
+      images: [...new Set([...(base?.images ?? []), ...(base ? c.p.images.filter(approvedCatalogueImage) : c.p.images)])].slice(0, 30),
       source: base ? "shopify-preview" : source,
       variants: [...variants.values()],
     });

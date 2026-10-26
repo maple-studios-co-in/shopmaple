@@ -43,6 +43,14 @@ export const variantSchema = z.object({
   available: z.boolean(),
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
 });
+export const sourceTaxonomySchema = z.object({
+  productType: z.string().max(200),
+  category: z.string().max(200).nullable(),
+  subCategory: z.string().max(200).nullable(),
+}).strict();
+export const sourceDetailsSchema = z.object({
+ details: z.string().max(10000).nullable(), materials: z.string().max(10000).nullable(), dimensions: z.string().max(10000).nullable(), careInstructions: z.string().max(10000).nullable(), warranty: z.string().max(10000).nullable(),
+}).strict();
 export const productSchema = z.object({
   id: z.string().min(1).max(160),
   handle: z
@@ -59,6 +67,8 @@ export const productSchema = z.object({
   published: z.boolean(),
   source: z.string().min(1).max(100),
   sourceStatus: z.string().max(80).nullable().optional(),
+  sourceTaxonomy: sourceTaxonomySchema.nullable().optional(),
+  sourceDetails: sourceDetailsSchema.nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });

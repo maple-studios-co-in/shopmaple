@@ -1,0 +1,82 @@
+[
+  {
+    "key": "delhi",
+    "source": "https://commons.wikimedia.org/wiki/File:India_Gate_1_(New_Delhi).jpg",
+    "author": "Subeesh Balan സുഭീഷ് ബാലൻ",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original": "File:India Gate 1 (New Delhi).jpg"
+  },
+  {
+    "key": "kolkata",
+    "source": "https://commons.wikimedia.org/wiki/File:Howrah_Bridge_02.jpg",
+    "author": "Bernard Gagnon",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original": "File:Howrah Bridge 02.jpg"
+  },
+  {
+    "key": "hyderabad",
+    "source": "https://commons.wikimedia.org/wiki/File:Charminar_Hyderabad_1.jpg",
+    "author": "DidierTais",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original": "File:Charminar Hyderabad 1.jpg"
+  },
+  {
+    "key": "varanasi",
+    "source": "https://commons.wikimedia.org/wiki/File:Varanasi_Munshi_Ghat3.jpg",
+    "author": "Marcin Białek",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original": "File:Varanasi Munshi Ghat3.jpg"
+  },
+  {
+    "key": "mumbai",
+    "source": "https://commons.wikimedia.org/wiki/File:Mumbai_03-2016_30_Gateway_of_India.jpg",
+    "author": "A.Savin",
+    "license": "FAL",
+    "licenseUrl": "http://artlibre.org/licence/lal/en",
+    "original": "File:Mumbai 03-2016 30 Gateway of India.jpg"
+  },
+  {
+    "key": "jaipur",
+    "source": "https://commons.wikimedia.org/wiki/File:Hawa_Mahal_(The_Palace_of_Winds)_in_Jaipur,_20191218_1201_9174.jpg",
+    "author": "Jakub Hałun",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original": "File:Hawa Mahal (The Palace of Winds) in Jaipur, 20191218 1201 9174.jpg"
+  },
+  {
+    "key": "bengaluru",
+    "source": "https://commons.wikimedia.org/wiki/File:Vidhan_Soudha_Bangalore_Front_view.JPG",
+    "author": "Rameshng at Malayalam Wikipedia",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "original": "File:Vidhan Soudha Bangalore Front view.JPG"
+  },
+  {
+    "key": "chennai",
+    "source": "https://commons.wikimedia.org/wiki/File:Chennai_Kapaleeshwarar_Temple.jpg",
+    "author": "Thilip thiru",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original": "File:Chennai Kapaleeshwarar Temple.jpg"
+  },
+  {
+    "key": "gujarat",
+    "source": "https://commons.wikimedia.org/wiki/File:Statue_of_Unity.jpg",
+    "author": "Snehrashmi",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original": "File:Statue of Unity.jpg"
+  },
+  {
+    "key": "agra",
+    "source": "https://commons.wikimedia.org/wiki/File:Taj_Mahal,_Agra,_India_edit2.jpg",
+    "author": "Yann; edited by King of Hearts",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "original": "File:Taj Mahal, Agra, India edit2.jpg"
+  }
+]
