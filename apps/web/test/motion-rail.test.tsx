@@ -140,3 +140,30 @@ for(const gesture of [
   }finally{await h.unmount();}
  });
 }
+
+for (const gesture of ['touch rail', 'next arrow'] as const) {
+ test(`${gesture} exposes an enabled Play control that resumes after focus leaves`, async t => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  const h = await mount(true);
+  try {
+   if (gesture === 'touch rail') {
+    await act(async () => h.rail.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true })));
+   } else {
+    await act(async () => h.button('Next Instagram posts')!.click());
+   }
+   await act(async () => document.getElementById('outside')!.focus());
+   const stoppedAt = h.rail.scrollLeft;
+   await act(async () => t.mock.timers.tick(9000));
+   assert.equal(h.rail.scrollLeft, stoppedAt, 'Visitor interaction must stop automatic movement');
+   const resume = h.button('Play Instagram posts');
+   assert.ok(resume, 'Paused rails must expose the semantic Play state used by the visible resume affordance');
+   assert.equal(resume.disabled, false);
+   await act(async () => resume.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true })));
+   await act(async () => resume.focus());
+   await act(async () => resume.click());
+   assert.ok(h.button('Pause Instagram posts'), 'Pointer activation restores the automatic state');
+   await act(async () => t.mock.timers.tick(4500));
+   assert.equal(h.rail.scrollLeft, stoppedAt + 600);
+  } finally { await h.unmount(); }
+ });
+}

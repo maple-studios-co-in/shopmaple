@@ -1,5 +1,7 @@
 # Current delivery queue — 26 October 2026
 
+Latest local increment: [storefront fidelity and Keeri discovery](releases/2026-10-26-fidelity-followup.md). Elegance, navigation/banner sizing, filter typography, Story proportions, footer and unobtrusive motion controls are corrected locally. The Keeri adapter now derives missing categories from known product types, but the fresh database sync is pending. Local tests/types/build pass; trusted network access, dependency audit, remote CI and deployment remain open. This entry is not a claim that the new changes are live.
+
 The active goal and next work are tracked in [Shop Content and Motion](superpowers/plans/2026-10-26-shop-content-motion.md). This wave adds a protected Shop Admin and restores the original moving Instagram layout. Keeri remains the product/order authority; checkout remains disabled. The older checklist below records previous milestones and must not be read as the current deployment status.
 
 Completed and deployed in PR #17: category copy/order/visibility controls, private media library and transactional publication, and a separately authorized enquiry inbox. The first publisher is `aditya@maplefurnishers.com`; private password setup and enquiry capability approval remain pending. The deployed runtime is `b38d9a0` (same tree as merge `7eda8c6`).

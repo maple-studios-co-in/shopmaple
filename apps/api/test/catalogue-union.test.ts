@@ -28,6 +28,15 @@ test("exact SKU union preserves Shopify product/cart identities and missing pres
   assert.equal(p.variants[0]!.pricePaise, 12345);
   assert.equal(plan.report.mergedModels, 1);
 });
+
+test("a derived Keeri type does not replace an explicit Shopify category on an exact match", () => {
+  const { s, k } = fixtures();
+  k.publication[0]!.category = null;
+  k.models[0]!.productType = "table";
+  assert.equal(planCatalogueUnion(s, k, "maple").products[0]!.category, "chairs");
+  k.publication[0]!.category = "outdoors";
+  assert.equal(planCatalogueUnion(s, k, "maple").products[0]!.category, "outdoors");
+});
 test("conflicting exact evidence does not guess; unrelated Shopify variants remain", () => {
   const { s, k } = fixtures();
   s.products[0]!.variants.nodes.push({

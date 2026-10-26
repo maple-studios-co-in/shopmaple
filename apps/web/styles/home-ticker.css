@@ -64,25 +64,6 @@
   outline-offset: 3px;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .home-ticker .home-ticker-control {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .home-ticker:hover .home-ticker-control,
-  .home-ticker:focus-within .home-ticker-control {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-@media (any-pointer: coarse) {
-  .home-ticker .home-ticker-control {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
 @keyframes home-ticker-scroll {
   to { transform: translateX(-50%); }
 }
@@ -101,3 +82,51 @@
     white-space: normal;
   }
 }
+
+/* Original Shopify slogan: large gradient type with no panel behind it. */
+.home-parity .home-ticker {
+  margin: 0;
+  padding: 20px 0;
+  background: transparent;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 80px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.6;
+  text-align: left;
+}
+.home-ticker-copy, .home-ticker-repeat {
+  background: linear-gradient(89deg, #ac4942 7%, #741a14 94%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #741a14;
+}
+.home-ticker-track { animation-duration: 20s; }
+.home-ticker-repeat { padding: 0 64px 0 0; }
+.home-ticker .home-ticker-control {
+  opacity: 0;
+  pointer-events: auto;
+  color: #741a14;
+}
+.home-ticker .home-ticker-control:focus-visible { opacity: 1; }
+@media (max-width: 749px) {
+  .home-parity .home-ticker { font-size: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-parity .home-ticker { padding-inline: 16px; }
+}
+/* A touch anywhere on the slogan pauses it without a persistent badge. */
+.home-ticker .home-ticker-control {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 1;
+}
+.home-ticker-control > svg { opacity: 0; }
+.home-ticker-control:focus-visible { outline-offset: -4px; }
+.home-ticker-control:focus-visible > svg { opacity: 1; background: #f4f2ec; padding: 12px; border-radius: 50%; box-sizing: content-box; }

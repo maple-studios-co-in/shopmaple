@@ -248,13 +248,17 @@ export function HomeCities({
         {cities.map(({ key }) => {
           const artwork = resolveTemplateMedia(`home-city-${key}`, media);
           return (
-            <Image
-              key={key}
-              src={artwork.image}
-              alt={artwork.alt}
-              width={150}
-              height={120}
-            />
+            <figure key={key} className="home-city-card">
+              <div className="home-city-artwork">
+                <Image
+                  src={artwork.image}
+                  alt={artwork.alt}
+                  width={150}
+                  height={120}
+                />
+              </div>
+              {artwork.alt && <figcaption>{artwork.alt}</figcaption>}
+            </figure>
           );
         })}
       </MovingCities>

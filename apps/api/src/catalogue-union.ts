@@ -142,7 +142,8 @@ export function planCatalogueUnion(
     )
       ambiguous = true;
     const target = [...targetProducts][0];
-    return { p, target, variantMap, ambiguous, bound };
+    const publishedCategory = raw.publication.find((entry) => entry.modelId === model.id)?.category;
+    return { p, target, variantMap, ambiguous, bound, publishedCategory };
   });
   const claims = new Map<string, number>();
   for (const c of candidates)
@@ -186,7 +187,8 @@ export function planCatalogueUnion(
       title: base ? base.title : c.p.title,
       description: base ? base.description : c.p.description,
       pdpContent: base?.pdpContent ?? null,
-      category: c.p.category ?? base?.category ?? null,
+      // Explicit channel categories outrank a fallback derived from the source type.
+      category: c.publishedCategory ?? base?.category ?? c.p.category ?? null,
       images: base ? base.images : c.p.images,
       source: base ? "shopify-preview" : source,
       variants: [...variants.values()],

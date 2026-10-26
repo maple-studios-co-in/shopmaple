@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type CSSProperties } from "react";
-import { Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react";
+import { Instagram, Linkedin } from "lucide-react";
 import type { ChromeLink, SiteChrome } from "@shopmaple/contracts";
-import { shopFile } from "@/lib/format";
 import { defaultSiteChrome, chromeHref } from "@/lib/site-chrome-defaults";
 function Links({ links }: { links: ChromeLink[] }) {
   return links
@@ -31,10 +30,10 @@ export function Footer({
   );
   const mainStyle = {
     "--chrome-footer-columns": [
-      "1.7fr",
+      "2fr",
       ...columns.map(
         (column) =>
-          ({ shop: "0.8fr", help: "0.9fr", care: "1.7fr" })[column.key],
+          ({ shop: "0.8fr", help: "0.8fr", care: "1.1fr" })[column.key],
       ),
     ].join(" "),
     "--chrome-footer-medium-columns": [
@@ -47,9 +46,9 @@ export function Footer({
   } as CSSProperties;
   const contactStyle = {
     "--chrome-contact-columns": [
-      "1fr",
+      "1.7fr",
       ...contactColumns.map((column) =>
-        column.key === "marketplace" ? "0.65fr" : "1.1fr",
+        column.key === "marketplace" ? "0.45fr" : "1fr",
       ),
     ].join(" "),
   } as CSSProperties;
@@ -62,7 +61,7 @@ export function Footer({
           aria-label="Maple Furnishers home"
         >
           <Image
-            src={shopFile("Cover_Image_Maple_1.png?v=1752647999")}
+            src={"/media/footer/maple-logo.webp"}
             alt="Maple Furnishers"
             width={1080}
             height={500}
@@ -75,7 +74,7 @@ export function Footer({
               <div className="maple-footer-care" key={key}>
                 <h2>{footer.careHeading}</h2>
                 <p>
-                  <MapPin size={26} strokeWidth={1} />
+                  <Image src={"/media/footer/map.svg"} alt="" width={40} height={42} />
                   <span>
                     {footer.addressLines.map((line, index) => (
                       <Fragment key={index}>
@@ -86,11 +85,11 @@ export function Footer({
                   </span>
                 </p>
                 <a href={`tel:${footer.customerPhone}`}>
-                  <Phone size={26} strokeWidth={1} />{" "}
+                  <Image src={"/media/footer/phone.svg"} alt="" width={40} height={42} />{" "}
                   {footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${footer.customerEmail}`}>
-                  <Mail size={26} strokeWidth={1} /> {footer.customerEmail}
+                  <Image src={"/media/footer/mail.svg"} alt="" width={40} height={42} /> {footer.customerEmail}
                 </a>
               </div>
             );
@@ -119,7 +118,7 @@ export function Footer({
                 <div key={key}>
                   <h3>{footer.findUsHeading}</h3>
                   <Image
-                    src={shopFile("amazon_logo.avif?v=1778615085")}
+                    src={"/media/footer/amazon.avif"}
                     alt="Amazon"
                     width={150}
                     height={56}
@@ -133,11 +132,11 @@ export function Footer({
               <div key={key}>
                 <h3>{bulk ? footer.bulkHeading : footer.serviceHeading}</h3>
                 <a href={`tel:${phone}`}>
-                  <Phone size={24} strokeWidth={1} />{" "}
+                  <Image src={"/media/footer/phone-light.svg"} alt="" width={40} height={42} />{" "}
                   {bulk ? footer.bulkPhoneLabel : footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${email}`}>
-                  <Mail size={24} strokeWidth={1} /> {email}
+                  <Image src={"/media/footer/mail-light.svg"} alt="" width={40} height={42} /> {email}
                 </a>
               </div>
             );
@@ -149,9 +148,12 @@ export function Footer({
           © {new Date().getFullYear()} {footer.copyrightName}
         </span>
         {footer.policyLinks.some((link) => link.enabled) && (
-          <nav aria-label="Store policies">
-            <Links links={footer.policyLinks} />
-          </nav>
+          <details className="maple-footer-policies">
+            <summary>Terms and Policies</summary>
+            <nav aria-label="Store policies">
+              <Links links={footer.policyLinks} />
+            </nav>
+          </details>
         )}
         {(footer.instagram || footer.linkedin) && (
           <div>

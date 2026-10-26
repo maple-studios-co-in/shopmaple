@@ -59,3 +59,56 @@
     min-height: 32px;
   }
 }
+
+/* Restore the original full-width footer bands and column proportions. */
+.maple-footer-main { padding: 52px 40px 20px; gap: 48px; min-height: 346px; }
+.maple-footer-logo { align-self: center; max-width: 330px; }
+.maple-footer-main h2 { font-size: 18px; font-weight: 700; line-height: 1.1; font-style: normal; letter-spacing: 0; margin-bottom: 28px; }
+.maple-footer-main nav { gap: 12px; line-height: 1.6; }
+.maple-footer-main nav > a { font-size: 16px; }
+.maple-footer-main nav h2 { margin-bottom: 12px; }
+.maple-footer-main nav + nav,
+.maple-footer-care { border-left: 1px solid #43362512; padding-left: 24px; margin-left: -24px; }
+.maple-footer-care { font-size: 16px; line-height: 1.6; }
+.maple-footer-care p, .maple-footer-care a { margin-bottom: 24px; }
+.maple-footer-care svg { color: #741a14; }
+.maple-footer-contact { margin: 0; padding: 20px max(40px, calc((100vw - 1360px) / 2)) 16px; min-height: 193px; gap: 64px; border-radius: 0; background: #741a14; color: #f5f5f5; }
+.maple-footer-contact > div { border: 0; padding: 0; }
+.maple-footer-contact > div:first-child { align-self: center; }
+.maple-footer-contact h2 { font: italic 500 48px/1.1 Newsreader, Georgia, serif; }
+.maple-footer-contact h3 { font-size: 18px; line-height: 1.1; font-weight: 700; margin: 12px 0 16px; }
+.maple-footer-contact a { font-size: 16px; gap: 16px; margin: 12px 0; min-height: 40px; }
+.maple-footer-contact img { width: 105px; height: auto; }
+.maple-footer-bottom { min-height: 64px; padding: 20px 40px; font-size: 12px; justify-content: flex-start; }
+.maple-footer-bottom > div:last-child { margin-left: auto; }
+.maple-footer-policies { position: relative; }
+.maple-footer-policies summary { list-style: none; cursor: pointer; }
+.maple-footer-policies summary::-webkit-details-marker { display: none; }
+.maple-footer-policies summary:focus-visible { outline: 2px solid #741a14; outline-offset: 5px; }
+.maple-footer-policies nav { position: absolute; bottom: calc(100% + 12px); left: 0; width: 200px; padding: 16px; background: #e9e4e0; border: 1px solid #43362533; box-shadow: 0 4px 16px #0001; flex-direction: column; z-index: 2; }
+@media (min-width: 750px) and (max-width: 1100px) {
+  .maple-footer-main { gap: 28px; }
+  .maple-footer-main nav > a, .maple-footer-care { font-size: 14px; }
+  .maple-footer-contact { gap: 28px; }
+}
+@media (max-width: 749px) {
+  .maple-footer-main { padding: 32px 20px; gap: 32px 24px; }
+  .maple-footer-logo { width: 70%; }
+  .maple-footer-care, .maple-footer-main nav + nav { margin: 0; padding: 0; border: 0; }
+  .maple-footer-main h2 { font-size: 18px; }
+  .maple-footer-contact { padding: 28px 20px; gap: 24px; }
+  .maple-footer-contact h2 { font-size: 36px; }
+  .maple-footer-contact > div, .maple-footer-contact > div:nth-child(2) { border: 0; padding: 0; }
+  .maple-footer-bottom { padding: 24px 20px 90px; gap: 20px; }
+  .maple-footer-bottom > div:last-child { margin-left: 0; }
+}
+
+.maple-footer-care img, .maple-footer-contact a img { flex: 0 0 40px; width: 40px; height: 42px; object-fit: contain; }
+.maple-footer-contact h3 { margin: 0; padding: 11.2px 0; }
+.maple-footer-contact a { margin: 0; min-height: 42px; }
+.maple-footer-contact a + a { margin-top: 12px; }
+@media (min-width: 1101px) {
+  .maple-footer-contact a[href^="mailto:"], .maple-footer-care a[href^="mailto:"] { white-space: nowrap; }
+}
+.maple-footer-care a:last-child { margin-bottom: 0; }
+@media (min-width: 1101px) { .maple-footer-logo { margin-left: 10px; } }
