@@ -86,13 +86,13 @@ test("failed product images retain a neutral accessible fallback", async () => {
   });
 });
 test("an unpriced saved cart uses unknown totals and an enquiry instead of checkout", async () => {
-  const cart: Cart = { ...empty, itemCount: 1, subtotalPaise: null, items: [{ variantId: "option", handle: model.handle, title: model.title, variantTitle: "Natural", image: "", pricePaise: null, lineTotalPaise: null, quantity: 1, available: true, stockPolicy: "stocked" }] };
+  const cart: Cart = { ...empty, itemCount: 1, subtotalPaise: null, items: [{ variantId: "option", handle: model.handle, title: model.title, variantTitle: "Natural", image: "", pricePaise: null, lineTotalPaise: null, quantity: 1, available: true, cartable: false, stockPolicy: "stocked" }] };
   await mount(<CartContents />, () => {
     assert.match(document.querySelector(".cart-summary strong")!.textContent!, /Price on request/);
     assert.equal(document.querySelector('a[href="/checkout"]'), null);
     assert.ok(document.querySelector('.cart-summary a[href="/pages/contact"]'));
     assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Increase quantity of New Model"]')!.disabled, true);
-    assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Decrease quantity of New Model"]')!.disabled, true);
+    assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Decrease quantity of New Model"]')!.disabled, false);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
   }, cart);
 });
@@ -121,10 +121,11 @@ test("new catalogue members use their known category without requiring dated pre
   const chair = { ...model, category: "chairs" as const };
   assert.deepEqual(collectionMembers([chair], "chairs"), [chair]);
 });
-test("an unverified stock policy never offers purchase even when a price and available flag are present", async () => {
-  await mount(<ProductDetail product={{ ...model, variants: [{ ...known, stockPolicy: "unverified" }] }} />, () => {
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
-    assert.ok(document.querySelector(".pdp-purchase a"));
+test("priced unverified options offer cart selection without claiming confirmed stock", async () => {
+  await mount(<ProductDetail product={{ ...model, variants: [{ ...known, available: false, stockPolicy: "unverified" }] }} />, () => {
+    assert.equal(document.querySelector(".pdp-purchase button.button")?.textContent, "Add to cart");
+    assert.equal(document.querySelector(".pdp-purchase a"), null);
+    assert.doesNotMatch(document.querySelector(".pdp-info")!.textContent!, /In stock|Payment confirmed/);
   });
 });
 

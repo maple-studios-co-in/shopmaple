@@ -1,7 +1,6 @@
 "use client";
 import { useLayoutEffect, useRef, useState } from "react";
 import { ProductImage } from "./product-image";
-import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useShop } from "./shop-provider";
@@ -120,7 +119,8 @@ export function CartContents() {
               </Link>
               <p className="muted">{item.variantTitle}</p>
               <p>{money(item.pricePaise)}</p>
-              {!canOrder(item) && (
+              {item.stockPolicy === "made_to_order" && <p className="muted">Made to order</p>}
+              {!item.cartable && (
                 <p className="error-text">
                   Please contact us to confirm price and availability.
                 </p>
@@ -128,7 +128,7 @@ export function CartContents() {
               <div className="quantity-row">
                 <div className="quantity-control">
                   <button
-                    disabled={busy || !canOrder(item)}
+                    disabled={busy}
                     onClick={(event) =>
                       void updateQuantity(item.variantId, item.quantity - 1, event.currentTarget)
                     }
@@ -138,7 +138,7 @@ export function CartContents() {
                   </button>
                   <span>{item.quantity}</span>
                   <button
-                    disabled={busy || item.quantity >= 20 || !canOrder(item)}
+                    disabled={busy || item.quantity >= 20 || !item.cartable}
                     onClick={() =>
                       void setQuantity(item.variantId, item.quantity + 1)
                     }
@@ -176,13 +176,13 @@ export function CartContents() {
         <p>Shipping and availability will be confirmed before payment.</p>
         <Link
           className="button full-width"
-          href={cart.items.every(canOrder) && cart.subtotalPaise !== null ? "/checkout" : "/pages/contact"}
+          href={cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "/checkout" : "/pages/contact"}
           onClick={() => setCartOpen(false)}
         >
-          {cart.items.every(canOrder) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
+          {cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
         </Link>
         <p className="preview-disclosure">
-          Preview only. Online payment is not available yet.
+          Your cart is saved. Online payment is not available yet.
         </p>
       </div>
     </section>

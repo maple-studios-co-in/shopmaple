@@ -1,1 +1,1 @@
-export { pricedVariants, lowestPrice, canOrder } from "@shopmaple/contracts";
+export { pricedVariants, lowestPrice, canOrder, canAddToCart } from "@shopmaple/contracts";

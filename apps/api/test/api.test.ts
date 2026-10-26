@@ -160,8 +160,15 @@ test("cross-origin and missing-origin cart writes are refused", async () => {
   assert.equal((await request(app).put("/api/cart/items/chair-cream").set("Origin", "https://other.example").send({ quantity: 1 })).status, 403);
   assert.equal(await db.cart.count(), 0);
 });
-test("unavailable, unpublished and made-to-order variants cannot be added", async () => {
-  for (const id of ["chair-blue", "chair-custom", "hidden-v", "missing"]) {
+test("priced unavailable and made-to-order items can be saved while unpublished or missing products are rejected", async () => {
+  for (const id of ["chair-blue", "chair-custom"]) {
+    const result = await cartWrite(request.agent(app), id, 1);
+    assert.equal(result.status, 200);
+    assert.equal(result.body.items[0].cartable, true);
+    assert.equal(result.body.items[0].available, false);
+    assert.equal(result.body.checkoutEnabled, false);
+  }
+  for (const id of ["hidden-v", "missing"]) {
     const result = await cartWrite(request.agent(app), id, 1);
     assert.ok([404, 409].includes(result.status), id + " status " + result.status);
   }

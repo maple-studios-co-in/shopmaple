@@ -60,8 +60,8 @@ test("captured source disclosures replace generic copy without changing purchase
     assert.equal(disclosure("Shipping + Returns").querySelector("a"), null);
     assert.equal(document.querySelector("h1")?.textContent, "Source Chair");
     assert.match(document.querySelector(".pdp-price-block strong")!.textContent!, /23,600/);
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
-    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Checkout is unavailable/);
+    assert.equal(document.querySelector(".pdp-purchase button.button")?.textContent, "Add to cart");
+    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
     assert.match(disclosure("Dimensions & specifications").textContent!, /SKU: CHAIR-NAT/);
   });
 });
