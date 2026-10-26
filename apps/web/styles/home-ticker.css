@@ -64,6 +64,25 @@
   outline-offset: 3px;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .home-ticker .home-ticker-control {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .home-ticker:hover .home-ticker-control,
+  .home-ticker:focus-within .home-ticker-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (any-pointer: coarse) {
+  .home-ticker .home-ticker-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 @keyframes home-ticker-scroll {
   to { transform: translateX(-50%); }
 }

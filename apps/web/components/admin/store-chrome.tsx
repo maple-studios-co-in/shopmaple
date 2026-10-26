@@ -24,9 +24,6 @@ export function StoreChromeView({
       <Footer siteChrome={siteChrome} />
       <CartDrawer />
       <WhatsAppLink siteChrome={siteChrome} />
-      <aside className="preview-note" aria-label="Preview status">
-        Development preview · Checkout unavailable
-      </aside>
     </>
   );
 }

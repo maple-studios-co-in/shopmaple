@@ -46,11 +46,21 @@ test("storefront and admin-like public slugs preserve real shopping navigation a
       ),
     );
     assert.ok(document.querySelector('nav[aria-label="Help and policies"]'));
-    assert.ok(document.querySelector('[aria-label="Preview status"]'));
     assert.equal(document.querySelectorAll("main").length, 1);
     assert.equal(
       document.querySelector("main h1")?.textContent,
       "Current page",
     );
+  }
+});
+test("public pages have no floating development-preview announcement", () => {
+  for (const path of ["/", "/pages/care-guide", "/collections/all", "/products/example"]) {
+    const document = render(path);
+    assert.equal(
+      document.querySelector('[aria-label="Preview status"]'),
+      null,
+      "Public content must not be covered by a floating development-preview badge",
+    );
+    assert.doesNotMatch(document.body.textContent!, /Development preview · Checkout unavailable/);
   }
 });

@@ -1,0 +1,101 @@
+/* Exact font files and faces served by the published Shopify storefront.
+ * See public/fonts/shopify/README.md for provenance and licenses. */
+@font-face {
+  font-family: Manrope;
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/manrope_n4.cd2363f838fb1ef03bdb07c829c7c992d417dd64.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Manrope;
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/manrope_n7.f3a06f9634c15008fe4637ba89fefcc8a1b93fbd.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_n4.b5d1a51abefc3e451a1095094f8cb52bc71994eb.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_n7.23ab8134dd970213aaed7699491a8a2cb47dae45.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_i4.b6c896efb016d5bce4e554059dfe501c6316187d.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_i7.c957ba3bc7bb44bfca68314e689a88a6cb340dbe.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_n5.a5140c017534cc37a56cca2c3893d76127bc46ac.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_i5.7a22c0369f814aa39277fdc61ee901d9af33759a.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Red Hat Display";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/redhatdisplay_n7.5b14b817f945f7cf9f5e3fa661372aaee24aedbe.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Red Hat Display";
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  src: url("/fonts/shopify/redhatdisplay_i7.725ef8b794aadff6bc8844a51e5cccf4180e7ffa.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: Newsreader;
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/newsreader_n6.e6648a2ece97a1b03d7262a0f4551ab429abd3d9.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Red Hat Display";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/shopify/redhatdisplay_n4.36efd597fcb92d83eab631792bad06e153941221.woff2") format("woff2");
+}
+
+:root {
+  --font-heading: Newsreader, Georgia, serif;
+}
