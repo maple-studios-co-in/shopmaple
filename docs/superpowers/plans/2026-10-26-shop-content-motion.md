@@ -12,7 +12,7 @@
 
 ## Current acceptance status (supersedes historical task snapshots)
 
-Verified merged source baseline: PR42, merged asc726ee99354a280993464520deca786f63f1c327 with eight passing exact-head CI checks. Compact catalogue queries and cart focus are the current increment; release evidence is recorded separately. The checklists below retain implementation history; an old unchecked item does not override the current evidence, and a checked implementation item does not establish production acceptance.
+Verified merged source baseline: PR43, merged as4794816bd3b4e605761ca530d644641487ab23c2 with eight passing exact-head CI checks and916 tests. Compact catalogue queries and cart focus are merged. Disabled enquiry notification delivery is the current increment; release evidence is recorded separately. The checklists below retain implementation history; an old unchecked item does not override the current evidence, and a checked implementation item does not establish production acceptance.
 
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |

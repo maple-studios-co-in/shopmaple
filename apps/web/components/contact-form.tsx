@@ -103,8 +103,7 @@ export function ContactForm({
         {enquiry.pending ? "Saving…" : bulk ? "Request Proposal" : "Submit"}
       </button>
       <p id={`${id}-email-note`} className="cp-email-note">
-        Development preview: enquiries are saved locally. Team notifications are
-        not connected yet.
+        Development preview: enquiries are saved. Team notification is not confirmed.
       </p>
       {enquiry.message && (
         <p role={enquiry.failed ? "alert" : "status"} className="cp-email-note">

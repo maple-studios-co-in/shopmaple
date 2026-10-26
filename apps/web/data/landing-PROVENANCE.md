@@ -18,7 +18,7 @@ Product rows resolve the owned API's complete paginated catalogue once per serve
 
 The current public preview snapshot contains 85 products, and all 73 landing-page products resolve locally. At this catalogue size, the cached lookup makes two paginated API requests per server render; it is not one request per product row. Specialist collection destinations without local support retain their exact Shopify links.
 
-Nimbus enquiries reuse the project form and POST to the persistent local enquiry endpoint. A successful response returns an idempotent preview reference with `mode: preview` and `notificationSent: false`; the UI explicitly states that the enquiry was saved in this development preview and has not been sent to the team. There is no email-app handoff or verified team notification. See `docs/enquiries.md` for persistence and retry boundaries.
+Nimbus enquiries reuse the project form and POST to the persistent local enquiry endpoint. A successful response returns an idempotent preview reference with `mode: preview` and `notificationSent: false`; the UI explicitly states that the enquiry was saved in this development preview and that team notification is not confirmed. The asynchronous alert may be queued or accepted by its provider; the public receipt does not confirm inbox delivery. There is no email-app handoff. See `docs/enquiries.md` for persistence and retry boundaries.
 
 Video controls respect reduced-motion preferences and provide a pause/play control. The source's embedded Judge.me widget on Our Story is not replaced by fabricated reviews.
 

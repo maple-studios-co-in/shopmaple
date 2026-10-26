@@ -17,7 +17,7 @@ function decodeCursor(value: string) {
         throw new HttpError(400, "INVALID_INPUT", "Check the supplied values and try again.");
     }
 }
-async function requireEnquiryAccess(tx: Prisma.TransactionClient, req: Request, secure: boolean, write = false) {
+export async function requireEnquiryAccess(tx: Prisma.TransactionClient, req: Request, secure: boolean, write = false) {
     const session = await requireStaff(tx, req, secure, write, false, true);
     // The staff row remains locked until data reads or review/audit writes commit.
     const current = await tx.shopAdmin.findUniqueOrThrow({ where: { id: session.user.id } });

@@ -43,7 +43,8 @@ test("source service routes retain forms, help, operational notices, media and a
     assert.ok(contact.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
     assert.ok(contact.querySelector('iframe[title="Maple Furnishers showroom in Kirti Nagar"]'));
     assert.match(contact.body.textContent ?? "", /Account sign-in and order tracking are not available/);
-    assert.match(contact.body.textContent ?? "", /Team notifications are not connected yet/);
+    assert.match(contact.body.textContent ?? "", /Development preview: enquiries are saved\. Team notification is not confirmed\./);
+    assert.doesNotMatch(contact.body.textContent ?? "", /saved locally|notifications are not connected|has not been sent to our team/);
     assert.equal(contact.querySelector(".home-cities h2")?.textContent, "20+ Cities");
     const bulk = await renderPage("bulk-enquiry");
     assert.equal(bulk.querySelector("h1")?.textContent, "Home Interior");
@@ -190,7 +191,8 @@ test("service marketing fields are plain text and never replace operational noti
       const doc = await renderPage(slug);
       assert.ok(doc.body.textContent?.includes(attack));
       assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
-      assert.match(doc.body.textContent ?? "", /Team notifications are not connected yet/);
+      assert.match(doc.body.textContent ?? "", /Development preview: enquiries are saved\. Team notification is not confirmed\./);
+      assert.doesNotMatch(doc.body.textContent ?? "", /saved locally|notifications are not connected|has not been sent to our team/);
       if (slug === "returns") assert.ok(doc.body.textContent?.includes(fixedWarning));
       if (slug === "contact") assert.match(doc.body.textContent ?? "", /Account sign-in and order tracking are not available/);
     }

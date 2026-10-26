@@ -14,7 +14,7 @@ export function useEnquiry() {
     try {
       sender.current ??= createEnquirySender();
       const receipt = await sender.current(input);
-      setMessage(`Saved in this development preview. It has not been sent to our team. Reference: ${receipt.reference}`);
+      setMessage(`Saved in this development preview. Team notification is not confirmed. Reference: ${receipt.reference}`);
     } catch (error) {
       setFailed(true);
       setMessage(error instanceof Error && !error.message.startsWith("[") ? error.message : "Please check your details and try again.");
