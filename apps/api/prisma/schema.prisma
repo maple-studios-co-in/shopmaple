@@ -103,6 +103,7 @@ model Enquiry {
   context Json
   status String @default("new")
   version Int @default(0)
+  delivery EnquiryDelivery?
   reviews EnquiryReviewAudit[]
   assignedToId String?
   assignedTo ShopAdmin? @relation("AssignedEnquiries", fields: [assignedToId], references: [id], onDelete: Restrict)
@@ -194,6 +195,7 @@ model ShopAdmin {
   sessions ShopAdminSession[]
   revisions ShopContentRevision[]
   mediaAssets ShopMediaAsset[]
+  deliveryRetries EnquiryDeliveryRetryAudit[]
   enquiryReviews EnquiryReviewAudit[]
   assignedEnquiries Enquiry[] @relation("AssignedEnquiries")
   enquiryActivity EnquiryActivity[] @relation("EnquiryActivityActor")
@@ -278,4 +280,35 @@ model ShopArticlePublication {
   handle String
   publishedAt DateTime @default(now())
   @@id([blog, handle])
+}
+
+model EnquiryDelivery {
+  id String @id @default(cuid())
+  enquiryId String @unique
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  configurationHash String
+  status String @default("queued")
+  version Int @default(0)
+  attempts Int @default(0)
+  nextAttemptAt DateTime? @default(now())
+  firstAttemptAt DateTime?
+  acceptedAt DateTime?
+  errorCode String?
+  providerId String?
+  leaseToken String?
+  leaseExpiresAt DateTime?
+  createdAt DateTime @default(now())
+  retries EnquiryDeliveryRetryAudit[]
+  @@index([status, nextAttemptAt])
+}
+
+model EnquiryDeliveryRetryAudit {
+  id String @id @default(cuid())
+  deliveryId String
+  delivery EnquiryDelivery @relation(fields: [deliveryId], references: [id], onDelete: Restrict)
+  actorId String
+  actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  version Int
+  createdAt DateTime @default(now())
+  @@unique([deliveryId, version])
 }

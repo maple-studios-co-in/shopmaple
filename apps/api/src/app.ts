@@ -7,6 +7,8 @@ import { z } from "zod";
 import { registerStaffRoutes } from "./admin/auth.js";
 import { registerMediaRoutes } from "./admin/media.js";
 import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
+import { registerEnquiryDeliveryAdminRoutes } from "./admin/enquiry-delivery.js";
+import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
@@ -26,6 +28,7 @@ export type AppConfig = {
   /** Only opt in for a loopback-bound API behind the trusted local Next/Tunnel proxy. */
   trustProxyLoopback?: boolean;
   mediaRoot?: string;
+  enquiryDelivery?: EnquiryDeliveryConfig | null;
 };
 export function createApp(
   db: PrismaClient,
@@ -69,6 +72,7 @@ export function createApp(
   registerStaffRoutes(app, db, config.secureCookies);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot);
   registerEnquiryAdminRoutes(app, db, config.secureCookies);
+  registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
   registerCatalogueViewRoutes(app, db);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
@@ -133,6 +137,7 @@ export function createApp(
         db,
         req.body,
         req.get("Idempotency-Key"),
+        config.enquiryDelivery ?? null,
       );
       res.status(result.created ? 201 : 200).json(result.receipt);
     },

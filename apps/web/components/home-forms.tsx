@@ -58,7 +58,7 @@ export function HomeProjectForm() {
         {enquiry.pending ? "Saving…" : "Submit"}
       </button>
       <p className="home-preview-detail">
-        Development preview: enquiries are saved locally. Team notifications are not connected yet.
+        Development preview: enquiries are saved. Team notification is not confirmed.
       </p>
       {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="home-preview-detail">{enquiry.message}</p>}
     </form>

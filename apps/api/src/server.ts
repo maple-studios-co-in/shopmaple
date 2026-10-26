@@ -2,6 +2,9 @@ import { isAbsolute } from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createApp } from "./app.js";
+import { loadEnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
+import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
+import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -21,6 +24,7 @@ if (
   !["127.0.0.1", "::1"].includes(env.API_HOST)
 )
   throw new Error("Trusted local proxy requires a loopback-bound API");
+const enquiryDelivery = loadEnquiryDeliveryConfig(process.env);
 const db = new PrismaClient();
 const server = createApp(db, {
   webOrigin: new URL(env.WEB_ORIGIN).origin,
@@ -28,6 +32,7 @@ const server = createApp(db, {
   mediaRoot: env.SHOP_MEDIA_ROOT,
   secureCookies: process.env.NODE_ENV === "production",
   trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
+  enquiryDelivery,
 }).listen(env.API_PORT, env.API_HOST, () =>
   console.log(
     "Maple API listening on " +
@@ -37,9 +42,19 @@ const server = createApp(db, {
       " (preview; checkout disabled)",
   ),
 );
+const deliveryRunner = enquiryDelivery
+  ? startEnquiryDeliveryRunner(
+      () => processEnquiryDeliveries(db, enquiryDelivery),
+      () => console.error("Enquiry delivery cycle failed; queued work remains recoverable."),
+    )
+  : null;
+let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
-  process.on(signal, () =>
+  process.on(signal, () => {
+    if (stopping) return;
+    stopping = true;
+    const drained = deliveryRunner?.stop();
     server.close(() => {
-      void db.$disconnect().then(() => process.exit(0));
-    }),
-  );
+      void Promise.resolve(drained).then(() => db.$disconnect()).then(() => process.exit(0));
+    });
+  });

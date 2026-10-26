@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { enquiryAdminListSchema, enquiryAdminDetailSchema, type EnquiryAdminSummary, type EnquiryAdminDetail } from "@shopmaple/contracts";
 import { EnquiryWorkflow } from "./enquiry-workflow";
+import { EnquiryDeliveryPanel } from "./enquiry-delivery-panel";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 export function EnquiryInbox(props: { session: StaffSession; onExpired: () => void }) {
@@ -20,7 +21,8 @@ function EnquiryInboxSession({ session, onExpired }: {
     const [cursor, setCursor] = useState<string | null>(null);
     const [loading, setBusy] = useState(false);
     const [workflowBusy, setWorkflowBusy] = useState(false);
-    const busy = loading || workflowBusy;
+    const [deliveryBusy, setDeliveryBusy] = useState(false);
+    const busy = loading || workflowBusy || deliveryBusy;
     const [error, setError] = useState("");
     const [loaded, setLoaded] = useState(false);
     const sequence = useRef(0);
@@ -32,6 +34,7 @@ function EnquiryInboxSession({ session, onExpired }: {
     useEffect(() => { if (detail)
         detailHeading.current?.focus(); }, [detail?.id]);
     function clear() { setItems([]); setDetail(null); setCursor(null); setLoaded(false); }
+    function denied(code: number) { sequence.current++; clear(); setBusy(false); setWorkflowBusy(false); setDeliveryBusy(false); if (code === 401) expired.current(); else setError("Your account does not have access to customer enquiries. Contact your administrator."); }
     async function run(path: string, mode: "list" | "detail") {
         const current = ++sequence.current;
         setBusy(true);
@@ -111,7 +114,8 @@ function EnquiryInboxSession({ session, onExpired }: {
       <dl><dt>Reference</dt><dd>{detail.id}</dd><dt>Name</dt><dd>{detail.name || "Not provided"}</dd><dt>Email</dt><dd>{detail.email}</dd><dt>Phone</dt><dd>{detail.phone || "Not provided"}</dd><dt>Status</dt><dd>{detail.status === "new" ? "New" : "Reviewed"}</dd><dt>Product</dt><dd>{detail.context.product || "Not provided"}</dd><dt>Variant</dt><dd>{detail.context.variant || "Not provided"}</dd><dt>SKU</dt><dd>{detail.context.sku || "Not provided"}</dd><dt>Pincode</dt><dd>{detail.context.pincode || "Not provided"}</dd></dl>
       <h4>Message</h4><p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.message || "No message supplied."}</p>
       {detail.reviews.map(review => <p key={review.id}>Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleString()}</time>.</p>)}
-      <EnquiryWorkflow key={detail.id} detail={detail} session={session} onBusy={setWorkflowBusy} onChange={value => { setDetail(value); setItems(rows => rows.map(row => row.id === value.id ? { ...row, status: value.status, version: value.version, assignedToId: value.assignedToId } : row).filter(row => (!status || row.status === status) && (!assignment || (assignment === "mine" ? row.assignedToId === session.user.id : row.assignedToId === null)))); }} onDenied={code => { sequence.current++; clear(); setBusy(false); setWorkflowBusy(false); if (code === 401) expired.current(); else setError("Your account does not have access to customer enquiries. Contact your administrator."); }} />
+      <EnquiryWorkflow key={detail.id} detail={detail} session={session} onBusy={setWorkflowBusy} onChange={value => { setDetail(value); setItems(rows => rows.map(row => row.id === value.id ? { ...row, status: value.status, version: value.version, assignedToId: value.assignedToId } : row).filter(row => (!status || row.status === status) && (!assignment || (assignment === "mine" ? row.assignedToId === session.user.id : row.assignedToId === null)))); }} onDenied={denied} />
+      <EnquiryDeliveryPanel enquiryId={detail.id} session={session} onBusy={setDeliveryBusy} onDenied={denied} />
       <button type="button" disabled={busy} onClick={() => { setDetail(null); (detailOpener.current?.isConnected ? detailOpener.current : reloadButton.current)?.focus(); }}>Close enquiry</button>
     </article>}
   </section>;
