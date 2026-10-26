@@ -4,7 +4,7 @@ import { ProductImage } from "./product-image";
 import { ProductGallery } from "./product-gallery";
 import { ProductVisit } from "./product-visit";
 import { ProductRichText } from "./product-rich-text";
-import { canOrder } from "@/lib/product-availability";
+import { canAddToCart } from "@/lib/product-availability";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -77,7 +77,7 @@ export function ProductDetail({
     toggleFavourite,
   } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
-  const enquiry = !canOrder(variant);
+  const enquiry = !product.published || !canAddToCart(variant);
   const selectedQuantity =
     cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
@@ -300,8 +300,7 @@ export function ProductDetail({
               </div>
             </div>
             <p className="preview-disclosure">
-              Development preview. Checkout is unavailable; stock, delivery,
-              warranty and payment terms must be confirmed before ordering.
+              Delivery and payment options will be confirmed before ordering.
             </p>
             <form
               className="pdp-serviceability"

@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import type { Cart, CartMutationInput } from "@shopmaple/contracts";
+import { canAddToCart } from "@shopmaple/contracts";
 import { cartCookieName, guestCartToken } from "./cart-credential.js";
 
 export class HttpError extends Error {
@@ -46,6 +47,7 @@ export async function readCart(
     lineTotalPaise: v.pricePaise === null ? null : v.pricePaise * quantity,
     available:
       v.pricePaise !== null && v.available && v.published && v.product.published && v.stockPolicy !== "made_to_order",
+    cartable: v.product.published && canAddToCart(v),
     stockPolicy: v.stockPolicy,
   }));
   return {
@@ -121,14 +123,17 @@ export async function setCartQuantity(
         if (cart.revision !== mutation.expectedRevision)
           return recordRejection(409, "CART_REVISION_CONFLICT", "Your cart changed in another window. Please review it before trying again.");
         if (quantity > 0) {
-          const variant = await tx.variant.findUnique({ where: { id }, include: { product: true } });
-          if (!variant || !variant.product.published)
-            return recordRejection(404, "PRODUCT_NOT_FOUND", "This item is no longer available.");
-          if (variant.pricePaise === null || !variant.available || !variant.published || variant.stockPolicy === "made_to_order")
-            return recordRejection(409, "ENQUIRY_REQUIRED", "Please enquire about this item before ordering.");
-          const count = await tx.cartItem.count({ where: { cartId: cart.id } });
           const line = await tx.cartItem.findUnique({ where: { cartId_variantId: { cartId: cart.id, variantId: id } } });
-          if (count >= 50 && !line)
+          // Existing selections may shrink even if publication or pricing changed.
+          // Adding or growing a selection still requires current public pricing.
+          if (!line || quantity > line.quantity) {
+            const variant = await tx.variant.findUnique({ where: { id }, include: { product: true } });
+            if (!variant || !variant.product.published)
+              return recordRejection(404, "PRODUCT_NOT_FOUND", "This item is no longer available.");
+            if (!canAddToCart(variant))
+              return recordRejection(409, "ENQUIRY_REQUIRED", "Please enquire about this item before adding it to your cart.");
+          }
+          if (!line && await tx.cartItem.count({ where: { cartId: cart.id } }) >= 50)
             return recordRejection(409, "CART_LIMIT", "Your cart can contain up to 50 different items.");
           await tx.cartItem.upsert({
             where: { cartId_variantId: { cartId: cart.id, variantId: id } },

@@ -51,12 +51,12 @@ test("two tabs on one revision cannot silently overwrite each other", async () =
   assert.equal(rejected.body.code, "CART_REVISION_CONFLICT"); assert.equal(rejected.body.mutationResult.status, "rejected");
   assert.equal((await client.get("/api/cart")).body.itemCount, results.find(r => r.status === 200)!.body.itemCount);
 });
-test("business rejection is durable when the product later becomes available", async () => {
+test("business rejection is durable when an unknown product price later becomes known", async () => {
   const client = agent(); const payload = body((await client.get("/api/cart")).body, 2);
-  await db.variant.update({ where: { id: "recovery-v" }, data: { available: false } });
+  await db.variant.update({ where: { id: "recovery-v" }, data: { pricePaise: null } });
   const first = await put(client, payload); assert.equal(first.status, 409); assert.equal(first.body.code, "ENQUIRY_REQUIRED");
   assert.deepEqual(first.body.mutationResult, { id: payload.mutation.id, status: "rejected" });
-  await db.variant.update({ where: { id: "recovery-v" }, data: { available: true } });
+  await db.variant.update({ where: { id: "recovery-v" }, data: { pricePaise: 1000 } });
   const replay = await put(client, payload); assert.equal(replay.status, 409); assert.equal(replay.body.code, "ENQUIRY_REQUIRED");
   assert.equal((await client.get("/api/cart")).body.itemCount, 0);
 });

@@ -77,7 +77,7 @@ test("the real product route honors explicit options, legacy aliases and safe fa
     await render("third");
     assert.equal(selected(), "preview-third");
     assert.equal(document.querySelector(".pdp-purchase button"), null);
-    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Checkout is unavailable/);
+    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
     await render("unknown");
     assert.equal(selected(), "first");
   }, "second");

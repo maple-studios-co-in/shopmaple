@@ -83,6 +83,7 @@ export const cartItemSchema = z.object({
   quantity: z.number().int(),
   lineTotalPaise: z.number().int().nullable(),
   available: z.boolean(),
+  cartable: z.boolean().default(false),
   stockPolicy: z.string(),
 });
 export const cartMutationContextSchema = z.object({
@@ -208,6 +209,7 @@ export * from "./authored-articles";
 export * from "./site-chrome";
 
 export * from "./catalogue-cards";
+export * from "./cart-eligibility";
 export * from "./catalogue-collections";
 
 export * from "./enquiry-delivery";

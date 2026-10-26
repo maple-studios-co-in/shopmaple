@@ -56,12 +56,12 @@ test("explicit unpriced option remains selected and keeps its enquiry identity",
     assert.equal(new URL(link.href).searchParams.get("sku"), "AERO-NI");
   }, { initialVariant: "catalogue-nordic" });
 });
-test("default chooses the mapped Deep Atlantic option without enabling ordering", async () => {
+test("default chooses the mapped priced Deep Atlantic option for cart selection", async () => {
   await mount(async requests => {
     assert.equal(selected(), "preview-atlantic");
     assert.match(document.querySelector(".pdp-price-block strong")!.textContent!, /23,600/);
     assert.equal(document.querySelectorAll('input[name="variant"]').length, 6);
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
+    assert.ok([...document.querySelectorAll(".pdp-purchase button")].some(e => e.textContent === "Add to cart"));
     assert.deepEqual(requests, ["GET /api/cart"]);
   });
 });
@@ -100,15 +100,19 @@ test("repeated option titles are distinguished by differing public item codes", 
     assert.doesNotMatch(document.querySelector(".pdp-info")!.textContent!, /catalogue-taupe|preview-taupe|shopify-preview/);
   });
 });
-test("all six options stay selectable for enquiry and never send cart mutations", async () => {
+test("all six options stay selectable while only priced options offer cart selection", async () => {
   await mount(async requests => {
     for (const v of product.variants) {
       await act(async () => tile(v.id).querySelector("input")!.click());
       assert.equal(selected(), v.id);
-      assert.equal(document.querySelector(".pdp-purchase button"), null);
-      const link = document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
-      assert.equal(new URL(link.href).searchParams.get("sku"), v.sku);
-      if (v.pricePaise === null) assert.equal(document.querySelector(".pdp-price-block strong")?.textContent, "Price on request");
+      if (v.pricePaise === null) {
+        assert.equal(document.querySelector(".pdp-purchase button"), null);
+        const link = document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+        assert.equal(new URL(link.href).searchParams.get("sku"), v.sku);
+        assert.equal(document.querySelector(".pdp-price-block strong")?.textContent, "Price on request");
+      } else {
+        assert.ok([...document.querySelectorAll(".pdp-purchase button")].some(e => e.textContent === "Add to cart"));
+      }
     }
     assert.deepEqual(requests, ["GET /api/cart"]);
   });

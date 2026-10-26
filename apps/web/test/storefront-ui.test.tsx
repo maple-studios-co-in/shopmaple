@@ -237,7 +237,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
       assert.equal(window.location.hash, "#delivery-enquiry");
       assert.deepEqual(replacements, [], "variant changes do not request a new server route");
       const enquiry =
-        document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+        document.querySelector<HTMLAnchorElement>(".pdp-custom a")!;
       assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");
       assert.equal(new URL(enquiry.href).searchParams.get("sku"), "RED");
       assert.ok(
