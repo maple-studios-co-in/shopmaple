@@ -33,7 +33,7 @@ async function mount(check: (requests: string[], replacements: string[]) => Prom
   const previousFetch = globalThis.fetch, requests: string[] = [], replacements: string[] = [];
   globalThis.fetch = async (url, init) => {
     requests.push(`${init?.method ?? "GET"} ${url}`);
-    return Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", checkoutEnabled: false, mode: "preview" });
+    return Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
   };
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace(href: string) { replacements.push(href); }, prefetch() {} };
   try {

@@ -26,7 +26,7 @@ const captured = (details: ProductRichText | null, materialsCare: ProductRichTex
 async function mount(value: Product, check: () => void) {
   const root = createRoot(document.getElementById("root")!);
   const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", checkoutEnabled: false, mode: "preview" });
+  globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   try {
     await act(async () => root.render(<ShopProvider><AppRouterContext.Provider value={router}><ProductDetail product={value} /></AppRouterContext.Provider></ShopProvider>));

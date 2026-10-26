@@ -69,7 +69,7 @@ async function mount(
       items: [],
       itemCount: 0,
       subtotalPaise: 0,
-      currency: "INR",
+      currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 },
       checkoutEnabled: false,
       mode: "preview",
     });

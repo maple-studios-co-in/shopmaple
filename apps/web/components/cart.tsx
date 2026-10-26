@@ -1,4 +1,5 @@
 "use client";
+import { useLayoutEffect, useRef } from "react";
 import { ProductImage } from "./product-image";
 import { canOrder } from "@/lib/product-availability";
 import Link from "next/link";
@@ -7,20 +8,36 @@ import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { money } from "@/lib/format";
 export function CartContents() {
-  const { cart, busy, cartReady, error, setQuantity, setCartOpen } = useShop();
+  const { cart, busy, cartReady, error, setQuantity, setCartOpen, cartRecovery, checkingCart, recoverCart } = useShop();
+  const region = useRef<HTMLElement>(null);
+  const restoreFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (checkingCart || cartRecovery || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    if (document.activeElement === document.body) region.current?.focus();
+  }, [cartRecovery, checkingCart]);
+  const recovery = cartRecovery && (
+    <button className="button" disabled={checkingCart} onClick={(event) => {
+      restoreFocus.current = document.activeElement === event.currentTarget;
+      void recoverCart();
+    }}>
+      {checkingCart ? "Checking your cart…" : cartRecovery === "mutation" ? "Check cart update" : "Try again"}
+    </button>
+  );
   if (!cartReady)
     return (
-      <p role={error ? "alert" : "status"}>
+      <section ref={region} aria-label="Your saved cart" tabIndex={-1}><p role={error ? "alert" : "status"}>
         {error || "Loading your saved cart…"}
-      </p>
+      </p>{recovery}</section>
     );
   if (!cart.items.length)
     return (
-      <div className="empty-state">
+      <section ref={region} aria-label="Your saved cart" tabIndex={-1}><div className="empty-state">
         <ShoppingBag size={38} />
         <h2>Your cart is empty</h2>
         <p>Find a piece that feels like home.</p>
         {error && <p role="alert">{error}</p>}
+        {recovery}
         <Link
           href="/collections/all"
           className="button"
@@ -28,10 +45,10 @@ export function CartContents() {
         >
           Explore furniture
         </Link>
-      </div>
+      </div></section>
     );
   return (
-    <>
+    <section ref={region} aria-label="Your saved cart" tabIndex={-1}>
       <div className="cart-lines">
         {cart.items.map((item) => (
           <article key={item.variantId} className="cart-line">
@@ -97,6 +114,7 @@ export function CartContents() {
           {error}
         </p>
       )}
+      {recovery}
       <div className="cart-summary">
         <div>
           <span>Subtotal</span>
@@ -114,7 +132,7 @@ export function CartContents() {
           Preview only. Online payment is not available yet.
         </p>
       </div>
-    </>
+    </section>
   );
 }
 export function CartDrawer() {

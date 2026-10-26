@@ -31,7 +31,7 @@ const mapped: Product = {
   images: ["https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455", "https://example.com/aero-side.jpg"],
   variants: [{ ...chair.variants[0]!, id: "preview-46728293843133" }, chair.variants[1]!],
 };
-const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", checkoutEnabled: false, mode: "preview" };
+const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 const input = () => document.querySelector<HTMLInputElement>("#delivery-pincode")!;
 const option = (id: string) => document.querySelector<HTMLInputElement>(`input[name="variant"][value="${id}"]`)!;
 const button = (label: string) => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;

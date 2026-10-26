@@ -40,6 +40,34 @@ The deployed catalogue baseline before this increment is 539 products / 1,050 va
 
 Instagram uses a 24-post responsive native scroll rail, automatic advance and explicit pause/manual controls. Hover, keyboard interaction, background tabs and reduced-motion preferences suspend automatic movement. Gallery keyboard/swipe transitions and optional section reveals are implemented without a heavy animation dependency. Media upload, scheduling and fixed-template controls are implemented to the scope of their release notes; remaining media/authoring, enquiry workflows, measured performance, customer services and commerce activation remain in the [current work plan](superpowers/plans/2026-10-26-shop-content-motion.md).
 
+## Guest cart recovery
+
+Cart reads establish a server-created empty cart and opaque HttpOnly cookie if the previous cookie is absent, unknown, ambiguous or expired. The response carries a domain-separated, non-secret cart identity and monotonic revision. A write requires that identity, expected revision and an operation UUID; an unguarded request cannot bypass concurrency checks.
+
+`CartMutationReceipt` stores a payload hash and terminal outcome. The serializable transaction checks an existing receipt before checking the revision, then commits the quantity, revision increment and receipt together. Business failures also get durable rejection receipts. Replaying an accepted operation returns the current cart without restoring its old quantity. Conflicting edits from another tab require the shopper to review current quantities. Reads use a consistent snapshot of cart items and revision.
+
+The browser persists pending intent in session storage before dispatch. Requests, including response-body reads, have a ten-second deadline. An uncertain outcome keeps further writes locked and exposes **Check cart update**; this replays the same operation. A matching success receipt supplies the current cart; a matching terminal rejection triggers a fresh read before unlocking. Reloading or a successful GET alone cannot erase an unresolved operation. Storage failure prevents dispatch; favourites retain their separate existing storage behavior.
+
+Migration `20261027060000_cart_mutation_receipts` is additive. Deploy API and frontend together: the new API rejects old unguarded writes, and the new frontend refuses to write without the guarded response. Retain receipts while their cart is live. PUT never creates or resurrects carts, so removing expired carts cannot make a delayed operation valid again. GET initialization adds empty browsing-session rows under the existing API rate limit; scheduled expired-cart cleanup remains an operational follow-up. The existing guest cookie name also needs separate host-prefix hardening before live commerce. These source changes do not activate checkout or establish production deployment.
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant API
+  participant DB as Shop PostgreSQL
+  Browser->>API: GET cart
+  API->>DB: Initialize or read cart consistently
+  API-->>Browser: Cookie, identity, revision and current items
+  Browser->>Browser: Persist operation UUID and intended quantity
+  Browser->>API: PUT with identity, expected revision and UUID
+  API->>DB: Atomically record outcome and any quantity/revision change
+  Note over Browser,API: If response is lost, further writes stay locked
+  Browser->>API: Explicit retry of the same UUID and payload
+  API->>DB: Read receipt before revision check
+  API-->>Browser: Confirmed outcome and current cart, or terminal rejection
+  Browser->>Browser: Clear pending intent only after confirmation and reconciliation
+```
+
 ---
 
 ## Historical implementation snapshot — 25 October 2026

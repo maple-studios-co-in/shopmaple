@@ -74,10 +74,31 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
     });
   }
 
+  const controls = (
+    <div className="home-carousel-controls" hidden={!ready}>
+      {autoplay && <button type="button" aria-controls={id} disabled={reduced}
+        aria-label={`${paused || reduced ? "Play" : "Pause"} ${label}`}
+        title={reduced ? "Automatic motion is off because you prefer reduced motion" : undefined}
+        onPointerDown={() => { pointerPauseIntent.current = !paused; }}
+        onPointerCancel={() => { pointerPauseIntent.current = null; }}
+        onKeyDown={() => { pointerPauseIntent.current = null; }}
+        onClick={() => {
+          const intent = pointerPauseIntent.current;
+          pointerPauseIntent.current = null;
+          setPaused(value => intent ?? !value);
+        }}>
+        {paused || reduced ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+      </button>}
+      <button type="button" onClick={() => move(-1)} aria-controls={id} aria-label={`Previous ${label}`}><ArrowLeft size={20} aria-hidden="true" /></button>
+      <button type="button" onClick={() => move(1)} aria-controls={id} aria-label={`Next ${label}`}><ArrowRight size={20} aria-hidden="true" /></button>
+    </div>
+  );
+
   return (
-    <div className={`home-carousel ${className}`} role="group" aria-label={label} aria-roledescription="carousel"
+    <div className={`home-carousel ${autoplay ? "home-carousel-autoplay" : ""} ${className}`} role="group" aria-label={label} aria-roledescription="carousel"
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => { if (autoplay) setPaused(true); }}>
+      {autoplay && controls}
       <div className={railClassName} id={id} ref={rail} aria-label={label} tabIndex={0}
         onPointerDown={() => { if (autoplay) setPaused(true); }}
         onWheel={event => {
@@ -85,23 +106,7 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
         }}>
         {children}
       </div>
-      <div className="home-carousel-controls" hidden={!ready}>
-        {autoplay && <button type="button" aria-controls={id} disabled={reduced}
-          aria-label={`${paused || reduced ? "Play" : "Pause"} ${label}`}
-          title={reduced ? "Automatic motion is off because you prefer reduced motion" : undefined}
-          onPointerDown={() => { pointerPauseIntent.current = !paused; }}
-          onPointerCancel={() => { pointerPauseIntent.current = null; }}
-          onKeyDown={() => { pointerPauseIntent.current = null; }}
-          onClick={() => {
-            const intent = pointerPauseIntent.current;
-            pointerPauseIntent.current = null;
-            setPaused(value => intent ?? !value);
-          }}>
-          {paused || reduced ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
-        </button>}
-        <button type="button" onClick={() => move(-1)} aria-controls={id} aria-label={`Previous ${label}`}><ArrowLeft size={20} aria-hidden="true" /></button>
-        <button type="button" onClick={() => move(1)} aria-controls={id} aria-label={`Next ${label}`}><ArrowRight size={20} aria-hidden="true" /></button>
-      </div>
+      {!autoplay && controls}
     </div>
   );
 }

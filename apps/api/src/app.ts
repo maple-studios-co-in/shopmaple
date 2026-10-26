@@ -1,3 +1,4 @@
+import { cartMutationInputSchema } from "@shopmaple/contracts";
 import express, { type ErrorRequestHandler } from "express";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
@@ -9,7 +10,7 @@ import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
 import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
 import { saveEnquiry } from "./enquiries.js";
-import { currentCart, readCart, setCartQuantity, HttpError } from "./cart.js";
+import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
   commerceHttpError,
   registerCheckoutRoutes,
@@ -104,17 +105,13 @@ export function createApp(
     },
   );
   app.get("/api/cart", async (req, res) =>
-    res.json(await readCart(db, (await currentCart(db, req))?.id)),
+    res.json(await bootstrapCart(db, req, res, config.secureCookies)),
   );
   app.put("/api/cart/items/:variantId", async (req, res) => {
-    const { quantity } = z
-      .object({ quantity: z.number().int().min(0).max(20) })
-      .strict()
-      .parse(req.body);
+    const input = cartMutationInputSchema.parse(req.body);
     const id = z.string().min(1).max(160).parse(req.params.variantId);
-    res.json(
-      await setCartQuantity(db, req, res, id, quantity, config.secureCookies),
-    );
+    const result = await setCartQuantity(db, req, id, input);
+    res.status(result.status).json(result.body);
   });
   app.post(
     "/api/enquiries",

@@ -8,7 +8,7 @@ import { Favourites } from "../components/favourites";
 import { ShopProvider, useShop } from "../components/shop-provider";
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
-const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", checkoutEnabled: false, mode: "preview" };
+const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 function product(handle: string): Product {
   return { id: handle, handle, title: `${handle} Chair`, description: "Original description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-variant`, title: "Default", sku: handle, pricePaise: 120000, compareAtPaise: null, available: false, stockPolicy: "unverified" }] };
 }

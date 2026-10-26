@@ -17,7 +17,7 @@ Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.
 const model: Product = { id: "model", handle: "new-model", title: "New Model", description: "", category: null, images: [], published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [] };
 const unknown = { id: "option", title: "Natural", sku: null, pricePaise: null, compareAtPaise: 50000, available: true, stockPolicy: "stocked" as const };
 const known = { ...unknown, id: "priced", title: "Oak", pricePaise: 25000, compareAtPaise: null };
-const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", checkoutEnabled: false, mode: "preview" };
+const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 async function mount(ui: React.ReactNode, check: () => void | Promise<void>, cart = empty) {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json(cart);

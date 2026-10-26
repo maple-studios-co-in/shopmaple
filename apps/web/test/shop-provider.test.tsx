@@ -17,7 +17,7 @@ const cart = {
   items: [],
   itemCount: 3,
   subtotalPaise: 300,
-  currency: "INR",
+  currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 },
   checkoutEnabled: false,
   mode: "preview",
 };
