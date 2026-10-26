@@ -1,3 +1,4 @@
+import { toProductCard } from "@/lib/product-card-model";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
@@ -78,7 +79,7 @@ async function HomeProducts({
       {products.length ? (
         <HomeCarousel label={label}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={toProductCard(product)} />
           ))}
         </HomeCarousel>
       ) : (

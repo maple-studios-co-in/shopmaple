@@ -9,7 +9,7 @@ import {
   X,
   Search,
 } from "lucide-react";
-import type { Product } from "@shopmaple/contracts";
+import type { ProductCardModel } from "@/lib/product-card-model";
 import { ProductCard } from "./product-card";
 import {
   collectionHref,
@@ -24,7 +24,7 @@ type Props = {
   handle: string;
   title: string;
   query: CollectionQuery;
-  products: Product[];
+  products: ProductCardModel[];
   total: number;
   collectionTotal: number;
   limit: number;

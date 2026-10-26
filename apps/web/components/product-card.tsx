@@ -1,28 +1,23 @@
 "use client";
 import Link from "next/link";
 import { ProductImage } from "./product-image";
-import { pricedVariants } from "@/lib/product-availability";
+import type { ProductCardModel } from "@/lib/product-card-model";
 import { Heart, ArrowUpRight } from "lucide-react";
-import type { Product } from "@shopmaple/contracts";
 import { useShop } from "./shop-provider";
 import { shopMoney } from "@/lib/format";
 export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (max-width: 1000px) 32vw, 24vw" }: {
-  product: Product;
+  product: ProductCardModel;
   imageSizes?: string;
 }) {
   const { favourites, toggleFavourite } = useShop();
   const saved = favourites.includes(product.handle);
-  const priced = pricedVariants(product);
-  const cheapest = priced.sort((a, b) => a.pricePaise - b.pricePaise)[0];
-  const price = cheapest?.pricePaise ?? null;
-  const unknownPrices = priced.length < product.variants.length;
-  const sale = price !== null && cheapest?.compareAtPaise && cheapest.compareAtPaise > price;
+  const sale = product.compareAtPaise !== null;
   return (
     <article className="product-card">
       <div className="product-card-image">
         <Link href={"/products/" + product.handle}>
           <ProductImage
-            src={product.images[0]}
+            src={product.image ?? undefined}
             alt={product.title}
             fill
             sizes={imageSizes}
@@ -46,21 +41,19 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
       </Link>
       <p className="product-card-price">
         <span>
-          {price !== null && (unknownPrices || new Set(priced.map((v) => v.pricePaise)).size > 1)
-            ? "From "
-            : ""}
-          {shopMoney(price)}
+          {product.priceFrom ? "From " : ""}
+          {shopMoney(product.pricePaise)}
         </span>
-        {sale ? <del>{shopMoney(cheapest!.compareAtPaise!)}</del> : null}
+        {sale ? <del>{shopMoney(product.compareAtPaise!)}</del> : null}
       </p>
-      {unknownPrices && price !== null && <p className="product-card-options">Other options on request</p>}
-      {product.variants.length > 1 && (
+      {product.otherOptionsOnRequest && <p className="product-card-options">Other options on request</p>}
+      {product.optionCount > 1 && (
         <Link
           className="product-card-options"
           href={"/products/" + product.handle}
-          aria-label={`View ${product.variants.length} options for ${product.title}`}
+          aria-label={`View ${product.optionCount} options for ${product.title}`}
         >
-          {product.variants.length} options{" "}
+          {product.optionCount} options{" "}
           <ArrowUpRight size={13} aria-hidden="true" />
         </Link>
       )}

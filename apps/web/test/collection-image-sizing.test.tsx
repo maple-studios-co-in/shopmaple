@@ -1,3 +1,4 @@
+import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import test from "node:test";
 import React, { act } from "react";
@@ -21,7 +22,7 @@ test("changing collection density updates image slots while retaining product ar
   const root = createRoot(document.getElementById("root")!);
   try {
     await act(async () => root.render(<ShopProvider><CollectionListing handle="all" title="Furniture"
-      query={collectionQuery({})} products={[product]} total={1} collectionTotal={1} limit={24}
+      query={collectionQuery({})} products={[toProductCard(product)]} total={1} collectionTotal={1} limit={24}
       inStock={0} outOfStock={1} highestPrice={null} /></ShopProvider>));
     const image = document.querySelector<HTMLImageElement>(".collection-products img")!;
     const standard = "(max-width:749px) calc((100vw - 44px) / 2), (max-width:1100px) calc((100vw - 274px) / 2), (max-width:1599px) calc((100vw - 356px) / 3), (min-width:1920px) 387px, calc((100vw - 372px) / 4)";

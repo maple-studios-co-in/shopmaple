@@ -22,6 +22,7 @@ import "@/styles/landing-parity.css";
 import "@/components/legacy-chairs.css";
 import "@/styles/navigation-parity.css";
 import "@/styles/suggested-pages.css";
+import "@/styles/search-dialog.css";
 import "@/styles/campaign-banners.css";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";

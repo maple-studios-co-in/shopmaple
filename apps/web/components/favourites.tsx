@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { productSchema, type Product } from "@shopmaple/contracts";
+import { productSchema } from "@shopmaple/contracts";
+import { toProductCard, type ProductCardModel } from "@/lib/product-card-model";
 import { useShop } from "./shop-provider";
 import { ProductCard } from "./product-card";
 import Link from "next/link";
 import { Heart } from "lucide-react";
-type Resolution = { product: Product | null; failed: boolean };
+type Resolution = { product: ProductCardModel | null; failed: boolean };
 const removeSelector = '.save-button[aria-pressed="true"], [data-remove-missing]';
 
 export function Favourites({
@@ -55,7 +56,7 @@ export function Favourites({
           const product = productSchema.parse(await response.json());
           if (product.handle !== handle)
             throw new Error("Saved furniture unavailable");
-          return product;
+          return toProductCard(product);
         })
         .then((product) => settle({ product, failed: false }))
         .catch(() => settle({ product: null, failed: true }));

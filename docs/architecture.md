@@ -40,6 +40,26 @@ The deployed catalogue baseline before this increment is 539 products / 1,050 va
 
 Instagram uses a 24-post responsive native scroll rail, automatic advance and explicit pause/manual controls. Hover, keyboard interaction, background tabs and reduced-motion preferences suspend automatic movement. Gallery keyboard/swipe transitions and optional section reveals are implemented without a heavy animation dependency. Media upload, scheduling and fixed-template controls are implemented to the scope of their release notes; remaining media/authoring, enquiry workflows, measured performance, customer services and commerce activation remain in the [current work plan](superpowers/plans/2026-10-26-shop-content-motion.md).
 
+## Catalogue display and search
+
+Server collection membership, facets and filtering still use complete validated product records. Before crossing into client cards, the server explicitly projects nine display fields: identity/handle/title, first image, displayed price/compare-at, From and options-on-request flags, and option count. Homepage, category/editorial rails, standard collections and related products share this boundary. The main product-detail component retains its full product/variant data. A narrower TypeScript type alone is not the minimization mechanism; each caller builds the new object.
+
+Search opens a dedicated native dialog with original Shopify labels, product previews, recently viewed, reset/clear and local View all. Public catalogue reads debounce and have bounded header/body deadlines, cancellation, stale-response guards and explicit retry. Only current published, identity-checked records become internal product links. Query matching currently uses the catalogue API's substring search; Shopify fuzzy ranking is not reproduced.
+
+Canonical product visits retain at most eight validated handles in browser storage, never search queries, prices or customer data. Search resolves current product records for those handles. Storage corruption/denial does not prevent browsing; Clear removes only this history key. Favourites and search still fetch the existing complete public API response before projecting compact display state, so this does not claim API transfer reduction for those client requests.
+
+```mermaid
+flowchart LR
+  Catalogue[Validated catalogue] --> Filters[Server membership and facets]
+  Filters --> Projection[Explicit card display projection]
+  Projection --> Cards[Client cards and rails]
+  Catalogue --> Detail[Full product detail and variants]
+  Handles[Eight local recent handles] --> Lookup[Current public product lookup]
+  Query[Search input] --> Lookup
+  Lookup --> SearchProjection[Validate and project display data]
+  SearchProjection --> SearchDialog[Search dialog and local links]
+```
+
 ## Guest cart recovery
 
 Cart reads establish a server-created empty cart and opaque HttpOnly cookie if the previous cookie is absent, unknown, ambiguous or expired. The response carries a domain-separated, non-secret cart identity and monotonic revision. A write requires that identity, expected revision and an operation UUID; an unguarded request cannot bypass concurrency checks.

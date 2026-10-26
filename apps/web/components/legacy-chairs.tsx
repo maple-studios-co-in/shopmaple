@@ -1,3 +1,4 @@
+import { toProductCard } from "@/lib/product-card-model";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@shopmaple/contracts";
@@ -30,7 +31,7 @@ function LegacyProducts({
 }) {
   const cards = handles.map((handle) => {
     const product = products.get(handle);
-    if (product) return <ProductCard key={handle} product={product} />;
+    if (product) return <ProductCard key={handle} product={toProductCard(product)} />;
     const source = sourceProducts[handle];
     if (!source) return null;
     const href = `/pages/contact?product=${encodeURIComponent(source.title)}`;
