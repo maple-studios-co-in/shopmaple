@@ -12,14 +12,14 @@
 
 ## Current acceptance status (supersedes historical task snapshots)
 
-Verified source baseline: PR40, merged as53f21a4029dc265107f4f63d65ca5936937fe6ee. The checklists below retain implementation history; an old unchecked item does not override the current evidence, and a checked implementation item does not establish production acceptance.
+Verified merged source baseline: PR41, merged as3d130f4b2a2f84d32a82e700e6f0f08d0c2e848e. Navigation/footer authoring is the current locally verified increment; its release evidence is recorded separately. The checklists below retain implementation history; an old unchecked item does not override the current evidence, and a checked implementation item does not establish production acceptance.
 
 | Requirement | Current evidence | Remaining acceptance |
 | --- | --- | --- |
 | Shop content backend and dashboard | Protected content API, draft/publish/revisions/restore, role/CSRF checks; original defaults; PR16–17 and later content releases | First publisher private setup, production staff save/preview/publish/restore/logout; no account created yet |
-| Banners, pages, positions and copy | Campaign scheduling; homepage/category/Nimbus/Story/contact/policy/blog controls; merchandising and artwork; new structured articles/pages (PR25–36) | Complete source layout/state audit and live publisher acceptance; global navigation/footer authoring is still fixed source |
+| Banners, pages, positions and copy | Campaign scheduling; homepage/category/Nimbus/Story/contact/policy/blog controls; merchandising and artwork; new structured articles/pages (PR25–36) | Navigation/footer authoring now locally implemented with publication validation; exact-head CI/merge and live publisher acceptance remain. Complete source layout/state audit |
 | Instagram and moving sections | Source24-post rail, pause/manual/reduced-motion behavior; gallery gestures/transitions; optional reveals; deferred category films | Full-route visual/accessibility/performance acceptance, including assistive-technology testing |
-| Product discovery and interaction | PR37–40 continuity/cart recovery, image sizing, rich search and compact card projection;827 tests at PR40 | Favourites bounded retry, single-variant photo notice and current menu-product publication/prices are the active increment; fuzzy search parity remains |
+| Product discovery and interaction | PR37–41 continuity/cart recovery, image sizing, rich search, compact cards, bounded favourites retry and current published menu products;845 tests at PR41 | Search ranking parity and full route/state/performance acceptance remain |
 | Keeri commerce authority | Separate catalogue read model; Keeri owns products, stock, orders and delivery | Catalogue identity/price/package completeness, shipping and merchant activation, sandbox payment/order recovery proof; checkout disabled |
 | Customer services and CRM | Saved enquiries, separately authorized inbox, assignment and notes | Notification transport/retention, reviews/newsletter/accounts/order history/returns integrations |
 | Security and TDD | Assertion-based RED/GREEN, complete tests/types/build, scans, independent review and exact-commit CI per increment | Continue on every change; green checks do not establish external provider or production readiness |

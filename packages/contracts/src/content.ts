@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { siteChromeSchema } from "./site-chrome";
 import { authoredArticlesSchema, authoredBlocksSchema } from "./authored-articles";
 import { editorialContentSchema } from "./editorial-content";
 import { servicePagesContentSchema } from "./service-pages";
@@ -245,6 +246,8 @@ export const contentPageSchema = z
 export const storefrontContentSchema = z
   .object({
     schemaVersion: z.literal(1),
+    // Legacy snapshots retain source navigation and footer defaults.
+    siteChrome: siteChromeSchema.optional(),
     editorialContent: editorialContentSchema.optional(),
     authoredArticles: authoredArticlesSchema.optional(),
     homeSections: z

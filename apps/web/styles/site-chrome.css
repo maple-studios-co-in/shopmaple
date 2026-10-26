@@ -1,0 +1,61 @@
+/* Optional columns keep their source proportions as editors move or hide them. */
+@media (min-width: 1101px) {
+  .maple-footer-main {
+    grid-template-columns: var(--chrome-footer-columns);
+  }
+  .maple-footer-contact {
+    grid-template-columns: var(--chrome-contact-columns);
+  }
+  .maple-mega:not(:has(.maple-mega-feature)) {
+    grid-template-columns: minmax(0, 1fr) 190px;
+  }
+  .maple-mega:not(:has(.maple-mega-discovery)) {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+  .maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .maple-footer-main {
+    grid-template-columns: var(--chrome-footer-medium-columns);
+  }
+}
+@media (min-width: 750px) and (max-width: 1100px) {
+  .maple-mega:not(:has(.maple-mega-feature)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.maple-footer-main > *,
+.maple-footer-contact > * {
+  min-width: 0;
+}
+.maple-footer-main a,
+.maple-footer-main h2,
+.maple-footer-contact h2,
+.maple-footer-contact h3,
+.maple-menu-trigger,
+.maple-mega a {
+  overflow-wrap: anywhere;
+}
+/* Hiding every utility link must leave the shopping actions on the right. */
+.header-main .header-actions {
+  margin-left: auto;
+}
+.utility-links {
+  flex-wrap: wrap;
+  row-gap: 8px;
+  max-width: calc(50% - 110px);
+}
+.announcement {
+  height: auto;
+  min-height: 42px;
+  text-align: center;
+  padding-inline: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .announcement {
+    min-height: 32px;
+  }
+}

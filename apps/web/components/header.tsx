@@ -9,7 +9,11 @@ import { SearchDialog } from "./search-dialog";
 import { Favourites } from "./favourites";
 import { shopFile } from "@/lib/format";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
-export function Header() {
+import type { SiteChrome } from "@shopmaple/contracts";
+import { defaultSiteChrome, chromeHref } from "@/lib/site-chrome-defaults";
+export function Header({
+  siteChrome = defaultSiteChrome,
+}: { siteChrome?: SiteChrome } = {}) {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
     [account, setAccount] = useState(false),
@@ -20,16 +24,26 @@ export function Header() {
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <div className="announcement">
-        <Link href="/collections/all">LUXURY FURNITURE. FACTORY PRICES.</Link>
-      </div>
+      {siteChrome.announcement.enabled && (
+        <div className="announcement">
+          <Link href={siteChrome.announcement.href}>
+            {siteChrome.announcement.text}
+          </Link>
+        </div>
+      )}
       <header className="site-header">
         <div className="header-main">
-          <div className="utility-links">
-            <a href="/pages/our-story">Our Story</a>
-            <Link href="/pages/bulk-enquiry">Bulk Enquiry</Link>
-            <Link href="/pages/contact">Help Center</Link>
-          </div>
+          {siteChrome.utilityLinks.some((link) => link.enabled) && (
+            <div className="utility-links">
+              {siteChrome.utilityLinks
+                .filter((link) => link.enabled)
+                .map((link) => (
+                  <Link key={link.id} href={chromeHref(link)}>
+                    {link.label}
+                  </Link>
+                ))}
+            </div>
+          )}
           <button
             className="icon-button mobile-menu-button"
             aria-label="Open navigation"
@@ -85,7 +99,7 @@ export function Header() {
             </button>
           </div>
         </div>
-        <DesktopNavigation />
+        <DesktopNavigation siteChrome={siteChrome} />
       </header>
       {search && <SearchDialog onClose={() => setSearch(false)} />}
       <Modal
@@ -118,7 +132,11 @@ export function Header() {
       >
         <Favourites onNavigate={() => setWishlist(false)} compact />
       </Modal>
-      <MobileNavigation open={mobile} onClose={() => setMobile(false)} />
+      <MobileNavigation
+        siteChrome={siteChrome}
+        open={mobile}
+        onClose={() => setMobile(false)}
+      />
     </>
   );
 }

@@ -211,3 +211,5 @@ export * from "./service-pages";
 export * from "./editorial-content";
 
 export * from "./authored-articles";
+
+export * from "./site-chrome";
