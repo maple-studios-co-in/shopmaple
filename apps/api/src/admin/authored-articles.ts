@@ -13,14 +13,16 @@ const collectionHandles = new Set([
 ]);
 const originalPages = ["contact", "bulk-enquiry", "chairs", "tables", "sofas", "nimbus-collection", "our-story", "returns"];
 
-export async function validateAuthoredArticleLinks(tx: Prisma.TransactionClient, content: StorefrontContent) {
-  if (!content.authoredArticles?.length) return;
-  const paths = new Set(content.authoredArticles.flatMap(article => article.blocks.flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
+export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient, content: StorefrontContent) {
+  const articlePaths = new Set((content.authoredArticles ?? []).flatMap(article => article.blocks.flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
+  const pagePaths = new Set(content.pages.flatMap(page => (page.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
+  const paths = new Set([...articlePaths, ...pagePaths]);
+  if (!paths.size) return;
   const destinations = new Set([
     "/", ...originalPages.map(slug => `/pages/${slug}`), ...content.pages.map(page => `/pages/${page.slug}`),
     ...policySlugs.map(slug => `/policies/${slug}`), ...blogHandles.map(handle => `/blogs/${handle}`),
     ...articleHandles.map(handle => `/blogs/recent-stories/${handle}`),
-    ...content.authoredArticles.map(article => `/blogs/${article.blog}/${article.handle}`),
+    ...(content.authoredArticles ?? []).map(article => `/blogs/${article.blog}/${article.handle}`),
     ...[...collectionHandles].map(handle => `/collections/${handle}`),
   ]);
   const productHandles = [...paths].filter(path => path.startsWith("/products/")).map(path => path.slice("/products/".length));
@@ -28,8 +30,10 @@ export async function validateAuthoredArticleLinks(tx: Prisma.TransactionClient,
     const products = await tx.product.findMany({ where: { handle: { in: productHandles }, published: true }, select: { handle: true } });
     for (const product of products) destinations.add(`/products/${product.handle}`);
   }
-  for (const path of paths) if (!destinations.has(path))
+  for (const path of articlePaths) if (!destinations.has(path))
     throw new HttpError(400, "ARTICLE_LINK_TARGET_MISSING", "An article link points to a page that is not available. Choose an existing destination before publishing.");
+  for (const path of pagePaths) if (!destinations.has(path))
+    throw new HttpError(400, "PAGE_LINK_TARGET_MISSING", "A page link points to a page that is not available. Choose an existing destination before publishing.");
 }
 
 export async function normalizeArticlePublicationDates(tx: Prisma.TransactionClient, content: StorefrontContent, publish: boolean): Promise<StorefrontContent> {

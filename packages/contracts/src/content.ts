@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authoredArticlesSchema } from "./authored-articles";
+import { authoredArticlesSchema, authoredBlocksSchema } from "./authored-articles";
 import { editorialContentSchema } from "./editorial-content";
 import { servicePagesContentSchema } from "./service-pages";
 import { categoryPageContentSchema } from "./category-content";
@@ -225,6 +225,7 @@ export const contentPageSchema = z
     title: text(160).min(1),
     description: text(300),
     body: text(8000),
+    blocks: authoredBlocksSchema.optional(),
     banner: z
       .object({
         desktopImage: contentImageSchema,
@@ -236,7 +237,11 @@ export const contentPageSchema = z
       .strict()
       .nullable(),
   })
-  .strict();
+  .strict()
+  .superRefine((page, ctx) => {
+    if (page.blocks !== undefined && new TextEncoder().encode(JSON.stringify(page)).length > 48 * 1024)
+      ctx.addIssue({ code: "custom", message: "Page exceeds 48 KiB" });
+  });
 export const storefrontContentSchema = z
   .object({
     schemaVersion: z.literal(1),

@@ -1,6 +1,7 @@
 import type { ContentPage as Page } from "@shopmaple/contracts";
 import Image from "next/image";
 import Link from "next/link";
+import { AuthoredArticleBody } from "./authored-article-body";
 export function ContentPage({ page }: { page: Page }) {
   return (
     <article className="content-page home-container">
@@ -26,8 +27,8 @@ export function ContentPage({ page }: { page: Page }) {
           <span>{page.banner.label}</span>
         </Link>
       )}
-      <div className="content-page-copy">
-        {page.body
+      <div className={page.blocks ? "content-page-copy store-prose" : "content-page-copy"}>
+        {page.blocks ? <AuthoredArticleBody blocks={page.blocks} /> : page.body
           .split(/\n\s*\n/)
           .filter(Boolean)
           .map((paragraph, index) => (

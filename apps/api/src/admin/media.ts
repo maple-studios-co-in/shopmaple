@@ -154,7 +154,11 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
  }
  for (const item of list(document.instagramPosts)) image(record(item).src);
  for (const item of list(document.campaigns)) { const artwork = record(record(item).artwork); image(artwork.desktopImage); image(artwork.mobileImage); }
- for (const item of list(document.pages)) { const banner = record(record(item).banner); image(banner.desktopImage); image(banner.mobileImage); }
+ for (const item of list(document.pages)) {
+  const page = record(item), banner = record(page.banner);
+  image(banner.desktopImage); image(banner.mobileImage);
+  for (const block of list(page.blocks)) if (record(block).type === "image") image(record(block).src);
+ }
  if (!hashes.size) return;
  const absent = () => new HttpError(400, "MEDIA_REFERENCE_MISSING", "An image is missing from the media library. Choose it again before publishing.");
  if (!mediaRoot || !isAbsolute(mediaRoot)) throw absent();

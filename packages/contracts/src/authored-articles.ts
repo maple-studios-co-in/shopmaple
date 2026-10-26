@@ -15,11 +15,12 @@ const blockSchema = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("link"), text: nonblank(300), href: link }).strict(),
   z.object({ id, type: z.literal("image"), src: image, alt: nonblank(200) }).strict(),
 ]);
+export const authoredBlocksSchema = z.array(blockSchema).min(1).max(60).refine(blocks => new Set(blocks.map(block => block.id)).size === blocks.length, "Block identities must be unique");
 const articleSchema = z.object({
   blog: z.enum(blogHandles), handle: z.string().max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title: nonblank(300), excerpt: text(2000),
   cover: z.object({ src: image, alt: nonblank(200) }).strict().nullable().optional(),
-  blocks: z.array(blockSchema).min(1).max(60).refine(blocks => new Set(blocks.map(block => block.id)).size === blocks.length, "Block identities must be unique"),
+  blocks: authoredBlocksSchema,
   publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
 }).strict().superRefine((article, ctx) => {
   if (article.blog === "recent-stories" && (articleHandles as readonly string[]).includes(article.handle)) ctx.addIssue({ code: "custom", path: ["handle"], message: "This source article route is reserved" });

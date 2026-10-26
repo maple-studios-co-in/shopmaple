@@ -1,0 +1,13 @@
+# Structured custom shop pages
+
+Staff need to create and arrange headings, paragraphs, quotations, lists, internal links and images on custom informational pages. Reuse the bounded article block system rather than introducing arbitrary HTML or a separate content platform. Existing storefront templates, copy, banners and legacy custom-page rendering remain unchanged unless staff explicitly edit and publish them.
+
+`ContentPage.blocks` is optional. Absence preserves `body` paragraph rendering exactly. Presence uses 1–60 uniquely identified blocks with the existing article block constraints. Structured pages have a 48 KiB serialized-page limit, including retained legacy body and banner; the whole document remains capped at 128 KiB. Legacy pages without blocks keep their existing limits. No migration is required.
+
+The page editor starts in its existing plain-text mode. “Use structured blocks” explicitly converts nonblank paragraphs in order and preserves the original body string for recovery. An empty body becomes a blank required paragraph. More than 60 paragraphs yields an error without changing content. Staff can return to the retained plain-text body only after an inline confirmation explains that block edits will be discarded; publication remains a separate whole-draft action. Blocks support add, edit, reorder and remove, with stable focus and blank required fields. The banner remains above the body.
+
+Extract the existing article block controls into a shared editor, keeping article behavior and serialization identical. Move the generic Field helper to a leaf module to avoid circular imports. Preserve existing import compatibility by re-exporting it from forms. Session-less text editing remains supported; media-library selection requires the existing session and expiry handler. Preview validates links/images independently and uses authenticated private image URLs.
+
+Publication collects links and managed images from page blocks, even when authored articles are absent. Reuse the candidate pages/articles and catalogue destination registry. Invalid page links return a page-specific error; article errors and legacy banners retain their behavior. Media, publication, revision and article-date changes remain atomic within the authorized version-checked transaction. Rollback creates a draft and does not bypass publication validation.
+
+No source copy is generated or replaced, no new article/page is published, and no checkout, product, inventory or delivery authority changes. Older strict readers cannot accept the new field; compatible API/web deployment and content recovery remain release requirements. Production capacity and private publisher setup remain unresolved separately.
