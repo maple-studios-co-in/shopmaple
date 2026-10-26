@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import source from "@/data/store-content.json";
+import { AuthoredArticleBody } from "@/components/authored-article-body";
 import index from "@/data/blog-index.json";
 import { StoreContent } from "@/components/store-content";
 import { getPublishedContent } from "@/lib/content";
@@ -29,7 +29,7 @@ export async function generateMetadata({
 }) {
   const { blog, article } = await params;
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   return {
     title:
       blogs
@@ -46,12 +46,11 @@ export default async function ArticlePage({
   }>;
 }) {
   const { blog, article } = await params;
-  const original = source.blogs.find((item) => item.handle === blog);
-  if (!original?.articles.some((item) => item.handle === article)) notFound();
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   const record = blogs.find((item) => item.handle === blog)!;
-  const post = record.articles.find((item) => item.handle === article)!;
+  const post = record?.articles.find((item) => item.handle === article);
+  if (!post) notFound();
   const image = presentation[blog]?.[article]?.image;
   return (
     <section className="editorial-page">
@@ -79,7 +78,10 @@ export default async function ArticlePage({
           </time>
         )}
       </header>
-      {image && (
+      {post.cover ? (
+        <img src={post.cover.src} alt={post.cover.alt} width={1200} height={800} loading="eager" fetchPriority="high"
+          style={{ display: "block", width: "100%", height: "auto", aspectRatio: "3 / 2", objectFit: "cover", marginBottom: 32 }} />
+      ) : image && (
         <Image
           {...image}
           loading="eager"
@@ -94,7 +96,7 @@ export default async function ArticlePage({
         />
       )}
       <article className="store-prose">
-        <StoreContent nodes={post.content} />
+        {post.blocks ? <AuthoredArticleBody blocks={post.blocks} /> : <StoreContent nodes={post.content} />}
       </article>
     </section>
   );

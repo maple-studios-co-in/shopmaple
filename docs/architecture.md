@@ -1,6 +1,6 @@
 # Shop Maple architecture
 
-Updated 26 October 2026. Shop Admin at `/admin` shares the shop repository and runtime. PR31 adds enquiry assignment/notes; PR32 adds deferred category films and smaller homepage client data. The homepage artwork/city controls increment is described in the current plan. Source and merged work must not be treated as deployed. Account activation still needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
+Updated 26 October 2026. Shop Admin at `/admin` shares the shop repository and runtime. PR31 adds enquiry assignment/notes; PR32 adds deferred category films and smaller homepage client data; PR33 adds homepage artwork and city controls. New article authoring extends the content system with structured blocks and a first-publication ledger. Source and merged work must not be treated as deployed. Account activation still needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
 
 ```mermaid
 flowchart LR
@@ -27,6 +27,8 @@ flowchart LR
 | Maple corporate dashboard | Corporate website functions in its existing application | A second store order or inventory database |
 
 Shop Admin is a separate staff interface in the existing infrastructure: Next.js serves it and Express enforces permissions. Content uses `ShopAdmin`, `ShopAdminSession`, `ShopContent`, immutable `ShopContentRevision` and `ShopMediaAsset`. Editors save drafts; publishers explicitly publish. Restoring a revision creates a new draft. Public rendering never queries draft content and falls back to checked-in source content when no valid publication exists.
+
+New articles use bounded plain-text blocks in the existing storefront document, with safe internal links and approved images. `ShopArticlePublication` retains the first publication date by blog and handle, even after removal and republication. The server assigns dates in the same transaction as content, revisions and media publication. Existing source articles remain unchanged. Content API failure preserves the original source fallback; newly authored routes are unavailable until the published snapshot can be read again.
 
 Customer enquiries use their own permission, defaulting to denied even for content publishers. The existing inbox reads customer details and records internal review. The current ownership/notes increment adds assignment and append-only activity with the same enquiry version, separate from published site content. Staff credentials, notes and customer contact details never enter public content responses. Notes do not send customer replies; notification delivery and retention remain separate work.
 

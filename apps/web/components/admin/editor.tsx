@@ -10,6 +10,7 @@ import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
 import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
+import { AuthoredArticleFields } from "./authored-article-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
@@ -576,7 +577,10 @@ export function ContentEditor({
                 <MediaLibrary session={session} onExpired={onExpired} />
               )}
               {tab === "Policies & blogs" && (
-                <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
+                <>
+                  <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
+                  <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
+                </>
               )}
               {tab === "Enquiries" &&
                 session.user.canManageEnquiries === true && (

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { authoredArticlesSchema } from "./authored-articles";
 import { editorialContentSchema } from "./editorial-content";
 import { servicePagesContentSchema } from "./service-pages";
 import { categoryPageContentSchema } from "./category-content";
@@ -54,7 +55,8 @@ const text = (max: number) =>
     );
 const cleanUrl = (value: string) =>
   !/[\s\\%\u0000-\u001f\u007f]/.test(value) &&
-  !value.split(/[/?#]/).includes("..");
+  !value.split(/[/?#]/).some(segment => segment === "." || segment === "..") &&
+  !value.replace(/^https:\/\//i, "").split(/[?#]/)[0]!.includes("//");
 export const contentLinkSchema = z
   .string()
   .max(500)
@@ -239,6 +241,7 @@ export const storefrontContentSchema = z
   .object({
     schemaVersion: z.literal(1),
     editorialContent: editorialContentSchema.optional(),
+    authoredArticles: authoredArticlesSchema.optional(),
     homeSections: z
       .array(
         z

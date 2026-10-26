@@ -4,6 +4,7 @@ import { z } from "zod";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { HttpError } from "../cart.js";
 import { prepareMediaForPublication } from "./media.js";
+import { normalizeArticlePublicationDates, validateAuthoredArticleLinks } from "./authored-articles.js";
 import { requireStaff } from "./auth.js";
 const documentId = "storefront";
 const version = z.number().int().min(0).max(2000000000);
@@ -84,8 +85,12 @@ async function change(
           );
         content = storefrontContentSchema.parse(row.draft);
       }
-      if (action === "publish")
-        await prepareMediaForPublication(tx, content, mediaRoot);
+      const parsed = storefrontContentSchema.parse(content);
+      if (action === "publish") {
+        await validateAuthoredArticleLinks(tx, parsed);
+        await prepareMediaForPublication(tx, parsed, mediaRoot);
+      }
+      content = storefrontContentSchema.parse(await normalizeArticlePublicationDates(tx, parsed, action === "publish"));
       const nextVersion = input.expectedVersion + 1;
       if (!row) {
         await tx.shopContent.create({
