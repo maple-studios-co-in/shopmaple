@@ -16,12 +16,17 @@ export {
   homeCollectionTileSchema,
   templateMediaKeys,
   templateMediaResponsiveKeys,
+  templateMediaDecorativeKeys,
+  homeCityKeys,
+  homeCitiesLayoutSchema,
   templateMediaSchema,
 } from "./content";
 export type {
   StorefrontContent,
   HomeMerchandising,
   HomeCollectionTile,
+  HomeCityKey,
+  HomeCitiesLayout,
   TemplateMediaKey,
   TemplateMediaItem,
   TemplateMedia,

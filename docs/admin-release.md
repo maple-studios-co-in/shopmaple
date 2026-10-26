@@ -73,6 +73,8 @@ Sessions expire after eight hours; logout invalidates the stored token. Role cha
 
 ## Rollback and content recovery
 
+Content schemas are strict. The homepage artwork/city controls release adds 26 allowed artwork keys and optional `homeCitiesLayout`; an older binary cannot parse a revision using these additions. Keep the compatible application release and paired database/media snapshot when deploying. Do not assume switching to an older binary preserves newly published content: the old parser may fall back to original content. Prefer restoring an earlier compatible revision through the current application, reviewing it and explicitly publishing before a planned binary rollback. Preserve the new revision history and media; a whole-database restore requires a separate incident decision.
+
 For application rollback, point `current` to the retained pre-release directory and restart only the two shop application processes. The old application ignores the additive admin/content tables, so preserve them; do not reverse the migration or delete drafts, revisions, staff or sessions. Verify the old storefront and disabled checkout after rollback.
 
 For a content correction, restore the desired revision as a draft, inspect it and publish with the current version. Stale saves/publications return 409 instead of overwriting another operator. Revision history retains the action and actor identity. A database restore is a separate incident decision because restoring a whole archive can overwrite later commerce or content writes; never perform it automatically as an application rollback.

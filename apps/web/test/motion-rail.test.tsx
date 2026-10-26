@@ -11,8 +11,11 @@ let reduced=false,visible=true;
 const listeners=new Set<()=>void>();
 Object.defineProperty(window,'matchMedia',{configurable:true,value:()=>({get matches(){return reduced;},addEventListener:(_n:string,f:()=>void)=>listeners.add(f),removeEventListener:(_n:string,f:()=>void)=>listeners.delete(f)})});
 Object.defineProperty(document,'hidden',{get:()=>!visible});
-let intersect:((entries:{isIntersecting:boolean}[])=>void)|undefined;
-class Observer{constructor(cb:typeof intersect){intersect=cb;}observe(){}disconnect(){intersect=undefined;}}
+type Observation = { target: Element; isIntersecting: boolean; intersectionRatio: number; time: number };
+let intersect:((entries:Observation[])=>void)|undefined;
+let observed: Element;
+class Observer{constructor(cb:typeof intersect){intersect=cb;}observe(target:Element){observed=target;}disconnect(){intersect=undefined;}}
+const observation=(isIntersecting:boolean,time=0,intersectionRatio=isIntersecting?1:0):Observation=>({target:observed,isIntersecting,intersectionRatio,time});
 Object.assign(globalThis,{IntersectionObserver:Observer});
 async function mount(autoplay=false){
  reduced=false;visible=true;const host=document.getElementById('root')!,root=createRoot(host);
@@ -21,7 +24,7 @@ async function mount(autoplay=false){
  const moves:ScrollToOptions[]=[];
  rail.scrollBy=options=>{const o=options as ScrollToOptions;moves.push(o);rail.scrollLeft+=o.left??0;};
  rail.scrollTo=options=>{const o=options as ScrollToOptions;moves.push(o);rail.scrollLeft=o.left??0;};
- await act(async()=>intersect?.([{isIntersecting:true}]));
+ await act(async()=>intersect?.([observation(true)]));
  return{host,rail,moves,unmount:async()=>act(async()=>root.unmount()),button:(label:string)=>host.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)};
 }
 test('manual arrows preserve page scrolling and reduced-motion instant navigation',async()=>{const h=await mount();try{await act(async()=>h.button('Next Instagram posts')!.click());assert.deepEqual(h.moves,[{left:600,behavior:'smooth'}]);reduced=true;await act(async()=>h.button('Previous Instagram posts')!.click());assert.deepEqual(h.moves[1],{left:-600,behavior:'instant'});}finally{await h.unmount();}});
@@ -37,8 +40,8 @@ test('autoplay advances an overflowing row and user pause prevents subsequent mo
 test('keyboard focus stops autoplay until explicitly restarted even after focus leaves',async t=>{t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{await act(async()=>h.rail.querySelector<HTMLElement>('a')!.focus());await act(async()=>document.getElementById('outside')!.focus());await act(async()=>t.mock.timers.tick(9000));assert.equal(h.rail.scrollLeft,0);assert.ok(h.button('Play Instagram posts'));}finally{await h.unmount();}});
 test('offscreen rows, hidden pages, pointer hover and reduced-motion changes suspend automatic movement',async t=>{
  t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{
- await act(async()=>intersect?.([{isIntersecting:false}]));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
- await act(async()=>intersect?.([{isIntersecting:true}]));visible=false;await act(async()=>document.dispatchEvent(new dom.window.Event('visibilitychange')));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
+ await act(async()=>intersect?.([observation(false)]));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
+ await act(async()=>intersect?.([observation(true)]));visible=false;await act(async()=>document.dispatchEvent(new dom.window.Event('visibilitychange')));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
  visible=true;await act(async()=>document.dispatchEvent(new dom.window.Event('visibilitychange')));
  await act(async()=>h.host.querySelector('.home-carousel')!.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
  await act(async()=>h.host.querySelector('.home-carousel')!.dispatchEvent(new dom.window.MouseEvent('mouseout',{bubbles:true,relatedTarget:document.body})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,600);
@@ -72,4 +75,35 @@ test('missing media-query API keeps content usable with autoplay off and instant
   assert.equal(h.button('Play Instagram posts')?.disabled,true);
   await act(async()=>h!.button('Next Instagram posts')!.click());assert.deepEqual(h.moves,[{left:600,behavior:'instant'}]);
  }finally{await h?.unmount();Object.defineProperty(window,'matchMedia',{configurable:true,value:original});}
+});
+
+test('queued carousel observations use the latest matching target state',async t=>{
+ t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{
+  await act(async()=>intersect?.([observation(true,1),observation(false,2)]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0,'An older visible observation must not keep an offscreen row moving');
+  await act(async()=>intersect?.([observation(false,4),observation(true,3)]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0,'Observation time determines the newest state');
+  await act(async()=>intersect?.([{...observation(true,5),target:document.getElementById('outside')!}]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0,'An unrelated element must not resume this row');
+  await act(async()=>intersect?.([observation(false,6),observation(true,7)]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,600);
+ }finally{await h.unmount();}
+});
+
+test('carousel motion waits for its configured visible-area threshold',async t=>{
+ t.mock.timers.enable({apis:['setInterval']});const h=await mount(true);try{
+  await act(async()=>intersect?.([observation(true,1,0.05)]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0,'Edge contact below 15 percent must not advance the row');
+  await act(async()=>intersect?.([observation(true,2,0.15)]));
+  await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,600);
+ }finally{await h.unmount();}
+});
+
+test('missing viewport observer keeps automatic movement off but retains manual arrows',async t=>{
+ t.mock.timers.enable({apis:['setInterval']});const original=globalThis.IntersectionObserver;
+ Object.assign(globalThis,{IntersectionObserver:undefined});let h:Awaited<ReturnType<typeof mount>>|undefined;
+ try{
+  h=await mount(true);await act(async()=>t.mock.timers.tick(9000));assert.equal(h.rail.scrollLeft,0);
+  await act(async()=>h!.button('Next Instagram posts')!.click());assert.equal(h.rail.scrollLeft,600);
+ }finally{await h?.unmount();Object.assign(globalThis,{IntersectionObserver:original});}
 });

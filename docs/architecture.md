@@ -1,6 +1,6 @@
 # Shop Maple architecture
 
-Updated 26 October 2026. Shop Admin at `/admin` shares the shop repository and runtime. The latest merged content increment is PR30; newer source work is described in the current plan and must not be treated as deployed. Account activation still needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
+Updated 26 October 2026. Shop Admin at `/admin` shares the shop repository and runtime. PR31 adds enquiry assignment/notes; PR32 adds deferred category films and smaller homepage client data. The homepage artwork/city controls increment is described in the current plan. Source and merged work must not be treated as deployed. Account activation still needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
 
 ```mermaid
 flowchart LR
@@ -31,6 +31,8 @@ Shop Admin is a separate staff interface in the existing infrastructure: Next.js
 Customer enquiries use their own permission, defaulting to denied even for content publishers. The existing inbox reads customer details and records internal review. The current ownership/notes increment adds assignment and append-only activity with the same enquiry version, separate from published site content. Staff credentials, notes and customer contact details never enter public content responses. Notes do not send customer replies; notification delivery and retention remain separate work.
 
 Staff sessions use opaque HttpOnly cookies and hashed tokens, bounded lifetime, scrypt password hashes, login throttling, role checks and CSRF/origin checks. Concurrent edits use version checks. Content accepts bounded text and approved media/internal links, not executable HTML. The CLI creates the first publisher privately; there is no public signup. See [admin release and provisioning](admin-release.md).
+
+Homepage artwork uses fixed placement identities and sparse overrides. The remaining Difference/value icons and city illustrations use the same approved-media, private-file and publication boundaries as banners and other template images. City-rail layout records the order and visibility of all 18 existing identities; hiding all entries removes that visual section. These are presentation controls and do not decide delivery areas, rates or stock. Legacy revisions without the new fields retain their original artwork and order. Editable image descriptions remain plain text; decorative originals may keep empty descriptions.
 
 The deployed catalogue baseline before this increment is 539 products / 1,050 variants, combining Keeri and the Shopify snapshot. A scheduled Keeri pull updates the read model; unverified buyer prices remain “Price on request”. Product counts and runtime revisions must be rechecked during release, rather than treated as architecture guarantees.
 

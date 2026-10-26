@@ -31,12 +31,19 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
     updateVisibility();
     media?.addEventListener("change", updateMotion);
     document.addEventListener("visibilitychange", updateVisibility);
+    const visibilityThreshold = 0.15;
     const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(
-      entries => setVisible(entries.some(entry => entry.isIntersecting)),
-      { threshold: 0.15 },
+      entries => {
+        const latest = entries.reduce<IntersectionObserverEntry | undefined>(
+          (current, entry) => entry.target === rail.current && (!current || entry.time >= current.time) ? entry : current,
+          undefined,
+        );
+        if (latest) setVisible(latest.isIntersecting && latest.intersectionRatio >= visibilityThreshold);
+      },
+      { threshold: visibilityThreshold },
     );
     if (observer && rail.current) observer.observe(rail.current);
-    else setVisible(true);
+    else setVisible(false);
     return () => {
       media?.removeEventListener("change", updateMotion);
       document.removeEventListener("visibilitychange", updateVisibility);

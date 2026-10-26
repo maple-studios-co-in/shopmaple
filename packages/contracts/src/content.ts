@@ -95,7 +95,33 @@ export const templateMediaKeys = [
   "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining", "nimbus-room-collection",
   "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project",
   "nimbus-hero-poster", "nimbus-craft-poster", "story-hero", "story-film-poster",
+  "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
+  "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
+  "home-city-delhi", "home-city-kolkata", "home-city-hyderabad", "home-city-varanasi", "home-city-mumbai",
+  "home-city-jaipur", "home-city-bengaluru", "home-city-chennai", "home-city-gujarat",
+  "home-city-artwork-1", "home-city-artwork-2", "home-city-artwork-3", "home-city-artwork-4",
+  "home-city-artwork-5", "home-city-artwork-6", "home-city-artwork-7", "home-city-artwork-8", "home-city-agra",
 ] as const;
+export const templateMediaDecorativeKeys = [
+  "home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds",
+  "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
+  "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
+  "home-city-artwork-1", "home-city-artwork-2", "home-city-artwork-3", "home-city-artwork-4",
+  "home-city-artwork-5", "home-city-artwork-6", "home-city-artwork-7", "home-city-artwork-8",
+] as const;
+export const homeCityKeys = [
+  "delhi", "kolkata", "hyderabad", "varanasi", "mumbai", "jaipur", "bengaluru", "chennai", "gujarat",
+  "artwork-1", "artwork-2", "artwork-3", "artwork-4", "artwork-5", "artwork-6", "artwork-7", "artwork-8", "agra",
+] as const;
+export type HomeCityKey = typeof homeCityKeys[number];
+export const homeCitiesLayoutSchema = z.array(z.object({
+  key: z.enum(homeCityKeys),
+  enabled: z.boolean(),
+}).strict()).length(homeCityKeys.length).refine(
+  items => new Set(items.map(item => item.key)).size === items.length,
+  "City placements must include every identity exactly once",
+);
+export type HomeCitiesLayout = z.infer<typeof homeCitiesLayoutSchema>;
 export const templateMediaResponsiveKeys = [
   "home-nimbus", "nimbus-room-collection", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-hero-poster",
 ] as const;
@@ -109,10 +135,10 @@ const templateMediaItemSchema = z.object({
   const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(value.key);
   if (responsive !== (value.mobileImage !== undefined))
     ctx.addIssue({ code: "custom", path: ["mobileImage"], message: responsive ? "Choose both desktop and mobile artwork" : "This artwork has one image" });
-  if (!value.alt.trim() && !["home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds"].includes(value.key))
+  if (!value.alt.trim() && !(templateMediaDecorativeKeys as readonly string[]).includes(value.key))
     ctx.addIssue({ code: "custom", path: ["alt"], message: "Describe this artwork" });
 });
-export const templateMediaSchema = z.array(templateMediaItemSchema).max(21).refine(
+export const templateMediaSchema = z.array(templateMediaItemSchema).max(templateMediaKeys.length).refine(
   items => new Set(items.map(item => item.key)).size === items.length, "Artwork placements must be unique",
 );
 export type TemplateMediaItem = z.infer<typeof templateMediaItemSchema>;
@@ -250,6 +276,8 @@ export const storefrontContentSchema = z
     storyPage: storyPageContentSchema.optional(),
     // Legacy revisions retain the original homepage template copy.
     homeDetails: homeDetailsSchema.optional(),
+    // Absent in legacy revisions, preserving the original city order and visibility.
+    homeCitiesLayout: homeCitiesLayoutSchema.optional(),
     homeMerchandising: homeMerchandisingSchema.optional(),
     templateMedia: templateMediaSchema.optional(),
     // Legacy revisions retain the original Nimbus collection template copy.
