@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { before, after, beforeEach, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
@@ -112,137 +113,73 @@ test("invalid query and quantities fail rather than silently changing behavior",
     (await request(app).get("/api/products?limit=5000")).status,
     400,
   );
+  const client = request.agent(app);
+  const current = (await client.get("/api/cart")).body;
   for (const quantity of [-1, 0.5, 21, "2"]) {
     assert.equal(
       (
-        await request(app)
+        await client
           .put("/api/cart/items/chair-cream")
           .set("Origin", origin)
-          .send({ quantity })
+          .send({ quantity, mutation: { id: randomUUID(), cartIdentity: current.mutationContext.cartIdentity, expectedRevision: current.mutationContext.revision } })
       ).status,
       400,
     );
   }
 });
+async function cartWrite(agent: ReturnType<typeof request.agent>, id: string, quantity: number, extra = {}) {
+  const current = await agent.get("/api/cart");
+  return agent.put("/api/cart/items/" + id).set("Origin", origin).send({
+    quantity,
+    mutation: { id: randomUUID(), cartIdentity: current.body.mutationContext.cartIdentity, expectedRevision: current.body.mutationContext.revision },
+    ...extra,
+  });
+}
 test("cart totals use database prices and reject injected price fields", async () => {
   const agent = request.agent(app);
-  assert.equal(
-    (
-      await agent
-        .put("/api/cart/items/chair-cream")
-        .set("Origin", origin)
-        .send({ quantity: 2, pricePaise: 1 })
-    ).status,
-    400,
-  );
-  const added = await agent
-    .put("/api/cart/items/chair-cream")
-    .set("Origin", origin)
-    .send({ quantity: 2 });
-  assert.equal(added.status, 200);
-  assert.equal(added.body.subtotalPaise, 24690);
-  assert.equal(added.body.itemCount, 2);
-  assert.match(cookie(added), /HttpOnly/);
-  assert.match(String(added.headers["cache-control"]), /no-store/);
-  await db.variant.update({
-    where: { id: "chair-cream" },
-    data: { pricePaise: 15000 },
-  });
+  const boot = await agent.get("/api/cart");
+  assert.equal((await cartWrite(agent, "chair-cream", 2, { pricePaise: 1 })).status, 400);
+  const added = await cartWrite(agent, "chair-cream", 2);
+  assert.equal(added.status, 200); assert.equal(added.body.subtotalPaise, 24690); assert.equal(added.body.itemCount, 2);
+  assert.match(cookie(boot), /HttpOnly/); assert.match(String(added.headers["cache-control"]), /no-store/);
+  await db.variant.update({ where: { id: "chair-cream" }, data: { pricePaise: 15000 } });
   assert.equal((await agent.get("/api/cart")).body.subtotalPaise, 30000);
 });
 test("guest cart credentials isolate shoppers and survive a new API instance", async () => {
-  const a = request.agent(app),
-    b = request.agent(app);
-  const result = await a
-    .put("/api/cart/items/chair-cream")
-    .set("Origin", origin)
-    .send({ quantity: 1 });
+  const a = request.agent(app), b = request.agent(app);
+  const boot = await a.get("/api/cart");
+  await cartWrite(a, "chair-cream", 1);
   assert.equal((await b.get("/api/cart")).body.itemCount, 0);
-  const restarted = createApp(db, {
-    webOrigin: origin,
-    catalogMode: "preview",
-    secureCookies: false,
-  });
-  assert.equal(
-    (
-      await request(restarted)
-        .get("/api/cart")
-        .set("Cookie", cookie(result).split(";")[0]!)
-    ).body.itemCount,
-    1,
-  );
+  const restarted = createApp(db, { webOrigin: origin, catalogMode: "preview", secureCookies: false });
+  assert.equal((await request(restarted).get("/api/cart").set("Cookie", cookie(boot).split(";")[0]!)).body.itemCount, 1);
   const stored = await db.cart.findFirstOrThrow();
-  assert.equal(stored.tokenHash.length, 64);
-  assert.ok(!cookie(result).includes(stored.tokenHash));
+  assert.equal(stored.tokenHash.length, 64); assert.ok(!cookie(boot).includes(stored.tokenHash));
 });
 test("cross-origin and missing-origin cart writes are refused", async () => {
-  assert.equal(
-    (
-      await request(app)
-        .put("/api/cart/items/chair-cream")
-        .send({ quantity: 1 })
-    ).status,
-    403,
-  );
-  assert.equal(
-    (
-      await request(app)
-        .put("/api/cart/items/chair-cream")
-        .set("Origin", "https://other.example")
-        .send({ quantity: 1 })
-    ).status,
-    403,
-  );
+  assert.equal((await request(app).put("/api/cart/items/chair-cream").send({ quantity: 1 })).status, 403);
+  assert.equal((await request(app).put("/api/cart/items/chair-cream").set("Origin", "https://other.example").send({ quantity: 1 })).status, 403);
   assert.equal(await db.cart.count(), 0);
 });
 test("unavailable, unpublished and made-to-order variants cannot be added", async () => {
   for (const id of ["chair-blue", "chair-custom", "hidden-v", "missing"]) {
-    const r = await request(app)
-      .put("/api/cart/items/" + id)
-      .set("Origin", origin)
-      .send({ quantity: 1 });
-    assert.ok([404, 409].includes(r.status), id + " status " + r.status);
+    const result = await cartWrite(request.agent(app), id, 1);
+    assert.ok([404, 409].includes(result.status), id + " status " + result.status);
   }
 });
 test("absolute quantity updates are idempotent and zero removes a line", async () => {
   const agent = request.agent(app);
-  await agent
-    .put("/api/cart/items/chair-cream")
-    .set("Origin", origin)
-    .send({ quantity: 1 });
-  const results = await Promise.all(
-    [2, 2].map((quantity) =>
-      agent
-        .put("/api/cart/items/chair-cream")
-        .set("Origin", origin)
-        .send({ quantity }),
-    ),
-  );
-  assert.ok(results.every((r) => r.status === 200));
-  assert.equal((await agent.get("/api/cart")).body.itemCount, 2);
-  assert.equal(await db.cartItem.count(), 1);
-  await db.variant.update({
-    where: { id: "chair-cream" },
-    data: { available: false },
-  });
-  const changed = await agent.get("/api/cart");
-  assert.equal(changed.body.items[0].available, false);
-  assert.equal(
-    (
-      await agent
-        .put("/api/cart/items/chair-cream")
-        .set("Origin", origin)
-        .send({ quantity: 0 })
-    ).body.itemCount,
-    0,
-  );
+  await cartWrite(agent, "chair-cream", 1);
+  const current = (await agent.get("/api/cart")).body;
+  const payload = { quantity: 2, mutation: { id: randomUUID(), cartIdentity: current.mutationContext.cartIdentity, expectedRevision: current.mutationContext.revision } };
+  const results = await Promise.all([1, 2].map(() => agent.put("/api/cart/items/chair-cream").set("Origin", origin).send(payload)));
+  assert.ok(results.every(result => result.status === 200));
+  assert.equal((await agent.get("/api/cart")).body.itemCount, 2); assert.equal(await db.cartItem.count(), 1);
+  await db.variant.update({ where: { id: "chair-cream" }, data: { available: false } });
+  assert.equal((await agent.get("/api/cart")).body.items[0].available, false);
+  assert.equal((await cartWrite(agent, "chair-cream", 0)).body.itemCount, 0);
 });
 test("expired carts do not expose previous items", async () => {
-  const agent = request.agent(app);
-  await agent
-    .put("/api/cart/items/chair-cream")
-    .set("Origin", origin)
-    .send({ quantity: 1 });
+  const agent = request.agent(app); await cartWrite(agent, "chair-cream", 1);
   await db.cart.updateMany({ data: { expiresAt: new Date("2020-01-01") } });
   assert.equal((await agent.get("/api/cart")).body.itemCount, 0);
 });

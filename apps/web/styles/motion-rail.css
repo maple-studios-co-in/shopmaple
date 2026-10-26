@@ -1,4 +1,7 @@
 /* Rows remain natively scrollable before JavaScript and with reduced motion. */
+/* Native focus reaches rotation controls first; their visual placement stays below the row. */
+.home-carousel-autoplay { display: flex; flex-direction: column; }
+.home-carousel-autoplay > .home-carousel-controls { order: 1; }
 .home-carousel-controls[hidden] { display: none; }
 .home-carousel-controls button:focus-visible,
 .home-carousel [tabindex]:focus-visible,

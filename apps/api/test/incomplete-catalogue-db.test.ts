@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { before, beforeEach, after, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
@@ -102,10 +103,12 @@ test("unpriced legacy cart items remain unavailable and do not become zero-price
 });
 
 test("an unpriced variant cannot be added to a purchasing cart even if its old stock flag is true", async () => {
-  const result = await request(app)
+  const client = request.agent(app);
+  const current = (await client.get("/api/cart")).body;
+  const result = await client
     .put("/api/cart/items/unknown")
     .set("Origin", "http://localhost:3000")
-    .send({ quantity: 1 });
+    .send({ quantity: 1, mutation: { id: randomUUID(), cartIdentity: current.mutationContext.cartIdentity, expectedRevision: current.mutationContext.revision } });
   assert.equal(result.status, 409);
   assert.equal(result.body.code, "ENQUIRY_REQUIRED");
   assert.equal(await db.cartItem.count(), 0);

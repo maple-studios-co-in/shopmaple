@@ -92,7 +92,21 @@ export const cartItemSchema = z.object({
   available: z.boolean(),
   stockPolicy: z.string(),
 });
+export const cartMutationContextSchema = z.object({
+  cartIdentity: z.string().regex(/^[a-f0-9]{64}$/),
+  revision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+});
+export const cartMutationInputSchema = z.object({
+  quantity: z.number().int().min(0).max(20),
+  mutation: z.object({
+    id: z.uuid(),
+    cartIdentity: z.string().regex(/^[a-f0-9]{64}$/),
+    expectedRevision: z.number().int().nonnegative().max(2_147_483_646),
+  }).strict(),
+}).strict();
+export type CartMutationInput = z.infer<typeof cartMutationInputSchema>;
 export const cartSchema = z.object({
+  mutationContext: cartMutationContextSchema.optional(),
   items: z.array(cartItemSchema),
   itemCount: z.number().int(),
   subtotalPaise: z.number().int().nullable(),
@@ -101,6 +115,10 @@ export const cartSchema = z.object({
   mode: z.literal("preview"),
 });
 export type Cart = z.infer<typeof cartSchema>;
+export const guardedCartSchema = cartSchema.extend({ mutationContext: cartMutationContextSchema });
+export const cartMutationResponseSchema = guardedCartSchema.extend({
+  mutationResult: z.object({ id: z.uuid(), status: z.enum(["applied", "replayed"]) }),
+});
 export const catalogueImportSchema = z
   .object({
     schemaVersion: z.literal(1),

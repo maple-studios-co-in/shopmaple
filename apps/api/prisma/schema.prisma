@@ -60,6 +60,19 @@ model Cart {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   items CartItem[]
+  revision Int @default(0)
+  mutations CartMutationReceipt[]
+}
+model CartMutationReceipt {
+  cartId String
+  operationId String
+  payloadHash String
+  status Int
+  code String
+  message String
+  createdAt DateTime @default(now())
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  @@id([cartId, operationId])
 }
 model CartItem {
   cartId String
