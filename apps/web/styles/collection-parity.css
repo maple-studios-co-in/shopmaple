@@ -376,7 +376,7 @@
   margin-bottom: 20px;
   font-size: 12px;
 }
-.collection-heading h1 {
+.collection-heading :is(h1, h2) {
   font-size: clamp(32px, 4vw, 48px);
 }
 .collection-heading > p {

@@ -93,7 +93,10 @@ export function LegacyChairs({ products }: { products: ProductCardModel[] }) {
             <em>{data.hero.eyebrow}</em>
           </p>
           <h1>{data.hero.heading}</h1>
-          <p>{data.hero.description}</p>
+          <p className="legacy-chairs-hero-description">{data.hero.description}</p>
+          <Link className="legacy-chairs-button" href="#collection-products">
+            Browse all chairs →
+          </Link>
         </div>
       </section>
       <nav

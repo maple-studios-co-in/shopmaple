@@ -1,6 +1,8 @@
 # Current delivery queue — 26 October 2026
 
-Latest local increment: [storefront fidelity and Keeri discovery](releases/2026-10-26-fidelity-followup.md). Elegance, navigation/banner sizing, filter typography, Story proportions, footer and unobtrusive motion controls are corrected locally. The Keeri adapter now derives missing categories from known product types, but the fresh database sync is pending. Local tests/types/build pass; trusted network access, dependency audit, remote CI and deployment remain open. This entry is not a claim that the new changes are live.
+Current milestone board: [Next delivery goals](next-delivery-goals.md). This separates catalogue discovery, checkout readiness, Shop Admin, visual parity and operational release work into independently verifiable tasks. Parallel implementation is underway; these new edits are not deployed.
+
+Latest verified deployment: [storefront fidelity and Keeri discovery](releases/2026-10-26-fidelity-followup.md), runtime `77d829e`, PR #51 merged as `e91c4a7` with the same tree. The 26 October deployment verified 539 public products / 1,050 variants and 332 category fills. Eight CI checks, fresh paired-backup restore, staged/live smoke and public desktop/mobile checks passed. Checkout remains disabled. Earlier release notes below retain their historical statuses; they are not the current runtime status.
 
 The active goal and next work are tracked in [Shop Content and Motion](superpowers/plans/2026-10-26-shop-content-motion.md). This wave adds a protected Shop Admin and restores the original moving Instagram layout. Keeri remains the product/order authority; checkout remains disabled. The older checklist below records previous milestones and must not be read as the current deployment status.
 

@@ -40,9 +40,11 @@ export default async function Collection({
     "category",
     "page",
   ].some((key) => Object.hasOwn(rawQuery, key));
-  if (handle === "chairs" && !browsingRequested)
-    return <LegacyChairs products={await getProductCards(legacyChairHandles)} />;
-  const result = await getCollectionPage(handle, query);
+  const showChairEditorial = handle === "chairs" && !browsingRequested;
+  const [result, editorialProducts] = await Promise.all([
+    getCollectionPage(handle, query),
+    showChairEditorial ? getProductCards(legacyChairHandles) : Promise.resolve([]),
+  ]);
   const campaign: CampaignKey | undefined = (
     {
       beds: "beds-hero",
@@ -52,10 +54,12 @@ export default async function Collection({
   )[handle];
   return (
     <>
+      {showChairEditorial && <LegacyChairs products={editorialProducts} />}
       {campaign && <CampaignBanner campaign={campaign} />}
       <CollectionListing
         handle={handle}
         title={collectionTitles[handle]!}
+        headingLevel={showChairEditorial ? "h2" : "h1"}
         query={result.query}
         products={result.products}
         total={result.total}

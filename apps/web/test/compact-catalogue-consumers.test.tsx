@@ -62,18 +62,32 @@ test("search rejects a valid summary page for another query instead of showing s
   await transport(async () => { await assert.rejects(searchProducts("oak", new AbortController())); }, () => ({ ...page, query: { ...query, q: "brass" }, limit: 4 }));
 });
 
-test("bare editorial chairs requests only bounded curated card batches", async () => {
+test("bare editorial chairs adds one canonical compact category page to bounded unique editorial card batches", async () => {
   await transport(async requests => {
-    await Collection({ params: Promise.resolve({ handle: "chairs" }), searchParams: Promise.resolve({}) });
-    assert.ok(requests.length > 0);
-    for (const request of requests) {
-      assert.equal(request.pathname, "/api/catalogue/cards");
+    const result = listing(await Collection({ params: Promise.resolve({ handle: "chairs" }), searchParams: Promise.resolve({}) }))!;
+    const collections = requests.filter(request => request.pathname === "/api/catalogue/collections/chairs");
+    assert.equal(collections.length, 1, "the canonical chair category requires exactly one compact page read");
+    assert.equal(collections[0]!.searchParams.get("limit"), "24");
+    assert.equal(collections[0]!.searchParams.get("page"), "1");
+    assert.equal(collections[0]!.searchParams.get("sort"), "title");
+    assert.equal(collections[0]!.searchParams.has("q"), false);
+    assert.equal(collections[0]!.searchParams.has("category"), false);
+    assert.deepEqual(result.products, [card]);
+    assert.equal(result.total, 1);
+    const batches = requests.filter(request => request.pathname === "/api/catalogue/cards");
+    assert.ok(batches.length > 0);
+    assert.equal(requests.length, collections.length + batches.length, "no full-product or unrelated catalogue reads are allowed");
+    for (const request of batches) {
       const handles = request.searchParams.get("handles")!.split(",");
-      assert.ok(handles.length <= 50); assert.equal(new Set(handles).size, handles.length);
+      assert.ok(handles.length > 0 && handles.length <= 50);
     }
-    assert.deepEqual(requests.flatMap(request => request.searchParams.get("handles")!.split(",")), [
+    const requestedHandles = batches.flatMap(request => request.searchParams.get("handles")!.split(","));
+    assert.equal(new Set(requestedHandles).size, requestedHandles.length, "editorial products are deduplicated across all batches");
+    assert.deepEqual(requestedHandles, [
       "aera-swivel-lounge-chair", "aero-dining-chair", "aileron-signature-bed", "aileron-upholstered-bench", "alcyone-7-seater-sofa", "alina-7-seater-sofa",
       "lira-barrel-accent-chair", "nimbus-cloud-lounge-chair-grey-boucle-walnut", "aurelia-luxe-accent-chair-walnut-mocha", "alto-luxe-lounge-chair-gold-charcoal", "ovalo-modern-console-walnut-white", "maple-bloom-petal-coffee-table-white-marble-brass-finish", "aurelia-fluted-coffee-table-white-marble-gold", "caro", "ario", "nola", "tara", "arno", "rollo",
     ]);
-  }, url => url.pathname === "/api/products" ? { products: [], total: 0, page: 1, limit: 50, mode: "preview", checkoutEnabled: false } : { products: [], published: true });
+  }, url => url.pathname === "/api/catalogue/collections/chairs"
+    ? { ...page, handle: "chairs", collectionTotal: 1, inStock: 1, outOfStock: 0, highestPrice: 120000 }
+    : { products: [], published: true });
 });
