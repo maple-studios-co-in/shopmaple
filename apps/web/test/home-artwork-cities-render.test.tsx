@@ -62,14 +62,14 @@ function assertOriginal(doc: Document) {
   assert.deepEqual(attrs(doc, ".home-difference img", "alt"), ["", "", "", ""]);
   assert.deepEqual(attrs(doc, ".home-values img", "src"), values.map(([, file]) => files + file));
   assert.deepEqual(attrs(doc, ".home-values img", "alt"), ["", "", "", ""]);
-  assert.deepEqual(attrs(doc, ".home-city-track img", "src"), cities.map(([, file]) => files + file));
-  assert.deepEqual(attrs(doc, ".home-city-track img", "alt"), cities.map(([, , alt]) => alt));
+  assert.deepEqual(attrs(doc, ".home-city-track img", "src"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([key]) => `/media/cities/${key}.webp`));
+  assert.deepEqual(attrs(doc, ".home-city-track img", "alt"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([, , alt]) => alt));
 }
 
-test("legacy homepage keeps all 26 original icon and city assets, dimensions, copy and controls", async () => {
+test("homepage preserves original value icons and copy while showing the suggested photographic city cards", async () => {
   const doc = await render(published());
   assertOriginal(doc);
-  for (const [selector, width, height] of [[".home-difference img", "60", "60"], [".home-values img", "80", "80"], [".home-city-track img", "150", "120"]]) {
+  for (const [selector, width, height] of [[".home-difference img", "60", "60"], [".home-values img", "80", "80"], [".home-city-track img", "400", "600"]]) {
     for (const node of doc.querySelectorAll(selector!)) {
       assert.equal(node.getAttribute("width"), width);
       assert.equal(node.getAttribute("height"), height);
@@ -91,7 +91,7 @@ function artworkOverrides() {
 }
 
 test("published custom artwork reaches every difference, value and city slot with its accessible description", async () => {
-  const doc = await render(published({ templateMedia: artworkOverrides() }));
+  const doc = await render(published({ templateMedia: artworkOverrides(), homeCitiesLayout: cities.map(([key])=>({key,enabled:true})) }));
   assert.deepEqual(attrs(doc, ".home-difference img", "src"), ["/media/difference-1.webp", "/media/difference-2.webp", "/media/difference-3.webp", "/media/difference-4.webp"]);
   assert.deepEqual(attrs(doc, ".home-difference img", "alt"), ["Promise icon 1", "Promise icon 2", "Promise icon 3", "Promise icon 4"]);
   assert.deepEqual(attrs(doc, ".home-values img", "src"), ["/media/value-quiet-luxury.webp", "/media/value-real-living.webp", "/media/value-ages-beautifully.webp", "/media/value-strength.webp"]);
@@ -114,7 +114,7 @@ test("published reordered values and cities retain keyed artwork and hide disabl
     }));
     assert.deepEqual(attrs(doc, ".home-city-track img", "src"), custom
       ? ["/media/city-agra.webp", "/media/city-artwork-8.webp", "/media/city-delhi.webp"]
-      : [files + "Agra.svg", files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", files + "Delhi.svg"]);
+      : ["/media/cities/agra.webp", files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", "/media/cities/delhi.webp"]);
     assert.deepEqual(attrs(doc, ".home-city-track img", "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
     assert.equal(doc.querySelector(".home-values img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : files + "Cover_Image_Maple_5.svg");
     assert.equal(doc.querySelector(".home-values h3")?.textContent, "Strength You Don’t See");
@@ -135,7 +135,7 @@ test("blank decorative alt is preserved and custom descriptions remain literal t
   media[0]!.alt = "";
   media[4]!.alt = markup;
   media.find(item => item.key === "home-city-artwork-1")!.alt = "";
-  const doc = await render(published({ templateMedia: media }));
+  const doc = await render(published({ templateMedia: media, homeCitiesLayout: cities.map(([key])=>({key,enabled:true})) }));
   assert.equal(doc.querySelector(".home-difference img")?.getAttribute("src"), "/media/difference-1.webp");
   assert.equal(doc.querySelector(".home-difference img")?.getAttribute("alt"), "");
   assert.equal(doc.querySelector(".home-values img")?.getAttribute("alt"), markup);
@@ -152,4 +152,12 @@ test("draft-only, invalid artwork, malformed city layouts and unavailable public
     published({ templateMedia: artworkOverrides(), homeCitiesLayout: [...layout.slice(0, -1), layout[0]] }),
     "offline",
   ]) assertOriginal(await render(body));
+});
+
+test('default city strip uses photographic cards for the named locations',async()=>{
+ const doc=await render(published());
+ const images=[...doc.querySelectorAll('.home-city-track img')];
+ assert.equal(images.length,10);
+ assert.deepEqual(images.map(i=>i.getAttribute('src')),['delhi','kolkata','hyderabad','varanasi','mumbai','jaipur','bengaluru','chennai','gujarat','agra'].map(k=>'/media/cities/'+k+'.webp'));
+ assert.equal(doc.querySelector('.home-cities a[href="/media/cities/credits.html"]')?.textContent,'Image credits');
 });

@@ -6,6 +6,7 @@ import { shopifyFixture } from "./fixtures/shopify-admin.js";
 function options() {
   const k = v2Fixture();
   k.publicMedia = [];
+  for (const model of k.models) Object.assign(model, {taxonomy: { category: "Dining", subCategory: null }, content: {details:null, materials:null, dimensions:null, careInstructions:null, warranty:null}});
   return {
     origin: "https://keeri.example",
     token: "synthetic-only",
@@ -15,7 +16,7 @@ function options() {
     fetch: async (input: URL | RequestInfo) => {
       assert.equal(
         String(input),
-        "https://keeri.example/api/storefront/catalogue/v2",
+        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1",
       );
       return new Response(JSON.stringify(k), {
         headers: { "content-type": "application/json" },

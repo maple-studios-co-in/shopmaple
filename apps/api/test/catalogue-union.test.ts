@@ -153,14 +153,14 @@ test("raw Keeri MRP cannot overwrite verified public prices across repeated sync
   assert.equal(revoked.products[0]!.variants[0]!.pricePaise, null);
 });
 
-test("exactly mapped products retain Shopify display copy and photos over populated Keeri presentation", () => {
+test("exactly mapped products retain Shopify copy and leading photos while appending approved Keeri photos", () => {
   const { k } = fixtures();
   k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
   const plan = planCatalogueUnion(shopifyPricedFixture(), k, "maple");
   const p = plan.products[0]!;
   assert.equal(p.title, "Real chair");
   assert.equal(p.description, "Actual description");
-  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg"]);
+  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg", "https://cdn.shopify.com/s/files/1/keeri.jpg"]);
   assert.equal(p.id, "preview-101");
   assert.equal(p.handle, "real-chair");
   assert.deepEqual(p.variants.map(v => [v.id, v.pricePaise, v.compareAtPaise, v.available, v.stockPolicy]),
@@ -171,7 +171,7 @@ test("exactly mapped products retain Shopify display copy and photos over popula
   ]);
 });
 
-test("empty current Shopify copy and photos are not replaced with Keeri or historical presentation", () => {
+test("empty Shopify copy remains unchanged while current approved Keeri photos fill the gallery", () => {
   const { k } = fixtures();
   k.publicMedia = [{ assetId: "photo1", url: "https://cdn.shopify.com/s/files/1/keeri.jpg" }];
   const s = shopifyPricedFixture();
@@ -182,7 +182,7 @@ test("empty current Shopify copy and photos are not replaced with Keeri or histo
     products: prior.products, productBindings: prior.productBindings, variantBindings: prior.variantBindings,
   });
   assert.equal(next.products[0]!.description, "");
-  assert.deepEqual(next.products[0]!.images, []);
+  assert.deepEqual(next.products[0]!.images, ["https://cdn.shopify.com/s/files/1/keeri.jpg"]);
 });
 
 test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct and unpriced", () => {

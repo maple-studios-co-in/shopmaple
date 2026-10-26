@@ -17,7 +17,7 @@ export function HomeCitiesLayoutFields({ value, onChange }: {
       pendingFocus.current = null;
     }
   }, [current]);
-  const original = current.every((item, index) => item.key === defaultHomeCitiesLayout[index]?.key && item.enabled);
+  const original = current.every((item, index) => item.key === defaultHomeCitiesLayout[index]?.key && item.enabled === defaultHomeCitiesLayout[index]?.enabled);
   function update(next: HomeCitiesLayout, focus: HomeCityKey) {
     pendingFocus.current = focus;
     onChange(next);

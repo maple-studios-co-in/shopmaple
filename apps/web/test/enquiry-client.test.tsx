@@ -46,9 +46,9 @@ test("saved receipt retains preview reference without claiming the asynchronous 
   await act(async () => root.render(<ReceiptForm />));
   await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
   const status = container.querySelector('[role="status"]')?.textContent ?? "";
-  assert.match(status, /Saved in this development preview/);
+  assert.match(status, /Your enquiry has been saved/);
   assert.match(status, /Reference: enq_00000000-0000-4000-8000-000000000000/);
-  assert.match(status, /Team notification is not confirmed/);
+  assert.doesNotMatch(status, /development preview|notification/i);
   assert.doesNotMatch(status, /has not been sent to our team/);
   assert.equal(container.querySelector('[role="alert"]'), null);
  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; dom.window.close(); }
@@ -59,7 +59,7 @@ test("project preview notice leaves asynchronous notification unconfirmed and pr
  const dom = new JSDOM(renderToStaticMarkup(<><HomeProjectForm /><HomeNewsletterForm /></>));
  try {
   const notice = dom.window.document.querySelector(".home-project-form .home-preview-detail")?.textContent ?? "";
-  assert.match(notice, /Development preview: enquiries are saved\. Team notification is not confirmed\./);
+  assert.equal(notice, "");
   assert.doesNotMatch(notice, /saved locally|notifications are not connected|has not been sent to our team/);
   assert.equal(dom.window.document.querySelector(".home-newsletter-form .home-preview-detail")?.textContent, "Newsletter signup is not available yet.");
  } finally { dom.window.close(); }

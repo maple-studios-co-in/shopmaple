@@ -7,7 +7,8 @@ export function approvedCatalogueImage(value: string) {
     !u.username &&
     !u.password &&
     !u.port &&
-    ((u.hostname === "cdn.shopify.com" && u.pathname.startsWith("/s/files/")) ||
+    ((u.hostname === "store.maplefurnishers.com" && /^\/media\/keeri\/[A-Za-z0-9_-]{1,64}\.webp$/.test(u.pathname) && !u.search && !u.hash) ||
+      (u.hostname === "cdn.shopify.com" && u.pathname.startsWith("/s/files/")) ||
       (u.hostname === "shop.maplefurnishers.com" &&
         u.pathname.startsWith("/cdn/shop/")))
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export function HomeCarousel({ children, label, autoplay = false, railClassName = "home-product-rail", className = "" }: {
   children: ReactNode;
@@ -76,7 +76,7 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
 
   const controls = (
     <div className="home-carousel-controls" hidden={!ready}>
-      {autoplay && <button type="button" aria-controls={id} disabled={reduced}
+      {autoplay && <button className="motion-playback-control" type="button" aria-controls={id} disabled={reduced}
         aria-label={`${paused || reduced ? "Play" : "Pause"} ${label}`}
         title={reduced ? "Automatic motion is off because you prefer reduced motion" : undefined}
         onPointerDown={() => { pointerPauseIntent.current = !paused; }}
@@ -87,7 +87,7 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
           pointerPauseIntent.current = null;
           setPaused(value => intent ?? !value);
         }}>
-        {paused || reduced ? <Play size={18} aria-hidden="true" /> : <Pause size={18} aria-hidden="true" />}
+        <span className="sr-only">Toggle motion</span>
       </button>}
       <button type="button" onClick={() => move(-1)} aria-controls={id} aria-label={`Previous ${label}`}><ArrowLeft size={20} aria-hidden="true" /></button>
       <button type="button" onClick={() => move(1)} aria-controls={id} aria-label={`Next ${label}`}><ArrowRight size={20} aria-hidden="true" /></button>

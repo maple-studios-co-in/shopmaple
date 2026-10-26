@@ -1,3 +1,5 @@
+import request from "supertest";
+import { createApp } from "../src/app.js";
 import assert from "node:assert/strict";
 import { beforeEach, after, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
@@ -175,10 +177,32 @@ test("newer union refresh restores Shopify presentation without moving cart or s
   const p = await db.product.findUniqueOrThrow({ where: { id: "preview-101" }, include: { variants: true } });
   assert.equal(p.title, "Real chair");
   assert.equal(p.description, "Actual description");
-  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg"]);
+  assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg", "https://cdn.shopify.com/s/files/1/keeri.jpg"]);
   assert.equal(p.handle, "real-chair");
   assert.deepEqual(p.variants.map(v => [v.id, v.title, v.pricePaise, v.available]), [["preview-201", "Oak", 12345, false]]);
   assert.deepEqual((await db.cartItem.findMany({ where: { cartId: cart.id } })).map(i => [i.variantId, i.quantity]), [["preview-201", 2]]);
   assert.equal(await db.productSourceIdentity.count({ where: { productId: "preview-101" } }), 2);
   assert.equal(await db.variantSourceIdentity.count({ where: { variantId: "preview-201" } }), 2);
+});
+
+test('persisted Keeri taxonomy expands Dining Chairs without losing Shopify members or exposing unpublished models', async () => {
+  const {s,k}=fixtures();
+  s.products[0]!.handle='aero-dining-chair';
+  k.models[0]!.variants[0]!.sku='KEERI-ONLY';
+  const input={...k,models:k.models.map(m=>({...m, productType:'chair',taxonomy:{category:'Dining',subCategory:null}}))};
+  await syncCatalogueUnion(db,s,input,'maple');
+  const app=createApp(db,{webOrigin:'http://localhost:3000',catalogMode:'preview',secureCookies:false});
+  const result=await request(app).get('/api/catalogue/collections/dining-chair');
+  assert.equal(result.status,200);
+  assert.equal(result.body.total,2);
+  assert.deepEqual(new Set(result.body.products.map((p:{handle:string})=>p.handle)),new Set(['aero-dining-chair',k.publication[0]!.handle]));
+  const persisted=await db.product.findUniqueOrThrow({where:{id:'keeri:maple:model1'}});
+  assert.deepEqual(persisted.sourceTaxonomy,{productType:'chair',category:'Dining',subCategory:null});
+  input.capturedAt='2026-10-25T12:00:00Z'; input.models[0]!.taxonomy.category='Accent';
+  await syncCatalogueUnion(db,s,input,'maple');
+  assert.equal((await request(app).get('/api/catalogue/collections/dining-chair')).body.total,1);
+  // A legacy snapshot must clear stale category metadata rather than retain an obsolete assignment.
+  k.capturedAt='2026-10-25T13:00:00Z';
+  await syncCatalogueUnion(db,s,k,'maple');
+  assert.equal((await db.product.findUniqueOrThrow({where:{id:'keeri:maple:model1'}})).sourceTaxonomy,null);
 });

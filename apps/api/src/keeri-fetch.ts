@@ -2,6 +2,8 @@ import { adaptKeeriExport, adaptKeeriExportV2 } from "./keeri.js";
 export interface KeeriFetchOptions {
   endpoint: string;
   schemaVersion?: 1 | 2;
+  includeTaxonomy?: boolean;
+  includeContent?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -32,6 +34,7 @@ export async function fetchKeeriExport(
       endpoint.username ||
       endpoint.password ||
       endpoint.search ||
+      ((options.includeTaxonomy || options.includeContent) && (options.schemaVersion !== 2 || endpoint.pathname !== "/api/storefront/catalogue/v2")) ||
       endpoint.hash ||
       !/^[A-Za-z0-9_-]{1,64}$/.test(options.tenantId) ||
       !/^[\x21-\x7E]{1,4096}$/.test(options.token) ||
@@ -46,6 +49,8 @@ export async function fetchKeeriExport(
   } catch {
     throw new KeeriFetchError("INVALID_CONFIGURATION");
   }
+  if (options.includeTaxonomy || options.includeContent) endpoint.searchParams.set("taxonomy", "1");
+  if (options.includeContent) endpoint.searchParams.set("content", "1");
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
@@ -98,7 +103,12 @@ export async function fetchKeeriExport(
       const text = new TextDecoder("utf-8", { fatal: true }).decode(
         Buffer.concat(chunks),
       );
-      return (options.schemaVersion === 2 ? adaptKeeriExportV2 : adaptKeeriExport)(JSON.parse(text), options.tenantId);
+      const result = (options.schemaVersion === 2 ? adaptKeeriExportV2 : adaptKeeriExport)(JSON.parse(text), options.tenantId);
+      if ((options.includeTaxonomy || options.includeContent) && result.products.some(product => !product.sourceTaxonomy))
+        throw new KeeriFetchError("INVALID_EXPORT");
+      if (options.includeContent && result.products.some(product => !product.sourceDetails))
+        throw new KeeriFetchError("INVALID_EXPORT");
+      return result;
     } catch {
       throw new KeeriFetchError("INVALID_EXPORT");
     }

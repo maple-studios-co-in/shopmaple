@@ -33,6 +33,7 @@ const server = createApp(db, {
   secureCookies: process.env.NODE_ENV === "production",
   trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
   enquiryDelivery,
+  catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
 }).listen(env.API_PORT, env.API_HOST, () =>
   console.log(
     "Maple API listening on " +

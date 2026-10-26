@@ -1,3 +1,4 @@
+import { DismissibleDetails } from "./dismissible-details";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type CSSProperties } from "react";
@@ -148,12 +149,12 @@ export function Footer({
           © {new Date().getFullYear()} {footer.copyrightName}
         </span>
         {footer.policyLinks.some((link) => link.enabled) && (
-          <details className="maple-footer-policies">
+          <DismissibleDetails className="maple-footer-policies">
             <summary>Terms and Policies</summary>
             <nav aria-label="Store policies">
               <Links links={footer.policyLinks} />
             </nav>
-          </details>
+          </DismissibleDetails>
         )}
         {(footer.instagram || footer.linkedin) && (
           <div>

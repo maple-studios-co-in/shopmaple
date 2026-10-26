@@ -55,7 +55,7 @@ test("legacy city layout browsing stays clean and moving or hiding saves complet
   const app = await setup();
   try {
     assert.deepEqual([...cities().querySelectorAll('input[type="checkbox"]')].map(e => e.getAttribute("aria-label")), cityNames.map(name => `Show ${name}`));
-    assert.ok([...cities().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].every(e => e.checked));
+    assert.deepEqual([...cities().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].map(e => e.checked), cityKeys.map(key => !key.startsWith("artwork-")));
     assert.equal(button("Save draft").disabled, true);
     assert.equal(button("Move Delhi up").disabled, true);
     assert.equal(button("Move Agra down").disabled, true);
@@ -84,7 +84,7 @@ test("legacy city layout browsing stays clean and moving or hiding saves complet
     assert.equal(app.saved().expectedVersion, 4);
     assert.deepEqual(app.saved().content.homeCitiesLayout, [
       {key:"kolkata",enabled:true}, {key:"delhi",enabled:false},
-      ...cityKeys.slice(2).map(key => ({key,enabled:true})),
+      ...cityKeys.slice(2).map(key => ({key,enabled:!key.startsWith("artwork-")})),
     ]);
     assert.deepEqual(app.saved().content.templateMedia, app.initial.templateMedia);
     assert.deepEqual(app.saved().content.homeDetails, app.initial.homeDetails);
@@ -105,9 +105,9 @@ test("all cities may be hidden and restoring layout resets only order and visibi
     button("Restore original city layout").focus();
     await click("Restore original city layout");
     assert.equal(document.activeElement?.getAttribute("aria-label"), "City artwork Delhi");
-    assert.ok([...cities().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].every(e => e.checked));
+    assert.deepEqual([...cities().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].map(e => e.checked), cityKeys.map(key => !key.startsWith("artwork-")));
     await click("Save draft");
-    assert.deepEqual(app.saved().content.homeCitiesLayout, cityKeys.map(key => ({key,enabled:true})));
+    assert.deepEqual(app.saved().content.homeCitiesLayout, cityKeys.map(key => ({key,enabled:!key.startsWith("artwork-")})));
     assert.deepEqual(app.saved().content.templateMedia, app.initial.templateMedia);
     assert.deepEqual(app.saved().content.homeSections, app.initial.homeSections);
   } finally { await app.close(); }
