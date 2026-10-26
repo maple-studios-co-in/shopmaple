@@ -249,35 +249,62 @@ test("product variants update price, gallery and enquiry while delivery stays an
 });
 
 test("hero keeps product discovery clear and only downloads its film when requested", async () => {
-  Object.assign(dom.window, { matchMedia: () => ({ matches: false }) });
-  dom.window.HTMLMediaElement.prototype.play = async function () {};
-  dom.window.HTMLMediaElement.prototype.pause = function () {};
-  await mount(<Hero />, async () => {
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 1700)));
-    const video = document.querySelector("video")!;
-    assert.equal(
-      video.getAttribute("src"),
-      null,
-      "the film should not consume bandwidth before a shopper requests it",
-    );
-    assert.match(
-      document.querySelector(".hero-film")!.textContent!,
-      /Explore Collection/,
-    );
-    assert.match(
-      document.querySelector(".hero-categories")!.textContent!,
-      /Starting from ₹25,000/,
-    );
-    await act(async () =>
-      document
-        .querySelector<HTMLButtonElement>(
-          'button[aria-label="Play workshop video"]',
-        )!
-        .click(),
-    );
-    assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
-    assert.ok(
-      document.querySelector('button[aria-label="Pause workshop video"]'),
-    );
+  const mediaPrototype = dom.window.HTMLMediaElement.prototype;
+  const savedMedia = new Map(["play", "pause", "paused"].map(key => [key, Object.getOwnPropertyDescriptor(mediaPrototype, key)]));
+  const savedMotion = Object.getOwnPropertyDescriptor(dom.window, "matchMedia");
+  const savedVisibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+  const motion = Object.assign(new dom.window.EventTarget(), { matches: false });
+  Object.assign(dom.window, { matchMedia: () => motion });
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+  const paused = new WeakMap<HTMLMediaElement, boolean>();
+  // Simulate the browser boundary, including actual playback state and events.
+  Object.defineProperties(mediaPrototype, {
+    paused: { configurable: true, get(this: HTMLMediaElement) { return paused.get(this) ?? true; } },
+    play: { configurable: true, value: async function (this: HTMLMediaElement) {
+      paused.set(this, false); this.dispatchEvent(new dom.window.Event("play"));
+    } },
+    pause: { configurable: true, value: function (this: HTMLMediaElement) {
+      if (this.paused) return;
+      paused.set(this, true); this.dispatchEvent(new dom.window.Event("pause"));
+    } },
   });
+  try {
+    await mount(<Hero />, async () => {
+      await act(async () => new Promise((resolve) => setTimeout(resolve, 1700)));
+      const video = document.querySelector("video")!;
+      assert.equal(
+        video.getAttribute("src"),
+        null,
+        "the film should not consume bandwidth before a shopper requests it",
+      );
+      assert.match(
+        document.querySelector(".hero-film")!.textContent!,
+        /Explore Collection/,
+      );
+      assert.match(
+        document.querySelector(".hero-categories")!.textContent!,
+        /Starting from ₹25,000/,
+      );
+      await act(async () =>
+        document
+          .querySelector<HTMLButtonElement>(
+            'button[aria-label="Play workshop video"]',
+          )!
+          .click(),
+      );
+      assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
+      assert.ok(
+        document.querySelector('button[aria-label="Pause workshop video"]'),
+      );
+    });
+  } finally {
+    for (const [key, descriptor] of savedMedia) {
+      if (descriptor) Object.defineProperty(mediaPrototype, key, descriptor);
+      else Reflect.deleteProperty(mediaPrototype, key);
+    }
+    if (savedMotion) Object.defineProperty(dom.window, "matchMedia", savedMotion);
+    else Reflect.deleteProperty(dom.window, "matchMedia");
+    if (savedVisibility) Object.defineProperty(document, "visibilityState", savedVisibility);
+    else Reflect.deleteProperty(document, "visibilityState");
+  }
 });
