@@ -1,12 +1,12 @@
-import type { EditorialContent, EditorialNode } from "@shopmaple/contracts";
+import type { AuthoredArticle, AuthoredBlock, EditorialContent, EditorialNode } from "@shopmaple/contracts";
 import source from "@/data/store-content.json";
 import blogIndex from "@/data/blog-index.json";
 
-type ResolvedArticle = Omit<(typeof source.blogs)[number]["articles"][number], "content"> & { content: EditorialNode[]; excerpt: string };
+type ResolvedArticle = Omit<(typeof source.blogs)[number]["articles"][number], "content"> & { content: EditorialNode[]; excerpt: string; blocks?: AuthoredBlock[]; cover?: AuthoredArticle["cover"] };
 type ResolvedBlog = { handle: string; title: string; articles: ResolvedArticle[] };
 type ResolvedEditorialContent = { policies: Record<string, { title: string; content: EditorialNode[] }>; blogs: ResolvedBlog[] };
 export const defaultEditorialContent: EditorialContent = { policies: [], blogs: [], articles: [] };
-export function resolveEditorialContent(value?: EditorialContent): ResolvedEditorialContent {
+export function resolveEditorialContent(value?: EditorialContent, authoredArticles?: readonly AuthoredArticle[]): ResolvedEditorialContent {
   const result = structuredClone({ policies: source.policies, blogs: source.blogs }) as unknown as ResolvedEditorialContent;
   const listing = blogIndex as Record<string, Record<string, { excerpt: string }>>;
   for (const blog of result.blogs) {
@@ -21,6 +21,21 @@ export function resolveEditorialContent(value?: EditorialContent): ResolvedEdito
         article.content = structuredClone(edit.content);
       }
     }
+  }
+  for (const article of authoredArticles ?? []) {
+    if (!article.publishedAt) continue;
+    const blog = result.blogs.find(item => item.handle === article.blog);
+    if (!blog || blog.articles.some(item => item.handle === article.handle)) continue;
+    blog.articles.push({
+      handle: article.handle,
+      title: article.title,
+      excerpt: article.excerpt,
+      publishedAt: article.publishedAt,
+      content: [],
+      summary: [],
+      blocks: structuredClone(article.blocks),
+      cover: article.cover ? structuredClone(article.cover) : article.cover,
+    });
   }
   for (const policy of value?.policies ?? []) {
     result.policies[policy.slug] = { title: policy.title, content: structuredClone(policy.content) };

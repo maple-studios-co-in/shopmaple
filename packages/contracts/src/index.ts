@@ -191,3 +191,5 @@ export type { HomeDetails } from "./home-details";
 export * from "./service-pages";
 
 export * from "./editorial-content";
+
+export * from "./authored-articles";

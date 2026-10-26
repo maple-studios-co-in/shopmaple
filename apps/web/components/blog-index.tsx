@@ -7,6 +7,7 @@ type Article = {
   title: string;
   excerpt?: string;
   publishedAt: string | null;
+  cover?: { src: string; alt: string } | null;
 };
 type IndexPresentation = {
   excerpt: string;
@@ -32,7 +33,11 @@ export function BlogIndex({ blog, title, articles }: {
           const href = `/blogs/${blog}/${article.handle}`;
           return (
             <article key={article.handle} className="blog-index-card">
-              {details?.image && (
+              {article.cover ? (
+                <Link href={href} className="blog-index-image">
+                  <img src={article.cover.src} alt={article.cover.alt} width={1200} height={800} loading={position === 0 ? "eager" : "lazy"} />
+                </Link>
+              ) : details?.image && (
                 <Link href={href} className="blog-index-image">
                   <Image
                     {...details.image}

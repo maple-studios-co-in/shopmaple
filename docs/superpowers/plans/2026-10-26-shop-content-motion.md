@@ -175,6 +175,18 @@ Acceptance: authorised staff can assign a real enquiry only to an active account
 - [x] Shop Admin: grouped artwork choices, decorative descriptions, private picker and per-slot restore; keyboard city ordering, show/hide and layout reset without changing artwork.
 - [x] Shared carousel: latest queued visibility state, aligned15% threshold and conservative no-observer autoplay; assertion RED then11/11 GREEN.
 - [x] Parent:637 tests, types/build, retained homepage payload boundary, working-tree security checks, independent review and responsive browser acceptance.
-- [ ] Final-commit security checks and exact-head CI/merge; production release remains separately gated.
+- [x] Final-commit security checks and all eight exact-head CI checks passed; PR33 merged as52a0b21. Production release remains separately gated.
 
 Scope: four Difference icons, four value illustrations and 18 city-rail images. The eight unnamed original city illustrations keep neutral admin labels and their original empty storefront descriptions; no city identity is invented. This does not change Keeri serviceability, shipping rates or products. No staff account, capability grant, outbound notification or checkout activation is part of this increment. New keys/layout require compatible content recovery before rolling back to an older strict-schema binary.
+
+## New article authoring
+
+- [x] Bounded structured blocks, fixed identities and optional legacy-compatible article field.
+- [x] Transactional server-owned first-publication ledger, candidate link validation and managed-media integrity checks.
+- [x] Published article routes/index/metadata; original ten source articles preserved.
+- [x] Editor creation, reorder/remove, private preview, empty required content and image descriptions; stable keyboard focus at reorder boundaries.
+- [x] Independent security review findings fixed with regression tests; mobile editor overflow corrected from observed525px to390px document width at390px viewport.
+- [x] Integrated666 tests:238API,370web,58deployment/recovery. Development backup made before additive migration;85products/115variants/1enquiry unchanged.
+- [ ] Final commit scans and exact-head CI/merge. Production capacity, private publisher activation and live staff acceptance remain separate gates.
+
+See [article authoring release notes](../../releases/2026-10-26-authored-articles.md). This increment does not publish an article or change existing website copy. New articles become unavailable during content API outage while original source fallback remains available. The overall goal remains active: full visual/state/performance acceptance, richer page structure, customer integrations, operational readiness and live commerce gates still need work.

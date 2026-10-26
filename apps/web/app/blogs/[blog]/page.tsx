@@ -12,7 +12,7 @@ export async function generateMetadata({
 }) {
   const { blog } = await params;
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   return {
     title: blogs.find((item) => item.handle === blog)?.title || "Blogs",
   };
@@ -27,7 +27,7 @@ export default async function BlogPage({
   const { blog } = await params;
   if (!source.blogs.some((item) => item.handle === blog)) notFound();
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   const record = blogs.find((item) => item.handle === blog)!;
   return <BlogIndex blog={blog} title={record.title} articles={record.articles} />;
 }

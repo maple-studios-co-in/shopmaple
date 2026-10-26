@@ -147,6 +147,11 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   for (const item of list(rail)) image(record(item).image);
  // All template slots are published references, including artwork in hidden sections.
  for (const item of list(document.templateMedia)) { image(record(item).image); image(record(item).mobileImage); }
+ for (const item of list(document.authoredArticles)) {
+  const article = record(item);
+  image(record(article.cover).src);
+  for (const block of list(article.blocks)) if (record(block).type === "image") image(record(block).src);
+ }
  for (const item of list(document.instagramPosts)) image(record(item).src);
  for (const item of list(document.campaigns)) { const artwork = record(record(item).artwork); image(artwork.desktopImage); image(artwork.mobileImage); }
  for (const item of list(document.pages)) { const banner = record(record(item).banner); image(banner.desktopImage); image(banner.mobileImage); }
@@ -158,7 +163,8 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
  for (const row of rows) {
   if (row.storageKey !== `${row.sha256}.webp`) throw absent();
   let handle;
-  try { handle = await open(join(mediaRoot, row.storageKey), constants.O_RDONLY | constants.O_NOFOLLOW); const stat = await handle.stat(); if (!stat.isFile() || stat.size !== row.bytes) throw absent(); }
+  try { handle = await open(join(mediaRoot, row.storageKey), constants.O_RDONLY | constants.O_NOFOLLOW); const stat = await handle.stat(); if (!stat.isFile() || stat.size !== row.bytes || stat.size > maxBytes) throw absent();
+   if (createHash("sha256").update(await handle.readFile()).digest("hex") !== row.sha256) throw absent(); }
   catch { throw absent(); }
   finally { await handle?.close(); }
  }

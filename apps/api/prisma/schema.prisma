@@ -258,3 +258,11 @@ model EnquiryActivity {
   createdAt DateTime @default(now())
   @@unique([enquiryId, version])
 }
+
+// Durable route identity: removing or restoring content never resets first publication.
+model ShopArticlePublication {
+  blog String
+  handle String
+  publishedAt DateTime @default(now())
+  @@id([blog, handle])
+}
