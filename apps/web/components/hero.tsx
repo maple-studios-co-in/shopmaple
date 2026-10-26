@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Pause, Play } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
@@ -13,21 +13,107 @@ export function Hero({
 }: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
   const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
   const video = useRef<HTMLVideoElement>(null);
+  const togglePlayback = useRef<(() => void) | null>(null);
   const [playing, setPlaying] = useState(false);
-  function toggle() {
+  const [starting, setStarting] = useState(false);
+
+  useEffect(() => {
     const v = video.current;
     if (!v) return;
-    if (playing) {
+    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let disposed = false;
+    let intersecting: boolean | null = null;
+    let requested = false;
+    let request = 0;
+    let pending: number | null = null;
+    const permitted = () => !disposed && requested &&
+      document.visibilityState === "visible" && intersecting !== false;
+    const pause = () => {
+      requested = false;
+      request += 1;
+      pending = null;
       v.pause();
-      setPlaying(false);
-    } else {
-      if (!v.src) v.src = "/media/workshop.mp4";
-      void v
-        .play()
-        .then(() => setPlaying(true))
-        .catch(() => {});
-    }
-  }
+      if (!disposed) {
+        setStarting(false);
+        setPlaying(false);
+      }
+    };
+    const onPlay = () => {
+      if (!permitted()) pause();
+      else setPlaying(!v.paused);
+    };
+    const onPause = () => {
+      // A queued pause event can arrive after a newer Play has already started.
+      if (v.paused) pause();
+      else setPlaying(true);
+    };
+    const toggle = () => {
+      if (pending !== null || !v.paused) {
+        pause();
+        return;
+      }
+      requested = true;
+      if (!permitted()) {
+        pause();
+        return;
+      }
+      if (!v.getAttribute("src")) v.src = "/media/workshop.mp4";
+      const currentRequest = ++request;
+      pending = currentRequest;
+      setStarting(true);
+      const settle = (failed = false) => {
+        if (disposed) {
+          if (!togglePlayback.current) v.pause();
+          return;
+        }
+        // Old completions must not cancel a newer explicit Play. Every stop
+        // clears intent, so returning onscreen never revives a cancelled request.
+        if (!permitted()) {
+          pause();
+          return;
+        }
+        if (request !== currentRequest) return;
+        pending = null;
+        setStarting(false);
+        if (failed) pause();
+        else setPlaying(!v.paused);
+      };
+      void v.play().then(() => settle(), () => settle(true));
+    };
+    const onVisibility = () => { if (document.hidden) pause(); };
+    const onMotion = () => { if (motion?.matches) pause(); };
+    togglePlayback.current = toggle;
+    v.addEventListener("play", onPlay);
+    v.addEventListener("pause", onPause);
+    v.addEventListener("ended", pause);
+    v.addEventListener("error", pause);
+    document.addEventListener("visibilitychange", onVisibility);
+    motion?.addEventListener("change", onMotion);
+    const observer = typeof window.IntersectionObserver === "function"
+      ? new window.IntersectionObserver((entries) => {
+          const entry = entries.reduce<IntersectionObserverEntry | undefined>(
+            (latest, item) => item.target === v && (!latest || item.time >= latest.time) ? item : latest,
+            undefined,
+          );
+          if (!entry || disposed) return;
+          intersecting = entry.isIntersecting;
+          if (!intersecting) pause();
+        }, { threshold: 0 })
+      : null;
+    observer?.observe(v);
+    return () => {
+      disposed = true;
+      togglePlayback.current = null;
+      observer?.disconnect();
+      motion?.removeEventListener("change", onMotion);
+      document.removeEventListener("visibilitychange", onVisibility);
+      v.removeEventListener("play", onPlay);
+      v.removeEventListener("pause", onPause);
+      v.removeEventListener("ended", pause);
+      v.removeEventListener("error", pause);
+      pause();
+    };
+  }, []);
   return (
     <section className="hero-grid" aria-label="Explore Maple furniture">
       <div className="hero-film">
@@ -53,10 +139,11 @@ export function Hero({
         </div>
         <button
           className="video-control"
-          onClick={toggle}
-          aria-label={playing ? "Pause workshop video" : "Play workshop video"}
+          type="button"
+          onClick={() => togglePlayback.current?.()}
+          aria-label={playing ? "Pause workshop video" : starting ? "Cancel workshop video playback" : "Play workshop video"}
         >
-          {playing ? <Pause size={16} /> : <Play size={16} />}
+          {playing || starting ? <Pause size={16} /> : <Play size={16} />}
         </button>
       </div>
       <div className="hero-categories">
