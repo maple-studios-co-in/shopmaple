@@ -60,7 +60,7 @@ test("authorized inbox paginates stable metadata without contact data, messages 
     assert.match(String(first.headers["cache-control"]), /no-store/);
     assert.deepEqual(first.body.items.map((row: any) => row.id), expected.slice(0, 2));
     for (const row of first.body.items)
-        assert.deepEqual(Object.keys(row).sort(), ["createdAt", "id", "kind", "status", "version"]);
+        assert.deepEqual(Object.keys(row).sort(), ["assignedToId", "createdAt", "id", "kind", "status", "version"]);
     const cursor = JSON.parse(Buffer.from(first.body.nextCursor, "base64url").toString("utf8"));
     assert.deepEqual(Object.keys(cursor).sort(), ["createdAt", "id"]);
     const second = await read(`kind=project&status=new&limit=1&cursor=${first.body.nextCursor}`);

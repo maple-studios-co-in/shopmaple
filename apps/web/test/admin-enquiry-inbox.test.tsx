@@ -20,6 +20,7 @@ test("inbox fetches private metadata then escaped detail and reviews with curren
     }[] = [];
     globalThis.fetch = async (url, options) => {
         calls.push({ url: String(url), options });
+        if (String(url).includes("/assignees") || String(url).includes("/activity")) return Response.json({ items: [], nextCursor: null });
         if (options?.method === "POST")
             return Response.json({ ...detail, status: "reviewed", version: 1, reviews: [{ id: "audit", actorId: "staff", version: 1, action: "reviewed", createdAt: row.createdAt }] });
         return Response.json(String(url).includes(row.id) ? detail : { items: [row], nextCursor: null });
@@ -65,10 +66,10 @@ test("access denial clears customer content and session expiry returns to sign i
     }
     globalThis.fetch = previous;
 });
-test("a review conflict clears stale detail and offers a reload without silently retrying", async () => {
+test("a review conflict preserves detail and requires deliberate reload without silently retrying", async () => {
     const previous = globalThis.fetch;
     let writes = 0;
-    globalThis.fetch = async (url, options) => options?.method === "POST" ? (writes++, Response.json({}, { status: 409 })) : Response.json(String(url).includes(row.id) ? detail : { items: [row], nextCursor: null });
+    globalThis.fetch = async (url, options) => String(url).includes("/assignees") || String(url).includes("/activity") ? Response.json({ items: [], nextCursor: null }) : options?.method === "POST" ? (writes++, Response.json({}, { status: 409 })) : Response.json(String(url).includes(row.id) ? detail : { items: [row], nextCursor: null });
     const root = createRoot(container);
     try {
         await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => { }}/>));
@@ -77,7 +78,9 @@ test("a review conflict clears stale detail and offers a reload without silently
         assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /changed|reload/i);
         assert.equal(writes, 1);
         assert.ok(button("Reload inbox"));
-        assert.ok(!container.textContent!.includes(detail.email));
+        assert.ok(container.textContent!.includes(detail.email));
+        assert.ok(button("Reload enquiry"));
+        assert.equal(button("Mark reviewed").disabled, true);
     }
     finally {
         await act(async () => root.unmount());

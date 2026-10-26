@@ -1,12 +1,15 @@
 # Shop Maple architecture
 
-Updated 26 October 2026. The current source adds a dedicated Shop Admin at `/admin`, in the existing shop repository and runtime. This increment is pending release verification; account activation needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
+Updated 26 October 2026. Shop Admin at `/admin` shares the shop repository and runtime. The latest merged content increment is PR30; newer source work is described in the current plan and must not be treated as deployed. Account activation still needs private publisher provisioning. Keeri remains the operational system of record. Checkout stays disabled.
 
 ```mermaid
 flowchart LR
   Customer[Customer] --> Web[Next.js storefront]
   Staff[Content team] --> Admin[Shop Admin /admin]
   Admin -->|Session + CSRF / draft / publish| Content[Express content API]
+  Staff -->|Separate enquiry capability| Inbox[Shop Admin enquiry inbox]
+  Inbox -->|Session + CSRF / versioned changes| Enquiries[Express enquiry API]
+  Enquiries --> ShopDB
   Content --> ShopDB[(Isolated shop PostgreSQL)]
   ShopDB -->|Published content only| Web
   Web --> API[Shop commerce API]
@@ -19,17 +22,19 @@ flowchart LR
 
 | Surface | Owns | Does not own |
 | --- | --- | --- |
-| Shop Admin | Homepage section order/visibility, selected headings, campaign copy/destinations, Instagram posts, custom content pages, drafts/publication/revisions | Product stock, invoices or delivery operations |
+| Shop Admin | Template copy/order/visibility, campaign scheduling, Instagram posts, pages/policies/blog copy, merchandising selections, artwork/private media and draft/publication/revisions; separately permitted customer enquiries | Product stock, invoices or delivery operations |
 | Keeri | Products, channel publication, inventory, confirmed sales orders, invoices and fulfilment operations | Storefront layout and campaign editing |
 | Maple corporate dashboard | Corporate website functions in its existing application | A second store order or inventory database |
 
-Shop Admin is a separate staff interface, but **not another infrastructure stack**: Next.js serves it and the existing Express service enforces permissions. Its tables are `ShopAdmin`, `ShopAdminSession`, `ShopContent` and immutable `ShopContentRevision`. Editors save drafts; publishers explicitly publish. Restoring a revision creates a new draft. Public rendering never queries draft content and falls back to checked-in source content when no valid publication exists.
+Shop Admin is a separate staff interface in the existing infrastructure: Next.js serves it and Express enforces permissions. Content uses `ShopAdmin`, `ShopAdminSession`, `ShopContent`, immutable `ShopContentRevision` and `ShopMediaAsset`. Editors save drafts; publishers explicitly publish. Restoring a revision creates a new draft. Public rendering never queries draft content and falls back to checked-in source content when no valid publication exists.
+
+Customer enquiries use their own permission, defaulting to denied even for content publishers. The existing inbox reads customer details and records internal review. The current ownership/notes increment adds assignment and append-only activity with the same enquiry version, separate from published site content. Staff credentials, notes and customer contact details never enter public content responses. Notes do not send customer replies; notification delivery and retention remain separate work.
 
 Staff sessions use opaque HttpOnly cookies and hashed tokens, bounded lifetime, scrypt password hashes, login throttling, role checks and CSRF/origin checks. Concurrent edits use version checks. Content accepts bounded text and approved media/internal links, not executable HTML. The CLI creates the first publisher privately; there is no public signup. See [admin release and provisioning](admin-release.md).
 
 The deployed catalogue baseline before this increment is 539 products / 1,050 variants, combining Keeri and the Shopify snapshot. A scheduled Keeri pull updates the read model; unverified buyer prices remain “Price on request”. Product counts and runtime revisions must be rechecked during release, rather than treated as architecture guarantees.
 
-Instagram uses a 24-post responsive native scroll rail, automatic advance and explicit pause/manual controls. Hover, keyboard interaction, background tabs and reduced-motion preferences suspend automatic movement. No animation dependency is needed for this increment. Media upload, scheduling, enquiry CRM, remaining template controls, extra effects and commerce activation remain in the [current work plan](superpowers/plans/2026-10-26-shop-content-motion.md).
+Instagram uses a 24-post responsive native scroll rail, automatic advance and explicit pause/manual controls. Hover, keyboard interaction, background tabs and reduced-motion preferences suspend automatic movement. Gallery keyboard/swipe transitions and optional section reveals are implemented without a heavy animation dependency. Media upload, scheduling and fixed-template controls are implemented to the scope of their release notes; remaining media/authoring, enquiry workflows, measured performance, customer services and commerce activation remain in the [current work plan](superpowers/plans/2026-10-26-shop-content-motion.md).
 
 ---
 

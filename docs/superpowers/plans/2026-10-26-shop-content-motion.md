@@ -148,6 +148,16 @@ Lists are bounded at12 items each. New tile identities are stable and separate f
 - [x] Renderer agent: consume published overrides on Homepage, Nimbus and Our Story; preserve original imagery/copy/links, responsive source selection, video files and playback controls.
 - [x] Admin agent: grouped Artwork tab, existing media picker/private previews, explicit desktop/mobile fields, restore-original for each placement, retained sibling/draft/conflict behavior.
 - [x] Parent: 577 tests, types/build, independent review and responsive/browser default checks. Final security and exact-head CI/merge remain release gates.
-- [ ] PR merge after exact-head CI; production deployment remains separately gated.
+- [x] PR30: eight exact-head checks passed at 5e8de71; merged bfc3b47 with an identical tree. Production deployment remains separately gated.
 
 The fixed placements cover hero category tiles, workshop/testimonial posters, the homepage Nimbus banner and newsletter illustration; Nimbus room tiles, origin/project images, room slides and film posters; Our Story hero and film poster. Defaults remain unchanged until a publisher explicitly publishes a saved override. Original descriptions that are intentionally decorative stay valid. This does not add video uploads, edit source video files, change product media authority or enable checkout.
+
+## Enquiry ownership and internal notes
+
+- [x] API agent: additive assignment/activity persistence, strict shared contracts, eligible staff directory, bounded cursor activity/owner filters, versioned transactional writes; assertion RED and database/security regressions.
+- [x] UI agent: eligible assignee selection, unassign, own/unassigned filters, internal note composer and paginated activity; retain unsent notes safely on recoverable failures, reject stale responses and clear private data after access loss.
+- [x] Audit agent: inspect image loading and interaction costs; identify measured or directly evidenced next storefront improvements without claiming Core Web Vitals from source.
+- [x] Parent: reviewed migration/permission/concurrency boundaries; guarded local/test migrations, 597 tests, typecheck/build, desktop/mobile component checks and independent review passed.
+- [ ] Final staged/commit security checks, exact-head CI and merge. Production deployment remains capacity-gated.
+
+Acceptance: authorised staff can assign a real enquiry only to an active account already permitted to manage enquiries, append plain-text internal notes and view immutable actor/version/time history. Assignment, review and notes share the enquiry version so competing changes cannot silently overwrite each other. Lists remain metadata-only; notes/contact details and the directory require the existing separate capability. There is no new permission grant, customer reply, email/WhatsApp notification or checkout activation. Production migration/deployment remains separately gated.
