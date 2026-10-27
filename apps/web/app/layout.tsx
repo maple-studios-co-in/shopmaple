@@ -18,6 +18,7 @@ import "@/styles/campaign-banners.css";
 import "@/styles/home-ticker.css";
 import "@/styles/home-rails.css";
 import "@/styles/storefront-interactions.css";
+import "@/styles/checkout.css";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";

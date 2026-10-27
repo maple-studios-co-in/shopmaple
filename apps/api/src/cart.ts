@@ -28,6 +28,7 @@ export async function currentCart(db: PrismaClient, req: Request, secure: boolea
 export async function readCart(
   db: PrismaClient | Prisma.TransactionClient,
   cartId?: string,
+  checkoutEnabled = false,
 ): Promise<Cart> {
   const rows = cartId
     ? await db.cartItem.findMany({
@@ -55,7 +56,7 @@ export async function readCart(
     itemCount: items.reduce((sum, x) => sum + x.quantity, 0),
     subtotalPaise: items.some(x => x.lineTotalPaise === null) ? null : items.reduce((sum, x) => sum + x.lineTotalPaise!, 0),
     currency: "INR",
-    checkoutEnabled: false,
+    checkoutEnabled,
     mode: "preview",
   };
 }
@@ -63,7 +64,7 @@ const identity = (secret: string) => hash("shopmaple-cart-context-v1:" + secret)
 function setCookie(res: Response, secret: string, secure: boolean) {
   res.cookie(cartCookieName(secure), secret, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: lifetime });
 }
-export async function bootstrapCart(db: PrismaClient, req: Request, res: Response, secure: boolean) {
+export async function bootstrapCart(db: PrismaClient, req: Request, res: Response, secure: boolean, checkoutEnabled = false) {
   let secret = guestCartToken(req, secure);
   let rotated = false;
   const result = await db.$transaction(async tx => {
@@ -73,7 +74,7 @@ export async function bootstrapCart(db: PrismaClient, req: Request, res: Respons
       rotated = true;
       cart = await tx.cart.create({ data: { tokenHash: hash(secret), expiresAt: new Date(Date.now() + lifetime) } });
     }
-    return { ...await readCart(tx, cart?.id), mutationContext: { cartIdentity: identity(secret!), revision: cart!.revision } };
+    return { ...await readCart(tx, cart?.id, checkoutEnabled), mutationContext: { cartIdentity: identity(secret!), revision: cart!.revision } };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   if (rotated) setCookie(res, secret!, secure);
   return result;
@@ -84,6 +85,7 @@ export async function setCartQuantity(
   id: string,
   input: CartMutationInput,
   secure: boolean,
+  checkoutEnabled = false,
 ) {
   const { quantity, mutation } = input;
   const reject = (status: number, code: string, message: string) => ({
@@ -110,7 +112,7 @@ export async function setCartQuantity(
         const success = async (status: "applied" | "replayed", revision: number) => ({
           status: 200,
           body: {
-            ...await readCart(tx, cart.id),
+            ...await readCart(tx, cart.id, checkoutEnabled),
             mutationContext: { cartIdentity: mutation.cartIdentity, revision },
             mutationResult: { id: mutation.id, status },
           },

@@ -1,6 +1,6 @@
 # Checkout HTTP boundary
 
-The API has an opt-in checkout HTTP boundary. `createApp(db, config, commerce)` accepts an injected order service; `server.ts` does not inject it. The running preview continues to return `503 CHECKOUT_NOT_AVAILABLE`, and both health and cart still advertise checkout as disabled. This implementation does not activate live payments or add a browser checkout flow.
+The API has a configuration-gated checkout HTTP boundary. `createApp(db, config, commerce)` accepts an injected order service; `server.ts` composes one through `commerce-composition.ts` only when `CHECKOUT_ENABLED=true` and the full commerce configuration is valid (see the checkout gate in [store deployment](store-deployment.md)). Otherwise the running preview returns `503 CHECKOUT_NOT_AVAILABLE`, health reports `checkoutEnabled: false`, and the cart still advertises checkout as disabled. When composed, `GET /api/checkout/options` publishes the configured delivery methods and the public Razorpay key id, and the `/checkout` page runs the hosted browser flow. Deploying this code does not activate live payments; configuration and the recorded release gates do.
 
 ## Routes when explicitly injected
 
@@ -9,6 +9,10 @@ The API has an opt-in checkout HTTP boundary. `createApp(db, config, commerce)` 
 | `POST /api/checkout` | Exact configured browser Origin, current `maple_cart` cookie, `Idempotency-Key`, strict `{}` JSON body | Freeze the current cart using stored prices and a server-side quote policy. Repeated keys for the same cart return the same attempt. |
 | `POST /api/checkout/:attemptId/payment-order` | Exact configured Origin, current guest cookie, UUID attempt ID, strict `{}` JSON body | Create or replay the provider order for an owned attempt. The durable attempt ID supplies idempotency; no client amount, currency, merchant, reservation or payment fields are accepted. |
 | `GET /api/checkout/:attemptId` | Current guest cookie and UUID attempt ID | Return only an owned attempt's public status. Unknown, expired and other-cart credentials cannot read the attempt. |
+| `POST /api/checkout/:attemptId/release` | Exact configured Origin, current guest cookie, UUID attempt ID, strict `{}` JSON body | The buyer walked away from a payable attempt (edited details, re-quoted). Frees the Keeri hold best-effort and marks the attempt `abandoned`; an uncertain release leaves `reconciliation_required` with `RELEASE_UNCERTAIN` and answers 409. Idempotent. |
+| `GET /api/checkout/options` | None | Configured delivery methods and the public Razorpay key id; 503 when options are not configured. |
+
+A cart with an attempt in `reserving`, `creating_provider_order`, or `awaiting_payment` with a live reservation cannot be quoted again (`409 CHECKOUT_IN_PROGRESS`) until that attempt is released, abandoned, captured or its hold expires. A delivery method outside the configured options, or a Keeri 4xx refusal, answers `422 QUOTE_REJECTED`; a Keeri 5xx or transport failure answers `503 QUOTE_UNAVAILABLE`.
 | `POST /api/webhooks/razorpay` | Exact raw-body HMAC, `x-razorpay-signature`, `x-razorpay-event-id` | Persist authenticated receipt and return `202 {"accepted":true}`. Payment verification and order delivery happen separately. |
 
 The response DTO is an allowlist: `id`, `state`, `amountPaise`, `currency`, `paid`, `providerOrderId`. It excludes frozen item snapshots, SKUs, cart IDs/tokens, merchant scope, reservation IDs, receipts, payment IDs, internal failure codes and provider responses. `paid` becomes true only for the service's verified `captured` state. An accepted webhook is not payment confirmation.

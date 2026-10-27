@@ -53,6 +53,11 @@ export interface ReservationPort {
   verify(
     input: ReservationBinding & { reservationId: string },
   ): Promise<boolean>;
+  /** Best-effort early release of a hold the buyer has abandoned. Callers must
+   * quarantine the attempt when this fails; the hold otherwise lapses at expiresAt. */
+  release?(
+    input: ReservationBinding & { reservationId: string },
+  ): Promise<boolean>;
 }
 import { OrderFlowError } from "./errors.js";
 export { OrderFlowError } from "./errors.js";
@@ -132,6 +137,22 @@ export function createOrderService(db: PrismaClient, options: Options) {
     if (!cart) throw new OrderFlowError("CART_NOT_FOUND");
     return cart;
   }
+  /** A cart with a payable provider order or an in-flight hold must not be quoted
+   * again: a refresh or second tab would otherwise pay twice for the same goods. */
+  async function assertNoPayableAttempt(tx: Prisma.TransactionClient, cartId: string) {
+    const payable = await tx.checkoutAttempt.findFirst({
+      where: {
+        cartId,
+        merchantScope,
+        OR: [
+          { state: { in: ["reserving", "creating_provider_order", "releasing"] } },
+          { state: "awaiting_payment", reservationExpiresAt: { gt: now() } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (payable) throw new OrderFlowError("CHECKOUT_IN_PROGRESS");
+  }
   async function freezeCart(
     cartToken: string,
     idempotencyKey: string,
@@ -159,6 +180,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
               throw new OrderFlowError("ATTEMPT_NOT_FOUND");
             return existing;
           }
+          await assertNoPayableAttempt(tx, cart.id);
           const rows = await tx.cartItem.findMany({
             where: { cartId: cart.id },
             include: { variant: { include: { product: true } } },
@@ -319,7 +341,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
     }
     const { initial, existing } = await transaction(db, async (tx) => {
       const initial = await readCart(tx);
-      return { initial, existing: await replay(tx, initial) };
+      const found = await replay(tx, initial);
+      if (!found) await assertNoPayableAttempt(tx, initial.cart.id);
+      return { initial, existing: found };
     });
     if (existing) return existing;
     // Fetch before opening a transaction, then revalidate the cart under serializable isolation.
@@ -363,6 +387,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
             throw new OrderFlowError("CHECKOUT_INPUT_CHANGED");
           const found = await replay(tx, current);
           if (found) return found;
+          await assertNoPayableAttempt(tx, current.cart.id);
           if (Date.parse(s.expiresAt) <= now().getTime())
             throw new OrderFlowError("QUOTE_EXPIRED");
           const id = randomUUID();
@@ -435,8 +460,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
         throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
     });
     const snapshotSha256 = hash(canonical(snapshot));
+    let reservation: Awaited<ReturnType<ReservationPort["reserve"]>>;
     try {
-      const reservation = await reservations.reserve({
+      reservation = await reservations.reserve({
         attemptId: attempt.id,
         snapshotSha256,
         snapshot: structuredClone(snapshot),
@@ -495,8 +521,50 @@ export function createOrderService(db: PrismaClient, options: Options) {
           failureCode: "PROVIDER_CREATION_UNCERTAIN",
         },
       });
+      // The buyer was never offered this order, so free the stock now rather than at expiry.
+      // The attempt already requires reconciliation; a failed release changes nothing further.
+      await releaseHold({
+        attemptId: attempt.id,
+        reservationId: reservation.reservationId,
+        snapshotSha256,
+      }).catch(() => false);
       throw new OrderFlowError("PROVIDER_CREATION_UNCERTAIN");
     }
+  }
+  async function releaseHold(input: ReservationBinding & { reservationId: string }) {
+    if (!reservations?.release) return false;
+    return reservations.release(input);
+  }
+  /** The buyer walked away from a payable attempt (edited details, re-quoted or
+   * abandoned the provider window). Free the hold; an uncertain release is quarantined. */
+  async function releaseAttempt(cartToken: string, attemptId: string) {
+    const attempt = await ownedAttempt(cartToken, attemptId);
+    if (attempt.state === "abandoned") return attempt;
+    if (attempt.state === "reservation_required")
+      return db.checkoutAttempt.update({ where: { id: attempt.id }, data: { state: "abandoned" } });
+    if (attempt.state !== "awaiting_payment")
+      throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
+    // Claim first: a payment that lands while the hold is being released is then
+    // routed to reconciliation by the worker instead of being accepted silently.
+    const claim = await db.checkoutAttempt.updateMany({
+      where: { id: attempt.id, merchantScope, state: "awaiting_payment" },
+      data: { state: "releasing" },
+    });
+    if (claim.count !== 1) throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
+    let released = false;
+    try {
+      released = !attempt.reservationId || (await releaseHold(binding(attempt)));
+    } catch {
+      released = false;
+    }
+    const updated = await db.checkoutAttempt.update({
+      where: { id: attempt.id },
+      data: released
+        ? { state: "abandoned", failureCode: null }
+        : { state: "reconciliation_required", failureCode: "RELEASE_UNCERTAIN" },
+    });
+    if (!released) throw new OrderFlowError("RELEASE_UNCERTAIN");
+    return updated;
   }
   async function ingestWebhook(
     rawBody: Buffer,
@@ -707,6 +775,13 @@ export function createOrderService(db: PrismaClient, options: Options) {
             failureCode: null,
           },
         });
+        // Paid goods leave the cart in the same transaction, so a refresh or a
+        // second tab cannot quote and pay for them again.
+        await tx.cartItem.deleteMany({ where: { cartId: current.cartId } });
+        await tx.cart.updateMany({
+          where: { id: current.cartId },
+          data: { revision: { increment: 1 } },
+        });
         await tx.orderOutbox.create({
           data: {
             attemptId: current.id,
@@ -767,6 +842,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
     freezeCart,
     getAttempt,
     createProviderOrder,
+    releaseAttempt,
     ingestWebhook,
     processWebhook,
   };

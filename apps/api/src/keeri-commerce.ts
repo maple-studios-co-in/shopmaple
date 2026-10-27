@@ -98,7 +98,10 @@ export function createKeeriCommerce(options: Options) {
       }
       if (response.status !== 200 || response.redirected) {
         void response.body?.cancel().catch(() => {});
-        throw new KeeriCommerceError("UPSTREAM_REJECTED");
+        // 5xx is a Keeri outage worth retrying; anything else is a refusal of this request.
+        throw new KeeriCommerceError(
+          response.status >= 500 ? "UPSTREAM_UNAVAILABLE" : "UPSTREAM_REJECTED",
+        );
       }
       if (
         !/^application\/json(?:\s*;|$)/i.test(
@@ -195,6 +198,12 @@ export function createKeeriCommerce(options: Options) {
         z.object({ verified: z.boolean() }).strict(),
         await request("reservations/verify", input),
       ).verified;
+    },
+    async release(input) {
+      return validated(
+        z.object({ released: z.literal(true) }).strict(),
+        await request("reservations/release", input),
+      ).released;
     },
   };
   async function quote(input: QuoteRequest) {
