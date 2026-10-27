@@ -1,6 +1,6 @@
 # Checkout HTTP boundary
 
-The API has an opt-in checkout HTTP boundary. `createApp(db, config, commerce)` accepts an injected order service; `server.ts` does not inject it. The running preview continues to return `503 CHECKOUT_NOT_AVAILABLE`, and both health and cart still advertise checkout as disabled. This implementation does not activate live payments or add a browser checkout flow.
+The API has a configuration-gated checkout HTTP boundary. `createApp(db, config, commerce)` accepts an injected order service; `server.ts` composes one through `commerce-composition.ts` only when `CHECKOUT_ENABLED=true` and the full commerce configuration is valid (see the checkout gate in [store deployment](store-deployment.md)). Otherwise the running preview returns `503 CHECKOUT_NOT_AVAILABLE`, health reports `checkoutEnabled: false`, and the cart still advertises checkout as disabled. When composed, `GET /api/checkout/options` publishes the configured delivery methods and the public Razorpay key id, and the `/checkout` page runs the hosted browser flow. Deploying this code does not activate live payments; configuration and the recorded release gates do.
 
 ## Routes when explicitly injected
 

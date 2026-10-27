@@ -40,7 +40,7 @@ Webhook secret rotation needs a bounded history of endpoint secrets for older re
 7. In one database transaction, apply an allowed idempotent commerce-order transition, mark the inbox work complete and enqueue the Keeri handoff/notification jobs. A verified capture alone cannot determine whether a cancelled/expired order should be fulfilled. Retry durable workers safely and alert on unresolved state. Browser redirects cannot mark an order paid.
 8. Implement refund/dispute reconciliation separately and verify the complete sandbox flow, duplicate events, network ambiguity, last-item concurrency, delayed capture and durable handoff retry before exposing checkout. Merchant-specific limits and automatic capture settings must be verified in that environment.
 
-The separate [order service](order-flow.md) now provides frozen checkout attempts, creation idempotency, an authenticated webhook inbox and a transactional Keeri outbox around this adapter. Production reservations, worker delivery and refund reconciliation remain unimplemented. No public endpoint invokes the gateway; the existing checkout refusal stays in place.
+The separate [order service](order-flow.md) now provides frozen checkout attempts, creation idempotency, an authenticated webhook inbox and a transactional Keeri outbox around this adapter. Production reservations, worker delivery and refund reconciliation remain unimplemented. The gateway is invoked only by the configuration-gated checkout composition described in [store deployment](store-deployment.md); without that configuration the existing checkout refusal stays in place.
 
 ## Verification
 
