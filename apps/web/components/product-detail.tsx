@@ -39,6 +39,10 @@ export function ProductDetail({
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
+  // Catalogues without any per-option photo mapping (every Keeri product today)
+  // present plain option tiles rather than a grid of "Photo unavailable" boxes.
+  const optionPhotos = Boolean(presentation && Object.keys(presentation.variantImages).length);
+  const textOptions = !optionPhotos && product.images.length > 0;
   const initial =
     product.variants.find((v) => v.id === queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
@@ -139,7 +143,7 @@ export function ProductDetail({
           />
           <div className="product-information pdp-info">
             <h1>{product.title}</h1>
-            {variant && !variantImage(variant.id) &&
+            {variant && !variantImage(variant.id) && !textOptions &&
               (product.variants.length > 1 || product.images.length === 0) && (
               <p className="pdp-option-photo-note" role="status">
                 Photo for this option unavailable
@@ -170,7 +174,7 @@ export function ProductDetail({
               </p>
             </div>
             {product.variants.length > 1 && (
-              <fieldset className="pdp-variants">
+              <fieldset className={"pdp-variants" + (textOptions ? " pdp-variants-text" : "")}>
                 <legend>
                   Choose your option <span>{variant?.title}</span>
                 </legend>
@@ -187,18 +191,20 @@ export function ProductDetail({
                         checked={v.id === variantId}
                         onChange={() => selectVariant(v.id)}
                       />
-                      <span className="pdp-variant-image">
-                        {variantImage(v.id) ? (
-                          <ProductImage
-                            src={variantImage(v.id)!}
-                            alt=""
-                            fill
-                            sizes="143px"
-                          />
-                        ) : (
-                          <span className="pdp-variant-placeholder">Photo unavailable</span>
-                        )}
-                      </span>
+                      {!textOptions && (
+                        <span className="pdp-variant-image">
+                          {variantImage(v.id) ? (
+                            <ProductImage
+                              src={variantImage(v.id)!}
+                              alt=""
+                              fill
+                              sizes="143px"
+                            />
+                          ) : (
+                            <span className="pdp-variant-placeholder">Photo unavailable</span>
+                          )}
+                        </span>
+                      )}
                       <span>{v.title}</span>
                       {v.sku?.trim() && product.variants.some(
                         (other) => other.id !== v.id && other.title === v.title &&

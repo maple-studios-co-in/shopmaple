@@ -115,13 +115,14 @@ test("legacy published homepage preserves original collection copy, media, links
   assert.deepEqual(texts(doc, ".home-categories h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
   assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
   assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
+  // SVG-wrapped covers resolve to the CDN raster so next/image can resize them (lib/shopify-artwork.ts).
   assert.deepEqual(attributes(doc, ".home-categories img", "src"), [
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.svg?v=1778649785",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.svg?v=1778649944",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM.png?v=1776235338",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.svg?v=1778650094",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.svg?v=1780689685",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?width=600",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?width=600",
   ]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);

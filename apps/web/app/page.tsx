@@ -22,6 +22,7 @@ import {
 import { getProductCards } from "@/lib/catalog";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
+import { rasterShopifyArtwork } from "@/lib/shopify-artwork";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ function CollectionTiles({
         <Link href={`/collections/${item.collectionHandle}`} key={item.key}>
           <div>
             <Image
-              src={item.image}
+              src={rasterShopifyArtwork(item.image)}
               alt={item.alt}
               fill
               sizes={className.includes("categories")

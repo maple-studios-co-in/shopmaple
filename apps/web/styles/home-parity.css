@@ -1151,7 +1151,8 @@
   padding: 14px;
 }
 
-.maple-loading { min-height: 45vh; display: grid; place-content: center; background: #faf8f4; }
+/* The streamed route shell must fill the viewport so the footer never paints above the fold and then jumps. */
+.maple-loading { min-height: 100vh; min-height: 100dvh; display: grid; place-content: center; background: #faf8f4; }
 .maple-loading img { width: 180px; height: auto; animation: maple-loading-pulse 1.4s ease-in-out infinite; }
 @keyframes maple-loading-pulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .maple-loading img { animation: none; } }
