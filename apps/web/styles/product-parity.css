@@ -351,16 +351,18 @@
   font-size: 30px;
   margin: 0 0 30px;
 }
+/* Source theme badge: burgundy rectangle, uppercase Red Hat Display. */
 .product-card .card-sale {
   position: absolute;
   left: 8px;
   top: 8px;
-  font-size: 10px;
-  line-height: 1;
-  padding: 6px 12px;
-  border-radius: 4px;
-  background: #f4e7c1;
-  color: #594211;
+  z-index: 1;
+  font: 700 13px/1.6 "Red Hat Display", Manrope, sans-serif;
+  padding: 4px 10px;
+  border-radius: 0;
+  background: var(--burgundy);
+  color: #f5f5f5;
+  text-transform: uppercase;
 }
 .product-card .product-card-price {
   display: flex;
@@ -549,4 +551,35 @@
   text-align: center;
   font-size: 10px;
   line-height: 1.4;
+}
+
+/* Large galleries: thumbnails outside the strip's viewport mount on intersection. */
+.product-thumbnail-pending {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #eeece7;
+  border-radius: 4px;
+}
+.pdp-gallery .product-thumbnails {
+  scroll-behavior: smooth;
+  scroll-padding: 6px;
+}
+.pdp-gallery .product-thumbnails button:focus-visible {
+  outline-offset: -3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pdp-gallery .product-thumbnails {
+    scroll-behavior: auto;
+  }
+}
+/* Option tiles without photos stay compact instead of framing an empty placeholder. */
+.pdp-variants.pdp-variants-text label {
+  min-height: 0;
+  justify-content: center;
+  gap: 2px;
+  padding: 14px 10px;
+}
+.pdp-variants.pdp-variants-text small {
+  margin-top: 4px;
 }

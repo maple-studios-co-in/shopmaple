@@ -1,7 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { getImageProps } from "next/image";
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { ProductImage } from "./product-image";
+
+const STAGE_SIZES = "(max-width:749px) 100vw, 44vw";
+// Thumbnails beyond this count mount their image only once they near the strip's viewport.
+const EAGER_THUMBNAILS = 12;
+const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
 
 export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave }: {
   images: string[];
@@ -18,15 +24,59 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   const [readySrc, setReadySrc] = useState<string>();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
+  const strip = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(() => initialWindow(images.length));
+  const previousSelected = useRef(selected);
   const ready = src === settledSrc || src === readySrc;
   useEffect(() => {
     if (!src || readySrc !== src || settledSrc === src) return;
     const timer = window.setTimeout(() => setSettledSrc(src), 180);
     return () => window.clearTimeout(timer);
   }, [src, readySrc, settledSrc]);
+  useEffect(() => {
+    const container = strip.current;
+    if (!container) return;
+    if (typeof IntersectionObserver !== "function") {
+      // Without intersection support every thumbnail loads as before.
+      setNear(new Set(images.map((_, i) => i)));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      const seen: number[] = [];
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const index = Number((entry.target as HTMLElement).dataset.index);
+        if (Number.isInteger(index)) { seen.push(index); observer.unobserve(entry.target); }
+      }
+      if (seen.length) setNear((current) => {
+        if (seen.every((index) => current.has(index))) return current;
+        const next = new Set(current);
+        seen.forEach((index) => next.add(index));
+        return next;
+      });
+    }, { root: container, rootMargin: "160px" });
+    container.querySelectorAll<HTMLElement>("button[data-index]").forEach((button) => observer.observe(button));
+    return () => observer.disconnect();
+  }, [images]);
+  useEffect(() => {
+    // Scroll only the strip, never the page: option tiles below the gallery can change the photo on mobile.
+    if (previousSelected.current === selected) return;
+    previousSelected.current = selected;
+    const container = strip.current;
+    const button = container?.querySelector<HTMLElement>(`button[data-index="${selected}"]`);
+    if (!container || !button || typeof container.scrollTo !== "function") return;
+    container.scrollTo({
+      top: button.offsetTop - (container.clientHeight - button.offsetHeight) / 2,
+      left: button.offsetLeft - (container.clientWidth - button.offsetWidth) / 2,
+      behavior: "auto",
+    });
+  }, [selected]);
   function advance(direction: number) {
     if (images.length > 1) onSelect((selected + direction + images.length) % images.length);
   }
+  const neighbours = readySrc === src && images.length > 1
+    ? [...new Set([images[(selected + 1) % images.length]!, images[(selected - 1 + images.length) % images.length]!])]
+    : [];
   return (
     <div
       className="product-gallery pdp-gallery"
@@ -41,10 +91,16 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         }
       }}
     >
-      <div className="product-thumbnails">
+      {neighbours.map((href) => {
+        const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
+        return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
+      })}
+      <div className="product-thumbnails" ref={strip}>
         {images.map((image, i) => (
-          <button key={image} onClick={() => onSelect(i)} aria-label={"Show product image " + (i + 1)} aria-pressed={selected === i}>
-            <ProductImage src={image} alt="" width={76} height={76} />
+          <button key={image} data-index={i} onClick={() => onSelect(i)} aria-label={"Show product image " + (i + 1)} aria-pressed={selected === i}>
+            {near.has(i) || selected === i
+              ? <ProductImage src={image} alt="" width={76} height={76} />
+              : <span className="product-thumbnail-pending" aria-hidden="true" />}
           </button>
         ))}
       </div>
@@ -89,7 +145,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                 src={src}
                 alt={title + " — view " + (selected + 1)}
                 fill
-                sizes="(max-width:749px) 100vw, 44vw"
+                sizes={STAGE_SIZES}
                 preload={src === initialSrc.current}
                 onLoad={() => setReadySrc(src)}
                 onError={() => setReadySrc(src)}
@@ -97,7 +153,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             </span>
             {settledSrc && settledSrc !== src && (
               <span className="pdp-gallery-image" aria-hidden="true">
-                <ProductImage src={settledSrc} alt="" fill sizes="(max-width:749px) 100vw, 44vw" />
+                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} />
               </span>
             )}
           </button>
