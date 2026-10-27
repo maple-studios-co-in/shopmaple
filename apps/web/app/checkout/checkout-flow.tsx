@@ -1,7 +1,8 @@
 "use client";
 import { checkoutInputSchema, type CheckoutInput } from "@shopmaple/contracts";
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { z } from "zod";
 import { useShop } from "@/components/shop-provider";
 import { money } from "@/lib/format";
 import { CheckoutClosed } from "./checkout-closed";
@@ -16,6 +17,7 @@ import { openHostedPayment } from "./razorpay";
 
 type Stage =
   | { kind: "details" }
+  | { kind: "resuming" }
   | { kind: "quote"; attempt: CheckoutAttempt }
   | { kind: "paying"; attempt: CheckoutAttempt }
   | { kind: "confirming"; attempt: CheckoutAttempt }
@@ -38,7 +40,32 @@ const fieldLabels: Record<string, string> = {
   "billingAddress.pincode": "Billing pincode",
   deliveryMethodId: "Delivery method",
 };
-const confirmationWindowMs = 150_000;
+const defaultConfirmationWindowMs = 150_000;
+const storageKey = "maple-checkout-attempt-v1";
+const storedAttemptSchema = z.object({ attemptId: z.uuid(), input: checkoutInputSchema, submitted: z.boolean() });
+type StoredAttempt = z.infer<typeof storedAttemptSchema>;
+function readStored(): StoredAttempt | null {
+  try {
+    const raw = window.sessionStorage.getItem(storageKey);
+    return raw ? storedAttemptSchema.parse(JSON.parse(raw)) : null;
+  } catch {
+    return null;
+  }
+}
+function writeStored(value: StoredAttempt) {
+  try {
+    window.sessionStorage.setItem(storageKey, JSON.stringify(value));
+  } catch {
+    /* Without storage a reload cannot resume; the server still refuses a second payable attempt. */
+  }
+}
+function clearStored() {
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    /* Nothing to clear. */
+  }
+}
 function readForm(form: HTMLFormElement, sameBilling: boolean) {
   // Read named controls directly so the same code runs in browsers and DOM test runners.
   const read = (key: string) => {
@@ -100,9 +127,17 @@ function AddressFields({ prefix, id, defaults }: { prefix: "shipping" | "billing
   );
 }
 
-export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: CheckoutOptions; pollIntervalMs?: number }) {
+export function CheckoutFlow({
+  options,
+  pollIntervalMs = 2500,
+  confirmationWindowMs = defaultConfirmationWindowMs,
+}: {
+  options: CheckoutOptions;
+  pollIntervalMs?: number;
+  confirmationWindowMs?: number;
+}) {
   const id = useId();
-  const { cart, cartReady } = useShop();
+  const { cart, cartReady, recoverCart } = useShop();
   const client = useMemo(() => createCheckoutClient(), []);
   const [stage, setStage] = useState<Stage>({ kind: "details" });
   const [input, setInput] = useState<CheckoutInput | null>(null);
@@ -112,8 +147,13 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [paid, setPaid] = useState(false);
+  // Set the moment the provider reports the buyer completed payment; never cleared by a timeout.
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const resumed = useRef(false);
   const confirmingId = stage.kind === "confirming" ? stage.attempt.id : null;
+  const watchingId = stage.kind === "quote" && stage.attempt.state === "awaiting_payment" ? stage.attempt.id : null;
+  const settledId = stage.kind === "confirmed" || (stage.kind === "review" && (paid || stage.attempt.paid)) ? stage.attempt.id : null;
   const quoteExpiry = stage.kind === "quote" && stage.attempt.quote ? Date.parse(stage.attempt.quote.expiresAt) : null;
   const expired = quoteExpiry !== null && quoteExpiry <= now;
 
@@ -127,6 +167,18 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
         ? error.message
         : "We couldn't complete that step. Please try again. No payment has been taken.",
     );
+  }
+  /** Walk away from an attempt: free its hold if one exists and forget its idempotency key. */
+  async function leaveAttempt(attempt: CheckoutAttempt | null) {
+    clearStored();
+    if (!attempt) return;
+    client.forgetKey();
+    if (attempt.state !== "awaiting_payment") return;
+    try {
+      await client.release(attempt.id);
+    } catch {
+      /* The server quarantines an uncertain release; the hold otherwise lapses on its own. */
+    }
   }
   async function requestQuote(data: CheckoutInput, fresh: boolean) {
     setBusy(true);
@@ -172,6 +224,7 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
         theme: { color: "#6b1d14" },
         handler: () => {
           setPaid(false);
+          setPaymentSubmitted(true);
           setStage({ kind: "confirming", attempt: ready });
         },
         modal: {
@@ -194,6 +247,86 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
     const timer = setTimeout(() => setNow(Date.now()), Math.min(quoteExpiry - now + 50, 2_147_483_647));
     return () => clearTimeout(timer);
   }, [quoteExpiry, now]);
+  useEffect(() => {
+    if (resumed.current) return;
+    resumed.current = true;
+    const stored = readStored();
+    if (!stored) return;
+    let cancelled = false;
+    setInput(stored.input);
+    setStage({ kind: "resuming" });
+    void (async () => {
+      try {
+        const current = await client.status(stored.attemptId);
+        if (cancelled) return;
+        const quoteLive = current.quote ? Date.parse(current.quote.expiresAt) > Date.now() : false;
+        if (current.paid || current.state === "captured" || (current.state === "awaiting_payment" && stored.submitted)) {
+          if (current.paid) setPaid(true);
+          setPaymentSubmitted(stored.submitted || current.paid);
+          setStage({ kind: "confirming", attempt: current });
+        } else if (current.state === "reconciliation_required") {
+          setStage({ kind: "review", attempt: current, reason: "review" });
+        } else if (current.state === "awaiting_payment" || (current.state === "reservation_required" && quoteLive)) {
+          setNow(Date.now());
+          setStage({ kind: "quote", attempt: current });
+        } else {
+          clearStored();
+          setStage({ kind: "details" });
+        }
+      } catch (error) {
+        if (cancelled) return;
+        if (error instanceof CheckoutClientError && error.kind === "closed") setStage({ kind: "closed" });
+        else {
+          clearStored();
+          setStage({ kind: "details" });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+  useEffect(() => {
+    if (stage.kind === "quote" || stage.kind === "paying" || stage.kind === "confirming") {
+      if (input) writeStored({ attemptId: stage.attempt.id, input, submitted: paymentSubmitted });
+    } else if (stage.kind !== "resuming") clearStored();
+  }, [stage, input, paymentSubmitted]);
+  useEffect(() => {
+    // Capture empties the saved cart server-side; show that rather than the pre-order lines.
+    if (settledId) void recoverCart();
+  }, [settledId, recoverCart]);
+  useEffect(() => {
+    // A payable attempt may be completed in another tab or window; keep watching it quietly.
+    if (!watchingId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = Date.now() + confirmationWindowMs;
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const current = await client.status(watchingId);
+        if (cancelled) return;
+        if (current.paid || current.state === "captured") {
+          setPaid(true);
+          setPaymentSubmitted(true);
+          setStage({ kind: "confirming", attempt: current });
+          return;
+        }
+        if (current.state === "reconciliation_required") {
+          setStage({ kind: "review", attempt: current, reason: "review" });
+          return;
+        }
+      } catch {
+        /* Transient; the buyer can still act on the page. */
+      }
+      if (Date.now() < deadline) timer = setTimeout(() => void tick(), Math.max(pollIntervalMs, 1000));
+    };
+    timer = setTimeout(() => void tick(), Math.max(pollIntervalMs, 1000));
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [watchingId, client, pollIntervalMs, confirmationWindowMs]);
   useEffect(() => {
     if (!confirmingId) return;
     let cancelled = false;
@@ -231,9 +364,15 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [confirmingId, client, pollIntervalMs]);
+  }, [confirmingId, client, pollIntervalMs, confirmationWindowMs]);
 
   if (stage.kind === "closed") return <CheckoutClosed />;
+  if (stage.kind === "resuming")
+    return (
+      <section className="empty-state checkout-state" aria-live="polite">
+        <p role="status">Checking your checkout…</p>
+      </section>
+    );
   if (stage.kind === "confirmed") {
     return (
       <section className="empty-state checkout-state" aria-live="polite">
@@ -255,15 +394,25 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
     );
   }
   if (stage.kind === "review") {
+    const received = paid || stage.attempt.paid;
+    const submitted = received || paymentSubmitted;
     return (
       <section className="empty-state checkout-state" aria-live="polite">
-        <h2>{paid || stage.attempt.paid ? "Your payment has been received" : "This checkout needs a check"}</h2>
+        <h2>
+          {received
+            ? "Your payment has been received"
+            : submitted
+              ? "Your payment is still being confirmed"
+              : "This checkout needs a check"}
+        </h2>
         <p>
-          {paid || stage.attempt.paid
-            ? stage.reason === "timeout"
-              ? "We're still confirming your order with our team. This can take a few minutes; you don't need to pay again."
-              : "Our team is reviewing this order before confirming it. You don't need to pay again."
-            : "Our team needs to review this checkout before payment can continue. No payment has been taken."}
+          {stage.reason === "timeout"
+            ? "We're still confirming your payment and order with our team. This can take a few minutes, and you don't need to pay again."
+            : received
+              ? "Our team is reviewing this order before confirming it. You don't need to pay again."
+              : submitted
+                ? "Our team is checking this payment and order. You don't need to pay again."
+                : "Our team needs to review this checkout before payment can continue. No payment has been taken."}
         </p>
         <p>
           Your checkout reference is <strong>{stage.attempt.id}</strong>. Quote it if you contact us.
@@ -356,7 +505,16 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
           )}
           <div className="button-row">
             {expired ? (
-              <button className="button" type="button" disabled={busy} onClick={() => input && void requestQuote(input, true)}>
+              <button
+                className="button"
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (!input) return;
+                  const previous = stage.attempt;
+                  void leaveAttempt(previous).then(() => requestQuote(input, true));
+                }}
+              >
                 Get a new quote
               </button>
             ) : (
@@ -364,11 +522,24 @@ export function CheckoutFlow({ options, pollIntervalMs = 2500 }: { options: Chec
                 Pay {money(stage.attempt.amountPaise)}
               </button>
             )}
-            <button className="button secondary" type="button" disabled={busy} onClick={() => { setNotice(""); setStage({ kind: "details" }); }}>
+            <button
+              className="button secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setNotice("");
+                const previous = stage.attempt;
+                setStage({ kind: "details" });
+                void leaveAttempt(previous);
+              }}
+            >
               Edit details
             </button>
           </div>
           <p className="muted">Payment is taken by Razorpay in a secure window. Your card details never reach Maple.</p>
+          {stage.attempt.state === "awaiting_payment" && (
+            <p className="muted">If you already completed the payment, keep this page open: it checks for confirmation automatically.</p>
+          )}
         </section>
         {input && (
           <aside className="checkout-summary">

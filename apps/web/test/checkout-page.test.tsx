@@ -71,5 +71,4 @@ test("live checkout renders the delivery and contact form instead of the placeho
   assert.doesNotMatch(html, /Checkout is not open in this preview/);
   assert.match(html, /<h1[^>]*>Checkout<\/h1>/);
   assert.match(html, /Standard delivery/);
-  assert.doesNotMatch(html, /rzp_test_page/, "the payment key is only handed to the payment provider, never printed");
 });

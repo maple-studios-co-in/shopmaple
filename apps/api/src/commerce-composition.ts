@@ -124,6 +124,9 @@ export function composeCommerce(
     payments: orders,
     keeri,
     now: options.now,
+    // One payment verification can take the Keeri verify timeout (10 s) plus the
+    // Razorpay fetch timeout (10 s) plus the capture transaction; the lease must outlive it.
+    leaseMs: 90_000,
   });
   return {
     commerce: orders,

@@ -25,10 +25,10 @@ Normal state sequence:
 
 ```text
 reservation_required -> reserving -> creating_provider_order -> awaiting_payment -> captured
-                                \-> reconciliation_required <-/
+            \-> abandoned           \-> reconciliation_required <-/      \-> releasing -> abandoned
 ```
 
-Concurrent callers use a conditional database claim; only one can reserve and POST. A failure or ambiguous outcome during reservation/provider creation leaves `reconciliation_required`. A process crash may leave `reserving` or `creating_provider_order`; these states also refuse automatic retries. Reconcile using the same persisted attempt/receipt with the provider and reservation system before any recovery. No new receipt or replacement provider order is automatically generated. This service deliberately does not implement a manual recovery, cancellation or release API.
+Concurrent callers use a conditional database claim; only one can reserve and POST. A failure or ambiguous outcome during reservation/provider creation leaves `reconciliation_required`. A process crash may leave `reserving` or `creating_provider_order`; these states also refuse automatic retries. Reconcile using the same persisted attempt/receipt with the provider and reservation system before any recovery. No new receipt or replacement provider order is automatically generated. `releaseAttempt` lets the owning guest abandon a `reservation_required` or `awaiting_payment` attempt: the Keeri hold is released best-effort and the attempt becomes `abandoned`, or `reconciliation_required` (`RELEASE_UNCERTAIN`) when the release fails. A failed provider order also releases its hold before leaving `reconciliation_required`. There is still no manual recovery or cancellation API for captured orders.
 
 Prices stay frozen even if the catalogue price changes. Publication and stock eligibility are rechecked before reservation. The authoritative reservation port must account for concurrent inventory changes and hold inventory long enough for payment and eventual Keeri handoff. It must eventually support an idempotent conversion of the reservation into a fulfilled order; that integration is still required.
 
@@ -40,7 +40,7 @@ The inbox stores the authenticated SHA-256, event type and provider/payment IDs,
 
 Before any new capture, the service checks reservation validity and expiry. It fetches payment state from Razorpay using the persisted order ID and amount, requiring captured status, matching identity/currency/amount and no refund. Unknown mappings, verification failures, expired/revoked holds and nonpayable/cancelled states leave the inbox requiring reconciliation with a bounded error code. A webhook that arrived before the provider mapping was persisted can be retried after that mapping becomes available. Failed/authorized events never downgrade captured orders. A different payment ID for an already captured order is quarantined.
 
-The final serializable transaction rechecks order state and reservation expiry, records the unique payment identity, sets `captured`, inserts the unique `keeri.order.captured.v1` outbox entry and marks the inbox processed. Database failures roll back those changes. Concurrent workers and duplicate events produce one capture and one handoff. The handoff payload contains the frozen snapshot, merchant/provider/payment identity, amount and reservation ID. It contains no fabricated customer/address data.
+The final serializable transaction rechecks order state and reservation expiry, records the unique payment identity, sets `captured`, removes the paid lines from the guest cart (and bumps its revision) so the same goods cannot be quoted again, inserts the unique outbox entry and marks the inbox processed. Database failures roll back those changes. Concurrent workers and duplicate events produce one capture and one handoff. The handoff payload contains the frozen snapshot, merchant/provider/payment identity, amount and reservation ID. It contains no fabricated customer/address data.
 
 ## Remaining activation work
 

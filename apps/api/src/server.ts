@@ -6,6 +6,7 @@ import { composeCommerce, loadCommerceConfig } from "./commerce-composition.js";
 import { loadEnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
 import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
+import { installShutdown } from "./server-lifecycle.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -65,13 +66,9 @@ const orderRunner = commerce
       5_000,
     )
   : null;
-let stopping = false;
-for (const signal of ["SIGINT", "SIGTERM"])
-  process.on(signal, () => {
-    if (stopping) return;
-    stopping = true;
-    const drained = Promise.all([deliveryRunner?.stop(), orderRunner?.stop()]);
-    server.close(() => {
-      void drained.then(() => db.$disconnect()).then(() => process.exit(0));
-    });
-  });
+installShutdown({
+  server,
+  db,
+  runners: [deliveryRunner, orderRunner],
+  exit: (code) => process.exit(code),
+});

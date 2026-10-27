@@ -58,6 +58,8 @@ export class CheckoutClientError extends Error {
 const safeMessages: Record<string, CheckoutClientError["kind"]> = {
   CHECKOUT_NOT_AVAILABLE: "closed",
   CHECKOUT_BLOCKED: "blocked",
+  CHECKOUT_IN_PROGRESS: "blocked",
+  QUOTE_REJECTED: "invalid",
   QUOTE_UNAVAILABLE: "unavailable",
   PAYMENT_UNAVAILABLE: "unavailable",
   CHECKOUT_NOT_FOUND: "lost",
@@ -136,6 +138,18 @@ export function createCheckoutClient(transport: typeof fetch = (...args) => fetc
     },
     status(attemptId: string) {
       return call(`/api/checkout/${encodeURIComponent(attemptId)}`, { method: "GET" });
+    },
+    /** Free the stock hold of an attempt the buyer is walking away from. */
+    release(attemptId: string) {
+      return call(`/api/checkout/${encodeURIComponent(attemptId)}/release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+    },
+    /** After a release or a server-side state change the next quote must not replay the old attempt. */
+    forgetKey() {
+      keyedPayload = "";
     },
   };
 }

@@ -46,7 +46,10 @@ let clock = new Date("2030-01-01T10:00:00Z");
 /** Fake Keeri + Razorpay transports, routed by host. Behaviour is adjustable per test. */
 const fake = {
   quoteExpiresAt: "2030-01-01T10:15:00.000Z",
+  quoteStatus: 200,
   reservationStatus: 200,
+  releaseStatus: 200,
+  razorpayOrderStatus: 200,
   paymentCaptured: true,
   keeriCalls: [] as string[],
   razorpayCalls: [] as string[],
@@ -59,6 +62,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
     const body = JSON.parse(String(init.body));
     switch (u.pathname) {
       case "/api/storefront/quotes": {
+        if (fake.quoteStatus !== 200) return new Response("policy detail", { status: fake.quoteStatus });
         const snapshot = {
           version: 2, currency: "INR", policyId: "reviewed-composition-v1", quoteId: "quote_composition",
           expiresAt: fake.quoteExpiresAt, customer: body.customer, billingAddress: body.billingAddress,
@@ -82,6 +86,10 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
           reservationId: `hold-${body.attemptId}`, verified: true, expiresAt: "2030-01-01T10:30:00.000Z" });
       case "/api/storefront/reservations/verify":
         return Response.json({ verified: true });
+      case "/api/storefront/reservations/release":
+        if (fake.releaseStatus !== 200) return new Response("release detail", { status: fake.releaseStatus });
+        assert.deepEqual(Object.keys(body).sort(), ["attemptId", "reservationId", "snapshotSha256"]);
+        return Response.json({ released: true });
       case "/api/storefront/orders":
         return Response.json({ accepted: true, merchantScope: body.merchantScope, attemptId: body.attemptId,
           idempotencyKey: body.idempotencyKey, payloadSha256: body.payloadSha256, externalOrderId: "SO-1001" });
@@ -91,6 +99,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
   if (u.host === "api.razorpay.com") {
     fake.razorpayCalls.push(`${init.method} ${u.pathname}`);
     if (init.method === "POST") {
+      if (fake.razorpayOrderStatus !== 200) return new Response("gateway detail", { status: fake.razorpayOrderStatus });
       const body = JSON.parse(String(init.body));
       return Response.json({ entity: "order", id: "order_comp1", ...body, status: "created", amount_paid: 0, amount_due: body.amount });
     }
@@ -109,9 +118,13 @@ function checkoutApp() {
   const composed = compose();
   return { ...composed, app: createApp(db, { ...appConfig, checkout: composed.checkout }, composed.commerce) };
 }
-function freeze(app: ReturnType<typeof createApp>, key = "composition-request-1") {
-  return request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", key).send(input);
+function freeze(app: ReturnType<typeof createApp>, key = "composition-request-1", body: unknown = input) {
+  return request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", key).send(body as object);
 }
+function release(app: ReturnType<typeof createApp>, id: string) {
+  return request(app).post(`/api/checkout/${id}/release`).set("Origin", origin).set("Cookie", cookie).send({});
+}
+const cartOf = (app: ReturnType<typeof createApp>) => request(app).get("/api/cart").set("Cookie", cookie);
 function paymentOrder(app: ReturnType<typeof createApp>, id: string) {
   return request(app).post(`/api/checkout/${id}/payment-order`).set("Origin", origin).set("Cookie", cookie).send({});
 }
@@ -129,7 +142,8 @@ function webhook(app: ReturnType<typeof createApp>, secret = webhookSecret, paym
 before(async () => { await db.$connect(); });
 beforeEach(async () => {
   clock = new Date("2030-01-01T10:00:00Z");
-  Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", reservationStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [] });
+  Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", quoteStatus: 200, reservationStatus: 200, releaseStatus: 200,
+    razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [] });
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
   await db.checkoutAttempt.deleteMany();
@@ -224,6 +238,87 @@ test("composed checkout reports itself, publishes only public options, and compl
   assert.equal(confirmed.body.orderReference, "SO-1001");
   assert.ok(fake.keeriCalls.includes("/api/storefront/orders"));
   assert.doesNotMatch(JSON.stringify(confirmed.body), /buyer@example|400001|Test Buyer/);
+  const consumed = await cartOf(app);
+  assert.deepEqual(consumed.body.items, [], "paid goods leave the cart so a refresh cannot quote them again");
+  assert.equal(consumed.body.checkoutEnabled, true, "a live cart advertises checkout");
+  const again = await freeze(app, "composition-request-after-capture");
+  assert.equal(again.status, 409, "an emptied cart cannot start a second order");
+  assert.equal(await db.checkoutAttempt.count(), 1);
+});
+
+test("the cart reports live checkout only when the service is composed", async () => {
+  assert.equal((await cartOf(createApp(db, appConfig))).body.checkoutEnabled, false);
+  assert.equal((await cartOf(checkoutApp().app)).body.checkoutEnabled, true);
+});
+
+test("a cart with a payable attempt cannot be quoted again until that attempt is released", async () => {
+  const { app } = checkoutApp();
+  const frozen = await freeze(app);
+  assert.equal((await freeze(app, "composition-request-2")).status, 200, "unpaid quotes may be replaced freely");
+  assert.equal((await paymentOrder(app, frozen.body.id)).status, 200);
+  const blocked = await freeze(app, "composition-request-3");
+  assert.equal(blocked.status, 409);
+  assert.equal(blocked.body.code, "CHECKOUT_IN_PROGRESS");
+  assert.equal(await db.checkoutAttempt.count(), 2);
+  const released = await release(app, frozen.body.id);
+  assert.equal(released.status, 200, JSON.stringify(released.body));
+  assert.equal(released.body.state, "abandoned");
+  assert.equal(released.body.paid, false);
+  assert.ok(fake.keeriCalls.includes("/api/storefront/reservations/release"));
+  assert.equal((await release(app, frozen.body.id)).body.state, "abandoned", "release is idempotent");
+  assert.equal((await paymentOrder(app, frozen.body.id)).status, 409, "an abandoned attempt can never be paid");
+  const fresh = await freeze(app, "composition-request-3");
+  assert.equal(fresh.status, 200);
+  assert.notEqual(fresh.body.id, frozen.body.id);
+  for (const credential of ["", `maple_cart=${"d".repeat(64)}`])
+    assert.equal((await request(app).post(`/api/checkout/${fresh.body.id}/release`).set("Origin", origin).set("Cookie", credential).send({})).status, 404);
+  assert.equal((await request(app).post(`/api/checkout/${fresh.body.id}/release`).set("Cookie", cookie).send({})).status, 403);
+});
+
+test("a hold that cannot be released is quarantined for staff instead of silently kept", async () => {
+  const { app } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  fake.releaseStatus = 503;
+  const failed = await release(app, frozen.body.id);
+  assert.equal(failed.status, 409);
+  assert.equal(failed.body.code, "CHECKOUT_BLOCKED");
+  assert.doesNotMatch(JSON.stringify(failed.body), /release detail/);
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.equal(attempt.state, "reconciliation_required");
+  assert.equal(attempt.failureCode, "RELEASE_UNCERTAIN");
+  assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "review_required");
+});
+
+test("a failed provider order releases the Keeri hold and leaves the attempt for reconciliation", async () => {
+  const { app } = checkoutApp();
+  const frozen = await freeze(app);
+  fake.razorpayOrderStatus = 500;
+  const failed = await paymentOrder(app, frozen.body.id);
+  assert.equal(failed.status, 409);
+  assert.equal(failed.body.code, "CHECKOUT_BLOCKED");
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.equal(attempt.state, "reconciliation_required");
+  assert.equal(attempt.failureCode, "PROVIDER_CREATION_UNCERTAIN");
+  assert.deepEqual(fake.keeriCalls.slice(1), ["/api/storefront/reservations", "/api/storefront/reservations/release"]);
+});
+
+test("an order Keeri refuses to quote is a buyer problem, while a Keeri outage is a retry", async () => {
+  const { app } = checkoutApp();
+  const unknown = await freeze(app, "composition-unknown-method", { ...input, deliveryMethodId: "overnight" });
+  assert.equal(unknown.status, 422);
+  assert.equal(unknown.body.code, "QUOTE_REJECTED");
+  assert.deepEqual(fake.keeriCalls, [], "an unconfigured delivery method never reaches Keeri");
+  fake.quoteStatus = 422;
+  const refused = await freeze(app, "composition-refused");
+  assert.equal(refused.status, 422);
+  assert.equal(refused.body.code, "QUOTE_REJECTED");
+  assert.doesNotMatch(JSON.stringify(refused.body), /policy detail/);
+  fake.quoteStatus = 503;
+  const outage = await freeze(app, "composition-outage");
+  assert.equal(outage.status, 503);
+  assert.equal(outage.body.code, "QUOTE_UNAVAILABLE");
+  assert.equal(await db.checkoutAttempt.count(), 0);
 });
 
 test("a refused Keeri hold leaves the attempt in reconciliation without a provider order", async () => {
@@ -241,10 +336,14 @@ test("a refused Keeri hold leaves the attempt in reconciliation without a provid
   assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "review_required");
 });
 
-test("an expired quote cannot start payment and an unexpired replay is not silently reused after expiry", async () => {
+test("an expired quote replays for its key, cannot start payment, and a fresh key gets a new quote", async () => {
   const { app } = checkoutApp();
   const frozen = await freeze(app);
   clock = new Date("2030-01-01T10:16:00Z");
+  const replayed = await freeze(app);
+  assert.equal(replayed.status, 200);
+  assert.equal(replayed.body.id, frozen.body.id, "the same key returns the same attempt even once expired");
+  assert.equal(replayed.body.quote.expiresAt, "2030-01-01T10:15:00.000Z", "so the client must read the expiry and use a new key");
   const expired = await paymentOrder(app, frozen.body.id);
   assert.equal(expired.status, 409);
   assert.equal(expired.body.code, "CHECKOUT_BLOCKED");

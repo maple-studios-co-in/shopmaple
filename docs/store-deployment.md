@@ -60,10 +60,12 @@ Gates before `CHECKOUT_ENABLED=true` on the VPS, in order:
 1. Keeri: the commerce-scoped credential exists, `STOREFRONT_COMMERCE_POLICIES` holds exactly one reviewed policy for this tenant and merchant scope, and the delivery method ids above match it.
 2. Razorpay: test-mode keys first. The webhook endpoint `https://store.maplefurnishers.com/api/webhooks/razorpay` is registered with the `payment.captured` and `order.paid` events and the same webhook secret. Confirm the merchant, capture settings and that the Tunnel passes the request body uncompressed.
 3. Sandbox evidence: a complete test-mode purchase on the deployed host reaches `fulfillmentStatus: confirmed` with a Keeri order reference, a forged webhook returns 401, and a dismissed payment leaves the attempt payable. Record the attempt ids; never use a real card.
-4. Operations: the order worker (every 5 seconds inside `shopmaple-api`) is observed processing inbox and outbox rows; alerts exist for `reconciliation_required` attempts, failed outbox rows and stuck inbox rows; the backup/restore gate above has been repeated with commerce tables populated.
+4. Operations: the order worker (every 5 seconds inside `shopmaple-api`, 90-second row leases) is observed processing inbox and outbox rows; alerts exist for `reconciliation_required` attempts, failed outbox rows and stuck inbox rows; the backup/restore gate above has been repeated with commerce tables populated.
 5. Only then switch to live Razorpay keys and set `CHECKOUT_ENABLED=true`, restart `shopmaple-api`, and verify `/api/health` reports `checkoutEnabled: true` and `/checkout` renders the form. Rollback is removing the flag and restarting; in-flight attempts stay in the database for reconciliation.
 
 A merged pull request, a passing local suite or a green CI run is none of these gates.
+
+Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker cycles, stops accepting connections, then waits for any in-flight enquiry or order cycle to finish before disconnecting the database and exiting, so a PM2 restart drains a whole cycle (bounded by the Keeri and Razorpay timeouts, about 30 s worst case; `kill_timeout` is 10 s, so PM2 may SIGKILL first). A hard kill is still safe: every inbox and outbox row is processed under a 90-second lease and a killed worker's lease simply expires, after which the next cycle retries the row. Paid goods are removed from the guest cart inside the capture transaction, and a cart with a payable attempt cannot be quoted again until that attempt is released, so a retry never produces a second order for the same payment.
 
 ## Release sequence
 

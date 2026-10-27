@@ -10,7 +10,7 @@ import { KeeriCommerceError } from "./keeri-commerce.js";
 
 export type CommerceHttpService = Pick<
   ReturnType<typeof createOrderService>,
-  "freezeCart" | "getAttempt" | "createProviderOrder" | "ingestWebhook"
+  "freezeCart" | "getAttempt" | "createProviderOrder" | "releaseAttempt" | "ingestWebhook"
 >;
 /** Public, non-secret values the storefront needs before it can quote and pay. */
 export interface CheckoutOptions {
@@ -19,6 +19,8 @@ export interface CheckoutOptions {
   paymentKeyId: string;
 }
 const emptyBody = z.object({}).strict();
+const quoteRejectedMessage =
+  "We can't quote this order as entered. Check the delivery method and address, or contact our team. No payment has been taken.";
 const attemptId = z.uuid();
 const idempotencyKey = z.string().regex(/^[A-Za-z0-9_-]{8,128}$/);
 
@@ -128,8 +130,21 @@ export function registerCheckoutRoutes(
   app.post("/api/checkout", async (req, res) => {
     const input = checkoutInputSchema.or(emptyBody).parse(req.body);
     const key = idempotencyKey.parse(req.get("Idempotency-Key"));
+    if (
+      options &&
+      "deliveryMethodId" in input &&
+      !options.deliveryMethods.some((method) => method.id === input.deliveryMethodId)
+    )
+      throw new HttpError(422, "QUOTE_REJECTED", quoteRejectedMessage);
     res.json(
       publicAttempt(await commerce.freezeCart(guestToken(req, secure), key, input)),
+    );
+  });
+  app.post("/api/checkout/:attemptId/release", async (req, res) => {
+    emptyBody.parse(req.body);
+    const id = attemptId.parse(req.params.attemptId);
+    res.json(
+      publicAttempt(await commerce.releaseAttempt(guestToken(req, secure), id)),
     );
   });
   app.post("/api/checkout/:attemptId/payment-order", async (req, res) => {
@@ -167,18 +182,27 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
         "WEBHOOK_CONFLICT",
         "The webhook could not be accepted.",
       );
+    if (error.code === "CHECKOUT_IN_PROGRESS")
+      return new HttpError(
+        409,
+        "CHECKOUT_IN_PROGRESS",
+        "A payment for this cart is already in progress. Finish or close it, then check your order status before starting another.",
+      );
     return new HttpError(
       409,
       "CHECKOUT_BLOCKED",
       "This checkout requires review. Check your order status before trying another payment.",
     );
   }
-  if (error instanceof KeeriCommerceError)
+  if (error instanceof KeeriCommerceError) {
+    if (error.code === "UPSTREAM_REJECTED")
+      return new HttpError(422, "QUOTE_REJECTED", quoteRejectedMessage);
     return new HttpError(
       503,
       "QUOTE_UNAVAILABLE",
       "We couldn't confirm pricing and delivery right now. Please try again in a moment. No payment has been taken.",
     );
+  }
   if (error instanceof PaymentGatewayError) {
     if (error.code === "INVALID_SIGNATURE")
       return new HttpError(

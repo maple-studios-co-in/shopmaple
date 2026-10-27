@@ -117,12 +117,12 @@ export function createApp(
     },
   );
   app.get("/api/cart", async (req, res) =>
-    res.json(await bootstrapCart(db, req, res, config.secureCookies)),
+    res.json(await bootstrapCart(db, req, res, config.secureCookies, Boolean(commerce))),
   );
   app.put("/api/cart/items/:variantId", async (req, res) => {
     const input = cartMutationInputSchema.parse(req.body);
     const id = z.string().min(1).max(160).parse(req.params.variantId);
-    const result = await setCartQuantity(db, req, id, input, config.secureCookies);
+    const result = await setCartQuantity(db, req, id, input, config.secureCookies, Boolean(commerce));
     res.status(result.status).json(result.body);
   });
   app.post(

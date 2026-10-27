@@ -113,7 +113,8 @@ export const cartSchema = z.object({
   itemCount: z.number().int(),
   subtotalPaise: z.number().int().nullable(),
   currency: z.literal("INR"),
-  checkoutEnabled: z.literal(false),
+  /** True only while the API has a composed, configured checkout service. */
+  checkoutEnabled: z.boolean(),
   mode: z.literal("preview"),
 });
 export type Cart = z.infer<typeof cartSchema>;

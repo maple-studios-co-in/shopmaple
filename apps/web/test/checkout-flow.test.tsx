@@ -35,8 +35,9 @@ class FakeRazorpay {
 const field = (name: string) => document.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
 const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === label);
 const text = () => document.getElementById("root")!.textContent ?? "";
-async function mount(route: (call: Call) => Response | Promise<Response>) {
-  sessionStorage.clear(); localStorage.clear();
+const storageKey = "maple-checkout-attempt-v1";
+async function mount(route: (call: Call) => Response | Promise<Response>, extra: { confirmationWindowMs?: number; keepStorage?: boolean } = {}) {
+  if (!extra.keepStorage) { sessionStorage.clear(); localStorage.clear(); }
   razorpay = null;
   (window as any).Razorpay = FakeRazorpay;
   const calls: Call[] = [];
@@ -51,7 +52,7 @@ async function mount(route: (call: Call) => Response | Promise<Response>) {
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider>
-    <CheckoutFlow options={options} pollIntervalMs={5} />
+    <CheckoutFlow options={options} pollIntervalMs={5} confirmationWindowMs={extra.confirmationWindowMs} />
   </ShopProvider></AppRouterContext.Provider>));
   return { calls, cleanup: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
@@ -232,5 +233,95 @@ test("a checkout that the API closes mid-session returns the buyer to the previe
     await submitDetails();
     assert.match(text(), /Checkout is not open in this preview/);
     assert.ok(!document.querySelector("form"));
+  } finally { await cleanup(); }
+});
+
+test("a payment the buyer completed is never described as unpaid when confirmation outlasts the window", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path.endsWith("/payment-order")) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_slow" }));
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_slow" }));
+  }, { confirmationWindowMs: 40 });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_slow", razorpay_order_id: "order_slow", razorpay_signature: "f".repeat(64) }); });
+    await settle(12);
+    assert.match(text(), /still confirming/i);
+    assert.match(text(), /don.t need to pay again|do not pay again/i);
+    assert.doesNotMatch(text(), /No payment has been taken/);
+    assert.match(text(), new RegExp(attemptId));
+    assert.ok(!button("Pay ₹3,835"));
+  } finally { await cleanup(); }
+});
+
+test("a refresh while confirming resumes the same attempt, then empties the cart once the order is confirmed", async () => {
+  let confirmed = false;
+  const route = (call: Call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path.endsWith("/payment-order")) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_resume" }));
+    if (call.path === `/api/checkout/${attemptId}`)
+      return Response.json(confirmed
+        ? attempt({ state: "captured", paid: true, providerOrderId: "order_resume", fulfillmentStatus: "confirmed", orderReference: "SO-2002" })
+        : attempt({ state: "awaiting_payment", providerOrderId: "order_resume" }));
+    return new Response(null, { status: 404 });
+  };
+  const first = await mount(route);
+  await submitDetails();
+  await act(async () => button("Pay ₹3,835")!.click());
+  await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_resume", razorpay_order_id: "order_resume", razorpay_signature: "f".repeat(64) }); });
+  await settle(4);
+  assert.match(text(), /confirming/i);
+  assert.ok(sessionStorage.getItem(storageKey), "the in-flight attempt survives a reload");
+  await first.cleanup();
+  confirmed = true;
+  const second = await mount(route, { keepStorage: true });
+  try {
+    await settle(12);
+    assert.ok(!document.querySelector("form"), "a resumed attempt never shows the details form again");
+    assert.equal(second.calls.filter((c) => c.path === "/api/checkout" && c.method === "POST").length, 0, "no second quote, order or payment");
+    assert.match(text(), /SO-2002/);
+    assert.ok(second.calls.filter((c) => c.path === "/api/cart").length >= 2, "the saved cart is reloaded after capture consumed it");
+    assert.equal(sessionStorage.getItem(storageKey), null);
+  } finally { await second.cleanup(); }
+});
+
+test("leaving a payable attempt releases its hold and the next quote uses a new key", async () => {
+  const { calls, cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path.endsWith("/payment-order")) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_leave" }));
+    if (call.path.endsWith("/release")) return Response.json(attempt({ state: "abandoned", providerOrderId: "order_leave" }));
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_leave" }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => { razorpay!.options.modal.ondismiss(); });
+    await act(async () => button("Edit details")!.click());
+    await settle(2);
+    const releases = calls.filter((c) => c.path === `/api/checkout/${attemptId}/release`);
+    assert.equal(releases.length, 1);
+    assert.equal(releases[0]!.method, "POST");
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    const keys = calls.filter((c) => c.path === "/api/checkout" && c.method === "POST").map((c) => c.headers.get("Idempotency-Key"));
+    assert.equal(keys.length, 2);
+    assert.notEqual(keys[0], keys[1], "identical details must not replay the abandoned attempt");
+  } finally { await cleanup(); }
+});
+
+test("a rejected quote and a cart already being paid are explained in the API's words", async () => {
+  let code = "QUOTE_REJECTED";
+  const { cleanup } = await mount(() => Response.json(
+    code === "QUOTE_REJECTED"
+      ? { code, message: "We can't quote this order as entered. Check the delivery method and address, or contact our team. No payment has been taken." }
+      : { code, message: "A payment for this cart is already in progress. Finish or close it, then check your order status before starting another." },
+    { status: code === "QUOTE_REJECTED" ? 422 : 409 }));
+  try {
+    await submitDetails();
+    assert.match(text(), /can't quote this order as entered/);
+    assert.ok(document.querySelector("form"), "the buyer can correct the details");
+    code = "CHECKOUT_IN_PROGRESS";
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    assert.match(text(), /already in progress/);
   } finally { await cleanup(); }
 });

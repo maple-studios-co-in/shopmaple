@@ -7,6 +7,7 @@ import type { CommerceHttpService } from "../src/commerce-http.js";
 import { KeeriCommerceError } from "../src/keeri-commerce.js";
 import { OrderFlowError } from "../src/orders/errors.js";
 import { PaymentGatewayError } from "../src/payments/razorpay.js";
+import { guardedCartSchema } from "@shopmaple/contracts";
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test")
@@ -24,6 +25,7 @@ const quiet: CommerceHttpService = {
   getAttempt: async () => { throw new OrderFlowError("ATTEMPT_NOT_FOUND"); },
   createProviderOrder: async () => { throw new OrderFlowError("ATTEMPT_NOT_FOUND"); },
   ingestWebhook: async () => { throw new PaymentGatewayError("INVALID_SIGNATURE"); },
+  releaseAttempt: async () => { throw new OrderFlowError("ATTEMPT_NOT_FOUND"); },
 };
 /** A fake commerce service: route tests only need the HTTP translation, not a database flow. */
 function service(overrides: Partial<CommerceHttpService>): CommerceHttpService {
@@ -35,6 +37,57 @@ after(async () => { await db.$disconnect(); });
 test("health reports live checkout only when a commerce service is injected", async () => {
   assert.equal((await request(createApp(db, config)).get("/api/health")).body.checkoutEnabled, false);
   assert.equal((await request(createApp(db, { ...config, checkout }, quiet)).get("/api/health")).body.checkoutEnabled, true);
+});
+
+test("the guest cart advertises checkout exactly when the service is composed, within the shared contract", async () => {
+  const preview = await request(createApp(db, config)).get("/api/cart");
+  assert.equal(preview.body.checkoutEnabled, false);
+  const live = await request(createApp(db, { ...config, checkout }, quiet)).get("/api/cart");
+  assert.equal(live.status, 200);
+  assert.equal(live.body.checkoutEnabled, true);
+  assert.equal(guardedCartSchema.parse(live.body).checkoutEnabled, true, "the storefront contract must accept a live cart");
+});
+
+test("a delivery method outside the configured options is refused before any quote is requested", async () => {
+  let quotes = 0;
+  const app = createApp(db, { ...config, checkout }, service({ freezeCart: async () => { quotes++; throw new OrderFlowError("CART_NOT_FOUND"); } }));
+  const refused = await request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", "routes-method-1").send({ ...input, deliveryMethodId: "overnight" });
+  assert.equal(refused.status, 422);
+  assert.equal(refused.body.code, "QUOTE_REJECTED");
+  assert.equal(quotes, 0);
+  await request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", "routes-method-2").send({ ...input, deliveryMethodId: "white-glove" });
+  assert.equal(quotes, 1, "configured methods proceed to the service");
+});
+
+test("Keeri rejections and in-flight attempts are distinguished from outages", async () => {
+  for (const [error, status, code] of [
+    [new KeeriCommerceError("UPSTREAM_REJECTED"), 422, "QUOTE_REJECTED"],
+    [new KeeriCommerceError("UPSTREAM_UNAVAILABLE"), 503, "QUOTE_UNAVAILABLE"],
+    [new OrderFlowError("CHECKOUT_IN_PROGRESS"), 409, "CHECKOUT_IN_PROGRESS"],
+  ] as Array<[Error, number, string]>) {
+    const app = createApp(db, { ...config, checkout }, service({ freezeCart: async () => { throw error; } }));
+    const response = await request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", "routes-request-2").send(input);
+    assert.equal(response.status, status, error.message);
+    assert.equal(response.body.code, code);
+  }
+});
+
+test("release needs the browser origin and the owning cart, and reports an uncertain release as blocked", async () => {
+  const released: string[] = [];
+  const app = createApp(db, { ...config, checkout }, service({
+    releaseAttempt: async (_token, id) => { released.push(id); if (released.length > 1) throw new OrderFlowError("RELEASE_UNCERTAIN"); return { id, state: "abandoned", amountPaise: 1000, currency: "INR", providerOrderId: "order_x", snapshot: {} } as never; },
+  }));
+  assert.equal((await request(app).post(`/api/checkout/${attemptId}/release`).set("Cookie", cookie).send({})).status, 403);
+  assert.equal((await request(app).post(`/api/checkout/${attemptId}/release`).set("Origin", origin).set("Cookie", cookie).send({ force: true })).status, 400);
+  assert.equal((await request(app).post("/api/checkout/not-a-uuid/release").set("Origin", origin).set("Cookie", cookie).send({})).status, 400);
+  const ok = await request(app).post(`/api/checkout/${attemptId}/release`).set("Origin", origin).set("Cookie", cookie).send({});
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.state, "abandoned");
+  assert.equal(ok.body.snapshot, undefined);
+  const uncertain = await request(app).post(`/api/checkout/${attemptId}/release`).set("Origin", origin).set("Cookie", cookie).send({});
+  assert.equal(uncertain.status, 409);
+  assert.equal(uncertain.body.code, "CHECKOUT_BLOCKED");
+  assert.deepEqual(released, [attemptId, attemptId]);
 });
 
 test("checkout options expose delivery choices and the public payment key without credentials", async () => {
@@ -53,7 +106,7 @@ test("upstream Keeri failures while quoting surface as a retryable 503 without t
   const app = createApp(db, { ...config, checkout }, service({
     freezeCart: async () => { throw new KeeriCommerceError(codes.shift() ?? "TRANSPORT_TIMEOUT"); },
   }));
-  for (const code of ["TRANSPORT_TIMEOUT", "UPSTREAM_REJECTED", "INVALID_RESPONSE", "TRANSPORT_UNAVAILABLE"]) {
+  for (const code of ["TRANSPORT_TIMEOUT", "UPSTREAM_UNAVAILABLE", "INVALID_RESPONSE", "TRANSPORT_UNAVAILABLE"]) {
     codes.push(code);
     const response = await request(app).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", "routes-request-1").send(input);
     assert.equal(response.status, 503, code);

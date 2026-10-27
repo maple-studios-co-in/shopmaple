@@ -181,9 +181,11 @@ export function CartContents() {
         >
           {cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
         </Link>
-        <p className="preview-disclosure">
-          Your cart is saved. Online payment is not available yet.
-        </p>
+        {!cart.checkoutEnabled && (
+          <p className="preview-disclosure">
+            Your cart is saved. Online payment is not available yet.
+          </p>
+        )}
       </div>
     </section>
   );
