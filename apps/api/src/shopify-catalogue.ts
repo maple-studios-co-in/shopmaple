@@ -109,8 +109,7 @@ const schema = z
                           .optional(),
                       })
                       .strict(),
-                  )
-                  .max(30),
+                  ),
               })
               .strict(),
             variants: z

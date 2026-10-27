@@ -61,9 +61,7 @@ export const productSchema = z.object({
   description: z.string().max(50000),
   pdpContent: productPdpContentSchema.nullable().optional(),
   category: z.enum(categories).nullable(),
-  images: z
-    .array(z.url().refine((url) => new URL(url).protocol === "https:"))
-    .max(30),
+  images: z.array(z.url().refine((url) => new URL(url).protocol === "https:")),
   published: z.boolean(),
   source: z.string().min(1).max(100),
   sourceStatus: z.string().max(80).nullable().optional(),
