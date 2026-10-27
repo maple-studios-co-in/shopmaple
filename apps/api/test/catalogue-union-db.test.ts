@@ -9,6 +9,7 @@ import {
   shopifyPricedFixture,
 } from "./fixtures/shopify-admin.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";
+import { largeGalleryFixture } from "./fixtures/large-gallery.js";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test")
   throw new Error("Dedicated test database required");
@@ -205,4 +206,39 @@ test('persisted Keeri taxonomy expands Dining Chairs without losing Shopify memb
   k.capturedAt='2026-10-25T13:00:00Z';
   await syncCatalogueUnion(db,s,k,'maple');
   assert.equal((await db.product.findUniqueOrThrow({where:{id:'keeri:maple:model1'}})).sourceTaxonomy,null);
+});
+
+
+test("large galleries survive persistence, replay and detail responses while cards remain compact", async () => {
+  const k = largeGalleryFixture(240);
+  k.models[0]!.shopifyProductId = "101";
+  const s = shopifyFixture();
+  await syncCatalogueUnion(db, s, k, "maple");
+  const expected = ["https://cdn.shopify.com/s/files/1/chair.jpg", ...Array.from({ length: 240 }, (_, i) =>
+    `https://store.maplefurnishers.com/media/keeri/gallery-${i}.webp`)];
+  assert.deepEqual((await db.product.findUniqueOrThrow({ where: { id: "preview-101" } })).images, expected);
+  assert.equal((await syncCatalogueUnion(db, s, k, "maple")).replayed, true);
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false });
+  const detail = await request(app).get("/api/products/real-chair");
+  assert.equal(detail.status, 200);
+  assert.deepEqual(detail.body.images, expected);
+  const card = await request(app).get("/api/catalogue/cards/real-chair");
+  assert.equal(card.status, 200);
+  assert.equal(card.body.product.image, "https://cdn.shopify.com/s/files/1/chair.jpg");
+  assert.equal("images" in card.body.product, false);
+  assert.ok(Buffer.byteLength(card.text) < 500, "cards must not carry full galleries");
+  const collection = await request(app).get("/api/catalogue/collections/all");
+  assert.equal(collection.status, 200);
+  assert.equal(collection.body.products[0].image, "https://cdn.shopify.com/s/files/1/chair.jpg");
+  assert.equal("images" in collection.body.products[0], false);
+  assert.ok(Buffer.byteLength(collection.text) < 1500);
+  const cursor = await db.catalogueSyncState.findMany();
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  k.publicMedia[239]!.url = "https://unapproved.example.test/photo.jpg";
+  // An exact Shopify merge filters unsupported Keeri URLs. Test the fail-closed
+  // Keeri-only path too, ensuring malformed input cannot partially write a sync.
+  k.models[0]!.shopifyProductId = null;
+  await assert.rejects(syncCatalogueUnion(db, s, k, "maple"), /UNSUPPORTED_PUBLIC_MEDIA/);
+  assert.deepEqual((await db.product.findUniqueOrThrow({ where: { id: "preview-101" } })).images, expected);
+  assert.deepEqual(await db.catalogueSyncState.findMany(), cursor);
 });

@@ -50,7 +50,7 @@ const variantSchema = z
           .strict(),
       )
       .max(30),
-    media: z.array(mediaSchema).max(100),
+    media: z.array(mediaSchema),
   })
   .strict();
 export const keeriExportSchema = z
@@ -72,7 +72,7 @@ export const keeriExportSchema = z
             status: z.string(),
             deletedAt: time.nullable(),
             updatedAt: time,
-            media: z.array(mediaSchema).max(100),
+            media: z.array(mediaSchema),
             variants: z.array(variantSchema).max(500),
           })
           .strict(),
@@ -280,7 +280,7 @@ function adaptValidated(
           .map((m) => publicMedia.get(m.id))
           .filter((url): url is string => Boolean(url)),
       ),
-    ].slice(0, 30);
+    ];
     if (data.schemaVersion === 1 && (!eligible.length || !images.length))
       continue;
     products.push(

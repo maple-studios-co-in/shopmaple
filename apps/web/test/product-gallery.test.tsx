@@ -149,3 +149,24 @@ test("rapid selections keep the last loaded image while obsolete requests cannot
     assert.equal(images[1]!.getAttribute("src"), "https://example.com/blue.jpg");
   });
 });
+
+test("all photos in a large gallery remain selectable, zoomable and keyboard reachable", async () => {
+  const images = Array.from({ length: 240 }, (_, i) => `https://example.com/gallery-${i}.jpg`);
+  await mount(async () => {
+    assert.equal(document.querySelectorAll(".product-thumbnails button").length, 240);
+    await act(async () => button("Show product image 240").click());
+    assert.equal(selected(), "Show product image 240");
+    assert.match(document.querySelector(".pdp-gallery-controls")!.textContent!, /240 \/ 240/);
+    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
+    await act(async () => button("Enlarge product image").click());
+    assert.equal(document.querySelector(".pdp-zoom img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
+    await act(async () => button("Close Aero Chair").click());
+    const gallery = document.querySelector<HTMLElement>(".product-gallery")!;
+    gallery.focus();
+    await key(gallery, "ArrowRight");
+    assert.equal(selected(), "Show product image 1");
+    await key(gallery, "ArrowLeft");
+    assert.equal(selected(), "Show product image 240");
+    assert.ok(document.querySelectorAll(".product-main-image img").length <= 2, "full-size stage stays bounded as galleries grow");
+  }, images);
+});
