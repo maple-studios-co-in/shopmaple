@@ -37,3 +37,17 @@ test('a failed cycle reports only a signal and the next scheduled cycle can reco
   assert.equal(calls, 2);
   await runner.stop();
 });
+
+test('a caller-chosen interval drives the cycle without changing the default cadence', async (t) => {
+  t.mock.timers.enable({ apis: ['setInterval'] });
+  let fast = 0, slow = 0;
+  const quick = startEnquiryDeliveryRunner(async () => { fast++; }, () => assert.fail('unexpected failure'), 5_000);
+  const standard = startEnquiryDeliveryRunner(async () => { slow++; }, () => assert.fail('unexpected failure'));
+  t.mock.timers.tick(5_000); await flush();
+  assert.equal(fast, 1);
+  assert.equal(slow, 0);
+  for (let i = 0; i < 5; i++) { t.mock.timers.tick(5_000); await flush(); }
+  assert.equal(fast, 6);
+  assert.equal(slow, 1);
+  await quick.stop(); await standard.stop();
+});

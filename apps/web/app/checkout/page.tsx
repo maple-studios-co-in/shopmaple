@@ -1,21 +1,15 @@
-import Link from "next/link";
-export default function CheckoutPage() {
+import { readCheckoutAvailability } from "./availability";
+import { CheckoutClosed } from "./checkout-closed";
+import { CheckoutFlow } from "./checkout-flow";
+// Availability is read from the API on every request; it must never be baked in at build time.
+export const dynamic = "force-dynamic";
+export default async function CheckoutPage() {
+  const options = await readCheckoutAvailability();
+  if (!options) return <CheckoutClosed />;
   return (
-    <section className="empty-state checkout-state">
-      <h1>Checkout is not open in this preview</h1>
-      <p>
-        Your cart is saved. We’re preparing online payments and confirming
-        delivery and stock before opening checkout.
-      </p>
-      <p>No payment has been taken and no order has been placed.</p>
-      <div className="button-row">
-        <Link className="button" href="/cart">
-          Return to cart
-        </Link>
-        <Link className="button secondary" href="/pages/contact">
-          Contact our team
-        </Link>
-      </div>
+    <section className="page-section checkout-page">
+      <h1>Checkout</h1>
+      <CheckoutFlow options={options} />
     </section>
   );
 }

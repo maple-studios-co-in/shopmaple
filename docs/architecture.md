@@ -109,7 +109,7 @@ The frontend and backend live in **one npm-workspace repository and run as separ
 | Component | Current technology | Responsibility and status |
 | --- | --- | --- |
 | `apps/web` | Next.js 16.4.3, React 19.3.1, TypeScript | Server-rendered catalogue and content routes; interactive menus, product variants, favourites, cart and enquiry forms. Shopify layout/content references guide parity; full parity is ongoing. |
-| `apps/api` | Node.js 22+, Express 5, Zod 4 | Public catalogue, guest cart, enquiry persistence, health endpoint and explicit checkout refusal. Opt-in checkout/status and raw webhook routes are tested with an injected order service; the running server does not inject it. |
+| `apps/api` | Node.js 22+, Express 5, Zod 4 | Public catalogue, guest cart, enquiry persistence, health endpoint and explicit checkout refusal. Checkout/status/options and raw webhook routes plus the order workers are composed by `server.ts` only when `CHECKOUT_ENABLED=true` and the full commerce configuration is present; otherwise the server runs as the preview. |
 | `packages/contracts` | Shared TypeScript and Zod schemas | Validates API input/output, product/cart/enquiry structures and catalogue imports across both applications. |
 | Shop Maple database | PostgreSQL 17, Prisma 6.19.3 | Catalogue read model, guest carts, enquiries, sync cursor, frozen checkout attempts, payment-event inbox and Keeri outbox. This is separate from Keeri's database. |
 | Catalogue tools | TypeScript CLI scripts | Manual public-preview import and validated offline Keeri export import. A bounded, authenticated export-fetch consumer exists for the proposed Keeri service contract; no live scheduler or configured producer is active. |
@@ -195,15 +195,15 @@ Browser requests use Next's `/api/:path*` rewrite; there are no Next route handl
 
 | Method and path | Current behavior | Boundary |
 | --- | --- | --- |
-| `GET /api/health` | Checks PostgreSQL with `SELECT 1`; returns status, preview mode and `checkoutEnabled: false`. | Database reachability, not integration readiness. |
+| `GET /api/health` | Checks PostgreSQL with `SELECT 1`; returns status, preview mode and `checkoutEnabled`, true only when the commerce service is composed. | Database reachability, not integration readiness. |
 | `GET /api/products` | Published products/variants; optional query/category/sort/page/limit. Maximum page size 50. | Public cacheable read model. |
 | `GET /api/products/:handle` | One published product or 404. | Public cacheable read model. |
 | `GET /api/cart` | Guest's persisted cart or an empty cart. | Opaque cookie; private/no-store. |
 | `PUT /api/cart/items/:variantId` | Sets absolute quantity 0–20; maximum 50 distinct lines; server reads prices. | Configured Origin required; private/no-store. |
 | `POST /api/enquiries` | Validates and saves contact, bulk or project enquiry; requires UUID `Idempotency-Key`. Returns 201 or 200 for replay. | Origin check, body/rate limits, private/no-store. Returns `notificationSent: false`. |
-| `POST /api/checkout` | Always returns 503 `CHECKOUT_NOT_AVAILABLE`. | No provider call or order created through this endpoint. |
+| `POST /api/checkout` | Returns 503 `CHECKOUT_NOT_AVAILABLE` unless checkout is composed; then freezes a Keeri quote for the guest cart. | No provider call or order is created through this endpoint. |
 
-The running preview server exposes no order-status or gateway-webhook route. An optional injected service adds checkout creation, provider-order creation, owned status and exact-byte signed webhook intake in tests; see [checkout HTTP boundary](checkout-http.md). Refund, customer-login and staff-enquiry endpoints remain absent. There is no public enquiry read endpoint.
+Without the commerce configuration the running server exposes no order-status, options or gateway-webhook route. When composed, the same service adds checkout creation, `GET /api/checkout/options`, provider-order creation, owned status and exact-byte signed webhook intake; see [checkout HTTP boundary](checkout-http.md) and the checkout gate in [store deployment](store-deployment.md). Refund, customer-login and staff-enquiry endpoints remain absent. There is no public enquiry read endpoint.
 
 ## 4. Data ownership and persistence
 
@@ -405,7 +405,7 @@ Production requires migration execution, process supervision, health/readiness c
 | Frozen orders and payment-event persistence | **Service foundation ready** | Callable and database-tested; no public activation or complete customer/fulfilment flow. |
 | Razorpay adapter | **Boundary tested** | Deterministic fixtures/mock transport. Current merchant, test/live mode, capture settings and real sandbox flow are unverified. |
 | Inventory reservation | **No** | Interface and fail-closed gate exist; no cross-channel stock adapter or last-item production proof. |
-| Public checkout and payment callbacks/webhooks | **Tested opt-in boundary only** | Running checkout returns 503. Injection enables tested routes; hosted browser checkout and live activation remain pending. |
+| Public checkout and payment callbacks/webhooks | **Composed behind configuration** | Running checkout returns 503 until `CHECKOUT_ENABLED=true` with full configuration. The hosted browser checkout exists; sandbox and live activation evidence remain pending. |
 | Keeri order delivery | **Worker boundary tested** | Leased delivery, retry and bound acknowledgement checks exist; the real transport and complete commercial handoff are not active. |
 | Refunds, disputes, cancellation and support recovery | **No** | Reconciliation boundaries exist, not a complete operational workflow. |
 | Deployment and production performance | **No release evidence here** | CI builds/tests; no deployment pipeline, measured live Core Web Vitals or production restore test. |

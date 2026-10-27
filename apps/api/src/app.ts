@@ -19,6 +19,7 @@ import {
   commerceHttpError,
   registerCheckoutRoutes,
   registerPaymentWebhook,
+  type CheckoutOptions,
   type CommerceHttpService,
 } from "./commerce-http.js";
 
@@ -31,6 +32,8 @@ export type AppConfig = {
   mediaRoot?: string;
   catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
+  /** Public checkout options; only meaningful together with an injected commerce service. */
+  checkout?: CheckoutOptions;
 };
 export function createApp(
   db: PrismaClient,
@@ -82,7 +85,7 @@ export function createApp(
     res.json({
       status: "ok",
       catalogMode: config.catalogMode,
-      checkoutEnabled: false,
+      checkoutEnabled: Boolean(commerce),
     });
   });
   app.get("/api/products", async (req, res) => {
@@ -145,7 +148,7 @@ export function createApp(
       res.status(result.created ? 201 : 200).json(result.receipt);
     },
   );
-  if (commerce) registerCheckoutRoutes(app, commerce, config.secureCookies);
+  if (commerce) registerCheckoutRoutes(app, commerce, config.secureCookies, config.checkout);
   app.post("/api/checkout", (_req, res) =>
     res.status(503).json({
       code: "CHECKOUT_NOT_AVAILABLE",

@@ -39,12 +39,38 @@ node --env-file=/home/deploy/shopmaple/shared/store.env \
 
 Repeated bootstraps fail closed; they never replace a populated or Keeri-synced catalogue. Later catalogue changes must use the reviewed Keeri integration, not this bootstrap. Enquiry persistence is not evidence that staff received a notification or can action it in Keeri.
 
+## Enabling checkout (operational release gate)
+
+The API composes live checkout only when `CHECKOUT_ENABLED=true` **and** every key below is present and valid in the private environment. Any other state, including a credential set without the flag, runs exactly as the preview: `/api/health` reports `checkoutEnabled: false`, `POST /api/checkout` refuses with 503, no order or payment workers run, and `/checkout` renders the preview placeholder. With the flag set and a key missing or malformed, startup fails loudly naming the key, so a half-configured release cannot half-work. `CATALOG_MODE` stays `preview`; it does not control checkout.
+
+| Key | Release gate it belongs to |
+| --- | --- |
+| `CHECKOUT_ENABLED` | Final activation switch. Set it last, only after every gate below is recorded. |
+| `KEERI_ORIGIN` | Keeri storefront service origin (HTTPS only). Shared with the catalogue media reader. |
+| `KEERI_COMMERCE_TOKEN` | Keeri service credential with `quotes:write`, `reservations:write` and `orders:write` scopes. The existing catalogue-only token does not qualify. |
+| `KEERI_TENANT_ID` | Keeri tenant whose catalogue identities the stored bindings reference. |
+| `KEERI_MERCHANT_SCOPE` | Merchant scope bound to the commerce credential and to the reviewed Keeri `STOREFRONT_COMMERCE_POLICIES` entry. Also namespaces attempts, webhooks and outbox rows. |
+| `RAZORPAY_KEY_ID` | Gateway merchant and mode (test or live). The only payment value the browser receives. |
+| `RAZORPAY_KEY_SECRET` | Server-only gateway secret for order creation and captured-payment verification. |
+| `RAZORPAY_WEBHOOK_SECRET` | Server-only secret configured on the `POST /api/webhooks/razorpay` endpoint in the Razorpay dashboard. |
+| `CHECKOUT_DELIVERY_METHODS` | JSON array of `{ "id", "label" }` pairs. Each `id` must exist in the reviewed Keeri delivery policy; labels are what buyers see. Amounts and tax come only from the Keeri quote. |
+
+Gates before `CHECKOUT_ENABLED=true` on the VPS, in order:
+
+1. Keeri: the commerce-scoped credential exists, `STOREFRONT_COMMERCE_POLICIES` holds exactly one reviewed policy for this tenant and merchant scope, and the delivery method ids above match it.
+2. Razorpay: test-mode keys first. The webhook endpoint `https://store.maplefurnishers.com/api/webhooks/razorpay` is registered with the `payment.captured` and `order.paid` events and the same webhook secret. Confirm the merchant, capture settings and that the Tunnel passes the request body uncompressed.
+3. Sandbox evidence: a complete test-mode purchase on the deployed host reaches `fulfillmentStatus: confirmed` with a Keeri order reference, a forged webhook returns 401, and a dismissed payment leaves the attempt payable. Record the attempt ids; never use a real card.
+4. Operations: the order worker (every 5 seconds inside `shopmaple-api`) is observed processing inbox and outbox rows; alerts exist for `reconciliation_required` attempts, failed outbox rows and stuck inbox rows; the backup/restore gate above has been repeated with commerce tables populated.
+5. Only then switch to live Razorpay keys and set `CHECKOUT_ENABLED=true`, restart `shopmaple-api`, and verify `/api/health` reports `checkoutEnabled: true` and `/checkout` renders the form. Rollback is removing the flag and restarting; in-flight attempts stay in the database for reconciliation.
+
+A merged pull request, a passing local suite or a green CI run is none of these gates.
+
 ## Release sequence
 
 1. Record the fully reviewed and validated Git SHA. Export that exact commit to a new release directory (never copy the dirty working tree). Keep prior releases intact.
 2. Symlink the private environment as the release `.env`, install with `npm ci` on Node22, generate Prisma and apply committed migrations to the isolated shop database. Capture a pre-migration custom-format database dump on subsequent releases.
 3. Build the release with the production API URL and web origin. The API must be healthy before Next.js static data generation; verify whether product pages are dynamic/cached and rebuild/revalidate after initial catalogue bootstrap if required.
-4. Run API/web on their assigned loopback ports, test health, catalogue counts, a product, menu, cart, security headers, cookies, and disabled checkout. Never submit live synthetic customer enquiries or orders for a smoke test.
+4. Run API/web on their assigned loopback ports, test health, catalogue counts, a product, menu, cart, security headers, cookies, and that checkout is disabled unless the checkout gate above has been passed and recorded. Never submit live synthetic customer enquiries or orders for a smoke test.
 5. Atomically point `current` to the verified release and restart only `shopmaple-api` and `shopmaple-web` using `deploy/ecosystem.config.cjs`. Keep `shopmaple-db` running. Save PM2 state.
 6. Add the exact Cloudflare hostname route and DNS record, verify ordinary public DNS and trusted HTTPS from a browser, and inspect network/image loading. A `curl --resolve` response alone is not launch evidence.
 7. Save deployed SHA, dependency/build results, public checks, migration status, dump checksum, restore test, and rollback target. Enable nightly isolated database backups; verify restore into a disposable database before accepting customer data.

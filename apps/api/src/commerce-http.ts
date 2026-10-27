@@ -6,11 +6,18 @@ import { HttpError } from "./cart.js";
 import { OrderFlowError, type createOrderService } from "./orders/service.js";
 import { PaymentGatewayError } from "./payments/razorpay.js";
 import { guestCartToken } from "./cart-credential.js";
+import { KeeriCommerceError } from "./keeri-commerce.js";
 
 export type CommerceHttpService = Pick<
   ReturnType<typeof createOrderService>,
   "freezeCart" | "getAttempt" | "createProviderOrder" | "ingestWebhook"
 >;
+/** Public, non-secret values the storefront needs before it can quote and pay. */
+export interface CheckoutOptions {
+  deliveryMethods: Array<{ id: string; label: string }>;
+  /** The Razorpay key id is a public identifier used by the hosted checkout. Never the secret. */
+  paymentKeyId: string;
+}
 const emptyBody = z.object({}).strict();
 const attemptId = z.uuid();
 const idempotencyKey = z.string().regex(/^[A-Za-z0-9_-]{8,128}$/);
@@ -104,7 +111,20 @@ export function registerCheckoutRoutes(
   app: Express,
   commerce: CommerceHttpService,
   secure: boolean,
+  options?: CheckoutOptions,
 ) {
+  app.get("/api/checkout/options", (_req, res) => {
+    if (!options)
+      throw new HttpError(
+        503,
+        "CHECKOUT_NOT_AVAILABLE",
+        "Online checkout is not available right now. No payment has been taken.",
+      );
+    res.json({
+      deliveryMethods: options.deliveryMethods.map(({ id, label }) => ({ id, label })),
+      paymentKeyId: options.paymentKeyId,
+    });
+  });
   app.post("/api/checkout", async (req, res) => {
     const input = checkoutInputSchema.or(emptyBody).parse(req.body);
     const key = idempotencyKey.parse(req.get("Idempotency-Key"));
@@ -153,6 +173,12 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
       "This checkout requires review. Check your order status before trying another payment.",
     );
   }
+  if (error instanceof KeeriCommerceError)
+    return new HttpError(
+      503,
+      "QUOTE_UNAVAILABLE",
+      "We couldn't confirm pricing and delivery right now. Please try again in a moment. No payment has been taken.",
+    );
   if (error instanceof PaymentGatewayError) {
     if (error.code === "INVALID_SIGNATURE")
       return new HttpError(
