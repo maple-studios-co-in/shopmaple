@@ -33,4 +33,4 @@ test-results/
 .impeccable/review/
 
 # Commercially licensed fonts live outside the repository (server: symlink to a private share).
-apps/web/public/fonts/licensed/
+apps/web/public/fonts/licensed
