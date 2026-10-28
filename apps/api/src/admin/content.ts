@@ -6,6 +6,7 @@ import { HttpError } from "../cart.js";
 import { prepareMediaForPublication } from "./media.js";
 import { normalizeArticlePublicationDates, validateAuthoredContentLinks } from "./authored-articles.js";
 import { requireStaff } from "./auth.js";
+import { registerPreviewRoutes } from "./preview.js";
 const documentId = "storefront";
 const version = z.number().int().min(0).max(2000000000);
 const expectedSchema = z.object({ expectedVersion: version }).strict();
@@ -168,6 +169,7 @@ export function registerContentRoutes(
   app.post("/api/admin/content/rollback", async (req, res) =>
     res.json(await change(db, req, secure, "rollback")),
   );
+  registerPreviewRoutes(app, db, secure);
   app.get("/api/admin/content/revisions", async (_req, res) => {
     const revisions = await db.shopContentRevision.findMany({
       where: { documentId },
