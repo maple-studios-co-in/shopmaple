@@ -25,7 +25,7 @@ import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { CrmSummary } from "./crm-summary";
 import { SortableList } from "./sortable-list";
-import { LivePreview, type MintedPreview } from "./live-preview";
+import { LivePreview, type MintResult } from "./live-preview";
 import { EmptyState, Skeleton, initials } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
@@ -161,6 +161,12 @@ export function ContentEditor({
   const [liveAuto, setLiveAuto] = useState(true);
   const [liveBlocked, setLiveBlocked] = useState("");
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
+  /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
+  const [saving, setSaving] = useState(false);
+  /** The last failed quiet save; auto-save pauses until a manual save succeeds. */
+  const [autoSaveFailed, setAutoSaveFailed] = useState("");
+  const inFlight = useRef(false);
+  const loadSequence = useRef(0);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function acceptDocument(value: unknown) {
@@ -171,6 +177,10 @@ export function ContentEditor({
     setConflict(false);
   }
   async function load() {
+    // Only the newest read may change state: an older read that was aborted (StrictMode's
+    // first mount, a reload) must neither report nor clear the busy state of the one running.
+    const sequence = ++loadSequence.current;
+    const current = () => alive.current && sequence === loadSequence.current;
     setBusy(true);
     setError("");
     setNotice("");
@@ -179,6 +189,7 @@ export function ContentEditor({
         cache: "no-store",
         credentials: "same-origin",
       });
+      if (!current()) return;
       if (response.status === 401) {
         onExpired();
         return;
@@ -186,14 +197,14 @@ export function ContentEditor({
       if (!response.ok) throw new Error("Read failed");
       acceptDocument(await response.json());
     } catch (error) {
-      if (aborted(error) || !alive.current) return;
+      if (aborted(error) || !current()) return;
       setError(
         error instanceof AdminRequestTimeout
           ? "Loading your draft timed out. Please try again."
           : "We couldn't load your draft. Please try again.",
       );
     } finally {
-      if (alive.current) setBusy(false);
+      if (current()) setBusy(false);
     }
   }
   useEffect(() => {
@@ -257,8 +268,13 @@ export function ContentEditor({
     return "home";
   }
   const previewTitle = tab === "Category pages" ? "Sofas" : tab === "Existing pages" ? "the selected page" : tab === "Pages" ? "the selected page" : "Home";
-  /** Mints a preview token for a draft version; the session, conflict and failure paths are handled here. */
-  const mintPreviewToken = useCallback(async (version: number): Promise<MintedPreview | null> => {
+  /**
+   * Mints a preview token for a draft version. Only an expired session is handled here (null);
+   * every other outcome is returned so the caller can show it where it belongs. A 409 from
+   * minting is never an editor conflict: either no draft exists yet (version 0) or the draft
+   * moved on, and neither changes the local edits.
+   */
+  const mintPreviewToken = useCallback(async (version: number): Promise<MintResult | null> => {
     try {
       const response = await adminRequest("/api/admin/content/preview", {
         method: "POST",
@@ -271,23 +287,27 @@ export function ContentEditor({
         return null;
       }
       if (response.status === 409) {
-        setConflict(true);
-        setError("Another editor saved a newer version. Reload the latest draft before previewing again; reloading discards local changes.");
-        return null;
+        const body: unknown = await response.json().catch(() => null);
+        const code = body && typeof body === "object" ? (body as { code?: unknown }).code : undefined;
+        return code === "CONTENT_DRAFT_REQUIRED"
+          ? { ok: false, code: "draft-required", message: "Save the draft once to start the live preview." }
+          : { ok: false, code: "conflict", message: "The draft changed since it was loaded. Reload the latest draft to preview it." };
       }
+      if (response.status === 429) return { ok: false, code: "rate-limited", message: "Too many preview requests. Wait a minute, then retry." };
       if (!response.ok) throw new Error("Preview failed");
       const result: unknown = await response.json();
       const record = result && typeof result === "object" ? (result as { token?: unknown; expiresAt?: unknown }) : {};
       if (typeof record.token !== "string" || !previewTokenPattern.test(record.token)) throw new Error("Invalid preview token");
-      return { token: record.token, expiresAt: typeof record.expiresAt === "string" ? record.expiresAt : "" };
+      return { ok: true, token: record.token, expiresAt: typeof record.expiresAt === "string" ? record.expiresAt : "" };
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Opening the preview timed out. Your draft is saved; please try again."
-          : "We couldn't open the preview. Your draft is saved; please try again.",
-      );
-      return null;
+      return {
+        ok: false,
+        code: "unavailable",
+        message: error instanceof AdminRequestTimeout
+          ? "Opening the preview timed out. Please try again."
+          : "We couldn't open the preview. Please try again.",
+      };
     }
   }, [adminRequest, session.csrfToken, onExpired]);
   async function preview() {
@@ -312,6 +332,11 @@ export function ContentEditor({
       popup?.close();
       return;
     }
+    if (!minted.ok) {
+      popup?.close();
+      setError(minted.message);
+      return;
+    }
     const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(minted.token)}`;
     if (popup) popup.location.href = url;
     else setPreviewLink(url);
@@ -321,7 +346,7 @@ export function ContentEditor({
     revisionId?: string,
     options: { quiet?: boolean } = {},
   ): Promise<Document | null> {
-    if (!document || !content || busy || conflict || scheduleEditing) return null;
+    if (!document || !content || busy || inFlight.current || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
@@ -332,10 +357,14 @@ export function ContentEditor({
         return null;
       }
     }
+    // A quiet save (live preview) must never disable the form or move focus: it is shown in
+    // the status chip only. Explicit saves, publishes and restores take the busy state.
+    const quiet = options.quiet === true;
+    inFlight.current = true;
     setLiveBlocked("");
-    setBusy(true);
-    setError("");
-    setNotice("");
+    if (quiet) setSaving(true); else setBusy(true);
+    if (!quiet) { setError(""); setNotice(""); }
+    const fail = (message: string) => { if (quiet) setAutoSaveFailed(message); else setError(message); };
     try {
       const response = await adminRequest(
         `/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`,
@@ -368,13 +397,11 @@ export function ContentEditor({
         return null;
       }
       if (response.status === 403) {
-        setError(
-          "Your permission or session has changed. Sign out and sign in again before continuing.",
-        );
+        fail("Your permission or session has changed. Sign out and sign in again before continuing.");
         return null;
       }
       if (!response.ok) {
-        setError(
+        fail(
           response.status === 400
             ? "Some content is invalid. Check your links and fields, then save again."
             : "We couldn't complete that change. Your local edits are still here. Please try again.",
@@ -383,7 +410,8 @@ export function ContentEditor({
       }
       const accepted = parseDocument(await response.json());
       acceptDocument(accepted);
-      if (!options.quiet) setNotice(
+      setAutoSaveFailed("");
+      if (!quiet) setNotice(
         action === "save"
           ? "Draft saved. The published storefront has not changed."
           : action === "publish"
@@ -393,23 +421,26 @@ export function ContentEditor({
       return accepted;
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      setError(
+      fail(
         error instanceof AdminRequestTimeout
           ? "The request timed out. Your local edits are still here. Please try again."
           : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.",
       );
       return null;
     } finally {
-      if (alive.current) setBusy(false);
+      inFlight.current = false;
+      if (alive.current) { if (quiet) setSaving(false); else setBusy(false); }
     }
   }
   // Live preview: save quietly after a pause in editing so the frame can show the edit.
   const liveActive = liveOpen && previewable.has(tab);
+  // After a failed quiet save, auto-save stays paused (one persistent notice with a retry)
+  // until a manual save succeeds, so an outage never becomes a stream of retries.
   useEffect(() => {
-    if (!liveActive || !liveAuto || !dirty || busy || conflict || scheduleEditing || !document || !content) return;
+    if (!liveActive || !liveAuto || !dirty || autoSaveFailed || busy || saving || conflict || scheduleEditing || !document || !content) return;
     const timer = setTimeout(() => { void write("save", undefined, { quiet: true }); }, livePreviewDebounceMs);
     return () => clearTimeout(timer);
-  }, [liveActive, liveAuto, dirty, busy, conflict, scheduleEditing, content, document, livePreviewDebounceMs]);
+  }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs]);
   useEffect(() => { if (!dirty) setLiveBlocked(""); }, [dirty]);
 
   const canManageEnquiries = session.user.canManageEnquiries === true;
@@ -493,9 +524,9 @@ export function ContentEditor({
               </select>
             </label>
             <div className="admin-status-group">
-              <span className="admin-chip" data-draft-status data-tone={conflict ? "conflict" : busy ? "saving" : dirty ? "unsaved" : "accent"}>
+              <span className="admin-chip" data-draft-status data-tone={conflict ? "conflict" : busy || saving ? "saving" : dirty ? "unsaved" : "accent"}>
                 {document ? `Draft version ${document.version}` : "Loading draft"}
-                {conflict ? ", conflict" : busy ? ", saving" : dirty ? ", unsaved changes" : ""}
+                {conflict ? ", conflict" : busy || saving ? ", saving" : dirty ? ", unsaved changes" : ""}
               </span>
               <span className="admin-chip" data-publish-status data-tone={document?.publishedVersion ? "published" : "unpublished"}>
                 {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
@@ -515,14 +546,14 @@ export function ContentEditor({
             </button>
             <button
               data-action="save"
-              disabled={!content || !dirty || busy || conflict || scheduleEditing}
+              disabled={!content || !dirty || busy || saving || conflict || scheduleEditing}
               onClick={() => void write("save")}
             >
               Save draft
             </button>
             <button
               data-action="preview"
-              disabled={!document || !content || busy || conflict || scheduleEditing}
+              disabled={!document || !content || busy || saving || conflict || scheduleEditing}
               onClick={() => void preview()}
             >
               Preview draft
@@ -530,7 +561,7 @@ export function ContentEditor({
             {session.user.role === "publisher" && (
               <button
                 className="admin-primary"
-                disabled={!document?.version || dirty || busy || conflict || scheduleEditing}
+                disabled={!document?.version || dirty || busy || saving || conflict || scheduleEditing}
                 onClick={() => void write("publish")}
               >
                 Publish draft
@@ -561,6 +592,13 @@ export function ContentEditor({
               ) : (
                 <button type="button" className="admin-icon-button admin-notice-action" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></button>
               )}
+            </p>
+          )}
+          {autoSaveFailed && (
+            <p role="alert" className="admin-alert" data-autosave-failed>
+              <TriangleAlert aria-hidden="true" strokeWidth={1.5} />
+              <span>Live updates are paused: the last save failed. {autoSaveFailed}</span>
+              <button type="button" className="admin-small admin-notice-action" onClick={() => void write("save")} disabled={busy || saving || conflict || !dirty}>Retry save</button>
             </p>
           )}
           {notice && (
@@ -891,8 +929,9 @@ export function ContentEditor({
                 title={previewTitle}
                 version={document?.version ?? null}
                 publishedVersion={document?.publishedVersion ?? null}
+                draftRequired={document?.draft === null}
                 dirty={dirty}
-                busy={busy}
+                busy={busy || saving}
                 blocked={liveBlocked}
                 auto={liveAuto}
                 onAutoChange={setLiveAuto}

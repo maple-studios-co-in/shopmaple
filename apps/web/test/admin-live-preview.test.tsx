@@ -40,21 +40,24 @@ const frame = () => {
   return found;
 };
 
-async function setup(options: { expiresInMs?: number } = {}) {
+async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number } = {}) {
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const calls: { method: string; path: string; body?: any }[] = [];
   let version = 4;
   let minted = 0;
+  let saveFailures = options.saveFailures ?? 0;
   globalThis.fetch = async (input, init) => {
     const path = String(input), method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path, body });
     if (path === "/api/admin/content" && method === "PUT") {
+      if (saveFailures > 0) { saveFailures--; return Response.json({ code: "SERVER_ERROR" }, { status: 500 }); }
       version = body.expectedVersion + 1;
       return Response.json({ version, draft: body.content, publishedVersion: 2, updatedAt: "2026-10-28T09:00:00Z" });
     }
     if (path === "/api/admin/content/preview" && method === "POST") {
+      if (options.previewStatus && options.previewStatus !== 200) return Response.json({ code: options.previewCode ?? "ERROR", message: "Preview failed" }, { status: options.previewStatus });
       assert.equal(body.expectedVersion, version, "Preview tokens are minted for the current draft version");
       minted++;
       return Response.json({ token: minted === 1 ? tokenA : tokenB, version, expiresAt: new Date(Date.now() + (options.expiresInMs ?? 15 * 60_000)).toISOString() });
@@ -236,4 +239,86 @@ test("inside the frame: the bridge announces its sections to the parent and scro
     assert.equal(container.querySelector('[data-home-section="categories"]')?.getAttribute("data-preview-highlight"), "true");
     assert.equal(container.querySelector('[data-home-section="hero"]')?.getAttribute("data-preview-highlight"), null);
   } finally { await act(async () => root.unmount()); }
+});
+
+test("a rejected mint is requested exactly once, shows a designed error with a manual retry, and never retries by itself", async () => {
+  const app = await setup({ previewStatus: 500 });
+  try {
+    await click("Live preview");
+    await wait(80);
+    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1, "One mint per version and attempt");
+    const status = container.querySelector<HTMLElement>("[data-preview-status]");
+    assert.equal(status?.dataset.state, "error");
+    assert.equal(container.querySelector('[role="alert"]'), null, "The pane owns its own error state; no global alert");
+    assert.equal(container.querySelector("iframe[data-live-preview-frame]"), null);
+    await click("Retry preview");
+    assert.equal(app.calls.filter((c) => c.method === "POST").length, 2, "Retry is manual");
+    await wait(80);
+    assert.equal(app.calls.filter((c) => c.method === "POST").length, 2);
+  } finally { await app.close(); }
+});
+
+test("a rate-limited mint stops until the user retries; a missing draft asks for one save, never a conflict reload", async () => {
+  const limited = await setup({ previewStatus: 429, previewCode: "RATE_LIMITED" });
+  try {
+    await click("Live preview");
+    await wait(80);
+    assert.equal(limited.calls.filter((c) => c.method === "POST").length, 1);
+    const text = container.querySelector("[data-preview-status]")?.textContent ?? "";
+    assert.match(text, /too many|wait/i);
+    assert.doesNotMatch(text, /saved/i, "A rate limit says nothing about the draft being saved");
+  } finally { await limited.close(); }
+  const missing = await setup({ previewStatus: 409, previewCode: "CONTENT_DRAFT_REQUIRED" });
+  try {
+    await click("Live preview");
+    await wait(80);
+    assert.equal(missing.calls.filter((c) => c.method === "POST").length, 1);
+    assert.match(container.querySelector("[data-preview-status]")?.textContent ?? "", /save/i, "Version 0: save once to start the preview");
+    assert.doesNotMatch(container.textContent ?? "", /newer version/, "A missing draft is not an editor conflict");
+    assert.equal([...container.querySelectorAll("button")].some((b) => b.textContent === "Reload latest draft"), false);
+  } finally { await missing.close(); }
+});
+
+test("a failed quiet save pauses live updates with one persistent notice and resumes only after a successful manual retry", async () => {
+  const app = await setup({ saveFailures: 1 });
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    await type("Category heading", "Will fail once");
+    await wait(60);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "One failed attempt");
+    await wait(80);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "No automatic retry after a failure");
+    const alerts = container.querySelectorAll('[role="alert"]');
+    assert.equal(alerts.length, 1, "Exactly one alert");
+    assert.ok(container.querySelector("[data-autosave-failed]"), "A persistent notice for the failed save");
+    await type("Category heading", "Still paused");
+    await wait(80);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "Typing does not restart auto-save while paused");
+    await click("Retry save");
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 2);
+    assert.equal(container.querySelector("[data-autosave-failed]"), null, "The notice clears after a successful save");
+    await type("Category heading", "Resumed");
+    await wait(60);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 3, "Auto-save resumes after a successful manual save");
+  } finally { await app.close(); }
+});
+
+test("a quiet save never disables the form or moves focus", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    const input = container.querySelector<HTMLInputElement>('input[aria-label="Category heading"]')!;
+    await act(async () => { input.focus(); });
+    await type("Category heading", "Keep my focus");
+    assert.equal(document.activeElement, input);
+    await wait(15);
+    assert.equal(container.querySelector("fieldset")?.disabled, false, "Fields stay enabled during a quiet save");
+    assert.equal(document.activeElement, input, "Focus stays put while the quiet save runs");
+    await wait(60);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
+    assert.equal(document.activeElement, input, "Focus stays put after the quiet save");
+    assert.equal(container.querySelector("fieldset")?.disabled, false);
+  } finally { await app.close(); }
 });
