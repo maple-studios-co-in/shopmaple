@@ -223,3 +223,4 @@ export * from "./cart-eligibility";
 export * from "./catalogue-collections";
 
 export * from "./enquiry-delivery";
+export * from "./crm";

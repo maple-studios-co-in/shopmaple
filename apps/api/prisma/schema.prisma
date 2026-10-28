@@ -104,15 +104,78 @@ model Enquiry {
   message String
   context Json
   status String @default("new")
+  lostReason String?
   version Int @default(0)
   delivery EnquiryDelivery?
   reviews EnquiryReviewAudit[]
   assignedToId String?
   assignedTo ShopAdmin? @relation("AssignedEnquiries", fields: [assignedToId], references: [id], onDelete: Restrict)
+  contactId String?
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
   activity EnquiryActivity[]
+  tasks FollowUpTask[]
   createdAt DateTime @default(now())
   @@index([status, createdAt])
   @@index([assignedToId, createdAt, id])
+  @@index([contactId, createdAt])
+}
+
+// One CRM contact per customer, keyed by normalised email and phone. Created by enquiries and the backfill migration.
+model Contact {
+  id String @id
+  emailKey String @unique
+  phoneKey String? @unique
+  name String
+  email String
+  phone String
+  city String @default("")
+  tags String[] @default([])
+  notes String @default("")
+  version Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  enquiries Enquiry[]
+  tasks FollowUpTask[]
+  activity ContactActivity[]
+  @@index([createdAt, id])
+}
+
+model ContactActivity {
+  id String @id @default(cuid())
+  contactId String
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  actorId String
+  actor ShopAdmin @relation("ContactActivityActor", fields: [actorId], references: [id], onDelete: Restrict)
+  version Int
+  action String
+  taskId String?
+  body String?
+  createdAt DateTime @default(now())
+  @@unique([contactId, version])
+}
+
+model FollowUpTask {
+  id String @id @default(cuid())
+  enquiryId String?
+  enquiry Enquiry? @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  contactId String?
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  title String
+  dueOn DateTime @db.Date
+  assigneeId String?
+  assignee ShopAdmin? @relation("FollowUpTaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  note String @default("")
+  done Boolean @default(false)
+  completedAt DateTime?
+  createdById String
+  createdBy ShopAdmin @relation("FollowUpTaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  version Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([done, dueOn, id])
+  @@index([assigneeId, done, dueOn])
+  @@index([enquiryId, done, dueOn])
+  @@index([contactId, done, dueOn])
 }
 
 model CheckoutAttempt {
@@ -203,6 +266,9 @@ model ShopAdmin {
   assignedEnquiries Enquiry[] @relation("AssignedEnquiries")
   enquiryActivity EnquiryActivity[] @relation("EnquiryActivityActor")
   enquiryAssignments EnquiryActivity[] @relation("EnquiryActivityAssignee")
+  contactActivity ContactActivity[] @relation("ContactActivityActor")
+  followUpTasks FollowUpTask[] @relation("FollowUpTaskAssignee")
+  createdFollowUpTasks FollowUpTask[] @relation("FollowUpTaskCreator")
 }
 model ShopAdminSession {
   id String @id @default(cuid())
@@ -273,6 +339,9 @@ model EnquiryActivity {
   version Int
   action String
   body String?
+  stage String?
+  taskId String?
+  subject String?
   createdAt DateTime @default(now())
   @@unique([enquiryId, version])
 }
