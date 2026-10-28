@@ -2,6 +2,7 @@
 import type { StoryPageContent, StorySectionKey } from "@shopmaple/contracts";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 import { Field } from "./forms";
+import { SortableList, moveItem } from "./sortable-list";
 
 const labels: Record<StorySectionKey, string> = {
   hero: "Hero", "belief-film": "Belief and film", journey: "Journey", cities: "Cities",
@@ -31,9 +32,11 @@ export function StoryFields({ value, onChange }: {
       <p>Use one line per heading line, up to three. Text displays as text, including any HTML.</p>
       <h3>Sections</h3>
       <p>The page heading stays available to screen readers when the hero is hidden.</p>
-      <ol className="admin-section-list">
-        {page.sections.map((section, index) => (
-          <li key={section.key}>
+      <SortableList items={page.sections} getKey={section => section.key} getLabel={section => `Our Story ${labels[section.key]}`}
+        onReorder={sections => update({ sections })}
+        renderItem={(section, index, { handle }) => (
+          <>
+            {handle}
             <label>
               <input type="checkbox" aria-label={`Show Our Story ${labels[section.key]}`} checked={section.enabled}
                 onChange={event => update({ sections: page.sections.map(item => item.key === section.key ? { ...item, enabled: event.target.checked } : item) })} />
@@ -43,18 +46,13 @@ export function StoryFields({ value, onChange }: {
               {([-1, 1] as const).map(direction => (
                 <button key={direction} type="button" aria-label={`Move Our Story ${labels[section.key]} ${direction === -1 ? "up" : "down"}`}
                   disabled={index + direction < 0 || index + direction >= page.sections.length}
-                  onClick={() => {
-                    const sections = [...page.sections];
-                    [sections[index], sections[index + direction]] = [sections[index + direction]!, sections[index]!];
-                    update({ sections });
-                  }}>
+                  onClick={() => update({ sections: moveItem(page.sections, index, index + direction) })}>
                   {direction === -1 ? "Move up" : "Move down"}
                 </button>
               ))}
             </div>
-          </li>
-        ))}
-      </ol>
+          </>
+        )} />
       <h3>Journey</h3>
       {page.timeline.map((item, index) => {
         function chapter(patch: Partial<StoryPageContent["timeline"][number]>) {

@@ -5,6 +5,7 @@ import {
   type CategorySectionContent,
 } from "@shopmaple/contracts";
 import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
+import { SortableList, moveItem } from "./sortable-list";
 
 function TextField({
   label,
@@ -76,12 +77,7 @@ export function CategoryFields({
         function move(index: number, offset: number) {
           const next = index + offset;
           if (next < 0 || next >= page.sections.length) return;
-          const sections = [...page.sections];
-          [sections[index], sections[next]] = [
-            sections[next]!,
-            sections[index]!,
-          ];
-          update({ ...page, sections });
+          update({ ...page, sections: moveItem(page.sections, index, next) });
         }
         return (
           <details key={slug} open={slug === "sofas"}>
@@ -102,8 +98,18 @@ export function CategoryFields({
                 />
               </div>
               <h3>Sections</h3>
-              {page.sections.map((section, index) => (
-                <details key={section.key}>
+              <SortableList
+                as="div"
+                rowAs="div"
+                className="admin-sortable-blocks"
+                items={page.sections}
+                getKey={(section) => section.key}
+                getLabel={(section) => `${label} ${section.key}`}
+                onReorder={(sections) => update({ ...page, sections })}
+                renderItem={(section, index, { handle }) => (
+                  <>
+                    {handle}
+                    <details>
                   <summary>
                     {section.key.replaceAll("-", " ")}
                     {section.enabled ? "" : " (hidden)"}
@@ -193,8 +199,10 @@ export function CategoryFields({
                       </div>
                     ))}
                   </div>
-                </details>
-              ))}
+                    </details>
+                  </>
+                )}
+              />
             </section>
           </details>
         );

@@ -4,6 +4,7 @@ import type { AuthoredBlock } from "@shopmaple/contracts";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
 import { MediaPicker } from "./media-picker";
+import { SortableList, moveItem } from "./sortable-list";
 
 export function newAuthoredBlock(type: Exclude<AuthoredBlock["type"], "image">): AuthoredBlock {
   const id = crypto.randomUUID();
@@ -41,8 +42,7 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
   }
   function moveBlock(index: number, direction: -1 | 1) {
     if (index + direction < 0 || index + direction >= value.length) return;
-    const blocks = [...value];
-    [blocks[index], blocks[index + direction]] = [blocks[index + direction]!, blocks[index]!];
+    const blocks = moveItem(value, index, index + direction);
     // Boundary moves disable their control; retain keyboard focus in the moved block.
     if (index + direction === 0 || index + direction === blocks.length - 1) focusBlock.current = blocks[index + direction]!.id;
     onChange(blocks);
@@ -57,7 +57,11 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
     if (event.key === "Enter" && event.target instanceof window.HTMLInputElement && event.target.type === "text") event.preventDefault();
   }}>
     <h3>{blockLabel}s</h3><p>Keep at least one block. HTML is displayed as text.</p>
-    {value.map((block, index) => <fieldset aria-label={blockLabel} data-block-id={block.id} key={block.id}>
+    <SortableList as="div" rowAs="div" className="admin-sortable-blocks" items={value} getKey={block => block.id} getLabel={(_block, index) => `Block ${index + 1}`}
+      onReorder={blocks => onChange(blocks)}
+      renderItem={(block, index, { handle }) => <>
+      {handle}
+      <fieldset aria-label={blockLabel} data-block-id={block.id}>
       <legend>Block {index + 1} · {block.type}</legend>
       {(block.type === "paragraph" || block.type === "quote" || block.type === "heading") && <Field label={`Block ${index + 1} text`} value={block.text} maxLength={block.type === "heading" ? 300 : 8000} multiline={block.type !== "heading"} onChange={text => replaceBlock(block.id, { ...block, text })} />}
       {block.type === "heading" && <label className="admin-field"><span>Heading level</span><select aria-label={`Block ${index + 1} heading level`} value={block.level} onChange={event => replaceBlock(block.id, { ...block, level: Number(event.target.value) as 2 | 3 })}><option value={2}>Heading 2</option><option value={3}>Heading 3</option></select></label>}
@@ -78,7 +82,8 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
       <button type="button" disabled={index === 0} onClick={() => moveBlock(index, -1)}>Move up</button>
       <button type="button" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)}>Move down</button>
       <button type="button" disabled={value.length <= 1} onClick={() => removeBlock(index)}>Remove block</button>
-    </fieldset>)}
+    </fieldset>
+    </>} />
     <p>{value.length} of 60 blocks</p>
     <div className="admin-actions">{(["paragraph", "heading", "quote", "list", "link"] as const).map(type => <button key={type} type="button" disabled={value.length >= 60} onClick={() => addBlock(newAuthoredBlock(type))}>Add {type}</button>)}
       <button type="button" disabled={value.length >= 60 || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}>Add image</button>

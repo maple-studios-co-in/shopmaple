@@ -2,6 +2,7 @@
 import type { ServicePagesContent } from "@shopmaple/contracts";
 import { resolveServicePages } from "@/lib/service-page-defaults";
 import { Field } from "./forms";
+import { SortableList, moveItem } from "./sortable-list";
 
 const contactLabels = { intro: "Introduction and form", help: "Help", cities: "Cities" };
 const bulkLabels = { hero: "Hero and form", trust: "Trust", process: "Process", business: "Business", cities: "Cities" };
@@ -13,16 +14,18 @@ function Sections<K extends string>({ name, items, labels, onChange }: {
   onChange: (items: { key: K; enabled: boolean }[]) => void;
 }) {
   return <><h3>Sections</h3><p>Move sections or hide them. The page keeps an accessible heading.</p>
-    <ol className="admin-section-list">{items.map((item, index) => <li key={item.key}>
-      <label><input type="checkbox" aria-label={`Show ${name} ${labels[item.key]}`} checked={item.enabled}
-        onChange={event => onChange(items.map(entry => entry.key === item.key ? { ...entry, enabled: event.target.checked } : entry))} />
-        <span>{labels[item.key]}</span></label>
-      <div>{([-1, 1] as const).map(direction => <button key={direction} type="button"
-        aria-label={`Move ${name} ${labels[item.key]} ${direction === -1 ? "up" : "down"}`}
-        disabled={index + direction < 0 || index + direction >= items.length}
-        onClick={() => { const next = [...items]; [next[index], next[index + direction]] = [next[index + direction]!, next[index]!]; onChange(next); }}>
-        {direction === -1 ? "Move up" : "Move down"}</button>)}</div>
-    </li>)}</ol></>;
+    <SortableList items={items} getKey={item => item.key} getLabel={item => `${name} ${labels[item.key]}`} onReorder={onChange}
+      renderItem={(item, index, { handle }) => <>
+        {handle}
+        <label><input type="checkbox" aria-label={`Show ${name} ${labels[item.key]}`} checked={item.enabled}
+          onChange={event => onChange(items.map(entry => entry.key === item.key ? { ...entry, enabled: event.target.checked } : entry))} />
+          <span>{labels[item.key]}</span></label>
+        <div>{([-1, 1] as const).map(direction => <button key={direction} type="button"
+          aria-label={`Move ${name} ${labels[item.key]} ${direction === -1 ? "up" : "down"}`}
+          disabled={index + direction < 0 || index + direction >= items.length}
+          onClick={() => onChange(moveItem(items, index, index + direction))}>
+          {direction === -1 ? "Move up" : "Move down"}</button>)}</div>
+      </>} /></>;
 }
 const field = (label: string, value: string, maxLength: number, onChange: (value: string) => void, multiline = false) =>
   <Field key={label} label={label} value={value} maxLength={maxLength} onChange={onChange} multiline={multiline} />;

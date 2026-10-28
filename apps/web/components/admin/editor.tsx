@@ -18,6 +18,7 @@ import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
+import { SortableList, moveItem } from "./sortable-list";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 type Document = {
@@ -402,9 +403,14 @@ export function ContentEditor({
                 <>
                   <h2>Homepage</h2>
                   <p>Move sections into order and choose what visitors see.</p>
-                  <ol className="admin-section-list">
-                    {content.homeSections.map((section, index) => (
-                      <li key={section.key}>
+                  <SortableList
+                    items={content.homeSections}
+                    getKey={(section) => section.key}
+                    getLabel={(section) => titleCase(section.key)}
+                    onReorder={(homeSections) => edit({ ...content, homeSections })}
+                    renderItem={(section, index, { handle }) => (
+                      <>
+                        {handle}
                         <label>
                           <input
                             type="checkbox"
@@ -432,23 +438,24 @@ export function ContentEditor({
                                 index + direction < 0 ||
                                 index + direction >= content.homeSections.length
                               }
-                              onClick={() => {
-                                const sections = [...content.homeSections];
-                                [sections[index], sections[index + direction]] =
-                                  [
-                                    sections[index + direction]!,
-                                    sections[index]!,
-                                  ];
-                                edit({ ...content, homeSections: sections });
-                              }}
+                              onClick={() =>
+                                edit({
+                                  ...content,
+                                  homeSections: moveItem(
+                                    content.homeSections,
+                                    index,
+                                    index + direction,
+                                  ),
+                                })
+                              }
                             >
                               {direction === -1 ? "Move up" : "Move down"}
                             </button>
                           ))}
                         </div>
-                      </li>
-                    ))}
-                  </ol>
+                      </>
+                    )}
+                  />
                   <h3>Homepage copy</h3>
                   <div className="admin-fields">
                     {(

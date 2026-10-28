@@ -6,6 +6,7 @@ import { resolveHomeMerchandising } from "../../lib/home-merchandising-defaults"
 import type { StaffSession } from "./dashboard";
 import { Field } from "./forms";
 import { MediaPicker } from "./media-picker";
+import { SortableList, moveItem } from "./sortable-list";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 const rails = [{ key: "bestsellers", label: "Bestsellers" }, { key: "chairs", label: "Chairs" }] as const;
@@ -88,26 +89,25 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
     {rails.map(rail => <section key={rail.key} aria-label={`${rail.label} selection`}>
       <h3>{rail.label} · {current[rail.key].length}/{limit}</h3>
       {current[rail.key].length === 0 && <p>No products selected. Use Homepage section visibility to hide this section.</p>}
-      <ol className="admin-section-list">
-        {current[rail.key].map((handle, index) => <li key={handle} tabIndex={-1} aria-label={`Selected ${rail.label} ${handle}`} ref={remember(`${rail.key}:${handle}`)}>
+      <SortableList items={current[rail.key]} getKey={handle => handle} getLabel={handle => `${handle} in ${rail.label}`}
+        onReorder={(next, move) => update({ ...current, [rail.key]: next }, `${rail.key}:${next[move.to]}`)}
+        rowProps={handle => ({ tabIndex: -1, "aria-label": `Selected ${rail.label} ${handle}` })}
+        rowRef={(handle, node) => remember(`${rail.key}:${handle}`)(node)}
+        renderItem={(handle, index, { handle: grip }) => <>
+          {grip}
           <div><strong>{results?.products.find(product => product.handle === handle)?.title ?? handle}</strong><p>{handle}</p></div>
           <div className="admin-actions">
             {([-1, 1] as const).map(direction => <button key={direction} type="button"
               aria-label={`Move ${handle} ${direction === -1 ? "up" : "down"} in ${rail.label}`}
               disabled={index + direction < 0 || index + direction >= current[rail.key].length}
-              onClick={() => {
-                const next = [...current[rail.key]];
-                [next[index], next[index + direction]] = [next[index + direction]!, next[index]!];
-                update({ ...current, [rail.key]: next }, `${rail.key}:${handle}`);
-              }}>{direction === -1 ? "Move up" : "Move down"}</button>)}
+              onClick={() => update({ ...current, [rail.key]: moveItem(current[rail.key], index, index + direction) }, `${rail.key}:${handle}`)}>{direction === -1 ? "Move up" : "Move down"}</button>)}
             <button type="button" aria-label={`Remove ${handle} from ${rail.label}`} onClick={() => {
               const next = current[rail.key].filter(item => item !== handle);
               const neighbor = next[Math.min(index, next.length - 1)];
               update({ ...current, [rail.key]: next }, neighbor ? `${rail.key}:${neighbor}` : "search");
             }}>Remove</button>
           </div>
-        </li>)}
-      </ol>
+        </>} />
     </section>)}
     <section aria-label="Product catalog" aria-busy={busy}>
       <h3>Find products</h3>
@@ -139,7 +139,11 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
       <p>Use the collection handle from its store URL, such as chairs. Add an image and review the description before enabling a new tile.</p>
       {group.key === "offers" && <p>Offer artwork contains its visible marketing copy. The title identifies the tile here; the image description provides accessible text.</p>}
       {current[group.key].length === 0 && <p>No tiles selected. Use Homepage section visibility to hide this section.</p>}
-      {current[group.key].map((tile, index) => <fieldset key={tile.key} aria-label={`${group.label} tile ${index + 1}`}>
+      <SortableList as="div" rowAs="div" className="admin-sortable-blocks" items={current[group.key]} getKey={tile => tile.key} getLabel={(_tile, index) => `${group.singular} tile ${index + 1}`}
+        onReorder={(next, move) => update({ ...current, [group.key]: next }, `${group.key}:${next[move.to]!.key}`)}
+        renderItem={(tile, index, { handle }) => <>
+        {handle}
+        <fieldset aria-label={`${group.label} tile ${index + 1}`}>
         <legend>{group.label} tile {index + 1}</legend>
         <div className="admin-fields" ref={node => {
           const input = node?.querySelector("input");
@@ -153,13 +157,12 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
         <label className="admin-check"><input type="checkbox" aria-label={`Show ${group.singular} tile ${index + 1}`} checked={tile.enabled} onChange={event => editTile(group.key, index, { enabled: event.currentTarget.checked })} />Show this tile</label>
         <div className="admin-actions">
           {([-1, 1] as const).map(direction => <button key={direction} type="button" aria-label={`Move ${group.singular} tile ${index + 1} ${direction === -1 ? "up" : "down"}`} disabled={index + direction < 0 || index + direction >= current[group.key].length} onClick={() => {
-            const next = [...current[group.key]];
-            [next[index], next[index + direction]] = [next[index + direction]!, next[index]!];
-            update({ ...current, [group.key]: next }, `${group.key}:${tile.key}`);
+            update({ ...current, [group.key]: moveItem(current[group.key], index, index + direction) }, `${group.key}:${tile.key}`);
           }}>{direction === -1 ? "Move up" : "Move down"}</button>)}
           <button type="button" aria-label={`Remove ${group.singular} tile ${index + 1}`} onClick={() => update({ ...current, [group.key]: current[group.key].filter(item => item.key !== tile.key) }, `add:${group.key}`)}>Remove tile</button>
         </div>
-      </fieldset>)}
+      </fieldset>
+      </>} />
       <button type="button" ref={remember(`add:${group.key}`)} disabled={current[group.key].length >= limit} onClick={() => addTile(group.key)}>Add {group.singular} tile</button>
     </section>)}
   </section>;
