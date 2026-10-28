@@ -21,6 +21,7 @@ import { EnquiryInbox } from "./enquiry-inbox";
 import { SortableList, moveItem } from "./sortable-list";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
+import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 type Document = {
   version: number;
   draft: StorefrontContent | null;
@@ -60,6 +61,27 @@ const copyLabels: Record<keyof StorefrontContent["homeCopy"], string> = {
   testimonialHeading: "Testimonial heading",
   testimonialSubheading: "Testimonial subheading",
 };
+/** The storefront page that best shows the current editor tab, as a draft preview path. */
+export function previewPathFor(
+  tab: Tab,
+  existingPage: "story" | "nimbus" | "contact" | "bulk" | "returns",
+  content: StorefrontContent,
+): string {
+  switch (tab) {
+    case "Existing pages":
+      return { story: "/pages/our-story", nimbus: "/pages/nimbus-collection", contact: "/pages/contact", bulk: "/pages/bulk-enquiry", returns: "/pages/returns" }[existingPage];
+    case "Category pages":
+      return "/pages/sofas";
+    case "Pages":
+      return content.pages[0] ? `/pages/${content.pages[0].slug}` : "/";
+    case "Policies & blogs": {
+      const slug = Object.keys(resolveEditorialContent(content.editorialContent).policies)[0];
+      return slug ? `/policies/${slug}` : "/";
+    }
+    default:
+      return "/";
+  }
+}
 export const titleCase = (value: string) =>
   value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 function parseDocument(value: unknown): Document {
@@ -111,8 +133,10 @@ export function ContentEditor({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [previewLink, setPreviewLink] = useState("");
   function acceptDocument(value: unknown) {
     const next = parseDocument(value);
+    setPreviewLink("");
     setDocument(next);
     setContent(structuredClone(next.draft ?? initialContent));
     setDirty(next.draft === null);
@@ -185,12 +209,13 @@ export function ContentEditor({
     setContent(next);
     setDirty(true);
     setNotice("");
+    setPreviewLink("");
   }
   async function write(
     action: "save" | "publish" | "restore",
     revisionId?: string,
-  ) {
-    if (!document || !content || busy || conflict || scheduleEditing) return;
+  ): Promise<Document | null> {
+    if (!document || !content || busy || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
@@ -198,7 +223,7 @@ export function ContentEditor({
         setError(
           `Check ${issue?.path.join(" · ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`,
         );
-        return;
+        return null;
       }
     }
     setBusy(true);
@@ -226,20 +251,17 @@ export function ContentEditor({
       );
       if (response.status === 401) {
         onExpired();
-        return;
+        return null;
       }
       if (response.status === 409) {
-        setConflict(true);
-        setError(
-          "Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.",
-        );
-        return;
+        markConflict();
+        return null;
       }
       if (response.status === 403) {
         setError(
           "Your permission or session has changed. Sign out and sign in again before continuing.",
         );
-        return;
+        return null;
       }
       if (!response.ok) {
         setError(
@@ -247,9 +269,10 @@ export function ContentEditor({
             ? "Some content is invalid. Check your links and fields, then save again."
             : "We couldn't complete that change. Your local edits are still here. Please try again.",
         );
-        return;
+        return null;
       }
-      acceptDocument(await response.json());
+      const accepted = parseDocument(await response.json());
+      acceptDocument(accepted);
       setNotice(
         action === "save"
           ? "Draft saved. The published storefront has not changed."
@@ -257,11 +280,69 @@ export function ContentEditor({
             ? "Draft published. The storefront now uses this version."
             : "Restored as a draft. Review it, then publish when ready.",
       );
+      return accepted;
     } catch (error) {
       setError(
         error instanceof AdminRequestTimeout
           ? "The request timed out. Your local edits are still here. Please try again."
           : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.",
+      );
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }
+  function markConflict() {
+    setConflict(true);
+    setError(
+      "Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.",
+    );
+  }
+  /** Save any unsaved changes, then open the draft in a new tab with a short-lived preview token. */
+  async function preview() {
+    if (!document || !content || busy || conflict || scheduleEditing) return;
+    let version = document.version;
+    if (dirty) {
+      const saved = await write("save");
+      if (!saved) return;
+      version = saved.version;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await adminRequest("/api/admin/content/preview", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": session.csrfToken,
+        },
+        body: JSON.stringify({ expectedVersion: version }),
+      });
+      if (response.status === 401) {
+        onExpired();
+        return;
+      }
+      if (response.status === 409) {
+        markConflict();
+        return;
+      }
+      if (!response.ok) {
+        setError("We couldn't open the preview. Please try again.");
+        return;
+      }
+      const result = (await response.json()) as { token?: unknown };
+      if (typeof result.token !== "string" || !/^[A-Za-z0-9_.-]{1,4000}$/.test(result.token))
+        throw new Error("Invalid preview response");
+      const path = previewPathFor(tab, existingPage, content);
+      const link = `/admin/preview${path === "/" ? "" : path}?token=${encodeURIComponent(result.token)}`;
+      setPreviewLink(link);
+      window.open(link, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setError(
+        error instanceof AdminRequestTimeout
+          ? "Opening the preview timed out. Please try again."
+          : "We couldn't open the preview. Please try again.",
       );
     } finally {
       setBusy(false);
@@ -299,6 +380,13 @@ export function ContentEditor({
           >
             Save draft
           </button>
+          <button
+            data-action="preview"
+            disabled={!content || !document || busy || conflict || scheduleEditing}
+            onClick={() => void preview()}
+          >
+            Preview draft
+          </button>
           {session.user.role === "publisher" && (
             <button
               className="admin-primary"
@@ -315,9 +403,19 @@ export function ContentEditor({
           {error}
         </p>
       )}
-      {notice && (
+      {(notice || previewLink) && (
         <p role="status" className="admin-notice">
           {notice}
+          {previewLink && (
+            <>
+              {notice ? " " : ""}
+              The draft preview opened in a new tab.{" "}
+              <a href={previewLink} target="_blank" rel="noopener noreferrer">
+                Open the draft preview
+              </a>{" "}
+              if it was blocked. Preview links expire after 15 minutes.
+            </>
+          )}
         </p>
       )}
       {conflict && (

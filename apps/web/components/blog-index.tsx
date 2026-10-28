@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 import index from "@/data/blog-index.json";
 
 type Article = {

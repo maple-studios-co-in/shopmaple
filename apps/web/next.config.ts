@@ -46,6 +46,30 @@ const config: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
+      // Staff draft previews: never cached by a CDN or browser, never indexed.
+      {
+        source: "/admin/preview/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
+        source: "/admin/preview",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      // The preview frame is embedded only by the same-origin preview shell.
+      {
+        source: "/admin/preview-frame/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
+      {
+        source: "/admin/preview-frame",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        ],
+      },
     ];
   },
 };

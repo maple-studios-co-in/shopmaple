@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { StoreContent } from "@/components/store-content";
-import source from "@/data/store-content.json";
+import { PolicyPage, isPolicySlug } from "@/components/policy-page";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 export async function generateMetadata({
@@ -15,12 +13,12 @@ export async function generateMetadata({
   const content = await getPublishedContent();
   const { policies } = resolveEditorialContent(content.editorialContent);
   return {
-    title: Object.hasOwn(source.policies, slug)
+    title: isPolicySlug(slug)
       ? policies[slug]?.title ?? "Policy"
       : "Policy",
   };
 }
-export default async function PolicyPage({
+export default async function Policy({
   params,
 }: {
   params: Promise<{
@@ -28,21 +26,8 @@ export default async function PolicyPage({
   }>;
 }) {
   const { slug } = await params;
-  if (!Object.hasOwn(source.policies, slug)) notFound();
-  const content = await getPublishedContent();
-  const { policies } = resolveEditorialContent(content.editorialContent);
-  const policy = policies[slug];
-  if (!policy) notFound();
-  return (
-    <section className="editorial-page">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
-        <span>{policy.title}</span>
-      </nav>
-      <h1>{policy.title}</h1>
-      <article className="store-prose">
-        <StoreContent nodes={policy.content} />
-      </article>
-    </section>
-  );
+  if (!isPolicySlug(slug)) notFound();
+  const page = PolicyPage({ slug, content: await getPublishedContent() });
+  if (!page) notFound();
+  return page;
 }

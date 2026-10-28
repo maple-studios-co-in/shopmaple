@@ -3,9 +3,18 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["../*"],
-      "next/image": ["./support/next-image.tsx"],
-      "server-only": ["./support/server-only.ts"]
+      "@/*": [
+        "../*"
+      ],
+      "next/image": [
+        "./support/next-image.tsx"
+      ],
+      "server-only": [
+        "./support/server-only.ts"
+      ],
+      "next/headers": [
+        "./support/next-headers.ts"
+      ]
     }
   }
 }

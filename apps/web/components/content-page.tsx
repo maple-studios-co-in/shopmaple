@@ -1,5 +1,5 @@
 import type { ContentPage as Page } from "@shopmaple/contracts";
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 import Link from "next/link";
 import { AuthoredArticleBody } from "./authored-article-body";
 export function ContentPage({ page }: { page: Page }) {

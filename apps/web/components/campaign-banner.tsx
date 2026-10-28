@@ -1,9 +1,9 @@
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { CampaignWindow } from "./campaign-window";
 import campaigns from "@/data/diwali-campaigns.json";
-import { getPublishedContent } from "@/lib/content";
+import { getPublishedContent, type StorefrontContentView } from "@/lib/content";
 import { defaultStorefrontContent } from "@/lib/content-defaults";
 
 export type CampaignKey = keyof typeof campaigns;
@@ -47,11 +47,14 @@ function ArtworkLayer({
 export async function CampaignBanner({
   campaign,
   compact = false,
+  content: supplied,
 }: {
   campaign: CampaignKey;
   compact?: boolean;
+  /** Render from this content (for example a draft preview) instead of the published snapshot. */
+  content?: StorefrontContentView;
 }) {
-  const content = await getPublishedContent();
+  const content = supplied ?? (await getPublishedContent());
   if (!content.campaignsAvailable) return null;
   const override = content.campaigns.find((item) => item.key === campaign);
   const fallback = defaultStorefrontContent.campaigns.find(

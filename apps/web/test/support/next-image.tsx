@@ -9,10 +9,12 @@ export function getImageProps(props: ImgHTMLAttributes<HTMLImageElement>) {
 export default function TestImage({
   fill,
   preload,
+  unoptimized,
   ...props
 }: ImgHTMLAttributes<HTMLImageElement> & {
   fill?: boolean;
   preload?: boolean;
+  unoptimized?: boolean;
 }) {
   return <img {...props} />;
 }

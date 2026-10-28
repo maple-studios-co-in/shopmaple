@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { contentImageSchema, contentLinkSchema, type AuthoredBlock } from "@shopmaple/contracts";
+import { isPrivatePreviewMedia } from "@/lib/preview-media";
 
 /** Shared semantic body for published articles and the unsaved editor preview. */
 export function AuthoredArticleBody({ blocks, preview = false }: { blocks: readonly AuthoredBlock[]; preview?: boolean }) {
@@ -14,7 +15,8 @@ export function AuthoredArticleBody({ blocks, preview = false }: { blocks: reado
       }
       case "link": return <p key={block.id}>{contentLinkSchema.safeParse(block.href).success ? <Link href={block.href}>{block.text}</Link> : block.text}</p>;
       case "image": {
-        if (!contentImageSchema.safeParse(block.src).success) return null;
+        // Draft previews already map private uploads to the staff media path.
+        if (!contentImageSchema.safeParse(block.src).success && !isPrivatePreviewMedia(block.src)) return null;
         const managed = /^\/media\/uploads\/([a-f0-9]{64})\.webp$/.exec(block.src);
         if (block.src.startsWith("/media/uploads/") && !managed) return null;
         const src = preview && managed ? `/api/admin/media/${managed[1]}/preview` : block.src;

@@ -6,7 +6,12 @@ type ResolvedArticle = Omit<(typeof source.blogs)[number]["articles"][number], "
 type ResolvedBlog = { handle: string; title: string; articles: ResolvedArticle[] };
 type ResolvedEditorialContent = { policies: Record<string, { title: string; content: EditorialNode[] }>; blogs: ResolvedBlog[] };
 export const defaultEditorialContent: EditorialContent = { policies: [], blogs: [], articles: [] };
-export function resolveEditorialContent(value?: EditorialContent, authoredArticles?: readonly AuthoredArticle[]): ResolvedEditorialContent {
+/**
+ * Resolve policies and blogs from the bundled source plus managed overrides.
+ * Authored articles join their blog once they carry a publication date; a
+ * draft preview may include the unpublished ones too.
+ */
+export function resolveEditorialContent(value?: EditorialContent, authoredArticles?: readonly AuthoredArticle[], options: { includeUnpublished?: boolean } = {}): ResolvedEditorialContent {
   const result = structuredClone({ policies: source.policies, blogs: source.blogs }) as unknown as ResolvedEditorialContent;
   const listing = blogIndex as Record<string, Record<string, { excerpt: string }>>;
   for (const blog of result.blogs) {
@@ -23,14 +28,14 @@ export function resolveEditorialContent(value?: EditorialContent, authoredArticl
     }
   }
   for (const article of authoredArticles ?? []) {
-    if (!article.publishedAt) continue;
+    if (!article.publishedAt && !options.includeUnpublished) continue;
     const blog = result.blogs.find(item => item.handle === article.blog);
     if (!blog || blog.articles.some(item => item.handle === article.handle)) continue;
     blog.articles.push({
       handle: article.handle,
       title: article.title,
       excerpt: article.excerpt,
-      publishedAt: article.publishedAt,
+      publishedAt: article.publishedAt ?? "",
       content: [],
       summary: [],
       blocks: structuredClone(article.blocks),

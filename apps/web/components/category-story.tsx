@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 import { HomeCities } from "@/components/home-sections";
 import { CategoryVideo } from "@/components/category-controls";
 import { MaplePromises } from "@/components/category-nimbus";

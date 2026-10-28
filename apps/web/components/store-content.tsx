@@ -1,5 +1,5 @@
 import { createElement, Fragment } from "react";
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 export type ContentNode =
   | string
   | {

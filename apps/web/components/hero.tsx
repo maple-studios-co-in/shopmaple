@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import Image from "@/components/storefront-image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
