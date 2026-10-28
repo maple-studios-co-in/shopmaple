@@ -30,10 +30,11 @@ async function pointer(target: Element, type: string, x: number, y = 60) {
     Object.defineProperty(event, "pointerId", { value: 1 });
     Object.defineProperty(event, "pointerType", { value: "mouse" });
     target.dispatchEvent(event);
-    // A browser emits a click after pointerup; dnd-kit consumes exactly one to suppress post-drag clicks.
-    if (type === "pointerup") target.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true, cancelable: true }));
   });
 }
+// dnd-kit stops propagation of every document click for 50ms after a drop. Nothing here waits on that
+// timer: stage moves come from pointerup (drag end) and the lost confirmation is a form submission, whose
+// default action still fires on a click inside that window.
 const columnOf = (name: string) => container.querySelector(`[data-card][data-name="${name}"]`)?.closest<HTMLElement>("[data-stage-column]")?.dataset.stageColumn;
 const rows = { new: [summary(1, { name: "Asha Rao", assignedToId: staffA.id }), summary(2, { name: "Rahul K", product: "" })], contacted: [summary(3, { name: "Meera Iyer", status: "contacted", version: 2 })], quoted: [], won: [], lost: [] };
 function transport(onWrite: (path: string, body: any) => Response | Promise<Response>) {

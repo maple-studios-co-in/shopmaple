@@ -39,13 +39,16 @@ function BoardCard({ card, today, staff, due, busy, lostPrompt, onMoveIntent, on
       {assignee ? <Avatar email={assignee.email} title={`Assigned to ${assignee.email}`} /> : card.assignedToId ? <Avatar email={card.assignedToId} title={`Assigned to staff ${card.assignedToId}`} /> : null}
     </div>
     {card.status === "lost" && card.lostReason && <p className="crm-card-reason">{card.lostReason}</p>}
-    {lostPrompt && <div className="crm-lost-form">
+    {lostPrompt && <form className="crm-lost-form" aria-label={`Reason for losing ${card.name || "enquiry"}`}
+      // A form submission, not a click handler: dnd-kit swallows document clicks for 50ms after a drop,
+      // while a submit button's default action still fires the submit event. The reason is always sent.
+      onSubmit={event => { event.preventDefault(); if (!busy && reason.trim()) onConfirmLost(card, reason.trim()); }}>
       <label className="crm-field"><span>Why was this enquiry lost?</span><textarea aria-label="Reason for losing" value={reason} maxLength={500} rows={2} onInput={event => setReason(event.currentTarget.value)} /></label>
       <div className="crm-lost-form-actions">
-        <button type="button" className="admin-primary crm-button-small" disabled={busy || !reason.trim()} onClick={() => onConfirmLost(card, reason.trim())}>Confirm lost</button>
+        <button type="submit" className="admin-primary crm-button-small" disabled={busy || !reason.trim()}>Confirm lost</button>
         <button type="button" className="crm-button-small" disabled={busy} onClick={() => { setReason(""); onCancelLost(); }}>Cancel</button>
       </div>
-    </div>}
+    </form>}
     <div className="crm-card-actions">
       <select aria-label={`Move ${card.name || "enquiry"} to`} value={card.status} disabled={busy || card.pending} onChange={event => onMoveIntent(card, stageOf(event.currentTarget.value))}>
         {stageOptions.map(([stage, label]) => <option key={stage} value={stage}>{label}</option>)}
