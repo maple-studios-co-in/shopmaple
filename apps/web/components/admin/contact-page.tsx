@@ -21,6 +21,7 @@ function describe(entry: ContactTimelineEntry): { title: string; kind: "stage" |
     case "task_created": return { title: "Follow-up added", kind: "task" };
     case "task_completed": return { title: "Follow-up done", kind: "task" };
     case "task_reopened": return { title: "Follow-up reopened", kind: "task" };
+    case "email_sending": return { title: "Email send unconfirmed", kind: "email" };
     case "email_sent": return { title: "Email sent", kind: "email" };
     case "email_failed": return { title: "Email failed to send", kind: "email" };
     case "updated": return { title: "Contact details updated", kind: "plain" };
@@ -194,16 +195,16 @@ export function ContactsDirectory({ session, onDenied, onOpenContact }: { sessio
     const current = ++sequence.current;
     setLoading(true); setError("");
     if (!next) { setItems([]); setCursor(null); }
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (next) params.set("cursor", next);
-    const result = await readJson(request, `/api/admin/crm/contacts${params.size ? `?${params}` : ""}`, contactListSchema, "Contacts");
+    // A search term may be an email or phone number: it is posted, never placed in a URL.
+    const result = query
+      ? await readJson(request, "/api/admin/crm/contacts/search", contactListSchema, "Contacts", { q: query, ...(next ? { cursor: next } : {}) }, session.csrfToken)
+      : await readJson(request, `/api/admin/crm/contacts${next ? `?cursor=${encodeURIComponent(next)}` : ""}`, contactListSchema, "Contacts");
     if (!active.current || current !== sequence.current) return;
     setLoading(false);
     if (!result.ok) { if (result.denied) { setItems([]); callbacks.current.onDenied(result.denied); } else setError(result.message); return; }
     setItems(rows => next ? [...rows, ...result.value.items.filter(item => !rows.some(row => row.id === item.id))] : result.value.items);
     setCursor(result.value.nextCursor);
-  }, [request, query]);
+  }, [request, query, session.csrfToken]);
   useEffect(() => { active.current = true; void load(); return () => { active.current = false; sequence.current++; }; }, [load, session.user.id]);
   return <section className="crm" aria-label="Contacts" aria-busy={loading}>
     <form className="crm-search" onSubmit={event => { event.preventDefault(); setQuery(term.trim()); }}>

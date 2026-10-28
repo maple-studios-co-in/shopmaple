@@ -17,7 +17,7 @@ export const staffA = { id: "c000000000000000000000001", email: "priya.menon@exa
 export const contactId = "ct_00000000-0000-4000-8000-0000000000aa";
 export const enquiryId = (n: number) => `enq_00000000-0000-4000-8000-00000000000${n}`;
 export const summary = (n: number, extra: Record<string, unknown> = {}) => ({
-  id: enquiryId(n), kind: "contact", status: "new", version: 0, assignedToId: null, contactId, name: `Customer ${n}`, product: "Nimbus sofa", createdAt: "2030-01-07T09:00:00.000Z", ...extra,
+  id: enquiryId(n), kind: "contact", status: "new", version: 0, assignedToId: null, contactId, name: `Customer ${n}`, product: "Nimbus sofa", nextDueOn: null as string | null, createdAt: "2030-01-07T09:00:00.000Z", ...extra,
 });
 export const detailOf = (row: ReturnType<typeof summary>, extra: Record<string, unknown> = {}) => ({
   ...row, email: "customer@example.invalid", phone: "+91 98765 43210", message: "Hello", lostReason: null,

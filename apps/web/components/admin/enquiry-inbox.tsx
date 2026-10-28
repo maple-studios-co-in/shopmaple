@@ -6,7 +6,7 @@ import { EnquiryDeliveryPanel } from "./enquiry-delivery-panel";
 import { CrmBoard } from "./crm-board";
 import { TaskViews } from "./crm-tasks";
 import { ContactPage, ContactsDirectory } from "./contact-page";
-import { EmptyState, Notice, Skeleton, StageChip, ageLabel, formatDate, localToday, stageOptions, useDirectory } from "./crm-primitives";
+import { DueBadge, EmptyState, Notice, Skeleton, StageChip, ageLabel, dueState, formatDate, localToday, stageOptions, useDirectory } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
@@ -57,14 +57,15 @@ function EnquiryInboxSession({ session, onExpired }: {
     function clear() { setItems([]); setDetail(null); setCursor(null); setLoaded(false); }
     function expire() { if (closed.current) return; closed.current = true; expired.current(); }
     function denied(code: number) { sequence.current++; clear(); setContactId(null); setBusy(false); setWorkflowBusy(false); setDeliveryBusy(false); if (code === 401) expire(); else setError("Your account does not have access to customer enquiries. Contact your administrator."); }
-    async function run(path: string, mode: "list" | "detail") {
+    async function run(path: string, mode: "list" | "detail", payload?: object) {
         const current = ++sequence.current;
         setBusy(true);
         setError("");
         setDetail(null);
         if (mode === "list") { setItems([]); setCursor(null); setLoaded(false); }
         try {
-            const response = await request(path, { cache: "no-store", credentials: "same-origin" });
+            // Search text can be a customer's email or phone: it goes in a POST body, never a URL.
+            const response = await request(path, payload ? { cache: "no-store", credentials: "same-origin", method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken }, body: JSON.stringify(payload) } : { cache: "no-store", credentials: "same-origin" });
             if (current !== sequence.current)
                 return;
             if (response.status === 401) {
@@ -105,23 +106,16 @@ function EnquiryInboxSession({ session, onExpired }: {
         }
     }
     function load(next?: string | null) {
-        const params = new URLSearchParams();
-        if (kind)
-            params.set("kind", kind);
-        if (status)
-            params.set("status", status);
-        if (assignment)
-            params.set("assignment", assignment);
-        if (assigneeId)
-            params.set("assigneeId", assigneeId);
-        if (from)
-            params.set("from", from);
-        if (to)
-            params.set("to", to);
-        if (query)
-            params.set("q", query);
-        if (next)
-            params.set("cursor", next);
+        const filters: Record<string, string> = {};
+        if (kind) filters.kind = kind;
+        if (status) filters.status = status;
+        if (assignment) filters.assignment = assignment;
+        if (assigneeId) filters.assigneeId = assigneeId;
+        if (from) filters.from = from;
+        if (to) filters.to = to;
+        if (next) filters.cursor = next;
+        if (query) return run("/api/admin/enquiries/search", "list", { ...filters, q: query });
+        const params = new URLSearchParams(filters);
         return run(`/api/admin/enquiries${params.size ? `?${params}` : ""}`, "list");
     }
     useEffect(() => {
@@ -178,7 +172,7 @@ function EnquiryInboxSession({ session, onExpired }: {
     <ul className="crm-rows">{items.map(row => <li key={row.id}><div className="crm-row" data-enquiry-row={row.id}>
       <div className="crm-row-primary"><strong>{row.name || "No name given"}</strong><span className="crm-faint">{kindLabels[row.kind] ?? row.kind} enquiry, {ageLabel(row.createdAt, today) === "Today" ? "today" : `${ageLabel(row.createdAt, today)} ago`} (<time dateTime={row.createdAt}>{formatDate(row.createdAt)}</time>)</span></div>
       <div className="crm-row-secondary"><span>{row.product || "No product noted"}</span><span>{row.assignedToId ? staff.get(row.assignedToId)?.email ?? `Staff ${row.assignedToId}` : "Unassigned"}</span><span className="crm-faint crm-num">{row.id}</span></div>
-      <div className="crm-row-meta"><StageChip stage={row.status} /></div>
+      <div className="crm-row-meta"><StageChip stage={row.status} />{row.nextDueOn && <DueBadge state={dueState(row.nextDueOn, today)} />}</div>
       <div className="crm-row-actions">
         <button type="button" className="crm-button-small" disabled={busy} onClick={event => { detailOpener.current = event.currentTarget; void run(`/api/admin/enquiries/${encodeURIComponent(row.id)}`, "detail"); }}>Open enquiry</button>
         {row.contactId && <button type="button" className="crm-button-quiet crm-button-small" disabled={busy} aria-label={`Open contact for ${row.name || "enquiry"}`} onClick={() => openContact(row.contactId!)}>Contact</button>}

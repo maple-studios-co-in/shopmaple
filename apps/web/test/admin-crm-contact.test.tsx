@@ -15,14 +15,14 @@ const timeline = [
   { id: enquiries[1]!.id, source: "enquiry", enquiryId: enquiries[1]!.id, action: "enquiry_received", actorId: null, stage: null, subject: null, body: null, createdAt: "2030-01-07T09:00:00.000Z" },
   { id: "c1", source: "contact", enquiryId: null, action: "task_completed", actorId: staffA.id, stage: null, subject: null, body: "Visit showroom", createdAt: "2030-01-06T10:00:00.000Z" },
 ];
-function transport(onWrite: (body: any) => Response, overrides?: (path: string) => Response | undefined) {
+function transport(onWrite: (body: any, path: string) => Response, overrides?: (path: string) => Response | undefined) {
   return fakeFetch((path, options) => {
-    if (options?.method === "POST") return onWrite(JSON.parse(String(options.body)));
+    if (options?.method === "POST") return onWrite(JSON.parse(String(options.body)), path);
     const override = overrides?.(path); if (override) return override;
     if (path.includes("/assignees")) return Response.json({ items: [staffA], nextCursor: null });
     if (path.includes("/timeline")) return Response.json({ items: timeline, nextCursor: null });
     if (path.endsWith(`/crm/contacts/${contactId}`)) return Response.json({ contact, enquiries });
-    if (path.startsWith("/api/admin/crm/contacts")) return Response.json({ items: [contact], nextCursor: null });
+    if (path === "/api/admin/crm/contacts" || path.startsWith("/api/admin/crm/contacts?")) return Response.json({ items: [contact], nextCursor: null });
     return Response.json(empty);
   });
 }
@@ -84,8 +84,8 @@ test("editing saves name, phone, city, tags and notes with the current version, 
 });
 
 test("the directory searches contacts on submit, shows an empty state and opens a contact", async () => {
-  const previous = fetch; const paths: string[] = []; const opened: string[] = [];
-  globalThis.fetch = transport(() => Response.json({}), path => { paths.push(path); return path.includes("q=nobody") ? Response.json(empty) : undefined; });
+  const previous = fetch; const paths: string[] = []; const opened: string[] = []; const searches: any[] = [];
+  globalThis.fetch = transport((body, path) => { if (path === "/api/admin/crm/contacts/search") { searches.push(body); paths.push(path); return Response.json(body.q === "nobody" ? empty : { items: [contact], nextCursor: null }); } return Response.json({}); }, path => { paths.push(path); return undefined; });
   const root = createRoot(container);
   try {
     await act(async () => root.render(<ContactsDirectory session={session} onDenied={() => {}} onOpenContact={id => opened.push(id)} />));
@@ -96,7 +96,9 @@ test("the directory searches contacts on submit, shows an empty state and opens 
     assert.deepEqual(opened, [contactId]);
     await setValue(dom, control("Search contacts"), "nobody");
     await act(async () => { control("Search contacts")!.closest("form")!.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })); });
-    assert.equal(paths.at(-1), "/api/admin/crm/contacts?q=nobody");
+    assert.equal(paths.at(-1), "/api/admin/crm/contacts/search", "search text is posted, never placed in a URL");
+    assert.deepEqual(searches, [{ q: "nobody" }]);
+    assert.ok(paths.every(path => !path.includes("nobody")));
     assert.ok(container.querySelector("[data-empty]")); assert.match(container.textContent!, /no contacts match/i);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });

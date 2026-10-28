@@ -64,9 +64,9 @@ export function Notice({ tone, children }: { tone: "error" | "status" | "info"; 
 
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };
 /** One bounded, validated admin read with the three outcomes every CRM panel has to handle. */
-export async function readJson<T>(request: ReturnType<typeof useAdminRequest>, path: string, schema: z.ZodType<T>, failure: string): Promise<ReadResult<T>> {
+export async function readJson<T>(request: ReturnType<typeof useAdminRequest>, path: string, schema: z.ZodType<T>, failure: string, body?: object, csrfToken?: string): Promise<ReadResult<T>> {
   try {
-    const response = await request(path, { cache: "no-store", credentials: "same-origin" });
+    const response = await request(path, body && csrfToken ? writeOptions(csrfToken, body) : { cache: "no-store", credentials: "same-origin" });
     if (response.status === 401 || response.status === 403) return { ok: false, denied: response.status };
     if (!response.ok) throw Error("request");
     return { ok: true, value: schema.parse(await response.json()) };

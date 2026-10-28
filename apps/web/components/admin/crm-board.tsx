@@ -3,10 +3,9 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDraggable, useDroppable, useSensor, useSensors, type Announcements, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowUpRight, GripVertical, UserRound } from "lucide-react";
-import { enquiryAdminDetailSchema, enquiryAdminListSchema, enquiryStageLabels, enquiryStages, followUpTaskListSchema, type EnquiryAdminSummary, type EnquiryStage } from "@shopmaple/contracts";
+import { enquiryAdminDetailSchema, enquiryAdminListSchema, enquiryStageLabels, enquiryStages, type EnquiryAdminSummary, type EnquiryStage } from "@shopmaple/contracts";
 import type { StaffSession } from "./dashboard";
-import { z } from "zod";
-import { Avatar, DueBadge, Notice, Skeleton, ageLabel, dueState, localToday, readJson, stageOptions, useDirectory, writeOptions, type DueState, type ReadResult } from "./crm-primitives";
+import { Avatar, DueBadge, Notice, Skeleton, ageLabel, dueState, localToday, readJson, stageOptions, useDirectory, writeOptions, type DueState } from "./crm-primitives";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 type Card = EnquiryAdminSummary & { lostReason?: string | null; pending?: boolean };
@@ -14,6 +13,8 @@ type Columns = Record<EnquiryStage, Card[]>;
 type Directory = ReturnType<typeof useDirectory>;
 const emptyColumns = (): Columns => ({ new: [], contacted: [], quoted: [], won: [], lost: [] });
 const emptyCopy: Record<EnquiryStage, string> = { new: "No new enquiries. Fresh submissions land here.", contacted: "Nothing contacted yet. Drag a card here once you have replied.", quoted: "Nothing quoted yet. Move an enquiry here when a quote goes out.", won: "No wins yet.", lost: "Nothing lost. Each lost enquiry keeps a short reason." };
+/** Cards per column; a column with more shows a pointer to the list view instead of loading everything. */
+const columnLimit = 50;
 const stageOf = (value: string): EnquiryStage => (enquiryStages as readonly string[]).includes(value) ? value as EnquiryStage : "new";
 
 function BoardCard({ card, today, staff, due, busy, lostPrompt, onMoveIntent, onConfirmLost, onCancelLost, onOpenEnquiry, onOpenContact }: {
@@ -59,13 +60,14 @@ function BoardCard({ card, today, staff, due, busy, lostPrompt, onMoveIntent, on
   </article>;
 }
 
-function BoardColumn({ stage, cards, loading, children }: { stage: EnquiryStage; cards: Card[]; loading: boolean; children: ReactNode }) {
+function BoardColumn({ stage, cards, loading, capped, children }: { stage: EnquiryStage; cards: Card[]; loading: boolean; capped: boolean; children: ReactNode }) {
   const { setNodeRef, isOver, active } = useDroppable({ id: stage });
   return <section ref={setNodeRef} className="crm-column" data-stage-column={stage} data-drop-active={isOver && active ? "true" : undefined} aria-label={`${enquiryStageLabels[stage]} column`}>
-    <header className="crm-column-head"><h4>{enquiryStageLabels[stage]}</h4><span className="crm-column-count crm-num" aria-label={`${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}</span></header>
+    <header className="crm-column-head"><h4>{enquiryStageLabels[stage]}</h4><span className="crm-column-count crm-num" aria-label={`${capped ? "more than " : ""}${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}{capped ? "+" : ""}</span></header>
     <div className="crm-column-body">
       {loading && cards.length === 0 ? <Skeleton rows={2} variant="card" /> : children}
       {!loading && cards.length === 0 && <p className="crm-column-empty">{emptyCopy[stage]}</p>}
+      {capped && <p className="crm-column-empty" data-column-capped={stage}>Showing the newest {cards.length}. More {enquiryStageLabels[stage].toLowerCase()} enquiries are in the list view.</p>}
     </div>
   </section>;
 }
@@ -77,7 +79,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
   const staff = useDirectory(onDenied);
   const contextId = useId();
   const [columns, setColumns] = useState<Columns>(emptyColumns);
-  const [due, setDue] = useState<Map<string, string>>(new Map());
+  const [capped, setCapped] = useState<Set<EnquiryStage>>(new Set());
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -92,28 +94,15 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
   const load = useCallback(async () => {
     const current = ++sequence.current;
     setLoading(true); setError(""); setNotice("");
-    const results = await Promise.all(enquiryStages.map(stage => readJson(request, `/api/admin/enquiries?status=${stage}&limit=50`, enquiryAdminListSchema, "Pipeline board")));
-    const tasks = await (async () => {
-      const found = new Map<string, string>();
-      let cursor: string | null = null;
-      for (let page = 0; page < 4; page++) {
-        const result: ReadResult<z.infer<typeof followUpTaskListSchema>> = await readJson(request, `/api/admin/crm/tasks?view=open&today=${today}&limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, followUpTaskListSchema, "Follow-ups");
-        if (!result.ok) return result;
-        for (const task of result.value.items) if (task.enquiryId && !(found.has(task.enquiryId) && found.get(task.enquiryId)! <= task.dueOn)) found.set(task.enquiryId, task.dueOn);
-        cursor = result.value.nextCursor;
-        if (!cursor) break;
-      }
-      return { ok: true as const, value: found };
-    })();
+    const results = await Promise.all(enquiryStages.map(stage => readJson(request, `/api/admin/enquiries?status=${stage}&limit=${columnLimit}`, enquiryAdminListSchema, "Pipeline board")));
     if (!active.current || current !== sequence.current) return;
     setLoading(false);
-    const denied = [...results, tasks].find(result => !result.ok && result.denied);
+    const denied = results.find(result => !result.ok && result.denied);
     if (denied && !denied.ok && denied.denied) { setColumns(emptyColumns()); callbacks.current.onDenied(denied.denied); return; }
-    const next = emptyColumns();
+    const next = emptyColumns(), full = new Set<EnquiryStage>();
     const failures: string[] = [];
-    results.forEach((result, index) => { const stage = enquiryStages[index]!; if (result.ok) next[stage] = result.value.items; else failures.push(enquiryStageLabels[stage]); });
-    setColumns(next);
-    if (tasks.ok) setDue(tasks.value); else failures.push("follow-ups");
+    results.forEach((result, index) => { const stage = enquiryStages[index]!; if (result.ok) { next[stage] = result.value.items; if (result.value.nextCursor) full.add(stage); } else failures.push(enquiryStageLabels[stage]); });
+    setColumns(next); setCapped(full);
     if (failures.length) setError(`We couldn't load part of the board (${failures.join(", ")}). Reload the board to try again.`);
   }, [request, today]);
   useEffect(() => { active.current = true; void load(); return () => { active.current = false; sequence.current++; }; }, [load, session.user.id]);
@@ -185,10 +174,9 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
     <p className="admin-sr-only" aria-live="polite">{liveMessage}</p>
     <DndContext id={contextId} sensors={sensors} collisionDetection={closestCenter} accessibility={{ announcements }} onDragEnd={dragEnd}>
       <div className="crm-board">
-        {enquiryStages.map(stage => <BoardColumn key={stage} stage={stage} cards={columns[stage]} loading={loading}>
+        {enquiryStages.map(stage => <BoardColumn key={stage} stage={stage} cards={columns[stage]} loading={loading} capped={capped.has(stage)}>
           {columns[stage].map(card => {
-            const dueOn = due.get(card.id);
-            return <BoardCard key={card.id} card={card} today={today} staff={staff} due={dueOn ? dueState(dueOn, today) : null} busy={busy}
+            return <BoardCard key={card.id} card={card} today={today} staff={staff} due={card.nextDueOn ? dueState(card.nextDueOn, today) : null} busy={busy}
               lostPrompt={lostPrompt === card.id} onMoveIntent={intent} onConfirmLost={(item, reason) => void move(item, "lost", reason)} onCancelLost={() => setLostPrompt(null)}
               onOpenEnquiry={onOpenEnquiry} onOpenContact={onOpenContact} />;
           })}

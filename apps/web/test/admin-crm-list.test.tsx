@@ -7,8 +7,10 @@ const { createRoot } = await import("react-dom/client");
 const { EnquiryInbox } = await import("../components/admin/enquiry-inbox");
 const button = makeButton(container);
 const rows = [summary(1, { name: "Asha Rao", status: "quoted", assignedToId: staffA.id }), summary(2, { name: "Rahul K", kind: "bulk" })];
+const searches: { body: any; csrf: string | null }[] = [];
 function transport(list: (path: string) => Response | Promise<Response> | undefined) {
   return fakeFetch((path, options) => {
+    if (path === "/api/admin/enquiries/search" && options?.method === "POST") { searches.push({ body: JSON.parse(String(options.body)), csrf: new Headers(options.headers).get("X-CSRF-Token") }); return list(path) ?? Response.json({ items: rows, nextCursor: null }); }
     if (options?.method === "POST") return Response.json({});
     if (path.includes("/assignees")) return Response.json({ items: [staffA], nextCursor: null });
     if (path.startsWith("/api/admin/enquiries?") || path === "/api/admin/enquiries") return list(path) ?? Response.json({ items: rows, nextCursor: null });
@@ -36,7 +38,7 @@ test("list rows show name, product and stage and link to both the enquiry and th
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
 
-test("filters and search build one query: stage, assignee, kind, date range and free text", async () => {
+test("filters build a GET query while free-text search posts a body with the same filters", async () => {
   const previous = fetch; const paths: string[] = [];
   globalThis.fetch = transport(path => { paths.push(path); return undefined; });
   const root = createRoot(container);
@@ -54,7 +56,9 @@ test("filters and search build one query: stage, assignee, kind, date range and 
     await setValue(dom, control("Search enquiries"), "nimbus");
     assert.equal(paths.length, before, "typing does not query on every keystroke");
     await act(async () => { control("Search enquiries")!.closest("form")!.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })); });
-    assert.equal(paths.at(-1), `/api/admin/enquiries?kind=bulk&status=quoted&assigneeId=${staffA.id}&from=2030-01-01&to=2030-01-31&q=nimbus`);
+    assert.equal(paths.at(-1), "/api/admin/enquiries/search", "search text is posted, never placed in a URL");
+    assert.ok(paths.every(path => !path.includes("q=") && !path.includes("nimbus")));
+    assert.deepEqual(searches.at(-1), { body: { kind: "bulk", status: "quoted", assigneeId: staffA.id, from: "2030-01-01", to: "2030-01-31", q: "nimbus" }, csrf: session.csrfToken });
     await act(async () => button("Clear filters").click());
     assert.equal(paths.at(-1), "/api/admin/enquiries");
     assert.equal((control("Search enquiries") as HTMLInputElement).value, "");

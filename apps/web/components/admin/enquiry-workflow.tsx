@@ -16,6 +16,7 @@ function describeActivity(item: EnquiryActivity, staff: (id: string) => string) 
     case "task_created": return "Follow-up added";
     case "task_completed": return "Follow-up done";
     case "task_reopened": return "Follow-up reopened";
+    case "email_sending": return `Email send unconfirmed: ${item.subject ?? ""}`;
     case "email_sent": return `Email sent: ${item.subject ?? ""}`;
     case "email_failed": return `Email failed to send: ${item.subject ?? ""}`;
   }

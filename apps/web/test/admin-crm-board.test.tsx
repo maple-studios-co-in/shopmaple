@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import React, { act } from "react";
-import { detailOf, empty, fakeFetch, installDom, makeButton, session, setValue, staffA, summary, task } from "./support/crm-fixtures";
+import { detailOf, empty, fakeFetch, installDom, makeButton, session, setValue, staffA, summary } from "./support/crm-fixtures";
 const { dom, container } = installDom();
 const { createRoot } = await import("react-dom/client");
 const { CrmBoard } = await import("../components/admin/crm-board");
@@ -36,14 +36,15 @@ async function pointer(target: Element, type: string, x: number, y = 60) {
 // timer: stage moves come from pointerup (drag end) and the lost confirmation is a form submission, whose
 // default action still fires on a click inside that window.
 const columnOf = (name: string) => container.querySelector(`[data-card][data-name="${name}"]`)?.closest<HTMLElement>("[data-stage-column]")?.dataset.stageColumn;
-const rows = { new: [summary(1, { name: "Asha Rao", assignedToId: staffA.id }), summary(2, { name: "Rahul K", product: "" })], contacted: [summary(3, { name: "Meera Iyer", status: "contacted", version: 2 })], quoted: [], won: [], lost: [] };
+const rows = { new: [summary(1, { name: "Asha Rao", assignedToId: staffA.id, nextDueOn: "2030-01-09" }), summary(2, { name: "Rahul K", product: "", nextDueOn: "2030-01-10" })], contacted: [summary(3, { name: "Meera Iyer", status: "contacted", version: 2 })], quoted: [], won: [], lost: [] };
+let wonCursor: string | null = null;
 function transport(onWrite: (path: string, body: any) => Response | Promise<Response>) {
   return fakeFetch((path, options) => {
     if (options?.method === "POST") return onWrite(path, JSON.parse(String(options.body)));
     if (path.includes("/assignees")) return Response.json({ items: [staffA], nextCursor: null });
-    if (path.includes("/crm/tasks")) return Response.json({ items: [task("c000000000000000000000t01", { enquiryId: rows.new[0]!.id, dueOn: "2030-01-09" }), task("c000000000000000000000t02", { enquiryId: rows.new[1]!.id, dueOn: "2030-01-10" })], nextCursor: null });
+    if (path.includes("/crm/tasks")) throw new Error("the board must not query tasks; rows carry nextDueOn");
     const stage = new URL(path, "http://localhost").searchParams.get("status") as keyof typeof rows | null;
-    if (path.startsWith("/api/admin/enquiries?") && stage) return Response.json({ items: rows[stage], nextCursor: null });
+    if (path.startsWith("/api/admin/enquiries?") && stage) return Response.json({ items: rows[stage], nextCursor: stage === "won" ? wonCursor : null });
     return Response.json(empty);
   });
 }
@@ -58,13 +59,14 @@ test("board renders one column per stage with cards showing name, product, age, 
     const columns = [...container.querySelectorAll<HTMLElement>("[data-stage-column]")].map(column => column.dataset.stageColumn);
     assert.deepEqual(columns, ["new", "contacted", "quoted", "won", "lost"]);
     assert.ok(paths.some(path => path.includes("status=new") && path.includes("limit=50")));
-    assert.ok(paths.some(path => path.includes("/crm/tasks?") && path.includes("view=open") && path.includes("today=2030-01-10")));
+    assert.ok(!paths.some(path => path.includes("/crm/tasks")), "due badges come from the rows, not a task query");
+    assert.equal(container.querySelector("[data-column-capped]"), null, "no cap indicator when every stage fits");
     const asha = container.querySelector<HTMLElement>('[data-card][data-name="Asha Rao"]')!;
     assert.ok(asha, "card for Asha");
     assert.match(asha.textContent!, /Nimbus sofa/);
     assert.match(asha.textContent!, /3d/, "age of the enquiry relative to today");
     assert.equal(asha.querySelector("[data-avatar]")?.textContent?.trim(), "PM", "assignee initials from the directory");
-    assert.equal(asha.querySelector("[data-due]")?.getAttribute("data-due"), "overdue");
+    assert.equal(asha.querySelector("[data-due]")?.getAttribute("data-due"), "overdue", "nextDueOn before today");
     const rahul = container.querySelector<HTMLElement>('[data-card][data-name="Rahul K"]')!;
     assert.equal(rahul.querySelector("[data-due]")?.getAttribute("data-due"), "today");
     assert.equal(rahul.querySelector("[data-avatar]"), null, "unassigned cards show no avatar");
@@ -143,4 +145,17 @@ test("a failed column load shows an inline error with retry instead of an empty 
     failing = false; await act(async () => button("Reload board").click());
     assert.equal(container.querySelector('[role="alert"]'), null);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("a stage with more than the column limit shows a capped count and points at the list view", async () => {
+  const previous = fetch; wonCursor = "opaque";
+  globalThis.fetch = transport(() => Response.json({}));
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<CrmBoard session={session} onDenied={() => {}} onOpenEnquiry={() => {}} onOpenContact={() => {}} today="2030-01-10" />));
+    const won = container.querySelector<HTMLElement>('[data-stage-column="won"]')!;
+    assert.match(won.querySelector("[data-column-capped]")?.textContent ?? "", /list view/i);
+    assert.match(won.querySelector(".crm-column-count")?.textContent ?? "", /\+$/, "the count is marked as a lower bound");
+    assert.equal(container.querySelector('[data-stage-column="new"] [data-column-capped]'), null);
+  } finally { wonCursor = null; await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
