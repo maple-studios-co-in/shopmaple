@@ -39,7 +39,7 @@ test("storefront links inside the frame reopen on the draft with the same token;
       </ShopProvider>,
     ));
     const byText = (text: string) => { const a = [...document.querySelectorAll("a")].find((el) => el.textContent === text); assert.ok(a, `Missing ${text} link`); return a; };
-    assert.equal(document.querySelector('[role="status"]')?.textContent, "Draft preview — not published · version 7");
+    assert.equal(document.querySelector('[role="status"]')?.textContent, "Draft preview, not published. Version 7");
     const query = `?token=${encodeURIComponent(token)}`;
 
     const chromeLink = [...document.querySelectorAll<HTMLAnchorElement>("header a[href], footer a[href]")].find((a) => a.getAttribute("href")?.startsWith("/policies/"));
