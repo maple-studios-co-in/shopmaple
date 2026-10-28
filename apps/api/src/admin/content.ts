@@ -1,7 +1,8 @@
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { Prisma, type PrismaClient, type ShopContent } from "@prisma/client";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { storefrontContentSchema } from "@shopmaple/contracts";
+import { storefrontContentSchema, previewTokenPattern } from "@shopmaple/contracts";
 import { HttpError } from "../cart.js";
 import { prepareMediaForPublication } from "./media.js";
 import { normalizeArticlePublicationDates, validateAuthoredContentLinks } from "./authored-articles.js";
@@ -21,6 +22,28 @@ const conflict = () =>
     "CONTENT_VERSION_CONFLICT",
     "Someone else changed this content. Reload before saving again.",
   );
+const previewTokenLifetime = 15 * 60_000;
+const previewPayloadSchema = z.object({ s: z.string().min(1).max(100), v: version, e: z.number().int().min(0) }).strict();
+const encode = (value: Buffer | string) => Buffer.from(value).toString("base64url");
+const sign = (secret: string, payload: string) => encode(createHmac("sha256", secret).update(payload).digest());
+/** A staff preview token: base64url payload bound to one staff member and draft version, plus an HMAC-SHA256 signature. */
+export function signPreviewToken(secret: string, input: { staffId: string; version: number; expiresAt: Date }) {
+  const payload = encode(JSON.stringify({ s: input.staffId, v: input.version, e: Math.floor(input.expiresAt.getTime() / 1000) }));
+  return `${payload}.${sign(secret, payload)}`;
+}
+const previewInvalid = () => new HttpError(403, "PREVIEW_TOKEN_INVALID", "This preview link is not valid. Open the preview again from the editor.");
+/** Verifies the signature before reading the payload; staff and version binding are checked by the caller. */
+export function verifyPreviewToken(secret: string, token: string, now = new Date()) {
+  if (!previewTokenPattern.test(token)) throw previewInvalid();
+  const [encodedPayload = "", signature = ""] = token.split(".");
+  const expected = Buffer.from(sign(secret, encodedPayload), "base64url"), supplied = Buffer.from(signature, "base64url");
+  if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) throw previewInvalid();
+  let payload: z.infer<typeof previewPayloadSchema>;
+  try { payload = previewPayloadSchema.parse(JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"))); }
+  catch { throw previewInvalid(); }
+  if (payload.e * 1000 <= now.getTime()) throw new HttpError(403, "PREVIEW_TOKEN_EXPIRED", "This preview link has expired. Open the preview again from the editor.");
+  return { staffId: payload.s, version: payload.v, expiresAt: new Date(payload.e * 1000) };
+}
 function serialize(row: ShopContent | null) {
   return row
     ? {
@@ -136,7 +159,10 @@ export function registerContentRoutes(
   db: PrismaClient,
   secure: boolean,
   mediaRoot?: string,
+  previewSecret?: string,
 ) {
+  // Without a configured secret, tokens are only valid for this process and its lifetime.
+  const secret = previewSecret ?? randomBytes(32).toString("hex");
   app.get("/api/content/storefront", async (_req, res) => {
     res.set("Cache-Control", "no-store");
     const row = await db.shopContent.findUnique({
@@ -168,6 +194,36 @@ export function registerContentRoutes(
   app.post("/api/admin/content/rollback", async (req, res) =>
     res.json(await change(db, req, secure, "rollback")),
   );
+  app.post("/api/admin/content/preview", async (req, res) => {
+    // Session, role and CSRF first, so a rejected caller learns nothing about the body shape.
+    const staff = await requireStaff(db, req, secure, true);
+    const input = expectedSchema.parse(req.body);
+    const row = await db.shopContent.findUnique({ where: { id: documentId }, select: { version: true } });
+    if (!row) throw new HttpError(409, "CONTENT_DRAFT_REQUIRED", "Save a draft before previewing it.");
+    if (row.version !== input.expectedVersion) throw conflict();
+    const expiresAt = new Date(Date.now() + previewTokenLifetime);
+    res.json({
+      token: signPreviewToken(secret, { staffId: staff.user.id, version: row.version, expiresAt }),
+      version: row.version,
+      expiresAt: expiresAt.toISOString(),
+    });
+  });
+  app.get("/api/admin/content/preview", async (req, res) => {
+    const staff = await requireStaff(db, req, secure);
+    const token = z.string().min(1).max(512).parse(req.query.token);
+    const claims = verifyPreviewToken(secret, token);
+    if (claims.staffId !== staff.user.id) throw previewInvalid();
+    const row = await db.shopContent.findUnique({ where: { id: documentId } });
+    if (!row || row.version !== claims.version)
+      throw new HttpError(409, "PREVIEW_VERSION_STALE", "The draft has changed since this preview was opened. Open the preview again from the editor.");
+    res.set("X-Robots-Tag", "noindex, nofollow");
+    res.json({
+      version: row.version,
+      publishedVersion: row.publishedVersion,
+      expiresAt: claims.expiresAt.toISOString(),
+      content: storefrontContentSchema.parse(row.draft),
+    });
+  });
   app.get("/api/admin/content/revisions", async (_req, res) => {
     const revisions = await db.shopContentRevision.findMany({
       where: { documentId },

@@ -11,7 +11,7 @@ import { HomeCarousel } from "@/components/home-carousel";
 import { CategoryIntroduction } from "@/components/category-controls";
 import type { CategoryPageSlug } from "@shopmaple/contracts";
 import { resolveCategoryPage } from "@/lib/category-content-defaults";
-import { getPublishedContent } from "@/lib/content";
+import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import sourceCatalog from "@/data/landing-catalog.json";
 type SourceProduct = {
   handle: string;
@@ -182,8 +182,8 @@ export function CategoryValues({
     </section>
   );
 }
-export async function CategoryLanding({ slug }: { slug: CategoryPageSlug }) {
-  const content = await getPublishedContent();
+export async function CategoryLanding({ slug, content: supplied }: { slug: CategoryPageSlug; content?: StorefrontDocument }) {
+  const content = supplied ?? await getPublishedContent();
   const data = resolveCategoryPage(slug, content.landingPages);
   const handles = [...new Set(data.sections
     .filter((section) => section.type === "products")
@@ -211,7 +211,7 @@ export async function CategoryLanding({ slug }: { slug: CategoryPageSlug }) {
           return (
             <div key={section.key}>
               {campaign ? (
-                <CampaignBanner campaign={campaign} />
+                <CampaignBanner campaign={campaign} content={content} />
               ) : (
                 <CategoryBanner
                   desktop={section.desktop!}

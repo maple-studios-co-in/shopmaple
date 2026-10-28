@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { ChromeLink, ChromeNavigationItem, FooterContent, SiteChrome } from "@shopmaple/contracts";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { Field } from "./field";
+import { SortableList } from "./sortable-list";
 
 const newId = () => `chrome-${crypto.randomUUID()}`;
 const newLink = (): ChromeLink => ({id:newId(),label:"New link",href:"/collections/all",enabled:true});
@@ -27,17 +28,19 @@ function Rows<T>({title,name,items,onChange,render,identity,create,min=0,max=99}
   return <section aria-label={title} className="admin-chrome-list">
     <h3>{title}</h3>
     {create && <p>{items.length} of {max}. {min>0 ? `Keep at least ${min}.` : "All entries may be removed or hidden."}</p>}
-    <ol>{items.map((item,index)=>{
+    <SortableList items={items} getId={identity} getLabel={(_,index)=>lower(`${name} ${index+1}`)} onReorder={next=>onChange(next)}
+      rowProps={(item,index)=>{const id=identity(item);return {"data-chrome-row":id,tabIndex:-1,"aria-label":`${name} ${index+1}`,ref:(node:HTMLElement|null)=>{if(node)nodes.current.set(id,node as HTMLLIElement);else nodes.current.delete(id);}};}}
+      renderItem={(item,index,handle)=>{
       const id=identity(item), label=`${name} ${index+1}`;
-      return <li key={id} data-chrome-row={id} tabIndex={-1} aria-label={label} ref={node=>{if(node)nodes.current.set(id,node);else nodes.current.delete(id);}}>
+      return <>
         {render(item,index,next=>onChange(items.map((old,i)=>i===index?next:old)))}
-        <div className="admin-actions">{([-1,1] as const).map(direction=><button key={direction} type="button" aria-label={`Move ${lower(label)} ${direction===-1?"up":"down"}`} disabled={index+direction<0||index+direction>=items.length} onClick={()=>{
+        <div className="admin-actions">{handle}{([-1,1] as const).map(direction=><button key={direction} type="button" aria-label={`Move ${lower(label)} ${direction===-1?"up":"down"}`} disabled={index+direction<0||index+direction>=items.length} onClick={()=>{
           const next=[...items]; [next[index],next[index+direction]]=[next[index+direction]!,next[index]!]; update(next,id);
         }}>{direction===-1?"Move up":"Move down"}</button>)}
         {create && <button type="button" aria-label={`Remove ${lower(label)}`} disabled={items.length<=min} onClick={()=>update(items.filter((_,i)=>i!==index),items[index+1]?identity(items[index+1]!):items[index-1]?identity(items[index-1]!):"")}>Remove</button>}
         </div>
-      </li>;
-    })}</ol>
+      </>;
+    }}/>
     {create && <button ref={add} type="button" disabled={items.length>=max} onClick={()=>{const item=create();update([...items,item],identity(item));}}>Add {lower(name)}</button>}
   </section>;
 }
@@ -86,10 +89,13 @@ function NavigationFields({items,onChange}:{items:ChromeNavigationItem[];onChang
 function FooterLayout<K extends string>({title,name,items,onChange}:{title:string;name:string;items:{key:K;enabled:boolean}[];onChange:(items:{key:K;enabled:boolean}[])=>void}) {
   const nodes=useRef(new Map<K,HTMLLIElement>()),pending=useRef<K|null>(null);
   useLayoutEffect(()=>{if(pending.current){nodes.current.get(pending.current)?.focus();pending.current=null;}},[items]);
-  return <section aria-label={title}><h3>{title}</h3><ol className="admin-section-list">{items.map((item,index)=><li key={item.key} tabIndex={-1} aria-label={`${name} ${item.key}`} ref={node=>{if(node)nodes.current.set(item.key,node);else nodes.current.delete(item.key);}}>
+  return <section aria-label={title}><h3>{title}</h3><SortableList items={items} getId={item=>item.key} getLabel={item=>`${name} ${item.key}`} className="admin-section-list" onReorder={next=>onChange(next)}
+    rowProps={item=>({tabIndex:-1,"aria-label":`${name} ${item.key}`,ref:(node:HTMLElement|null)=>{if(node)nodes.current.set(item.key,node as HTMLLIElement);else nodes.current.delete(item.key);}})}
+    renderItem={(item,index,handle)=><>
+    {handle}
     <Toggle label={`Show ${name} ${item.key}`} checked={item.enabled} onChange={enabled=>onChange(items.map(old=>old.key===item.key?{...old,enabled}:old))}/>
     <div className="admin-actions">{([-1,1] as const).map(direction=><button key={direction} type="button" aria-label={`Move ${name} ${item.key} ${direction===-1?"up":"down"}`} disabled={index+direction<0||index+direction>=items.length} onClick={()=>{const next=[...items];[next[index],next[index+direction]]=[next[index+direction]!,next[index]!];pending.current=item.key;onChange(next);}}>{direction===-1?"Move up":"Move down"}</button>)}</div>
-  </li>)}</ol></section>;
+  </>}/></section>;
 }
 const footerTextFields = [
   ["shopHeading","Shop heading",160],["helpHeading","Help heading",160],["careHeading","Customer care heading",160],

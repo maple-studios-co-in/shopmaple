@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { ContentImage as Image } from "@/components/content-image";
 import { Instagram } from "lucide-react";
 import { HomeCarousel } from "./home-carousel";
 

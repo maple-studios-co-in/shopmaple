@@ -15,6 +15,8 @@ export function StoreChromeView({
   siteChrome?: SiteChrome;
   children: ReactNode;
 }) {
+  // The staff preview frame renders the draft's own chrome inside the page.
+  if (path?.startsWith("/admin/preview-frame/")) return <>{children}</>;
   if (path === "/admin" || path?.startsWith("/admin/"))
     return <main id="main">{children}</main>;
   return (

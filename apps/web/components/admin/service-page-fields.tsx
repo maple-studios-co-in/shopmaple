@@ -2,6 +2,7 @@
 import type { ServicePagesContent } from "@shopmaple/contracts";
 import { resolveServicePages } from "@/lib/service-page-defaults";
 import { Field } from "./forms";
+import { SortableList } from "./sortable-list";
 
 const contactLabels = { intro: "Introduction and form", help: "Help", cities: "Cities" };
 const bulkLabels = { hero: "Hero and form", trust: "Trust", process: "Process", business: "Business", cities: "Cities" };
@@ -12,8 +13,10 @@ function Sections<K extends string>({ name, items, labels, onChange }: {
   name: string; items: { key: K; enabled: boolean }[]; labels: Record<K, string>;
   onChange: (items: { key: K; enabled: boolean }[]) => void;
 }) {
-  return <><h3>Sections</h3><p>Move sections or hide them. The page keeps an accessible heading.</p>
-    <ol className="admin-section-list">{items.map((item, index) => <li key={item.key}>
+  return <><h3>Sections</h3><p>Drag sections into order, or use the Move buttons, and hide the ones you do not need. The page keeps an accessible heading.</p>
+    <SortableList items={items} getId={item => item.key} getLabel={item => `${name} ${labels[item.key]}`} className="admin-section-list" onReorder={next => onChange(next)}
+      renderItem={(item, index, handle) => <>
+      {handle}
       <label><input type="checkbox" aria-label={`Show ${name} ${labels[item.key]}`} checked={item.enabled}
         onChange={event => onChange(items.map(entry => entry.key === item.key ? { ...entry, enabled: event.target.checked } : entry))} />
         <span>{labels[item.key]}</span></label>
@@ -22,7 +25,7 @@ function Sections<K extends string>({ name, items, labels, onChange }: {
         disabled={index + direction < 0 || index + direction >= items.length}
         onClick={() => { const next = [...items]; [next[index], next[index + direction]] = [next[index + direction]!, next[index]!]; onChange(next); }}>
         {direction === -1 ? "Move up" : "Move down"}</button>)}</div>
-    </li>)}</ol></>;
+    </>} /></>;
 }
 const field = (label: string, value: string, maxLength: number, onChange: (value: string) => void, multiline = false) =>
   <Field key={label} label={label} value={value} maxLength={maxLength} onChange={onChange} multiline={multiline} />;

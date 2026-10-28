@@ -5,6 +5,7 @@ import {
   type CategorySectionContent,
 } from "@shopmaple/contracts";
 import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
+import { SortableList } from "./sortable-list";
 
 function TextField({
   label,
@@ -102,13 +103,22 @@ export function CategoryFields({
                 />
               </div>
               <h3>Sections</h3>
-              {page.sections.map((section, index) => (
-                <details key={section.key}>
+              <p>Open a section to drag it into order or use its Move buttons.</p>
+              <SortableList
+                items={page.sections}
+                getId={(section) => section.key}
+                getLabel={(section) => `${label} ${section.key}`}
+                tag="div"
+                rowTag="details"
+                onReorder={(sections) => update({ ...page, sections })}
+                renderItem={(section, index, handle) => (
+                <>
                   <summary>
                     {section.key.replaceAll("-", " ")}
                     {section.enabled ? "" : " (hidden)"}
                   </summary>
                   <div className="admin-actions">
+                    {handle}
                     <label className="admin-check">
                       <input
                         type="checkbox"
@@ -193,8 +203,9 @@ export function CategoryFields({
                       </div>
                     ))}
                   </div>
-                </details>
-              ))}
+                </>
+                )}
+              />
             </section>
           </details>
         );

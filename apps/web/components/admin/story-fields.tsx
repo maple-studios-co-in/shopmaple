@@ -2,6 +2,7 @@
 import type { StoryPageContent, StorySectionKey } from "@shopmaple/contracts";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 import { Field } from "./forms";
+import { SortableList } from "./sortable-list";
 
 const labels: Record<StorySectionKey, string> = {
   hero: "Hero", "belief-film": "Belief and film", journey: "Journey", cities: "Cities",
@@ -30,10 +31,12 @@ export function StoryFields({ value, onChange }: {
       </div>
       <p>Use one line per heading line, up to three. Text displays as text, including any HTML.</p>
       <h3>Sections</h3>
-      <p>The page heading stays available to screen readers when the hero is hidden.</p>
-      <ol className="admin-section-list">
-        {page.sections.map((section, index) => (
-          <li key={section.key}>
+      <p>Drag sections into order or use the Move buttons. The page heading stays available to screen readers when the hero is hidden.</p>
+      <SortableList items={page.sections} getId={section => section.key} getLabel={section => `Our Story ${labels[section.key]}`} className="admin-section-list"
+        onReorder={sections => update({ sections })}
+        renderItem={(section, index, handle) => (
+          <>
+            {handle}
             <label>
               <input type="checkbox" aria-label={`Show Our Story ${labels[section.key]}`} checked={section.enabled}
                 onChange={event => update({ sections: page.sections.map(item => item.key === section.key ? { ...item, enabled: event.target.checked } : item) })} />
@@ -52,9 +55,9 @@ export function StoryFields({ value, onChange }: {
                 </button>
               ))}
             </div>
-          </li>
-        ))}
-      </ol>
+          </>
+        )}
+      />
       <h3>Journey</h3>
       {page.timeline.map((item, index) => {
         function chapter(patch: Partial<StoryPageContent["timeline"][number]>) {

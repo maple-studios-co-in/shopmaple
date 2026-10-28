@@ -1,6 +1,6 @@
 import { InstagramRail, MovingCities } from "@/components/motion-rail";
 import instagramPosts from "@/data/instagram-posts.json";
-import Image, { getImageProps } from "next/image";
+import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
 import { ArrowRight, Instagram } from "lucide-react";
 import { shopFile } from "@/lib/format";

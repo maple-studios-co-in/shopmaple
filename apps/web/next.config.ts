@@ -46,6 +46,16 @@ const config: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
+      {
+        // Staff pages and draft previews must never be stored by browsers or the CDN.
+        source: "/admin/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
+        // The draft preview frame is embedded only by the same-origin preview shell.
+        source: "/admin/preview-frame/:path*",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
     ];
   },
 };
