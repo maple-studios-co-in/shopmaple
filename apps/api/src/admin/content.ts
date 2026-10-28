@@ -2,7 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { Prisma, type PrismaClient, type ShopContent } from "@prisma/client";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { storefrontContentSchema } from "@shopmaple/contracts";
+import { storefrontContentSchema, previewTokenPattern } from "@shopmaple/contracts";
 import { HttpError } from "../cart.js";
 import { prepareMediaForPublication } from "./media.js";
 import { normalizeArticlePublicationDates, validateAuthoredContentLinks } from "./authored-articles.js";
@@ -34,12 +34,12 @@ export function signPreviewToken(secret: string, input: { staffId: string; versi
 const previewInvalid = () => new HttpError(403, "PREVIEW_TOKEN_INVALID", "This preview link is not valid. Open the preview again from the editor.");
 /** Verifies the signature before reading the payload; staff and version binding are checked by the caller. */
 export function verifyPreviewToken(secret: string, token: string, now = new Date()) {
-  const match = /^([A-Za-z0-9_-]{1,400})\.([A-Za-z0-9_-]{43})$/.exec(token);
-  if (!match) throw previewInvalid();
-  const expected = Buffer.from(sign(secret, match[1]!), "base64url"), supplied = Buffer.from(match[2]!, "base64url");
+  if (!previewTokenPattern.test(token)) throw previewInvalid();
+  const [encodedPayload = "", signature = ""] = token.split(".");
+  const expected = Buffer.from(sign(secret, encodedPayload), "base64url"), supplied = Buffer.from(signature, "base64url");
   if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) throw previewInvalid();
   let payload: z.infer<typeof previewPayloadSchema>;
-  try { payload = previewPayloadSchema.parse(JSON.parse(Buffer.from(match[1]!, "base64url").toString("utf8"))); }
+  try { payload = previewPayloadSchema.parse(JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"))); }
   catch { throw previewInvalid(); }
   if (payload.e * 1000 <= now.getTime()) throw new HttpError(403, "PREVIEW_TOKEN_EXPIRED", "This preview link has expired. Open the preview again from the editor.");
   return { staffId: payload.s, version: payload.v, expiresAt: new Date(payload.e * 1000) };
@@ -195,8 +195,9 @@ export function registerContentRoutes(
     res.json(await change(db, req, secure, "rollback")),
   );
   app.post("/api/admin/content/preview", async (req, res) => {
-    const input = expectedSchema.parse(req.body);
+    // Session, role and CSRF first, so a rejected caller learns nothing about the body shape.
     const staff = await requireStaff(db, req, secure, true);
+    const input = expectedSchema.parse(req.body);
     const row = await db.shopContent.findUnique({ where: { id: documentId }, select: { version: true } });
     if (!row) throw new HttpError(409, "CONTENT_DRAFT_REQUIRED", "Save a draft before previewing it.");
     if (row.version !== input.expectedVersion) throw conflict();

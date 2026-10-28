@@ -1,12 +1,12 @@
 import "server-only";
 import { z } from "zod";
-import { storefrontContentSchema } from "@shopmaple/contracts";
+import { previewTokenPattern, storefrontContentSchema } from "@shopmaple/contracts";
 import type { StorefrontDocument } from "./content";
 
 const uploadPattern = /^\/media\/uploads\/([a-f0-9]{64})\.webp$/;
 const imageKeys = new Set(["image", "mobileImage", "desktopImage", "src"]);
 const staffCookieNames = new Set(["shop_admin", "__Host-shop_admin"]);
-export const previewTokenPattern = /^[A-Za-z0-9_-]{1,400}\.[A-Za-z0-9_-]{43}$/;
+export { previewTokenPattern };
 const draftSchema = z.object({
   version: z.number().int().min(1),
   publishedVersion: z.number().int().min(0).nullable(),
@@ -21,6 +21,8 @@ export type DraftPreview =
 /**
  * Points library uploads at the staff-only media preview route so unpublished images
  * render for signed-in staff. Only image fields change; prose that mentions a path does not.
+ * The image keys here cover the same fields that `prepareMediaForPublication` in
+ * apps/api/src/admin/media.ts walks explicitly when a draft is published; change both together.
  */
 export function previewMediaContent<T>(content: T): T {
   const walk = (value: unknown, key?: string): unknown => {

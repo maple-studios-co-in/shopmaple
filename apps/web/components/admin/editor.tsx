@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
+  previewTokenPattern,
   storefrontContentSchema,
   type StorefrontContent,
 } from "@shopmaple/contracts";
@@ -111,6 +112,8 @@ export function ContentEditor({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [previewLink, setPreviewLink] = useState("");
+  // PageFields starts on its first page each time the tab opens and reports later selections.
+  const [selectedPage, setSelectedPage] = useState(0);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   function acceptDocument(value: unknown) {
     const next = parseDocument(value);
@@ -198,7 +201,7 @@ export function ContentEditor({
         : existingPage === "bulk" ? "pages/bulk-enquiry"
         : "pages/returns";
     if (tab === "Pages") {
-      const page = content?.pages.find((item) => item.slug);
+      const page = [content?.pages[selectedPage], ...(content?.pages ?? [])].find((item) => item?.slug);
       if (page) return `pages/${encodeURIComponent(page.slug)}`;
     }
     return "home";
@@ -207,12 +210,12 @@ export function ContentEditor({
     if (!document || !content || busy || conflict || scheduleEditing) return;
     setPreviewLink("");
     // Open the tab inside the click so pop-up blockers allow it; it navigates once the token exists.
-    const tab = window.open("about:blank", "_blank");
+    const popup = window.open("about:blank", "_blank");
     let version = document.version;
     if (dirty || document.draft === null) {
       const saved = await write("save");
       if (!saved) {
-        tab?.close();
+        popup?.close();
         return;
       }
       version = saved.version;
@@ -227,12 +230,12 @@ export function ContentEditor({
         body: JSON.stringify({ expectedVersion: version }),
       });
       if (response.status === 401) {
-        tab?.close();
+        popup?.close();
         onExpired();
         return;
       }
       if (response.status === 409) {
-        tab?.close();
+        popup?.close();
         setConflict(true);
         setError("Another editor saved a newer version. Reload the latest draft before previewing again; reloading discards local changes.");
         return;
@@ -240,12 +243,12 @@ export function ContentEditor({
       if (!response.ok) throw new Error("Preview failed");
       const result: unknown = await response.json();
       const token = result && typeof result === "object" ? (result as { token?: unknown }).token : undefined;
-      if (typeof token !== "string" || !/^[A-Za-z0-9_-]{1,400}\.[A-Za-z0-9_-]{43}$/.test(token)) throw new Error("Invalid preview token");
+      if (typeof token !== "string" || !previewTokenPattern.test(token)) throw new Error("Invalid preview token");
       const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(token)}`;
-      if (tab) tab.location.href = url;
+      if (popup) popup.location.href = url;
       else setPreviewLink(url);
     } catch (error) {
-      tab?.close();
+      popup?.close();
       setError(
         error instanceof AdminRequestTimeout
           ? "Opening the preview timed out. Your draft is saved; please try again."
@@ -426,9 +429,12 @@ export function ContentEditor({
                   key={name}
                   aria-current={tab === name ? "page" : undefined}
                   disabled={scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview")}
-                  onClick={() =>
-                    name === "History" ? void history() : setTab(name)
-                  }
+                  onClick={() => {
+                    if (name === "History") { void history(); return; }
+                    if (name === tab) return;
+                    setSelectedPage(0);
+                    setTab(name);
+                  }}
                 >
                   {name}
                 </button>
@@ -655,6 +661,7 @@ export function ContentEditor({
                   onChange={edit}
                   session={session}
                   onExpired={onExpired}
+                  onSelectedPageChange={setSelectedPage}
                 />
               )}
               {tab === "Category pages" && (

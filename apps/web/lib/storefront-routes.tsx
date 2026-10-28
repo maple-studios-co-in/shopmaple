@@ -66,7 +66,7 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
 
 /** Preview destinations offered in the preview banner, derived from the document being previewed. */
 export function listPreviewPages(content: StorefrontDocument): { label: string; segments: string[] }[] {
-  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs, policies } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   return [
     { label: "Home", segments: ["home"] },
     ...categoryPageSlugs.map((slug) => ({ label: resolveCategoryPageContent(slug, content.landingPages).title, segments: ["pages", slug] })),
@@ -76,7 +76,7 @@ export function listPreviewPages(content: StorefrontDocument): { label: string; 
     { label: "Bulk Enquiry", segments: ["pages", "bulk-enquiry"] },
     { label: "Return & Exchange", segments: ["pages", "returns"] },
     ...content.pages.filter((page) => page.slug).map((page) => ({ label: page.title || page.slug, segments: ["pages", page.slug] })),
-    ...Object.keys(source.policies).map((slug) => ({ label: resolveEditorialContent(content.editorialContent).policies[slug]?.title ?? slug, segments: ["policies", slug] })),
+    ...Object.keys(source.policies).map((slug) => ({ label: policies[slug]?.title ?? slug, segments: ["policies", slug] })),
     ...blogs.flatMap((blog) => [
       { label: blog.title, segments: ["blogs", blog.handle] },
       ...blog.articles.map((article) => ({ label: `${blog.title}: ${article.title}`, segments: ["blogs", blog.handle, article.handle] })),

@@ -216,6 +216,7 @@ export * from "./editorial-content";
 export * from "./authored-articles";
 
 export * from "./site-chrome";
+export { previewTokenPattern } from "./admin-preview";
 
 export * from "./catalogue-cards";
 export * from "./cart-eligibility";

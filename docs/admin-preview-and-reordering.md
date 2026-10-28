@@ -4,7 +4,7 @@ This release adds two editing aids to the `/admin` dashboard. Neither changes wh
 
 ## Draft preview
 
-**Preview draft** sits next to **Save draft**. It saves unsaved changes first using the same version check as saving, so a stale editor still gets the 409 conflict message and nothing is previewed until the latest draft is reloaded. Once the draft is current the editor asks the API for a preview token and opens `/admin/preview/<page>?token=…` in a new tab. If the browser blocks the tab, the editor shows an **Open draft preview** link instead.
+**Preview draft** sits next to **Save draft**. It saves unsaved changes first using the same version check as saving, so a stale editor still gets the 409 conflict message and nothing is previewed until the latest draft is reloaded. Once the draft is current the editor asks the API for a preview token and opens `/admin/preview/<page>?token=…` in a new tab, on the page being edited: the category page, the existing page or the informational page currently selected, otherwise the homepage. If the browser blocks the tab, the editor shows an **Open draft preview** link instead.
 
 The preview tab shows a fixed banner, **Draft preview — not published**, the draft and published version numbers, a page switcher covering the homepage, category landing pages, Our Story, Nimbus, contact, bulk enquiry, returns, informational pages, policies and blogs, and a **Desktop / Mobile** width toggle. The page itself renders inside an iframe at `/admin/preview-frame/<page>?token=…` so the mobile toggle exercises the real responsive layout. Links inside the frame reopen within the preview with the same token.
 

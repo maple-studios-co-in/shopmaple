@@ -29,9 +29,11 @@ async function select(label: string, value: string) {
   await act(async () => { input.value = value; input.dispatchEvent(new dom.window.Event("change", { bubbles: true })); });
 }
 type FakeTab = { location: { href: string }; closed: boolean; close(): void };
-async function setup(options: { saveStatus?: number; previewStatus?: number; popupBlocked?: boolean } = {}) {
+type Page = (typeof defaultStorefrontContent)["pages"][number];
+async function setup(options: { saveStatus?: number; previewStatus?: number; popupBlocked?: boolean; pages?: Page[] } = {}) {
   const previous = globalThis.fetch, previousOpen = dom.window.open, root = createRoot(container);
   const initial = structuredClone(defaultStorefrontContent);
+  if (options.pages) initial.pages = options.pages;
   const calls: { method: string; path: string; body?: any; csrf?: string | null }[] = [];
   const tabs: FakeTab[] = [];
   dom.window.open = ((url?: string) => {
@@ -81,6 +83,20 @@ test("preview saves unsaved changes, mints a token and opens the preview tab for
     await click("Preview draft");
     assert.equal(app.calls.filter(call => call.method === "PUT").length, 1, "A clean draft is not saved again");
     assert.equal(app.tabs[1]!.location.href, `/admin/preview/pages/nimbus-collection?token=${encodeURIComponent(token)}`);
+  } finally { await app.close(); }
+});
+
+test("the Pages tab previews the page currently selected, not the first page with a slug", async () => {
+  const banner = { desktopImage: "/media/cities/delhi.webp", mobileImage: "/media/cities/delhi.webp", alt: "Banner", href: "/collections/all", label: "Explore" };
+  const page = (slug: string, title: string): Page => ({ slug, title, description: title, body: `${title} body.`, banner });
+  const app = await setup({ pages: [page("care-guide", "Care guide"), page("delivery-areas", "Delivery areas")] });
+  try {
+    await click("Pages"); await select("Page", "1");
+    await click("Preview draft");
+    assert.equal(app.tabs[0]!.location.href, `/admin/preview/pages/delivery-areas?token=${encodeURIComponent(token)}`);
+    await click("Homepage"); await click("Pages");
+    await click("Preview draft");
+    assert.equal(app.tabs[1]!.location.href, `/admin/preview/pages/care-guide?token=${encodeURIComponent(token)}`, "Reopening the tab selects its first page again");
   } finally { await app.close(); }
 });
 

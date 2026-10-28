@@ -130,6 +130,12 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   await serveImage(res, config.mediaRoot, asset, true);
  });
 }
+/**
+ * Walks every field of the content document that may reference a library upload and marks
+ * those uploads public. Keep this field list in step with `previewMediaContent` in
+ * apps/web/lib/draft-preview.ts, which rewrites the same image fields (by key name) for
+ * the staff preview.
+ */
 export async function prepareMediaForPublication(tx: Prisma.TransactionClient, content: unknown, mediaRoot?: string) {
  const hashes = new Set<string>();
  const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};

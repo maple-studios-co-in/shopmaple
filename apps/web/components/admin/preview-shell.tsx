@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import type { SiteChrome } from "@shopmaple/contracts";
+import { StoreChromeView } from "@/components/admin/store-chrome";
 
 export type PreviewPageOption = { label: string; segments: string[] };
 
@@ -54,7 +56,12 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
 }
 
 /** Keeps in-preview navigation on draft content: same-origin storefront links reopen inside the frame with the same token. */
-export function PreviewNavigation({ token }: { token: string }) {
+export function PreviewNavigation({ token, children, navigate = (url) => window.location.assign(url) }: {
+  token: string;
+  children: ReactNode;
+  /** Replaced in tests; the browser's own navigation otherwise. */
+  navigate?: (url: string) => void;
+}) {
   function onClick(event: React.MouseEvent<HTMLDivElement>) {
     const anchor = (event.target as HTMLElement).closest("a[href]");
     if (!(anchor instanceof HTMLAnchorElement) || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
@@ -62,7 +69,27 @@ export function PreviewNavigation({ token }: { token: string }) {
     if (url.origin !== window.location.origin || url.pathname.startsWith("/admin")) return;
     event.preventDefault();
     const path = url.pathname === "/" ? "/home" : url.pathname;
-    window.location.assign(`/admin/preview-frame${path}?token=${encodeURIComponent(token)}`);
+    navigate(`/admin/preview-frame${path}?token=${encodeURIComponent(token)}`);
   }
-  return <div onClickCapture={onClick} className="admin-preview-navigation" />;
+  // display: contents, so the wrapper changes no layout; it only has to be an ancestor of every link.
+  return <div onClickCapture={onClick} className="admin-preview-navigation" data-preview-navigation="">{children}</div>;
+}
+
+/** The draft page with the draft's own navigation and footer, a slim ribbon, and in-frame links kept on the draft. */
+export function PreviewFrameDocument({ token, version, path, siteChrome, children, navigate }: {
+  token: string;
+  version: number;
+  path: string;
+  siteChrome?: SiteChrome;
+  children: ReactNode;
+  navigate?: (url: string) => void;
+}) {
+  return (
+    <div className="admin-preview-document" data-preview-version={version} data-preview-path={path}>
+      <PreviewNavigation token={token} navigate={navigate}>
+        <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
+        <p className="admin-preview-ribbon" role="status">Draft preview — not published · version {version}</p>
+      </PreviewNavigation>
+    </div>
+  );
 }

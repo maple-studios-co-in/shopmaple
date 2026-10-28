@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { PreviewNavigation } from "@/components/admin/preview-shell";
-import { StoreChromeView } from "@/components/admin/store-chrome";
+import { PreviewFrameDocument } from "@/components/admin/preview-shell";
 import { previewMediaContent } from "@/lib/draft-preview";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
@@ -26,10 +25,8 @@ export default async function PreviewFrame({ params, searchParams }: {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no storefront page at this address to preview." }} />;
   }
   return (
-    <div className="admin-preview-document" data-preview-version={draft.version} data-preview-path={route.path}>
-      <PreviewNavigation token={token} />
-      <StoreChromeView path={route.path} siteChrome={content.siteChrome}>{route.node}</StoreChromeView>
-      <p className="admin-preview-ribbon" role="status">Draft preview — not published · version {draft.version}</p>
-    </div>
+    <PreviewFrameDocument token={token} version={draft.version} path={route.path} siteChrome={content.siteChrome}>
+      {route.node}
+    </PreviewFrameDocument>
   );
 }

@@ -48,6 +48,11 @@ test("anonymous callers cannot mint or read previews and admin responses stay pr
   const minted = await http.post("/api/admin/content/preview").set("Origin", origin).send({ expectedVersion: 0 });
   assert.equal(minted.status, 401);
   assert.match(String(minted.headers["cache-control"]), /no-store/);
+  const malformed = await http.post("/api/admin/content/preview").set("Origin", origin).send({ expectedVersion: "later", extra: true });
+  assert.equal(malformed.status, 401, "Anonymous callers learn nothing about the body shape");
+  const { agent } = await login();
+  const unsigned = await agent.post("/api/admin/content/preview").set("Origin", origin).send({ expectedVersion: "later", extra: true });
+  assert.equal(unsigned.status, 403, "The CSRF check runs before the body is validated");
   const fetched = await http.get("/api/admin/content/preview?token=anything");
   assert.equal(fetched.status, 401);
   assert.match(String(fetched.headers["cache-control"]), /no-store/);

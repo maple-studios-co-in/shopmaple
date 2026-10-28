@@ -18,6 +18,8 @@ type Props = {
   session?: StaffSession;
   onExpired?: () => void;
   onScheduleEditingChange?: (editing: boolean) => void;
+  /** PageFields only: the index of the page being edited, so the editor can preview it. */
+  onSelectedPageChange?: (index: number) => void;
 };
 export function CampaignFields({
   content,
@@ -305,13 +307,14 @@ export function InstagramFields({
     </>
   );
 }
-export function PageFields({ content, onChange, session, onExpired }: Props) {
+export function PageFields({ content, onChange, session, onExpired, onSelectedPageChange }: Props) {
   const [selected, setSelected] = useState(0);
   const [selectionRevision, setSelectionRevision] = useState(0);
   const [conversionError, setConversionError] = useState("");
   const [restoring, setRestoring] = useState(false);
   function selectPage(index: number) {
     setSelected(index);
+    onSelectedPageChange?.(index);
     // A removed page can be replaced at the same index; reset only on selection actions.
     setSelectionRevision(value => value + 1);
     setConversionError("");
