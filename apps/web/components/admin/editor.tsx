@@ -831,7 +831,7 @@ export function ContentEditor({
                   <>
                     <div className="admin-panel-head">
                       <div>
-                        <h2>Policies & blogs</h2>
+                        <h2>Policies &amp; blogs</h2>
                         <p>Policies, blog indexes and authored articles share the storefront's editorial layout.</p>
                       </div>
                     </div>
