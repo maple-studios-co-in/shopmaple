@@ -921,7 +921,7 @@ test("section reveal preference can be edited and saved without publishing", asy
 
 test("authorised enquiry staff can use the inbox when the content draft is unavailable", async () => {
   const previous = globalThis.fetch;
-  const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, createdAt: "2026-10-26T00:00:00.000Z" };
+  const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
   try {
     for (const failure of ["unavailable", "malformed"]) {
       let recovered = false;
