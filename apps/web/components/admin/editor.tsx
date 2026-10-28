@@ -1,5 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  BookOpen, CircleCheck, Eye, ExternalLink, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
+  LayoutDashboard, LayoutGrid, LogOut, Megaphone, PanelsTopLeft, Tags, TriangleAlert, X,
+} from "lucide-react";
 import {
   previewTokenPattern,
   storefrontContentSchema,
@@ -21,6 +25,8 @@ import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { CrmSummary } from "./crm-summary";
 import { SortableList } from "./sortable-list";
+import { LivePreview, type MintedPreview } from "./live-preview";
+import { EmptyState, Skeleton, initials } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 type Document = {
@@ -53,6 +59,33 @@ const tabs = [
   "History",
 ] as const;
 type Tab = (typeof tabs)[number];
+/** Sidebar structure: Overview on its own, then grouped sections. */
+const navGroups: { label: string | null; items: Tab[] }[] = [
+  { label: null, items: ["Overview"] },
+  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram"] },
+  { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
+  { label: "Library", items: ["Media"] },
+  { label: "Customers", items: ["Enquiries"] },
+  { label: "Publishing", items: ["History"] },
+];
+const icons: Record<Tab, typeof House> = {
+  Overview: LayoutDashboard,
+  Homepage: House,
+  "Navigation & footer": PanelsTopLeft,
+  Merchandising: LayoutGrid,
+  Artwork: ImageIcon,
+  Campaigns: Megaphone,
+  Instagram,
+  Pages: FileText,
+  "Existing pages": Files,
+  "Policies & blogs": BookOpen,
+  "Category pages": Tags,
+  Media: Images,
+  Enquiries: Inbox,
+  History,
+};
+/** Sections whose edits show on a storefront page and can therefore use the live preview. */
+const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
 const copyLabels: Record<keyof StorefrontContent["homeCopy"], string> = {
   categoryHeading: "Category heading",
   bestsellersHeading: "Bestsellers heading",
@@ -92,14 +125,22 @@ function parseDocument(value: unknown): Document {
         : storefrontContentSchema.parse(document.draft),
   };
 }
+/** A request the hook aborted because the component went away; never worth reporting. */
+const aborted = (error: unknown) => error instanceof Error && error.name === "AbortError";
+
 export function ContentEditor({
   session,
   initialContent,
   onExpired,
+  account,
+  livePreviewDebounceMs = 1200,
 }: {
   session: StaffSession;
   initialContent: StorefrontContent;
   onExpired: () => void;
+  /** The signed-in staff member's controls in the top bar; omitted in isolated tests. */
+  account?: { onSignOut: () => void; busy: boolean };
+  livePreviewDebounceMs?: number;
 }) {
   const adminRequest = useAdminRequest();
   const [tab, setTab] = useState<Tab>("Overview");
@@ -116,6 +157,12 @@ export function ContentEditor({
   // PageFields starts on its first page each time the tab opens and reports later selections.
   const [selectedPage, setSelectedPage] = useState(0);
   const [revisions, setRevisions] = useState<Revision[]>([]);
+  const [liveOpen, setLiveOpen] = useState(false);
+  const [liveAuto, setLiveAuto] = useState(true);
+  const [liveBlocked, setLiveBlocked] = useState("");
+  const [focusedSection, setFocusedSection] = useState<string | null>(null);
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function acceptDocument(value: unknown) {
     const next = parseDocument(value);
     setDocument(next);
@@ -139,13 +186,14 @@ export function ContentEditor({
       if (!response.ok) throw new Error("Read failed");
       acceptDocument(await response.json());
     } catch (error) {
+      if (aborted(error) || !alive.current) return;
       setError(
         error instanceof AdminRequestTimeout
           ? "Loading your draft timed out. Please try again."
           : "We couldn't load your draft. Please try again.",
       );
     } finally {
-      setBusy(false);
+      if (alive.current) setBusy(false);
     }
   }
   useEffect(() => {
@@ -177,13 +225,14 @@ export function ContentEditor({
       if (!Array.isArray(result.revisions)) throw new Error("Invalid history");
       setRevisions(result.revisions);
     } catch (error) {
+      if (aborted(error) || !alive.current) return;
       setError(
         error instanceof AdminRequestTimeout
           ? "Loading revision history timed out. Open History to try again."
           : "We couldn't load revision history. Open History to try again.",
       );
     } finally {
-      setBusy(false);
+      if (alive.current) setBusy(false);
     }
   }
   function edit(next: StorefrontContent) {
@@ -207,6 +256,40 @@ export function ContentEditor({
     }
     return "home";
   }
+  const previewTitle = tab === "Category pages" ? "Sofas" : tab === "Existing pages" ? "the selected page" : tab === "Pages" ? "the selected page" : "Home";
+  /** Mints a preview token for a draft version; the session, conflict and failure paths are handled here. */
+  const mintPreviewToken = useCallback(async (version: number): Promise<MintedPreview | null> => {
+    try {
+      const response = await adminRequest("/api/admin/content/preview", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        body: JSON.stringify({ expectedVersion: version }),
+      });
+      if (response.status === 401) {
+        onExpired();
+        return null;
+      }
+      if (response.status === 409) {
+        setConflict(true);
+        setError("Another editor saved a newer version. Reload the latest draft before previewing again; reloading discards local changes.");
+        return null;
+      }
+      if (!response.ok) throw new Error("Preview failed");
+      const result: unknown = await response.json();
+      const record = result && typeof result === "object" ? (result as { token?: unknown; expiresAt?: unknown }) : {};
+      if (typeof record.token !== "string" || !previewTokenPattern.test(record.token)) throw new Error("Invalid preview token");
+      return { token: record.token, expiresAt: typeof record.expiresAt === "string" ? record.expiresAt : "" };
+    } catch (error) {
+      if (aborted(error) || !alive.current) return null;
+      setError(
+        error instanceof AdminRequestTimeout
+          ? "Opening the preview timed out. Your draft is saved; please try again."
+          : "We couldn't open the preview. Your draft is saved; please try again.",
+      );
+      return null;
+    }
+  }, [adminRequest, session.csrfToken, onExpired]);
   async function preview() {
     if (!document || !content || busy || conflict || scheduleEditing) return;
     setPreviewLink("");
@@ -223,57 +306,33 @@ export function ContentEditor({
     }
     setBusy(true);
     setError("");
-    try {
-      const response = await adminRequest("/api/admin/content/preview", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
-        body: JSON.stringify({ expectedVersion: version }),
-      });
-      if (response.status === 401) {
-        popup?.close();
-        onExpired();
-        return;
-      }
-      if (response.status === 409) {
-        popup?.close();
-        setConflict(true);
-        setError("Another editor saved a newer version. Reload the latest draft before previewing again; reloading discards local changes.");
-        return;
-      }
-      if (!response.ok) throw new Error("Preview failed");
-      const result: unknown = await response.json();
-      const token = result && typeof result === "object" ? (result as { token?: unknown }).token : undefined;
-      if (typeof token !== "string" || !previewTokenPattern.test(token)) throw new Error("Invalid preview token");
-      const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(token)}`;
-      if (popup) popup.location.href = url;
-      else setPreviewLink(url);
-    } catch (error) {
+    const minted = await mintPreviewToken(version);
+    if (alive.current) setBusy(false);
+    if (!minted) {
       popup?.close();
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Opening the preview timed out. Your draft is saved; please try again."
-          : "We couldn't open the preview. Your draft is saved; please try again.",
-      );
-    } finally {
-      setBusy(false);
+      return;
     }
+    const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(minted.token)}`;
+    if (popup) popup.location.href = url;
+    else setPreviewLink(url);
   }
   async function write(
     action: "save" | "publish" | "restore",
     revisionId?: string,
+    options: { quiet?: boolean } = {},
   ): Promise<Document | null> {
     if (!document || !content || busy || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
         const issue = validation.error.issues[0];
-        setError(
-          `Check ${issue?.path.join(" · ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`,
-        );
+        const message = `Check ${issue?.path.join(" > ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`;
+        if (options.quiet) setLiveBlocked(message);
+        else setError(message);
         return null;
       }
     }
+    setLiveBlocked("");
     setBusy(true);
     setError("");
     setNotice("");
@@ -324,7 +383,7 @@ export function ContentEditor({
       }
       const accepted = parseDocument(await response.json());
       acceptDocument(accepted);
-      setNotice(
+      if (!options.quiet) setNotice(
         action === "save"
           ? "Draft saved. The published storefront has not changed."
           : action === "publish"
@@ -333,6 +392,7 @@ export function ContentEditor({
       );
       return accepted;
     } catch (error) {
+      if (aborted(error) || !alive.current) return null;
       setError(
         error instanceof AdminRequestTimeout
           ? "The request timed out. Your local edits are still here. Please try again."
@@ -340,416 +400,571 @@ export function ContentEditor({
       );
       return null;
     } finally {
-      setBusy(false);
+      if (alive.current) setBusy(false);
     }
   }
-  const unavailableDraft = (
-    <div className="admin-empty">
-      <p role="status">
-        {busy ? "Loading store content…" : "Your draft is unavailable."}
-      </p>
-      {!busy && (
-        <button onClick={() => void load()}>Retry loading draft</button>
-      )}
+  // Live preview: save quietly after a pause in editing so the frame can show the edit.
+  const liveActive = liveOpen && previewable.has(tab);
+  useEffect(() => {
+    if (!liveActive || !liveAuto || !dirty || busy || conflict || scheduleEditing || !document || !content) return;
+    const timer = setTimeout(() => { void write("save", undefined, { quiet: true }); }, livePreviewDebounceMs);
+    return () => clearTimeout(timer);
+  }, [liveActive, liveAuto, dirty, busy, conflict, scheduleEditing, content, document, livePreviewDebounceMs]);
+  useEffect(() => { if (!dirty) setLiveBlocked(""); }, [dirty]);
+
+  const canManageEnquiries = session.user.canManageEnquiries === true;
+  const visibleGroups = navGroups
+    .map((group) => ({ ...group, items: group.items.filter((name) => name !== "Enquiries" || canManageEnquiries) }))
+    .filter((group) => group.items.length > 0);
+  function selectTab(name: Tab) {
+    if (name === "History") { void history(); return; }
+    if (name === tab) return;
+    setSelectedPage(0);
+    setFocusedSection(null);
+    setTab(name);
+  }
+  const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
+  const roleLabel = session.user.role === "publisher" ? "Publisher" : "Editor";
+  const unavailableDraft = busy ? (
+    <div className="admin-empty" aria-busy="true">
+      <p role="status" className="admin-sr-only">Loading store content</p>
+      <Skeleton rows={4} />
+    </div>
+  ) : (
+    <EmptyState title="Your draft is unavailable" action={<button type="button" onClick={() => void load()}>Retry loading draft</button>}>
+      The draft could not be loaded. Check your connection, then try again.
+    </EmptyState>
+  );
+  const navButton = (name: Tab) => {
+    const Icon = icons[name];
+    return (
+      <button
+        key={name}
+        type="button"
+        aria-current={tab === name ? "page" : undefined}
+        disabled={navDisabled(name)}
+        onClick={() => selectTab(name)}
+      >
+        <Icon aria-hidden="true" strokeWidth={1.5} />
+        {name}
+      </button>
+    );
+  };
+
+  return (
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <a className="admin-brand" href="/">
+          <strong>Maple Furnishers</strong>
+          <span>Shop admin</span>
+        </a>
+        <nav className="admin-nav" aria-label="Admin sections">
+          {visibleGroups.map((group) =>
+            group.label === null ? (
+              <div className="admin-nav-group" key="top">{group.items.map(navButton)}</div>
+            ) : (
+              <div className="admin-nav-group" key={group.label} data-nav-group={group.label}>
+                <p className="admin-nav-group-label">{group.label}</p>
+                {group.items.map(navButton)}
+              </div>
+            ),
+          )}
+        </nav>
+        <div className="admin-sidebar-foot">
+          <span>{document?.publishedVersion ? `Live storefront on version ${document.publishedVersion}` : "Storefront not published yet"}</span>
+          <a href="/" target="_blank" rel="noopener noreferrer">Open storefront <ExternalLink aria-hidden="true" strokeWidth={1.5} /></a>
+        </div>
+      </aside>
+      <div className="admin-main">
+        <header className="admin-topbar" data-admin-topbar>
+          <div className="admin-topbar-context">
+            <label className="admin-section-picker">
+              <span className="admin-sr-only">Admin section</span>
+              <select aria-label="Admin section" value={tab} onChange={(event) => selectTab(event.target.value as Tab)}>
+                {visibleGroups.map((group) =>
+                  group.label === null
+                    ? group.items.map((name) => <option key={name} value={name} disabled={navDisabled(name)}>{name}</option>)
+                    : (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.items.map((name) => <option key={name} value={name} disabled={navDisabled(name)}>{name}</option>)}
+                      </optgroup>
+                    ),
+                )}
+              </select>
+            </label>
+            <div className="admin-status-group">
+              <span className="admin-chip" data-draft-status data-tone={conflict ? "conflict" : busy ? "saving" : dirty ? "unsaved" : "accent"}>
+                {document ? `Draft version ${document.version}` : "Loading draft"}
+                {conflict ? ", conflict" : busy ? ", saving" : dirty ? ", unsaved changes" : ""}
+              </span>
+              <span className="admin-chip" data-publish-status data-tone={document?.publishedVersion ? "published" : "unpublished"}>
+                {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
+              </span>
+            </div>
+          </div>
+          <div className="admin-topbar-actions">
+            <button
+              type="button"
+              className="admin-quiet"
+              aria-pressed={liveOpen}
+              disabled={!document || !content || !previewable.has(tab)}
+              onClick={() => setLiveOpen((value) => !value)}
+            >
+              <Eye aria-hidden="true" strokeWidth={1.5} />
+              Live preview
+            </button>
+            <button
+              data-action="save"
+              disabled={!content || !dirty || busy || conflict || scheduleEditing}
+              onClick={() => void write("save")}
+            >
+              Save draft
+            </button>
+            <button
+              data-action="preview"
+              disabled={!document || !content || busy || conflict || scheduleEditing}
+              onClick={() => void preview()}
+            >
+              Preview draft
+            </button>
+            {session.user.role === "publisher" && (
+              <button
+                className="admin-primary"
+                disabled={!document?.version || dirty || busy || conflict || scheduleEditing}
+                onClick={() => void write("publish")}
+              >
+                Publish draft
+              </button>
+            )}
+          </div>
+          {account && (
+            <div className="admin-account" data-staff-account>
+              <span className="admin-avatar" data-avatar aria-hidden="true">{initials(session.user.email)}</span>
+              <span className="admin-account-text">
+                <strong>{session.user.email}</strong>
+                <span>{roleLabel}</span>
+              </span>
+              <button type="button" className="admin-quiet admin-small" disabled={account.busy} onClick={account.onSignOut}>
+                <LogOut aria-hidden="true" strokeWidth={1.5} />
+                Sign out
+              </button>
+            </div>
+          )}
+        </header>
+        <div className="admin-notices">
+          {error && (
+            <p role="alert" className="admin-alert">
+              <TriangleAlert aria-hidden="true" strokeWidth={1.5} />
+              <span>{error}</span>
+              {conflict ? (
+                <button type="button" className="admin-small admin-notice-action" onClick={() => void load()} disabled={busy}>Reload latest draft</button>
+              ) : (
+                <button type="button" className="admin-icon-button admin-notice-action" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></button>
+              )}
+            </p>
+          )}
+          {notice && (
+            <p role="status" className="admin-notice">
+              <CircleCheck aria-hidden="true" strokeWidth={1.5} />
+              <span>{notice}</span>
+              <button type="button" className="admin-icon-button admin-notice-action" aria-label="Dismiss message" onClick={() => setNotice("")}><X aria-hidden="true" strokeWidth={1.5} /></button>
+            </p>
+          )}
+          {previewLink && (
+            <p role="status" className="admin-notice" data-tone="info">
+              <span>
+                Your browser blocked the preview tab.{" "}
+                <a href={previewLink} target="_blank" rel="noopener noreferrer">
+                  Open draft preview
+                </a>
+              </span>
+            </p>
+          )}
+        </div>
+        {!content && !canManageEnquiries ? (
+          <div className="admin-workspace"><section className="admin-panel" data-admin-panel>{unavailableDraft}</section></div>
+        ) : (
+          <div className="admin-workspace" data-split={liveActive ? "true" : "false"}>
+            <section
+              className="admin-panel"
+              data-admin-panel
+              aria-label={`${tab} editor`}
+              onFocusCapture={(event) => {
+                const row = (event.target as HTMLElement).closest?.("[data-preview-section]");
+                if (row instanceof HTMLElement) setFocusedSection(row.dataset.previewSection ?? null);
+              }}
+            >
+              {tab === "Enquiries" && canManageEnquiries ? (
+                <EnquiryInbox session={session} onExpired={onExpired} />
+              ) : !content ? unavailableDraft : (
+              <fieldset disabled={busy || conflict}>
+                <legend className="admin-sr-only">{tab} editor</legend>
+                {tab === "Overview" && (
+                  <OverviewPanel content={content} session={session} onExpired={onExpired} document={document} dirty={dirty} />
+                )}
+                {tab === "Navigation & footer" && <SiteChromeFields value={content.siteChrome} onChange={siteChrome => {
+                  const next = {...content};
+                  if (siteChrome === undefined) delete next.siteChrome;
+                  else next.siteChrome = siteChrome;
+                  edit(next);
+                }} />}
+                {tab === "Homepage" && (
+                  <>
+                    <div className="admin-panel-head">
+                      <div>
+                        <h2>Homepage</h2>
+                        <p>Drag sections into order, or use the Move buttons, and choose what visitors see. Focus a section to find it in the live preview.</p>
+                      </div>
+                    </div>
+                    <SortableList
+                      items={content.homeSections}
+                      getId={(section) => section.key}
+                      getLabel={(section) => titleCase(section.key)}
+                      className="admin-section-list"
+                      onReorder={(homeSections) => edit({ ...content, homeSections })}
+                      rowProps={(section) => ({ "data-preview-section": section.key, "data-preview-focused": focusedSection === section.key ? "true" : undefined })}
+                      renderItem={(section, index, handle) => (
+                        <>
+                          {handle}
+                          <label>
+                            <input
+                              type="checkbox"
+                              aria-label={`Show ${titleCase(section.key)}`}
+                              checked={section.enabled}
+                              onChange={(e) =>
+                                edit({
+                                  ...content,
+                                  homeSections: content.homeSections.map((s) =>
+                                    s.key === section.key
+                                      ? { ...s, enabled: e.target.checked }
+                                      : s,
+                                  ),
+                                })
+                              }
+                            />
+                            <span>{titleCase(section.key)}</span>
+                          </label>
+                          <div>
+                            {([-1, 1] as const).map((direction) => (
+                              <button
+                                key={direction}
+                                aria-label={`Move ${titleCase(section.key)} ${direction === -1 ? "up" : "down"}`}
+                                disabled={
+                                  index + direction < 0 ||
+                                  index + direction >= content.homeSections.length
+                                }
+                                onClick={() => {
+                                  const sections = [...content.homeSections];
+                                  [sections[index], sections[index + direction]] =
+                                    [
+                                      sections[index + direction]!,
+                                      sections[index]!,
+                                    ];
+                                  edit({ ...content, homeSections: sections });
+                                }}
+                              >
+                                {direction === -1 ? "Move up" : "Move down"}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    />
+                    <h3>Homepage copy</h3>
+                    <div className="admin-fields">
+                      {(
+                        Object.keys(
+                          copyLabels,
+                        ) as (keyof StorefrontContent["homeCopy"])[]
+                      ).map((key) => (
+                        <Field
+                          key={key}
+                          label={copyLabels[key]}
+                          value={content.homeCopy[key] ?? "Chairs"}
+                          multiline={key === "ticker"}
+                          maxLength={
+                            key === "ticker"
+                              ? 600
+                              : key === "testimonialSubheading"
+                                ? 300
+                                : 160
+                          }
+                          onChange={(value) =>
+                            edit({
+                              ...content,
+                              homeCopy: { ...content.homeCopy, [key]: value },
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                    <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
+                    <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={homeCitiesLayout => edit({ ...content, homeCitiesLayout })} />
+                    <h3>Motion</h3>
+                    <label className="admin-check">
+                      <input
+                        type="checkbox"
+                        checked={content.motion.autoplayTicker ?? true}
+                        onChange={(event) => edit({ ...content, motion: {
+                          ...content.motion, autoplayTicker: event.target.checked,
+                        } })}
+                      />
+                      Automatically move the homepage ticker
+                    </label>
+                    <label className="admin-check">
+                      <input
+                        type="checkbox"
+                        checked={content.motion.autoplaySocial}
+                        onChange={(e) =>
+                          edit({
+                            ...content,
+                            motion: {
+                              ...content.motion,
+                              autoplaySocial: e.target.checked,
+                            },
+                          })
+                        }
+                      />
+                      Automatically move Instagram posts
+                    </label>
+                    <label className="admin-check">
+                      <input
+                        type="checkbox"
+                        checked={content.motion.autoplayCities}
+                        onChange={(e) =>
+                          edit({
+                            ...content,
+                            motion: {
+                              ...content.motion,
+                              autoplayCities: e.target.checked,
+                            },
+                          })
+                        }
+                      />
+                      Automatically move city illustrations
+                    </label>
+                    <p>
+                      Visitors can pause motion. Their reduced-motion preference
+                      takes priority.
+                    </p>
+                    <label className="admin-check">
+                      <input type="checkbox" checked={content.motion.revealSections}
+                        onChange={(event) => edit({ ...content, motion: {
+                          ...content.motion, revealSections: event.target.checked,
+                        } })} />
+                      Section reveal effects
+                    </label>
+                  </>
+                )}
+                {tab === "Merchandising" && (
+                  <HomeMerchandisingFields value={content.homeMerchandising} onChange={homeMerchandising => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />
+                )}
+                {tab === "Campaigns" && (
+                  <CampaignFields
+                    content={content}
+                    onChange={edit}
+                    session={session}
+                    onExpired={onExpired}
+                    onScheduleEditingChange={setScheduleEditing}
+                  />
+                )}
+                {tab === "Instagram" && (
+                  <InstagramFields
+                    content={content}
+                    onChange={edit}
+                    session={session}
+                    onExpired={onExpired}
+                  />
+                )}
+                {tab === "Pages" && (
+                  <PageFields
+                    content={content}
+                    onChange={edit}
+                    session={session}
+                    onExpired={onExpired}
+                    onSelectedPageChange={setSelectedPage}
+                  />
+                )}
+                {tab === "Category pages" && (
+                  <CategoryFields
+                    value={content.landingPages}
+                    onChange={(landingPages) =>
+                      edit({ ...content, landingPages })
+                    }
+                  />
+                )}
+                {tab === "Existing pages" && (
+                  <>
+                    <div className="admin-panel-head">
+                      <div>
+                        <h2>Existing pages</h2>
+                        <p>Edit the storefront pages that ship with the theme. Changes stay in your draft until published.</p>
+                      </div>
+                    </div>
+                    <label className="admin-field">
+                      <span>Existing page</span>
+                      <select aria-label="Existing page" value={existingPage} onChange={event => {
+                        const value = event.target.value;
+                        setExistingPage(value === "nimbus" || value === "contact" || value === "bulk" || value === "returns" ? value : "story");
+                      }}>
+                        <option value="story">Our Story</option>
+                        <option value="nimbus">The Nimbus Collection</option>
+                        <option value="contact">Contact</option>
+                        <option value="bulk">Bulk Enquiry</option>
+                        <option value="returns">Return &amp; Exchange</option>
+                      </select>
+                    </label>
+                    {existingPage === "story"
+                      ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
+                      : existingPage === "nimbus"
+                        ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
+                        : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
+                  </>
+                )}
+                {tab === "Artwork" && (
+                  <TemplateArtworkFields value={content.templateMedia} onChange={templateMedia => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
+                )}
+                {tab === "Media" && (
+                  <MediaLibrary session={session} onExpired={onExpired} heading="h2" />
+                )}
+                {tab === "Policies & blogs" && (
+                  <>
+                    <div className="admin-panel-head">
+                      <div>
+                        <h2>Policies & blogs</h2>
+                        <p>Policies, blog indexes and authored articles share the storefront's editorial layout.</p>
+                      </div>
+                    </div>
+                    <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
+                    <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
+                  </>
+                )}
+                {tab === "History" && (
+                  <>
+                    <div className="admin-panel-head">
+                      <div>
+                        <h2>Revision history</h2>
+                        <p>
+                          Restore saved content as a new draft. Save local changes
+                          before restoring.
+                        </p>
+                      </div>
+                    </div>
+                    {busy && revisions.length === 0 ? (
+                      <Skeleton rows={3} />
+                    ) : revisions.length === 0 ? (
+                      <EmptyState title="No revisions yet">Save a draft to start its history.</EmptyState>
+                    ) : (
+                      <ul className="admin-history">
+                        {revisions.map((revision) => (
+                          <li key={revision.id}>
+                            <span className="admin-history-version" aria-hidden="true">{revision.version}</span>
+                            <div>
+                              <strong>
+                                Version {revision.version}, {titleCase(revision.action)}
+                              </strong>
+                              <span>
+                                {revision.actorEmail}, {new Date(revision.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            {session.user.role === "publisher" && (
+                              <button
+                                className="admin-small"
+                                disabled={dirty}
+                                onClick={() => void write("restore", revision.id)}
+                              >
+                                Restore version {revision.version}
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </fieldset>
+              )}
+            </section>
+            {liveActive && (
+              <LivePreview
+                path={previewPath()}
+                title={previewTitle}
+                version={document?.version ?? null}
+                publishedVersion={document?.publishedVersion ?? null}
+                dirty={dirty}
+                busy={busy}
+                blocked={liveBlocked}
+                auto={liveAuto}
+                onAutoChange={setLiveAuto}
+                onUpdateNow={() => void write("save", undefined, { quiet: true })}
+                onClose={() => setLiveOpen(false)}
+                mint={mintPreviewToken}
+                focusedSection={focusedSection}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OverviewPanel({ content, session, onExpired, document, dirty }: {
+  content: StorefrontContent;
+  session: StaffSession;
+  onExpired: () => void;
+  document: Document | null;
+  dirty: boolean;
+}) {
+  const visible = content.homeSections.filter((s) => s.enabled).length;
+  const stat = (label: string, value: ReactNode, note: string) => (
+    <div className="admin-stat">
+      <span className="admin-stat-label">{label}</span>
+      <span className="admin-stat-value">{value}<small>{note}</small></span>
     </div>
   );
   return (
     <>
-      <div className="admin-toolbar">
+      <div className="admin-panel-head">
         <div>
-          <strong>
-            {document ? `Draft version ${document.version}` : "Loading draft"}
-          </strong>
-          <span>
-            {document?.publishedVersion
-              ? `Published version ${document.publishedVersion}`
-              : "No published content yet"}
-            {dirty ? " · Unsaved changes" : ""}
-          </span>
-        </div>
-        <div className="admin-actions">
-          <button
-            data-action="save"
-            disabled={!content || !dirty || busy || conflict || scheduleEditing}
-            onClick={() => void write("save")}
-          >
-            Save draft
-          </button>
-          <button
-            data-action="preview"
-            disabled={!document || !content || busy || conflict || scheduleEditing}
-            onClick={() => void preview()}
-          >
-            Preview draft
-          </button>
-          {session.user.role === "publisher" && (
-            <button
-              className="admin-primary"
-              disabled={!document?.version || dirty || busy || conflict || scheduleEditing}
-              onClick={() => void write("publish")}
-            >
-              Publish draft
-            </button>
-          )}
+          <h2>Overview</h2>
+          <p>What is in the draft right now, and where the storefront stands.</p>
         </div>
       </div>
-      {error && (
-        <p role="alert" className="admin-alert">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="admin-notice">
-          {notice}
-        </p>
-      )}
-      {previewLink && (
-        <p role="status" className="admin-notice">
-          Your browser blocked the preview tab.{" "}
-          <a href={previewLink} target="_blank" rel="noopener noreferrer">
-            Open draft preview
-          </a>
-        </p>
-      )}
-      {conflict && (
-        <button onClick={() => void load()} disabled={busy}>
-          Reload latest draft
-        </button>
-      )}
-      {!content && !session.user.canManageEnquiries ? unavailableDraft : (
-        <div className="admin-workspace">
-          <nav aria-label="Content sections">
-            {tabs
-              .filter(
-                (name) =>
-                  name !== "Enquiries" ||
-                  session.user.canManageEnquiries === true,
-              )
-              .map((name) => (
-                <button
-                  key={name}
-                  aria-current={tab === name ? "page" : undefined}
-                  disabled={scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview")}
-                  onClick={() => {
-                    if (name === "History") { void history(); return; }
-                    if (name === tab) return;
-                    setSelectedPage(0);
-                    setTab(name);
-                  }}
-                >
-                  {name}
-                </button>
-              ))}
-          </nav>
-          <div className="admin-panel">
-            {tab === "Enquiries" && session.user.canManageEnquiries === true ? (
-              <EnquiryInbox session={session} onExpired={onExpired} />
-            ) : !content ? unavailableDraft : (
-            <fieldset disabled={busy || conflict}>
-              <legend className="admin-sr-only">{tab} editor</legend>
-              {tab === "Overview" && (
-                <>
-                  <h2>Your storefront, ready for its next chapter.</h2>
-                  <p>
-                    Manage homepage content, campaigns, Instagram posts and
-                    informational pages. Save your work as a draft, then publish
-                    it when it is ready.
-                  </p>
-                  <dl className="admin-summary">
-                    <div>
-                      <dt>Homepage sections</dt>
-                      <dd>
-                        {content.homeSections.filter((s) => s.enabled).length}{" "}
-                        visible of {content.homeSections.length}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Campaigns</dt>
-                      <dd>{content.campaigns.length} editable</dd>
-                    </div>
-                    <div>
-                      <dt>Informational pages</dt>
-                      <dd>{content.pages.length} pages</dd>
-                    </div>
-                  </dl>
-                  {session.user.canManageEnquiries === true && <CrmSummary session={session} onExpired={onExpired} />}
-                  <h3>Publishing</h3>
-                  <p>
-                    {session.user.role === "publisher"
-                      ? "You can edit and publish. Save any unsaved changes before publishing."
-                      : "You can edit and save drafts. A publisher must publish your changes."}
-                  </p>
-                  <p>
-                    Restoring a revision creates a draft. It does not change the
-                    live storefront until published.
-                  </p>
-                  <a href="/" target="_blank" rel="noopener noreferrer">
-                    Open storefront
-                  </a>
-                </>
-              )}
-              {tab === "Navigation & footer" && <SiteChromeFields value={content.siteChrome} onChange={siteChrome => {
-                const next = {...content};
-                if (siteChrome === undefined) delete next.siteChrome;
-                else next.siteChrome = siteChrome;
-                edit(next);
-              }} />}
-              {tab === "Homepage" && (
-                <>
-                  <h2>Homepage</h2>
-                  <p>Drag sections into order, or use the Move buttons, and choose what visitors see.</p>
-                  <SortableList
-                    items={content.homeSections}
-                    getId={(section) => section.key}
-                    getLabel={(section) => titleCase(section.key)}
-                    className="admin-section-list"
-                    onReorder={(homeSections) => edit({ ...content, homeSections })}
-                    renderItem={(section, index, handle) => (
-                      <>
-                        {handle}
-                        <label>
-                          <input
-                            type="checkbox"
-                            aria-label={`Show ${titleCase(section.key)}`}
-                            checked={section.enabled}
-                            onChange={(e) =>
-                              edit({
-                                ...content,
-                                homeSections: content.homeSections.map((s) =>
-                                  s.key === section.key
-                                    ? { ...s, enabled: e.target.checked }
-                                    : s,
-                                ),
-                              })
-                            }
-                          />
-                          <span>{titleCase(section.key)}</span>
-                        </label>
-                        <div>
-                          {([-1, 1] as const).map((direction) => (
-                            <button
-                              key={direction}
-                              aria-label={`Move ${titleCase(section.key)} ${direction === -1 ? "up" : "down"}`}
-                              disabled={
-                                index + direction < 0 ||
-                                index + direction >= content.homeSections.length
-                              }
-                              onClick={() => {
-                                const sections = [...content.homeSections];
-                                [sections[index], sections[index + direction]] =
-                                  [
-                                    sections[index + direction]!,
-                                    sections[index]!,
-                                  ];
-                                edit({ ...content, homeSections: sections });
-                              }}
-                            >
-                              {direction === -1 ? "Move up" : "Move down"}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  />
-                  <h3>Homepage copy</h3>
-                  <div className="admin-fields">
-                    {(
-                      Object.keys(
-                        copyLabels,
-                      ) as (keyof StorefrontContent["homeCopy"])[]
-                    ).map((key) => (
-                      <Field
-                        key={key}
-                        label={copyLabels[key]}
-                        value={content.homeCopy[key] ?? "Chairs"}
-                        multiline={key === "ticker"}
-                        maxLength={
-                          key === "ticker"
-                            ? 600
-                            : key === "testimonialSubheading"
-                              ? 300
-                              : 160
-                        }
-                        onChange={(value) =>
-                          edit({
-                            ...content,
-                            homeCopy: { ...content.homeCopy, [key]: value },
-                          })
-                        }
-                      />
-                    ))}
-                  </div>
-                  <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
-                  <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={homeCitiesLayout => edit({ ...content, homeCitiesLayout })} />
-                  <h3>Motion</h3>
-                  <label className="admin-check">
-                    <input
-                      type="checkbox"
-                      checked={content.motion.autoplayTicker ?? true}
-                      onChange={(event) => edit({ ...content, motion: {
-                        ...content.motion, autoplayTicker: event.target.checked,
-                      } })}
-                    />
-                    Automatically move the homepage ticker
-                  </label>
-                  <label className="admin-check">
-                    <input
-                      type="checkbox"
-                      checked={content.motion.autoplaySocial}
-                      onChange={(e) =>
-                        edit({
-                          ...content,
-                          motion: {
-                            ...content.motion,
-                            autoplaySocial: e.target.checked,
-                          },
-                        })
-                      }
-                    />
-                    Automatically move Instagram posts
-                  </label>
-                  <label className="admin-check">
-                    <input
-                      type="checkbox"
-                      checked={content.motion.autoplayCities}
-                      onChange={(e) =>
-                        edit({
-                          ...content,
-                          motion: {
-                            ...content.motion,
-                            autoplayCities: e.target.checked,
-                          },
-                        })
-                      }
-                    />
-                    Automatically move city illustrations
-                  </label>
-                  <p>
-                    Visitors can pause motion. Their reduced-motion preference
-                    takes priority.
-                  </p>
-                  <label className="admin-check">
-                    <input type="checkbox" checked={content.motion.revealSections}
-                      onChange={(event) => edit({ ...content, motion: {
-                        ...content.motion, revealSections: event.target.checked,
-                      } })} />
-                    Section reveal effects
-                  </label>
-                </>
-              )}
-              {tab === "Merchandising" && (
-                <HomeMerchandisingFields value={content.homeMerchandising} onChange={homeMerchandising => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />
-              )}
-              {tab === "Campaigns" && (
-                <CampaignFields
-                  content={content}
-                  onChange={edit}
-                  session={session}
-                  onExpired={onExpired}
-                  onScheduleEditingChange={setScheduleEditing}
-                />
-              )}
-              {tab === "Instagram" && (
-                <InstagramFields
-                  content={content}
-                  onChange={edit}
-                  session={session}
-                  onExpired={onExpired}
-                />
-              )}
-              {tab === "Pages" && (
-                <PageFields
-                  content={content}
-                  onChange={edit}
-                  session={session}
-                  onExpired={onExpired}
-                  onSelectedPageChange={setSelectedPage}
-                />
-              )}
-              {tab === "Category pages" && (
-                <CategoryFields
-                  value={content.landingPages}
-                  onChange={(landingPages) =>
-                    edit({ ...content, landingPages })
-                  }
-                />
-              )}
-              {tab === "Existing pages" && (
-                <>
-                  <label className="admin-field">
-                    <span>Existing page</span>
-                    <select aria-label="Existing page" value={existingPage} onChange={event => {
-                      const value = event.target.value;
-                      setExistingPage(value === "nimbus" || value === "contact" || value === "bulk" || value === "returns" ? value : "story");
-                    }}>
-                      <option value="story">Our Story</option>
-                      <option value="nimbus">The Nimbus Collection</option>
-                      <option value="contact">Contact</option>
-                      <option value="bulk">Bulk Enquiry</option>
-                      <option value="returns">Return &amp; Exchange</option>
-                    </select>
-                  </label>
-                  {existingPage === "story"
-                    ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
-                    : existingPage === "nimbus"
-                      ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
-                      : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
-                </>
-              )}
-              {tab === "Artwork" && (
-                <TemplateArtworkFields value={content.templateMedia} onChange={templateMedia => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
-              )}
-              {tab === "Media" && (
-                <MediaLibrary session={session} onExpired={onExpired} />
-              )}
-              {tab === "Policies & blogs" && (
-                <>
-                  <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
-                  <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
-                </>
-              )}
-              {tab === "History" && (
-                <>
-                  <h2>Revision history</h2>
-                  <p>
-                    Restore saved content as a new draft. Save local changes
-                    before restoring.
-                  </p>
-                  {revisions.length === 0 ? (
-                    <p>No revisions yet. Save a draft to start its history.</p>
-                  ) : (
-                    <ul className="admin-history">
-                      {revisions.map((revision) => (
-                        <li key={revision.id}>
-                          <div>
-                            <strong>
-                              Version {revision.version} ·{" "}
-                              {titleCase(revision.action)}
-                            </strong>
-                            <span>
-                              {revision.actorEmail} ·{" "}
-                              {new Date(revision.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {session.user.role === "publisher" && (
-                            <button
-                              disabled={dirty}
-                              onClick={() => void write("restore", revision.id)}
-                            >
-                              Restore version {revision.version}
-                            </button>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              )}
-            </fieldset>
-            )}
+      <div className="admin-overview-grid" role="group" aria-label="Draft summary">
+        {stat("Homepage sections", visible, `visible of ${content.homeSections.length}`)}
+        {stat("Campaigns", content.campaigns.length, "editable")}
+        {stat("Informational pages", content.pages.length, content.pages.length === 1 ? "page" : "pages")}
+      </div>
+      {session.user.canManageEnquiries === true && <CrmSummary session={session} onExpired={onExpired} />}
+      <div className="admin-overview-cols">
+        <div className="admin-overview-card">
+          <h3>Publishing</h3>
+          <p>
+            {session.user.role === "publisher"
+              ? "You can edit and publish. Save any unsaved changes before publishing."
+              : "You can edit and save drafts. A publisher must publish your changes."}
+          </p>
+          <p>
+            Restoring a revision creates a draft. It does not change the
+            live storefront until published.
+          </p>
+          <p>
+            {document?.publishedVersion
+              ? `The storefront is on version ${document.publishedVersion}; the draft is version ${document.version}${dirty ? " with unsaved changes" : ""}.`
+              : "Nothing is published yet. Visitors see the bundled storefront content until the first publish."}
+          </p>
+        </div>
+        <div className="admin-overview-card">
+          <h3>Storefront</h3>
+          <p>Open the live storefront in a new tab, or use Live preview in the top bar to see the draft beside the editor.</p>
+          <div className="admin-actions">
+            <a href="/" target="_blank" rel="noopener noreferrer">
+              Open storefront
+            </a>
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 }

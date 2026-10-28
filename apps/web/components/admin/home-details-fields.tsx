@@ -31,7 +31,7 @@ export function HomeDetailsFields({ value, onChange }: {
     <section aria-label="Homepage section content">
       <h3>Section content</h3>
       <p>Open a section to edit its text. Changes appear on the storefront only after publishing.</p>
-      <details>
+      <details data-preview-section="hero">
         <summary>Hero</summary>
         <div className="admin-fields">
           {field("Hero collection button", page.hero.cta, 80, cta => update("hero", { ...page.hero, cta }))}
@@ -45,7 +45,7 @@ export function HomeDetailsFields({ value, onChange }: {
         </div>
         <p>Starting-price labels are display text. Product prices and availability are managed in Keeri.</p>
       </details>
-      <details>
+      <details data-preview-section="difference">
         <summary>The Maple Difference</summary>
         <div className="admin-fields">
           {field("Difference eyebrow", page.difference.eyebrow, 160, eyebrow => update("difference", { ...page.difference, eyebrow }))}
@@ -54,7 +54,7 @@ export function HomeDetailsFields({ value, onChange }: {
           {page.difference.promises.map((value, index) => field(`Difference promise ${index + 1}`, value, 160, value => update("difference", { ...page.difference, promises: page.difference.promises.map((item, i) => i === index ? value : item) })))}
         </div>
       </details>
-      <details>
+      <details data-preview-section="nimbus">
         <summary>Nimbus</summary>
         <div className="admin-fields">
           {field("Nimbus heading", page.nimbus.heading, 160, heading => update("nimbus", { ...page.nimbus, heading }))}
@@ -63,7 +63,7 @@ export function HomeDetailsFields({ value, onChange }: {
           {page.nimbus.features.map((value, index) => field(`Nimbus feature ${index + 1}`, value, 160, value => update("nimbus", { ...page.nimbus, features: page.nimbus.features.map((item, i) => i === index ? value : item) })))}
         </div>
       </details>
-      <details>
+      <details data-preview-section="testimonial">
         <summary>Customer testimonial</summary>
         <p>Use only approved customer wording and attribution.</p>
         <div className="admin-fields" ref={paragraphFields}>
@@ -85,7 +85,7 @@ export function HomeDetailsFields({ value, onChange }: {
           update("testimonial", { ...page.testimonial, paragraphs: [...page.testimonial.paragraphs, ""] });
         }}>Add testimonial paragraph</button>
       </details>
-      <details>
+      <details data-preview-section="newsletter">
         <summary>Newsletter</summary>
         <div className="admin-fields">
           {field("Newsletter heading", page.newsletter.heading, 160, heading => update("newsletter", { ...page.newsletter, heading }))}
@@ -93,7 +93,7 @@ export function HomeDetailsFields({ value, onChange }: {
           {field("Newsletter signup heading", page.newsletter.signupHeading, 160, signupHeading => update("newsletter", { ...page.newsletter, signupHeading }))}
         </div>
       </details>
-      <details>
+      <details data-preview-section="values">
         <summary>Values</summary>
         <div className="admin-fields">
           {page.values.map(value => (
@@ -105,14 +105,14 @@ export function HomeDetailsFields({ value, onChange }: {
           ))}
         </div>
       </details>
-      <details>
+      <details data-preview-section="cities">
         <summary>Cities</summary>
         <div className="admin-fields">
           {field("Cities eyebrow", page.cities.eyebrow, 160, eyebrow => update("cities", { ...page.cities, eyebrow }))}
           {field("Cities heading", page.cities.heading, 160, heading => update("cities", { ...page.cities, heading }))}
         </div>
       </details>
-      <details>
+      <details data-preview-section="project">
         <summary>Project introduction</summary>
         <div className="admin-fields">
           {field("Project heading", page.project.heading, 160, heading => update("project", { ...page.project, heading }))}
