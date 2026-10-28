@@ -13,6 +13,7 @@ const app = () => createApp(db, { webOrigin: origin, catalogMode: "preview", sec
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const ownedAdmins: string[] = [], ownedEnquiries: string[] = [];
 after(async () => {
+    await db.enquiryActivity.deleteMany({ where: { enquiryId: { in: ownedEnquiries } } });
     await db.enquiryReviewAudit.deleteMany({ where: { enquiryId: { in: ownedEnquiries } } });
     await db.enquiry.deleteMany({ where: { id: { in: ownedEnquiries } } });
     await db.shopAdminSession.deleteMany({ where: { adminId: { in: ownedAdmins } } });
@@ -60,7 +61,8 @@ test("authorized inbox paginates stable metadata without contact data, messages 
     assert.match(String(first.headers["cache-control"]), /no-store/);
     assert.deepEqual(first.body.items.map((row: any) => row.id), expected.slice(0, 2));
     for (const row of first.body.items)
-        assert.deepEqual(Object.keys(row).sort(), ["assignedToId", "createdAt", "id", "kind", "status", "version"]);
+        assert.deepEqual(Object.keys(row).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "product", "status", "version"]);
+    for (const row of first.body.items) { assert.equal(row.email, undefined); assert.equal(row.phone, undefined); assert.equal(row.message, undefined); }
     const cursor = JSON.parse(Buffer.from(first.body.nextCursor, "base64url").toString("utf8"));
     assert.deepEqual(Object.keys(cursor).sort(), ["createdAt", "id"]);
     const second = await read(`kind=project&status=new&limit=1&cursor=${first.body.nextCursor}`);
@@ -79,32 +81,34 @@ test("authorized inbox paginates stable metadata without contact data, messages 
     }
     assert.equal((await request(app()).get('/api/admin/enquiries/enq_00000000-0000-4000-8000-000000000000').set("Cookie", account.cookie)).status, 404);
 });
-test("review requires current capability, Origin, CSRF and expected version; concurrent review has one audit winner", async () => {
+test("stage changes require current capability, Origin, CSRF and expected version; concurrent changes have one audit winner", async () => {
     const account = await manager(), row = await enquiry();
-    const review = (body: object = { expectedVersion: 0 }, csrf = account.csrf, source = origin) => request(app()).post(`/api/admin/enquiries/${row.id}/review`).set("Cookie", account.cookie).set("Origin", source).set("X-CSRF-Token", csrf).send(body);
-    assert.equal((await review({}, account.csrf)).status, 400);
-    assert.equal((await review({ expectedVersion: 0, actorId: account.id })).status, 400);
-    assert.equal((await review({ expectedVersion: 0 }, "0".repeat(64))).status, 403);
-    assert.equal((await review({ expectedVersion: 0 }, account.csrf, "https://other.invalid")).status, 403);
-    const raced = await Promise.all([review(), review()]);
+    const stage = (body: object = { expectedVersion: 0, stage: "contacted" }, csrf = account.csrf, source = origin) => request(app()).post(`/api/admin/enquiries/${row.id}/stage`).set("Cookie", account.cookie).set("Origin", source).set("X-CSRF-Token", csrf).send(body);
+    assert.equal((await stage({}, account.csrf)).status, 400);
+    assert.equal((await stage({ expectedVersion: 0, stage: "contacted", actorId: account.id })).status, 400);
+    assert.equal((await stage({ expectedVersion: 0, stage: "reviewed" })).status, 400, "the legacy two-state value is not a stage");
+    assert.equal((await stage({ expectedVersion: 0, stage: "contacted" }, "0".repeat(64))).status, 403);
+    assert.equal((await stage({ expectedVersion: 0, stage: "contacted" }, account.csrf, "https://other.invalid")).status, 403);
+    const raced = await Promise.all([stage(), stage()]);
     assert.deepEqual(raced.map(r => r.status).sort(), [200, 409]);
     assert.ok(raced.every(r => String(r.headers["cache-control"]).includes("no-store")));
     const stored = await db.enquiry.findUniqueOrThrow({ where: { id: row.id } });
-    assert.equal(stored.status, "reviewed");
+    assert.equal(stored.status, "contacted");
     assert.equal(stored.version, 1);
-    const audits = await db.enquiryReviewAudit.findMany({ where: { enquiryId: row.id } });
+    const audits = await db.enquiryActivity.findMany({ where: { enquiryId: row.id } });
     assert.equal(audits.length, 1);
     assert.equal(audits[0]!.actorId, account.id);
     assert.equal(audits[0]!.version, 1);
-    assert.equal(audits[0]!.action, "reviewed");
+    assert.equal(audits[0]!.action, "status_changed");
+    assert.equal(audits[0]!.stage, "contacted");
     assert.ok(audits[0]!.createdAt instanceof Date);
-    assert.equal((await review({ expectedVersion: 1 })).status, 409);
-    assert.equal(await db.enquiryReviewAudit.count({ where: { enquiryId: row.id } }), 1);
+    assert.equal((await stage({ expectedVersion: 0, stage: "quoted" })).status, 409);
+    assert.equal(await db.enquiryActivity.count({ where: { enquiryId: row.id } }), 1);
     const next = await enquiry();
     await db.shopAdmin.update({ where: { id: account.id }, data: { canManageEnquiries: false } });
     for (const path of ["/api/admin/enquiries", `/api/admin/enquiries/${next.id}`])
         assert.equal((await request(app()).get(path).set("Cookie", account.cookie)).status, 403);
-    const denied = await request(app()).post(`/api/admin/enquiries/${next.id}/review`).set("Cookie", account.cookie).set("Origin", origin).set("X-CSRF-Token", account.csrf).send({ expectedVersion: 0 });
+    const denied = await request(app()).post(`/api/admin/enquiries/${next.id}/stage`).set("Cookie", account.cookie).set("Origin", origin).set("X-CSRF-Token", account.csrf).send({ expectedVersion: 0, stage: "contacted" });
     assert.equal(denied.status, 403);
     assert.equal((await db.enquiry.findUniqueOrThrow({ where: { id: next.id } })).status, "new");
 });

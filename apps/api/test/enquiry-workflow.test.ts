@@ -57,7 +57,7 @@ test("assignment and notes persist actor attribution; no-op stable and activity 
   const detail = await get(actor, `/${row.id}`); assert.equal(detail.body.assignedToId, null); assert.equal(detail.body.version, 3); assert.equal(detail.body.body, undefined);
   const metadata = await get(actor, "?assignment=unassigned"); assert.equal(metadata.status, 200);
   const item = metadata.body.items.find((item: any) => item.id === row.id); assert.ok(item);
-  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "createdAt", "id", "kind", "status", "version"]);
+  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "product", "status", "version"]);
 });
 test("directory paginates only active capable staff and assignment filters match actor", async () => {
   const actor = await staff(), target = await staff(), incapable = await staff(false), inactive = await staff(true, false), row = await enquiry();
@@ -107,11 +107,11 @@ test("strict validation rejects injection, controls, pagination and unavailable 
   assert.equal((await get(actor, "?assignment=unknown")).status, 400);
   assert.equal((await get(actor, `/${row.id}`)).body.version, 0); assert.deepEqual((await get(actor, `/${row.id}/activity`)).body.items, []);
 });
-test("concurrent notes, assignments and reviews share one CAS version with no duplicate audit", async () => {
+test("concurrent notes, assignments and stage changes share one CAS version with no duplicate audit", async () => {
   const actor = await staff();
-  for (const actions of [["notes", "notes"], ["assignment", "assignment"], ["assignment", "notes"], ["review", "notes"], ["review", "assignment"]]) {
+  for (const actions of [["notes", "notes"], ["assignment", "assignment"], ["assignment", "notes"], ["stage", "notes"], ["stage", "assignment"]]) {
     const row = await enquiry();
-    const responses = await Promise.all(actions.map(action => post(actor, row.id, action, action === "notes" ? { expectedVersion: 0, body: "Call tomorrow" } : action === "assignment" ? { expectedVersion: 0, assigneeId: actor.id } : { expectedVersion: 0 })));
+    const responses = await Promise.all(actions.map(action => post(actor, row.id, action, action === "notes" ? { expectedVersion: 0, body: "Call tomorrow" } : action === "assignment" ? { expectedVersion: 0, assigneeId: actor.id } : { expectedVersion: 0, stage: "contacted" })));
     assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
     const detail = await get(actor, `/${row.id}`), activity = await get(actor, `/${row.id}/activity`);
     assert.equal(detail.body.version, 1); assert.equal(activity.body.items.length + detail.body.reviews.length, 1);
