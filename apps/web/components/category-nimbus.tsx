@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import Image from "next/image";
+import { ContentImage as Image } from "@/components/content-image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { NimbusPageContent, NimbusSectionKey, TemplateMedia } from "@shopmaple/contracts";

@@ -71,6 +71,10 @@ Sign in at `https://store.maplefurnishers.com/admin`. Save an initial draft copi
 
 Sessions expire after eight hours; logout invalidates the stored token. Role changes and disabling an account are checked on subsequent requests. There is currently no staff-management, password-reset or MFA UI. Operator recovery must be separately authorized; do not use the create-only helper to reset an existing identity. Login attempts are bounded by the API and per-account lockout. Account lockout can deny access temporarily if an attacker targets a known address; no lockout bypass is provided.
 
+## Draft preview and reordering
+
+Editors can preview a saved draft in a new tab and drag list items into order; see [admin draft preview and drag-and-drop reordering](admin-preview-and-reordering.md) for the preview token model, the optional `ADMIN_PREVIEW_SECRET` variable and the keyboard controls. Previewing never publishes.
+
 ## Rollback and content recovery
 
 The new article authoring release also adds optional `authoredArticles` and the additive `ShopArticlePublication` date ledger. Deploy API/web together and preserve the ledger in paired database/media backups. Older content readers cannot parse authored-article documents. See [article authoring and recovery](releases/2026-10-26-authored-articles.md) for limits and restoration behavior.

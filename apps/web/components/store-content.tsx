@@ -1,5 +1,5 @@
 import { createElement, Fragment } from "react";
-import Image from "next/image";
+import { ContentImage as Image } from "@/components/content-image";
 export type ContentNode =
   | string
   | {

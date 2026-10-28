@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { z } from "zod";
-import { storefrontContentSchema } from "@shopmaple/contracts";
+import { storefrontContentSchema, type StorefrontContent } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "./content-defaults";
 const publishedSchema = z
   .object({
@@ -9,7 +9,9 @@ const publishedSchema = z
     content: storefrontContentSchema,
   })
   .strict();
-export async function readPublishedContent(transport: typeof fetch = fetch) {
+/** A content document plus whether campaign banners may render (false only during an API outage). */
+export type StorefrontDocument = StorefrontContent & { campaignsAvailable?: boolean };
+export async function readPublishedContent(transport: typeof fetch = fetch): Promise<StorefrontDocument> {
   try {
     const response = await transport(
       (process.env.API_URL ?? "http://127.0.0.1:4100") +

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { StoreContent } from "@/components/store-content";
+import { PolicyArticle } from "@/components/policy-page";
 import source from "@/data/store-content.json";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
@@ -33,16 +32,5 @@ export default async function PolicyPage({
   const { policies } = resolveEditorialContent(content.editorialContent);
   const policy = policies[slug];
   if (!policy) notFound();
-  return (
-    <section className="editorial-page">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
-        <span>{policy.title}</span>
-      </nav>
-      <h1>{policy.title}</h1>
-      <article className="store-prose">
-        <StoreContent nodes={policy.content} />
-      </article>
-    </section>
-  );
+  return <PolicyArticle policy={policy} />;
 }

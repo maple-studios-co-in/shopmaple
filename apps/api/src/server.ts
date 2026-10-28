@@ -19,6 +19,7 @@ const env = z
       .refine(isAbsolute, "Media root must be absolute")
       .optional(),
     CATALOG_MODE: z.literal("preview").default("preview"),
+    ADMIN_PREVIEW_SECRET: z.string().min(32).max(256).optional(),
   })
   .parse(process.env);
 if (
@@ -37,6 +38,7 @@ const server = createApp(
     webOrigin: new URL(env.WEB_ORIGIN).origin,
     catalogMode: env.CATALOG_MODE,
     mediaRoot: env.SHOP_MEDIA_ROOT,
+    previewSecret: env.ADMIN_PREVIEW_SECRET,
     secureCookies: process.env.NODE_ENV === "production",
     trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
     enquiryDelivery,

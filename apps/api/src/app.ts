@@ -30,6 +30,8 @@ export type AppConfig = {
   /** Only opt in for a loopback-bound API behind the trusted local Next/Tunnel proxy. */
   trustProxyLoopback?: boolean;
   mediaRoot?: string;
+  /** Signs staff draft-preview tokens; share it across API processes, or omit it for a per-process key. */
+  previewSecret?: string;
   catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
   /** Public checkout options; only meaningful together with an injected commerce service. */
@@ -75,7 +77,7 @@ export function createApp(
     next();
   });
   registerStaffRoutes(app, db, config.secureCookies);
-  registerContentRoutes(app, db, config.secureCookies, config.mediaRoot);
+  registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
   registerEnquiryAdminRoutes(app, db, config.secureCookies);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
   registerCatalogueViewRoutes(app, db);

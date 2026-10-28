@@ -2,6 +2,7 @@
 import type { NimbusPageContent, NimbusSectionKey } from "@shopmaple/contracts";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 import { Field } from "./forms";
+import { SortableList } from "./sortable-list";
 
 const sections: Record<NimbusSectionKey, string> = {
   hero: "Hero film", intro: "Introduction", "rooms-grid": "Room tiles", origin: "Origin",
@@ -22,10 +23,12 @@ export function NimbusFields({value,onChange}:{value?:NimbusPageContent;onChange
       <p>Edit /pages/nimbus-collection. Changes stay in your draft until published. The original artwork, videos and product links stay attached to their sections.</p>
       {field("Nimbus page title",page.title,160,title=>update("title",title))}
       <h3>Sections</h3>
-      <p>Move sections or hide them. A page heading remains available to screen readers.</p>
-      <ol className="admin-section-list">
-        {page.sections.map((section,index)=>(
-          <li key={section.key}>
+      <p>Drag sections into order, or use the Move buttons, and hide the ones you do not need. A page heading remains available to screen readers.</p>
+      <SortableList items={page.sections} getId={section=>section.key} getLabel={section=>`Nimbus ${sections[section.key]}`} className="admin-section-list"
+        onReorder={next=>update("sections",next)}
+        renderItem={(section,index,handle)=>(
+          <>
+            {handle}
             <label>
               <input type="checkbox" aria-label={`Show Nimbus ${sections[section.key]}`} checked={section.enabled}
                 onChange={event=>update("sections",page.sections.map(item=>item.key===section.key?{...item,enabled:event.target.checked}:item))}/>
@@ -40,9 +43,9 @@ export function NimbusFields({value,onChange}:{value?:NimbusPageContent;onChange
                 </button>
               ))}
             </div>
-          </li>
-        ))}
-      </ol>
+          </>
+        )}
+      />
       <h3>Section content</h3>
       <details><summary>Introduction</summary><div className="admin-fields">
         {field("Nimbus introduction heading",page.intro.heading,160,heading=>update("intro",{...page.intro,heading}))}

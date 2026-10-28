@@ -18,6 +18,7 @@ import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
+import { SortableList } from "./sortable-list";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 type Document = {
@@ -109,6 +110,7 @@ export function ContentEditor({
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [previewLink, setPreviewLink] = useState("");
   const [revisions, setRevisions] = useState<Revision[]>([]);
   function acceptDocument(value: unknown) {
     const next = parseDocument(value);
@@ -184,12 +186,80 @@ export function ContentEditor({
     setContent(next);
     setDirty(true);
     setNotice("");
+    setPreviewLink("");
+  }
+  /** Storefront address the preview opens on, chosen from what is being edited. */
+  function previewPath() {
+    if (tab === "Category pages") return "pages/sofas";
+    if (tab === "Existing pages")
+      return existingPage === "story" ? "pages/our-story"
+        : existingPage === "nimbus" ? "pages/nimbus-collection"
+        : existingPage === "contact" ? "pages/contact"
+        : existingPage === "bulk" ? "pages/bulk-enquiry"
+        : "pages/returns";
+    if (tab === "Pages") {
+      const page = content?.pages.find((item) => item.slug);
+      if (page) return `pages/${encodeURIComponent(page.slug)}`;
+    }
+    return "home";
+  }
+  async function preview() {
+    if (!document || !content || busy || conflict || scheduleEditing) return;
+    setPreviewLink("");
+    // Open the tab inside the click so pop-up blockers allow it; it navigates once the token exists.
+    const tab = window.open("about:blank", "_blank");
+    let version = document.version;
+    if (dirty || document.draft === null) {
+      const saved = await write("save");
+      if (!saved) {
+        tab?.close();
+        return;
+      }
+      version = saved.version;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await adminRequest("/api/admin/content/preview", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        body: JSON.stringify({ expectedVersion: version }),
+      });
+      if (response.status === 401) {
+        tab?.close();
+        onExpired();
+        return;
+      }
+      if (response.status === 409) {
+        tab?.close();
+        setConflict(true);
+        setError("Another editor saved a newer version. Reload the latest draft before previewing again; reloading discards local changes.");
+        return;
+      }
+      if (!response.ok) throw new Error("Preview failed");
+      const result: unknown = await response.json();
+      const token = result && typeof result === "object" ? (result as { token?: unknown }).token : undefined;
+      if (typeof token !== "string" || !/^[A-Za-z0-9_-]{1,400}\.[A-Za-z0-9_-]{43}$/.test(token)) throw new Error("Invalid preview token");
+      const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(token)}`;
+      if (tab) tab.location.href = url;
+      else setPreviewLink(url);
+    } catch (error) {
+      tab?.close();
+      setError(
+        error instanceof AdminRequestTimeout
+          ? "Opening the preview timed out. Your draft is saved; please try again."
+          : "We couldn't open the preview. Your draft is saved; please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   async function write(
     action: "save" | "publish" | "restore",
     revisionId?: string,
-  ) {
-    if (!document || !content || busy || conflict || scheduleEditing) return;
+  ): Promise<Document | null> {
+    if (!document || !content || busy || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
@@ -197,7 +267,7 @@ export function ContentEditor({
         setError(
           `Check ${issue?.path.join(" · ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`,
         );
-        return;
+        return null;
       }
     }
     setBusy(true);
@@ -225,20 +295,20 @@ export function ContentEditor({
       );
       if (response.status === 401) {
         onExpired();
-        return;
+        return null;
       }
       if (response.status === 409) {
         setConflict(true);
         setError(
           "Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.",
         );
-        return;
+        return null;
       }
       if (response.status === 403) {
         setError(
           "Your permission or session has changed. Sign out and sign in again before continuing.",
         );
-        return;
+        return null;
       }
       if (!response.ok) {
         setError(
@@ -246,9 +316,10 @@ export function ContentEditor({
             ? "Some content is invalid. Check your links and fields, then save again."
             : "We couldn't complete that change. Your local edits are still here. Please try again.",
         );
-        return;
+        return null;
       }
-      acceptDocument(await response.json());
+      const accepted = parseDocument(await response.json());
+      acceptDocument(accepted);
       setNotice(
         action === "save"
           ? "Draft saved. The published storefront has not changed."
@@ -256,12 +327,14 @@ export function ContentEditor({
             ? "Draft published. The storefront now uses this version."
             : "Restored as a draft. Review it, then publish when ready.",
       );
+      return accepted;
     } catch (error) {
       setError(
         error instanceof AdminRequestTimeout
           ? "The request timed out. Your local edits are still here. Please try again."
           : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.",
       );
+      return null;
     } finally {
       setBusy(false);
     }
@@ -298,6 +371,13 @@ export function ContentEditor({
           >
             Save draft
           </button>
+          <button
+            data-action="preview"
+            disabled={!document || !content || busy || conflict || scheduleEditing}
+            onClick={() => void preview()}
+          >
+            Preview draft
+          </button>
           {session.user.role === "publisher" && (
             <button
               className="admin-primary"
@@ -317,6 +397,14 @@ export function ContentEditor({
       {notice && (
         <p role="status" className="admin-notice">
           {notice}
+        </p>
+      )}
+      {previewLink && (
+        <p role="status" className="admin-notice">
+          Your browser blocked the preview tab.{" "}
+          <a href={previewLink} target="_blank" rel="noopener noreferrer">
+            Open draft preview
+          </a>
         </p>
       )}
       {conflict && (
@@ -401,10 +489,16 @@ export function ContentEditor({
               {tab === "Homepage" && (
                 <>
                   <h2>Homepage</h2>
-                  <p>Move sections into order and choose what visitors see.</p>
-                  <ol className="admin-section-list">
-                    {content.homeSections.map((section, index) => (
-                      <li key={section.key}>
+                  <p>Drag sections into order, or use the Move buttons, and choose what visitors see.</p>
+                  <SortableList
+                    items={content.homeSections}
+                    getId={(section) => section.key}
+                    getLabel={(section) => titleCase(section.key)}
+                    className="admin-section-list"
+                    onReorder={(homeSections) => edit({ ...content, homeSections })}
+                    renderItem={(section, index, handle) => (
+                      <>
+                        {handle}
                         <label>
                           <input
                             type="checkbox"
@@ -446,9 +540,9 @@ export function ContentEditor({
                             </button>
                           ))}
                         </div>
-                      </li>
-                    ))}
-                  </ol>
+                      </>
+                    )}
+                  />
                   <h3>Homepage copy</h3>
                   <div className="admin-fields">
                     {(
