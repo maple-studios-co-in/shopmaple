@@ -17,7 +17,8 @@ const admins: string[] = [], enquiries: string[] = [], contacts: string[] = [];
 const suffix = randomBytes(4).toString("hex");
 // Phone numbers are unique per run so a previous run's rows can never be matched by phone.
 const digits = String(parseInt(suffix, 16) % 100000).padStart(5, "0");
-const phone = (tail: string) => `9${digits}${tail}`;
+// Numbers starting with 1 cannot be Indian mobiles (which start with 6 to 9), so fixtures are clearly synthetic.
+const phone = (tail: string) => `1${digits}${tail}`;
 after(async () => {
   const owned = await db.$queryRaw<Array<{ id: string }>>`SELECT "id" FROM "Enquiry" WHERE "id" = ANY(${enquiries}) OR "contactId" = ANY(${contacts})`;
   const ids = owned.map(row => row.id);
@@ -55,7 +56,7 @@ async function submit(body: Record<string, unknown>) {
 }
 function tracked<T extends { id: string }>(row: T, kind: "enquiry" | "contact") { (kind === "enquiry" ? enquiries : contacts).push(row.id); return row; }
 
-test("public enquiries create or reuse a contact keyed by normalised email, then phone; concurrent first contact is unique", async () => {
+test("contacts link by normalised email only: a stranger's enquiry with the victim's phone gets its own contact and placeholders are never keyed", async () => {
   const posted = await request(app).post("/api/enquiries").set("Origin", origin).set("Idempotency-Key", randomUUID()).send(sample({ name: "Asha Rao", email: `Asha-${suffix}@Example.invalid`, phone: `+91 ${phone("")} 0001` }));
   assert.equal(posted.status, 201);
   const first = await db.enquiry.findUniqueOrThrow({ where: { id: posted.body.reference } });
@@ -63,12 +64,18 @@ test("public enquiries create or reuse a contact keyed by normalised email, then
   assert.ok(first.contactId, "a new enquiry creates a contact");
   const again = await submit({ name: "A. Rao", email: `asha-${suffix}@example.invalid`, phone: "" });
   assert.equal(again.contactId, first.contactId, "email is matched case-insensitively");
-  const byPhone = await submit({ name: "Asha at work", email: `asha-work-${suffix}@example.invalid`, phone: phone("0001") });
-  assert.equal(byPhone.contactId, first.contactId, "a new email with the same normalised phone joins the contact");
-  const other = await submit({ name: "Someone Else", email: `else-${suffix}@example.invalid`, phone: `+91 ${phone("")} 0002` });
-  assert.notEqual(other.contactId, first.contactId);
+  const attacker = await submit({ name: "Someone Else", email: `attacker-${suffix}@example.invalid`, phone: phone("0001") });
+  assert.notEqual(attacker.contactId, first.contactId, "an unverified phone never attaches a different email to an existing contact");
+  const attackerContact = await db.$queryRaw<Array<{ emailKey: string; phoneKey: string | null }>>`SELECT "emailKey","phoneKey" FROM "Contact" WHERE "id"=${attacker.contactId}`;
+  assert.equal(attackerContact[0]!.emailKey, `attacker-${suffix}@example.invalid`);
+  assert.equal(attackerContact[0]!.phoneKey, `91${phone("0001")}`, "the same normalised phone may be stored on two contacts; it is never a key");
   const contact = await db.$queryRaw<Array<{ name: string; email: string; phone: string; emailKey: string; phoneKey: string | null }>>`SELECT "name","email","phone","emailKey","phoneKey" FROM "Contact" WHERE "id"=${first.contactId}`;
   assert.deepEqual(contact[0], { name: "Asha Rao", email: `asha-${suffix}@example.invalid`, phone: `+91 ${phone("")} 0001`, emailKey: `asha-${suffix}@example.invalid`, phoneKey: `91${phone("0001")}` });
+  for (const [index, placeholder] of ["0000000000", "1234567890", "+91 99999 99999", "12345", "+91 0123456789", ""].entries()) {
+    const row = await submit({ name: "Placeholder", email: `placeholder-${index}-${suffix}@example.invalid`, phone: placeholder });
+    const keyed = await db.$queryRaw<Array<{ phoneKey: string | null }>>`SELECT "phoneKey" FROM "Contact" WHERE "id"=${row.contactId}`;
+    assert.equal(keyed[0]!.phoneKey, null, `placeholder phone ${JSON.stringify(placeholder)} is never keyed`);
+  }
   const email = `race-${suffix}@example.invalid`;
   const raced = await Promise.all([1, 2, 3].map(() => request(app).post("/api/enquiries").set("Origin", origin).set("Idempotency-Key", randomUUID()).send({ kind: "contact", email, message: "Race" })));
   assert.deepEqual(raced.map(r => r.status), [201, 201, 201]);
@@ -104,28 +111,40 @@ test("pipeline stage changes log actor and stage, require a lost reason, and the
   assert.ok((await get(actor, "/enquiries?status=won")).body.items.some((item: any) => item.id === row.id));
 });
 
-test("list filters by stage, assignee and date range and searches name, email, phone, product and SKU case-insensitively", async () => {
+test("list filters by stage, assignee and Kolkata date range; search runs over POST so no contact data enters a URL", async () => {
   const actor = await staff("publisher"), other = await staff();
   const a = await submit({ name: "Priya Menon", email: `priya-${suffix}@example.invalid`, phone: `+91 ${phone("")} 1111`, context: { product: "Nimbus Sofa", variant: "", sku: `NIM-3S-${suffix}`, pincode: "" } });
   const b = await submit({ name: "Rahul K", email: `rahul-${suffix}@example.invalid`, phone: `+91 ${phone("")} 2222`, context: { product: "Aero Chair", variant: "", sku: `AER-1-${suffix}`, pincode: "" } });
-  await db.enquiry.update({ where: { id: b.id }, data: { createdAt: new Date("2099-03-10T12:00:00Z") } });
+  const c = await submit({ name: "Late Night", email: `late-${suffix}@example.invalid` });
+  // 23:30 and 00:00 Asia/Kolkata on either side of midnight, 10 and 11 March.
+  await db.enquiry.update({ where: { id: b.id }, data: { createdAt: new Date("2099-03-10T18:00:00Z") } });
+  await db.enquiry.update({ where: { id: c.id }, data: { createdAt: new Date("2099-03-10T18:30:00Z") } });
   assert.equal((await post(actor, `/enquiries/${a.id}/assignment`, { expectedVersion: 0, assigneeId: other.id })).status, 200);
-  const mine = [a.id, b.id];
+  const mine = [a.id, b.id, c.id];
   const ids = async (query: string) => { const r = await get(actor, `/enquiries?${query}`); assert.equal(r.status, 200, query); return (r.body.items.map((item: any) => item.id) as string[]).filter(id => mine.includes(id)); };
-  assert.deepEqual(await ids(`q=priya menon`), [a.id]);
-  assert.deepEqual(await ids(`q=RAHUL-${suffix}%40EXAMPLE`), [b.id]);
-  assert.deepEqual(await ids(`q=${digits} 1111`), [a.id]);
-  assert.deepEqual(await ids(`q=nimbus sofa`), [a.id]);
-  assert.deepEqual(await ids(`q=aer-1-${suffix}`), [b.id]);
-  assert.deepEqual(await ids(`q=%25%25%25-${suffix}`), [], "wildcards are literal");
+  const search = async (body: object) => { const r = await post(actor, "/enquiries/search", body); assert.equal(r.status, 200, JSON.stringify(body)); return (r.body.items.map((item: any) => item.id) as string[]).filter(id => mine.includes(id)); };
+  assert.deepEqual(await search({ q: "priya menon" }), [a.id]);
+  assert.deepEqual(await search({ q: `RAHUL-${suffix}@EXAMPLE` }), [b.id]);
+  assert.deepEqual(await search({ q: `${digits} 1111` }), [a.id]);
+  assert.deepEqual(await search({ q: "nimbus sofa" }), [a.id]);
+  assert.deepEqual(await search({ q: `aer-1-${suffix}` }), [b.id]);
+  assert.deepEqual(await search({ q: `%%%-${suffix}` }), [], "wildcards are literal");
+  assert.deepEqual(await search({ q: `rahul-${suffix}`, to: "2099-03-09" }), []);
+  assert.deepEqual(await search({ status: "new", assigneeId: other.id }), [a.id], "search accepts every list filter");
   assert.deepEqual(await ids(`assigneeId=${other.id}`), [a.id]);
-  assert.deepEqual(await ids(`from=2099-03-10&to=2099-03-10`), [b.id]);
-  assert.deepEqual(await ids(`from=2099-03-11`), []);
-  assert.deepEqual(await ids(`to=2099-03-09&q=rahul-${suffix}`), []);
-  const item = (await get(actor, `/enquiries?q=priya-${suffix}`)).body.items[0];
-  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "product", "status", "version"]);
-  assert.equal(item.name, "Priya Menon"); assert.equal(item.product, "Nimbus Sofa"); assert.equal(item.contactId, a.contactId);
-  for (const query of ["q=" + "x".repeat(101), "from=2099-13-01", "to=bad", "assigneeId=nope", "q=bad%00"]) assert.equal((await get(actor, `/enquiries?${query}`)).status, 400, query);
+  assert.deepEqual(await ids(`from=2099-03-10&to=2099-03-10`), [b.id], "day bounds are Asia/Kolkata calendar days");
+  assert.deepEqual(await ids(`from=2099-03-11&to=2099-03-11`), [c.id]);
+  assert.deepEqual(await ids(`from=2099-03-12`), []);
+  assert.equal((await get(actor, `/enquiries?q=priya`)).status, 400, "GET never carries search text");
+  assert.equal((await request(app).post("/api/admin/enquiries/search").set("Cookie", actor.cookie).set("Origin", origin).send({ q: "priya" })).status, 403, "search needs CSRF like every POST");
+  const item = (await post(actor, "/enquiries/search", { q: `priya-${suffix}` })).body.items[0];
+  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "nextDueOn", "product", "status", "version"]);
+  assert.equal(item.name, "Priya Menon"); assert.equal(item.product, "Nimbus Sofa"); assert.equal(item.contactId, a.contactId); assert.equal(item.nextDueOn, null);
+  assert.equal((await post(actor, "/crm/tasks", { enquiryId: a.id, title: "Quote", dueOn: "2030-01-05" })).status, 201);
+  assert.equal((await post(actor, "/crm/tasks", { enquiryId: a.id, title: "Earlier", dueOn: "2030-01-02" })).status, 201);
+  assert.equal((await post(actor, "/enquiries/search", { q: `priya-${suffix}` })).body.items[0].nextDueOn, "2030-01-02", "rows carry the earliest open follow-up");
+  for (const query of ["from=2099-13-01", "from=2026-02-31", "to=bad", "assigneeId=nope", "q=x"]) assert.equal((await get(actor, `/enquiries?${query}`)).status, 400, query);
+  for (const body of [{ q: "x".repeat(101) }, { q: "bad\u0000" }, { from: "2026-02-30" }, { email: "x" }]) assert.equal((await post(actor, "/enquiries/search", body)).status, 400, JSON.stringify(body));
 });
 
 test("contacts list, search, detail with enquiries, guarded update and a combined timeline", async () => {
@@ -133,10 +152,12 @@ test("contacts list, search, detail with enquiries, guarded update and a combine
   const first = await submit({ name: "Meera Iyer", email: `meera-${suffix}@example.invalid`, phone: `+91 ${phone("")} 3333`, context: { product: "Dining table", variant: "", sku: "", pincode: "" } });
   const second = await submit({ name: "Meera", email: `meera-${suffix}@example.invalid`, kind: "project" });
   const contactId = first.contactId!;
-  const list = await get(actor, `/crm/contacts?q=meera-${suffix}`);
+  const list = await post(actor, "/crm/contacts/search", { q: `meera-${suffix}` });
   assert.equal(list.status, 200); assert.equal(list.body.items.length, 1);
   assert.deepEqual(Object.keys(list.body.items[0]).sort(), ["city", "createdAt", "email", "id", "name", "notes", "phone", "tags", "updatedAt", "version"]);
-  assert.equal((await get(actor, "/crm/contacts?q=" + "x".repeat(101))).status, 400);
+  assert.equal((await post(actor, "/crm/contacts/search", { q: "x".repeat(101) })).status, 400);
+  assert.equal((await get(actor, `/crm/contacts?q=meera`)).status, 400, "GET never carries search text");
+  assert.equal((await get(actor, "/crm/contacts")).status, 200);
   assert.equal((await get(actor, "/crm/contacts/ct_00000000-0000-4000-8000-000000000000")).status, 404);
   const detail = await get(actor, `/crm/contacts/${contactId}`);
   assert.equal(detail.status, 200);
@@ -149,15 +170,18 @@ test("contacts list, search, detail with enquiries, guarded update and a combine
   assert.equal(saved.status, 200); assert.equal(saved.body.version, 1); assert.equal(saved.body.city, "Bengaluru"); assert.deepEqual(saved.body.tags, ["trade", "repeat"]);
   assert.equal((await update({ expectedVersion: 0, name: "Meera", phone: "", city: "", tags: [], notes: "" })).status, 409);
   const other = await submit({ name: "Phone owner", email: `phone-owner-${suffix}@example.invalid`, phone: `+91 ${phone("")} 4444` });
-  const clash = await update({ expectedVersion: 1, name: "Meera Iyer", phone: `${phone("")} 4444`, city: "Bengaluru", tags: [], notes: "" });
-  assert.equal(clash.status, 409); assert.equal(clash.body.code, "CONTACT_PHONE_IN_USE"); assert.ok(other.contactId);
+  const shared = await update({ expectedVersion: 1, name: "Meera Iyer", phone: `${phone("")} 4444`, city: "Bengaluru", tags: [], notes: "" });
+  assert.equal(shared.status, 200, "phones are not keys, so two contacts may share one"); assert.ok(other.contactId);
+  assert.equal((await update({ expectedVersion: 2, name: "Meera\u202eIyer", phone: "", city: "", tags: [], notes: "" })).status, 400, "bidi overrides are rejected");
+  assert.equal((await update({ expectedVersion: 2, name: "Meera", phone: "", city: "", tags: ["a\nb"], notes: "" })).status, 400, "tags are single line");
+  assert.equal((await update({ expectedVersion: 2, name: "Meera Iyer", phone: "", city: "", tags: [], notes: "line one\nline two" })).status, 200, "notes keep newlines");
   await post(actor, `/enquiries/${first.id}/stage`, { expectedVersion: 0, stage: "contacted" });
   await post(actor, `/enquiries/${second.id}/notes`, { expectedVersion: 0, body: "Called back" });
   const timeline = await get(actor, `/crm/contacts/${contactId}/timeline?limit=2`);
   assert.equal(timeline.status, 200); assert.equal(timeline.body.items.length, 2);
   const all = [...timeline.body.items, ...(await get(actor, `/crm/contacts/${contactId}/timeline?limit=10&cursor=${timeline.body.nextCursor}`)).body.items];
   assert.deepEqual(all.map((item: any) => [item.source, item.action, item.enquiryId]), [
-    ["enquiry", "note", second.id], ["enquiry", "status_changed", first.id], ["contact", "updated", null], ["enquiry", "enquiry_received", second.id], ["enquiry", "enquiry_received", first.id],
+    ["enquiry", "note", second.id], ["enquiry", "status_changed", first.id], ["contact", "updated", null], ["contact", "updated", null], ["contact", "updated", null], ["enquiry", "enquiry_received", second.id], ["enquiry", "enquiry_received", first.id],
   ]);
   assert.equal(all[0].body, "Called back"); assert.equal(all[1].stage, "contacted"); assert.equal(all[2].actorId, actor.id);
 });
@@ -167,7 +191,7 @@ test("follow-up tasks belong to one enquiry or contact, filter by overdue/today/
   const row = await submit({ email: `tasks-${suffix}@example.invalid` });
   const contactId = row.contactId!;
   const create = (body: object) => post(actor, "/crm/tasks", body);
-  for (const body of [{ title: "No parent", dueOn: "2030-01-01" }, { enquiryId: row.id, contactId, title: "Both", dueOn: "2030-01-01" }, { enquiryId: row.id, title: "", dueOn: "2030-01-01" }, { enquiryId: row.id, title: "Bad date", dueOn: "2030-1-1" }, { enquiryId: row.id, title: "Bad assignee", dueOn: "2030-01-01", assigneeId: "nope" }, { enquiryId: "enq_00000000-0000-4000-8000-000000000000", title: "Missing", dueOn: "2030-01-01" }])
+  for (const body of [{ title: "No parent", dueOn: "2030-01-01" }, { enquiryId: row.id, contactId, title: "Both", dueOn: "2030-01-01" }, { enquiryId: row.id, title: "", dueOn: "2030-01-01" }, { enquiryId: row.id, title: "Bad date", dueOn: "2030-1-1" }, { enquiryId: row.id, title: "Impossible date", dueOn: "2030-02-30" }, { enquiryId: row.id, title: "Multi\nline", dueOn: "2030-01-01" }, { enquiryId: row.id, title: "Bad assignee", dueOn: "2030-01-01", assigneeId: "nope" }, { enquiryId: "enq_00000000-0000-4000-8000-000000000000", title: "Missing", dueOn: "2030-01-01" }])
     assert.ok([400, 404].includes((await create(body)).status), JSON.stringify(body));
   const overdue = await create({ enquiryId: row.id, title: "Send quote", dueOn: "2030-01-05", assigneeId: actor.id, note: "Walnut finish" });
   assert.equal(overdue.status, 201);
@@ -176,11 +200,12 @@ test("follow-up tasks belong to one enquiry or contact, filter by overdue/today/
   const today = await create({ contactId, title: "Call Meera", dueOn: "2030-01-10", assigneeId: colleague.id });
   const later = await create({ enquiryId: row.id, title: "Site visit", dueOn: "2030-02-01" });
   assert.equal(later.status, 201);
-  const ids = async (query: string) => { const r = await get(actor, `/crm/tasks?${query}`); assert.equal(r.status, 200, query); return r.body.items.map((item: any) => item.id) as string[]; };
+  const known = [overdue.body.id, today.body.id, later.body.id];
+  const ids = async (query: string) => { const r = await get(actor, `/crm/tasks?${query}`); assert.equal(r.status, 200, query); return (r.body.items.map((item: any) => item.id) as string[]).filter(id => known.includes(id)); };
   assert.equal((await get(actor, "/crm/tasks")).status, 400, "today is required");
   assert.deepEqual(await ids("view=overdue&today=2030-01-10"), [overdue.body.id]);
   assert.deepEqual(await ids("view=today&today=2030-01-10"), [today.body.id]);
-  assert.deepEqual((await ids("view=open&today=2030-01-10")).filter(id => [overdue.body.id, today.body.id, later.body.id].includes(id)), [overdue.body.id, today.body.id, later.body.id], "open tasks are ordered by due date");
+  assert.deepEqual(await ids("view=open&today=2030-01-10"), [overdue.body.id, today.body.id, later.body.id], "open tasks are ordered by due date");
   assert.deepEqual(await ids(`view=open&today=2030-01-10&assignment=mine&enquiryId=${row.id}`), [overdue.body.id]);
   assert.deepEqual(await ids(`view=open&today=2030-01-10&contactId=${contactId}`), [today.body.id]);
   const complete = (id: string, body: object, account = actor) => post(account, `/crm/tasks/${id}/complete`, body);
@@ -208,8 +233,9 @@ test("dashboard summary counts stages, overdue and due-today tasks and enquiries
   const before = await read();
   const fresh = await submit({ email: `summary-fresh-${suffix}@example.invalid` });
   const old = await submit({ email: `summary-old-${suffix}@example.invalid` });
-  await db.enquiry.update({ where: { id: fresh.id }, data: { createdAt: new Date("2030-06-09T00:00:00Z") } });
-  await db.enquiry.update({ where: { id: old.id }, data: { createdAt: new Date("2030-06-07T23:59:59Z") } });
+  // 00:00 and 23:59:59 Asia/Kolkata on 9 and 8 June respectively.
+  await db.enquiry.update({ where: { id: fresh.id }, data: { createdAt: new Date("2030-06-08T18:30:00Z") } });
+  await db.enquiry.update({ where: { id: old.id }, data: { createdAt: new Date("2030-06-08T18:29:59Z") } });
   await post(actor, `/enquiries/${old.id}/stage`, { expectedVersion: 0, stage: "quoted" });
   await post(actor, "/crm/tasks", { enquiryId: fresh.id, title: "Late", dueOn: "2030-06-14" });
   await post(actor, "/crm/tasks", { enquiryId: fresh.id, title: "Today", dueOn: "2030-06-15" });
@@ -219,10 +245,11 @@ test("dashboard summary counts stages, overdue and due-today tasks and enquiries
   assert.deepEqual(Object.keys(after).sort(), ["dueTodayTasks", "newLastSevenDays", "overdueTasks", "stages"]);
   assert.equal(after.stages.new - before.stages.new, 1); assert.equal(after.stages.quoted - before.stages.quoted, 1);
   assert.equal(after.overdueTasks - before.overdueTasks, 1); assert.equal(after.dueTodayTasks - before.dueTodayTasks, 1);
-  assert.equal(after.newLastSevenDays - before.newLastSevenDays, 1, "seven days includes today and the six days before it");
+  assert.equal(after.newLastSevenDays - before.newLastSevenDays, 1, "seven Kolkata calendar days: today and the six before it");
+  assert.equal((await get(actor, "/crm/summary?today=2030-02-30")).status, 400, "impossible dates are rejected");
 });
 
-test("reply by email is refused without Resend, otherwise sends plain text to the customer and records the full message", async () => {
+test("reply by email is refused without Resend, otherwise sends plain text to the customer once per version and records the full message", async () => {
   const actor = await staff();
   const row = await submit({ email: `reply-${suffix}@example.invalid`, name: "Reply Target" });
   const reply = (body: object, http = app, account = actor) => post(account, `/enquiries/${row.id}/reply`, body, http);
@@ -237,11 +264,13 @@ test("reply by email is refused without Resend, otherwise sends plain text to th
     return outcome === "ok" ? Response.json({ id: randomUUID() }) : Response.json({ name: "validation_error" }, { status: 422 });
   };
   const configured = build({ enquiryDelivery: config, outboundFetch });
-  for (const body of [{}, { expectedVersion: 0, subject: "", body: "x" }, { expectedVersion: 0, subject: "s", body: " " }, { expectedVersion: 0, subject: "s", body: "x".repeat(5001) }, { expectedVersion: 0, subject: "s", body: "bad\u0007" }, { expectedVersion: 0, subject: "s", body: "x", html: "<b>" }])
-    assert.equal((await reply(body, configured)).status, 400);
+  for (const body of [{}, { expectedVersion: 0, subject: "", body: "x" }, { expectedVersion: 0, subject: "s", body: " " }, { expectedVersion: 0, subject: "s", body: "x".repeat(5001) }, { expectedVersion: 0, subject: "s", body: "bad\u0007" }, { expectedVersion: 0, subject: "s", body: "x", html: "<b>" },
+    { expectedVersion: 0, subject: "Hi\r\nBcc: x@evil.test", body: "x" }, { expectedVersion: 0, subject: "Hi\nthere", body: "x" }, { expectedVersion: 0, subject: "Hi\tthere", body: "x" }, { expectedVersion: 0, subject: "Invoice \u202eexe.pdf", body: "x" }, { expectedVersion: 0, subject: "s", body: "see \u2066this\u2069" }, { expectedVersion: 0, subject: "s", body: "line\r\nbreak" }, { expectedVersion: 0, subject: "s\u0085", body: "x" }])
+    assert.equal((await reply(body, configured)).status, 400, JSON.stringify(body));
   assert.equal((await reply({ expectedVersion: 5, subject: "s", body: "x" }, configured)).status, 409);
   assert.equal(calls.length, 0, "no email leaves before validation and version checks pass");
-  const text = "Hi Reply Target,\n\nThe Aero chair is in stock. <b>not html</b>\n\nMaple";
+  assert.deepEqual((await get(actor, `/enquiries/${row.id}/activity`)).body.items, [], "rejected replies leave no activity");
+  const text = "Hi Reply Target,\n\nThe Aero chair is in stock. <b>not html</b>\n\tTabbed line\n\nMaple";
   const sent = await reply({ expectedVersion: 0, subject: "  Your Aero chair enquiry ", body: text }, configured);
   assert.equal(sent.status, 200, JSON.stringify(sent.body)); assert.equal(sent.body.version, 1);
   assert.equal(calls.length, 1);
@@ -250,19 +279,24 @@ test("reply by email is refused without Resend, otherwise sends plain text to th
   assert.deepEqual(payload, { from: "shop@example.invalid", to: [`reply-${suffix}@example.invalid`], reply_to: "staff@example.invalid", subject: "Your Aero chair enquiry", text });
   assert.equal("html" in payload, false, "replies are plain text only");
   assert.equal(new Headers(calls[0]!.init.headers).get("Authorization"), "Bearer synthetic-test-key");
+  assert.equal(new Headers(calls[0]!.init.headers).get("Idempotency-Key"), `reply/${row.id}/1`, "the provider key is derived from the enquiry and the version consumed");
   const logged = (await get(actor, `/enquiries/${row.id}/activity`)).body.items[0];
   assert.equal(logged.action, "email_sent"); assert.equal(logged.actorId, actor.id); assert.equal(logged.subject, "Your Aero chair enquiry"); assert.equal(logged.body, text); assert.equal(logged.version, 1);
+  const raced = await Promise.all([reply({ expectedVersion: 1, subject: "Twice", body: "Only once" }, configured), reply({ expectedVersion: 1, subject: "Twice", body: "Only once" }, configured)]);
+  assert.deepEqual(raced.map(r => r.status).sort(), [200, 409], "two replies with one expected version: one wins");
+  assert.equal(calls.length, 2, "the loser never reaches the provider");
+  assert.equal((await get(actor, `/enquiries/${row.id}`)).body.version, 2);
   outcome = "fail";
-  const failed = await reply({ expectedVersion: 1, subject: "Again", body: "Second" }, configured);
+  const failed = await reply({ expectedVersion: 2, subject: "Again", body: "Second" }, configured);
   assert.equal(failed.status, 502); assert.equal(failed.body.code, "EMAIL_SEND_FAILED");
   const after = (await get(actor, `/enquiries/${row.id}/activity`)).body.items[0];
-  assert.equal(after.action, "email_failed"); assert.equal(after.body, "Second"); assert.equal(after.version, 2);
+  assert.equal(after.action, "email_failed"); assert.equal(after.body, "Second"); assert.equal(after.version, 3);
   outcome = "ok";
-  let version = 2, statuses: number[] = [];
+  let version = 3; const statuses: number[] = [];
   for (let i = 0; i < 20; i++) { const r = await reply({ expectedVersion: version, subject: "Bulk", body: `Message ${i}` }, configured); statuses.push(r.status); if (r.status === 200) version = r.body.version; }
   const limited = await reply({ expectedVersion: version, subject: "Bulk", body: "One too many" }, configured);
   assert.equal(limited.status, 429, "per-staff rate limit"); assert.equal(limited.body.code, "REPLY_RATE_LIMITED");
-  assert.equal(statuses.filter(s => s === 200).length, 18, "twenty sends per staff member per hour, two already used");
+  assert.equal(statuses.filter(s => s === 200).length, 18, "twenty accepted sends per staff member per hour; the failed send did not count");
   const other = await staff();
   assert.equal((await reply({ expectedVersion: version, subject: "Other", body: "Different staff member" }, configured, other)).status, 200);
 });
@@ -273,13 +307,13 @@ test("every CRM endpoint keeps the session, capability, Origin and CSRF rules fo
   const contactId = row.contactId!;
   const task = await post(publisher, "/crm/tasks", { enquiryId: row.id, title: "Perm", dueOn: "2030-01-01" });
   assert.equal(task.status, 201);
-  const reads = ["/crm/contacts", `/crm/contacts/${contactId}`, `/crm/contacts/${contactId}/timeline`, "/crm/tasks?today=2030-01-01", "/crm/summary?today=2030-01-01", "/enquiries?q=perm"];
+  const reads = ["/crm/contacts", `/crm/contacts/${contactId}`, `/crm/contacts/${contactId}/timeline`, "/crm/tasks?today=2030-01-01", "/crm/summary?today=2030-01-01", "/enquiries?status=new"];
   for (const path of reads) {
     assert.equal((await request(app).get(`/api/admin${path}`)).status, 401, path);
     assert.equal((await get(denied, path)).status, 403, path);
     for (const account of [editor, publisher]) { const r = await get(account, path); assert.equal(r.status, 200, `${account.id} ${path}`); assert.match(String(r.headers["cache-control"]), /no-store/); }
   }
-  const writes: Array<[string, object]> = [[`/enquiries/${row.id}/stage`, { expectedVersion: 99, stage: "contacted" }], [`/enquiries/${row.id}/reply`, { expectedVersion: 99, subject: "s", body: "b" }], [`/crm/contacts/${contactId}`, { expectedVersion: 99, name: "n", phone: "", city: "", tags: [], notes: "" }], ["/crm/tasks", { enquiryId: row.id, title: "t", dueOn: "2030-01-01" }], [`/crm/tasks/${task.body.id}/complete`, { expectedVersion: 99, done: true }]];
+  const writes: Array<[string, object]> = [["/enquiries/search", { q: "perm" }], ["/crm/contacts/search", { q: "perm" }], [`/enquiries/${row.id}/stage`, { expectedVersion: 99, stage: "contacted" }], [`/enquiries/${row.id}/reply`, { expectedVersion: 99, subject: "s", body: "b" }], [`/crm/contacts/${contactId}`, { expectedVersion: 99, name: "n", phone: "", city: "", tags: [], notes: "" }], ["/crm/tasks", { enquiryId: row.id, title: "t", dueOn: "2030-01-01" }], [`/crm/tasks/${task.body.id}/complete`, { expectedVersion: 99, done: true }]];
   for (const [path, body] of writes) {
     assert.equal((await request(app).post(`/api/admin${path}`).set("Origin", origin).send(body)).status, 401, path);
     assert.equal((await post(denied, path, body)).status, 403, path);

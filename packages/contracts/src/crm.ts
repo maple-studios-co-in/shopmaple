@@ -1,8 +1,6 @@
 import { z } from "zod";
-import { contactIdSchema, enquiryAdminIdSchema, enquiryStaffIdSchema, enquiryStageSchema, isoDateSchema } from "./enquiry-admin";
+import { contactIdSchema, enquiryAdminIdSchema, enquiryStaffIdSchema, enquiryStageSchema, isoDateSchema, multiLineText, singleLineText } from "./enquiry-admin";
 
-const plainText = (max: number) =>
-  z.string().max(max).regex(/^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/).trim();
 const versionSchema = z.number().int().min(0).max(2147483646);
 export const followUpTaskIdSchema = z.string().regex(/^c[a-z0-9]{24}$/);
 
@@ -10,16 +8,17 @@ export const enquiryStageInputSchema = z.object({
   expectedVersion: versionSchema,
   stage: enquiryStageSchema,
   /** Required when moving to `lost`; rejected for every other stage. */
-  reason: plainText(500).min(1).optional(),
+  reason: singleLineText(500).min(1).optional(),
 }).strict().superRefine((value, ctx) => {
   if (value.stage === "lost" && !value.reason) ctx.addIssue({ code: "custom", message: "A lost enquiry needs a short reason" });
   if (value.stage !== "lost" && value.reason !== undefined) ctx.addIssue({ code: "custom", message: "Only a lost enquiry records a reason" });
 });
 
+/** Subject: one line, no control characters or bidi overrides (header injection). Body: plain text with ordinary newlines. */
 export const enquiryReplyInputSchema = z.object({
   expectedVersion: versionSchema,
-  subject: plainText(150).min(1),
-  body: z.string().max(5000).regex(/^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/).trim().min(1),
+  subject: singleLineText(150).min(1),
+  body: multiLineText(5000).min(1),
 }).strict();
 
 export const contactSchema = z.object({
@@ -37,16 +36,22 @@ export const contactSchema = z.object({
 export type Contact = z.infer<typeof contactSchema>;
 export const contactUpdateInputSchema = z.object({
   expectedVersion: versionSchema,
-  name: plainText(100),
-  phone: plainText(30),
-  city: plainText(100),
-  tags: z.array(plainText(40).min(1)).max(20),
-  notes: z.string().max(5000).regex(/^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/).trim(),
+  name: singleLineText(100),
+  phone: singleLineText(30),
+  city: singleLineText(100),
+  tags: z.array(singleLineText(40).min(1)).max(20),
+  notes: multiLineText(5000),
 }).strict();
-export const contactQuerySchema = z.object({
-  q: plainText(100).optional(),
+const pageSchema = {
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: z.string().min(1).max(300).regex(/^[A-Za-z0-9_-]+$/).optional(),
+};
+/** GET listing: paging only. Search text travels in a POST body so contact data never enters a URL. */
+export const contactQuerySchema = z.object(pageSchema).strict();
+export const contactSearchInputSchema = z.object({
+  q: singleLineText(100).optional(),
+  limit: z.number().int().min(1).max(50).default(20),
+  cursor: pageSchema.cursor,
 }).strict();
 export const contactListSchema = z.object({ items: z.array(contactSchema).max(50), nextCursor: z.string().max(300).nullable() }).strict();
 
@@ -67,10 +72,10 @@ export type FollowUpTask = z.infer<typeof followUpTaskSchema>;
 export const followUpTaskCreateInputSchema = z.object({
   enquiryId: enquiryAdminIdSchema.optional(),
   contactId: contactIdSchema.optional(),
-  title: plainText(200).min(1),
+  title: singleLineText(200).min(1),
   dueOn: isoDateSchema,
   assigneeId: enquiryStaffIdSchema.nullable().default(null),
-  note: z.string().max(2000).regex(/^[^\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]*$/).trim().default(""),
+  note: multiLineText(2000).default(""),
 }).strict().refine(value => (value.enquiryId ? 1 : 0) + (value.contactId ? 1 : 0) === 1, { message: "A task belongs to exactly one enquiry or contact" });
 export const followUpTaskCompleteInputSchema = z.object({ expectedVersion: versionSchema, done: z.boolean() }).strict();
 export const followUpTaskQuerySchema = z.object({
@@ -80,8 +85,7 @@ export const followUpTaskQuerySchema = z.object({
   assignment: z.enum(["mine"]).optional(),
   enquiryId: enquiryAdminIdSchema.optional(),
   contactId: contactIdSchema.optional(),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-  cursor: z.string().min(1).max(300).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  ...pageSchema,
 }).strict();
 export const followUpTaskListSchema = z.object({ items: z.array(followUpTaskSchema).max(50), nextCursor: z.string().max(300).nullable() }).strict();
 
@@ -99,7 +103,7 @@ export const contactTimelineEntrySchema = z.object({
   id: z.string().max(100),
   source: z.enum(["enquiry", "contact"]),
   enquiryId: enquiryAdminIdSchema.nullable(),
-  action: z.enum(["assigned", "unassigned", "note", "status_changed", "task_created", "task_completed", "task_reopened", "email_sent", "email_failed", "updated", "enquiry_received"]),
+  action: z.enum(["assigned", "unassigned", "note", "status_changed", "task_created", "task_completed", "task_reopened", "email_sending", "email_sent", "email_failed", "updated", "enquiry_received"]),
   actorId: enquiryStaffIdSchema.nullable(),
   stage: enquiryStageSchema.nullable(),
   subject: z.string().max(150).nullable(),

@@ -50,7 +50,7 @@ async function enquiry(kind = "contact", createdAt = new Date()) {
     ownedEnquiries.push(row.id);
     return row;
 }
-test("authorized inbox paginates stable metadata without contact data, messages or private hashes and strictly validates filters", async () => {
+test("authorized inbox rows carry name and reference, never email, phone or message; filters never carry contact data in URLs", async () => {
     const account = await manager();
     // Future synthetic timestamps isolate this page from fixtures in other tests.
     const rows = await Promise.all(Array.from({ length: 3 }, () => enquiry("project", new Date("2099-01-01T00:00:00Z"))));
@@ -61,7 +61,7 @@ test("authorized inbox paginates stable metadata without contact data, messages 
     assert.match(String(first.headers["cache-control"]), /no-store/);
     assert.deepEqual(first.body.items.map((row: any) => row.id), expected.slice(0, 2));
     for (const row of first.body.items)
-        assert.deepEqual(Object.keys(row).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "product", "status", "version"]);
+        assert.deepEqual(Object.keys(row).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "nextDueOn", "product", "status", "version"]);
     for (const row of first.body.items) { assert.equal(row.email, undefined); assert.equal(row.phone, undefined); assert.equal(row.message, undefined); }
     const cursor = JSON.parse(Buffer.from(first.body.nextCursor, "base64url").toString("utf8"));
     assert.deepEqual(Object.keys(cursor).sort(), ["createdAt", "id"]);
@@ -74,7 +74,7 @@ test("authorized inbox paginates stable metadata without contact data, messages 
     assert.equal(full.body.idempotencyHash, undefined);
     assert.equal(full.body.payloadHash, undefined);
     assert.equal(full.body.email, "synthetic@example.invalid");
-    for (const query of ["limit=0", "limit=51", "kind=unknown", "status=sent", "cursor=bad", "email=synthetic@example.invalid", "kind=contact&kind=bulk"]) {
+    for (const query of ["limit=0", "limit=51", "kind=unknown", "status=sent", "cursor=bad", "email=synthetic@example.invalid", "q=synthetic", "kind=contact&kind=bulk"]) {
         const invalid = await read(query);
         assert.equal(invalid.status, 400);
         assert.match(String(invalid.headers["cache-control"]), /no-store/);

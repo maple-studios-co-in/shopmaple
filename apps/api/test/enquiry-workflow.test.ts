@@ -57,7 +57,7 @@ test("assignment and notes persist actor attribution; no-op stable and activity 
   const detail = await get(actor, `/${row.id}`); assert.equal(detail.body.assignedToId, null); assert.equal(detail.body.version, 3); assert.equal(detail.body.body, undefined);
   const metadata = await get(actor, "?assignment=unassigned"); assert.equal(metadata.status, 200);
   const item = metadata.body.items.find((item: any) => item.id === row.id); assert.ok(item);
-  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "product", "status", "version"]);
+  assert.deepEqual(Object.keys(item).sort(), ["assignedToId", "contactId", "createdAt", "id", "kind", "name", "nextDueOn", "product", "status", "version"]);
 });
 test("directory paginates only active capable staff and assignment filters match actor", async () => {
   const actor = await staff(), target = await staff(), incapable = await staff(false), inactive = await staff(true, false), row = await enquiry();

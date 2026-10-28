@@ -61,7 +61,8 @@ const responseByteLimit = 16_384;
 const requestDeadlineMs = 10_000;
 
 const replySchema = z.object({
-  replyId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
+  /** Enquiry id plus the version consumed, e.g. `enq_…/3`; stable across a retry of the same intent. */
+  replyId: z.string().regex(/^[A-Za-z0-9_-]{1,128}(?:\/[0-9]{1,10})?$/),
   to: z.email().max(254),
   subject: z.string().min(1).max(150),
   text: z.string().min(1).max(5000),

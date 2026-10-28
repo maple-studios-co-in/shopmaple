@@ -1,10 +1,10 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { Express } from "express";
 import { z } from "zod";
-import { contactIdSchema, contactQuerySchema, contactUpdateInputSchema, crmSummaryQuerySchema, enquiryStages, followUpTaskCompleteInputSchema, followUpTaskCreateInputSchema, followUpTaskIdSchema, followUpTaskQuerySchema, type EnquiryStage } from "@shopmaple/contracts";
+import { contactIdSchema, contactQuerySchema, contactSearchInputSchema, contactUpdateInputSchema, crmSummaryQuerySchema, enquiryStages, followUpTaskCompleteInputSchema, followUpTaskCreateInputSchema, followUpTaskIdSchema, followUpTaskQuerySchema, type EnquiryStage } from "@shopmaple/contracts";
 import { HttpError } from "../cart.js";
-import { phoneKey } from "../contacts.js";
-import { decodePageCursor, encodeCursor, requireEnquiryAccess, serializeEnquirySummary } from "./enquiries.js";
+import { lockContactKeys, phoneKey } from "../contacts.js";
+import { decodePageCursor, encodeCursor, kolkataDayAfter, kolkataDayStart, listEnquiries, requireEnquiryAccess } from "./enquiries.js";
 
 const contactMissing = () => new HttpError(404, "CONTACT_NOT_FOUND", "This contact could not be found.");
 const contactConflict = () => new HttpError(409, "CONTACT_VERSION_CONFLICT", "This contact changed. Reload the contact before trying again.");
@@ -17,7 +17,6 @@ const taskSelect = { id: true, enquiryId: true, contactId: true, title: true, du
 const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
 const utcDate = (value: string) => new Date(`${value}T00:00:00.000Z`);
 const serializeTask = (row: Prisma.FollowUpTaskGetPayload<{ select: typeof taskSelect }>) => ({ ...row, dueOn: dateOnly(row.dueOn) });
-const likePattern = (term: string) => "%" + term.replace(/[\\%_]/g, (match) => "\\" + match) + "%";
 
 /** Append one activity row to the parent of a task, advancing the parent's version under its row lock. */
 async function logTaskActivity(tx: Prisma.TransactionClient, task: { enquiryId: string | null; contactId: string | null; id: string; title: string }, actorId: string, action: "task_created" | "task_completed" | "task_reopened") {
@@ -35,20 +34,30 @@ async function logTaskActivity(tx: Prisma.TransactionClient, task: { enquiryId: 
 }
 
 export function registerCrmRoutes(app: Express, db: PrismaClient, secure: boolean) {
+  async function listContacts(tx: Prisma.TransactionClient, query: { q?: string; limit: number; cursor?: string }) {
+    const cursor = query.cursor ? decodePageCursor(query.cursor, timeCursorSchema) : null;
+    const rows = await tx.contact.findMany({
+      where: {
+        ...(query.q ? { OR: [{ name: { contains: query.q, mode: "insensitive" } }, { email: { contains: query.q, mode: "insensitive" } }, { phone: { contains: query.q, mode: "insensitive" } }, { city: { contains: query.q, mode: "insensitive" } }] } : {}),
+        ...(cursor ? { OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }] } : {}),
+      },
+      select: contactSelect, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: query.limit + 1,
+    });
+    const items = rows.slice(0, query.limit), last = items.at(-1);
+    return { items, nextCursor: rows.length > query.limit && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null };
+  }
   app.get("/api/admin/crm/contacts", async (req, res) => {
     const result = await db.$transaction(async (tx) => {
       await requireEnquiryAccess(tx, req, secure);
-      const query = contactQuerySchema.parse(req.query);
-      const cursor = query.cursor ? decodePageCursor(query.cursor, timeCursorSchema) : null;
-      const rows = await tx.contact.findMany({
-        where: {
-          ...(query.q ? { OR: [{ name: { contains: query.q, mode: "insensitive" } }, { email: { contains: query.q, mode: "insensitive" } }, { phone: { contains: query.q, mode: "insensitive" } }, { city: { contains: query.q, mode: "insensitive" } }] } : {}),
-          ...(cursor ? { OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }] } : {}),
-        },
-        select: contactSelect, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: query.limit + 1,
-      });
-      const items = rows.slice(0, query.limit), last = items.at(-1);
-      return { items, nextCursor: rows.length > query.limit && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null };
+      return listContacts(tx, contactQuerySchema.parse(req.query));
+    });
+    res.json(result);
+  });
+  // Search text may be an email or phone number, so it is posted in the body and never appears in a URL.
+  app.post("/api/admin/crm/contacts/search", async (req, res) => {
+    const result = await db.$transaction(async (tx) => {
+      await requireEnquiryAccess(tx, req, secure, true);
+      return listContacts(tx, contactSearchInputSchema.parse(req.body));
     });
     res.json(result);
   });
@@ -58,8 +67,9 @@ export function registerCrmRoutes(app: Express, db: PrismaClient, secure: boolea
       const id = contactIdSchema.parse(req.params.id);
       const contact = await tx.contact.findUnique({ where: { id }, select: contactSelect });
       if (!contact) throw contactMissing();
-      const enquiries = await tx.enquiry.findMany({ where: { contactId: id }, select: { id: true, kind: true, status: true, version: true, assignedToId: true, contactId: true, name: true, context: true, createdAt: true }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 50 });
-      return { contact, enquiries: enquiries.map(serializeEnquirySummary) };
+      // The contact page never filters by "mine", so no actor id is needed for the shared list.
+      const enquiries = await listEnquiries(tx, "", { contactId: id, limit: 50 });
+      return { contact, enquiries: enquiries.items };
     });
     res.json(result);
   });
@@ -90,16 +100,15 @@ export function registerCrmRoutes(app: Express, db: PrismaClient, secure: boolea
       const actor = await requireEnquiryAccess(tx, req, secure, true);
       const id = contactIdSchema.parse(req.params.id);
       const { expectedVersion, ...input } = contactUpdateInputSchema.parse(req.body);
+      const keyed = await tx.contact.findUnique({ where: { id }, select: { emailKey: true } });
+      if (!keyed) throw contactMissing();
+      const nextPhoneKey = phoneKey(input.phone);
+      // Same lock order as the public enquiry path (email key, then phone key) and always before the row lock.
+      await lockContactKeys(tx, keyed.emailKey, nextPhoneKey);
       await tx.$queryRaw`SELECT "id" FROM "Contact" WHERE "id"=${id} FOR UPDATE`;
-      const current = await tx.contact.findUnique({ where: { id }, select: { version: true, phoneKey: true } });
+      const current = await tx.contact.findUnique({ where: { id }, select: { version: true } });
       if (!current) throw contactMissing();
       if (current.version !== expectedVersion) throw contactConflict();
-      const nextPhoneKey = phoneKey(input.phone);
-      if (nextPhoneKey && nextPhoneKey !== current.phoneKey) {
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${"contact:phone:" + nextPhoneKey}))::text`;
-        const holder = await tx.contact.findUnique({ where: { phoneKey: nextPhoneKey }, select: { id: true } });
-        if (holder && holder.id !== id) throw new HttpError(409, "CONTACT_PHONE_IN_USE", "Another contact already uses this phone number.");
-      }
       await tx.contact.update({ where: { id }, data: { ...input, phoneKey: nextPhoneKey, version: { increment: 1 } } });
       await tx.contactActivity.create({ data: { contactId: id, actorId: actor.id, version: expectedVersion + 1, action: "updated" } });
       return tx.contact.findUniqueOrThrow({ where: { id }, select: contactSelect });
@@ -167,7 +176,8 @@ export function registerCrmRoutes(app: Express, db: PrismaClient, secure: boolea
     const result = await db.$transaction(async (tx) => {
       await requireEnquiryAccess(tx, req, secure);
       const { today } = crmSummaryQuerySchema.parse(req.query);
-      const start = utcDate(today), end = new Date(start.getTime() + 86_400_000), weekStart = new Date(start.getTime() - 6 * 86_400_000);
+      // Task due dates are plain calendar dates; the seven-day window is Asia/Kolkata calendar days like the list filters.
+      const start = utcDate(today), end = kolkataDayAfter(today), weekStart = new Date(kolkataDayStart(today).getTime() - 6 * 86_400_000);
       const grouped = await tx.enquiry.groupBy({ by: ["status"], _count: { _all: true } });
       const stages = Object.fromEntries(enquiryStages.map(stage => [stage, 0])) as Record<EnquiryStage, number>;
       for (const group of grouped) if (group.status in stages) stages[group.status as EnquiryStage] = group._count._all;
