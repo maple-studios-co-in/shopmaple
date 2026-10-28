@@ -13,9 +13,10 @@ export const isoDateSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1
     const date = new Date(Date.UTC(year, month - 1, day));
     return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }, "Not a calendar date");
-// Control characters (C0 and C1) and Unicode bidirectional overrides and isolates never belong in staff-entered text:
-// the overrides can disguise what a subject or name reads as, and CR/LF would inject mail headers.
-const forbiddenAnywhere = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/;
+// Control characters (C0 and C1), Unicode line and paragraph separators (U+2028, U+2029), directional
+// marks (U+200E, U+200F) and bidirectional overrides and isolates never belong in staff-entered text:
+// they can disguise what a subject or name reads as, and CR/LF would inject mail headers.
+const forbiddenAnywhere = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/;
 /** One line of plain text: no control characters at all, including tab, CR and LF. */
 export const singleLineText = (max: number) => z.string().max(max).refine(value => !forbiddenAnywhere.test(value) && !/[\t\r\n]/.test(value), "Control characters are not allowed").trim();
 /** Plain text that may contain ordinary newlines and tabs, but no CR, other controls or bidi overrides. */

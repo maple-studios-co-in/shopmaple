@@ -85,7 +85,11 @@ export async function listEnquiries(tx: Prisma.TransactionClient, actorId: strin
     return { items, nextCursor: rows.length > query.limit && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null };
 }
 
-/** Fixed-window count of accepted sends per staff member; process-local by design. */
+/**
+ * Fixed-window limit on accepted sends per staff member; process-local by design. A slot is reserved
+ * before the send and released if the send does not become an accepted email, so parallel replies
+ * across enquiries can never exceed the limit.
+ */
 export class ActorRateLimit {
     private readonly hits = new Map<string, number[]>();
     constructor(private readonly limit: number, private readonly windowMs: number, private readonly now: () => number = Date.now) { }
@@ -94,14 +98,39 @@ export class ActorRateLimit {
         this.hits.set(actorId, kept);
         return kept;
     }
-    /** True while the actor is under the limit; nothing is counted until `record`. */
-    allows(actorId: string) { return this.recent(actorId, this.now()).length < this.limit; }
-    /** Count one accepted send. */
-    record(actorId: string) { const at = this.now(); this.recent(actorId, at).push(at); }
+    /** Atomically take a slot; false when the actor is at the limit. */
+    reserve(actorId: string) {
+        const at = this.now(), kept = this.recent(actorId, at);
+        if (kept.length >= this.limit) return false;
+        kept.push(at);
+        return true;
+    }
+    /** Give back the most recent reservation (a send that was refused or failed). */
+    release(actorId: string) { this.recent(actorId, this.now()).pop(); }
 }
 
-export function registerEnquiryAdminRoutes(app: Express, db: PrismaClient, secure: boolean, delivery: EnquiryDeliveryConfig | null = null, outboundFetch: typeof fetch = fetch) {
-    const replyLimit = new ActorRateLimit(20, 60 * 60_000);
+type ReplyIntent = { id: string; activityId: string };
+/**
+ * Record the provider outcome on the intent row and return the fresh detail. If that transaction
+ * fails, a last-resort single-row update still flips the row off `email_sending`, and the request
+ * fails so the client reloads rather than trusting a detail we could not read.
+ */
+export async function recordReplyOutcome(db: PrismaClient, intent: ReplyIntent, accepted: boolean) {
+    const action = accepted ? "email_sent" : "email_failed";
+    try {
+        return await db.$transaction(async (tx) => {
+            await tx.enquiryActivity.update({ where: { id: intent.activityId }, data: { action } });
+            return detail(tx, intent.id);
+        });
+    } catch {
+        try { await db.enquiryActivity.updateMany({ where: { id: intent.activityId, action: "email_sending" }, data: { action } }); }
+        catch { /* the row may stay at email_sending; docs/admin-crm.md explains how to find and resolve it */ }
+        throw new HttpError(500, "REPLY_OUTCOME_UNRECORDED", `The reply was ${accepted ? "accepted by the provider" : "refused by the provider"} but its outcome could not be recorded. Reload the enquiry and check activity before sending again.`);
+    }
+}
+
+export function registerEnquiryAdminRoutes(app: Express, db: PrismaClient, secure: boolean, delivery: EnquiryDeliveryConfig | null = null, outboundFetch: typeof fetch = fetch, replyRateLimit: { limit: number; windowMs: number } = { limit: 20, windowMs: 60 * 60_000 }) {
+    const replyLimit = new ActorRateLimit(replyRateLimit.limit, replyRateLimit.windowMs);
     app.get("/api/admin/enquiries", async (req, res) => {
         const result = await db.$transaction(async (tx) => {
             const actor = await requireEnquiryAccess(tx, req, secure);
@@ -202,32 +231,38 @@ export function registerEnquiryAdminRoutes(app: Express, db: PrismaClient, secur
         res.json(result);
     });
     app.post("/api/admin/enquiries/:id/reply", async (req, res) => {
-        // One transaction consumes the expected version and records the intent to send, so two requests
-        // with the same expectedVersion yield exactly one send and one 409. The provider idempotency key
+        // One transaction consumes the expected version, reserves the actor's rate-limit slot and records
+        // the intent to send, so two requests with the same expectedVersion yield exactly one send and one
+        // 409, and parallel replies across enquiries cannot exceed the limit. The provider idempotency key
         // is the enquiry plus the version consumed, so a retry of the same intent cannot double-send.
-        const intent = await db.$transaction(async (tx) => {
-            const actor = await requireEnquiryAccess(tx, req, secure, true);
-            const id = enquiryAdminIdSchema.parse(req.params.id);
-            const input = enquiryReplyInputSchema.parse(req.body);
-            if (!delivery) throw new HttpError(503, "EMAIL_NOT_CONFIGURED", "Email replies are not configured on this server. Contact the customer another way.");
-            await tx.$queryRaw`SELECT "id" FROM "Enquiry" WHERE "id"=${id} FOR UPDATE`;
-            const current = await tx.enquiry.findUnique({ where: { id }, select: { version: true, email: true } });
-            if (!current) throw missing();
-            if (current.version !== input.expectedVersion) throw conflict();
-            if (!replyLimit.allows(actor.id)) throw new HttpError(429, "REPLY_RATE_LIMITED", "You have sent many replies recently. Wait before sending more.");
-            const version = input.expectedVersion + 1;
-            await tx.enquiry.update({ where: { id }, data: { version } });
-            const activity = await tx.enquiryActivity.create({ data: { enquiryId: id, actorId: actor.id, version, action: "email_sending", subject: input.subject, body: input.body }, select: { id: true } });
-            return { actor, id, to: current.email, input, version, activityId: activity.id };
-        });
+        let reservedFor: string | null = null;
+        let intent: ReplyIntent & { actor: { id: string }; to: string; input: { subject: string; body: string }; version: number };
+        try {
+            intent = await db.$transaction(async (tx) => {
+                const actor = await requireEnquiryAccess(tx, req, secure, true);
+                const id = enquiryAdminIdSchema.parse(req.params.id);
+                const input = enquiryReplyInputSchema.parse(req.body);
+                if (!delivery) throw new HttpError(503, "EMAIL_NOT_CONFIGURED", "Email replies are not configured on this server. Contact the customer another way.");
+                await tx.$queryRaw`SELECT "id" FROM "Enquiry" WHERE "id"=${id} FOR UPDATE`;
+                const current = await tx.enquiry.findUnique({ where: { id }, select: { version: true, email: true } });
+                if (!current) throw missing();
+                if (current.version !== input.expectedVersion) throw conflict();
+                if (!replyLimit.reserve(actor.id)) throw new HttpError(429, "REPLY_RATE_LIMITED", "You have sent many replies recently. Wait before sending more.");
+                reservedFor = actor.id;
+                const version = input.expectedVersion + 1;
+                await tx.enquiry.update({ where: { id }, data: { version } });
+                const activity = await tx.enquiryActivity.create({ data: { enquiryId: id, actorId: actor.id, version, action: "email_sending", subject: input.subject, body: input.body }, select: { id: true } });
+                return { actor, id, to: current.email, input, version, activityId: activity.id };
+            });
+        } catch (error) {
+            if (reservedFor) replyLimit.release(reservedFor);
+            throw error;
+        }
         // Transport runs outside any lock; the outcome is recorded on the intent row afterwards.
         const outcome = await sendEnquiryReply(delivery!, { replyId: `${intent.id}/${intent.version}`, to: intent.to, subject: intent.input.subject, text: intent.input.body }, outboundFetch);
         const accepted = outcome.status === "accepted";
-        if (accepted) replyLimit.record(intent.actor.id);
-        const result = await db.$transaction(async (tx) => {
-            await tx.enquiryActivity.update({ where: { id: intent.activityId }, data: { action: accepted ? "email_sent" : "email_failed" } });
-            return detail(tx, intent.id);
-        });
+        if (!accepted) replyLimit.release(intent.actor.id);
+        const result = await recordReplyOutcome(db, intent, accepted);
         if (!accepted) throw new HttpError(502, "EMAIL_SEND_FAILED", "The email provider did not accept the reply. It was recorded as failed; check activity before trying again.");
         res.json(result);
     });

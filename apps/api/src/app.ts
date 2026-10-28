@@ -37,6 +37,8 @@ export type AppConfig = {
   enquiryDelivery?: EnquiryDeliveryConfig | null;
   /** Transport for outbound staff replies; tests inject a local double. Defaults to global fetch. */
   outboundFetch?: typeof fetch;
+  /** Accepted staff replies per actor per window; defaults to 20 per hour. Tests inject a smaller limit. */
+  replyRateLimit?: { limit: number; windowMs: number };
   /** Public checkout options; only meaningful together with an injected commerce service. */
   checkout?: CheckoutOptions;
 };
@@ -81,7 +83,7 @@ export function createApp(
   });
   registerStaffRoutes(app, db, config.secureCookies);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
-  registerEnquiryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.outboundFetch);
+  registerEnquiryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.outboundFetch, config.replyRateLimit);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
   registerCrmRoutes(app, db, config.secureCookies);
   registerCatalogueViewRoutes(app, db);

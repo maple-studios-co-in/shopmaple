@@ -60,7 +60,16 @@ Release the API and web together as an **atomic swap** (stop old instances, migr
 
 ## Reply by email
 
-`POST /api/admin/enquiries/:id/reply` with `{ expectedVersion, subject, body }` sends plain text to the enquiry's email through the existing Resend integration, from `ENQUIRY_MAIL_FROM` with `ENQUIRY_MAIL_TO` as reply-to. Replies are never HTML. The subject is one line with no control characters or Unicode bidi overrides (so no header injection and no disguised text); the body allows ordinary newlines and tabs only. Exactly one send per version: the request locks the enquiry row, compares `expectedVersion`, advances the version and records an `email_sending` activity in one transaction, so two requests with the same version yield one send and one `409`. The provider idempotency key is `reply/<enquiry id>/<version consumed>`. After the transport the same activity row becomes `email_sent` or `email_failed` (`502 EMAIL_SEND_FAILED`); a row left at `email_sending` means the process died mid-send and the outcome is unknown. When `ENQUIRY_DELIVERY_ENABLED` is not `true` the UI says so and the server refuses with `503 EMAIL_NOT_CONFIGURED`. Each staff member may complete 20 accepted sends per hour per API process (`429 REPLY_RATE_LIMITED`); refused or failed sends do not count, and the counter is in memory.
+`POST /api/admin/enquiries/:id/reply` with `{ expectedVersion, subject, body }` sends plain text to the enquiry's email through the existing Resend integration, from `ENQUIRY_MAIL_FROM` with `ENQUIRY_MAIL_TO` as reply-to. Replies are never HTML. The subject is one line with no control characters or Unicode bidi overrides (so no header injection and no disguised text); the body allows ordinary newlines and tabs only. Exactly one send per version: the request locks the enquiry row, compares `expectedVersion`, advances the version and records an `email_sending` activity in one transaction, so two requests with the same version yield one send and one `409`. The provider idempotency key is `reply/<enquiry id>/<version consumed>`. After the transport the same activity row becomes `email_sent` or `email_failed` (`502 EMAIL_SEND_FAILED`). If recording that outcome fails, a last-resort single-row update still flips the row and the request answers `500 REPLY_OUTCOME_UNRECORDED` so staff reload before sending again. The rate-limit slot is reserved before the send and released when the send is refused or fails, so parallel replies across enquiries cannot exceed the limit.
+
+**Stuck intent rows.** A row left at `email_sending` means the process died between the intent and the outcome. Find them with
+
+```sql
+SELECT "id", "enquiryId", "version", "subject", "createdAt" FROM "EnquiryActivity"
+WHERE "action" = 'email_sending' AND "createdAt" < now() - interval '15 minutes';
+```
+
+Resolve each by checking the provider for the idempotency key `reply/<enquiryId>/<version>` (sent → `UPDATE "EnquiryActivity" SET "action" = 'email_sent' WHERE "id" = '<id>'`; not sent → `'email_failed'`). The activity log is append-only through the API; this is the one operator correction it expects. When `ENQUIRY_DELIVERY_ENABLED` is not `true` the UI says so and the server refuses with `503 EMAIL_NOT_CONFIGURED`. Each staff member may complete 20 accepted sends per hour per API process (`429 REPLY_RATE_LIMITED`); refused or failed sends do not count, and the counter is in memory.
 
 ## Migration `20261029010000_admin_crm`
 

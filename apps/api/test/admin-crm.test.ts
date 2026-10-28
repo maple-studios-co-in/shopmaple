@@ -173,6 +173,7 @@ test("contacts list, search, detail with enquiries, guarded update and a combine
   const shared = await update({ expectedVersion: 1, name: "Meera Iyer", phone: `${phone("")} 4444`, city: "Bengaluru", tags: [], notes: "" });
   assert.equal(shared.status, 200, "phones are not keys, so two contacts may share one"); assert.ok(other.contactId);
   assert.equal((await update({ expectedVersion: 2, name: "Meera\u202eIyer", phone: "", city: "", tags: [], notes: "" })).status, 400, "bidi overrides are rejected");
+  for (const mark of ["\u2028", "\u2029", "\u200e", "\u200f"]) assert.equal((await update({ expectedVersion: 2, name: `Meera${mark}Iyer`, phone: "", city: "", tags: [], notes: "" })).status, 400, `U+${mark.charCodeAt(0).toString(16)} is rejected`);
   assert.equal((await update({ expectedVersion: 2, name: "Meera", phone: "", city: "", tags: ["a\nb"], notes: "" })).status, 400, "tags are single line");
   assert.equal((await update({ expectedVersion: 2, name: "Meera Iyer", phone: "", city: "", tags: [], notes: "line one\nline two" })).status, 200, "notes keep newlines");
   await post(actor, `/enquiries/${first.id}/stage`, { expectedVersion: 0, stage: "contacted" });
@@ -265,7 +266,7 @@ test("reply by email is refused without Resend, otherwise sends plain text to th
   };
   const configured = build({ enquiryDelivery: config, outboundFetch });
   for (const body of [{}, { expectedVersion: 0, subject: "", body: "x" }, { expectedVersion: 0, subject: "s", body: " " }, { expectedVersion: 0, subject: "s", body: "x".repeat(5001) }, { expectedVersion: 0, subject: "s", body: "bad\u0007" }, { expectedVersion: 0, subject: "s", body: "x", html: "<b>" },
-    { expectedVersion: 0, subject: "Hi\r\nBcc: x@evil.test", body: "x" }, { expectedVersion: 0, subject: "Hi\nthere", body: "x" }, { expectedVersion: 0, subject: "Hi\tthere", body: "x" }, { expectedVersion: 0, subject: "Invoice \u202eexe.pdf", body: "x" }, { expectedVersion: 0, subject: "s", body: "see \u2066this\u2069" }, { expectedVersion: 0, subject: "s", body: "line\r\nbreak" }, { expectedVersion: 0, subject: "s\u0085", body: "x" }])
+    { expectedVersion: 0, subject: "Hi\r\nBcc: x@evil.test", body: "x" }, { expectedVersion: 0, subject: "Hi\nthere", body: "x" }, { expectedVersion: 0, subject: "Line\u2028sep", body: "x" }, { expectedVersion: 0, subject: "Para\u2029sep", body: "x" }, { expectedVersion: 0, subject: "Mark\u200eLRM", body: "x" }, { expectedVersion: 0, subject: "Mark\u200fRLM", body: "x" }, { expectedVersion: 0, subject: "s", body: "body\u2028sep" }, { expectedVersion: 0, subject: "Hi\tthere", body: "x" }, { expectedVersion: 0, subject: "Invoice \u202eexe.pdf", body: "x" }, { expectedVersion: 0, subject: "s", body: "see \u2066this\u2069" }, { expectedVersion: 0, subject: "s", body: "line\r\nbreak" }, { expectedVersion: 0, subject: "s\u0085", body: "x" }])
     assert.equal((await reply(body, configured)).status, 400, JSON.stringify(body));
   assert.equal((await reply({ expectedVersion: 5, subject: "s", body: "x" }, configured)).status, 409);
   assert.equal(calls.length, 0, "no email leaves before validation and version checks pass");
@@ -299,6 +300,29 @@ test("reply by email is refused without Resend, otherwise sends plain text to th
   assert.equal(statuses.filter(s => s === 200).length, 18, "twenty accepted sends per staff member per hour; the failed send did not count");
   const other = await staff();
   assert.equal((await reply({ expectedVersion: version, subject: "Other", body: "Different staff member" }, configured, other)).status, 200);
+});
+
+test("the per-staff limit reserves a slot before the send, so parallel replies across enquiries cannot exceed it", async () => {
+  const actor = await staff();
+  const first = await submit({ email: `slot-a-${suffix}@example.invalid` }), second = await submit({ email: `slot-b-${suffix}@example.invalid` });
+  const config = loadEnquiryDeliveryConfig({ ENQUIRY_DELIVERY_ENABLED: "true", ENQUIRY_RESEND_API_KEY: "synthetic-test-key", ENQUIRY_MAIL_FROM: "shop@example.invalid", ENQUIRY_MAIL_TO: "staff@example.invalid", WEB_ORIGIN: origin })!;
+  let calls = 0; let fail = false;
+  const outboundFetch: typeof fetch = async () => { calls++; await new Promise(resolve => setTimeout(resolve, 40)); return fail ? Response.json({ name: "validation_error" }, { status: 422 }) : Response.json({ id: randomUUID() }); };
+  const oneSlot = build({ enquiryDelivery: config, outboundFetch, replyRateLimit: { limit: 1, windowMs: 60_000 } });
+  const send = (id: string, version: number) => post(actor, `/enquiries/${id}/reply`, { expectedVersion: version, subject: "Slot", body: "One at a time" }, oneSlot);
+  const raced = await Promise.all([send(first.id, 0), send(second.id, 0)]);
+  assert.deepEqual(raced.map(r => r.status).sort(), [200, 429], "the second reply is refused while the first is still in flight");
+  assert.equal(calls, 1, "only one send reached the provider");
+  const refused = raced.find(r => r.status === 429)!; assert.equal(refused.body.code, "REPLY_RATE_LIMITED");
+  const untouched = raced[0]!.status === 429 ? first : second;
+  assert.equal((await get(actor, `/enquiries/${untouched.id}`)).body.version, 0, "a refused reply consumes no version and records nothing");
+  assert.deepEqual((await get(actor, `/enquiries/${untouched.id}/activity`)).body.items, []);
+  // A failed send releases its reservation: the slot is immediately usable again.
+  const twoSlots = build({ enquiryDelivery: config, outboundFetch, replyRateLimit: { limit: 1, windowMs: 60_000 } });
+  fail = true;
+  assert.equal((await post(actor, `/enquiries/${untouched.id}/reply`, { expectedVersion: 0, subject: "Fails", body: "x" }, twoSlots)).status, 502);
+  fail = false;
+  assert.equal((await post(actor, `/enquiries/${untouched.id}/reply`, { expectedVersion: 1, subject: "Works", body: "x" }, twoSlots)).status, 200);
 });
 
 test("every CRM endpoint keeps the session, capability, Origin and CSRF rules for both roles", async () => {
