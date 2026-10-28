@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  BookOpen, CircleCheck, Eye, ExternalLink, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
+  BookOpen, ChevronDown, ChevronUp, CircleCheck, Eye, ExternalLink, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
   LayoutDashboard, LayoutGrid, LogOut, Megaphone, PanelsTopLeft, Tags, TriangleAlert, X,
 } from "lucide-react";
 import {
@@ -160,6 +160,8 @@ export function ContentEditor({
   const [liveOpen, setLiveOpen] = useState(false);
   const [liveAuto, setLiveAuto] = useState(true);
   const [liveBlocked, setLiveBlocked] = useState("");
+  /** Phone width shows either the editor or the preview; wider screens show both. */
+  const [mobilePane, setMobilePane] = useState<"editor" | "preview">("editor");
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
   /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
   const [saving, setSaving] = useState(false);
@@ -622,10 +624,17 @@ export function ContentEditor({
         {!content && !canManageEnquiries ? (
           <div className="admin-workspace"><section className="admin-panel" data-admin-panel>{unavailableDraft}</section></div>
         ) : (
-          <div className="admin-workspace" data-split={liveActive ? "true" : "false"}>
+          <div className="admin-workspace" data-split={liveActive ? "true" : "false"} data-mobile-pane={liveActive ? mobilePane : undefined}>
+            {liveActive && (
+              <div className="admin-segmented admin-mobile-pane-toggle" role="group" aria-label="Show editor or preview">
+                <button type="button" aria-pressed={mobilePane === "editor"} onClick={() => setMobilePane("editor")}>Editor</button>
+                <button type="button" aria-pressed={mobilePane === "preview"} onClick={() => setMobilePane("preview")}>Preview</button>
+              </div>
+            )}
             <section
               className="admin-panel"
               data-admin-panel
+              data-wide={tab === "Enquiries" ? "true" : undefined}
               aria-label={`${tab} editor`}
               onFocusCapture={(event) => {
                 const row = (event.target as HTMLElement).closest?.("[data-preview-section]");
@@ -682,11 +691,13 @@ export function ContentEditor({
                             />
                             <span>{titleCase(section.key)}</span>
                           </label>
-                          <div>
+                          <div className="admin-row-actions">
                             {([-1, 1] as const).map((direction) => (
                               <button
                                 key={direction}
+                                type="button"
                                 aria-label={`Move ${titleCase(section.key)} ${direction === -1 ? "up" : "down"}`}
+                                title={direction === -1 ? "Move up" : "Move down"}
                                 disabled={
                                   index + direction < 0 ||
                                   index + direction >= content.homeSections.length
@@ -701,7 +712,8 @@ export function ContentEditor({
                                   edit({ ...content, homeSections: sections });
                                 }}
                               >
-                                {direction === -1 ? "Move up" : "Move down"}
+                                {direction === -1 ? <ChevronUp aria-hidden="true" strokeWidth={1.5} /> : <ChevronDown aria-hidden="true" strokeWidth={1.5} />}
+                                <span className="admin-sr-only">{direction === -1 ? "Move up" : "Move down"}</span>
                               </button>
                             ))}
                           </div>

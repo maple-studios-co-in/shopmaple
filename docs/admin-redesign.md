@@ -37,17 +37,17 @@ All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` c
 | `--admin-surface` | `#fbfaf6` | Panels, cards, fields |
 | `--admin-surface-raised` | `#ffffff` | Hovered or lifted cards, popovers |
 | `--admin-surface-sunken` | `#e4e2d9` | Shells that hold cards, segmented controls, skeletons |
-| `--admin-ink` / `-muted` / `-faint` | `#23261f` / `#5b5e57` / `#858880` | Text hierarchy (all AA against the surfaces) |
+| `--admin-ink` / `-muted` / `-faint` | `#23261f` / `#5b5e57` / `#62655f` | Text hierarchy. Contrast on the surface `#fbfaf6`: 15.0:1, 7.1:1 and 5.7:1; faint on the sunken surface `#e4e2d9` is 4.7:1, so the 11 to 12.5 px labels (nav groups, roles, CRM meta, eyebrows) clear AA |
 | `--admin-accent` / `-strong` / `-tint` | `#741a14` / `#57140f` / `rgba(116,26,20,.07)` | The single accent: primary actions, current state, focus |
-| `--admin-line-soft` / `-line` / `-line-strong` | ink at 8 % / 14 % / 28 % | Dividers, field borders, hover borders |
+| `--admin-line-soft` / `-line` / `-line-strong` | ink at 8 % / 50 % / 62 % | Decorative dividers only (soft); control boundaries at 3.1:1 on the surface (line); field borders at 4.5:1 on white (line-strong), meeting the 3:1 non-text minimum |
 | `--admin-success`, `--admin-warning`, `--admin-info`, `--admin-danger` | green, ochre, slate, burgundy (+ `-bg` tints) | Semantic state only: notices, chips, due badges |
 
 Shadows are tinted with the ink colour, never pure black: `--admin-shadow-s` (hairline lift), `--admin-shadow-m` (hover), `--admin-shadow-lift` (dragging, dialogs, the preview device frame).
 
 ### Type
 
-- **Display**: `--admin-font-display: "TAN Pearl", "Newsreader", Georgia, serif`. Page titles, the sign-in title, the overview numerals and empty-state titles only. The fallback is the storefront serif, so the admin reads correctly when the licensed file is absent.
-- **Text**: `--admin-font-text: "Geist Variable", "Manrope", system-ui, sans-serif`, self-hosted from `@fontsource-variable/geist` (OFL); no font CDN is called. Tabular numerals (`--admin-tnum`) on every count, version and date.
+- **Display**: `--admin-font-display: "TAN Pearl", "Newsreader", Georgia, serif`. Words only: page titles, the sign-in title and empty-state titles. TAN Pearl's zero reads as parentheses, so it is never used for numbers. The fallback is the storefront serif, so the admin reads correctly when the licensed file is absent.
+- **Text**: `--admin-font-text: "Geist Variable", "Manrope", system-ui, sans-serif`, self-hosted from `@fontsource-variable/geist` (OFL); no font CDN is called. Every number (overview and CRM tiles, versions, history badges, dates) uses this face with tabular figures (`--admin-tnum`).
 - Scale (`--admin-type-*`): 11 / 12.5 / 13.5 / 15 / 18 / 22 / 28 / 36 / 44 px. Line heights 1.2 for display, 1.5 for UI text, 1.6 for prose. Tracking: -0.01 em on titles, +0.06 em on the few uppercase labels.
 
 ### Space, shape, elevation, density
@@ -74,7 +74,9 @@ Every content editor that has a storefront page (homepage, navigation and footer
 - **Published vs draft.** The switch loads `…&view=published`, which the frame route renders from the published snapshot (still behind the staff session and token; the public storefront is never framed, since it keeps `X-Frame-Options: DENY`).
 - **Device widths.** Desktop (fills the pane), tablet (820 px) and phone (390 px) resize the frame itself so the real responsive layout runs.
 - **Section focus.** When a homepage section row gains focus in the editor, the pane posts `{ source: "shopmaple-preview", type: "focus", section }` to the frame; the frame scrolls that `data-home-section` into view and highlights it. The frame posts `{ type: "ready", sections, path, version }` after load and `{ type: "navigate", path }` when a link inside it is followed. Both sides ignore any message whose `origin` is not `window.location.origin`, and the frame ignores messages that do not come from its parent window.
-- **Full screen.** The pane can take the whole viewport; Escape or the close button returns to the split view. Links inside the frame keep navigating within the preview with the same token, as before.
+- **Full screen.** The pane can take the whole viewport; Escape or the close button returns to the split view. Links inside the frame keep navigating within the preview with the same token and the same view, as before.
+- **Failure handling.** A token is minted once per draft version and attempt. If minting fails (no draft saved yet, the draft moved on, a 429 rate limit, a 5xx or a timeout) the pane shows the reason with a manual **Retry preview** and never retries on its own; a 409 from minting never marks the editor as conflicted. Quiet saves never take the busy state, so fields stay enabled and focus stays put; if a quiet save fails, live updates pause behind one persistent notice with **Retry save** and resume only after a manual save succeeds.
+- **Layout.** The pane is sticky beside the editor and fills the viewport below the top bar, so the storefront stays in view while the editor scrolls. At phone width an **Editor / Preview** toggle shows one or the other, and the full-screen controls stay on the first toolbar row.
 
 The orchestration lives in `apps/web/lib/live-preview.ts` (pure helpers: frame URL, message parsing, trusted-origin check, debounce) and `apps/web/components/admin/live-preview.tsx` (the pane). Tests: `apps/web/test/admin-live-preview.test.tsx`, `admin-shell.test.tsx` and `admin-screens-smoke.test.tsx`.
 

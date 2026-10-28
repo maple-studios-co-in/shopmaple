@@ -55,7 +55,7 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
  return <section aria-label="Media library" aria-busy={busy} className="admin-media-library">
   <div className="admin-panel-head"><div><Heading>Media library</Heading><p>Upload JPEG, PNG or WebP images up to 8 MiB. Images stay private until you publish content that uses them.</p></div></div>
   <div className="admin-media-toolbar">
-   <label><Upload aria-hidden="true" strokeWidth={1.5} size={16} />Upload image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/></label>
+   <label className="admin-upload"><Upload aria-hidden="true" strokeWidth={1.5} size={16} />Upload image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/></label>
    <span className="admin-inline-status">{busy ? <><span className="admin-busy-dot" aria-hidden="true" />Working</> : loaded ? `${assets.length} ${assets.length === 1 ? "image" : "images"}${cursor ? " loaded so far" : ""}` : ""}</span>
   </div>
   {error&&<Notice tone="error">{error} <button type="button" className="admin-small admin-quiet" disabled={busy} onClick={()=>void load()}>Retry</button></Notice>}
