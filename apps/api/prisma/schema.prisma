@@ -124,7 +124,7 @@ model Enquiry {
 model Contact {
   id String @id
   emailKey String @unique
-  phoneKey String? @unique
+  phoneKey String?
   name String
   email String
   phone String
@@ -138,6 +138,7 @@ model Contact {
   tasks FollowUpTask[]
   activity ContactActivity[]
   @@index([createdAt, id])
+  @@index([phoneKey])
 }
 
 model ContactActivity {

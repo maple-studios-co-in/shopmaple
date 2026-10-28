@@ -1,7 +1,8 @@
 -- Admin CRM: contacts, pipeline stages, follow-up tasks and extended activity.
 -- Every statement is idempotent so the file can be re-applied safely; it never deletes enquiry data.
 
--- 1. Contacts keyed by normalised email (always present) and phone.
+-- 1. Contacts keyed by normalised email only. The phone is stored normalised for search and display;
+--    it is customer-typed and unverified, so it is never a key and never links enquiries.
 CREATE TABLE IF NOT EXISTS "Contact" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "emailKey" TEXT NOT NULL,
@@ -17,18 +18,30 @@ CREATE TABLE IF NOT EXISTS "Contact" (
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "Contact_emailKey_key" ON "Contact"("emailKey");
-CREATE UNIQUE INDEX IF NOT EXISTS "Contact_phoneKey_key" ON "Contact"("phoneKey");
+DROP INDEX IF EXISTS "Contact_phoneKey_key";
+CREATE INDEX IF NOT EXISTS "Contact_phoneKey_idx" ON "Contact"("phoneKey");
 CREATE INDEX IF NOT EXISTS "Contact_createdAt_id_idx" ON "Contact"("createdAt", "id");
 
--- Phone normalisation shared with the API: digits only; a 10-digit Indian number gains the 91 prefix,
--- a leading trunk 0 on an 11-digit number is replaced by 91; empty becomes NULL.
+-- Phone normalisation shared with the API (apps/api/src/contacts.ts): digits only; a 10-digit Indian
+-- number gains the 91 prefix and a leading trunk 0 on an 11-digit number is replaced by 91. Anything
+-- that is not a plausible mobile number (fewer than 10 significant digits, one repeated digit, or a
+-- counting sequence) becomes NULL so placeholders never look like identities.
 CREATE OR REPLACE FUNCTION shopmaple_phone_key(raw TEXT) RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
-    WHEN d = '' THEN NULL
-    WHEN length(d) = 10 THEN '91' || d
-    WHEN length(d) = 11 AND left(d, 1) = '0' THEN '91' || substr(d, 2)
-    ELSE d END
-  FROM (SELECT regexp_replace(coalesce(raw, ''), '[^0-9]', '', 'g') AS d) AS digits
+    WHEN length(n) < 10 THEN NULL
+    WHEN n ~ '^(.)\1*$' THEN NULL
+    WHEN n IN ('1234567890', '0123456789') THEN NULL
+    ELSE k END
+  FROM (
+    SELECT k, CASE WHEN k LIKE '91%' AND length(k) = 12 THEN substr(k, 3) ELSE k END AS n
+    FROM (
+      SELECT CASE
+        WHEN length(d) = 10 THEN '91' || d
+        WHEN length(d) = 11 AND left(d, 1) = '0' THEN '91' || substr(d, 2)
+        ELSE d END AS k
+      FROM (SELECT regexp_replace(coalesce(raw, ''), '[^0-9]', '', 'g') AS d) AS digits
+    ) AS keyed
+  ) AS national
 $$;
 
 -- 2. Enquiry columns and follow-up tasks (created before the backfill so merges can check both).
@@ -79,36 +92,20 @@ CREATE TABLE IF NOT EXISTS "ContactActivity" (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "ContactActivity_contactId_version_key" ON "ContactActivity"("contactId", "version");
 
--- 3. Backfill contacts from existing enquiries. Re-running converges on the same result.
+-- 3. Backfill contacts from existing enquiries. Re-running converges on the same result, and
+--    apps/api/src/contacts-backfill.ts repeats exactly these two statements for enquiries written by an
+--    old instance after the migration ran. Linking is by email key only.
 -- 3a. One contact per distinct normalised email, named from that email's earliest enquiry.
 INSERT INTO "Contact" ("id", "emailKey", "phoneKey", "name", "email", "phone", "createdAt", "updatedAt")
-SELECT 'ct_' || gen_random_uuid(), e."emailKey", NULL, e."name", e."emailKey", e."phone", e."createdAt", CURRENT_TIMESTAMP
+SELECT 'ct_' || gen_random_uuid(), e."emailKey", shopmaple_phone_key(e."phone"), e."name", e."emailKey", e."phone", e."createdAt", CURRENT_TIMESTAMP
 FROM (
   SELECT DISTINCT ON (lower(trim("email"))) lower(trim("email")) AS "emailKey", "name", "phone", "createdAt"
-  FROM "Enquiry" WHERE "contactId" IS NULL ORDER BY lower(trim("email")), "createdAt", "id"
+  FROM "Enquiry" WHERE "contactId" IS NULL AND trim("email") <> '' ORDER BY lower(trim("email")), "createdAt", "id"
 ) AS e
 ON CONFLICT ("emailKey") DO NOTHING;
--- 3b. Each phone key belongs to the earliest contact that supplied it.
-UPDATE "Contact" c SET "phoneKey" = k."phoneKey" FROM (
-  SELECT DISTINCT ON (shopmaple_phone_key("phone")) "id", shopmaple_phone_key("phone") AS "phoneKey"
-  FROM "Contact" WHERE shopmaple_phone_key("phone") IS NOT NULL ORDER BY shopmaple_phone_key("phone"), "createdAt", "id"
-) AS k WHERE c."id" = k."id" AND c."phoneKey" IS NULL
-  AND NOT EXISTS (SELECT 1 FROM "Contact" o WHERE o."phoneKey" = k."phoneKey");
--- 3c. A later contact whose phone is already held by an earlier contact is the same person: merge into the keeper.
-CREATE TEMP TABLE IF NOT EXISTS shopmaple_contact_merge AS
-  SELECT dup."id" AS "dupId", keep."id" AS "keepId" FROM "Contact" dup
-  JOIN "Contact" keep ON keep."phoneKey" = shopmaple_phone_key(dup."phone") AND keep."id" <> dup."id"
-  WHERE dup."phoneKey" IS NULL;
-UPDATE "Enquiry" e SET "contactId" = m."keepId" FROM shopmaple_contact_merge m WHERE e."contactId" = m."dupId";
-UPDATE "FollowUpTask" t SET "contactId" = m."keepId" FROM shopmaple_contact_merge m WHERE t."contactId" = m."dupId";
-DELETE FROM "Contact" c USING shopmaple_contact_merge m WHERE c."id" = m."dupId"
-  AND NOT EXISTS (SELECT 1 FROM "ContactActivity" a WHERE a."contactId" = c."id");
-DROP TABLE shopmaple_contact_merge;
--- 3d. Link enquiries by email key, then by phone key for emails that were merged away.
+-- 3b. Link every enquiry that has no contact yet by email key.
 UPDATE "Enquiry" e SET "contactId" = c."id" FROM "Contact" c
   WHERE e."contactId" IS NULL AND c."emailKey" = lower(trim(e."email"));
-UPDATE "Enquiry" e SET "contactId" = c."id" FROM "Contact" c
-  WHERE e."contactId" IS NULL AND c."phoneKey" IS NOT NULL AND c."phoneKey" = shopmaple_phone_key(e."phone");
 
 -- 4. Pipeline stages: legacy "reviewed" becomes "contacted"; the check constraint names the five stages.
 UPDATE "Enquiry" SET "status" = 'contacted' WHERE "status" = 'reviewed';
@@ -128,5 +125,5 @@ ALTER TABLE "EnquiryActivity" ADD CONSTRAINT "EnquiryActivity_action_check" CHEC
   ("action" = 'note' AND "assigneeId" IS NULL AND "body" IS NOT NULL AND length("body") BETWEEN 1 AND 2000 AND "stage" IS NULL AND "taskId" IS NULL AND "subject" IS NULL) OR
   ("action" = 'status_changed' AND "assigneeId" IS NULL AND "stage" IN ('new', 'contacted', 'quoted', 'won', 'lost') AND ("body" IS NULL OR length("body") BETWEEN 1 AND 500) AND "taskId" IS NULL AND "subject" IS NULL) OR
   ("action" IN ('task_created', 'task_completed', 'task_reopened') AND "assigneeId" IS NULL AND "taskId" IS NOT NULL AND "body" IS NOT NULL AND length("body") BETWEEN 1 AND 200 AND "stage" IS NULL AND "subject" IS NULL) OR
-  ("action" IN ('email_sent', 'email_failed') AND "assigneeId" IS NULL AND "subject" IS NOT NULL AND length("subject") BETWEEN 1 AND 150 AND "body" IS NOT NULL AND length("body") BETWEEN 1 AND 5000 AND "stage" IS NULL AND "taskId" IS NULL)
+  ("action" IN ('email_sending', 'email_sent', 'email_failed') AND "assigneeId" IS NULL AND "subject" IS NOT NULL AND length("subject") BETWEEN 1 AND 150 AND "body" IS NOT NULL AND length("body") BETWEEN 1 AND 5000 AND "stage" IS NULL AND "taskId" IS NULL)
 );
