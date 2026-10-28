@@ -31,6 +31,11 @@ export default async function PreviewFrame({ params, searchParams }: {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_NOT_PUBLISHED", message: "Nothing is published yet. Publish the draft to compare it with the live storefront." }} />;
   }
   const content = published ? await getPublishedContent() : previewMediaContent(draft.content);
+  // During an API outage the published reader falls back to the bundled defaults; those must
+  // never be shown labelled as the published storefront.
+  if (published && content.campaignsAvailable === false) {
+    return <PreviewUnavailable draft={{ ok: false, status: 503, code: "PREVIEW_PUBLISHED_UNREACHABLE", message: "The published storefront could not be read. Check that the API is running and try again." }} />;
+  }
   const route = renderStorefrontRoute(page, content);
   if (!route) {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no storefront page at this address to preview." }} />;
