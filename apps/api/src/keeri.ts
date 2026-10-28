@@ -110,6 +110,33 @@ const shopifyId = z
   .string()
   .regex(/^[1-9][0-9]{0,30}$/)
   .nullable();
+const positiveInt = z.number().int().min(1).max(1_000_000);
+/** Packed carton measurements for one unit, or null when staff left any of them unstated. */
+const shippingSchema = z
+  .object({
+    packedWeightGrams: positiveInt,
+    cartonLengthCm: positiveInt,
+    cartonWidthCm: positiveInt,
+    cartonHeightCm: positiveInt,
+    cartonCount: positiveInt,
+  })
+  .strict()
+  .nullable();
+/** How Keeri would fulfil the variant; null for dropship and unverified policies. */
+const fulfilmentSchema = z
+  .object({
+    kind: z.enum(["stocked", "made_to_order"]),
+    leadTimeDays: z.number().int().min(1).max(365).nullable(),
+  })
+  .strict()
+  .nullable();
+/** Keeri's own verdict on whether the variant can be quoted and held today, with reason codes. */
+const eligibilitySchema = z
+  .object({
+    sellable: z.boolean(),
+    reasons: z.array(z.string().max(64)).max(20),
+  })
+  .strict();
 export const keeriExportV2Schema = keeriExportSchema.extend({
   schemaVersion: z.literal(2),
   models: z
@@ -132,6 +159,12 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
               ]),
               shopifyProductId: shopifyId,
               shopifyVariantId: shopifyId,
+              // Added by Keeri on 2026-10-27; optional so an older export still parses.
+              // The store records nothing from them yet: cart eligibility is still decided
+              // at quote time by Keeri, and delivery pricing by the quote policy.
+              shipping: shippingSchema.optional(),
+              fulfilment: fulfilmentSchema.optional(),
+              eligibility: eligibilitySchema.optional(),
             }),
           )
           .max(500),

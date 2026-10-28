@@ -8,6 +8,8 @@ The full Shopify Admin projection contains only product-facing fields: stable ID
 
 Keeri V2 is `GET /api/storefront/catalogue/v2`, authenticated with a tenant-bound `catalogue:read` service credential. The consumer validates the complete schema, tenant and asset ownership before any write. V2 uses `channelPublished` independently of global source status; explicit channel exclusions are omitted by the producer. Missing price, category, media or variants remain explicit unknowns. All imported stock is unconfirmed (`available: false`); missing/zero placeholder prices become `null`, and such variants cannot enter a purchasing cart. V1 remains available with its original stricter publication gates.
 
+Since 27 October 2026 each V2 variant also carries `shipping` (packed carton measurements for one unit, or `null`), `fulfilment` (`stocked` or `made_to_order` with a lead time, or `null` for dropship and unverified policies) and `eligibility` (`{sellable, reasons}`, Keeri's own verdict on whether the variant can be quoted and held today). The consumer validates their shape and accepts an export with or without them, so either side can be released first. The store records nothing from them yet: purchase availability is still decided by Keeri at quote and reservation time, and delivery pricing by the quote policy.
+
 Public images must be approved/current and explicitly mapped by Keeri, then match the storefront image allowlist: `cdn.shopify.com/s/files/` or `shop.maplefurnishers.com/cdn/shop/`. No private storage key/admin route is published or fetched automatically. Products without a public image use the storefront fallback.
 
 ## Identity and precedence
