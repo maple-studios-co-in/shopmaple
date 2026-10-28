@@ -64,12 +64,15 @@ function embeddingParent(): Window | null {
 }
 
 /** Keeps in-preview navigation on draft content: same-origin storefront links reopen inside the frame with the same token. */
-export function PreviewNavigation({ token, children, navigate = (url) => window.location.assign(url) }: {
+export function PreviewNavigation({ token, children, navigate = (url) => window.location.assign(url), view = "draft" }: {
   token: string;
   children: ReactNode;
   /** Replaced in tests; the browser's own navigation otherwise. */
   navigate?: (url: string) => void;
+  /** Carried through every in-frame navigation so the published view stays published. */
+  view?: "draft" | "published";
 }) {
+  const query = `?token=${encodeURIComponent(token)}${view === "published" ? "&view=published" : ""}`;
   function onClick(event: React.MouseEvent<HTMLDivElement>) {
     const anchor = (event.target as HTMLElement).closest("a[href]");
     if (!(anchor instanceof HTMLAnchorElement) || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
@@ -79,7 +82,7 @@ export function PreviewNavigation({ token, children, navigate = (url) => window.
     const path = url.pathname === "/" ? "/home" : url.pathname;
     // Tell the embedding admin where the preview is going, so its toolbar can follow.
     embeddingParent()?.postMessage({ source: previewMessageSource, type: "navigate", path: url.pathname }, window.location.origin);
-    navigate(`/admin/preview-frame${path}?token=${encodeURIComponent(token)}`);
+    navigate(`/admin/preview-frame${path}${query}`);
   }
   // display: contents, so the wrapper changes no layout; it only has to be an ancestor of every link.
   return <div onClickCapture={onClick} className="admin-preview-navigation" data-preview-navigation="">{children}</div>;
@@ -126,7 +129,7 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
 }) {
   return (
     <div className="admin-preview-document" data-preview-version={version} data-preview-path={path} data-preview-view={view}>
-      <PreviewNavigation token={token} navigate={navigate}>
+      <PreviewNavigation token={token} navigate={navigate} view={view}>
         <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
         <p className="admin-preview-ribbon" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
       </PreviewNavigation>

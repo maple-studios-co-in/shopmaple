@@ -78,3 +78,26 @@ test("every link of a real draft page renders inside the navigation wrapper", as
   assert.deepEqual(outside, [], "Links rendered outside the click-capturing wrapper would leave the draft");
   assert.ok(page.querySelector("[data-preview-navigation] header"), "The draft chrome is inside the wrapper");
 });
+
+test("links followed inside the published view stay on the published view", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
+  const root = createRoot(document.getElementById("root")!);
+  const assigned: string[] = [];
+  try {
+    await act(async () => root.render(
+      <ShopProvider>
+        <PreviewFrameDocument token={token} version={2} path="/pages/sofas" siteChrome={content.siteChrome} view="published" navigate={(url) => assigned.push(url)}>
+          <a href="/collections/all">Shop all</a>
+        </PreviewFrameDocument>
+      </ShopProvider>,
+    ));
+    assert.match(document.querySelector('[role="status"]')?.textContent ?? "", /Published/);
+    const link = [...document.querySelectorAll("a")].find((el) => el.textContent === "Shop all")!;
+    assert.equal(click(link).prevented, true);
+    assert.deepEqual(assigned, [`/admin/preview-frame/collections/all?token=${encodeURIComponent(token)}&view=published`]);
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous;
+  }
+});
