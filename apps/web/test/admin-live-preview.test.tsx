@@ -40,7 +40,7 @@ const frame = () => {
   return found;
 };
 
-async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number } = {}) {
+async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number; saveDelayMs?: number } = {}) {
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const calls: { method: string; path: string; body?: any }[] = [];
@@ -52,6 +52,7 @@ async function setup(options: { expiresInMs?: number; previewStatus?: number; pr
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path, body });
     if (path === "/api/admin/content" && method === "PUT") {
+      if (options.saveDelayMs) await new Promise((resolve) => setTimeout(resolve, options.saveDelayMs));
       if (saveFailures > 0) { saveFailures--; return Response.json({ code: "SERVER_ERROR" }, { status: 500 }); }
       version = body.expectedVersion + 1;
       return Response.json({ version, draft: body.content, publishedVersion: 2, updatedAt: "2026-10-28T09:00:00Z" });
@@ -305,7 +306,7 @@ test("a failed quiet save pauses live updates with one persistent notice and res
 });
 
 test("a quiet save never disables the form or moves focus", async () => {
-  const app = await setup();
+  const app = await setup({ saveDelayMs: 120 });
   try {
     await click("Live preview");
     await click("Homepage");
@@ -313,10 +314,11 @@ test("a quiet save never disables the form or moves focus", async () => {
     await act(async () => { input.focus(); });
     await type("Category heading", "Keep my focus");
     assert.equal(document.activeElement, input);
-    await wait(15);
+    await wait(70);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "The quiet save is in flight");
     assert.equal(container.querySelector("fieldset")?.disabled, false, "Fields stay enabled during a quiet save");
     assert.equal(document.activeElement, input, "Focus stays put while the quiet save runs");
-    await wait(60);
+    await wait(150);
     assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
     assert.equal(document.activeElement, input, "Focus stays put after the quiet save");
     assert.equal(container.querySelector("fieldset")?.disabled, false);
