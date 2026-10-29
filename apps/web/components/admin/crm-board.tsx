@@ -182,6 +182,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
           })}
         </BoardColumn>)}
       </div>
+      <p className="crm-board-hint" aria-hidden="true">Scroll sideways to reach every stage.</p>
     </DndContext>
   </section>;
 }

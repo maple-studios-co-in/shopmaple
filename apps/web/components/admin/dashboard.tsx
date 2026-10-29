@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import { TriangleAlert } from "lucide-react";
 import type { StorefrontContent } from "@shopmaple/contracts";
 import { ContentEditor } from "./editor";
+import { Skeleton } from "./crm-primitives";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 export type StaffSession = {
   user: {
@@ -66,12 +68,12 @@ export function AdminDashboard({
           setError("We couldn't check your session. Please try signing in.");
       })
       .catch((error) => {
-        if (active)
-          setError(
-            error instanceof AdminRequestTimeout
-              ? "Checking your session timed out. Please try signing in."
-              : "We couldn't connect. Check your connection and try again.",
-          );
+        if (!active || (error instanceof Error && error.name === "AbortError")) return;
+        setError(
+          error instanceof AdminRequestTimeout
+            ? "Checking your session timed out. Please try signing in."
+            : "We couldn't connect. Check your connection and try again.",
+        );
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -126,8 +128,11 @@ export function AdminDashboard({
   }
   if (loading)
     return (
-      <section className="shop-admin">
-        <p role="status">Checking your session…</p>
+      <section className="shop-admin admin-session-check" aria-label="Store administration">
+        <div aria-busy="true">
+          <Skeleton rows={3} />
+          <p role="status">Checking your session</p>
+        </div>
       </section>
     );
   async function logout() {
@@ -151,43 +156,42 @@ export function AdminDashboard({
       setBusy(false);
     }
   }
+  if (session)
+    return (
+      <section className="shop-admin" aria-label="Store administration">
+        {error && (
+          <div className="admin-notices">
+            <p role="alert" className="admin-alert"><TriangleAlert aria-hidden="true" strokeWidth={1.5} /><span>{error}</span></p>
+          </div>
+        )}
+        <ContentEditor
+          session={session}
+          initialContent={initialContent}
+          account={{ onSignOut: () => void logout(), busy }}
+          onExpired={() => {
+            setSession(null);
+            setError("Your session has expired. Sign in again to continue.");
+          }}
+        />
+      </section>
+    );
   return (
-    <section className="shop-admin" aria-label="Store administration">
-      {session ? (
-        <>
-          <header className="admin-header">
-            <div>
-              <a href="/">Maple Furnishers</a>
-              <h1>Shop content</h1>
-            </div>
-            <div className="admin-account">
-              <span>
-                {session.user.email} · {session.user.role}
-              </span>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void logout()}
-              >
-                Sign out
-              </button>
-            </div>
-          </header>
-          {error && <p role="alert">{error}</p>}
-          <ContentEditor
-            session={session}
-            initialContent={initialContent}
-            onExpired={() => {
-              setSession(null);
-              setError("Your session has expired. Sign in again to continue.");
-            }}
-          />
-        </>
-      ) : (
+    <section className="shop-admin admin-signin" aria-label="Store administration" data-admin-signin>
+      <div className="admin-signin-aside" aria-hidden="true">
+        <strong>Maple Furnishers</strong>
+        <div>
+          <h1>Shop admin</h1>
+          <p>Edit the storefront, preview the draft beside the editor, and publish when it is ready.</p>
+        </div>
+        <small>Staff only. Nothing here is visible to visitors until it is published.</small>
+      </div>
+      <div className="admin-signin-main">
         <div className="admin-login">
-          <h1>Maple shop admin</h1>
-          <p>Sign in to manage your storefront content.</p>
-          {error && <p role="alert">{error}</p>}
+          <h2>Sign in</h2>
+          <p>Use your staff email and password.</p>
+          {error && (
+            <p role="alert" className="admin-alert"><TriangleAlert aria-hidden="true" strokeWidth={1.5} /><span>{error}</span></p>
+          )}
           <form onSubmit={login}>
             <label>
               Email
@@ -210,12 +214,12 @@ export function AdminDashboard({
               />
             </label>
             <button disabled={busy} type="submit">
-              {busy ? "Signing in…" : "Sign in"}
+              {busy ? "Signing in" : "Sign in"}
             </button>
           </form>
           <a href="/">Back to the storefront</a>
         </div>
-      )}
+      </div>
     </section>
   );
 }

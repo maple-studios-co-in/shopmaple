@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import type { StaffSession } from "./dashboard";
+import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { useAdminRequest } from "./use-admin-request";
 export type MediaAsset = { id: string; sha256: string; label: string; width: number; height: number; bytes: number; mimeType: string; createdAt: string; publicAt: string | null; url: string; previewUrl: string };
 const identifier = (value: unknown): value is string => typeof value === "string" && /^[a-z0-9]{1,100}$/.test(value);
@@ -17,10 +19,11 @@ function parsePage(value: unknown) {
  if (!Array.isArray(page.assets) || page.assets.length > 50 || !(page.nextCursor === null || identifier(page.nextCursor))) throw Error("Invalid image page");
  return {assets:page.assets.map(parseAsset),nextCursor:page.nextCursor};
 }
-export function MediaLibrary({ session, onExpired, onSelect }: { session: StaffSession; onExpired: () => void; onSelect?: (asset: MediaAsset) => void }) {
+const aborted = (error: unknown) => error instanceof Error && error.name === "AbortError";
+export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = "h3" }: { session: StaffSession; onExpired: () => void; onSelect?: (asset: MediaAsset) => void; heading?: "h2" | "h3" }) {
  const send = useAdminRequest();
  const [assets,setAssets] = useState<MediaAsset[]>([]), [cursor,setCursor] = useState<string|null>(null);
- const [busy,setBusy] = useState(false), [error,setError] = useState("");
+ const [busy,setBusy] = useState(false), [error,setError] = useState(""), [loaded,setLoaded] = useState(false);
  const active = useRef(true), expired = useRef(onExpired); expired.current = onExpired;
  async function load(next?:string) {
   setBusy(true);setError("");
@@ -30,8 +33,8 @@ export function MediaLibrary({ session, onExpired, onSelect }: { session: StaffS
    if(response.status===401){setAssets([]);expired.current();return;}
    if(!response.ok)throw Error("load");
    const result = parsePage(await response.json());
-   setAssets(previous=>next?[...previous,...result.assets]:result.assets);setCursor(result.nextCursor);
-  } catch { if(active.current)setError("We couldn't load your images. Please try again."); }
+   setAssets(previous=>next?[...previous,...result.assets]:result.assets);setCursor(result.nextCursor);setLoaded(true);
+  } catch(err) { if(active.current && !aborted(err))setError("We couldn't load your images. Please try again."); }
   finally { if(active.current)setBusy(false); }
  }
  useEffect(()=>{active.current=true;void load();return()=>{active.current=false;};},[send]);
@@ -46,20 +49,23 @@ export function MediaLibrary({ session, onExpired, onSelect }: { session: StaffS
    const body: unknown = await response.json();
    const asset = parseAsset(body && typeof body === "object" && "asset" in body ? body.asset : null);
    setAssets(previous=>[asset,...previous.filter(a=>a.id!==asset.id)]);
-  } catch(err) { if(active.current)setError(err instanceof Error ? err.message : "Upload failed. Please try again."); }
+  } catch(err) { if(active.current && !aborted(err))setError(err instanceof Error ? err.message : "Upload failed. Please try again."); }
   finally {if(active.current)setBusy(false);}
  }
  return <section aria-label="Media library" aria-busy={busy} className="admin-media-library">
-  <h3>Media library</h3><p>Upload JPEG, PNG or WebP images up to 8 MiB. Images stay private until you publish content that uses them.</p>
-  <label>Upload image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/></label>
-  {error&&<p role="alert">{error} <button type="button" disabled={busy} onClick={()=>void load()}>Retry</button></p>}
-  {busy&&<p role="status">Loading images…</p>}
-  {!busy&&!error&&assets.length===0&&<p>No images yet. Upload your first image above.</p>}
-  <div className="admin-media-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:"1rem"}}>{assets.map(asset=><article key={asset.id}>
-   <img src={asset.previewUrl} alt={asset.label} width={asset.width} height={asset.height} loading="lazy" style={{width:"100%",height:140,objectFit:"contain"}}/>
-   <p>{asset.label}</p><small>{asset.width} × {asset.height} · {Math.ceil(asset.bytes/1024)} KB · {asset.publicAt?"Published":"Private"}</small>
+  <div className="admin-panel-head"><div><Heading>Media library</Heading><p>Upload JPEG, PNG or WebP images up to 8 MiB. Images stay private until you publish content that uses them.</p></div></div>
+  <div className="admin-media-toolbar">
+   <label className="admin-upload"><Upload aria-hidden="true" strokeWidth={1.5} size={16} />Upload image<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/></label>
+   <span className="admin-inline-status">{busy ? <><span className="admin-busy-dot" aria-hidden="true" />Working</> : loaded ? `${assets.length} ${assets.length === 1 ? "image" : "images"}${cursor ? " loaded so far" : ""}` : ""}</span>
+  </div>
+  {error&&<Notice tone="error">{error} <button type="button" className="admin-small admin-quiet" disabled={busy} onClick={()=>void load()}>Retry</button></Notice>}
+  {busy&&assets.length===0&&!error&&<><p role="status" className="admin-sr-only">Loading images</p><Skeleton rows={2} variant="card" /></>}
+  {!busy&&!error&&loaded&&assets.length===0&&<EmptyState title="No images yet">Upload your first image with the control above. It stays private until a published page uses it.</EmptyState>}
+  {assets.length>0&&<div className="admin-media-grid">{assets.map(asset=><article key={asset.id}>
+   <img src={asset.previewUrl} alt={asset.label} width={asset.width} height={asset.height} loading="lazy"/>
+   <p title={asset.label}>{asset.label}</p><small>{asset.width} x {asset.height}, {Math.ceil(asset.bytes/1024)} KB, {asset.publicAt?"Published":"Private"}</small>
    {onSelect&&<button type="button" disabled={busy} onClick={()=>onSelect(asset)}>Use image<span className="sr-only">: {asset.label}</span></button>}
-  </article>)}</div>
-  {cursor&&<button type="button" disabled={busy} onClick={()=>void load(cursor)}>Load more</button>}
+  </article>)}</div>}
+  {cursor&&<button type="button" className="admin-quiet" disabled={busy} onClick={()=>void load(cursor)}>Load more</button>}
  </section>;
 }

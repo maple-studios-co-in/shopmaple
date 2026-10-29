@@ -982,3 +982,42 @@ test("unavailable content cannot expose enquiries without capability or bypass i
     }
   } finally { globalThis.fetch = previous; }
 });
+
+test("a draft read aborted by StrictMode's first mount is not reported and does not leave the editor busy", async () => {
+  const previous = globalThis.fetch;
+  const root = createRoot(container);
+  const reads: string[] = [];
+  let contentReads = 0;
+  globalThis.fetch = async (input, init) => {
+    const path = String(input);
+    // The surviving draft read is slow, so the aborted one finishes first.
+    const slow = path === "/api/admin/content" && ++contentReads === 2;
+    await new Promise((resolve) => setTimeout(resolve, slow ? 90 : 5));
+    if (init?.signal?.aborted) {
+      reads.push(`aborted ${path}`);
+      throw new dom.window.DOMException("The operation was aborted.", "AbortError");
+    }
+    reads.push(`ok ${path}`);
+    if (path === "/api/admin/session") return Response.json(staff("publisher"));
+    if (path === "/api/admin/content") return Response.json(doc());
+    assert.fail(`Unexpected request ${path}`);
+  };
+  try {
+    await act(async () => root.render(<React.StrictMode><AdminDashboard initialContent={initialContent} /></React.StrictMode>));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
+    assert.ok(reads.some((entry) => entry.startsWith("aborted /api/admin/content")), "The first draft read was aborted");
+    assert.equal(reads.includes("ok /api/admin/content"), false, "The surviving read is still running");
+    assert.ok(container.querySelector('[aria-busy="true"]'), "While the surviving read runs the editor shows its loading state");
+    assert.equal([...container.querySelectorAll("button")].some((b) => b.textContent === "Retry loading draft"), false, "The aborted read must not clear busy and expose the unavailable state while a read is still running");
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+    assert.ok(reads.some((entry) => entry.startsWith("aborted /api/admin/content")), "StrictMode's first draft read was aborted by the hook");
+    assert.ok(reads.includes("ok /api/admin/content"), "The second draft read completed");
+    assert.equal(container.querySelector('[role="alert"]'), null, "An aborted first read is never shown as a failure");
+    assert.equal(button("Preview draft").disabled, false, "The editor is not left busy by the aborted read's cleanup");
+    assert.ok(container.querySelector('button[data-action="save"]'), "The draft editor is usable");
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous;
+  }
+});
