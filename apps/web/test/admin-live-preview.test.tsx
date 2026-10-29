@@ -60,6 +60,8 @@ type SetupOptions = {
   saveFailures?: number;
   /** PUTs stay pending until the test resolves them with `resolveSave()`. */
   manualSaves?: boolean;
+  /** Quiet-save debounce; a test that asserts between two saves uses a window wider than a render. */
+  debounceMs?: number;
   initialDraft?: null;
 };
 async function setup(options: SetupOptions = {}) {
@@ -95,7 +97,7 @@ async function setup(options: SetupOptions = {}) {
       session={{ user: { id: "editor", email: "editor@example.test", role: "editor" }, csrfToken: "c".repeat(64) }}
       initialContent={defaultStorefrontContent}
       onExpired={() => assert.fail("Unexpected expiry")}
-      livePreviewDebounceMs={30}
+      livePreviewDebounceMs={options.debounceMs ?? 30}
     />,
   ));
   const puts = () => calls.filter((c) => c.method === "PUT");
@@ -354,7 +356,9 @@ test("a quiet save never disables the form or moves focus", async () => {
 });
 
 test("text typed while a quiet save is in flight survives, stays unsaved and is saved next with the newer version", async () => {
-  const app = await setup({ manualSaves: true });
+  // The assertions below run between the first save landing and the next quiet save starting,
+  // so that window is a second rather than 30 ms a loaded runner can spend on one render.
+  const app = await setup({ manualSaves: true, debounceMs: 1000 });
   try {
     await click("Live preview");
     await click("Homepage");
