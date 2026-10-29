@@ -99,3 +99,33 @@ test("the view switcher moves between list, board, follow-ups and contacts witho
     assert.ok(container.querySelector(`[data-enquiry-row="${rows[0]!.id}"]`));
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
+
+test("column filters narrow the loaded rows by stage, assignee and name without another request, and headers sort", async () => {
+  const previous = fetch; const paths: string[] = [];
+  globalThis.fetch = transport(path => { paths.push(path); return undefined; });
+  const root = createRoot(container);
+  const visible = () => [...container.querySelectorAll<HTMLElement>("[data-enquiry-row]")].map(row => row.dataset.enquiryRow);
+  try {
+    await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}} />));
+    assert.deepEqual(visible(), [rows[0]!.id, rows[1]!.id]);
+    const before = paths.length;
+    await setValue(dom, control("Filter by stage"), "quoted", "change");
+    assert.deepEqual(visible(), [rows[0]!.id], "the stage filter keeps only quoted rows");
+    await setValue(dom, control("Filter by stage"), "", "change");
+    await setValue(dom, control("Filter by assignee"), "Unassigned", "change");
+    assert.deepEqual(visible(), [rows[1]!.id], "the assignee filter keeps only unassigned rows");
+    await setValue(dom, control("Filter by assignee"), "", "change");
+    await setValue(dom, control("Filter by name"), "asha");
+    assert.deepEqual(visible(), [rows[0]!.id], "the name filter matches part of a name, ignoring case");
+    await setValue(dom, control("Filter by name"), "nobody");
+    assert.deepEqual(visible(), []);
+    assert.match(container.textContent!, /no loaded enquiries match/i, "an over-narrow filter says so");
+    assert.equal(paths.length, before, "column filters work on the rows already loaded");
+    await setValue(dom, control("Filter by name"), "");
+    const header = [...container.querySelectorAll<HTMLButtonElement>("th button")].find(item => item.textContent?.trim() === "Customer");
+    assert.ok(header, "the customer column header sorts");
+    await act(async () => header.click()); await act(async () => header.click());
+    assert.equal(header.closest("th")?.getAttribute("aria-sort"), "descending");
+    assert.deepEqual(visible(), [rows[1]!.id, rows[0]!.id], "descending by name puts Rahul first");
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});

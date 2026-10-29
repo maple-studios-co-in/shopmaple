@@ -7,6 +7,7 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type SortableRowProps = Record<string, unknown> & {
   ref?: (node: HTMLElement | null) => void;
@@ -25,9 +26,15 @@ export type SortableListProps<T> = {
   tag?: "ol" | "ul" | "div";
   rowTag?: "li" | "fieldset" | "details" | "div";
   className?: string;
+  /** Classes for every row (for example `rowCard` from ./kit); rowProps can add more. */
+  rowClassName?: string;
   /** Extra attributes for a row: labels, data attributes and a ref callback for focus management. */
   rowProps?: (item: T, index: number) => SortableRowProps;
 };
+
+function withRowClass(props: SortableRowProps, rowClassName?: string): SortableRowProps {
+  return rowClassName ? { ...props, className: cn(rowClassName, props.className) } : props;
+}
 
 const verticalOnly: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 const instructions = "To pick up an item, press space or enter. While lifted, use the up and down arrow keys to move it. Press space or enter again to drop it in its new position, or press escape to cancel.";
@@ -46,19 +53,19 @@ function SortableRow({ id, label, tag, dragging, dropTarget, rowProps, children 
   const handle = (
     <button
       type="button"
-      className="admin-drag-handle"
+      className="inline-grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-md text-faint transition-colors duration-150 ease-admin outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 active:cursor-grabbing"
       ref={setActivatorNodeRef}
       {...attributes}
       {...listeners}
       aria-label={`Drag ${label}`}
     >
-      <GripVertical aria-hidden="true" size={16} />
+      <GripVertical aria-hidden="true" size={16} strokeWidth={1.5} />
     </button>
   );
   return createElement(tag, {
     ...rest,
     ref: (node: HTMLElement | null) => { setNodeRef(node); ref?.(node); },
-    className: [className, dragging ? "is-dragging" : ""].filter(Boolean).join(" ") || undefined,
+    className: className || undefined,
     style: { transform: CSS.Transform.toString(transform), transition },
     "data-sortable-row": "",
     "data-dragging": dragging ? "true" : undefined,
@@ -66,7 +73,7 @@ function SortableRow({ id, label, tag, dragging, dropTarget, rowProps, children 
   }, children(handle));
 }
 
-export function SortableList<T>({ items, getId, getLabel, onReorder, renderItem, tag = "ol", rowTag = "li", className, rowProps }: SortableListProps<T>) {
+export function SortableList<T>({ items, getId, getLabel, onReorder, renderItem, tag = "ol", rowTag = "li", className, rowClassName, rowProps }: SortableListProps<T>) {
   const contextId = useId();
   const ids = items.map(getId);
   const [active, setActive] = useState<string | null>(null);
@@ -133,12 +140,12 @@ export function SortableList<T>({ items, getId, getLabel, onReorder, renderItem,
       onDragCancel={() => { setActive(null); setOver(null); }}
     >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        {createElement(tag, { className }, items.map((item, index) => {
+        {createElement(tag, { className: cn("grid gap-2", className) }, items.map((item, index) => {
           const id = ids[index]!;
           const dropTarget = activeIndex >= 0 && overIndex === index && overIndex !== activeIndex ? (overIndex < activeIndex ? "before" : "after") : null;
           return (
             <SortableRow key={id} id={id} label={getLabel(item, index)} tag={rowTag} dragging={activeIndex === index} dropTarget={dropTarget}
-              rowProps={rowProps?.(item, index) ?? {}}>
+              rowProps={withRowClass(rowProps?.(item, index) ?? {}, rowClassName)}>
               {handle => renderItem(item, index, handle)}
             </SortableRow>
           );

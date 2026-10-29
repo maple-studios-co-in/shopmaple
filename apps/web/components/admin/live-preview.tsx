@@ -13,6 +13,8 @@ import {
   type PreviewTokenState,
   type PreviewView,
 } from "@/lib/live-preview";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { EmptyState, Skeleton } from "./crm-primitives";
 
 /** What minting a preview token came to; null means the session expired and the editor took over. */
@@ -173,58 +175,86 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const frameTitle = `${viewLabel} of ${title}${framePath && framePath !== "/" ? ` (${framePath})` : ""}`;
   const onViewChange = useCallback((next: PreviewView) => setView(next), []);
 
+  const full = fullscreen;
+  const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-semibold text-muted-foreground outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
+  const segmentOn = "aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs has-[input:checked]:bg-card has-[input:checked]:text-foreground has-[input:checked]:shadow-xs has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-ring/60";
+  const dot = { ready: "bg-success", loading: "bg-info motion-safe:animate-pulse", saving: "bg-info motion-safe:animate-pulse", blocked: "bg-warning", error: "bg-danger", pending: "bg-faint" }[state];
+  const deviceFrame = device === "desktop"
+    ? "h-full w-full max-w-full"
+    : cn("flex-none origin-top [height:calc(100%/var(--device-scale,1))] [transform:scale(var(--device-scale,1))]", device === "tablet" ? "w-[828px]" : "w-[402px] rounded-[22px] p-1.5");
   return (
-    <aside className="admin-preview-pane" data-live-preview data-device={device} data-fullscreen={fullscreen ? "true" : "false"} aria-label="Live preview" style={{ "--device-scale": scale } as React.CSSProperties}>
-      <div className="admin-preview-toolbar">
-        <div className="admin-segmented" role="group" aria-label="Preview device">
+    <aside
+      data-live-preview
+      data-device={device}
+      data-fullscreen={full ? "true" : "false"}
+      aria-label="Live preview"
+      style={{ "--device-scale": scale } as React.CSSProperties}
+      className={cn(
+        "flex min-w-0 flex-col bg-sunken shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-line-soft",
+        full
+          ? "fixed inset-0 z-40 rounded-none"
+          : "relative h-[72dvh] min-h-[520px] rounded-xl md:h-[calc(100dvh-8.5rem)] xl:sticky xl:top-20",
+      )}
+    >
+      <div className={cn("flex min-w-0 items-center gap-2 px-3 py-2", full ? "flex-wrap" : "flex-nowrap")}>
+        <div className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.07] p-[3px]" role="group" aria-label="Preview device">
           {previewDevices.map((item) => (
-            <button key={item.key} type="button" aria-pressed={device === item.key} title={item.label} onClick={() => setDevice(item.key)}>
+            <button key={item.key} type="button" aria-pressed={device === item.key} title={item.label} onClick={() => setDevice(item.key)} className={cn(segment, segmentOn, !full && "px-2")}>
               {item.key === "desktop" ? <Monitor aria-hidden="true" strokeWidth={1.5} /> : item.key === "tablet" ? <Tablet aria-hidden="true" strokeWidth={1.5} /> : <Smartphone aria-hidden="true" strokeWidth={1.5} />}
-              <span className="admin-label-text">{item.label}</span>
+              <span className={cn(!full && "sr-only")}>{item.label}</span>
             </button>
           ))}
         </div>
-        <fieldset className="admin-segmented" aria-label="Preview version">
-          <label><input type="radio" name="preview-view" value="draft" checked={view === "draft"} onChange={() => onViewChange("draft")} />Draft</label>
-          <label><input type="radio" name="preview-view" value="published" checked={view === "published"} onChange={() => onViewChange("published")} />Published</label>
+        <fieldset className="inline-flex shrink-0 gap-0.5 rounded-full border-0 bg-black/[0.07] p-[3px]" aria-label="Preview version">
+          {(["draft", "published"] as const).map((value) => (
+            <label key={value} className={cn(segment, segmentOn, "relative cursor-pointer")}>
+              <input type="radio" name="preview-view" value={value} checked={view === value} onChange={() => onViewChange(value)} className="pointer-events-none absolute size-px opacity-0" />
+              {value === "draft" ? "Draft" : "Published"}
+            </label>
+          ))}
         </fieldset>
-        <span className="admin-preview-status" data-preview-status data-state={state} role="status" title={statusLabel}>{statusLabel}</span>
-        <div className="admin-preview-toolbar-group">
-          <button type="button" className="admin-icon-button" aria-pressed={!auto} title={auto ? "Pause live updates" : "Resume live updates"} onClick={() => onAutoChange(!auto)}>
+        <span data-preview-status data-state={state} role="status" title={statusLabel} className={cn("inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-[12.5px] font-medium text-ellipsis whitespace-nowrap text-muted-foreground", full && "max-md:basis-full")}>
+          <span aria-hidden="true" className={cn("size-[7px] shrink-0 rounded-full", dot)} />
+          <span className="truncate">{statusLabel}</span>
+        </span>
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          <Button type="button" variant="ghost" size="icon-sm" aria-pressed={!auto} title={auto ? "Pause live updates" : "Resume live updates"} onClick={() => onAutoChange(!auto)}>
             {auto ? <Pause aria-hidden="true" strokeWidth={1.5} /> : <Play aria-hidden="true" strokeWidth={1.5} />}
-            <span className="admin-sr-only">{auto ? "Pause live updates" : "Resume live updates"}</span>
-          </button>
-          <button type="button" className="admin-icon-button" disabled={busy || !dirty || Boolean(blocked) || draftRequired} title="Update preview" onClick={onUpdateNow}>
+            <span className="sr-only">{auto ? "Pause live updates" : "Resume live updates"}</span>
+          </Button>
+          <Button type="button" variant="ghost" size="icon-sm" disabled={busy || !dirty || Boolean(blocked) || draftRequired} title="Update preview" onClick={onUpdateNow}>
             <RefreshCw aria-hidden="true" strokeWidth={1.5} />
-            <span className="admin-sr-only">Update preview</span>
-          </button>
-          <button type="button" className="admin-icon-button" aria-label={fullscreen ? "Exit full screen" : "Full screen"} title={fullscreen ? "Exit full screen" : "Full screen"} aria-pressed={fullscreen} onClick={() => setFullscreen((value) => !value)}>
-            {fullscreen ? <Minimize2 aria-hidden="true" strokeWidth={1.5} /> : <Maximize2 aria-hidden="true" strokeWidth={1.5} />}
-          </button>
-          <button type="button" className="admin-icon-button" aria-label="Close preview" title="Close preview" onClick={onClose}>
+            <span className="sr-only">Update preview</span>
+          </Button>
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={full ? "Exit full screen" : "Full screen"} title={full ? "Exit full screen" : "Full screen"} aria-pressed={full} onClick={() => setFullscreen((value) => !value)}>
+            {full ? <Minimize2 aria-hidden="true" strokeWidth={1.5} /> : <Maximize2 aria-hidden="true" strokeWidth={1.5} />}
+          </Button>
+          <Button type="button" variant="ghost" size="icon-sm" aria-label="Close preview" title="Close preview" onClick={onClose}>
             <X aria-hidden="true" strokeWidth={1.5} />
-          </button>
+          </Button>
         </div>
       </div>
-      <div className="admin-preview-stage" ref={stage}>
-        <div className="admin-device">
+      <div className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden px-3 pb-3" ref={stage}>
+        <div className={cn("flex min-h-0 rounded-[14px] bg-black/10 p-1 shadow-lg motion-safe:transition-[max-width] motion-safe:duration-300 motion-safe:ease-admin", deviceFrame)}>
           {draftRequired ? (
-            <div className="admin-preview-placeholder" data-preview-draft-required>
-              <EmptyState title="No draft yet" action={<button type="button" className="admin-primary" disabled={busy} onClick={onSaveFirst}>Save draft to start the preview</button>}>{draftRequiredMessage} Saving creates the first draft version; nothing is published.</EmptyState>
+            <div className={placeholder} data-preview-draft-required>
+              <EmptyState title="No draft yet" action={<Button type="button" disabled={busy} onClick={onSaveFirst}>Save draft to start the preview</Button>}>{draftRequiredMessage} Saving creates the first draft version; nothing is published.</EmptyState>
             </div>
           ) : mintError ? (
-            <div className="admin-preview-placeholder" data-preview-error>
-              <EmptyState title="Preview unavailable" action={<button type="button" onClick={retry}>Retry preview</button>}>{mintError.message}</EmptyState>
+            <div className={placeholder} data-preview-error>
+              <EmptyState title="Preview unavailable" action={<Button type="button" variant="outline" onClick={retry}>Retry preview</Button>}>{mintError.message}</EmptyState>
             </div>
           ) : unpublished ? (
-            <div className="admin-preview-placeholder"><p>Nothing is published yet. Publish the draft to compare it with the live storefront.</p></div>
+            <div className={placeholder}><p className="max-w-[36ch] text-[13.5px] text-muted-foreground">Nothing is published yet. Publish the draft to compare it with the live storefront.</p></div>
           ) : src ? (
-            <iframe ref={frame} className="admin-preview-frame" data-live-preview-frame title={frameTitle} src={src} referrerPolicy="same-origin" />
+            <iframe ref={frame} data-live-preview-frame title={frameTitle} src={src} referrerPolicy="same-origin" className={cn("block min-h-full w-full flex-1 border-0 bg-white", device === "phone" ? "rounded-2xl" : "rounded-[10px]")} />
           ) : (
-            <div className="admin-preview-placeholder" aria-busy="true"><Skeleton rows={3} variant="card" /></div>
+            <div className={placeholder} aria-busy="true"><div className="w-full max-w-[420px]"><Skeleton rows={3} variant="card" /></div></div>
           )}
         </div>
       </div>
     </aside>
   );
 }
+
+const placeholder = "grid flex-1 place-items-center rounded-[10px] bg-surface p-8 text-center";

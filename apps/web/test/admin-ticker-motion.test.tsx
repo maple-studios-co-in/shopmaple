@@ -97,7 +97,7 @@ test("ticker draft conflicts retain the unsaved choice and lock further writes",
     assert.match(container.textContent ?? "", /Another editor saved/);
     assert.equal(ticker().checked, false);
     assert.equal(button("Save draft").disabled, true);
-    assert.equal(container.querySelector(".admin-panel > fieldset")?.hasAttribute("disabled"), true);
+    assert.equal(container.querySelector("[data-admin-panel] > fieldset")?.hasAttribute("disabled"), true);
     assert.equal(app.calls.filter(call => call.startsWith("PUT")).length, 1);
   } finally { await app.close(); }
 });

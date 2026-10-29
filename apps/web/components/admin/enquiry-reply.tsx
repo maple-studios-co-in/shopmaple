@@ -1,6 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { enquiryAdminDetailSchema, type EnquiryAdminDetail } from "@shopmaple/contracts";
+import { Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { StaffSession } from "./dashboard";
 import { Notice, writeOptions } from "./crm-primitives";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
@@ -31,6 +36,7 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
   const [denied, setDenied] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [open, setOpen] = useState(false);
   const active = useRef(true);
   const callbacks = useRef({ onChange, onDenied, onBusy });
   callbacks.current = { onChange, onDenied, onBusy };
@@ -55,7 +61,7 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
       if (!active.current) return;
       if (value.id !== detail.id) throw Error("Wrong enquiry");
       callbacks.current.onChange(value);
-      setSubject(""); setBody("");
+      setSubject(""); setBody(""); setOpen(false);
       setNotice("Reply sent to the customer and recorded in activity.");
     } catch (failure) {
       if (active.current) setError(failure instanceof AdminRequestTimeout ? messages.timeout : messages.generic);
@@ -63,20 +69,37 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
       if (active.current) { setBusy(false); callbacks.current.onBusy(false); }
     }
   }
-  if (denied) return <section className="crm crm-section" aria-label="Reply by email"><Notice tone="info">Replies are unavailable for this account.</Notice></section>;
-  return <section className="crm crm-section" aria-label="Reply by email" aria-busy={busy}>
-    <h4>Reply by email</h4>
-    <p className="crm-muted" style={{ marginBottom: 12 }}>Plain text goes to <strong>{detail.email}</strong> from the shop&apos;s configured sender. The full message is kept in activity.</p>
-    {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
-    <div className="crm-reply">
-      <label className="crm-field"><span>Subject</span><input aria-label="Reply subject" value={subject} maxLength={subjectLimit} disabled={busy || enabled === false} onInput={event => setSubject(event.currentTarget.value)} /></label>
-      <label className="crm-field"><span>Message</span><textarea aria-label="Reply message" aria-describedby="crm-reply-count" value={body} maxLength={bodyLimit} disabled={busy || enabled === false} onInput={event => setBody(event.currentTarget.value)} /></label>
-      <div className="crm-reply-foot">
-        <span id="crm-reply-count" className="crm-faint crm-num">{body.length}/{bodyLimit}</span>
-        <button type="button" className="admin-primary" disabled={!ready} onClick={() => void send()}>{busy ? "Sending reply…" : "Send reply"}</button>
+  const fieldLabel = "grid gap-1.5 text-[12.5px] font-medium text-foreground";
+  if (denied) return <section className="grid gap-3" aria-label="Reply by email"><h4 className="text-[13.5px] font-semibold text-foreground">Reply by email</h4><Notice tone="info">Replies are unavailable for this account.</Notice></section>;
+  return <section className="grid gap-3" aria-label="Reply by email" aria-busy={busy}>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid max-w-[56ch] gap-1">
+        <h4 className="text-[13.5px] font-semibold text-foreground">Reply by email</h4>
+        <p className="text-[12.5px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong> from the shop&apos;s configured sender. The full message is kept in activity.</p>
       </div>
+      <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setOpen(true)}><Mail aria-hidden="true" strokeWidth={1.5} />Reply</Button>
     </div>
-    {error && <Notice tone="error">{error}</Notice>}
+    {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
+    {!open && error && <Notice tone="error">{error}</Notice>}
     {notice && <Notice tone="status">{notice}</Notice>}
+    <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
+      <DialogContent className="gap-5 bg-card sm:max-w-xl" aria-busy={busy}>
+        <DialogHeader>
+          <DialogTitle className="text-[17px]">Reply to {detail.name || "the customer"}</DialogTitle>
+          <DialogDescription className="text-[12.5px] leading-relaxed [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong>. The full message is kept in activity.</DialogDescription>
+        </DialogHeader>
+        {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
+        <div className="grid gap-4">
+          <label className={fieldLabel}>Subject<Input aria-label="Reply subject" value={subject} maxLength={subjectLimit} disabled={busy || enabled === false} className="h-10 bg-card text-[13.5px]" onInput={event => setSubject(event.currentTarget.value)} onChange={() => {}} /></label>
+          <label className={fieldLabel}>Message<Textarea aria-label="Reply message" aria-describedby="enquiry-reply-count" value={body} maxLength={bodyLimit} rows={8} disabled={busy || enabled === false} className="min-h-40 bg-card text-[13.5px] leading-relaxed" onInput={event => setBody(event.currentTarget.value)} onChange={() => {}} /></label>
+          <p id="enquiry-reply-count" className="-mt-2 justify-self-end text-[11.5px] text-muted-foreground tabular-nums">{body.length}/{bodyLimit}</p>
+        </div>
+        {error && <Notice tone="error">{error}</Notice>}
+        <DialogFooter>
+          <Button type="button" variant="ghost" disabled={busy} onClick={() => setOpen(false)}>Cancel</Button>
+          <Button type="button" disabled={!ready} aria-busy={busy} onClick={() => void send()}>{busy ? "Sending reply…" : "Send reply"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </section>;
 }

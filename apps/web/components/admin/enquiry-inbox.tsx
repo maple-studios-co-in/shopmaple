@@ -1,6 +1,16 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { enquiryAdminListSchema, enquiryAdminDetailSchema, type EnquiryAdminSummary, type EnquiryAdminDetail } from "@shopmaple/contracts";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpRight, RotateCw, Search, UserRound } from "lucide-react";
+import { enquiryAdminListSchema, enquiryAdminDetailSchema, enquiryStages, type EnquiryAdminSummary, type EnquiryAdminDetail } from "@shopmaple/contracts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from "./data-table";
+import { PanelHeader } from "./kit";
 import { EnquiryWorkflow } from "./enquiry-workflow";
 import { EnquiryDeliveryPanel } from "./enquiry-delivery-panel";
 import { CrmBoard } from "./crm-board";
@@ -13,6 +23,9 @@ import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 const views = [["list", "List"], ["board", "Board"], ["tasks", "Follow-ups"], ["contacts", "Contacts"]] as const;
 type View = (typeof views)[number][0];
 const kindLabels: Record<string, string> = { contact: "Contact", project: "Project", bulk: "Bulk" };
+const accessMessage = "Your account does not have access to customer enquiries. Contact your administrator.";
+const fieldLabel = "grid gap-1.5 text-[12px] font-medium text-muted-foreground";
+const stageRank = (stage: string) => (enquiryStages as readonly string[]).indexOf(stage);
 
 export function EnquiryInbox(props: { session: StaffSession; onExpired: () => void }) {
     return <EnquiryInboxSession key={`${props.session.user.id}:${props.session.csrfToken}:${props.session.user.canManageEnquiries}`} {...props} />;
@@ -48,15 +61,14 @@ function EnquiryInboxSession({ session, onExpired }: {
     const expired = useRef(onExpired);
     expired.current = onExpired;
     const detailHeading = useRef<HTMLHeadingElement>(null);
-    const detailOpener = useRef<HTMLButtonElement | null>(null);
+    const detailOpener = useRef<HTMLElement | null>(null);
+    const listRegion = useRef<HTMLDivElement>(null);
     const reloadButton = useRef<HTMLButtonElement>(null);
     const staff = useDirectory(code => denied(code));
     const pendingOpen = useRef<string | null>(null);
-    useEffect(() => { if (detail)
-        detailHeading.current?.focus(); }, [detail?.id]);
     function clear() { setItems([]); setDetail(null); setCursor(null); setLoaded(false); }
     function expire() { if (closed.current) return; closed.current = true; expired.current(); }
-    function denied(code: number) { sequence.current++; clear(); setContactId(null); setBusy(false); setWorkflowBusy(false); setDeliveryBusy(false); if (code === 401) expire(); else setError("Your account does not have access to customer enquiries. Contact your administrator."); }
+    function denied(code: number) { sequence.current++; clear(); setContactId(null); setBusy(false); setWorkflowBusy(false); setDeliveryBusy(false); if (code === 401) expire(); else setError(accessMessage); }
     async function run(path: string, mode: "list" | "detail", payload?: object) {
         const current = ++sequence.current;
         setBusy(true);
@@ -75,7 +87,7 @@ function EnquiryInboxSession({ session, onExpired }: {
             }
             if (response.status === 403) {
                 clear();
-                setError("Your account does not have access to customer enquiries. Contact your administrator.");
+                setError(accessMessage);
                 return;
             }
             if (!response.ok)
@@ -133,62 +145,140 @@ function EnquiryInboxSession({ session, onExpired }: {
     function openContact(id: string) {
         sequence.current++; setDetail(null); setBusy(false); setContactId(id);
     }
+    function openDetail(id: string, opener: HTMLElement | null) {
+        if (busy) return;
+        detailOpener.current = opener;
+        void run(`/api/admin/enquiries/${encodeURIComponent(id)}`, "detail");
+    }
+    function closeDetail() {
+        const id = detail?.id;
+        // Unmount the sheet (and its focus trap) first, then hand focus back to whatever opened it.
+        flushSync(() => setDetail(null));
+        const row = id ? listRegion.current?.querySelector<HTMLElement>(`[data-enquiry-row="${id}"] button`) : null;
+        (detailOpener.current?.isConnected ? detailOpener.current : row ?? reloadButton.current)?.focus();
+    }
+    function selectView(key: View) {
+        setContactId(null);
+        if (key !== view) { sequence.current++; setDetail(null); setBusy(false); setView(key); }
+    }
     const filtered = Boolean(kind || status || assignment || assigneeId || from || to || query || term);
     function clearFilters() { setKind(""); setStatus(""); setAssignment(""); setAssigneeId(""); setFrom(""); setTo(""); setTerm(""); setQuery(""); }
     function search(event: FormEvent) { event.preventDefault(); setQuery(term.trim()); }
     const filtersDisabled = busy;
-    return <section className="admin-enquiry-inbox crm" aria-label="Customer enquiries" aria-busy={busy}>
-    <h2>Customer enquiries</h2>
-    <p className="crm-lede">Every contact, project and bulk enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal.</p>
-    <div role="tablist" aria-label="CRM views" className="crm-tabs">
-      {views.map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={view === key && contactId === null} disabled={workflowBusy || deliveryBusy} onClick={() => { setContactId(null); if (key !== view) { sequence.current++; setDetail(null); setBusy(false); setView(key); } }}>{label}</button>)}
-    </div>
-    {contactId !== null && <ContactPage session={session} contactId={contactId} onDenied={denied} onOpenEnquiry={openEnquiry} onBack={() => setContactId(null)} backLabel={view === "list" ? "Back to enquiries" : "Back"} today={today} />}
-    {contactId === null && view === "board" && <CrmBoard session={session} onDenied={denied} onOpenEnquiry={openEnquiry} onOpenContact={openContact} today={today} />}
-    {contactId === null && view === "tasks" && <TaskViews session={session} onDenied={denied} onOpenEnquiry={openEnquiry} onOpenContact={openContact} today={today} />}
-    {contactId === null && view === "contacts" && <ContactsDirectory session={session} onDenied={denied} onOpenContact={openContact} />}
-    {contactId === null && view === "list" && <>
-    <form className="crm-filters" onSubmit={search}>
-      <label className="crm-field"><span>Kind</span><select aria-label="Enquiry kind" value={kind} disabled={filtersDisabled} onChange={event => setKind(event.target.value)}><option value="">All kinds</option><option value="contact">Contact</option><option value="project">Project</option><option value="bulk">Bulk</option></select></label>
-      <label className="crm-field"><span>Stage</span><select aria-label="Enquiry status" value={status} disabled={filtersDisabled} onChange={event => setStatus(event.target.value)}><option value="">All stages</option>{stageOptions.map(([stage, label]) => <option key={stage} value={stage}>{label}</option>)}</select></label>
-      <label className="crm-field"><span>Assignment</span><select aria-label="Enquiry assignment" value={assignment} disabled={filtersDisabled} onChange={event => setAssignment(event.target.value)}><option value="">All assignments</option><option value="mine">Assigned to me</option><option value="unassigned">Unassigned</option></select></label>
-      <label className="crm-field"><span>Assignee</span><select aria-label="Assignee" value={assigneeId} disabled={filtersDisabled} onChange={event => setAssigneeId(event.target.value)}><option value="">Anyone</option>{[...staff.values()].map(item => <option key={item.id} value={item.id}>{item.email}</option>)}</select></label>
-      <label className="crm-field"><span>From</span><input aria-label="From date" type="date" value={from} disabled={filtersDisabled} onChange={event => setFrom(event.target.value)} /></label>
-      <label className="crm-field"><span>To</span><input aria-label="To date" type="date" value={to} disabled={filtersDisabled} onChange={event => setTo(event.target.value)} /></label>
-      <div className="crm-search">
-        <label className="crm-field"><span>Search</span><input aria-label="Search enquiries" value={term} maxLength={100} placeholder="Name, email, phone, product or SKU" disabled={filtersDisabled} onInput={event => setTerm(event.currentTarget.value)} /></label>
-        <button type="submit" disabled={filtersDisabled}>Search</button>
-      </div>
-    </form>
-    <div className="crm-filter-actions">
-      <button ref={reloadButton} type="button" disabled={busy} onClick={() => void load()}>Reload inbox</button>
-      {filtered && <button type="button" className="crm-button-quiet" disabled={filtersDisabled} onClick={clearFilters}>Clear filters</button>}
-      {query && <span className="crm-faint">Showing results for &ldquo;{query}&rdquo;</span>}
-    </div>
-    {error && <Notice tone="error">{error}</Notice>}
-    {busy && <p role="status" className="crm-faint">Loading enquiries…</p>}
-    {loading && items.length === 0 && !detail && <Skeleton rows={4} />}
-    {loaded && items.length === 0 && <EmptyState title="No enquiries match these filters." action={<button type="button" className="crm-button-small" onClick={clearFilters}>Clear filters</button>}>Try a wider date range, another stage, or part of a name, email, phone, product or SKU.</EmptyState>}
-    <ul className="crm-rows">{items.map(row => <li key={row.id}><div className="crm-row" data-enquiry-row={row.id}>
-      <div className="crm-row-primary"><strong>{row.name || "No name given"}</strong><span className="crm-faint">{kindLabels[row.kind] ?? row.kind} enquiry, {ageLabel(row.createdAt, today) === "Today" ? "today" : `${ageLabel(row.createdAt, today)} ago`} (<time dateTime={row.createdAt}>{formatDate(row.createdAt)}</time>)</span></div>
-      <div className="crm-row-secondary"><span>{row.product || "No product noted"}</span><span>{row.assignedToId ? staff.get(row.assignedToId)?.email ?? `Staff ${row.assignedToId}` : "Unassigned"}</span><span className="crm-faint crm-num">{row.id}</span></div>
-      <div className="crm-row-meta"><StageChip stage={row.status} />{row.nextDueOn && <DueBadge state={dueState(row.nextDueOn, today)} />}</div>
-      <div className="crm-row-actions">
-        <button type="button" className="crm-button-small" disabled={busy} onClick={event => { detailOpener.current = event.currentTarget; void run(`/api/admin/enquiries/${encodeURIComponent(row.id)}`, "detail"); }}>Open enquiry</button>
-        {row.contactId && <button type="button" className="crm-button-quiet crm-button-small" disabled={busy} aria-label={`Open contact for ${row.name || "enquiry"}`} onClick={() => openContact(row.contactId!)}>Contact</button>}
-      </div>
-    </div></li>)}</ul>
-    {cursor && <button type="button" className="crm-pager" disabled={busy} onClick={() => void load(cursor)}>Next page</button>}
-    {detail && <article aria-label="Enquiry detail">
-      <h3 tabIndex={-1} ref={detailHeading}>Enquiry details</h3>
-      <div className="crm-row-meta" style={{ marginBottom: 12 }}><StageChip stage={detail.status} /><span className="crm-faint">{kindLabels[detail.kind] ?? detail.kind} enquiry received <time dateTime={detail.createdAt}>{formatDate(detail.createdAt)}</time></span>{detail.contactId && <button type="button" className="crm-button-quiet crm-button-small" disabled={busy} onClick={() => openContact(detail.contactId!)}>Open contact</button>}</div>
-      <dl><dt>Reference</dt><dd>{detail.id}</dd><dt>Name</dt><dd>{detail.name || "Not provided"}</dd><dt>Email</dt><dd>{detail.email}</dd><dt>Phone</dt><dd>{detail.phone || "Not provided"}</dd><dt>Product</dt><dd>{detail.context.product || "Not provided"}</dd><dt>Variant</dt><dd>{detail.context.variant || "Not provided"}</dd><dt>SKU</dt><dd>{detail.context.sku || "Not provided"}</dd><dt>Pincode</dt><dd>{detail.context.pincode || "Not provided"}</dd></dl>
-      <h4>Message</h4><p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{detail.message || "No message supplied."}</p>
-      {detail.reviews.map(review => <p key={review.id} className="crm-faint">Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleString()}</time> (before the pipeline existed).</p>)}
-      <EnquiryWorkflow key={detail.id} detail={detail} session={session} emailEnabled={emailEnabled} onBusy={setWorkflowBusy} onChange={value => { setDetail(value); setItems(rows => rows.map(row => row.id === value.id ? { ...row, status: value.status, version: value.version, assignedToId: value.assignedToId } : row).filter(row => (!status || row.status === status) && (!assignment || (assignment === "mine" ? row.assignedToId === session.user.id : row.assignedToId === null)))); }} onDenied={denied} />
-      <EnquiryDeliveryPanel enquiryId={detail.id} session={session} onBusy={setDeliveryBusy} onDenied={denied} onEnabled={setEmailEnabled} />
-      <button type="button" disabled={busy} onClick={() => { setDetail(null); (detailOpener.current?.isConnected ? detailOpener.current : reloadButton.current)?.focus(); }}>Close enquiry</button>
-    </article>}
-    </>}
+    const assigneeLabel = (row: EnquiryAdminSummary) => row.assignedToId ? staff.get(row.assignedToId)?.email ?? `Staff ${row.assignedToId}` : "Unassigned";
+    const assigneeOptions = [...new Set(items.map(assigneeLabel))].sort((a, b) => a === "Unassigned" ? -1 : b === "Unassigned" ? 1 : a.localeCompare(b));
+    // TanStack renders each cell function as a component: the definitions stay stable (so row buttons
+    // keep their DOM nodes and focus) and read the current busy state and handlers from this ref.
+    const live = useRef({ busy, today, assigneeLabel, openDetail, openContact });
+    live.current = { busy, today, assigneeLabel, openDetail, openContact };
+    const optionsKey = assigneeOptions.join("\n");
+    const columns = useMemo<ColumnDef<EnquiryAdminSummary, any>[]>(() => [
+        {
+            id: "name", header: "Customer", accessorFn: row => row.name || "No name given",
+            meta: { filter: "text", label: "Name" },
+            cell: ({ row: { original: row } }) => <div className="grid min-w-0 gap-0.5">
+                <span className="font-semibold text-foreground [overflow-wrap:anywhere]">{row.name || "No name given"}</span>
+                <span className="text-[12px] text-muted-foreground">{kindLabels[row.kind] ?? row.kind} enquiry</span>
+                <span className="max-w-48 truncate text-[11.5px] text-faint tabular-nums" title={row.id}>{row.id}</span>
+            </div>,
+        },
+        { id: "product", header: "Product", accessorFn: row => row.product, cell: ({ row: { original: row } }) => <span className={row.product ? "text-foreground" : "text-muted-foreground"}>{row.product || "No product noted"}</span>, meta: { className: "max-w-56" } },
+        {
+            id: "stage", header: "Stage", accessorKey: "status", filterFn: "equalsString",
+            sortingFn: (a, b) => stageRank(a.original.status) - stageRank(b.original.status),
+            meta: { filter: "select", label: "Stage", options: stageOptions },
+            cell: ({ row: { original: row } }) => <div className="flex flex-wrap items-center gap-1.5"><StageChip stage={row.status} />{row.nextDueOn && <DueBadge state={dueState(row.nextDueOn, live.current.today)} />}</div>,
+        },
+        {
+            id: "assignee", header: "Assignee", accessorFn: row => live.current.assigneeLabel(row), filterFn: "equalsString",
+            meta: { filter: "select", label: "Assignee", options: optionsKey ? optionsKey.split("\n").map(label => [label, label] as const) : [] },
+            cell: ({ getValue }) => <span className={getValue() === "Unassigned" ? "text-muted-foreground" : "text-foreground [overflow-wrap:anywhere]"}>{getValue() as string}</span>,
+        },
+        {
+            id: "received", header: "Received", accessorKey: "createdAt",
+            cell: ({ row: { original: row } }) => { const age = ageLabel(row.createdAt, live.current.today); return <span className="grid gap-0.5 tabular-nums"><time dateTime={row.createdAt}>{formatDate(row.createdAt)}</time><span className="text-[12px] text-muted-foreground">{age === "Today" ? "Today" : `${age} ago`}</span></span>; },
+        },
+        {
+            id: "actions", header: () => <span className="sr-only">Actions</span>, enableSorting: false, meta: { className: "w-px text-right" },
+            cell: ({ row: { original: row } }) => <div className="flex justify-end gap-1">
+                <Button type="button" size="sm" variant="outline" disabled={live.current.busy} onClick={event => live.current.openDetail(row.id, event.currentTarget)}>Open enquiry</Button>
+                {row.contactId && <Button type="button" size="icon-sm" variant="ghost" title="Open contact" disabled={live.current.busy} aria-label={`Open contact for ${row.name || "enquiry"}`} onClick={() => live.current.openContact(row.contactId!)}><UserRound aria-hidden="true" strokeWidth={1.5} /></Button>}
+            </div>,
+        },
+    ], [optionsKey]);
+    const rowOpener = () => { const active = document.activeElement; return active instanceof HTMLElement && listRegion.current?.contains(active) ? active : null; };
+    const tabValue = contactId === null ? view : "";
+    return <section className="grid min-w-0" aria-label="Customer enquiries" aria-busy={busy}>
+    <PanelHeader title="Customer enquiries" description="Every contact, project and bulk enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal." />
+    <Tabs value={tabValue} onValueChange={value => selectView(value as View)} className="gap-5">
+      <TabsList aria-label="CRM views" className="h-9">
+        {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-[13px]" disabled={workflowBusy || deliveryBusy} onClick={() => selectView(key)}>{label}</TabsTrigger>)}
+      </TabsList>
+      {contactId !== null && <ContactPage session={session} contactId={contactId} onDenied={denied} onOpenEnquiry={openEnquiry} onBack={() => setContactId(null)} backLabel={view === "list" ? "Back to enquiries" : "Back"} today={today} />}
+      <TabsContent value="board"><CrmBoard session={session} onDenied={denied} onOpenEnquiry={openEnquiry} onOpenContact={openContact} today={today} /></TabsContent>
+      <TabsContent value="tasks"><TaskViews session={session} onDenied={denied} onOpenEnquiry={openEnquiry} onOpenContact={openContact} today={today} /></TabsContent>
+      <TabsContent value="contacts"><ContactsDirectory session={session} onDenied={denied} onOpenContact={openContact} /></TabsContent>
+      <TabsContent value="list" className="grid gap-4">
+        <form className="grid gap-3 rounded-xl border border-line-soft bg-surface p-4" onSubmit={search} aria-label="Search the inbox">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className={fieldLabel}>Kind<NativeSelect size="sm" className="min-w-32 bg-card" aria-label="Enquiry kind" value={kind} disabled={filtersDisabled} onChange={event => setKind(event.target.value)}><NativeSelectOption value="">All kinds</NativeSelectOption><NativeSelectOption value="contact">Contact</NativeSelectOption><NativeSelectOption value="project">Project</NativeSelectOption><NativeSelectOption value="bulk">Bulk</NativeSelectOption></NativeSelect></label>
+            <label className={fieldLabel}>Stage<NativeSelect size="sm" className="min-w-32 bg-card" aria-label="Enquiry status" value={status} disabled={filtersDisabled} onChange={event => setStatus(event.target.value)}><NativeSelectOption value="">All stages</NativeSelectOption>{stageOptions.map(([stage, label]) => <NativeSelectOption key={stage} value={stage}>{label}</NativeSelectOption>)}</NativeSelect></label>
+            <label className={fieldLabel}>Assignment<NativeSelect size="sm" className="min-w-36 bg-card" aria-label="Enquiry assignment" value={assignment} disabled={filtersDisabled} onChange={event => setAssignment(event.target.value)}><NativeSelectOption value="">All assignments</NativeSelectOption><NativeSelectOption value="mine">Assigned to me</NativeSelectOption><NativeSelectOption value="unassigned">Unassigned</NativeSelectOption></NativeSelect></label>
+            <label className={fieldLabel}>Assignee<NativeSelect size="sm" className="min-w-40 bg-card" aria-label="Assignee" value={assigneeId} disabled={filtersDisabled} onChange={event => setAssigneeId(event.target.value)}><NativeSelectOption value="">Anyone</NativeSelectOption>{[...staff.values()].map(item => <NativeSelectOption key={item.id} value={item.id}>{item.email}</NativeSelectOption>)}</NativeSelect></label>
+            <label className={fieldLabel}>From<Input aria-label="From date" type="date" className="h-8 w-40 bg-card text-[13px]" value={from} disabled={filtersDisabled} onChange={event => setFrom(event.target.value)} /></label>
+            <label className={fieldLabel}>To<Input aria-label="To date" type="date" className="h-8 w-40 bg-card text-[13px]" value={to} disabled={filtersDisabled} onChange={event => setTo(event.target.value)} /></label>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className={`${fieldLabel} min-w-64 flex-1`}>Search<Input aria-label="Search enquiries" className="h-8 bg-card text-[13px]" value={term} maxLength={100} placeholder="Name, email, phone, product or SKU" disabled={filtersDisabled} onInput={event => setTerm(event.currentTarget.value)} onChange={() => {}} /></label>
+            <Button type="submit" size="sm" disabled={filtersDisabled}><Search aria-hidden="true" strokeWidth={1.5} />Search</Button>
+            <Button ref={reloadButton} type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Reload inbox</Button>
+            {filtered && <Button type="button" size="sm" variant="ghost" disabled={filtersDisabled} onClick={clearFilters}>Clear filters</Button>}
+          </div>
+          {query && <p className="text-[12.5px] text-muted-foreground">Showing results for &ldquo;{query}&rdquo;</p>}
+        </form>
+        {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice>{error !== accessMessage && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Try again</Button>}</div>}
+        {busy && <p role="status" className="sr-only">Loading enquiries…</p>}
+        {loading && items.length === 0 && !detail && <Skeleton rows={4} />}
+        {loaded && items.length === 0 && <EmptyState title="No enquiries match these filters." action={<Button type="button" size="sm" variant="outline" onClick={clearFilters}>Clear filters</Button>}>Try a wider date range, another stage, or part of a name, email, phone, product or SKU.</EmptyState>}
+        {items.length > 0 && <div ref={listRegion} className="grid gap-3">
+          <DataTable columns={columns} data={items} label="Enquiries" getRowId={row => row.id} rowProps={row => ({ "data-enquiry-row": row.original.id })}
+            rowLabel={row => `Open enquiry from ${row.name || "No name given"}`} onRowOpen={row => openDetail(row.id, rowOpener())}
+            empty="No loaded enquiries match these column filters. Clear a filter, or search the whole inbox above." />
+          <p className="text-[12px] text-muted-foreground">Column filters narrow the rows on this page. The search above covers the whole inbox.</p>
+        </div>}
+        {cursor && <Button type="button" variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => void load(cursor)}>Next page</Button>}
+      </TabsContent>
+    </Tabs>
+    {detail && <Sheet open onOpenChange={open => { if (!open && !busy) closeDetail(); }}>
+      <SheetContent side="right" showCloseButton={false} className="w-full gap-0 bg-background p-0 sm:max-w-[680px]"
+        onOpenAutoFocus={event => { event.preventDefault(); detailHeading.current?.focus(); }}
+        onCloseAutoFocus={event => event.preventDefault()}>
+        <SheetHeader className="gap-3 border-b border-line-soft bg-card px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="grid min-w-0 gap-1">
+              <SheetTitle ref={detailHeading} tabIndex={-1} className="text-[18px] leading-tight outline-none">Enquiry details</SheetTitle>
+              <SheetDescription className="text-[12.5px] [overflow-wrap:anywhere]">{detail.name || "No name given"}, {(kindLabels[detail.kind] ?? detail.kind).toLowerCase()} enquiry received <time dateTime={detail.createdAt}>{formatDate(detail.createdAt)}</time></SheetDescription>
+            </div>
+            <Button type="button" size="sm" variant="outline" disabled={busy} onClick={closeDetail}>Close enquiry</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StageChip stage={detail.status} />
+            {detail.contactId && <Button type="button" size="xs" variant="ghost" disabled={busy} onClick={() => openContact(detail.contactId!)}><ArrowUpRight aria-hidden="true" strokeWidth={1.5} />Open contact</Button>}
+          </div>
+        </SheetHeader>
+        <article aria-label="Enquiry detail" className="grid flex-1 content-start gap-7 overflow-y-auto px-6 py-6">
+          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-xl border border-border bg-card p-4 text-[13px] shadow-xs [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-muted-foreground">
+            <dt>Reference</dt><dd className="tabular-nums">{detail.id}</dd><dt>Name</dt><dd>{detail.name || "Not provided"}</dd><dt>Email</dt><dd>{detail.email}</dd><dt>Phone</dt><dd>{detail.phone || "Not provided"}</dd><dt>Product</dt><dd>{detail.context.product || "Not provided"}</dd><dt>Variant</dt><dd>{detail.context.variant || "Not provided"}</dd><dt>SKU</dt><dd>{detail.context.sku || "Not provided"}</dd><dt>Pincode</dt><dd>{detail.context.pincode || "Not provided"}</dd>
+          </dl>
+          <div className="grid gap-2">
+            <h4 className="text-[13.5px] font-semibold text-foreground">Message</h4>
+            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{detail.message || "No message supplied."}</p>
+            {detail.reviews.map(review => <p key={review.id} className="text-[12.5px] text-muted-foreground">Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleString()}</time> (before the pipeline existed).</p>)}
+          </div>
+          <EnquiryWorkflow key={detail.id} detail={detail} session={session} emailEnabled={emailEnabled} onBusy={setWorkflowBusy} onChange={value => { setDetail(value); setItems(rows => rows.map(row => row.id === value.id ? { ...row, status: value.status, version: value.version, assignedToId: value.assignedToId } : row).filter(row => (!status || row.status === status) && (!assignment || (assignment === "mine" ? row.assignedToId === session.user.id : row.assignedToId === null)))); }} onDenied={denied} />
+          <div className="border-t border-line-soft pt-6"><EnquiryDeliveryPanel enquiryId={detail.id} session={session} onBusy={setDeliveryBusy} onDenied={denied} onEnabled={setEmailEnabled} /></div>
+        </article>
+      </SheetContent>
+    </Sheet>}
   </section>;
 }

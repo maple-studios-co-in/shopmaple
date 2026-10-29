@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { enquiryDeliveryResponseSchema, type EnquiryDeliveryResponse } from "@shopmaple/contracts";
+import { Button } from "@/components/ui/button";
+import { Notice, Skeleton } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
@@ -86,21 +88,27 @@ function DeliverySession({ session, enquiryId, onDenied, onBusy, onEnabled }: Pr
     failed: "Needs attention. Automatic attempts have stopped; ask an operator to review.",
     uncertain: "Outcome uncertain. Operator reconciliation is required before further action.",
   };
-  return <section aria-label="Enquiry notification" aria-busy={busy}>
-    <h4>Enquiry notification</h4>
-    <p>Provider acceptance does not confirm inbox delivery. This alert does not send a customer reply.</p>
-    {value && !value.enabled && <p>Enquiry notifications are disabled.</p>}
-    {value && !job && value.enabled && <p>No notification was queued for this enquiry.</p>}
-    {job && <>
-      <p>{labels[job.status]}</p>
-      <p>Attempts: {job.attempts} of 5.</p>
-      {job.nextAttemptAt && <p>Next attempt: <time dateTime={job.nextAttemptAt}>{new Date(job.nextAttemptAt).toLocaleString()}</time>.</p>}
-      {job.acceptedAt && <p>Provider acceptance: <time dateTime={job.acceptedAt}>{new Date(job.acceptedAt).toLocaleString()}</time>.</p>}
-      {job.errorCode && <p>Last status code: {job.errorCode}.</p>}
-    </>}
-    {error && <p role="alert">{error}</p>}
-    {busy && <p role="status">Loading notification status…</p>}
-    {value?.enabled && job?.status === "retry_wait" && job.canRetry && <button type="button" disabled={busy} onClick={() => void run(true)}>Retry notification</button>}
-    <button type="button" disabled={busy} onClick={() => void run()}>Reload notification</button>
+  const line = "text-[13px] text-foreground";
+  return <section aria-label="Enquiry notification" aria-busy={busy} className="grid gap-3">
+    <div className="grid gap-1">
+      <h4 className="text-[13.5px] font-semibold text-foreground">Enquiry notification</h4>
+      <p className="text-[12.5px] leading-relaxed text-muted-foreground">Provider acceptance does not confirm inbox delivery. This alert does not send a customer reply.</p>
+    </div>
+    {busy && !value && !error && <Skeleton rows={1} />}
+    {value && !value.enabled && <p className={line}>Enquiry notifications are disabled.</p>}
+    {value && !job && value.enabled && <p className={line}>No notification was queued for this enquiry.</p>}
+    {job && <div className="grid gap-1 rounded-lg border border-line-soft bg-surface px-3.5 py-3">
+      <p className="text-[13px] font-semibold text-foreground">{labels[job.status]}</p>
+      <p className="text-[12.5px] text-muted-foreground tabular-nums">Attempts: {job.attempts} of 5.</p>
+      {job.nextAttemptAt && <p className="text-[12.5px] text-muted-foreground">Next attempt: <time dateTime={job.nextAttemptAt}>{new Date(job.nextAttemptAt).toLocaleString()}</time>.</p>}
+      {job.acceptedAt && <p className="text-[12.5px] text-muted-foreground">Provider acceptance: <time dateTime={job.acceptedAt}>{new Date(job.acceptedAt).toLocaleString()}</time>.</p>}
+      {job.errorCode && <p className="text-[12.5px] text-muted-foreground">Last status code: {job.errorCode}.</p>}
+    </div>}
+    {error && <Notice tone="error">{error}</Notice>}
+    {busy && <p role="status" className="text-[12.5px] text-muted-foreground">Loading notification status…</p>}
+    <div className="flex flex-wrap gap-2">
+      {value?.enabled && job?.status === "retry_wait" && job.canRetry && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void run(true)}>Retry notification</Button>}
+      <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void run()}>Reload notification</Button>
+    </div>
   </section>;
 }

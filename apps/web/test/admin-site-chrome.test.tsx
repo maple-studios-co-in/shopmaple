@@ -26,6 +26,12 @@ async function type(name:string,value:string) {
     input.dispatchEvent(new dom.window.Event(input.tagName === "SELECT" ? "change" : "input",{bubbles:true}));
   });
 }
+// The sections are tabs: clicking a tab shows that section and marks it selected.
+async function section(name:string) {
+  const tab=[...container.querySelectorAll<HTMLButtonElement>('[role="tablist"][aria-label="Navigation & footer section"] [role="tab"]')].find(el=>el.textContent===name);
+  assert.ok(tab,`Missing ${name} section tab`); await act(async()=>tab.click());
+  assert.equal(tab.getAttribute("aria-selected"),"true",`${name} tab is selected`);
+}
 async function toggle(name:string) { await act(async()=> (field(name) as HTMLInputElement).click()); }
 async function setup(status=200, role:"editor"|"publisher"="editor") {
   const previous=globalThis.fetch, root=createRoot(container), initial=structuredClone(defaultStorefrontContent);
@@ -74,7 +80,7 @@ test("navigation editing retains invalid text until save and restore removes onl
 
 test("links and navigation preserve IDs across edits, moves, nested editing and removal focus",async()=>{
   const app=await setup(); try {
-    await click("Navigation & footer"); await type("Navigation & footer section","header"); await click("Add utility link");
+    await click("Navigation & footer"); await section("Header links"); await click("Add utility link");
     const utilityRows=()=>[...container.querySelectorAll<HTMLElement>('[aria-label="Utility links"] [data-chrome-row]')];
     const added=utilityRows().at(-1)!; const id=added.dataset.chromeRow!;
     const index=utilityRows().length;
@@ -86,7 +92,7 @@ test("links and navigation preserve IDs across edits, moves, nested editing and 
     assert.equal(app.saved().content.siteChrome.utilityLinks[index-2].enquirySubject,"Dining tables");
     await click(`Remove utility link ${index-1}`);
     assert.notEqual(document.activeElement,document.body);
-    await type("Navigation & footer section","navigation"); await click("Add navigation item");
+    await section("Main navigation"); await click("Add navigation item");
     const navIndex=container.querySelectorAll('[aria-label="Main navigation"] > ol > li').length;
     await type(`Navigation item ${navIndex} label`,"Inspiration");
     await type(`Navigation item ${navIndex} destination`,"/collections/all");
@@ -107,11 +113,11 @@ test("links and navigation preserve IDs across edits, moves, nested editing and 
 test("footer details, layout and discovery edits save together with no publication",async()=>{
   const app=await setup(); try {
     await click("Navigation & footer");
-    await type("Navigation & footer section","footer"); await click("Move footer help up"); await toggle("Show footer care"); await click("Move footer contact service up");
+    await section("Footer"); await click("Move footer help up"); await toggle("Show footer care"); await click("Move footer contact service up");
     await type("Shop heading","Browse furniture"); await type("Address lines","First address\nSecond address");
     await type("Customer phone","+919876543210"); await type("Customer email","care@example.test"); await type("Instagram profile","");
     await type("LinkedIn company profile","https://www.linkedin.com/company/maple-furnishers");
-    await type("Navigation & footer section","header"); await click("Add desktop discovery link");
+    await section("Header links"); await click("Add desktop discovery link");
     const discoveryCount=container.querySelectorAll('[aria-label="Desktop discovery"] > ol > li').length;
     await type(`Desktop discovery link ${discoveryCount} call to action`,"Read more");
     await click("Save draft"); const chrome=app.saved().content.siteChrome;
@@ -136,14 +142,14 @@ test("chrome editing uses existing conflict and expired-session handling",async(
 
 test("nested column visibility hides its links while list bounds and removal keep usable focus",async()=>{
   const app=await setup(); try {
-    await click("Navigation & footer"); await type("Navigation & footer section","navigation");
+    await click("Navigation & footer"); await section("Main navigation");
     const summary=[...container.querySelectorAll("summary")].find(node=>node.textContent?.startsWith("Navigation item 1 submenu"));
     assert.ok(summary); await act(async()=>summary.click());
     await toggle("Show navigation item 1 column 1"); await click("Save draft");
     assert.ok(app.saved().content.siteChrome.navigation[0].columns[0].links.every((item:any)=>item.enabled===false));
     await toggle("Show navigation item 1 column 1"); await click("Save draft");
     assert.ok(app.saved().content.siteChrome.navigation[0].columns[0].links.every((item:any)=>item.enabled===true));
-    await type("Navigation & footer section","header");
+    await section("Header links");
     while(!button("Add utility link").disabled) await click("Add utility link");
     assert.equal(container.querySelectorAll('[aria-label="Utility links"] > ol > li').length,6);
     assert.equal(button("Move utility link 1 up").disabled,true);
@@ -151,7 +157,7 @@ test("nested column visibility hides its links while list bounds and removal kee
     for(let i=6;i>0;i--) await click(`Remove utility link ${i}`);
     assert.equal(document.activeElement,button("Add utility link"));
     await click("Save draft"); assert.deepEqual(app.saved().content.siteChrome.utilityLinks,[]);
-    await type("Navigation & footer section","navigation");
+    await section("Main navigation");
     while(!button("Add navigation item").disabled) await click("Add navigation item");
     assert.equal(container.querySelectorAll('[aria-label="Main navigation"] > ol > li').length,8);
     for(let i=8;i>1;i--)await click(`Remove navigation item ${i}`);

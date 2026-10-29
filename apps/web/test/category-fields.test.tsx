@@ -130,3 +130,27 @@ test("category editor starts with original copy and emits only the selected page
     await act(async () => root.unmount());
   }
 });
+
+test("category pages are tabs: choosing Tables shows its page and every page stays editable", async () => {
+  function Editor() {
+    const [value, setValue] = useState<CategoryPageContent[]>([]);
+    return <CategoryFields value={value} onChange={setValue} />;
+  }
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<Editor />));
+    const tabs = [...container.querySelectorAll<HTMLButtonElement>('[role="tablist"][aria-label="Category page"] [role="tab"]')];
+    assert.deepEqual(tabs.map((tab) => tab.textContent), ["Sofas", "Tables", "Chairs"]);
+    assert.deepEqual(tabs.map((tab) => tab.getAttribute("aria-selected")), ["true", "false", "false"]);
+    const panel = (label: string) => container.querySelector(`[aria-label="${label} page content"]`)!.closest('[role="tabpanel"]')!;
+    assert.equal(panel("Sofas").getAttribute("data-state"), "active");
+    assert.equal(panel("Tables").getAttribute("data-state"), "inactive");
+    await act(async () => tabs[1]!.click());
+    assert.deepEqual(tabs.map((tab) => tab.getAttribute("aria-selected")), ["false", "true", "false"]);
+    assert.equal(panel("Tables").getAttribute("data-state"), "active");
+    assert.equal(panel("Sofas").getAttribute("data-state"), "inactive");
+    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Sofas title"]')?.value, "Sofas", "Inactive pages stay mounted with their values");
+  } finally {
+    await act(async () => root.unmount());
+  }
+});

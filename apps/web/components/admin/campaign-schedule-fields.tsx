@@ -2,6 +2,11 @@
 
 import { useEffect, useId, useState } from "react";
 import type { CampaignContent } from "@shopmaple/contracts";
+import { CalendarClock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Notice } from "./crm-primitives";
+import { FieldGrid, SectionHeading } from "./kit";
 
 type Schedule = NonNullable<CampaignContent["schedule"]>;
 const indiaOffset = 330 * 60 * 1000;
@@ -62,57 +67,68 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
     setEditing(true);
     onEditingChange(true);
   }
+  const describedBy = `${descriptionId}${error ? ` ${errorId}` : ""}`;
   return (
-    <section aria-label="Campaign schedule">
-      <h3>Campaign schedule</h3>
-      <p>India time · Asia/Kolkata · UTC+05:30</p>
-      <p role="status">
-        Draft schedule: {!value?.startsAt && !value?.endsAt ? "Always visible" : (
-          <>{value?.startsAt ? `From ${indiaInput(value.startsAt).replace("T", " ")} (inclusive)` : "No start limit"}
-            {" · "}{value?.endsAt ? `Until ${indiaInput(value.endsAt).replace("T", " ")} (exclusive)` : "No end limit"}</>
-        )}
-      </p>
-      <p id={descriptionId}>
+    <section aria-label="Campaign schedule" className="mt-8 grid gap-4 rounded-lg border border-line-soft bg-surface p-4 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <SectionHeading className="m-0" description="India time · Asia/Kolkata · UTC+05:30">Campaign schedule</SectionHeading>
+        <p role="status" className="flex items-center gap-2 rounded-md bg-card px-2.5 py-1.5 text-[12.5px] font-medium text-foreground shadow-xs tabular-nums">
+          <CalendarClock aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground" />
+          <span>
+            Draft schedule: {!value?.startsAt && !value?.endsAt ? "Always visible" : (
+              <>{value?.startsAt ? `From ${indiaInput(value.startsAt).replace("T", " ")} (inclusive)` : "No start limit"}
+                {" · "}{value?.endsAt ? `Until ${indiaInput(value.endsAt).replace("T", " ")} (exclusive)` : "No end limit"}</>
+            )}
+          </span>
+        </p>
+      </div>
+      <p id={descriptionId} className="max-w-[68ch] text-[12.5px] leading-relaxed text-muted-foreground">
         The banner is visible from the start time (inclusive) until the end time (exclusive), and hidden outside this window.
         Apply schedule changes, then Save draft and Publish draft to update the storefront.
         Leave either date empty for no limit.
       </p>
       {editing ? (
         <>
-          <p>Schedule edit in progress. Apply or cancel before saving, publishing, or switching sections.</p>
-          <div className="admin-fields">
-            <label className="admin-field">
-              <span>Starts at (India time)</span>
-              <input type="datetime-local" step="0.001" aria-label="Starts at (India time)" value={starts}
-                aria-describedby={`${descriptionId}${error ? ` ${errorId}` : ""}`} aria-invalid={Boolean(error)}
+          <Notice tone="info">Schedule edit in progress. Apply or cancel before saving, publishing, or switching sections.</Notice>
+          <FieldGrid>
+            <label className="grid min-w-0 gap-2">
+              <span className="text-[12.5px] font-medium text-foreground">Starts at (India time)</span>
+              <Input type="datetime-local" step="0.001" aria-label="Starts at (India time)" value={starts}
+                className="h-10 bg-card text-[13.5px] tabular-nums"
+                aria-describedby={describedBy} aria-invalid={Boolean(error)}
+                onChange={() => {}}
                 onInput={(event) => {
                   setStarts(event.currentTarget.value);
                   setBadStart(event.currentTarget.validity.badInput);
                 }} />
             </label>
-            <label className="admin-field">
-              <span>Ends at (India time)</span>
-              <input type="datetime-local" step="0.001" aria-label="Ends at (India time)" value={ends}
-                aria-describedby={`${descriptionId}${error ? ` ${errorId}` : ""}`} aria-invalid={Boolean(error)}
+            <label className="grid min-w-0 gap-2">
+              <span className="text-[12.5px] font-medium text-foreground">Ends at (India time)</span>
+              <Input type="datetime-local" step="0.001" aria-label="Ends at (India time)" value={ends}
+                className="h-10 bg-card text-[13.5px] tabular-nums"
+                aria-describedby={describedBy} aria-invalid={Boolean(error)}
+                onChange={() => {}}
                 onInput={(event) => {
                   setEnds(event.currentTarget.value);
                   setBadEnd(event.currentTarget.validity.badInput);
                 }} />
             </label>
+          </FieldGrid>
+          {error && <div id={errorId}><Notice tone="error">{error}</Notice></div>}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" disabled={Boolean(error)} onClick={() => {
+              if (error || startsAt === undefined || endsAt === undefined) return;
+              onChange({ startsAt, endsAt });
+              close();
+            }}>Apply schedule to draft</Button>
+            <Button type="button" variant="outline" size="sm" onClick={close}>Cancel schedule edit</Button>
           </div>
-          {error && <p role="alert" id={errorId}>{error}</p>}
-          <button type="button" disabled={Boolean(error)} onClick={() => {
-            if (error || startsAt === undefined || endsAt === undefined) return;
-            onChange({ startsAt, endsAt });
-            close();
-          }}>Apply schedule to draft</button>
-          <button type="button" onClick={close}>Cancel schedule edit</button>
         </>
       ) : (
-        <>
-          <button type="button" onClick={begin}>{value ? "Edit schedule" : "Enable schedule"}</button>
-          {value && <button type="button" onClick={() => onChange(null)}>Clear schedule</button>}
-        </>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={begin}>{value ? "Edit schedule" : "Enable schedule"}</Button>
+          {value && <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => onChange(null)}>Clear schedule</Button>}
+        </div>
       )}
     </section>
   );

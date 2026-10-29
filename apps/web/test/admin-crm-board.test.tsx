@@ -155,7 +155,7 @@ test("a stage with more than the column limit shows a capped count and points at
     await act(async () => root.render(<CrmBoard session={session} onDenied={() => {}} onOpenEnquiry={() => {}} onOpenContact={() => {}} today="2030-01-10" />));
     const won = container.querySelector<HTMLElement>('[data-stage-column="won"]')!;
     assert.match(won.querySelector("[data-column-capped]")?.textContent ?? "", /list view/i);
-    assert.match(won.querySelector(".crm-column-count")?.textContent ?? "", /\+$/, "the count is marked as a lower bound");
+    assert.match(won.querySelector("[data-column-count]")?.textContent ?? "", /\+$/, "the count is marked as a lower bound");
     assert.equal(container.querySelector('[data-stage-column="new"] [data-column-capped]'), null);
   } finally { wonCursor = null; await act(async () => root.unmount()); globalThis.fetch = previous; }
 });

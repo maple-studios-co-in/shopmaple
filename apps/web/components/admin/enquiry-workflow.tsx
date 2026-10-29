@@ -1,10 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { enquiryAdminDetailSchema, enquiryAssigneeListSchema, enquiryActivityListSchema, enquiryStageLabels, type EnquiryAdminDetail, type EnquiryAssignee, type EnquiryActivity, type EnquiryStage } from "@shopmaple/contracts";
 import type { StaffSession } from "./dashboard";
 import { TaskPanel } from "./crm-tasks";
 import { EnquiryReply } from "./enquiry-reply";
-import { Notice, StageChip, formatDateTime, localToday, stageOptions } from "./crm-primitives";
+import { Button } from "@/components/ui/button";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { EmptyState, Notice, Skeleton, StageChip, formatDateTime, localToday, stageOptions } from "./crm-primitives";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 function describeActivity(item: EnquiryActivity, staff: (id: string) => string) {
@@ -21,6 +25,24 @@ function describeActivity(item: EnquiryActivity, staff: (id: string) => string) 
     case "email_failed": return `Email failed to send: ${item.subject ?? ""}`;
   }
 }
+
+export type TimelineKind = "stage" | "email" | "task" | "note" | "plain";
+export type TimelineItem = { id: string; kind: TimelineKind; title: ReactNode; body?: string | null; meta: ReactNode };
+const markerTone: Record<TimelineKind, string> = { stage: "bg-info", email: "bg-primary", task: "bg-success", note: "bg-warning", plain: "bg-neutral" };
+/** A vertical activity list: a hairline rail with a dot per entry, coloured by what happened. Newest first. */
+export function Timeline({ items, label }: { items: TimelineItem[]; label: string }) {
+  return <ol data-timeline aria-label={label} className="relative grid gap-4 before:absolute before:top-2 before:bottom-2 before:left-[5px] before:w-px before:bg-line-soft">
+    {items.map(item => <li key={item.id} data-timeline-entry={item.id} data-kind={item.kind} className="relative grid min-w-0 gap-1 pl-6 [overflow-wrap:anywhere]">
+      <span aria-hidden="true" data-timeline-marker className={cn("absolute top-[5px] left-0 size-[11px] rounded-full ring-[3px] ring-background", markerTone[item.kind])} />
+      <span className="text-[13px] leading-snug font-semibold text-foreground">{item.title}</span>
+      {item.body && <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.body}</p>}
+      <span className="text-[12px] text-muted-foreground tabular-nums">{item.meta}</span>
+    </li>)}
+  </ol>;
+}
+const subheading = "text-[13.5px] font-semibold text-foreground";
+const fieldLabel = "grid gap-1.5 text-[12.5px] font-medium text-foreground";
+const activityKind = (action: EnquiryActivity["action"]): TimelineKind => action === "status_changed" ? "stage" : action.startsWith("email") ? "email" : action.startsWith("task") ? "task" : action === "note" ? "note" : "plain";
 
 export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, emailEnabled = null }: {
   detail: EnquiryAdminDetail; session: StaffSession; onChange: (value: EnquiryAdminDetail) => void;
@@ -44,6 +66,7 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
   const [lostReason, setLostReason] = useState("");
   const [lostPrompt, setLostPrompt] = useState(false);
   const [replyBusy, setReplyBusy] = useState(false);
+  const [pending, setPending] = useState<"assignment" | "notes" | "stage" | "reload" | null>(null);
   const active = useRef(true);
   const writing = useRef(false);
   const activitySequence = useRef(0);
@@ -94,7 +117,7 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
     if (writing.current || (stale && action !== "reload")) return;
     if (action === "notes" && (!draft.trim() || draft.length > 2000)) return;
     if (action === "stage" && stage === "lost" && !lostReason.trim()) return;
-    writing.current = true; setBusy(true); callbacks.current.onBusy(true); setError(""); setNotice("");
+    writing.current = true; setBusy(true); setPending(action); callbacks.current.onBusy(true); setError(""); setNotice("");
     try {
       const response = await request(action === "reload" ? path : `${path}/${action}`, {
         cache: "no-store", credentials: "same-origin",
@@ -114,58 +137,88 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
       void history();
     } catch (failure) {
       if (active.current) { setStale(true); setError(failure instanceof AdminRequestTimeout ? "The request timed out. Your unsaved note is retained. Reload the enquiry and check activity before trying again." : "We couldn't complete the request. Your unsaved note is retained. Reload the enquiry and check activity before trying again."); }
-    } finally { writing.current = false; if (active.current) { setBusy(false); callbacks.current.onBusy(false); } }
+    } finally { writing.current = false; if (active.current) { setBusy(false); setPending(null); callbacks.current.onBusy(false); } }
   }
   const current = detail.assignedToId ? assignees.find(item => item.id === detail.assignedToId)?.email ?? `Staff ${detail.assignedToId} (not in the loaded eligible directory)` : "Unassigned";
   const unavailable = !!selected && !assignees.some(item => item.id === selected);
   const staffName = (id: string) => assignees.find(item => item.id === id)?.email ?? `staff ${id}`;
-  return <section className="crm" aria-label="Internal enquiry workflow" aria-busy={busy}>
-    <div className="crm-section" style={{ marginTop: 0 }}>
-      <h4>Pipeline stage</h4>
-      <p className="crm-muted" style={{ marginBottom: 12 }}>Current: <StageChip stage={detail.status} /> Every change is recorded with your name. Lost needs a short reason.</p>
-      <div role="group" aria-label="Pipeline stage" className="crm-stage-control">
-        {stageOptions.map(([stage, label]) => <button key={stage} type="button" aria-pressed={detail.status === stage} disabled={busy || stale || replyBusy || detail.status === stage}
-          onClick={() => { if (stage === "lost") { setLostPrompt(true); return; } setLostPrompt(false); void save("stage", stage); }}>{label}</button>)}
+  const timeline: TimelineItem[] = activity.map(item => ({
+    id: item.id, kind: activityKind(item.action), title: describeActivity(item, staffName), body: item.body,
+    meta: <><time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time> by {staffName(item.actorId)}</>,
+  }));
+  return <section aria-label="Internal enquiry workflow" aria-busy={busy} className="grid gap-7">
+    <div className="grid gap-3">
+      <div className="grid gap-1">
+        <h4 className={subheading}>Pipeline stage</h4>
+        <p className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">Current: <StageChip stage={detail.status} /> Every change is recorded with your name. Lost needs a short reason.</p>
       </div>
-      {detail.status === "lost" && detail.lostReason && <p className="crm-card-reason" style={{ marginTop: 10 }}>Reason: {detail.lostReason}</p>}
-      {lostPrompt && detail.status !== "lost" && <div className="crm-lost-form" style={{ maxWidth: 480 }}>
-        <label className="crm-field"><span>Why was this enquiry lost?</span><textarea aria-label="Reason for losing" value={lostReason} maxLength={500} rows={2} disabled={busy} onInput={event => setLostReason(event.currentTarget.value)} /></label>
-        <div className="crm-lost-form-actions">
-          <button type="button" className="admin-primary crm-button-small" disabled={busy || stale || !lostReason.trim()} onClick={() => void save("stage", "lost")}>Confirm lost</button>
-          <button type="button" className="crm-button-small" disabled={busy} onClick={() => { setLostPrompt(false); setLostReason(""); }}>Cancel</button>
+      <div role="group" aria-label="Pipeline stage" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border bg-surface p-1">
+        {stageOptions.map(([stage, label]) => <Button key={stage} type="button" size="sm" variant="ghost" aria-pressed={detail.status === stage} disabled={busy || stale || replyBusy || detail.status === stage}
+          aria-busy={pending === "stage" ? true : undefined}
+          className="h-7 px-3 text-[12.5px] aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:disabled:opacity-100"
+          onClick={() => { if (stage === "lost") { setLostPrompt(true); return; } setLostPrompt(false); void save("stage", stage); }}>{label}</Button>)}
+      </div>
+      {detail.status === "lost" && detail.lostReason && <p className="rounded-md border border-line-soft bg-surface px-3 py-2 text-[12.5px] text-muted-foreground">Reason: {detail.lostReason}</p>}
+      {lostPrompt && detail.status !== "lost" && <div className="grid max-w-[480px] gap-2 rounded-lg border border-border bg-card p-3 shadow-xs">
+        <label className={fieldLabel}>Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={lostReason} maxLength={500} rows={2} disabled={busy} className="min-h-16 bg-card text-[13px]" onInput={event => setLostReason(event.currentTarget.value)} /></label>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" disabled={busy || stale || !lostReason.trim()} onClick={() => void save("stage", "lost")}>Confirm lost</Button>
+          <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => { setLostPrompt(false); setLostReason(""); }}>Cancel</Button>
         </div>
       </div>}
     </div>
-    <h4>Assignment</h4>
-    <p style={{ overflowWrap: "anywhere" }}>Current assignee: {current}</p>
-    <label>Assign to<select aria-label="Assign to" value={selected} disabled={busy || stale || directoryBusy} onChange={event => setSelected(event.target.value)}>
-      <option value="">Unassigned</option>
-      {unavailable && <option value={selected} disabled>Staff {selected} — not in loaded directory</option>}
-      {assignees.map(item => <option key={item.id} value={item.id}>{item.email}</option>)}
-    </select></label>
-    <button type="button" disabled={busy || stale || directoryBusy || unavailable || selected === (detail.assignedToId ?? "")} onClick={() => void save("assignment")}>Save assignment</button>
-    {directoryBusy && <p role="status">Loading assignees…</p>}
-    {directoryError && <p role="alert">{directoryError}</p>}
-    <button type="button" disabled={busy || directoryBusy} onClick={() => void directory()}>Reload assignees</button>
-    {assigneeCursor && <button type="button" disabled={busy || directoryBusy} onClick={() => void directory(assigneeCursor)}>More assignees</button>}
-    <h4>Internal notes</h4><p id="enquiry-note-help">Visible to authorised staff only. Adding a note does not send a customer reply.</p>
-    <label>Internal note<textarea aria-label="Internal note" aria-describedby="enquiry-note-help enquiry-note-count" value={draft} rows={4} maxLength={2000} disabled={busy} onInput={event => setDraft(event.currentTarget.value)} /></label>
-    <p id="enquiry-note-count">{draft.length}/2000 characters</p>
-    <button type="button" disabled={busy || stale || !draft.trim() || draft.length > 2000} onClick={() => void save("notes")}>Add internal note</button>
-    <button type="button" disabled={busy} onClick={() => void save("reload")}>Reload enquiry</button>
-    {error && <Notice tone="error">{error}</Notice>}{notice && <Notice tone="status">{notice}</Notice>}{busy && <p role="status" className="crm-faint">Saving or reloading enquiry…</p>}
-    <h4>Internal activity</h4>
-    {activityBusy && <p role="status">Loading activity…</p>}
-    {activityError && <p role="alert">{activityError}</p>}
-    {!activityBusy && !activityError && activity.length === 0 && <p>No internal activity yet.</p>}
-    <ol className="crm-timeline">{activity.map(item => <li key={item.id}><div className="crm-timeline-entry" data-kind={item.action === "status_changed" ? "stage" : item.action.startsWith("email") ? "email" : item.action.startsWith("task") ? "task" : "plain"} style={{ overflowWrap: "anywhere" }}>
-      <span className="crm-timeline-title">{describeActivity(item, staffName)}</span>
-      {item.body !== null && <p className="crm-timeline-body">{item.body}</p>}
-      <span className="crm-timeline-meta"><time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time> by {staffName(item.actorId)}</span>
-    </div></li>)}</ol>
-    <button type="button" disabled={busy || activityBusy} onClick={() => void history()}>Reload activity</button>
-    {activityCursor && <button type="button" disabled={busy || activityBusy} onClick={() => void history(activityCursor)}>Older activity</button>}
-    <TaskPanel session={session} onDenied={status => callbacks.current.onDenied(status)} parent={{ enquiryId: detail.id }} today={localToday()} onChanged={() => void history()} />
-    <EnquiryReply detail={detail} session={session} emailEnabled={emailEnabled} onChange={value => { callbacks.current.onChange(value); void history(); }} onDenied={status => { active.current = false; setDraft(""); callbacks.current.onDenied(status); }} onBusy={value => { setReplyBusy(value); callbacks.current.onBusy(value); }} />
+    <div className="grid gap-3 border-t border-line-soft pt-6">
+      <div className="grid gap-1">
+        <h4 className={subheading}>Assignment</h4>
+        <p className="text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]">Current assignee: {current}</p>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className={cn(fieldLabel, "min-w-56 flex-1")}>Assign to<NativeSelect aria-label="Assign to" size="sm" containerClassName="w-full" className="bg-card" value={selected} disabled={busy || stale || directoryBusy} onChange={event => setSelected(event.target.value)}>
+          <NativeSelectOption value="">Unassigned</NativeSelectOption>
+          {unavailable && <NativeSelectOption value={selected} disabled>Staff {selected} (not in the loaded directory)</NativeSelectOption>}
+          {assignees.map(item => <NativeSelectOption key={item.id} value={item.id}>{item.email}</NativeSelectOption>)}
+        </NativeSelect></label>
+        <Button type="button" size="sm" aria-busy={pending === "assignment" ? true : undefined} disabled={busy || stale || directoryBusy || unavailable || selected === (detail.assignedToId ?? "")} onClick={() => void save("assignment")}>Save assignment</Button>
+        <Button type="button" size="sm" variant="ghost" disabled={busy || directoryBusy} onClick={() => void directory()}>Reload assignees</Button>
+        {assigneeCursor && <Button type="button" size="sm" variant="ghost" disabled={busy || directoryBusy} onClick={() => void directory(assigneeCursor)}>More assignees</Button>}
+      </div>
+      {directoryBusy && <p role="status" className="text-[12.5px] text-muted-foreground">Loading assignees…</p>}
+      {directoryError && <Notice tone="error">{directoryError}</Notice>}
+    </div>
+    <div className="grid gap-3 border-t border-line-soft pt-6">
+      <div className="grid gap-1">
+        <h4 className={subheading}>Internal notes</h4>
+        <p id="enquiry-note-help" className="text-[12.5px] text-muted-foreground">Visible to authorised staff only. Adding a note does not send a customer reply.</p>
+      </div>
+      <label className={fieldLabel}>Internal note<Textarea aria-label="Internal note" aria-describedby="enquiry-note-help enquiry-note-count" value={draft} rows={4} maxLength={2000} disabled={busy} className="min-h-24 bg-card text-[13.5px] leading-relaxed" onInput={event => setDraft(event.currentTarget.value)} /></label>
+      <div className="flex flex-wrap items-center gap-2">
+        <p id="enquiry-note-count" className="mr-auto text-[12px] text-muted-foreground tabular-nums">{draft.length}/2000 characters</p>
+        <Button type="button" size="sm" variant="ghost" aria-busy={pending === "reload" ? true : undefined} disabled={busy} onClick={() => void save("reload")}>Reload enquiry</Button>
+        <Button type="button" size="sm" aria-busy={pending === "notes" ? true : undefined} disabled={busy || stale || !draft.trim() || draft.length > 2000} onClick={() => void save("notes")}>Add internal note</Button>
+      </div>
+      {error && <Notice tone="error">{error}</Notice>}
+      {notice && <Notice tone="status">{notice}</Notice>}
+      {busy && <p role="status" className="text-[12.5px] text-muted-foreground">Saving or reloading enquiry…</p>}
+    </div>
+    <div className="grid gap-3 border-t border-line-soft pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className={subheading}>Internal activity</h4>
+        <div className="flex gap-1">
+          <Button type="button" size="sm" variant="ghost" disabled={busy || activityBusy} onClick={() => void history()}>Reload activity</Button>
+        </div>
+      </div>
+      {activityBusy && <p role="status" className="sr-only">Loading activity…</p>}
+      {activityBusy && activity.length === 0 && <Skeleton rows={2} />}
+      {activityError && <Notice tone="error">{activityError}</Notice>}
+      {!activityBusy && !activityError && activity.length === 0 && <EmptyState title="No internal activity yet.">Stage changes, assignments, notes, follow-ups and emails on this enquiry appear here.</EmptyState>}
+      {timeline.length > 0 && <Timeline items={timeline} label="Enquiry activity" />}
+      {activityCursor && <Button type="button" size="sm" variant="outline" className="w-fit" disabled={busy || activityBusy} onClick={() => void history(activityCursor)}>Older activity</Button>}
+    </div>
+    <div className="border-t border-line-soft pt-6">
+      <TaskPanel session={session} onDenied={status => callbacks.current.onDenied(status)} parent={{ enquiryId: detail.id }} today={localToday()} onChanged={() => void history()} />
+    </div>
+    <div className="border-t border-line-soft pt-6">
+      <EnquiryReply detail={detail} session={session} emailEnabled={emailEnabled} onChange={value => { callbacks.current.onChange(value); void history(); }} onDenied={status => { active.current = false; setDraft(""); callbacks.current.onDenied(status); }} onBusy={value => { setReplyBusy(value); callbacks.current.onBusy(value); }} />
+    </div>
   </section>;
 }

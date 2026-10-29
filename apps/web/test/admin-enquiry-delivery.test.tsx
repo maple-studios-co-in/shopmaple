@@ -1,20 +1,22 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
-import { EnquiryInbox } from "../components/admin/enquiry-inbox";
-const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
-Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
+import { installUiDom } from "./support/ui-dom";
+// The detail opens in a sheet, which portals to document.body when rendered without AdminRoot:
+// queries read the whole page, and Radix needs the DOM in place before it is imported.
+const dom = installUiDom();
+const { createRoot } = await import("react-dom/client");
+const { EnquiryInbox } = await import("../components/admin/enquiry-inbox");
 const container = document.getElementById("root")!;
+const page = document.body;
 const session = { user: { id: "staff", email: "staff@example.invalid", role: "editor" as const, canManageEnquiries: true }, csrfToken: "a".repeat(64) };
 const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
 const detail = { ...row, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, reviews: [] };
 const retryable = { status: "retry_wait", version: 3, attempts: 1, nextAttemptAt: "2026-10-26T01:00:00.000Z", acceptedAt: null, errorCode: "rate_limited", canRetry: true };
 const response = (delivery: unknown = retryable, enabled = true, enquiryId = row.id) => ({ enquiryId, enabled, delivery });
-function button(text: string) { const found = [...container.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent === text); assert.ok(found, `Missing ${text}`); return found; }
+function button(text: string) { const found = [...page.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent === text); assert.ok(found, `Missing ${text}`); return found; }
 const click = (text: string) => act(async () => button(text).click());
-const panel = () => { const found = container.querySelector('[aria-label="Enquiry notification"]'); assert.ok(found, "Enquiry notification panel must be visible"); return found; };
+const panel = () => { const found = page.querySelector('[aria-label="Enquiry notification"]'); assert.ok(found, "Enquiry notification panel must be visible"); return found; };
 function transport(overrides?: (path: string, options?: RequestInit) => Response | Promise<Response> | undefined) {
   return async (url: string | URL | Request, options?: RequestInit) => {
     const path = String(url); const result = overrides?.(path, options); if (result) return result;
@@ -79,7 +81,7 @@ test("denied delivery reads and retries clear private detail and drafts", async 
     let expired = 0;
     globalThis.fetch = transport(path => (phase === "read" ? path.endsWith("/delivery") : path.endsWith("/delivery/retry")) ? Response.json({}, { status }) : undefined);
     const root = createRoot(container);
-    try { await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => { expired++; }}/>)); await click("Open enquiry"); if (phase === "retry") await click("Retry notification"); assert.ok(container.querySelector("textarea") === null); assert.ok(!container.textContent!.includes(detail.email)); assert.equal(expired, status === 401 ? 1 : 0); }
+    try { await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => { expired++; }}/>)); await click("Open enquiry"); if (phase === "retry") await click("Retry notification"); assert.ok(page.querySelector("textarea") === null); assert.ok(!page.textContent!.includes(detail.email)); assert.equal(expired, status === 401 ? 1 : 0); }
     finally { await act(async () => root.unmount()); }
   } } } finally { globalThis.fetch = previous; }
 });
@@ -93,7 +95,7 @@ test("late delivery from a closed enquiry cannot populate the next enquiry", asy
     if (path === "/api/admin/enquiries") return Response.json({ items: [row, { ...row, id: other.id }], nextCursor: null });
   });
   const root = await mount();
-  try { await click("Close enquiry"); await act(async () => [...container.querySelectorAll<HTMLButtonElement>("button")].filter(item => item.textContent === "Open enquiry")[1]!.click()); await act(async () => resolveOld(Response.json(response({ ...retryable, status: "accepted", canRetry: false })))); assert.match(panel().textContent!, /no notification.*queued/i); assert.ok(!panel().textContent!.includes("Accepted by")); }
+  try { await click("Close enquiry"); await act(async () => [...page.querySelectorAll<HTMLButtonElement>("button")].filter(item => item.textContent === "Open enquiry")[1]!.click()); await act(async () => resolveOld(Response.json(response({ ...retryable, status: "accepted", canRetry: false })))); assert.match(panel().textContent!, /no notification.*queued/i); assert.ok(!panel().textContent!.includes("Accepted by")); }
   finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
 
@@ -132,7 +134,7 @@ test("invalid retry response and failed post-retry refresh cannot leave stale el
       if (path.endsWith("/delivery") && requested) return Response.json({}, { status: failure === "refresh_denial" ? 403 : 500 });
     });
     const root = await mount();
-    try { await click("Retry notification"); assert.equal([...container.querySelectorAll("button")].some(item => item.textContent === "Retry notification"), false); if (failure === "refresh_denial") assert.ok(!container.textContent!.includes(detail.email)); else assert.match(panel().textContent!, /couldn't confirm.*retry/i); }
+    try { await click("Retry notification"); assert.equal([...page.querySelectorAll("button")].some(item => item.textContent === "Retry notification"), false); if (failure === "refresh_denial") assert.ok(!page.textContent!.includes(detail.email)); else assert.match(panel().textContent!, /couldn't confirm.*retry/i); }
     finally { await act(async () => root.unmount()); }
   } } finally { globalThis.fetch = previous; }
 });
@@ -146,7 +148,7 @@ test("session identity change discards a pending retry and ignores its eventual 
     await act(async () => root.render(<EnquiryInbox session={{ ...session, csrfToken: "b".repeat(64), user: { ...session.user, id: "second" } }} onExpired={() => { denied++; }}/>));
     await click("Open enquiry");
     await act(async () => resolveOld(Response.json({}, { status: 401 })));
-    assert.equal(denied, 0); assert.match(container.textContent!, /synthetic@example.invalid/); assert.equal(button("Retry notification").disabled, false); assert.equal(button("Close enquiry").disabled, false);
+    assert.equal(denied, 0); assert.match(page.textContent!, /synthetic@example.invalid/); assert.equal(button("Retry notification").disabled, false); assert.equal(button("Close enquiry").disabled, false);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
 

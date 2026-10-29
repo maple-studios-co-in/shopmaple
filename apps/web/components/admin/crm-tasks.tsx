@@ -2,8 +2,15 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check } from "lucide-react";
 import { followUpTaskListSchema, followUpTaskSchema, type FollowUpTask } from "@shopmaple/contracts";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import type { StaffSession } from "./dashboard";
+import { Field } from "./field";
+import { CheckField, FieldGrid, SelectField, rowCard } from "./kit";
 import { DueBadge, EmptyState, Notice, Skeleton, dueState, formatDate, localToday, readJson, useDirectory, writeOptions } from "./crm-primitives";
+import { NativeSelectOption } from "@/components/ui/native-select";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 type Parent = { enquiryId: string } | { contactId: string };
@@ -16,20 +23,23 @@ function TaskRow({ task, today, staff, busy, onToggle, onOpenEnquiry, onOpenCont
 }) {
   const state = dueState(task.dueOn, today);
   const assignee = task.assigneeId ? staff.get(task.assigneeId)?.email ?? `Staff ${task.assigneeId}` : "Unassigned";
-  return <li><article className="crm-task" data-task={task.id} data-due={state} data-done={task.done ? "true" : "false"}>
-    <button type="button" className="crm-task-check" disabled={busy} aria-pressed={task.done} aria-label={task.done ? `Reopen ${task.title}` : `Mark ${task.title} done`} onClick={() => onToggle(task)}><Check size={16} strokeWidth={2.5} aria-hidden="true" /></button>
-    <div>
-      <div className="crm-task-title">{task.title}</div>
-      {task.note && <p className="crm-task-note">{task.note}</p>}
-      <div className="crm-task-meta">
-        {task.done && task.completedAt ? <span>Done {formatDate(task.completedAt)}</span> : <DueBadge state={state}>{state === "upcoming" ? `Due ${formatDate(task.dueOn)}` : `${state === "overdue" ? "Overdue" : "Due today"}, ${formatDate(task.dueOn)}`}</DueBadge>}
-        <span style={{ overflowWrap: "anywhere" }}>{assignee}</span>
+  return <li><article className={cn(rowCard, "items-start data-[done=true]:bg-surface")} data-task={task.id} data-due={state} data-done={task.done ? "true" : "false"}>
+    <button type="button" disabled={busy} aria-pressed={task.done} aria-label={task.done ? `Reopen ${task.title}` : `Mark ${task.title} done`} onClick={() => onToggle(task)}
+      className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border border-input bg-card text-transparent transition-[background-color,border-color,color] duration-150 ease-admin outline-none hover:border-primary hover:text-primary/60 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground">
+      <Check className="size-3" strokeWidth={2.5} aria-hidden="true" />
+    </button>
+    <div className="grid min-w-0 flex-1 gap-1">
+      <p className={cn("text-[13.5px] leading-snug font-semibold text-foreground [overflow-wrap:anywhere]", task.done && "text-muted-foreground line-through decoration-line-soft")}>{task.title}</p>
+      {task.note && <p className="text-[12.5px] leading-relaxed whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">{task.note}</p>}
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
+        {task.done && task.completedAt ? <span className="tabular-nums">Done {formatDate(task.completedAt)}</span> : <DueBadge state={state}>{state === "upcoming" ? `Due ${formatDate(task.dueOn)}` : `${state === "overdue" ? "Overdue" : "Due today"}, ${formatDate(task.dueOn)}`}</DueBadge>}
+        <span className="[overflow-wrap:anywhere]">{assignee}</span>
       </div>
     </div>
-    <div className="crm-row-actions">
-      {onOpenEnquiry && task.enquiryId && <button type="button" className="crm-button-quiet crm-button-small" aria-label={`Open enquiry for ${task.title}`} onClick={() => onOpenEnquiry(task.enquiryId!)}>Enquiry</button>}
-      {onOpenContact && task.contactId && <button type="button" className="crm-button-quiet crm-button-small" aria-label={`Open contact for ${task.title}`} onClick={() => onOpenContact(task.contactId!)}>Contact</button>}
-    </div>
+    {(onOpenEnquiry && task.enquiryId || onOpenContact && task.contactId) && <div className="flex shrink-0 gap-1">
+      {onOpenEnquiry && task.enquiryId && <Button type="button" size="xs" variant="ghost" aria-label={`Open enquiry for ${task.title}`} onClick={() => onOpenEnquiry(task.enquiryId!)}>Enquiry</Button>}
+      {onOpenContact && task.contactId && <Button type="button" size="xs" variant="ghost" aria-label={`Open contact for ${task.title}`} onClick={() => onOpenContact(task.contactId!)}>Contact</Button>}
+    </div>}
   </article></li>;
 }
 
@@ -63,6 +73,7 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
   const [dueOn, setDueOn] = useState(today);
   const [assigneeId, setAssigneeId] = useState("");
   const [note, setNote] = useState("");
+  const [adding, setAdding] = useState(false);
   const active = useRef(true);
   const sequence = useRef(0);
   const callbacks = useRef({ onDenied, onChanged });
@@ -89,7 +100,7 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
   async function add(event: FormEvent) {
     event.preventDefault();
     if (!canAdd) return;
-    setBusy(true); setError(""); setNotice("");
+    setBusy(true); setAdding(true); setError(""); setNotice("");
     try {
       const response = await request("/api/admin/crm/tasks", writeOptions(session.csrfToken, { ...parent, title: title.trim(), dueOn, assigneeId: assigneeId || null, note: note.trim() }));
       if (!active.current) return;
@@ -102,7 +113,7 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
       setNotice("Follow-up added."); callbacks.current.onChanged?.();
     } catch (failure) {
       if (active.current) setError(failure instanceof AdminRequestTimeout ? "Adding the follow-up timed out. Reload follow-ups to see whether it was saved." : "We couldn't add the follow-up. Try again.");
-    } finally { if (active.current) setBusy(false); }
+    } finally { if (active.current) { setBusy(false); setAdding(false); } }
   }
   async function toggle(task: FollowUpTask) {
     setBusy(true); setError(""); setNotice("");
@@ -115,27 +126,28 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
     else { setDone(rows => rows.filter(row => row.id !== task.id)); setOpen(rows => [...rows, result.task].sort((a, b) => a.dueOn.localeCompare(b.dueOn) || a.id.localeCompare(b.id))); setNotice("Follow-up reopened."); }
     callbacks.current.onChanged?.();
   }
-  return <section className="crm crm-section" aria-label="Follow-ups" aria-busy={busy || loading}>
-    <h4>Follow-ups</h4>
+  return <section className="grid gap-3" aria-label="Follow-ups" aria-busy={busy || loading}>
+    <h4 className="text-[13.5px] font-semibold text-foreground">Follow-ups</h4>
     {loading && open.length === 0 && done.length === 0 && <Skeleton rows={2} />}
     {!loading && !error && open.length === 0 && done.length === 0 && <EmptyState title="No follow-ups yet.">Add the next step with a due date so it shows up in Overdue and Due today.</EmptyState>}
-    {open.length > 0 && <ul className="crm-task-list">{open.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>}
+    {open.length > 0 && <ul className="grid gap-2">{open.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>}
     {done.length > 0 && <>
-      <p className="crm-eyebrow" style={{ marginTop: 16 }}>Done</p>
-      <ul className="crm-task-list">{done.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>
+      <p className="mt-2 text-[11.5px] font-semibold tracking-[0.04em] text-muted-foreground uppercase">Done</p>
+      <ul className="grid gap-2">{done.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>
     </>}
-    {error && <Notice tone="error">{error}</Notice>}
+    {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Reload follow-ups</Button></div>}
     {notice && <Notice tone="status">{notice}</Notice>}
-    {error && <button type="button" className="crm-button-small" disabled={busy} onClick={() => void load()}>Reload follow-ups</button>}
-    <form className="crm-task-form" onSubmit={add}>
-      <label className="crm-field"><span>Title</span><input aria-label="Follow-up title" value={title} maxLength={200} disabled={busy} onInput={event => setTitle(event.currentTarget.value)} /></label>
-      <label className="crm-field"><span>Due</span><input aria-label="Due date" type="date" value={dueOn} disabled={busy} onChange={event => setDueOn(event.currentTarget.value)} /></label>
-      <label className="crm-field"><span>Assignee</span><select aria-label="Assign follow-up to" value={assigneeId} disabled={busy} onChange={event => setAssigneeId(event.currentTarget.value)}>
-        <option value="">Unassigned</option>
-        {[...staff.values()].map(item => <option key={item.id} value={item.id}>{item.email}</option>)}
-      </select></label>
-      <label className="crm-field crm-task-form-note"><span>Note (optional)</span><textarea aria-label="Follow-up note" value={note} maxLength={2000} rows={2} disabled={busy} onInput={event => setNote(event.currentTarget.value)} /></label>
-      <div className="crm-task-form-actions"><button type="submit" className="admin-primary" disabled={!canAdd}>Add follow-up</button></div>
+    <form className="mt-1 grid gap-4 rounded-lg border border-line-soft bg-surface p-4" onSubmit={add} aria-label="Add a follow-up">
+      <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0"><FieldGrid>
+        <Field label="Follow-up title" value={title} maxLength={200} onChange={setTitle} />
+        <label className="grid min-w-0 gap-2"><span className="text-[12.5px] font-medium text-foreground">Due</span><Input aria-label="Due date" type="date" className="h-10 bg-card text-[13.5px]" value={dueOn} disabled={busy} onChange={event => setDueOn(event.currentTarget.value)} /></label>
+        <SelectField label="Assign follow-up to" value={assigneeId} disabled={busy} onChange={event => setAssigneeId(event.currentTarget.value)}>
+          <NativeSelectOption value="">Unassigned</NativeSelectOption>
+          {[...staff.values()].map(item => <NativeSelectOption key={item.id} value={item.id}>{item.email}</NativeSelectOption>)}
+        </SelectField>
+        <Field label="Follow-up note" value={note} maxLength={2000} multiline onChange={setNote} />
+      </FieldGrid></fieldset>
+      <div className="flex justify-end"><Button type="submit" size="sm" disabled={!canAdd} aria-busy={adding}>{adding ? "Adding follow-up…" : "Add follow-up"}</Button></div>
     </form>
   </section>;
 }
@@ -190,19 +202,20 @@ export function TaskViews({ session, onDenied, onOpenEnquiry, onOpenContact, tod
     setNotice(result.task.done ? "Follow-up marked done." : "Follow-up reopened.");
   }
   const [emptyTitle, emptyBody] = emptyCopy[view];
-  return <section className="crm" aria-label="Follow-up views" aria-busy={loading || busy}>
-    <div className="crm-board-head">
-      <div role="tablist" aria-label="Follow-up filters" className="crm-tabs">
-        {views.map(([key, label]) => <button key={key} type="button" role="tab" aria-selected={view === key} disabled={busy} onClick={() => setView(key)}>{label}</button>)}
-      </div>
-      <label className="crm-inline-toggle"><input type="checkbox" aria-label="Only mine" checked={mine} disabled={busy} onChange={event => setMine(event.currentTarget.checked)} /> Only mine</label>
+  return <section className="grid gap-4" aria-label="Follow-up views" aria-busy={loading || busy}>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <Tabs value={view} onValueChange={value => setView(value as View)}>
+        <TabsList aria-label="Follow-up filters">
+          {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-[13px]" disabled={busy} onClick={() => setView(key)}>{label}</TabsTrigger>)}
+        </TabsList>
+      </Tabs>
+      <CheckField label="Only mine" aria-label="Only mine" checked={mine} disabled={busy} onChange={event => setMine(event.currentTarget.checked)} className="w-auto" />
     </div>
     {loading && items.length === 0 && <Skeleton rows={3} />}
-    {error && <Notice tone="error">{error}</Notice>}
-    {error && <button type="button" className="crm-button-small" onClick={() => void load()}>Try again</button>}
+    {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" onClick={() => void load()}>Try again</Button></div>}
     {notice && <Notice tone="status">{notice}</Notice>}
     {!loading && !error && items.length === 0 && <EmptyState title={emptyTitle}>{emptyBody}</EmptyState>}
-    {items.length > 0 && <ul className="crm-task-list">{items.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} onOpenEnquiry={onOpenEnquiry} onOpenContact={onOpenContact} />)}</ul>}
-    {cursor && <button type="button" className="crm-pager" disabled={loading || busy} onClick={() => void load(cursor)}>More follow-ups</button>}
+    {items.length > 0 && <ul className="grid gap-2">{items.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} onOpenEnquiry={onOpenEnquiry} onOpenContact={onOpenContact} />)}</ul>}
+    {cursor && <Button type="button" size="sm" variant="outline" className="w-fit" disabled={loading || busy} onClick={() => void load(cursor)}>More follow-ups</Button>}
   </section>;
 }

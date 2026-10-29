@@ -1,9 +1,22 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { crmSummarySchema, type CrmSummary as Summary } from "@shopmaple/contracts";
+import { RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { StaffSession } from "./dashboard";
 import { Notice, Skeleton, EmptyState, localToday, readJson, stageOptions } from "./crm-primitives";
 import { useAdminRequest } from "./use-admin-request";
+
+const stageAccent: Record<string, string> = { new: "bg-neutral", contacted: "bg-info", quoted: "bg-warning", won: "bg-success", lost: "bg-danger", overdue: "bg-danger", today: "bg-warning", week: "bg-primary" };
+/** One count on a raised tile: a small label, a large tabular number, a dot in the stage's tone. */
+function Tile({ stat, label, value }: { stat: string; label: string; value: number }) {
+  return <Card className="gap-2 rounded-lg px-4 py-3.5 shadow-xs">
+    <span className="flex items-center gap-2 text-[12px] font-medium text-muted-foreground"><span aria-hidden="true" className={cn("size-2 rounded-full", stageAccent[stat])} />{label}</span>
+    <span className="text-[26px] leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums" data-stat={stat}>{value}</span>
+  </Card>;
+}
 
 export function CrmSummary({ session, onExpired, today = localToday() }: { session: StaffSession; onExpired: () => void; today?: string }) {
   const request = useAdminRequest();
@@ -26,31 +39,27 @@ export function CrmSummary({ session, onExpired, today = localToday() }: { sessi
   }, [request, today]);
   useEffect(() => { void load(); return () => { sequence.current++; }; }, [load, session.user.id]);
   const total = value ? Object.values(value.stages).reduce((sum, count) => sum + count, 0) : 0;
-  return <section className="crm crm-summary" aria-label="Pipeline summary" aria-busy={busy}>
-    <div className="crm-summary-head">
-      <div>
-        <p className="crm-eyebrow">Enquiry pipeline</p>
-        <h3 style={{ margin: 0 }}>{value ? `${total} ${total === 1 ? "enquiry" : "enquiries"} in the pipeline` : "Pipeline"}</h3>
+  return <section className="grid gap-4" aria-label="Pipeline summary" aria-busy={busy}>
+    <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="grid gap-1">
+        <p className="text-[11.5px] font-semibold tracking-[0.04em] text-muted-foreground uppercase">Enquiry pipeline</p>
+        <h3 className="text-[15px] font-semibold text-foreground tabular-nums">{value ? `${total} ${total === 1 ? "enquiry" : "enquiries"} in the pipeline` : "Pipeline"}</h3>
       </div>
-      <button type="button" className="crm-button-quiet" disabled={busy} onClick={() => void load()}>Refresh</button>
+      <Button type="button" size="sm" variant="ghost" disabled={busy} aria-busy={busy} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Refresh</Button>
     </div>
     {busy && !value && <Skeleton rows={5} variant="tile" />}
-    {error && <Notice tone="error">{error}</Notice>}
-    {error && <button type="button" className="crm-button-small" onClick={() => void load()}>Try again</button>}
+    {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Try again</Button></div>}
     {value && total === 0 && !error && <EmptyState title="No enquiries yet.">Contact, project and bulk enquiries from the storefront appear here as soon as they arrive, with their stage, follow-ups and contact.</EmptyState>}
-    {value && total > 0 && <div className="crm-summary-shell">
-      <div className="crm-summary-grid" role="group" aria-label="Enquiries per stage">
-        {stageOptions.map(([stage, label]) => <div key={stage} className="crm-tile" data-tone={stage}>
-          <span className="crm-tile-label">{label}</span>
-          <span className="crm-tile-value" data-stat={stage}>{value.stages[stage]}</span>
-        </div>)}
+    {value && total > 0 && <div className="grid gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Enquiries per stage">
+        {stageOptions.map(([stage, label]) => <Tile key={stage} stat={stage} label={label} value={value.stages[stage]} />)}
       </div>
-      <div className="crm-summary-grid" role="group" aria-label="Follow-ups and recent enquiries">
-        <div className="crm-tile" data-tone="overdue"><span className="crm-tile-label">Overdue follow-ups</span><span className="crm-tile-value" data-stat="overdue">{value.overdueTasks}</span></div>
-        <div className="crm-tile" data-tone="today"><span className="crm-tile-label">Due today</span><span className="crm-tile-value" data-stat="today">{value.dueTodayTasks}</span></div>
-        <div className="crm-tile" data-tone="week"><span className="crm-tile-label">New in the last 7 days</span><span className="crm-tile-value" data-stat="week">{value.newLastSevenDays}</span></div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="group" aria-label="Follow-ups and recent enquiries">
+        <Tile stat="overdue" label="Overdue follow-ups" value={value.overdueTasks} />
+        <Tile stat="today" label="Due today" value={value.dueTodayTasks} />
+        <Tile stat="week" label="New in the last 7 days" value={value.newLastSevenDays} />
       </div>
+      <p className="text-[12px] text-muted-foreground">Counts as of today. Open the Enquiries tab to work the pipeline.</p>
     </div>}
-    {value && total > 0 && <p className="crm-faint" style={{ marginTop: 12 }}>Counts as of today. Open the Enquiries tab to work the pipeline.</p>}
   </section>;
 }

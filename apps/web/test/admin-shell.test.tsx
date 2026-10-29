@@ -89,8 +89,10 @@ test("the top bar shows the draft and published versions, the signed-in staff me
     assert.match(account.textContent ?? "", /priya\.menon@example\.test/);
     assert.match(account.textContent ?? "", /Publisher/);
     assert.equal(account.querySelector("[data-avatar]")?.textContent, "PM");
-    const signOut = [...bar.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "Sign out");
-    assert.ok(signOut, "Sign out lives in the top bar");
+    // Sign out lives in the staff menu opened from the account in the top bar (a Radix menu opens on Enter).
+    await act(async () => { account.focus(); account.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    const signOut = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent === "Sign out");
+    assert.ok(signOut, "Sign out lives in the top bar's staff menu");
     await act(async () => signOut.click());
     assert.equal(signedOut, 1);
     assert.equal([...bar.querySelectorAll("button")].some((b) => b.textContent === "Publish draft"), true, "Publishers can publish from the top bar");

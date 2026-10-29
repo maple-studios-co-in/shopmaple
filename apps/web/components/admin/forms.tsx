@@ -1,17 +1,24 @@
 "use client";
-import { useEffect, useState } from "react";
-import type { StaffSession } from "./dashboard";
-import { MediaPicker } from "./media-picker";
-import { CampaignScheduleFields } from "./campaign-schedule-fields";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
+import { FileText, ImagePlus, Images, Megaphone, Plus, RotateCcw, Trash2 } from "lucide-react";
 import type {
   StorefrontContent,
   CampaignContent,
   ContentPage,
 } from "@shopmaple/contracts";
-import { Field } from "./field";
-export { Field } from "./field";
-import { AuthoredBlockFields, newAuthoredBlock } from "./authored-block-fields";
+import { Button } from "@/components/ui/button";
+import { NativeSelectOption } from "@/components/ui/native-select";
 import { AuthoredArticleBody } from "@/components/authored-article-body";
+import { cn } from "@/lib/utils";
+import type { StaffSession } from "./dashboard";
+import { MediaPicker } from "./media-picker";
+import { CampaignScheduleFields } from "./campaign-schedule-fields";
+import { Field } from "./field";
+import { EmptyState, Notice } from "./crm-primitives";
+import { FieldGrid, PanelHeader, SectionHeading, SelectField } from "./kit";
+import { AuthoredBlockFields, newAuthoredBlock } from "./authored-block-fields";
+export { Field } from "./field";
+
 type Props = {
   content: StorefrontContent;
   onChange: (content: StorefrontContent) => void;
@@ -21,6 +28,73 @@ type Props = {
   /** PageFields only: the index of the page being edited, so the editor can preview it. */
   onSelectedPageChange?: (index: number) => void;
 };
+
+/* Layout pieces shared by the content editors (campaigns, pages, policies, articles). */
+
+/** Fields on the left, a sticky local preview on the right; stacks when the panel is narrow. */
+export function EditorWithPreview({ className, ...props }: ComponentProps<"div">) {
+  return (
+    <div className="@container">
+      <div className={cn("grid items-start gap-6 @3xl:grid-cols-[minmax(0,1fr)_minmax(240px,0.62fr)] @3xl:gap-8 [&>*]:min-w-0", className)} {...props} />
+    </div>
+  );
+}
+
+/** The local copy preview beside an editor: a raised card that follows the fields as they scroll. */
+export function PreviewPanel({ eyebrow, footnote, tone = "card", className, children, ...props }: Omit<ComponentProps<"aside">, "children"> & {
+  eyebrow: ReactNode;
+  footnote: ReactNode;
+  tone?: "card" | "accent";
+  children: ReactNode;
+}) {
+  return (
+    <aside
+      className={cn(
+        "grid gap-3 rounded-xl border p-5 text-[13.5px] leading-relaxed shadow-md [overflow-wrap:anywhere] @3xl:sticky @3xl:top-20",
+        tone === "accent" ? "border-transparent bg-primary text-primary-foreground" : "border-border bg-card text-foreground",
+        className,
+      )}
+      {...props}
+    >
+      <h3 className={cn("text-[11px] font-semibold tracking-[0.06em] uppercase", tone === "accent" ? "text-primary-foreground/80" : "text-faint")}>{eyebrow}</h3>
+      {children}
+      <small className={cn("mt-2 block border-t pt-3 text-[11.5px]", tone === "accent" ? "border-primary-foreground/20 text-primary-foreground/80" : "border-line-soft text-muted-foreground")}>{footnote}</small>
+    </aside>
+  );
+}
+
+/** The storefront-style title inside a preview card. */
+export function PreviewTitle({ className, ...props }: ComponentProps<"h4">) {
+  return <h4 className={cn("font-display text-[24px] leading-tight font-normal text-balance", className)} {...props} />;
+}
+
+/** A short hint under a group of fields. */
+export function Hint({ className, ...props }: ComponentProps<"p">) {
+  return <p data-span="full" className={cn("max-w-[68ch] text-[12.5px] leading-relaxed text-muted-foreground", className)} {...props} />;
+}
+
+/** An inline confirmation for a destructive step: what will happen, then the two choices. */
+export function ConfirmPanel({ children, actions }: { children: ReactNode; actions: ReactNode }) {
+  return (
+    <div role="alert" className="grid gap-3 rounded-lg border border-danger/25 bg-danger-bg px-4 py-3.5 text-[13px] leading-relaxed text-foreground">
+      <p className="max-w-[68ch]">{children}</p>
+      <div className="flex flex-wrap gap-2">{actions}</div>
+    </div>
+  );
+}
+
+/** The bottom-of-form removal area, set apart from the fields by a soft divider. */
+export function DangerZone({ children, note }: { children: ReactNode; note?: ReactNode }) {
+  return (
+    <div className="mt-8 grid justify-items-start gap-3 border-t border-line-soft pt-5">
+      {children}
+      {note && <p className="max-w-[68ch] text-[12.5px] text-muted-foreground">{note}</p>}
+    </div>
+  );
+}
+
+export const dangerButton = "text-danger hover:bg-danger-bg hover:text-danger";
+
 export function CampaignFields({
   content,
   onChange,
@@ -45,175 +119,184 @@ export function CampaignFields({
   }
   return (
     <>
-      <h2>Campaigns</h2>
-      <p>
-        Update campaign copy, destination and artwork. Original artwork stays in
-        place until you choose a replacement.
-      </p>
+      <PanelHeader
+        title="Campaigns"
+        description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement."
+      />
       {!campaign ? (
-        <p>No campaigns are configured in this draft.</p>
+        <EmptyState title="No campaigns in this draft" icon={<Megaphone strokeWidth={1.5} />}>
+          Campaigns come with the storefront theme. To bring them back, restore an earlier version from History.
+        </EmptyState>
       ) : (
         <>
-          <label className="admin-field">
-            <span>Campaign</span>
-            <select
-              aria-label="Campaign"
-              value={selected}
-              disabled={scheduleEditing}
-              onChange={(event) => setSelected(Number(event.target.value))}
-            >
-              {content.campaigns.map((value, index) => (
-                <option key={value.key} value={index}>
-                  {value.key.replace(/-/g, " ")}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="admin-editor-preview">
-            <div className="admin-fields">
-              <Field
-                label="Campaign label"
-                value={campaign.label}
-                maxLength={120}
-                onChange={(label) => update({ label })}
-              />
+          <SelectField
+            label="Campaign"
+            className="mb-6 max-w-sm"
+            value={selected}
+            disabled={scheduleEditing}
+            onChange={(event) => setSelected(Number(event.target.value))}
+          >
+            {content.campaigns.map((value, index) => (
+              <NativeSelectOption key={value.key} value={index} className="capitalize">
+                {value.key.replace(/-/g, " ")}
+              </NativeSelectOption>
+            ))}
+          </SelectField>
+          <EditorWithPreview>
+            <div>
+              <SectionHeading description="Use one line per headline or offer line, up to three. Destinations must be store links such as /collections/chairs.">
+                Copy
+              </SectionHeading>
+              <FieldGrid>
+                <Field
+                  label="Campaign label"
+                  value={campaign.label}
+                  maxLength={120}
+                  onChange={(label) => update({ label })}
+                />
+                <Field
+                  label="Campaign button label"
+                  value={campaign.cta}
+                  maxLength={80}
+                  onChange={(cta) => update({ cta })}
+                />
+                <Field
+                  label="Campaign headline"
+                  value={campaign.headline.join("\n")}
+                  maxLength={362}
+                  multiline
+                  onChange={(headline) =>
+                    update({ headline: headline.split("\n") })
+                  }
+                />
+                <Field
+                  label="Campaign supporting copy"
+                  value={campaign.supporting}
+                  maxLength={300}
+                  multiline
+                  onChange={(supporting) => update({ supporting })}
+                />
+                <Field
+                  label="Campaign offer"
+                  value={campaign.offer.join("\n")}
+                  maxLength={362}
+                  multiline
+                  onChange={(offer) =>
+                    update({ offer: offer ? offer.split("\n") : [] })
+                  }
+                />
+                <Field
+                  label="Campaign eligibility"
+                  value={campaign.eligibility}
+                  maxLength={300}
+                  onChange={(eligibility) => update({ eligibility })}
+                />
+                <Field
+                  label="Campaign destination"
+                  value={campaign.href}
+                  maxLength={500}
+                  onChange={(href) => update({ href })}
+                />
+              </FieldGrid>
               <CampaignScheduleFields
                 key={campaign.key}
                 value={campaign.schedule}
                 onChange={(schedule) => update({ schedule })}
                 onEditingChange={setScheduleEditing}
               />
-              <Field
-                label="Campaign headline"
-                value={campaign.headline.join("\n")}
-                maxLength={362}
-                multiline
-                onChange={(headline) =>
-                  update({ headline: headline.split("\n") })
-                }
-              />
-              <Field
-                label="Campaign supporting copy"
-                value={campaign.supporting}
-                maxLength={300}
-                multiline
-                onChange={(supporting) => update({ supporting })}
-              />
-              <Field
-                label="Campaign offer"
-                value={campaign.offer.join("\n")}
-                maxLength={362}
-                multiline
-                onChange={(offer) =>
-                  update({ offer: offer ? offer.split("\n") : [] })
-                }
-              />
-              <Field
-                label="Campaign eligibility"
-                value={campaign.eligibility}
-                maxLength={300}
-                onChange={(eligibility) => update({ eligibility })}
-              />
-              <Field
-                label="Campaign button label"
-                value={campaign.cta}
-                maxLength={80}
-                onChange={(cta) => update({ cta })}
-              />
-              <Field
-                label="Campaign destination"
-                value={campaign.href}
-                maxLength={500}
-                onChange={(href) => update({ href })}
-              />
-              {session &&
-                onExpired &&
-                (campaign.artwork ? (
-                  <>
-                    <MediaPicker
-                      label="Campaign desktop artwork"
-                      value={campaign.artwork.desktopImage}
-                      onChange={(desktopImage) =>
-                        update({
-                          artwork: { ...campaign.artwork!, desktopImage },
-                        })
-                      }
-                      session={session}
-                      onExpired={onExpired}
-                    />
-                    <MediaPicker
-                      label="Campaign mobile artwork"
-                      value={campaign.artwork.mobileImage}
-                      onChange={(mobileImage) =>
-                        update({
-                          artwork: { ...campaign.artwork!, mobileImage },
-                        })
-                      }
-                      session={session}
-                      onExpired={onExpired}
-                    />
-                    <Field
-                      label="Campaign artwork alt text"
-                      value={campaign.artwork.alt}
-                      maxLength={200}
-                      onChange={(alt) =>
-                        update({ artwork: { ...campaign.artwork!, alt } })
-                      }
-                    />
-                    <button
+              {session && onExpired && (
+                <>
+                  <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes.">
+                    Artwork
+                  </SectionHeading>
+                  {campaign.artwork ? (
+                    <FieldGrid>
+                      <MediaPicker
+                        label="Campaign desktop artwork"
+                        value={campaign.artwork.desktopImage}
+                        onChange={(desktopImage) =>
+                          update({
+                            artwork: { ...campaign.artwork!, desktopImage },
+                          })
+                        }
+                        session={session}
+                        onExpired={onExpired}
+                      />
+                      <MediaPicker
+                        label="Campaign mobile artwork"
+                        value={campaign.artwork.mobileImage}
+                        onChange={(mobileImage) =>
+                          update({
+                            artwork: { ...campaign.artwork!, mobileImage },
+                          })
+                        }
+                        session={session}
+                        onExpired={onExpired}
+                      />
+                      <Field
+                        label="Campaign artwork alt text"
+                        value={campaign.artwork.alt}
+                        maxLength={200}
+                        onChange={(alt) =>
+                          update({ artwork: { ...campaign.artwork!, alt } })
+                        }
+                      />
+                      <div data-span="full">
+                        <Button type="button" variant="outline" size="sm" onClick={() => update({ artwork: null })}>
+                          <RotateCcw aria-hidden="true" strokeWidth={1.5} />
+                          Restore original campaign artwork
+                        </Button>
+                      </div>
+                    </FieldGrid>
+                  ) : (
+                    <Button
                       type="button"
-                      onClick={() => update({ artwork: null })}
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        update({
+                          artwork: {
+                            desktopImage: "",
+                            mobileImage: "",
+                            alt: campaign.label,
+                          },
+                        })
+                      }
                     >
-                      Restore original campaign artwork
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      update({
-                        artwork: {
-                          desktopImage: "",
-                          mobileImage: "",
-                          alt: campaign.label,
-                        },
-                      })
-                    }
-                  >
-                    Replace campaign artwork
-                  </button>
-                ))}
-              <p>
-                Use one line per headline or offer line, up to three.
-                Destinations must be store links such as /collections/chairs.
-              </p>
+                      <ImagePlus aria-hidden="true" strokeWidth={1.5} />
+                      Replace campaign artwork
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
-            <aside
-              className="admin-preview admin-campaign-preview"
+            <PreviewPanel
+              tone="accent"
               aria-label="Campaign preview"
+              eyebrow="Copy preview"
+              footnote="Local copy preview · Artwork is managed separately"
             >
-              <h3>Copy preview</h3>
-              <p>{campaign.label}</p>
-              <h4>
+              <p className="text-[12px] font-semibold tracking-[0.04em] uppercase">{campaign.label}</p>
+              <PreviewTitle className="text-[26px]">
                 {campaign.headline.map((line, index) => (
                   <span key={index}>
                     {line}
                     <br />
                   </span>
                 ))}
-              </h4>
+              </PreviewTitle>
               <p>{campaign.supporting}</p>
-              <p>{campaign.offer.join(" · ")}</p>
-              <p>{campaign.eligibility}</p>
-              <span className="admin-preview-cta">{campaign.cta}</span>
-              <small>Local copy preview · Artwork is managed separately</small>
-            </aside>
-          </div>
+              <p className="font-medium">{campaign.offer.join(" · ")}</p>
+              <p className="text-[12.5px] text-primary-foreground/85">{campaign.eligibility}</p>
+              <span className="w-fit rounded-sm bg-card px-4 py-2 text-[12.5px] font-semibold text-primary">{campaign.cta}</span>
+            </PreviewPanel>
+          </EditorWithPreview>
         </>
       )}
     </>
   );
 }
+
 export function InstagramFields({
   content,
   onChange,
@@ -231,82 +314,99 @@ export function InstagramFields({
       ),
     });
   }
+  const posts = content.instagramPosts;
+  const addPost = (
+    <Button
+      type="button"
+      disabled={posts.length >= 30}
+      onClick={() =>
+        onChange({
+          ...content,
+          instagramPosts: [...posts, { href: "", src: "", alt: "" }],
+        })
+      }
+    >
+      <Plus aria-hidden="true" strokeWidth={1.5} />
+      Add Instagram post
+    </Button>
+  );
   return (
     <>
-      <div className="admin-section-heading">
-        <h2>Instagram</h2>
-        <button
-          disabled={content.instagramPosts.length >= 30}
-          onClick={() =>
-            onChange({
-              ...content,
-              instagramPosts: [
-                ...content.instagramPosts,
-                { href: "", src: "", alt: "" },
-              ],
-            })
-          }
-        >
-          Add Instagram post
-        </button>
-      </div>
-      <p>
-        Posts appear in this order. Use a public Instagram post or reel link and
-        an approved Maple image. Image descriptions help visitors using screen
-        readers.
-      </p>
-      <div className="admin-posts">
-        {content.instagramPosts.map((post, index) => (
-          <div className="admin-post" key={index}>
-            <h3>Post {index + 1}</h3>
-            <div className="admin-fields">
-              <Field
-                label={`Post ${index + 1} link`}
-                value={post.href}
-                maxLength={300}
-                onChange={(href) => update(index, { href })}
-              />
-              <Field
-                label={`Post ${index + 1} image`}
-                value={post.src}
-                maxLength={1000}
-                onChange={(src) => update(index, { src })}
-              />
-              {session && onExpired && (
-                <MediaPicker
-                  label={`Post ${index + 1} library image`}
-                  value={post.src}
-                  onChange={(src) => update(index, { src })}
-                  session={session}
-                  onExpired={onExpired}
+      <PanelHeader
+        title="Instagram"
+        description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers."
+        actions={posts.length > 0 && (
+          <>
+            <span className="text-[12px] text-muted-foreground tabular-nums">{posts.length} of 30 posts</span>
+            {addPost}
+          </>
+        )}
+      />
+      {posts.length === 0 ? (
+        <EmptyState title="No Instagram posts yet" icon={<Images strokeWidth={1.5} />} action={addPost}>
+          The homepage needs at least one post. Add a post link and an approved image to fill the Instagram row.
+        </EmptyState>
+      ) : (
+        <ol className="grid gap-3">
+          {posts.map((post, index) => (
+            <li key={index} className="grid gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <SectionHeading as="h4" className="m-0">Post {index + 1}</SectionHeading>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={dangerButton}
+                  disabled={posts.length <= 1}
+                  onClick={() =>
+                    onChange({
+                      ...content,
+                      instagramPosts: posts.filter((_, i) => i !== index),
+                    })
+                  }
+                >
+                  <Trash2 aria-hidden="true" strokeWidth={1.5} />
+                  Remove post {index + 1}
+                </Button>
+              </div>
+              <FieldGrid>
+                <Field
+                  label={`Post ${index + 1} link`}
+                  value={post.href}
+                  maxLength={300}
+                  onChange={(href) => update(index, { href })}
                 />
-              )}
-              <Field
-                label={`Post ${index + 1} alt text`}
-                value={post.alt}
-                maxLength={200}
-                onChange={(alt) => update(index, { alt })}
-              />
-            </div>
-            <button
-              disabled={content.instagramPosts.length <= 1}
-              onClick={() =>
-                onChange({
-                  ...content,
-                  instagramPosts: content.instagramPosts.filter(
-                    (_, i) => i !== index,
-                  ),
-                })
-              }
-            >
-              Remove post {index + 1}
-            </button>
-          </div>
-        ))}
-      </div>
+                <Field
+                  label={`Post ${index + 1} alt text`}
+                  value={post.alt}
+                  maxLength={200}
+                  onChange={(alt) => update(index, { alt })}
+                />
+                <Field
+                  label={`Post ${index + 1} image`}
+                  value={post.src}
+                  maxLength={1000}
+                  className="sm:col-span-2"
+                  onChange={(src) => update(index, { src })}
+                />
+                {session && onExpired && (
+                  <MediaPicker
+                    label={`Post ${index + 1} library image`}
+                    value={post.src}
+                    onChange={(src) => update(index, { src })}
+                    session={session}
+                    onExpired={onExpired}
+                  />
+                )}
+              </FieldGrid>
+            </li>
+          ))}
+        </ol>
+      )}
     </>
   );
 }
+
 export function PageFields({ content, onChange, session, onExpired, onSelectedPageChange }: Props) {
   const [selected, setSelected] = useState(0);
   const [selectionRevision, setSelectionRevision] = useState(0);
@@ -350,60 +450,62 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
     }) });
     setRestoring(false);
   }
+  function addPage() {
+    selectPage(content.pages.length);
+    onChange({
+      ...content,
+      pages: [
+        ...content.pages,
+        {
+          slug: "",
+          title: "",
+          description: "",
+          body: "",
+          banner: null,
+        },
+      ],
+    });
+  }
+  const addPageButton = (
+    <Button type="button" disabled={content.pages.length >= 20} onClick={addPage}>
+      <Plus aria-hidden="true" strokeWidth={1.5} />
+      Add page
+    </Button>
+  );
   return (
-    <section className="admin-structured-pages" aria-label="Informational pages editor">
-      <div className="admin-section-heading">
-        <h2>Informational pages</h2>
-        <button
-          disabled={content.pages.length >= 20}
-          onClick={() => {
-            selectPage(content.pages.length);
-            onChange({
-              ...content,
-              pages: [
-                ...content.pages,
-                {
-                  slug: "",
-                  title: "",
-                  description: "",
-                  body: "",
-                  banner: null,
-                },
-              ],
-            });
-          }}
-        >
-          Add page
-        </button>
-      </div>
-      <p>
-        Create a simple informational page at /pages/your-slug. Existing
-        storefront and enquiry routes are reserved.
-      </p>
+    <section aria-label="Informational pages editor">
+      <PanelHeader
+        title="Informational pages"
+        description="Create a simple informational page at /pages/your-slug. Existing storefront and enquiry routes are reserved."
+        actions={content.pages.length > 0 && (
+          <>
+            <span className="text-[12px] text-muted-foreground tabular-nums">{content.pages.length} of 20 pages</span>
+            {addPageButton}
+          </>
+        )}
+      />
       {content.pages.length > 0 && (
-        <label className="admin-field">
-          <span>Page</span>
-          <select
-            aria-label="Page"
-            value={selected}
-            onChange={(event) => selectPage(Number(event.target.value))}
-          >
-            {content.pages.map((value, index) => (
-              <option key={index} value={index}>
-                {value.title || "Untitled page"}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Page"
+          className="mb-6 max-w-sm"
+          value={selected}
+          onChange={(event) => selectPage(Number(event.target.value))}
+        >
+          {content.pages.map((value, index) => (
+            <NativeSelectOption key={index} value={index}>
+              {value.title || "Untitled page"}
+            </NativeSelectOption>
+          ))}
+        </SelectField>
       )}
       {!page ? (
-        <div className="admin-empty">
-          <p>No custom pages yet. Add a page to start writing.</p>
-        </div>
+        <EmptyState title="No custom pages yet" icon={<FileText strokeWidth={1.5} />} action={addPageButton}>
+          Add a page to start writing. It stays in your draft until the draft is published.
+        </EmptyState>
       ) : (
-        <div className="admin-editor-preview" key={`${selected}:${selectionRevision}`}>
+        <EditorWithPreview key={`${selected}:${selectionRevision}`}>
           <div>
-            <div className="admin-fields">
+            <FieldGrid>
               <Field
                 label="Page title"
                 value={page.title}
@@ -430,24 +532,36 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
                 multiline
                 onChange={(body) => update({ body })}
               />}
-            </div>
-            {page.blocks === undefined ? <>
-              <p>Use plain text, with blank lines between paragraphs. HTML and scripts display as text.</p>
-              <button type="button" onClick={convert}>Use structured blocks</button>
-              {conversionError && <p role="alert">{conversionError}</p>}
-            </> : <>
-              <AuthoredBlockFields blockLabel="Page block" value={page.blocks} onChange={blocks => update({ blocks })} session={session} onExpired={onExpired} />
-              <button type="button" onClick={() => setRestoring(true)}>Return to plain text</button>
-              {restoring && <div role="alert">
-                <p>Return to the original plain-text body? This will discard all structured block edits. Save draft and Publish draft still apply to the whole storefront.</p>
-                <button type="button" onClick={restorePlainText}>Confirm return to plain text</button>
-                <button type="button" onClick={() => setRestoring(false)}>Keep structured blocks</button>
-              </div>}
-            </>}
+            </FieldGrid>
+            {page.blocks === undefined ? (
+              <div className="mt-4 grid justify-items-start gap-3">
+                <Hint>Use plain text, with blank lines between paragraphs. HTML and scripts display as text.</Hint>
+                <Button type="button" variant="outline" size="sm" onClick={convert}>Use structured blocks</Button>
+                {conversionError && <Notice tone="error">{conversionError}</Notice>}
+              </div>
+            ) : (
+              <>
+                <AuthoredBlockFields blockLabel="Page block" value={page.blocks} onChange={blocks => update({ blocks })} session={session} onExpired={onExpired} />
+                <div className="mt-4 grid justify-items-start gap-3">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setRestoring(true)}>
+                    <RotateCcw aria-hidden="true" strokeWidth={1.5} />
+                    Return to plain text
+                  </Button>
+                  {restoring && (
+                    <ConfirmPanel actions={<>
+                      <Button type="button" variant="destructive" size="sm" onClick={restorePlainText}>Confirm return to plain text</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setRestoring(false)}>Keep structured blocks</Button>
+                    </>}>
+                      Return to the original plain-text body? This will discard all structured block edits. Save draft and Publish draft still apply to the whole storefront.
+                    </ConfirmPanel>
+                  )}
+                </div>
+              </>
+            )}
             {page.banner ? (
               <>
-                <h3>Page banner</h3>
-                <div className="admin-fields">
+                <SectionHeading description="A wide image with a link, shown above the page copy.">Page banner</SectionHeading>
+                <FieldGrid>
                   <Field
                     label="Desktop image"
                     value={page.banner.desktopImage}
@@ -494,30 +608,43 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
                     maxLength={80}
                     onChange={(label) => banner({ label })}
                   />
-                </div>
-                <button onClick={() => update({ banner: null })}>
-                  Remove page banner
-                </button>
+                  <div data-span="full">
+                    <Button type="button" variant="ghost" size="sm" className={dangerButton} onClick={() => update({ banner: null })}>
+                      <Trash2 aria-hidden="true" strokeWidth={1.5} />
+                      Remove page banner
+                    </Button>
+                  </div>
+                </FieldGrid>
               </>
             ) : (
-              <button
-                onClick={() =>
-                  update({
-                    banner: {
-                      desktopImage: "",
-                      mobileImage: "",
-                      alt: "",
-                      href: "/collections/all",
-                      label: "Explore",
-                    },
-                  })
-                }
-              >
-                Add page banner
-              </button>
+              <div className="mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    update({
+                      banner: {
+                        desktopImage: "",
+                        mobileImage: "",
+                        alt: "",
+                        href: "/collections/all",
+                        label: "Explore",
+                      },
+                    })
+                  }
+                >
+                  <ImagePlus aria-hidden="true" strokeWidth={1.5} />
+                  Add page banner
+                </Button>
+              </div>
             )}
-            <div className="admin-delete">
-              <button
+            <DangerZone note="Removal stays in your draft until it is published. Earlier saved versions remain in History.">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={dangerButton}
                 onClick={() => {
                   onChange({
                     ...content,
@@ -528,28 +655,29 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
                   selectPage(0);
                 }}
               >
+                <Trash2 aria-hidden="true" strokeWidth={1.5} />
                 Remove page
-              </button>
-              <p>
-                Removal stays in your draft until it is published. Earlier saved
-                versions remain in History.
-              </p>
-            </div>
+              </Button>
+            </DangerZone>
           </div>
-          <aside className="admin-preview" aria-label="Page preview">
-            <h3>{page.blocks === undefined ? "Text preview" : "Local page preview"}</h3>
-            <h4>{page.title || "Untitled page"}</h4>
-            <p>{page.description}</p>
-            {page.blocks === undefined ? <div className="admin-plain-copy">{page.body}</div> : <div className="store-prose"><AuthoredArticleBody blocks={page.blocks} preview /></div>}
+          <PreviewPanel
+            aria-label="Page preview"
+            eyebrow={page.blocks === undefined ? "Text preview" : "Local page preview"}
+            footnote={<>Local preview · /pages/{page.slug || "your-slug"}</>}
+          >
+            <PreviewTitle>{page.title || "Untitled page"}</PreviewTitle>
+            {page.description && <p className="text-muted-foreground">{page.description}</p>}
+            {page.blocks === undefined
+              ? <div data-plain-copy className="whitespace-pre-wrap [overflow-wrap:anywhere]">{page.body}</div>
+              : <div className="store-prose"><AuthoredArticleBody blocks={page.blocks} preview /></div>}
             {page.banner && (
-              <p>
+              <p className="rounded-md bg-sunken px-3 py-2 text-[12.5px] text-foreground">
                 Banner: {page.banner.alt || "Add an image description"} ·{" "}
                 {page.banner.label}
               </p>
             )}
-            <small>Local preview · /pages/{page.slug || "your-slug"}</small>
-          </aside>
-        </div>
+          </PreviewPanel>
+        </EditorWithPreview>
       )}
     </section>
   );

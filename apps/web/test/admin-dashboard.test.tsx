@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
 import type { StorefrontContent } from "@shopmaple/contracts";
-import { AdminDashboard } from "../components/admin/dashboard";
 const dom = new JSDOM('<div id="root"></div>', {
   url: "http://localhost:3000/admin",
 });
@@ -14,6 +12,10 @@ Object.assign(globalThis, {
   HTMLElement: dom.window.HTMLElement,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
+// Imported after the window exists, like the other admin tests: Radix picks its layout-effect
+// implementation at import time and would otherwise run as if on the server.
+const { createRoot } = await import("react-dom/client");
+const { AdminDashboard } = await import("../components/admin/dashboard");
 const initialContent: StorefrontContent = {
   schemaVersion: 1,
   landingPages: [],
@@ -143,6 +145,15 @@ test("failed login stays on the login form with a safe actionable error", async 
 
 async function click(name: string) {
   await act(async () => button(name).click());
+}
+/** Sign out sits in the staff menu in the top bar; the Radix menu opens on Enter. */
+async function signOut() {
+  const account = container.querySelector<HTMLElement>("[data-staff-account]");
+  assert.ok(account, "Missing staff menu");
+  await act(async () => { account.focus(); account.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  const item = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((node) => node.textContent === "Sign out");
+  assert.ok(item, "Missing Sign out in the staff menu");
+  await act(async () => item.click());
 }
 test("editors reorder and hide sections, change copy and save an unpublished draft", async () => {
   const previous = globalThis.fetch;
@@ -503,7 +514,7 @@ test("signing out sends CSRF and removes all authenticated editor content", asyn
     await act(async () =>
       root.render(<AdminDashboard initialContent={initialContent} />),
     );
-    await click("Sign out");
+    await signOut();
     assert.equal(logoutCsrf, "a".repeat(64));
     assert.ok(container.querySelector('input[type="password"]'));
     assert.equal(
@@ -809,7 +820,7 @@ test("logout succeeds when the transport exposes an empty stream for HTTP 204", 
     await act(async () =>
       root.render(<AdminDashboard initialContent={initialContent} />),
     );
-    await click("Sign out");
+    await signOut();
     assert.ok(
       container.querySelector('input[type="password"]'),
       "A successful 204 logout must return to the login form",

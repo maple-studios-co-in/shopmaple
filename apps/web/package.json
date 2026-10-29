@@ -8,7 +8,7 @@
     "build": "dotenv -e ../../.env -- next build",
     "start": "dotenv -e ../../.env -- next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --tsconfig test/tsconfig.json --test test/*.test.tsx"
+    "test": "tsx --tsconfig test/tsconfig.json --import ./test/support/dom-globals.ts --test test/*.test.tsx"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

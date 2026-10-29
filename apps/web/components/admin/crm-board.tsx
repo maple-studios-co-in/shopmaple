@@ -2,14 +2,19 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useDraggable, useDroppable, useSensor, useSensors, type Announcements, type DragEndEvent } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowUpRight, GripVertical, UserRound } from "lucide-react";
+import { ArrowUpRight, GripVertical, RotateCw, UserRound } from "lucide-react";
 import { enquiryAdminDetailSchema, enquiryAdminListSchema, enquiryStageLabels, enquiryStages, type EnquiryAdminSummary, type EnquiryStage } from "@shopmaple/contracts";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import type { StaffSession } from "./dashboard";
 import { Avatar, DueBadge, Notice, Skeleton, ageLabel, dueState, localToday, readJson, stageOptions, useDirectory, writeOptions, type DueState } from "./crm-primitives";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
-type Card = EnquiryAdminSummary & { lostReason?: string | null; pending?: boolean };
-type Columns = Record<EnquiryStage, Card[]>;
+type BoardItem = EnquiryAdminSummary & { lostReason?: string | null; pending?: boolean };
+type Columns = Record<EnquiryStage, BoardItem[]>;
 type Directory = ReturnType<typeof useDirectory>;
 const emptyColumns = (): Columns => ({ new: [], contacted: [], quoted: [], won: [], lost: [] });
 const emptyCopy: Record<EnquiryStage, string> = { new: "No new enquiries. Fresh submissions land here.", contacted: "Nothing contacted yet. Drag a card here once you have replied.", quoted: "Nothing quoted yet. Move an enquiry here when a quote goes out.", won: "No wins yet.", lost: "Nothing lost. Each lost enquiry keeps a short reason." };
@@ -18,58 +23,64 @@ const columnLimit = 50;
 const stageOf = (value: string): EnquiryStage => (enquiryStages as readonly string[]).includes(value) ? value as EnquiryStage : "new";
 
 function BoardCard({ card, today, staff, due, busy, lostPrompt, onMoveIntent, onConfirmLost, onCancelLost, onOpenEnquiry, onOpenContact }: {
-  card: Card; today: string; staff: Directory; due: DueState | null; busy: boolean; lostPrompt: boolean;
-  onMoveIntent: (card: Card, stage: EnquiryStage) => void; onConfirmLost: (card: Card, reason: string) => void; onCancelLost: () => void;
+  card: BoardItem; today: string; staff: Directory; due: DueState | null; busy: boolean; lostPrompt: boolean;
+  onMoveIntent: (card: BoardItem, stage: EnquiryStage) => void; onConfirmLost: (card: BoardItem, reason: string) => void; onCancelLost: () => void;
   onOpenEnquiry: (id: string) => void; onOpenContact: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({ id: card.id, disabled: busy || card.pending });
   const [reason, setReason] = useState("");
   const assignee = card.assignedToId ? staff.get(card.assignedToId) : null;
-  return <article ref={setNodeRef} className={["crm-card", isDragging ? "is-dragging" : "", card.pending ? "is-pending" : ""].filter(Boolean).join(" ")}
-    data-card data-name={card.name} data-version={card.version} data-enquiry={card.id} style={{ transform: CSS.Translate.toString(transform) }}>
-    <div className="crm-card-top">
-      <div style={{ minWidth: 0 }}>
-        <div className="crm-card-name">{card.name || "No name given"}</div>
-        <div className="crm-card-product">{card.product || "No product noted"}</div>
+  const name = card.name || "enquiry";
+  return <Card ref={setNodeRef} data-card data-name={card.name} data-version={card.version} data-enquiry={card.id}
+    data-dragging={isDragging ? "true" : undefined} data-pending={card.pending ? "true" : undefined} style={{ transform: CSS.Translate.toString(transform) }}
+    className="relative gap-2.5 rounded-lg px-3 py-3 shadow-xs transition-[box-shadow,opacity] duration-200 ease-admin data-[dragging=true]:z-20 data-[dragging=true]:shadow-lg data-[pending=true]:opacity-60">
+    <div className="flex items-start gap-2">
+      <div className="grid min-w-0 flex-1 gap-0.5">
+        <p className="text-[13.5px] leading-snug font-semibold text-foreground [overflow-wrap:anywhere]">{card.name || "No name given"}</p>
+        <p className={cn("text-[12.5px] [overflow-wrap:anywhere]", card.product ? "text-muted-foreground" : "text-faint")}>{card.product || "No product noted"}</p>
       </div>
-      <button type="button" className="admin-drag-handle" data-drag-handle ref={setActivatorNodeRef} {...attributes} {...listeners} disabled={busy || card.pending} aria-label={`Drag ${card.name || "enquiry"}`}><GripVertical aria-hidden="true" size={16} strokeWidth={1.75} /></button>
+      <Button type="button" variant="ghost" size="icon-sm" className="-mt-1 -mr-1.5 cursor-grab text-muted-foreground active:cursor-grabbing" data-drag-handle ref={setActivatorNodeRef} {...attributes} {...listeners} disabled={busy || card.pending} aria-label={`Drag ${name}`}><GripVertical aria-hidden="true" strokeWidth={1.5} /></Button>
     </div>
-    <div className="crm-card-meta">
-      <span className="crm-card-age" title={`Received ${new Date(card.createdAt).toLocaleDateString()}`}>{ageLabel(card.createdAt, today)}</span>
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="text-[12px] font-medium text-muted-foreground tabular-nums" title={`Received ${new Date(card.createdAt).toLocaleDateString()}`}>{ageLabel(card.createdAt, today)}</span>
       {due && <DueBadge state={due} />}
-      {assignee ? <Avatar email={assignee.email} title={`Assigned to ${assignee.email}`} /> : card.assignedToId ? <Avatar email={card.assignedToId} title={`Assigned to staff ${card.assignedToId}`} /> : null}
+      <span className="ml-auto">{assignee ? <Avatar email={assignee.email} title={`Assigned to ${assignee.email}`} /> : card.assignedToId ? <Avatar email={card.assignedToId} title={`Assigned to staff ${card.assignedToId}`} /> : null}</span>
     </div>
-    {card.status === "lost" && card.lostReason && <p className="crm-card-reason">{card.lostReason}</p>}
-    {lostPrompt && <form className="crm-lost-form" aria-label={`Reason for losing ${card.name || "enquiry"}`}
+    {card.status === "lost" && card.lostReason && <p className="rounded-md bg-surface px-2.5 py-1.5 text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]">{card.lostReason}</p>}
+    {lostPrompt && <form className="grid gap-2 border-t border-line-soft pt-2.5" aria-label={`Reason for losing ${name}`}
       // A form submission, not a click handler: dnd-kit swallows document clicks for 50ms after a drop,
       // while a submit button's default action still fires the submit event. The reason is always sent.
       onSubmit={event => { event.preventDefault(); if (!busy && reason.trim()) onConfirmLost(card, reason.trim()); }}>
-      <label className="crm-field"><span>Why was this enquiry lost?</span><textarea aria-label="Reason for losing" value={reason} maxLength={500} rows={2} onInput={event => setReason(event.currentTarget.value)} /></label>
-      <div className="crm-lost-form-actions">
-        <button type="submit" className="admin-primary crm-button-small" disabled={busy || !reason.trim()}>Confirm lost</button>
-        <button type="button" className="crm-button-small" disabled={busy} onClick={() => { setReason(""); onCancelLost(); }}>Cancel</button>
+      <label className="grid gap-1.5 text-[12px] font-medium text-foreground">Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={reason} maxLength={500} rows={2} className="min-h-14 bg-card text-[13px]" onInput={event => setReason(event.currentTarget.value)} onChange={() => {}} /></label>
+      <div className="flex gap-1.5">
+        <Button type="submit" size="xs" disabled={busy || !reason.trim()}>Confirm lost</Button>
+        <Button type="button" size="xs" variant="ghost" disabled={busy} onClick={() => { setReason(""); onCancelLost(); }}>Cancel</Button>
       </div>
     </form>}
-    <div className="crm-card-actions">
-      <select aria-label={`Move ${card.name || "enquiry"} to`} value={card.status} disabled={busy || card.pending} onChange={event => onMoveIntent(card, stageOf(event.currentTarget.value))}>
-        {stageOptions.map(([stage, label]) => <option key={stage} value={stage}>{label}</option>)}
-      </select>
-      <button type="button" className="crm-icon-button" title="Open enquiry" aria-label={`Open enquiry from ${card.name || "enquiry"}`} onClick={() => onOpenEnquiry(card.id)}><ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.75} /></button>
-      {card.contactId && <button type="button" className="crm-icon-button" title="Open contact" aria-label={`Open contact for ${card.name || "enquiry"}`} onClick={() => onOpenContact(card.contactId!)}><UserRound aria-hidden="true" size={16} strokeWidth={1.75} /></button>}
+    <div className="flex items-center gap-1 border-t border-line-soft pt-2.5">
+      <NativeSelect size="sm" aria-label={`Move ${name} to`} containerClassName="min-w-0 flex-1" className="h-7 bg-card text-[12.5px]" value={card.status} disabled={busy || card.pending} onChange={event => onMoveIntent(card, stageOf(event.currentTarget.value))}>
+        {stageOptions.map(([stage, label]) => <NativeSelectOption key={stage} value={stage}>{label}</NativeSelectOption>)}
+      </NativeSelect>
+      <Button type="button" variant="ghost" size="icon-sm" title="Open enquiry" aria-label={`Open enquiry from ${name}`} onClick={() => onOpenEnquiry(card.id)}><ArrowUpRight aria-hidden="true" strokeWidth={1.5} /></Button>
+      {card.contactId && <Button type="button" variant="ghost" size="icon-sm" title="Open contact" aria-label={`Open contact for ${name}`} onClick={() => onOpenContact(card.contactId!)}><UserRound aria-hidden="true" strokeWidth={1.5} /></Button>}
     </div>
-  </article>;
+  </Card>;
 }
 
-function BoardColumn({ stage, cards, loading, capped, children }: { stage: EnquiryStage; cards: Card[]; loading: boolean; capped: boolean; children: ReactNode }) {
+function BoardColumn({ stage, cards, loading, capped, children }: { stage: EnquiryStage; cards: BoardItem[]; loading: boolean; capped: boolean; children: ReactNode }) {
   const { setNodeRef, isOver, active } = useDroppable({ id: stage });
-  return <section ref={setNodeRef} className="crm-column" data-stage-column={stage} data-drop-active={isOver && active ? "true" : undefined} aria-label={`${enquiryStageLabels[stage]} column`}>
-    <header className="crm-column-head"><h4>{enquiryStageLabels[stage]}</h4><span className="crm-column-count crm-num" aria-label={`${capped ? "more than " : ""}${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}{capped ? "+" : ""}</span></header>
-    <div className="crm-column-body">
+  return <Card ref={setNodeRef} role="region" data-stage-column={stage} data-drop-active={isOver && active ? "true" : undefined} aria-label={`${enquiryStageLabels[stage]} column`}
+    className="w-[268px] shrink-0 gap-0 rounded-xl bg-surface py-0 shadow-xs transition-[box-shadow,border-color] duration-200 ease-admin data-[drop-active=true]:border-primary data-[drop-active=true]:shadow-[0_0_0_1px_var(--primary)]">
+    <header className="flex items-center justify-between gap-2 border-b border-line-soft px-3.5 py-3">
+      <h4 className="text-[13px] font-semibold text-foreground">{enquiryStageLabels[stage]}</h4>
+      <span data-column-count className="rounded-md bg-card px-2 py-0.5 text-[12px] font-semibold text-muted-foreground tabular-nums" aria-label={`${capped ? "more than " : ""}${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}{capped ? "+" : ""}</span>
+    </header>
+    <div className="grid min-h-40 content-start gap-2 p-2.5">
       {loading && cards.length === 0 ? <Skeleton rows={2} variant="card" /> : children}
-      {!loading && cards.length === 0 && <p className="crm-column-empty">{emptyCopy[stage]}</p>}
-      {capped && <p className="crm-column-empty" data-column-capped={stage}>Showing the newest {cards.length}. More {enquiryStageLabels[stage].toLowerCase()} enquiries are in the list view.</p>}
+      {!loading && cards.length === 0 && <p className="rounded-lg border border-dashed border-border px-3 py-4 text-[12.5px] leading-relaxed text-muted-foreground">{emptyCopy[stage]}</p>}
+      {capped && <p className="px-1 text-[12px] leading-relaxed text-muted-foreground" data-column-capped={stage}>Showing the newest {cards.length}. More {enquiryStageLabels[stage].toLowerCase()} enquiries are in the list view.</p>}
     </div>
-  </section>;
+  </Card>;
 }
 
 export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, today = localToday() }: {
@@ -107,7 +118,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
   }, [request, today]);
   useEffect(() => { active.current = true; void load(); return () => { active.current = false; sequence.current++; }; }, [load, session.user.id]);
 
-  function relocate(id: string, from: EnquiryStage, to: EnquiryStage, index: number | null, patch: Partial<Card> = {}) {
+  function relocate(id: string, from: EnquiryStage, to: EnquiryStage, index: number | null, patch: Partial<BoardItem> = {}) {
     setColumns(current => {
       const card = current[from].find(item => item.id === id); if (!card) return current;
       const next = { ...current, [from]: current[from].filter(item => item.id !== id) };
@@ -117,7 +128,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
       return { ...next, [to]: target };
     });
   }
-  async function move(card: Card, to: EnquiryStage, reason?: string) {
+  async function move(card: BoardItem, to: EnquiryStage, reason?: string) {
     const from = card.status as EnquiryStage;
     if (from === to && !reason) return;
     const index = columns[from].findIndex(item => item.id === card.id);
@@ -145,7 +156,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
       setError(failure instanceof AdminRequestTimeout ? `Moving ${card.name || "the enquiry"} timed out. Reload the board to see its current stage.` : `We couldn't move ${card.name || "this enquiry"}. Reload the board and try again.`);
     } finally { if (active.current) setBusy(false); }
   }
-  function intent(card: Card, to: EnquiryStage) {
+  function intent(card: BoardItem, to: EnquiryStage) {
     if (to === card.status) { setLostPrompt(null); return; }
     if (to === "lost") { setLostPrompt(card.id); return; }
     void move(card, to);
@@ -164,16 +175,16 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
     onDragCancel: () => "Move cancelled.",
   };
   const total = enquiryStages.reduce((sum, stage) => sum + columns[stage].length, 0);
-  return <section className="crm crm-board-wrap" aria-label="Pipeline board" aria-busy={loading || busy}>
-    <div className="crm-board-head">
-      <p className="crm-lede" style={{ margin: 0 }}>{loading && total === 0 ? "Loading the pipeline…" : `${total} ${total === 1 ? "enquiry" : "enquiries"} across ${enquiryStages.length} stages. Drag a card or use its Move to control.`}</p>
-      <button type="button" className="crm-button-quiet" disabled={loading || busy} onClick={() => void load()}>Reload board</button>
+  return <section className="grid min-w-0 gap-4" aria-label="Pipeline board" aria-busy={loading || busy}>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-[13.5px] text-muted-foreground tabular-nums">{loading && total === 0 ? "Loading the pipeline…" : `${total} ${total === 1 ? "enquiry" : "enquiries"} across ${enquiryStages.length} stages. Drag a card or use its Move to control.`}</p>
+      <Button type="button" size="sm" variant="outline" disabled={loading || busy} aria-busy={loading} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Reload board</Button>
     </div>
     {error && <Notice tone="error">{error}</Notice>}
     {notice && <Notice tone="status">{notice}</Notice>}
-    <p className="admin-sr-only" aria-live="polite">{liveMessage}</p>
+    <p className="sr-only" aria-live="polite">{liveMessage}</p>
     <DndContext id={contextId} sensors={sensors} collisionDetection={closestCenter} accessibility={{ announcements }} onDragEnd={dragEnd}>
-      <div className="crm-board">
+      <div className="flex items-start gap-3 overflow-x-auto pb-3">
         {enquiryStages.map(stage => <BoardColumn key={stage} stage={stage} cards={columns[stage]} loading={loading} capped={capped.has(stage)}>
           {columns[stage].map(card => {
             return <BoardCard key={card.id} card={card} today={today} staff={staff} due={card.nextDueOn ? dueState(card.nextDueOn, today) : null} busy={busy}
@@ -182,7 +193,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
           })}
         </BoardColumn>)}
       </div>
-      <p className="crm-board-hint" aria-hidden="true">Scroll sideways to reach every stage.</p>
+      <p className="text-[12px] text-muted-foreground lg:hidden" aria-hidden="true">Scroll sideways to reach every stage.</p>
     </DndContext>
   </section>;
 }

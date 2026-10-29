@@ -27,7 +27,11 @@ Patterns preserved: every route, API contract, form field name, `aria-label`, ke
 
 ## 2. Design system
 
-All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` custom properties. The CRM's `--crm-*` names remain as aliases of the admin tokens so the CRM components did not need to change.
+All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` custom properties. The CRM's `--crm-*` names remain as aliases of the admin tokens.
+
+Since 29 October 2026 the admin is built on **shadcn/ui** (`apps/web/components.json`, primitives in `apps/web/components/ui`) and **Tailwind 4**, and `admin.css` is the token file only: the tokens, the shadcn variable mapping (`--background`, `--primary`, `--border`, `--ring`, `--sidebar-*` ... all point at `--admin-*`), the `@theme inline` block that turns them into utilities (`bg-card`, `text-muted-foreground`, `text-faint`, `bg-success-bg`, `font-display`, `ease-admin` ...), and a scoped base. There is no component CSS: screens compose `components/ui` and the admin kit (`components/admin/kit.tsx`, `crm-primitives.tsx`, `data-table.tsx`, `field.tsx`, `sortable-list.tsx`) with utilities. AGENTS.md forbids new hand-written admin CSS.
+
+How it stays off the storefront: Tailwind's theme variables load in a cascade layer, there is no global preflight, only admin sources are scanned, and utilities are `important` so they beat the storefront's global element rules (which the root layout loads on every route) without any storefront stylesheet changing. The scoped base lives under `.shop-admin`; overlays (dialog, sheet, menus, popovers, tooltips, select) portal into the `.shop-admin` element through `AdminRoot`. Markup the admin draws inside the storefront preview frame (the ribbon, the section highlight) reads the tokens through `[data-admin-tokens]` without the base.
 
 ### Colour
 
@@ -40,7 +44,7 @@ All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` c
 | `--admin-ink` / `-muted` / `-faint` | `#23261f` / `#5b5e57` / `#62655f` | Text hierarchy. Contrast on the surface `#fbfaf6`: 15.0:1, 7.1:1 and 5.7:1; faint on the sunken surface `#e4e2d9` is 4.7:1, so the 11 to 12.5 px labels (nav groups, roles, CRM meta, eyebrows) clear AA |
 | `--admin-accent` / `-strong` / `-tint` | `#741a14` / `#57140f` / `rgba(116,26,20,.07)` | The single accent: primary actions, current state, focus |
 | `--admin-line-soft` / `-line` / `-line-strong` | ink at 8 % / 50 % / 62 % | Decorative dividers only (soft); control boundaries at 3.1:1 on the surface (line); field borders at 4.5:1 on white (line-strong), meeting the 3:1 non-text minimum |
-| `--admin-success`, `--admin-warning`, `--admin-info`, `--admin-danger` | green, ochre, slate, burgundy (+ `-bg` tints) | Semantic state only: notices, chips, due badges |
+| `--admin-success`, `--admin-warning`, `--admin-info`, `--admin-danger` | green, ochre, slate, burgundy (+ `-bg` tints) | Semantic state only: notices, chips, due badges. Warning is `#71530f` so the unsaved chip clears 4.5:1 on its tint over the canvas (5.2:1) and the sunken surface (4.8:1) |
 
 Shadows are tinted with the ink colour, never pure black: `--admin-shadow-s` (hairline lift), `--admin-shadow-m` (hover), `--admin-shadow-lift` (dragging, dialogs, the preview device frame).
 

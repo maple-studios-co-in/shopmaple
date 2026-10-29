@@ -1,10 +1,23 @@
 "use client";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { AuthoredBlock } from "@shopmaple/contracts";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
 import { MediaPicker } from "./media-picker";
 import { SortableList } from "./sortable-list";
+import { ChevronDown, ChevronUp, ImagePlus, Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { NativeSelectOption } from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
+import { Notice } from "./crm-primitives";
+import { CheckField, FieldGrid, SectionHeading, SelectField, rowCard } from "./kit";
+
+const blockTypeLabels: Record<AuthoredBlock["type"], string> = { paragraph: "Paragraph", heading: "Heading", quote: "Quotation", list: "List", link: "Link", image: "Image" };
+/** A short hint under a block's fields. */
+function Hint({ children }: { children: ReactNode }) {
+  return <p data-span="full" className="text-[12.5px] leading-relaxed text-muted-foreground">{children}</p>;
+}
 
 export function newAuthoredBlock(type: Exclude<AuthoredBlock["type"], "image">): AuthoredBlock {
   const id = crypto.randomUUID();
@@ -54,39 +67,65 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
     focusBlock.current = blocks[Math.min(index, blocks.length - 1)]!.id;
     onChange(blocks);
   }
-  return <div className="admin-block-fields" ref={region} onKeyDown={event => {
+  const atLimit = value.length >= 60;
+  return <div className="mt-8" ref={region} onKeyDown={event => {
     if (event.key === "Enter" && event.target instanceof window.HTMLInputElement && event.target.type === "text") event.preventDefault();
   }}>
-    <h3>{blockLabel}s</h3><p>Keep at least one block. Drag blocks into order or use the Move buttons. HTML is displayed as text.</p>
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+      <SectionHeading className="m-0" description="Keep at least one block. Drag blocks into order or use the Move buttons. HTML is displayed as text.">{blockLabel}s</SectionHeading>
+      <p className="text-[12px] text-muted-foreground tabular-nums">{value.length} of 60 blocks</p>
+    </div>
     <SortableList items={value} getId={block => block.id} getLabel={(_, index) => `Block ${index + 1}`} tag="div" rowTag="fieldset" onReorder={blocks => onChange(blocks)}
+      rowClassName={cn(rowCard, "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 p-3 sm:p-4")}
       rowProps={block => ({ "aria-label": blockLabel, "data-block-id": block.id })}
       renderItem={(block, index, handle) => <>
-      <legend>Block {index + 1} · {block.type}</legend>
-      {(block.type === "paragraph" || block.type === "quote" || block.type === "heading") && <Field label={`Block ${index + 1} text`} value={block.text} maxLength={block.type === "heading" ? 300 : 8000} multiline={block.type !== "heading"} onChange={text => replaceBlock(block.id, { ...block, text })} />}
-      {block.type === "heading" && <label className="admin-field"><span>Heading level</span><select aria-label={`Block ${index + 1} heading level`} value={block.level} onChange={event => replaceBlock(block.id, { ...block, level: Number(event.target.value) as 2 | 3 })}><option value={2}>Heading 2</option><option value={3}>Heading 3</option></select></label>}
-      {block.type === "list" && <>
-        <Field label={`Block ${index + 1} list items`} value={block.items.join("\n")} maxLength={40019} multiline onChange={text => replaceBlock(block.id, { ...block, items: text.split("\n") })} />
-        <p>One item per line; up to 20 items, 2,000 characters each.</p>
-        <label><input type="checkbox" aria-label={`Block ${index + 1} numbered list`} checked={block.ordered} onChange={event => replaceBlock(block.id, { ...block, ordered: event.target.checked })} />Numbered list</label>
-      </>}
-      {block.type === "link" && <>
-        <Field label={`Block ${index + 1} link label`} value={block.text} maxLength={300} onChange={text => replaceBlock(block.id, { ...block, text })} />
-        <Field label={`Block ${index + 1} link destination`} value={block.href} maxLength={500} onChange={href => replaceBlock(block.id, { ...block, href })} />
-        <p>Use a store address such as /collections/all.</p>
-      </>}
-      {block.type === "image" && <>
-        {session && onExpired ? <MediaPicker label={`Block ${index + 1} image`} value={block.src} session={session} onExpired={onExpired} onChange={src => replaceBlock(block.id, { ...block, src })} /> : <p>Sign in to choose an image from the media library.</p>}
-        <Field label={`Block ${index + 1} image description`} value={block.alt} maxLength={200} onChange={alt => replaceBlock(block.id, { ...block, alt })} />
-      </>}
-      {handle}
-      <button type="button" disabled={index === 0} onClick={() => moveBlock(index, -1)}>Move up</button>
-      <button type="button" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)}>Move down</button>
-      <button type="button" disabled={value.length <= 1} onClick={() => removeBlock(index)}>Remove block</button>
+      <legend className="float-left col-start-1 row-start-1 flex min-h-8 items-center gap-2 text-[13px] font-semibold text-foreground">
+        Block {index + 1}
+        <Badge variant="secondary" className="rounded-md border-0 bg-neutral-bg font-medium text-neutral">{blockTypeLabels[block.type]}</Badge>
+      </legend>
+      <FieldGrid className="col-span-2 row-start-2">
+        {(block.type === "paragraph" || block.type === "quote" || block.type === "heading") && <Field label={`Block ${index + 1} text`} value={block.text} maxLength={block.type === "heading" ? 300 : 8000} multiline={block.type !== "heading"} onChange={text => replaceBlock(block.id, { ...block, text })} />}
+        {block.type === "heading" && <SelectField label="Heading level" aria-label={`Block ${index + 1} heading level`} value={block.level} onChange={event => replaceBlock(block.id, { ...block, level: Number(event.target.value) as 2 | 3 })}>
+          <NativeSelectOption value={2}>Heading 2</NativeSelectOption>
+          <NativeSelectOption value={3}>Heading 3</NativeSelectOption>
+        </SelectField>}
+        {block.type === "list" && <>
+          <Field label={`Block ${index + 1} list items`} value={block.items.join("\n")} maxLength={40019} multiline onChange={text => replaceBlock(block.id, { ...block, items: text.split("\n") })} />
+          <Hint>One item per line; up to 20 items, 2,000 characters each.</Hint>
+          <CheckField label="Numbered list" aria-label={`Block ${index + 1} numbered list`} checked={block.ordered} onChange={event => replaceBlock(block.id, { ...block, ordered: event.target.checked })} />
+        </>}
+        {block.type === "link" && <>
+          <Field label={`Block ${index + 1} link label`} value={block.text} maxLength={300} onChange={text => replaceBlock(block.id, { ...block, text })} />
+          <Field label={`Block ${index + 1} link destination`} value={block.href} maxLength={500} onChange={href => replaceBlock(block.id, { ...block, href })} />
+          <Hint>Use a store address such as /collections/all.</Hint>
+        </>}
+        {block.type === "image" && <>
+          {session && onExpired ? <MediaPicker label={`Block ${index + 1} image`} value={block.src} session={session} onExpired={onExpired} onChange={src => replaceBlock(block.id, { ...block, src })} /> : <div data-span="full"><Notice tone="info">Sign in to choose an image from the media library.</Notice></div>}
+          <Field label={`Block ${index + 1} image description`} value={block.alt} maxLength={200} className="sm:col-span-2" onChange={alt => replaceBlock(block.id, { ...block, alt })} />
+        </>}
+      </FieldGrid>
+      {/* The fields come first in the DOM so focus after a reorder lands on the block's text, not its controls. */}
+      <div className="col-start-2 row-start-1 flex items-center gap-0.5">
+        {handle}
+        <Button type="button" variant="ghost" size="icon-sm" title="Move up" disabled={index === 0} onClick={() => moveBlock(index, -1)}>
+          <ChevronUp aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Move up</span>
+        </Button>
+        <Button type="button" variant="ghost" size="icon-sm" title="Move down" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)}>
+          <ChevronDown aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Move down</span>
+        </Button>
+        <Button type="button" variant="ghost" size="icon-sm" title="Remove block" className="text-muted-foreground hover:bg-danger-bg hover:text-danger" disabled={value.length <= 1} onClick={() => removeBlock(index)}>
+          <X aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Remove block</span>
+        </Button>
+      </div>
     </>} />
-    <p>{value.length} of 60 blocks</p>
-    <div className="admin-actions">{(["paragraph", "heading", "quote", "list", "link"] as const).map(type => <button key={type} type="button" disabled={value.length >= 60} onClick={() => addBlock(newAuthoredBlock(type))}>Add {type}</button>)}
-      <button type="button" disabled={value.length >= 60 || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}>Add image</button>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
+      <span className="mr-1 text-[12px] font-medium text-muted-foreground">Add a block</span>
+      {(["paragraph", "heading", "quote", "list", "link"] as const).map(type => <Button key={type} type="button" variant="outline" size="sm" disabled={atLimit} onClick={() => addBlock(newAuthoredBlock(type))}><Plus aria-hidden="true" strokeWidth={1.5} />Add {type}</Button>)}
+      <Button type="button" variant="outline" size="sm" disabled={atLimit || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}><ImagePlus aria-hidden="true" strokeWidth={1.5} />Add image</Button>
     </div>
-    {addingImage && session && onExpired && <div aria-label="New image block"><MediaPicker label="New block image" value="" session={session} onExpired={onExpired} onChange={src => { if (src) { addBlock({ id: crypto.randomUUID(), type: "image", src, alt: "" }); setAddingImage(false); } }} /><button type="button" onClick={() => setAddingImage(false)}>Cancel image block</button></div>}
+    {addingImage && session && onExpired && <div aria-label="New image block" className="mt-3 grid gap-3 rounded-lg border border-border bg-card p-3 shadow-xs sm:p-4">
+      <MediaPicker label="New block image" value="" session={session} onExpired={onExpired} onChange={src => { if (src) { addBlock({ id: crypto.randomUUID(), type: "image", src, alt: "" }); setAddingImage(false); } }} />
+      <Button type="button" variant="ghost" size="sm" className="justify-self-start text-muted-foreground" onClick={() => setAddingImage(false)}>Cancel image block</Button>
+    </div>}
   </div>;
 }

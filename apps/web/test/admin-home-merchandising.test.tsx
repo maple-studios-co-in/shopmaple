@@ -185,3 +185,16 @@ test("invalid collection links cannot be saved and malformed catalog payloads of
     assert.match(container.textContent??"",/Check homeMerchandising/);
   } finally {await app.close();}
 });
+
+test("an empty rail explains itself and its one action moves focus to the catalog search",async()=>{
+  const app=await setup();
+  try {
+    await click("Merchandising");
+    const chairs=container.querySelector('[aria-label="Chairs selection"]')!;
+    assert.ok(chairs.querySelector("[data-empty]"),"The empty Chairs rail shows an empty state");
+    assert.equal(container.querySelector('[aria-label="Bestsellers selection"] [data-empty]'),null,"A rail with products has no empty state");
+    await click("Find products for Chairs",chairs);
+    assert.equal(document.activeElement?.getAttribute("aria-label"),"Search catalog");
+    assert.equal(button("Save draft").disabled,true,"Moving focus does not change content");
+  } finally {await app.close();}
+});
