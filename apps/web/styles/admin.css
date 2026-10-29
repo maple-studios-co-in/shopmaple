@@ -3,7 +3,25 @@
 /* neutral ramp, one radius scale, tinted shadows, one easing curve.  */
 /* Documented in docs/admin-redesign.md. The --crm-* names below are   */
 /* aliases of these tokens so the CRM screens share the same system.  */
+/* shadcn/ui's variables (--background, --primary, ...) are mapped    */
+/* onto the same tokens; components come from components/ui.          */
 /* ------------------------------------------------------------------ */
+
+/* Tailwind is loaded for the admin only and never touches the storefront:
+   - theme: Tailwind's variables, in a cascade layer;
+   - no preflight: the storefront keeps its own base, and the admin gets the scoped
+     reset at the end of this file instead;
+   - utilities are `important`, so a utility on an admin element always beats the
+     storefront's global element rules (button, input, h2, p ...) that the root layout
+     loads on every route, without changing a single storefront stylesheet;
+   - only admin sources are scanned, so no utility is generated for storefront markup. */
+@layer theme, admin-base;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" important source(none);
+@import "tw-animate-css";
+@source "../components/ui";
+@source "../components/admin";
+@source "../app/admin";
 
 /* Brand display face. Commercially licensed: the files are never committed and the
    folder is a symlink to a private share on the server, so these paths must not change. */
@@ -142,6 +160,36 @@
   --admin-brand: var(--admin-accent);
   --admin-border: var(--admin-line);
 
+  /* shadcn/ui variables, mapped onto the tokens above. Light only: dark mode is off. */
+  --admin-line-medium: rgba(35, 38, 31, 0.14); /* card and table edges */
+  --radius: var(--admin-radius-m);
+  --background: var(--admin-canvas);
+  --foreground: var(--admin-ink);
+  --card: var(--admin-surface-raised);
+  --card-foreground: var(--admin-ink);
+  --popover: var(--admin-surface-raised);
+  --popover-foreground: var(--admin-ink);
+  --primary: var(--admin-accent);
+  --primary-foreground: var(--admin-accent-contrast);
+  --secondary: var(--admin-surface-sunken);
+  --secondary-foreground: var(--admin-ink);
+  --muted: var(--admin-surface-sunken);
+  --muted-foreground: var(--admin-text-muted);
+  --accent: var(--admin-neutral-bg);
+  --accent-foreground: var(--admin-ink);
+  --destructive: var(--admin-danger);
+  --border: var(--admin-line-medium);
+  --input: var(--admin-line);
+  --ring: var(--admin-accent);
+  --sidebar: var(--admin-surface);
+  --sidebar-foreground: var(--admin-ink);
+  --sidebar-primary: var(--admin-accent);
+  --sidebar-primary-foreground: var(--admin-accent-contrast);
+  --sidebar-accent: var(--admin-neutral-bg);
+  --sidebar-accent-foreground: var(--admin-ink);
+  --sidebar-border: var(--admin-line-soft);
+  --sidebar-ring: var(--admin-accent);
+
   color: var(--admin-text);
   background: var(--admin-canvas);
   font-family: var(--admin-font-text);
@@ -152,6 +200,89 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* Utilities read the tokens directly (inline), so nothing here depends on :root. */
+@theme inline {
+  --font-sans: var(--admin-font-text);
+  --font-display: var(--admin-font-display);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--admin-surface);
+  --color-sunken: var(--admin-surface-sunken);
+  --color-faint: var(--admin-text-faint);
+  --color-line-soft: var(--admin-line-soft);
+  --color-line-strong: var(--admin-line-strong);
+  --color-accent-strong: var(--admin-accent-strong);
+  --color-accent-tint: var(--admin-accent-tint);
+  --color-success: var(--admin-success);
+  --color-success-bg: var(--admin-success-bg);
+  --color-warning: var(--admin-warning);
+  --color-warning-bg: var(--admin-warning-bg);
+  --color-info: var(--admin-info);
+  --color-info-bg: var(--admin-info-bg);
+  --color-danger: var(--admin-danger);
+  --color-danger-bg: var(--admin-danger-bg);
+  --color-neutral: var(--admin-neutral);
+  --color-neutral-bg: var(--admin-neutral-bg);
+  --radius-sm: var(--admin-radius-s);
+  --radius-md: calc(var(--admin-radius-m) - 2px);
+  --radius-lg: var(--admin-radius-m);
+  --radius-xl: var(--admin-radius-l);
+  --shadow-xs: var(--admin-shadow-s);
+  --shadow-sm: var(--admin-shadow-s);
+  --shadow-md: var(--admin-shadow-m);
+  --shadow-lg: var(--admin-shadow-lift);
+  --ease-admin: var(--admin-ease);
+  --default-transition-duration: var(--admin-duration-fast);
+  --default-transition-timing-function: var(--admin-ease);
+}
+
+/* Scoped base: the parts of Tailwind's preflight the primitives rely on, applied only
+   inside .shop-admin (portalled overlays render inside it too). It sits in a layer for
+   now, so the legacy rules below still win and the admin looks exactly as before. */
+@layer admin-base {
+  .shop-admin *, .shop-admin ::before, .shop-admin ::after { box-sizing: border-box; border: 0 solid var(--border); }
+  .shop-admin :is(h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd) { margin: 0; }
+  .shop-admin :is(h1, h2, h3, h4, h5, h6) { font: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; }
+  .shop-admin :is(ul, ol) { list-style: none; padding: 0; }
+  .shop-admin :is(img, svg, video) { display: block; max-width: 100%; }
+  .shop-admin :is(button, input, select, textarea) { font: inherit; color: inherit; background: transparent; border-radius: 0; min-height: 0; padding: 0; }
+  .shop-admin :is(button, [role="button"]) { cursor: pointer; }
+  .shop-admin button:disabled { opacity: 1; cursor: default; }
+  .shop-admin a, .shop-admin a:hover { color: inherit; text-decoration: inherit; }
+  .shop-admin table { border-collapse: collapse; text-indent: 0; }
+  .shop-admin :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .shop-admin ::placeholder { color: var(--muted-foreground); opacity: 1; }
+  .shop-admin ::selection { background: var(--admin-accent); color: var(--admin-accent-contrast); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Legacy component rules (removed as each screen moves to components/ui). */
+/* ------------------------------------------------------------------ */
 .shop-admin *, .shop-admin *::before, .shop-admin *::after { box-sizing: border-box; }
 .shop-admin ::selection { background: var(--admin-accent); color: #fff; }
 .shop-admin :focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 2px; border-radius: var(--admin-radius-s); }
