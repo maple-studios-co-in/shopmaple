@@ -241,4 +241,22 @@ export function registerContentRoutes(
       })),
     });
   });
+  // One revision with its saved content, for the history diff preview. Read-only, any staff
+  // member (like the list above), scoped to the storefront document.
+  app.get("/api/admin/content/revisions/:id", async (req, res) => {
+    const id = z.string().min(1).max(100).parse(req.params.id);
+    const revision = await db.shopContentRevision.findFirst({
+      where: { id, documentId },
+      include: { actor: { select: { email: true } } },
+    });
+    if (!revision) throw new HttpError(404, "CONTENT_REVISION_NOT_FOUND", "This revision does not exist.");
+    res.json({
+      id: revision.id,
+      version: revision.version,
+      action: revision.action,
+      actorEmail: revision.actor.email,
+      createdAt: revision.createdAt.toISOString(),
+      content: storefrontContentSchema.parse(revision.content),
+    });
+  });
 }
