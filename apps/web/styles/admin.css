@@ -405,7 +405,7 @@
 .admin-media-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--admin-space-3); flex-wrap: wrap; margin: var(--admin-space-4) 0; padding: var(--admin-space-3) var(--admin-space-4); border-radius: var(--admin-radius-m); background: var(--admin-surface-raised); box-shadow: var(--admin-shadow-s); }
 .admin-media-toolbar label { display: flex; align-items: center; gap: var(--admin-space-3); }
 /* Upload control: the native file input stays in the tree (keyboard and screen readers) but the label is the button. */
-.admin-upload { position: relative; display: inline-flex; align-items: center; gap: var(--admin-space-2); min-height: var(--admin-control-height); padding: 7px 14px; border: 1px solid var(--admin-accent); border-radius: var(--admin-radius-s); background: var(--admin-accent); color: var(--admin-accent-contrast); font-size: var(--admin-type-m); font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: var(--admin-shadow-s), inset 0 1px 0 rgba(255, 255, 255, 0.14); transition: background-color var(--admin-duration-fast) var(--admin-ease), box-shadow var(--admin-duration) var(--admin-ease); }
+.shop-admin .admin-upload { position: relative; display: inline-flex; align-items: center; gap: var(--admin-space-2); min-height: var(--admin-control-height); padding: 7px 14px; border: 1px solid var(--admin-accent); border-radius: var(--admin-radius-s); background: var(--admin-accent); color: var(--admin-accent-contrast); font-size: var(--admin-type-m); font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: var(--admin-shadow-s), inset 0 1px 0 rgba(255, 255, 255, 0.14); transition: background-color var(--admin-duration-fast) var(--admin-ease), box-shadow var(--admin-duration) var(--admin-ease); }
 .admin-upload:hover { background: var(--admin-accent-strong); border-color: var(--admin-accent-strong); box-shadow: var(--admin-shadow-m); }
 .admin-upload:has(input:disabled) { background: var(--admin-surface-sunken); border-color: transparent; color: var(--admin-text-faint); cursor: not-allowed; box-shadow: none; }
 .admin-upload:has(input:focus-visible) { outline: 2px solid var(--admin-accent); outline-offset: 2px; }
@@ -501,8 +501,10 @@ details[data-sortable-row] .admin-drag-handle, fieldset[data-sortable-row] .admi
 .admin-device { display: flex; width: 100%; max-width: 100%; height: 100%; min-height: 0; padding: 4px; border-radius: 14px; background: rgba(35, 38, 31, 0.1); box-shadow: var(--admin-shadow-lift), inset 0 1px 1px rgba(255, 255, 255, 0.3); transition: max-width var(--admin-duration-slow) var(--admin-ease); }
 .admin-preview-stage { overflow: hidden; }
 .admin-mobile-pane-toggle { display: none; }
-.admin-preview-pane[data-device="tablet"] .admin-device { max-width: 828px; }
-.admin-preview-pane[data-device="phone"] .admin-device { max-width: 398px; border-radius: 22px; padding: 6px; }
+/* Tablet and phone frames keep their true width and scale down (transform, from the pane's --device-scale) to fit the stage, so a tablet is a real 820 px layout. The layout box grows by 1/scale so the scaled frame still fills the stage height. */
+.admin-preview-pane[data-device="tablet"] .admin-device, .admin-preview-pane[data-device="phone"] .admin-device { flex: none; transform: scale(var(--device-scale, 1)); transform-origin: top center; height: calc(100% / var(--device-scale, 1)); }
+.admin-preview-pane[data-device="tablet"] .admin-device { width: 828px; max-width: none; }
+.admin-preview-pane[data-device="phone"] .admin-device { width: 402px; max-width: none; border-radius: 22px; padding: 6px; }
 .admin-preview-pane[data-device="phone"] .admin-preview-frame { border-radius: 16px; }
 .admin-preview-frame { display: block; flex: 1; width: 100%; min-height: 100%; border: 0; border-radius: 10px; background: #fff; }
 .admin-preview-placeholder { flex: 1; display: grid; place-items: center; padding: var(--admin-space-6); text-align: center; color: var(--admin-text-muted); background: var(--admin-surface); border-radius: 10px; }
