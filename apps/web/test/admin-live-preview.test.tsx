@@ -9,6 +9,10 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 // changes (tokens are bound to staff id and version), saves edits after a pause so the
 // frame can show them, switches device widths and published/draft, and talks to the frame
 // over postMessage with an origin check in both directions.
+//
+// Timing: the editor's debounce is 30 ms here. Tests never assert after a fixed timer; they
+// wait for an observable condition (`until`) or drive the save mock by hand (`manualSaves`),
+// so a slow runner changes nothing.
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLIFrameElement: dom.window.HTMLIFrameElement, MessageEvent: dom.window.MessageEvent, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import("react-dom/client");
@@ -18,7 +22,16 @@ const { previewFrameUrl, readPreviewMessage, previewTokenState, previewMessageSo
 const container = document.getElementById("root")!;
 const tokenA = "eyJzIjoiZWRpdG9yIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const tokenB = "eyJzIjoiZWRpdG9yIn0.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
-const wait = (ms: number) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+/** A short flushed pause, only ever used to let something that must NOT happen have its chance. */
+const settle = (ms = 80) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+/** Waits (with flushed renders) until a condition holds; fails loudly instead of racing a timer. */
+async function until(condition: () => boolean, what: string, limitMs = 5000) {
+  const started = Date.now();
+  while (!condition()) {
+    if (Date.now() - started > limitMs) assert.fail(`Timed out waiting for: ${what}`);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 10)));
+  }
+}
 
 function button(name: string) {
   const found = [...container.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.getAttribute("aria-label") === name || b.textContent === name);
@@ -40,10 +53,20 @@ const frame = () => {
   return found;
 };
 
-async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number; saveDelayMs?: number; initialDraft?: null } = {}) {
+type SetupOptions = {
+  expiresInMs?: number;
+  previewStatus?: number;
+  previewCode?: string;
+  saveFailures?: number;
+  /** PUTs stay pending until the test resolves them with `resolveSave()`. */
+  manualSaves?: boolean;
+  initialDraft?: null;
+};
+async function setup(options: SetupOptions = {}) {
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const calls: { method: string; path: string; body?: any }[] = [];
+  const pendingSaves: (() => void)[] = [];
   let version = 4;
   let minted = 0;
   let saveFailures = options.saveFailures ?? 0;
@@ -52,7 +75,7 @@ async function setup(options: { expiresInMs?: number; previewStatus?: number; pr
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ method, path, body });
     if (path === "/api/admin/content" && method === "PUT") {
-      if (options.saveDelayMs) await new Promise((resolve) => setTimeout(resolve, options.saveDelayMs));
+      if (options.manualSaves) await new Promise<void>((resolve) => { pendingSaves.push(resolve); });
       if (saveFailures > 0) { saveFailures--; return Response.json({ code: "SERVER_ERROR" }, { status: 500 }); }
       version = body.expectedVersion + 1;
       return Response.json({ version, draft: body.content, publishedVersion: options.initialDraft === null ? null : 2, updatedAt: "2026-10-28T09:00:00Z" });
@@ -75,7 +98,16 @@ async function setup(options: { expiresInMs?: number; previewStatus?: number; pr
       livePreviewDebounceMs={30}
     />,
   ));
-  return { calls, close: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
+  const puts = () => calls.filter((c) => c.method === "PUT");
+  const posts = () => calls.filter((c) => c.method === "POST");
+  /** Lets the oldest pending PUT return, then flushes the renders that follow. */
+  async function resolveSave() {
+    const resolve = pendingSaves.shift();
+    assert.ok(resolve, "A save is pending");
+    await act(async () => { resolve(); await Promise.resolve(); });
+    await until(() => true, "flush");
+  }
+  return { calls, puts, posts, resolveSave, pendingCount: () => pendingSaves.length, close: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
 
 test("frame URLs keep the token model: the draft view is the existing frame address, the published view adds view=published", () => {
@@ -115,7 +147,7 @@ test("opening the live preview mints a token for the loaded version and embeds t
     assert.match(frame().getAttribute("title") ?? "", /draft preview/i);
     await click("Category pages");
     assert.equal(frame().getAttribute("src"), `/admin/preview-frame/pages/sofas?token=${encodeURIComponent(tokenA)}`, "The frame follows the section being edited without a new token");
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1);
+    assert.equal(app.posts().length, 1);
   } finally { await app.close(); }
 });
 
@@ -126,14 +158,13 @@ test("editing saves the draft after a pause, re-mints for the new version and re
     await click("Homepage");
     await type("Category heading", "Live");
     await type("Category heading", "Live edit");
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 0, "Nothing is saved while typing continues");
-    await wait(60);
-    const puts = app.calls.filter((c) => c.method === "PUT");
+    assert.equal(app.puts().length, 0, "Nothing is saved while typing continues");
+    await until(() => app.posts().length === 2, "the save and the re-mint");
+    const puts = app.puts();
     assert.equal(puts.length, 1, "One save after the pause, not one per keystroke");
     assert.equal(puts[0]!.body.expectedVersion, 4);
     assert.equal(puts[0]!.body.content.homeCopy.categoryHeading, "Live edit");
-    const mints = app.calls.filter((c) => c.method === "POST");
-    assert.deepEqual(mints.map((c) => c.body.expectedVersion), [4, 5], "A new token for the new version");
+    assert.deepEqual(app.posts().map((c) => c.body.expectedVersion), [4, 5], "A new token for the new version");
     assert.equal(frame().getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenB)}`);
     assert.match(container.textContent ?? "", /Draft version 5/);
     assert.equal(button("Save draft").disabled, true, "The manual save has nothing left to do");
@@ -147,10 +178,11 @@ test("live updates can be paused; Update preview then saves and refreshes on dem
     await click("Pause live updates");
     await click("Homepage");
     await type("Category heading", "Paused edit");
-    await wait(60);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 0, "Paused: typing does not save");
+    await settle();
+    assert.equal(app.puts().length, 0, "Paused: typing does not save");
     await click("Update preview");
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
+    await until(() => app.posts().length === 2, "the re-mint after the manual update");
+    assert.equal(app.puts().length, 1);
     assert.equal(frame().getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenB)}`);
   } finally { await app.close(); }
 });
@@ -159,10 +191,9 @@ test("the token is minted again shortly before it expires", async () => {
   const app = await setup({ expiresInMs: 60_000 + 150 });
   try {
     await click("Live preview");
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1);
-    await wait(400);
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 2, "Re-minted inside the expiry lead time");
-    assert.equal(frame().getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenB)}`);
+    assert.equal(app.posts().length, 1);
+    await until(() => app.posts().length === 2, "the re-mint inside the expiry lead time");
+    await until(() => frame().getAttribute("src") === `/admin/preview-frame/home?token=${encodeURIComponent(tokenB)}`, "the frame to use the new token");
   } finally { await app.close(); }
 });
 
@@ -184,7 +215,7 @@ test("device toggles resize the frame, the published switch changes the view, an
     assert.ok(published, "A labelled published/draft switch");
     await act(async () => { published.click(); });
     assert.equal(frame().getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenA)}&view=published`);
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1, "Switching views reuses the token");
+    assert.equal(app.posts().length, 1, "Switching views reuses the token");
 
     await click("Full screen");
     assert.equal(pane().dataset.fullscreen, "true");
@@ -247,16 +278,15 @@ test("a rejected mint is requested exactly once, shows a designed error with a m
   const app = await setup({ previewStatus: 500 });
   try {
     await click("Live preview");
-    await wait(80);
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1, "One mint per version and attempt");
-    const status = container.querySelector<HTMLElement>("[data-preview-status]");
-    assert.equal(status?.dataset.state, "error");
+    await until(() => container.querySelector<HTMLElement>("[data-preview-status]")?.dataset.state === "error", "the pane's error state");
+    await settle();
+    assert.equal(app.posts().length, 1, "One mint per version and attempt");
     assert.equal(container.querySelector('[role="alert"]'), null, "The pane owns its own error state; no global alert");
     assert.equal(container.querySelector("iframe[data-live-preview-frame]"), null);
     await click("Retry preview");
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 2, "Retry is manual");
-    await wait(80);
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 2);
+    await until(() => app.posts().length === 2, "the manual retry's request");
+    await settle();
+    assert.equal(app.posts().length, 2, "Retry is manual: still no automatic retry");
   } finally { await app.close(); }
 });
 
@@ -264,18 +294,17 @@ test("a rate-limited mint stops until the user retries; a missing draft asks for
   const limited = await setup({ previewStatus: 429, previewCode: "RATE_LIMITED" });
   try {
     await click("Live preview");
-    await wait(80);
-    assert.equal(limited.calls.filter((c) => c.method === "POST").length, 1);
-    const text = container.querySelector("[data-preview-status]")?.textContent ?? "";
-    assert.match(text, /too many|wait/i);
-    assert.doesNotMatch(text, /saved/i, "A rate limit says nothing about the draft being saved");
+    await until(() => /too many|wait/i.test(container.querySelector("[data-preview-status]")?.textContent ?? ""), "the rate-limit message");
+    await settle();
+    assert.equal(limited.posts().length, 1);
+    assert.doesNotMatch(container.querySelector("[data-preview-status]")?.textContent ?? "", /saved/i, "A rate limit says nothing about the draft being saved");
   } finally { await limited.close(); }
   const missing = await setup({ previewStatus: 409, previewCode: "CONTENT_DRAFT_REQUIRED" });
   try {
     await click("Live preview");
-    await wait(80);
-    assert.equal(missing.calls.filter((c) => c.method === "POST").length, 1);
-    assert.match(container.querySelector("[data-preview-status]")?.textContent ?? "", /save/i, "Version 0: save once to start the preview");
+    await until(() => /save/i.test(container.querySelector("[data-preview-status]")?.textContent ?? ""), "the draft-required message");
+    await settle();
+    assert.equal(missing.posts().length, 1);
     assert.doesNotMatch(container.textContent ?? "", /newer version/, "A missing draft is not an editor conflict");
     assert.equal([...container.querySelectorAll("button")].some((b) => b.textContent === "Reload latest draft"), false);
   } finally { await missing.close(); }
@@ -287,27 +316,24 @@ test("a failed quiet save pauses live updates with one persistent notice and res
     await click("Live preview");
     await click("Homepage");
     await type("Category heading", "Will fail once");
-    await wait(60);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "One failed attempt");
-    await wait(80);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "No automatic retry after a failure");
-    const alerts = container.querySelectorAll('[role="alert"]');
-    assert.equal(alerts.length, 1, "Exactly one alert");
-    assert.ok(container.querySelector("[data-autosave-failed]"), "A persistent notice for the failed save");
+    await until(() => container.querySelector("[data-autosave-failed]") !== null, "the persistent notice for the failed save");
+    assert.equal(app.puts().length, 1, "One failed attempt");
+    await settle();
+    assert.equal(app.puts().length, 1, "No automatic retry after a failure");
+    assert.equal(container.querySelectorAll('[role="alert"]').length, 1, "Exactly one alert");
     await type("Category heading", "Still paused");
-    await wait(80);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "Typing does not restart auto-save while paused");
+    await settle();
+    assert.equal(app.puts().length, 1, "Typing does not restart auto-save while paused");
     await click("Retry save");
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 2);
+    assert.equal(app.puts().length, 2);
     assert.equal(container.querySelector("[data-autosave-failed]"), null, "The notice clears after a successful save");
     await type("Category heading", "Resumed");
-    await wait(60);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 3, "Auto-save resumes after a successful manual save");
+    await until(() => app.puts().length === 3, "auto-save to resume after the successful manual save");
   } finally { await app.close(); }
 });
 
 test("a quiet save never disables the form or moves focus", async () => {
-  const app = await setup({ saveDelayMs: 120 });
+  const app = await setup({ manualSaves: true });
   try {
     await click("Live preview");
     await click("Homepage");
@@ -315,40 +341,43 @@ test("a quiet save never disables the form or moves focus", async () => {
     await act(async () => { input.focus(); });
     await type("Category heading", "Keep my focus");
     assert.equal(document.activeElement, input);
-    await wait(70);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "The quiet save is in flight");
+    await until(() => app.puts().length === 1, "the quiet save to start");
+    assert.equal(app.pendingCount(), 1, "The quiet save is in flight");
     assert.equal(container.querySelector("fieldset")?.disabled, false, "Fields stay enabled during a quiet save");
     assert.equal(document.activeElement, input, "Focus stays put while the quiet save runs");
-    await wait(150);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
+    await app.resolveSave();
+    await until(() => button("Save draft").disabled, "the save to land");
+    assert.equal(app.puts().length, 1);
     assert.equal(document.activeElement, input, "Focus stays put after the quiet save");
     assert.equal(container.querySelector("fieldset")?.disabled, false);
   } finally { await app.close(); }
 });
 
 test("text typed while a quiet save is in flight survives, stays unsaved and is saved next with the newer version", async () => {
-  const app = await setup({ saveDelayMs: 120 });
+  const app = await setup({ manualSaves: true });
   try {
     await click("Live preview");
     await click("Homepage");
     const input = () => container.querySelector<HTMLInputElement>('input[aria-label="Category heading"]')!;
     await type("Category heading", "A");
-    await wait(60);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "The first quiet save is in flight");
+    await until(() => app.puts().length === 1, "the first quiet save to start");
+    assert.equal(app.pendingCount(), 1, "The first quiet save is in flight");
     await type("Category heading", "AB");
-    await wait(150);
+    await app.resolveSave();
     assert.equal(input().value, "AB", "The edit made during the save is kept, not replaced by the server's copy");
     assert.equal(button("Save draft").disabled, false, "The edit made during the save is still unsaved");
-    await wait(80);
-    const puts = app.calls.filter((c) => c.method === "PUT");
+    assert.match(container.textContent ?? "", /Draft version 5/);
+    await until(() => app.puts().length === 2, "a second quiet save for the edit made during the first");
+    const puts = app.puts();
     assert.equal(puts[0]!.body.content.homeCopy.categoryHeading, "A");
-    assert.ok(puts.length >= 2, "A second quiet save follows for the edit made during the first");
     assert.equal(puts[1]!.body.expectedVersion, 5, "The second save uses the version the first one produced");
     assert.equal(puts[1]!.body.content.homeCopy.categoryHeading, "AB");
-    await wait(200);
+    await app.resolveSave();
+    await until(() => button("Save draft").disabled, "the second save to land");
     assert.equal(input().value, "AB");
-    assert.equal(button("Save draft").disabled, true, "Everything is saved once the second save lands");
     assert.match(container.textContent ?? "", /Draft version 6/);
+    await settle();
+    assert.equal(app.puts().length, 2, "Nothing left to save");
   } finally { await app.close(); }
 });
 
@@ -356,14 +385,14 @@ test("on version 0 the pane never saves by itself; a visible action performs the
   const app = await setup({ initialDraft: null });
   try {
     await click("Live preview");
-    await wait(80);
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 0, "No draft version is created without the user asking");
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 0, "Nothing is minted for version 0");
+    await settle();
+    assert.equal(app.puts().length, 0, "No draft version is created without the user asking");
+    assert.equal(app.posts().length, 0, "Nothing is minted for version 0");
     assert.match(container.querySelector("[data-preview-status]")?.textContent ?? "", /save/i);
     await click("Save draft to start the preview");
-    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
-    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1, "The first save unlocks the preview");
-    assert.ok(container.querySelector("iframe[data-live-preview-frame]"));
+    assert.equal(app.puts().length, 1);
+    await until(() => app.posts().length === 1, "the first save to unlock the preview");
+    await until(() => container.querySelector("iframe[data-live-preview-frame]") !== null, "the frame");
   } finally { await app.close(); }
 });
 
@@ -373,8 +402,7 @@ test("while live updates are paused after a failed save the status says so", asy
     await click("Live preview");
     await click("Homepage");
     await type("Category heading", "Will fail once");
-    await wait(80);
-    assert.ok(container.querySelector("[data-autosave-failed]"));
+    await until(() => container.querySelector("[data-autosave-failed]") !== null, "the persistent notice for the failed save");
     const status = container.querySelector("[data-preview-status]")?.textContent ?? "";
     assert.match(status, /paused/i);
     assert.doesNotMatch(status, /updating shortly/i);
