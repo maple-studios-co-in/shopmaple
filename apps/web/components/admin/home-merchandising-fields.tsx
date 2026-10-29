@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { productListSchema, type HomeCollectionTile, type HomeMerchandising, type ProductList } from "@shopmaple/contracts";
 import { resolveHomeMerchandising } from "../../lib/home-merchandising-defaults";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Plus, Search } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,7 +160,7 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
               onClick={() => {
                 if (!product.published || current[rail.key].includes(product.handle) || current[rail.key].length >= limit) return;
                 update({ ...current, [rail.key]: [...current[rail.key], product.handle] }, `${rail.key}:${product.handle}`);
-              }}>{selected ? `Selected in ${rail.label}` : <><Plus aria-hidden="true" strokeWidth={1.5} />Add to {rail.label}</>}</Button>;
+              }}>{selected ? <Check aria-hidden="true" strokeWidth={1.5} /> : <Plus aria-hidden="true" strokeWidth={1.5} />}{rail.label}</Button>;
           })}</div>
         </li>)}</ul>}
         <div className="flex items-center justify-end gap-2">

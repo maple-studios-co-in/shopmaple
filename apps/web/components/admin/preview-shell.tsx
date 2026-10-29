@@ -43,7 +43,7 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
         </label>
         <div role="group" aria-label="Preview width" className="inline-flex gap-0.5 rounded-full bg-black/[0.07] p-[3px]">
           {previewDevices.map((device) => (
-            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)} className="h-7 rounded-full px-3 text-[12.5px] font-semibold text-muted-foreground outline-none transition-colors duration-150 ease-admin hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs">{device.label}</button>
+            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)} className="h-7 rounded-full px-3 text-[12.5px] font-semibold text-neutral outline-none transition-colors duration-150 ease-admin hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs">{device.label}</button>
           ))}
         </div>
         <a href="/admin" className="ml-auto rounded-sm text-[12.5px] font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a>

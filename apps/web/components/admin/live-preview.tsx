@@ -176,7 +176,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const onViewChange = useCallback((next: PreviewView) => setView(next), []);
 
   const full = fullscreen;
-  const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-semibold text-muted-foreground outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
+  const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-semibold text-neutral outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
   const segmentOn = "aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs has-[input:checked]:bg-card has-[input:checked]:text-foreground has-[input:checked]:shadow-xs has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-ring/60";
   const dot = { ready: "bg-success", loading: "bg-info motion-safe:animate-pulse", saving: "bg-info motion-safe:animate-pulse", blocked: "bg-warning", error: "bg-danger", pending: "bg-faint" }[state];
   const deviceFrame = device === "desktop"

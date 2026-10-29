@@ -131,7 +131,8 @@ export function SectionPicker<T extends string>({ groups, current, disabled, onS
 /** The signed-in staff member and their menu (open the storefront, sign out). */
 export function StaffMenu({ email, role, busy, onSignOut }: { email: string; role: string; busy: boolean; onSignOut: () => void }) {
   return (
-    <DropdownMenu>
+    // Non-modal: a modal menu marks the rest of the page aria-hidden while it stays focusable.
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button type="button" data-staff-account className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1 text-left outline-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 data-[state=open]:bg-accent">
           <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-primary text-[11px] font-bold tracking-[0.04em] text-primary-foreground">{initials(email)}</span>
