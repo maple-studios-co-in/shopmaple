@@ -111,4 +111,4 @@ export function RemoveButton({ label, className, ...props }: Omit<ComponentProps
 }
 
 /** A row card for editable lists (sortable or not): handle, content, actions. */
-export const rowCard = "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 shadow-xs transition-[box-shadow,border-color] duration-200 ease-admin data-[dragging=true]:z-20 data-[dragging=true]:shadow-lg data-[drop-target=after]:shadow-[0_2px_0_0_var(--primary)] data-[drop-target=before]:shadow-[0_-2px_0_0_var(--primary)] data-[preview-focused=true]:border-primary data-[preview-focused=true]:shadow-[0_0_0_1px_var(--primary)]";
+export const rowCard = "flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-2.5 py-1.5 shadow-xs transition-[box-shadow,border-color] duration-200 ease-admin data-[dragging=true]:z-20 data-[dragging=true]:shadow-lg data-[drop-target=after]:shadow-[0_2px_0_0_var(--primary)] data-[drop-target=before]:shadow-[0_-2px_0_0_var(--primary)] data-[preview-focused=true]:border-primary data-[preview-focused=true]:shadow-[0_0_0_1px_var(--primary)]";

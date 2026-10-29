@@ -131,10 +131,12 @@ export function AdminDashboard({
   }
   if (loading)
     return (
-      <AdminRoot aria-label="Store administration" className="grid min-h-dvh place-items-center bg-background p-6">
-        <div aria-busy="true" className="grid w-full max-w-sm gap-4">
-          <Skeleton rows={3} />
-          <p role="status" className="text-center text-[12.5px] text-muted-foreground">Checking your session</p>
+      <AdminRoot aria-label="Store administration" className="min-h-dvh bg-background">
+        <div className="grid min-h-dvh place-items-center p-6">
+          <div aria-busy="true" className="grid w-full max-w-sm gap-4">
+            <Skeleton rows={3} />
+            <p role="status" className="text-center text-[12.5px] text-muted-foreground">Checking your session</p>
+          </div>
         </div>
       </AdminRoot>
     );
@@ -179,7 +181,9 @@ export function AdminDashboard({
       </AdminRoot>
     );
   return (
-    <AdminRoot aria-label="Store administration" data-admin-signin className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <AdminRoot aria-label="Store administration" data-admin-signin className="min-h-dvh bg-background">
+      {/* The layout grid sits inside the root so the root's toaster never takes a grid row. */}
+      <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div aria-hidden="true" className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:flex">
         <div className="pointer-events-none absolute -top-40 -right-40 size-[28rem] rounded-full bg-white/[0.06]" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 size-80 rounded-full bg-black/[0.12]" />
@@ -217,6 +221,7 @@ export function AdminDashboard({
             <a href="/" className="w-fit rounded-sm text-[12.5px] font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to the storefront</a>
           </div>
         </div>
+      </div>
       </div>
     </AdminRoot>
   );

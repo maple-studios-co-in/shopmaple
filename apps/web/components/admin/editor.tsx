@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Tags, TriangleAlert, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Tags, TriangleAlert, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
@@ -493,11 +493,11 @@ export function ContentEditor({
         publishedVersion={document?.publishedVersion ?? null}
       />
       <SidebarInset className="min-w-0 bg-background">
-        <header data-admin-topbar className="sticky top-0 z-10 flex min-h-16 flex-wrap items-center gap-x-3 gap-y-2 border-b border-line-soft bg-background/85 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 sm:px-6">
+        <header data-admin-topbar className="sticky top-0 z-10 flex min-h-16 flex-wrap items-center lg:flex-nowrap gap-x-3 gap-y-2 border-b border-line-soft bg-background/85 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 sm:px-6">
           <SidebarTrigger className="-ml-1 hidden text-muted-foreground md:inline-flex" />
           <Separator orientation="vertical" className="hidden h-5 md:block" />
           <SectionPicker groups={visibleGroups} current={tab} disabled={navDisabled} onSelect={selectTab} />
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">
             <StatusChip tone={draftTone} data-draft-status="">
               {document ? `Draft version ${document.version}` : "Loading draft"}
               {conflict ? ", conflict" : busy || saving ? ", saving" : dirty ? ", unsaved changes" : ""}
@@ -506,6 +506,7 @@ export function ContentEditor({
               {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
             </StatusChip>
           </div>
+          <div className="flex-1" aria-hidden="true" />
           <CommandPalette
             groups={visibleGroups}
             icons={icons}
@@ -529,17 +530,17 @@ export function ContentEditor({
               onClick={() => setLiveOpen((value) => !value)}
             >
               <Eye aria-hidden="true" strokeWidth={1.5} />
-              Live preview
+              <span className="max-sm:sr-only">Live preview</span>
             </Button>
             <Button type="button" variant="outline" size="sm" data-action="save" disabled={saveDisabled} onClick={() => void write("save")}>
-              Save draft
+              <Save aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Save draft</span>
             </Button>
             <Button type="button" variant="outline" size="sm" data-action="preview" disabled={previewDisabled} onClick={() => void preview()}>
-              Preview draft
+              <ExternalLink aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Preview draft</span>
             </Button>
             {session.user.role === "publisher" && (
               <Button type="button" size="sm" disabled={publishDisabled} onClick={() => void write("publish")}>
-                Publish draft
+                <Upload aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Publish draft</span>
               </Button>
             )}
           </div>

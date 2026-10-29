@@ -135,11 +135,11 @@ export function StaffMenu({ email, role, busy, onSignOut }: { email: string; rol
       <DropdownMenuTrigger asChild>
         <button type="button" data-staff-account className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1 text-left outline-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 data-[state=open]:bg-accent">
           <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-primary text-[11px] font-bold tracking-[0.04em] text-primary-foreground">{initials(email)}</span>
-          <span className="hidden min-w-0 gap-px leading-tight lg:grid">
+          <span className="hidden min-w-0 gap-px leading-tight 2xl:grid">
             <strong className="max-w-[22ch] truncate text-[12.5px] font-semibold text-foreground">{email}</strong>
             <span className="text-[11.5px] text-faint">{role}</span>
           </span>
-          <span className="sr-only lg:hidden">{email}, {role}</span>
+          <span className="sr-only 2xl:hidden">{email}, {role}</span>
           <ChevronDown aria-hidden="true" strokeWidth={1.5} className="size-3.5 text-faint" />
         </button>
       </DropdownMenuTrigger>
@@ -177,7 +177,7 @@ export function CommandPalette<T extends string>({ groups, icons, disabled, onSe
   const run = (callback: () => void) => { setOpen(false); callback(); };
   return (
     <>
-      <Button type="button" variant="outline" size="sm" className="hidden w-52 justify-start gap-2 px-2.5 font-normal text-muted-foreground lg:inline-flex" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" size="sm" className="hidden w-48 justify-start gap-2 px-2.5 font-normal text-muted-foreground xl:inline-flex" onClick={() => setOpen(true)}>
         <Search aria-hidden="true" strokeWidth={1.5} />
         <span className="flex-1 text-left">Jump to</span>
         <kbd className="rounded-sm border border-border bg-surface px-1.5 font-sans text-[10.5px] font-semibold text-faint">⌘K</kbd>
