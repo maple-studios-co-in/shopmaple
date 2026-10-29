@@ -169,14 +169,29 @@ export function ContentEditor({
   const [autoSaveFailed, setAutoSaveFailed] = useState("");
   const inFlight = useRef(false);
   const loadSequence = useRef(0);
+  /** The latest local content, so a finished quiet save can tell whether edits arrived meanwhile. */
+  const latestContent = useRef<StorefrontContent | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function acceptDocument(value: unknown) {
     const next = parseDocument(value);
     setDocument(next);
-    setContent(structuredClone(next.draft ?? initialContent));
+    const draft = structuredClone(next.draft ?? initialContent);
+    latestContent.current = draft;
+    setContent(draft);
     setDirty(next.draft === null);
     setConflict(false);
+  }
+  /**
+   * A quiet save accepts only the server's version and metadata, never its copy of the
+   * content: anything typed while the save was in flight must survive. If edits arrived
+   * meanwhile the draft stays dirty, so the next quiet save follows with the new version.
+   */
+  function acceptQuietSave(value: unknown, sent: StorefrontContent) {
+    const next = parseDocument(value);
+    setDocument(next);
+    setConflict(false);
+    setDirty(latestContent.current !== sent);
   }
   async function load() {
     // Only the newest read may change state: an older read that was aborted (StrictMode's
@@ -249,6 +264,7 @@ export function ContentEditor({
     }
   }
   function edit(next: StorefrontContent) {
+    latestContent.current = next;
     setContent(next);
     setDirty(true);
     setNotice("");
@@ -362,6 +378,7 @@ export function ContentEditor({
     // A quiet save (live preview) must never disable the form or move focus: it is shown in
     // the status chip only. Explicit saves, publishes and restores take the busy state.
     const quiet = options.quiet === true;
+    const sent = content;
     inFlight.current = true;
     setLiveBlocked("");
     if (quiet) setSaving(true); else setBusy(true);
@@ -410,8 +427,10 @@ export function ContentEditor({
         );
         return null;
       }
-      const accepted = parseDocument(await response.json());
-      acceptDocument(accepted);
+      const raw: unknown = await response.json();
+      const accepted = parseDocument(raw);
+      if (quiet && action === "save") acceptQuietSave(raw, sent!);
+      else acceptDocument(raw);
       setAutoSaveFailed("");
       if (!quiet) setNotice(
         action === "save"
@@ -439,7 +458,8 @@ export function ContentEditor({
   // After a failed quiet save, auto-save stays paused (one persistent notice with a retry)
   // until a manual save succeeds, so an outage never becomes a stream of retries.
   useEffect(() => {
-    if (!liveActive || !liveAuto || !dirty || autoSaveFailed || busy || saving || conflict || scheduleEditing || !document || !content) return;
+    // Version 0 (no draft ever saved) is never saved silently: the pane offers that first save explicitly.
+    if (!liveActive || !liveAuto || !dirty || autoSaveFailed || busy || saving || conflict || scheduleEditing || !document || document.draft === null || !content) return;
     const timer = setTimeout(() => { void write("save", undefined, { quiet: true }); }, livePreviewDebounceMs);
     return () => clearTimeout(timer);
   }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs]);
@@ -942,6 +962,8 @@ export function ContentEditor({
                 version={document?.version ?? null}
                 publishedVersion={document?.publishedVersion ?? null}
                 draftRequired={document?.draft === null}
+                onSaveFirst={() => void write("save")}
+                paused={autoSaveFailed !== ""}
                 dirty={dirty}
                 busy={busy || saving}
                 blocked={liveBlocked}

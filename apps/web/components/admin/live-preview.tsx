@@ -1,8 +1,9 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Maximize2, Minimize2, Monitor, Pause, Play, RefreshCw, Smartphone, Tablet, X } from "lucide-react";
 import {
   previewDevices,
+  previewDeviceWidths,
   previewFrameUrl,
   previewMessageSource,
   previewTokenLeadMs,
@@ -25,8 +26,12 @@ export type LivePreviewProps = {
   title: string;
   version: number | null;
   publishedVersion: number | null;
-  /** No draft has ever been saved (version 0): the API cannot mint until one save happens. */
+  /** No draft has ever been saved (version 0): the API cannot mint until one explicit save happens. */
   draftRequired: boolean;
+  /** Performs that first save when the user asks for it. */
+  onSaveFirst: () => void;
+  /** Live updates are paused after a failed quiet save until a manual save succeeds. */
+  paused: boolean;
   dirty: boolean;
   busy: boolean;
   /** Why the draft cannot be saved for the preview right now (an invalid field), or "". */
@@ -41,14 +46,21 @@ export type LivePreviewProps = {
 
 const emptyToken: PreviewTokenState = { token: "", version: null, expiresAt: null };
 const draftRequiredMessage = "Save the draft once to start the live preview.";
+/** Device frame outer widths (frame width plus the bezel padding) used to scale the frame to the pane. */
+const deviceOuterWidth: Record<PreviewDevice, number | null> = {
+  desktop: null,
+  tablet: (previewDeviceWidths.tablet ?? 820) + 8,
+  phone: (previewDeviceWidths.phone ?? 390) + 12,
+};
 
 /**
  * The builder-style preview pane. It owns the preview token lifecycle (one mint per draft
  * version and attempt, a manual retry after a failure, re-mint when the version changes or
- * expiry nears), the device and view switches, full-screen mode, and the origin-checked
- * conversation with the frame.
+ * expiry nears), the device and view switches (device frames scale down to fit the pane so a
+ * tablet is a true 820 px layout), full-screen mode, and the origin-checked conversation
+ * with the frame.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, mint, focusedSection }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, mint, focusedSection }: LivePreviewProps) {
   const [tokenState, setTokenState] = useState<PreviewTokenState>(emptyToken);
   const [minting, setMinting] = useState(false);
   const [mintError, setMintError] = useState<Extract<MintResult, { ok: false }> | null>(null);
@@ -58,7 +70,9 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const [fullscreen, setFullscreen] = useState(false);
   const [frameStatus, setFrameStatus] = useState<"loading" | "ready">("loading");
   const [framePath, setFramePath] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
   const frame = useRef<HTMLIFrameElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
   /** The (version, attempt) pair already sent to the API; a failure never re-sends it. */
   const sent = useRef<string | null>(null);
   const alive = useRef(true);
@@ -120,10 +134,26 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [fullscreen]);
+  // Scale a tablet or phone frame down to the stage width, so it keeps its true layout width.
+  useLayoutEffect(() => {
+    const node = stage.current;
+    const outer = deviceOuterWidth[device];
+    if (!node || outer === null) { setScale(1); return; }
+    const fit = () => {
+      const styles = window.getComputedStyle(node);
+      const available = node.clientWidth - parseFloat(styles.paddingLeft || "0") - parseFloat(styles.paddingRight || "0");
+      setScale(available > 0 ? Math.min(1, available / outer) : 1);
+    };
+    fit();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(fit);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [device, fullscreen]);
 
   const state = draftRequired ? "blocked"
     : mintError ? "error"
-      : blocked || unpublished ? "blocked"
+      : paused || blocked || unpublished ? "blocked"
         : busy ? "saving"
           : minting || !hasToken ? "loading"
             : frameStatus === "loading" ? "loading"
@@ -131,19 +161,20 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const statusLabel =
     draftRequired ? draftRequiredMessage
       : mintError ? mintError.message
-        : unpublished ? "Nothing published yet"
-          : state === "blocked" ? blocked
-            : state === "saving" ? "Saving draft"
-              : minting || !hasToken ? "Preparing preview, loading"
-                : state === "loading" ? "Loading preview"
-                  : state === "pending" ? (auto ? "Unsaved edits, updating shortly" : "Unsaved edits, update to refresh")
-                    : `Preview ready${view === "published" ? ", published version" : ", draft version"} ${view === "published" ? publishedVersion ?? "" : version ?? ""}`;
+        : paused ? "Live updates paused until the draft saves"
+          : unpublished ? "Nothing published yet"
+            : state === "blocked" ? blocked
+              : state === "saving" ? "Saving draft"
+                : minting || !hasToken ? "Preparing preview, loading"
+                  : state === "loading" ? "Loading preview"
+                    : state === "pending" ? (auto ? "Unsaved edits, updating shortly" : "Unsaved edits, update to refresh")
+                      : `Preview ready${view === "published" ? ", published version" : ", draft version"} ${view === "published" ? publishedVersion ?? "" : version ?? ""}`;
   const viewLabel = view === "published" ? "Published storefront" : "Draft preview";
   const frameTitle = `${viewLabel} of ${title}${framePath && framePath !== "/" ? ` (${framePath})` : ""}`;
   const onViewChange = useCallback((next: PreviewView) => setView(next), []);
 
   return (
-    <aside className="admin-preview-pane" data-live-preview data-device={device} data-fullscreen={fullscreen ? "true" : "false"} aria-label="Live preview">
+    <aside className="admin-preview-pane" data-live-preview data-device={device} data-fullscreen={fullscreen ? "true" : "false"} aria-label="Live preview" style={{ "--device-scale": scale } as React.CSSProperties}>
       <div className="admin-preview-toolbar">
         <div className="admin-segmented" role="group" aria-label="Preview device">
           {previewDevices.map((item) => (
@@ -175,10 +206,12 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
           </button>
         </div>
       </div>
-      <div className="admin-preview-stage">
+      <div className="admin-preview-stage" ref={stage}>
         <div className="admin-device">
           {draftRequired ? (
-            <div className="admin-preview-placeholder"><p>{draftRequiredMessage}</p></div>
+            <div className="admin-preview-placeholder" data-preview-draft-required>
+              <EmptyState title="No draft yet" action={<button type="button" className="admin-primary" disabled={busy} onClick={onSaveFirst}>Save draft to start the preview</button>}>{draftRequiredMessage} Saving creates the first draft version; nothing is published.</EmptyState>
+            </div>
           ) : mintError ? (
             <div className="admin-preview-placeholder" data-preview-error>
               <EmptyState title="Preview unavailable" action={<button type="button" onClick={retry}>Retry preview</button>}>{mintError.message}</EmptyState>

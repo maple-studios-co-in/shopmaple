@@ -40,7 +40,7 @@ const frame = () => {
   return found;
 };
 
-async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number; saveDelayMs?: number } = {}) {
+async function setup(options: { expiresInMs?: number; previewStatus?: number; previewCode?: string; saveFailures?: number; saveDelayMs?: number; initialDraft?: null } = {}) {
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const calls: { method: string; path: string; body?: any }[] = [];
@@ -55,7 +55,7 @@ async function setup(options: { expiresInMs?: number; previewStatus?: number; pr
       if (options.saveDelayMs) await new Promise((resolve) => setTimeout(resolve, options.saveDelayMs));
       if (saveFailures > 0) { saveFailures--; return Response.json({ code: "SERVER_ERROR" }, { status: 500 }); }
       version = body.expectedVersion + 1;
-      return Response.json({ version, draft: body.content, publishedVersion: 2, updatedAt: "2026-10-28T09:00:00Z" });
+      return Response.json({ version, draft: body.content, publishedVersion: options.initialDraft === null ? null : 2, updatedAt: "2026-10-28T09:00:00Z" });
     }
     if (path === "/api/admin/content/preview" && method === "POST") {
       if (options.previewStatus && options.previewStatus !== 200) return Response.json({ code: options.previewCode ?? "ERROR", message: "Preview failed" }, { status: options.previewStatus });
@@ -64,6 +64,7 @@ async function setup(options: { expiresInMs?: number; previewStatus?: number; pr
       return Response.json({ token: minted === 1 ? tokenA : tokenB, version, expiresAt: new Date(Date.now() + (options.expiresInMs ?? 15 * 60_000)).toISOString() });
     }
     assert.equal(path, "/api/admin/content", `Unexpected request ${method} ${path}`);
+    if (options.initialDraft === null) { version = 0; return Response.json({ version: 0, draft: null, publishedVersion: null, updatedAt: null }); }
     return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
   };
   await act(async () => root.render(
@@ -322,5 +323,60 @@ test("a quiet save never disables the form or moves focus", async () => {
     assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
     assert.equal(document.activeElement, input, "Focus stays put after the quiet save");
     assert.equal(container.querySelector("fieldset")?.disabled, false);
+  } finally { await app.close(); }
+});
+
+test("text typed while a quiet save is in flight survives, stays unsaved and is saved next with the newer version", async () => {
+  const app = await setup({ saveDelayMs: 120 });
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    const input = () => container.querySelector<HTMLInputElement>('input[aria-label="Category heading"]')!;
+    await type("Category heading", "A");
+    await wait(60);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1, "The first quiet save is in flight");
+    await type("Category heading", "AB");
+    await wait(150);
+    assert.equal(input().value, "AB", "The edit made during the save is kept, not replaced by the server's copy");
+    assert.equal(button("Save draft").disabled, false, "The edit made during the save is still unsaved");
+    await wait(80);
+    const puts = app.calls.filter((c) => c.method === "PUT");
+    assert.equal(puts[0]!.body.content.homeCopy.categoryHeading, "A");
+    assert.ok(puts.length >= 2, "A second quiet save follows for the edit made during the first");
+    assert.equal(puts[1]!.body.expectedVersion, 5, "The second save uses the version the first one produced");
+    assert.equal(puts[1]!.body.content.homeCopy.categoryHeading, "AB");
+    await wait(200);
+    assert.equal(input().value, "AB");
+    assert.equal(button("Save draft").disabled, true, "Everything is saved once the second save lands");
+    assert.match(container.textContent ?? "", /Draft version 6/);
+  } finally { await app.close(); }
+});
+
+test("on version 0 the pane never saves by itself; a visible action performs the first save", async () => {
+  const app = await setup({ initialDraft: null });
+  try {
+    await click("Live preview");
+    await wait(80);
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 0, "No draft version is created without the user asking");
+    assert.equal(app.calls.filter((c) => c.method === "POST").length, 0, "Nothing is minted for version 0");
+    assert.match(container.querySelector("[data-preview-status]")?.textContent ?? "", /save/i);
+    await click("Save draft to start the preview");
+    assert.equal(app.calls.filter((c) => c.method === "PUT").length, 1);
+    assert.equal(app.calls.filter((c) => c.method === "POST").length, 1, "The first save unlocks the preview");
+    assert.ok(container.querySelector("iframe[data-live-preview-frame]"));
+  } finally { await app.close(); }
+});
+
+test("while live updates are paused after a failed save the status says so", async () => {
+  const app = await setup({ saveFailures: 1 });
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    await type("Category heading", "Will fail once");
+    await wait(80);
+    assert.ok(container.querySelector("[data-autosave-failed]"));
+    const status = container.querySelector("[data-preview-status]")?.textContent ?? "";
+    assert.match(status, /paused/i);
+    assert.doesNotMatch(status, /updating shortly/i);
   } finally { await app.close(); }
 });
