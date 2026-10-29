@@ -19,6 +19,7 @@ import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
+import { CrmSummary } from "./crm-summary";
 import { SortableList } from "./sortable-list";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
@@ -471,6 +472,7 @@ export function ContentEditor({
                       <dd>{content.pages.length} pages</dd>
                     </div>
                   </dl>
+                  {session.user.canManageEnquiries === true && <CrmSummary session={session} onExpired={onExpired} />}
                   <h3>Publishing</h3>
                   <p>
                     {session.user.role === "publisher"

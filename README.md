@@ -37,7 +37,7 @@ The [Razorpay adapter](docs/payments.md) creates and validates provider orders t
 
 The [order service](docs/order-flow.md) freezes server-priced quotes, gates payment creation on verified reservations and persists authenticated payment events plus an atomic Keeri handoff outbox. It has no public checkout routes or active workers.
 
-[Enquiry forms](docs/enquiries.md) save locally with idempotent retries and a receipt. No team notification is sent. Newsletter, reviews, accounts and unsupported collection aliases continue on the existing shop; Instagram links to the real profile.
+[Enquiry forms](docs/enquiries.md) save locally with idempotent retries and a receipt. No team notification is sent. The [admin CRM](docs/admin-crm.md) gives staff contacts, a five-stage pipeline (list and drag-and-drop board), follow-up tasks, a dashboard summary and plain-text email replies, all inside the shop admin with no Keeri dependency. Newsletter, reviews, accounts and unsupported collection aliases continue on the existing shop; Instagram links to the real profile.
 
 ## Next integrations
 

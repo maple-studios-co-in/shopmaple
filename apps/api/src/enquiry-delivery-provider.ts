@@ -60,28 +60,59 @@ const acceptedSchema = z.object({ id: z.uuid() }).strict();
 const responseByteLimit = 16_384;
 const requestDeadlineMs = 10_000;
 
+const replySchema = z.object({
+  /** Enquiry id plus the version consumed, e.g. `enq_…/3`; stable across a retry of the same intent. */
+  replyId: z.string().regex(/^[A-Za-z0-9_-]{1,128}(?:\/[0-9]{1,10})?$/),
+  to: z.email().max(254),
+  subject: z.string().min(1).max(150),
+  text: z.string().min(1).max(5000),
+});
+
 /** Server-only adapter. An accepted response proves provider acceptance, not inbox delivery. */
 export async function sendEnquiryAlert(
   config: EnquiryDeliveryConfig, alert: EnquiryAlert, fetchImpl: typeof fetch = fetch,
 ): Promise<EnquiryDeliveryOutcome> {
+  const checked = recheckConfig(config);
+  if (!checked) return { status: "failed", code: "configuration_error" };
+  const parsed = alertSchema.safeParse(alert);
+  if (!parsed.success) return { status: "failed", code: "provider_rejected" };
+  const input = parsed.data;
+  return postEmail(checked, `enquiry/${input.jobId}`, {
+    from: checked.from,
+    to: [checked.to],
+    subject: "New ShopMaple enquiry",
+    text: `Reference: ${input.enquiryId}\nKind: ${input.kind}\nCreated: ${input.createdAt.toISOString()}\n\nOpen the staff inbox: ${checked.adminOrigin}/admin`,
+  }, fetchImpl);
+}
+
+/**
+ * Staff reply to a customer: plain text only, sent from the alert sender with the staff inbox as
+ * reply-to. The caller records the outcome; nothing here retries or retains provider error bodies.
+ */
+export async function sendEnquiryReply(
+  config: EnquiryDeliveryConfig, reply: { replyId: string; to: string; subject: string; text: string }, fetchImpl: typeof fetch = fetch,
+): Promise<EnquiryDeliveryOutcome> {
+  const checked = recheckConfig(config);
+  if (!checked) return { status: "failed", code: "configuration_error" };
+  const parsed = replySchema.safeParse(reply);
+  if (!parsed.success) return { status: "failed", code: "provider_rejected" };
+  const input = parsed.data;
+  return postEmail(checked, `reply/${input.replyId}`, { from: checked.from, to: [input.to], reply_to: checked.to, subject: input.subject, text: input.text }, fetchImpl);
+}
+
+function recheckConfig(config: EnquiryDeliveryConfig): EnquiryDeliveryConfig | null {
   try {
     // Recheck internal callers and reject a routing change without its corresponding fingerprint.
     const checked = loadEnquiryDeliveryConfig({
       ENQUIRY_DELIVERY_ENABLED: "true", ENQUIRY_RESEND_API_KEY: config.apiKey,
       ENQUIRY_MAIL_FROM: config.from, ENQUIRY_MAIL_TO: config.to, WEB_ORIGIN: config.adminOrigin,
     });
-    if (checked?.fingerprint !== config.fingerprint) return { status: "failed", code: "configuration_error" };
-    config = checked;
-  } catch { return { status: "failed", code: "configuration_error" }; }
-  const parsed = alertSchema.safeParse(alert);
-  if (!parsed.success) return { status: "failed", code: "provider_rejected" };
-  const input = parsed.data;
-  const body = JSON.stringify({
-    from: config.from,
-    to: [config.to],
-    subject: "New ShopMaple enquiry",
-    text: `Reference: ${input.enquiryId}\nKind: ${input.kind}\nCreated: ${input.createdAt.toISOString()}\n\nOpen the staff inbox: ${config.adminOrigin}/admin`,
-  });
+    return checked?.fingerprint === config.fingerprint ? checked : null;
+  } catch { return null; }
+}
+
+async function postEmail(config: EnquiryDeliveryConfig, idempotencyKey: string, payload: object, fetchImpl: typeof fetch): Promise<EnquiryDeliveryOutcome> {
+  const body = JSON.stringify(payload);
   const controller = new AbortController();
   let cancelBody: (() => void) | undefined;
   const invalidResponse = new Error("Invalid provider response.");
@@ -91,7 +122,7 @@ export async function sendEnquiryAlert(
         method: "POST", redirect: "error", signal: controller.signal,
         headers: {
           Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json",
-          "Idempotency-Key": `enquiry/${input.jobId}`,
+          "Idempotency-Key": idempotencyKey,
         },
         body,
       });

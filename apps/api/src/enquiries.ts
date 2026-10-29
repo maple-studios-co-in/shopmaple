@@ -4,6 +4,7 @@ import { enquiryInputSchema, type EnquiryReceipt } from "@shopmaple/contracts";
 import { z } from "zod";
 import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { HttpError } from "./cart.js";
+import { ensureContact } from "./contacts.js";
 const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
 export async function saveEnquiry(db:PrismaClient,raw:unknown,key:unknown,config:EnquiryDeliveryConfig|null=null):Promise<{created:boolean;receipt:EnquiryReceipt}>{
  const idempotencyHash=hash(z.uuid().parse(key));
@@ -12,7 +13,8 @@ export async function saveEnquiry(db:PrismaClient,raw:unknown,key:unknown,config
  const receipt=(reference:string):EnquiryReceipt=>({reference,mode:"preview",notificationSent:false});
  try {
   const saved=await db.$transaction(async tx => {
-   const enquiry=await tx.enquiry.create({data:{id:"enq_"+randomUUID(),idempotencyHash,payloadHash,...input}});
+   const contactId=await ensureContact(tx,input);
+   const enquiry=await tx.enquiry.create({data:{id:"enq_"+randomUUID(),idempotencyHash,payloadHash,...input,contactId}});
    if(config) await tx.enquiryDelivery.create({data:{enquiryId:enquiry.id,configurationHash:config.fingerprint,nextAttemptAt:new Date()}});
    return enquiry;
   });

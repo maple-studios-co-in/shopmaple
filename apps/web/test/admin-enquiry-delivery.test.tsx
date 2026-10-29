@@ -8,7 +8,7 @@ const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/adm
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const container = document.getElementById("root")!;
 const session = { user: { id: "staff", email: "staff@example.invalid", role: "editor" as const, canManageEnquiries: true }, csrfToken: "a".repeat(64) };
-const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, createdAt: "2026-10-26T00:00:00.000Z" };
+const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
 const detail = { ...row, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, reviews: [] };
 const retryable = { status: "retry_wait", version: 3, attempts: 1, nextAttemptAt: "2026-10-26T01:00:00.000Z", acceptedAt: null, errorCode: "rate_limited", canRetry: true };
 const response = (delivery: unknown = retryable, enabled = true, enquiryId = row.id) => ({ enquiryId, enabled, delivery });
@@ -99,11 +99,11 @@ test("late delivery from a closed enquiry cannot populate the next enquiry", asy
 
 test("completed workflow cannot unlock inbox while notification retry remains pending", async () => {
   const previous = fetch; let resolveRetry: (value: Response) => void = () => {}; let resolveWorkflow: (value: Response) => void = () => {}; let writes = 0;
-  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) { writes++; return new Promise(resolve => { resolveRetry = resolve; }); } if (path.endsWith("/review")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
+  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) { writes++; return new Promise(resolve => { resolveRetry = resolve; }); } if (path.endsWith("/stage")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
   const root = await mount();
   try {
-    await click("Mark reviewed"); await click("Retry notification"); await click("Retry notification"); assert.equal(writes, 1);
-    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "reviewed", version: 1 })));
+    await click("Contacted"); await click("Retry notification"); await click("Retry notification"); assert.equal(writes, 1);
+    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "contacted", version: 1 })));
     for (const label of ["Close enquiry", "Reload inbox", "Open enquiry"]) assert.equal(button(label).disabled, true, label);
     await act(async () => resolveRetry(Response.json(response({ ...retryable, version: 4, status: "queued", canRetry: false }))));
     assert.equal(button("Close enquiry").disabled, false);
@@ -152,12 +152,12 @@ test("session identity change discards a pending retry and ignores its eventual 
 
 test("completed notification retry cannot unlock inbox while workflow remains pending", async () => {
   const previous = fetch; let resolveWorkflow: (value: Response) => void = () => {};
-  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) return Response.json(response({ ...retryable, status: "queued", canRetry: false })); if (path.endsWith("/review")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
+  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) return Response.json(response({ ...retryable, status: "queued", canRetry: false })); if (path.endsWith("/stage")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
   const root = await mount();
   try {
-    await click("Mark reviewed"); await click("Retry notification");
+    await click("Contacted"); await click("Retry notification");
     assert.equal(button("Close enquiry").disabled, true); assert.equal(button("Reload inbox").disabled, true);
-    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "reviewed", version: 1 })));
+    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "contacted", version: 1 })));
     assert.equal(button("Close enquiry").disabled, false);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });

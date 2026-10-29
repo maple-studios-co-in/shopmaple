@@ -8,7 +8,7 @@ const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/adm
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const container = document.getElementById("root")!;
 const session = { user: { id: "staff", email: "staff@example.invalid", role: "editor" as const }, csrfToken: "a".repeat(64) };
-const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, createdAt: "2026-10-26T00:00:00.000Z" };
+const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
 const detail = { ...row, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Help", context: { product: "", variant: "", sku: "", pincode: "" }, reviews: [] };
 function button(text: string) { const b = [...container.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === text); assert.ok(b, `Missing ${text}`); return b; }
 const click = async (text: string) => act(async () => button(text).click());
@@ -136,11 +136,11 @@ test("account changes remove drafts and ignore old in-flight reads", async () =>
 
 test("reviewing preserves the unsaved internal draft and updates the version for the next note", async () => {
     const previous = fetch; const writes: { path: string; body: unknown }[] = [];
-    globalThis.fetch = transport((path, options) => { if (options?.method === "POST") { writes.push({ path, body: JSON.parse(String(options.body)) }); return Response.json({ ...detail, status: "reviewed", version: writes.length, reviews: [{ id: "review", actorId: "staff", action: "reviewed", version: 1, createdAt: row.createdAt }] }); } });
+    globalThis.fetch = transport((path, options) => { if (options?.method === "POST") { writes.push({ path, body: JSON.parse(String(options.body)) }); return Response.json({ ...detail, status: "contacted", version: writes.length, reviews: [{ id: "review", actorId: "staff", action: "reviewed", version: 1, createdAt: row.createdAt }] }); } });
     const root = createRoot(container);
     try {
         await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}}/>)); await click("Open enquiry");
-        await note("Draft across review"); await click("Mark reviewed");
+        await note("Draft across review"); await click("Contacted");
         assert.equal(container.querySelector<HTMLTextAreaElement>("textarea")?.value, "Draft across review");
         await click("Add internal note"); assert.deepEqual(writes[1]!.body, { expectedVersion: 1, body: "Draft across review" });
     } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
@@ -197,7 +197,7 @@ test("pending note disables concurrent actions and timeout retains draft until d
     const root = createRoot(container);
     try {
         await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}}/>)); await click("Open enquiry"); await note("Timeout draft"); await click("Add internal note");
-        for (const text of ["Add internal note", "Mark reviewed", "Close enquiry", "Reload inbox", "Save assignment"]) assert.equal(button(text).disabled, true, text);
+        for (const text of ["Add internal note", "Contacted", "Close enquiry", "Reload inbox", "Save assignment"]) assert.equal(button(text).disabled, true, text);
         await click("Add internal note"); assert.equal(writes, 1);
         await act(async () => t.mock.timers.tick(15_000));
         assert.match(container.textContent!, /timed out/);

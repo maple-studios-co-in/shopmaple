@@ -9,11 +9,13 @@ type Props = {
   enquiryId: string;
   onDenied: (status: number) => void;
   onBusy: (busy: boolean) => void;
+  /** Reports whether the email sender is configured, so the reply composer can refuse up front. */
+  onEnabled?: (enabled: boolean) => void;
 };
 export function EnquiryDeliveryPanel(props: Props) {
   return <DeliverySession key={`${props.enquiryId}:${props.session.user.id}:${props.session.csrfToken}:${props.session.user.canManageEnquiries}`} {...props} />;
 }
-function DeliverySession({ session, enquiryId, onDenied, onBusy }: Props) {
+function DeliverySession({ session, enquiryId, onDenied, onBusy, onEnabled }: Props) {
   const request = useAdminRequest();
   const [value, setValue] = useState<EnquiryDeliveryResponse | null>(null);
   const [busy, setBusy] = useState(true);
@@ -21,8 +23,8 @@ function DeliverySession({ session, enquiryId, onDenied, onBusy }: Props) {
   const active = useRef(true);
   const pending = useRef(false);
   const sequence = useRef(0);
-  const callbacks = useRef({ onDenied, onBusy });
-  callbacks.current = { onDenied, onBusy };
+  const callbacks = useRef({ onDenied, onBusy, onEnabled });
+  callbacks.current = { onDenied, onBusy, onEnabled };
   const path = `/api/admin/enquiries/${encodeURIComponent(enquiryId)}/delivery`;
   async function run(retry = false, notify = true) {
     if (pending.current || !active.current) return;
@@ -55,7 +57,7 @@ function DeliverySession({ session, enquiryId, onDenied, onBusy }: Props) {
       if (!result || !isCurrent()) return;
       // The worker may already have advanced beyond the retry response.
       const refreshed = retry ? await read(false) : result;
-      if (refreshed && isCurrent()) setValue(refreshed);
+      if (refreshed && isCurrent()) { setValue(refreshed); callbacks.current.onEnabled?.(refreshed.enabled); }
     } catch (failure) {
       if (isCurrent()) {
         setValue(null);

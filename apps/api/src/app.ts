@@ -8,6 +8,7 @@ import { registerStaffRoutes } from "./admin/auth.js";
 import { registerMediaRoutes } from "./admin/media.js";
 import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
 import { registerEnquiryDeliveryAdminRoutes } from "./admin/enquiry-delivery.js";
+import { registerCrmRoutes } from "./admin/crm.js";
 import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
@@ -34,6 +35,10 @@ export type AppConfig = {
   previewSecret?: string;
   catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
+  /** Transport for outbound staff replies; tests inject a local double. Defaults to global fetch. */
+  outboundFetch?: typeof fetch;
+  /** Accepted staff replies per actor per window; defaults to 20 per hour. Tests inject a smaller limit. */
+  replyRateLimit?: { limit: number; windowMs: number };
   /** Public checkout options; only meaningful together with an injected commerce service. */
   checkout?: CheckoutOptions;
 };
@@ -78,8 +83,9 @@ export function createApp(
   });
   registerStaffRoutes(app, db, config.secureCookies);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
-  registerEnquiryAdminRoutes(app, db, config.secureCookies);
+  registerEnquiryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.outboundFetch, config.replyRateLimit);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
+  registerCrmRoutes(app, db, config.secureCookies);
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
   app.get("/api/health", async (_req, res) => {
