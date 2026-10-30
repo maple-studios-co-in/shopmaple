@@ -2,9 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
 import type { StorefrontContent } from "@shopmaple/contracts";
-import { AdminDashboard } from "../components/admin/dashboard";
 const dom = new JSDOM('<div id="root"></div>', {
   url: "http://localhost:3000/admin",
 });
@@ -14,6 +12,10 @@ Object.assign(globalThis, {
   HTMLElement: dom.window.HTMLElement,
   IS_REACT_ACT_ENVIRONMENT: true,
 });
+// Imported after the window exists, like the other admin tests: Radix picks its layout-effect
+// implementation at import time and would otherwise run as if on the server.
+const { createRoot } = await import("react-dom/client");
+const { AdminDashboard } = await import("../components/admin/dashboard");
 const initialContent: StorefrontContent = {
   schemaVersion: 1,
   landingPages: [],
@@ -143,6 +145,15 @@ test("failed login stays on the login form with a safe actionable error", async 
 
 async function click(name: string) {
   await act(async () => button(name).click());
+}
+/** Sign out sits in the staff menu in the top bar; the Radix menu opens on Enter. */
+async function signOut() {
+  const account = container.querySelector<HTMLElement>("[data-staff-account]");
+  assert.ok(account, "Missing staff menu");
+  await act(async () => { account.focus(); account.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+  const item = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((node) => node.textContent === "Sign out");
+  assert.ok(item, "Missing Sign out in the staff menu");
+  await act(async () => item.click());
 }
 test("editors reorder and hide sections, change copy and save an unpublished draft", async () => {
   const previous = globalThis.fetch;
@@ -503,7 +514,7 @@ test("signing out sends CSRF and removes all authenticated editor content", asyn
     await act(async () =>
       root.render(<AdminDashboard initialContent={initialContent} />),
     );
-    await click("Sign out");
+    await signOut();
     assert.equal(logoutCsrf, "a".repeat(64));
     assert.ok(container.querySelector('input[type="password"]'));
     assert.equal(
@@ -809,7 +820,7 @@ test("logout succeeds when the transport exposes an empty stream for HTTP 204", 
     await act(async () =>
       root.render(<AdminDashboard initialContent={initialContent} />),
     );
-    await click("Sign out");
+    await signOut();
     assert.ok(
       container.querySelector('input[type="password"]'),
       "A successful 204 logout must return to the login form",
@@ -988,11 +999,14 @@ test("a draft read aborted by StrictMode's first mount is not reported and does 
   const root = createRoot(container);
   const reads: string[] = [];
   let contentReads = 0;
+  // The surviving draft read is held until the test releases it, so the aborted one always
+  // finishes first however long a render takes on a loaded runner.
+  let releaseSlow!: () => void;
+  const slowGate = new Promise<void>((resolve) => { releaseSlow = resolve; });
   globalThis.fetch = async (input, init) => {
     const path = String(input);
-    // The surviving draft read is slow, so the aborted one finishes first.
     const slow = path === "/api/admin/content" && ++contentReads === 2;
-    await new Promise((resolve) => setTimeout(resolve, slow ? 90 : 5));
+    await (slow ? slowGate : new Promise((resolve) => setTimeout(resolve, 5)));
     if (init?.signal?.aborted) {
       reads.push(`aborted ${path}`);
       throw new dom.window.DOMException("The operation was aborted.", "AbortError");
@@ -1010,13 +1024,15 @@ test("a draft read aborted by StrictMode's first mount is not reported and does 
     assert.equal(reads.includes("ok /api/admin/content"), false, "The surviving read is still running");
     assert.ok(container.querySelector('[aria-busy="true"]'), "While the surviving read runs the editor shows its loading state");
     assert.equal([...container.querySelectorAll("button")].some((b) => b.textContent === "Retry loading draft"), false, "The aborted read must not clear busy and expose the unavailable state while a read is still running");
-    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+    releaseSlow();
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
     assert.ok(reads.some((entry) => entry.startsWith("aborted /api/admin/content")), "StrictMode's first draft read was aborted by the hook");
     assert.ok(reads.includes("ok /api/admin/content"), "The second draft read completed");
     assert.equal(container.querySelector('[role="alert"]'), null, "An aborted first read is never shown as a failure");
     assert.equal(button("Preview draft").disabled, false, "The editor is not left busy by the aborted read's cleanup");
     assert.ok(container.querySelector('button[data-action="save"]'), "The draft editor is usable");
   } finally {
+    releaseSlow();
     await act(async () => root.unmount());
     globalThis.fetch = previous;
   }

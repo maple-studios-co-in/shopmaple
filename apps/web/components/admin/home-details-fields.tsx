@@ -1,128 +1,87 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { Plus } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
-import { Field } from "./forms";
+import { Notice } from "./crm-primitives";
+import { Field } from "./field";
+import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, TextFields, listFields, usePendingFocus } from "./kit";
 
 const tileNames = { sofas: "Sofas", chairs: "Chairs", tables: "Tables", beds: "Beds" };
 const valueNames = { "quiet-luxury": "Quiet luxury", "real-living": "Real living", "ages-beautifully": "Ages beautifully", strength: "Strength" };
-export function HomeDetailsFields({ value, onChange }: {
-  value?: HomeDetails;
-  onChange: (value: HomeDetails) => void;
-}) {
+export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; onChange: (value: HomeDetails) => void }) {
   const page = resolveHomeDetails(value);
-  const paragraphFields = useRef<HTMLDivElement>(null);
-  const addParagraph = useRef<HTMLButtonElement>(null);
-  const pendingFocus = useRef<number | "add" | null>(null);
-  useEffect(() => {
-    const target = pendingFocus.current;
-    if (target === null) return;
-    if (target === "add") addParagraph.current?.focus();
-    else paragraphFields.current?.querySelectorAll("textarea")[target]?.focus();
-    pendingFocus.current = null;
-  }, [page.testimonial.paragraphs.length]);
-  function update<K extends keyof HomeDetails>(key: K, value: HomeDetails[K]) {
-    onChange({ ...page, [key]: value });
+  const { hero, difference, nimbus, testimonial } = page;
+  const focus = usePendingFocus<number | "add">(testimonial.paragraphs.length);
+  const update = <K extends keyof HomeDetails>(key: K, value: HomeDetails[K]) => onChange({ ...page, [key]: value });
+  function paragraphs(next: string[], target: number | "add" | null = null) {
+    focus.focusAfter(target);
+    update("testimonial", { ...testimonial, paragraphs: next });
   }
-  const field = (label: string, value: string, maxLength: number, onChange: (value: string) => void, multiline = false) => (
-    <Field key={label} label={label} value={value} maxLength={maxLength} onChange={onChange} multiline={multiline} />
-  );
   return (
     <section aria-label="Homepage section content">
-      <h3>Section content</h3>
-      <p>Open a section to edit its text. Changes appear on the storefront only after publishing.</p>
-      <details data-preview-section="hero">
-        <summary>Hero</summary>
-        <div className="admin-fields">
-          {field("Hero collection button", page.hero.cta, 80, cta => update("hero", { ...page.hero, cta }))}
-          {page.hero.tiles.map(tile => (
-            <fieldset key={tile.key}>
-              <legend>{tileNames[tile.key]}</legend>
-              {field(`${tileNames[tile.key]} tile label`, tile.label, 80, label => update("hero", { ...page.hero, tiles: page.hero.tiles.map(item => item.key === tile.key ? { ...item, label } : item) }))}
-              {field(`${tileNames[tile.key]} starting-price label`, tile.priceLabel, 80, priceLabel => update("hero", { ...page.hero, tiles: page.hero.tiles.map(item => item.key === tile.key ? { ...item, priceLabel } : item) }))}
-            </fieldset>
-          ))}
-        </div>
-        <p>Starting-price labels are display text. Product prices and availability are managed in Keeri.</p>
-      </details>
-      <details data-preview-section="difference">
-        <summary>The Maple Difference</summary>
-        <div className="admin-fields">
-          {field("Difference eyebrow", page.difference.eyebrow, 160, eyebrow => update("difference", { ...page.difference, eyebrow }))}
-          {field("Difference heading", page.difference.heading, 160, heading => update("difference", { ...page.difference, heading }))}
-          {field("Difference button", page.difference.cta, 80, cta => update("difference", { ...page.difference, cta }))}
-          {page.difference.promises.map((value, index) => field(`Difference promise ${index + 1}`, value, 160, value => update("difference", { ...page.difference, promises: page.difference.promises.map((item, i) => i === index ? value : item) })))}
-        </div>
-      </details>
-      <details data-preview-section="nimbus">
-        <summary>Nimbus</summary>
-        <div className="admin-fields">
-          {field("Nimbus heading", page.nimbus.heading, 160, heading => update("nimbus", { ...page.nimbus, heading }))}
-          {field("Nimbus tagline", page.nimbus.tagline, 300, tagline => update("nimbus", { ...page.nimbus, tagline }))}
-          {field("Nimbus button", page.nimbus.cta, 80, cta => update("nimbus", { ...page.nimbus, cta }))}
-          {page.nimbus.features.map((value, index) => field(`Nimbus feature ${index + 1}`, value, 160, value => update("nimbus", { ...page.nimbus, features: page.nimbus.features.map((item, i) => i === index ? value : item) })))}
-        </div>
-      </details>
-      <details data-preview-section="testimonial">
-        <summary>Customer testimonial</summary>
-        <p>Use only approved customer wording and attribution.</p>
-        <div className="admin-fields" ref={paragraphFields}>
-          {field("Testimonial title", page.testimonial.title, 160, title => update("testimonial", { ...page.testimonial, title }))}
-          {field("Testimonial customer name", page.testimonial.name, 120, name => update("testimonial", { ...page.testimonial, name }))}
-          {field("Testimonial attribution", page.testimonial.attribution, 160, attribution => update("testimonial", { ...page.testimonial, attribution }))}
-          {page.testimonial.paragraphs.map((value, index) => (
-            <div key={index}>
-              {field(`Testimonial paragraph ${index + 1}`, value, 2000, value => update("testimonial", { ...page.testimonial, paragraphs: page.testimonial.paragraphs.map((item, i) => i === index ? value : item) }), true)}
-              <button type="button" disabled={page.testimonial.paragraphs.length === 1} aria-label={`Remove testimonial paragraph ${index + 1}`} onClick={() => {
-                pendingFocus.current = "add";
-                update("testimonial", { ...page.testimonial, paragraphs: page.testimonial.paragraphs.filter((_, i) => i !== index) });
-              }}>Remove paragraph</button>
-            </div>
-          ))}
-        </div>
-        <button type="button" ref={addParagraph} disabled={page.testimonial.paragraphs.length === 6} onClick={() => {
-          pendingFocus.current = page.testimonial.paragraphs.length;
-          update("testimonial", { ...page.testimonial, paragraphs: [...page.testimonial.paragraphs, ""] });
-        }}>Add testimonial paragraph</button>
-      </details>
-      <details data-preview-section="newsletter">
-        <summary>Newsletter</summary>
-        <div className="admin-fields">
-          {field("Newsletter heading", page.newsletter.heading, 160, heading => update("newsletter", { ...page.newsletter, heading }))}
-          {field("Newsletter body", page.newsletter.body, 2000, body => update("newsletter", { ...page.newsletter, body }), true)}
-          {field("Newsletter signup heading", page.newsletter.signupHeading, 160, signupHeading => update("newsletter", { ...page.newsletter, signupHeading }))}
-        </div>
-      </details>
-      <details data-preview-section="values">
-        <summary>Values</summary>
-        <div className="admin-fields">
-          {page.values.map(value => (
-            <fieldset key={value.key}>
-              <legend>{valueNames[value.key]}</legend>
-              {field(`${valueNames[value.key]} title`, value.title, 160, title => update("values", page.values.map(item => item.key === value.key ? { ...item, title } : item)))}
-              {field(`${valueNames[value.key]} body`, value.body, 2000, body => update("values", page.values.map(item => item.key === value.key ? { ...item, body } : item)), true)}
-            </fieldset>
-          ))}
-        </div>
-      </details>
-      <details data-preview-section="cities">
-        <summary>Cities</summary>
-        <div className="admin-fields">
-          {field("Cities eyebrow", page.cities.eyebrow, 160, eyebrow => update("cities", { ...page.cities, eyebrow }))}
-          {field("Cities heading", page.cities.heading, 160, heading => update("cities", { ...page.cities, heading }))}
-        </div>
-      </details>
-      <details data-preview-section="project">
-        <summary>Project introduction</summary>
-        <div className="admin-fields">
-          {field("Project heading", page.project.heading, 160, heading => update("project", { ...page.project, heading }))}
-          {field("Project text before response time", page.project.introBefore, 1000, introBefore => update("project", { ...page.project, introBefore }), true)}
-          {field("Project response time", page.project.responseTime, 80, responseTime => update("project", { ...page.project, responseTime }))}
-          {field("Project text after response time", page.project.introAfter, 1000, introAfter => update("project", { ...page.project, introAfter }), true)}
-          {field("Project body", page.project.body, 2000, body => update("project", { ...page.project, body }), true)}
-        </div>
-        <p>Spacing around the highlighted response time is added automatically. This text does not change enquiry handling.</p>
-      </details>
+      <ContentPanels description="Open a section to edit its text. Changes appear on the storefront only after publishing.">
+        <ContentPanel data-preview-section="hero" title="Hero">
+          <TextFields value={hero} onChange={next => update("hero", next)} fields={[["cta", "Hero collection button", 80]]} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <GroupedFields items={hero.tiles} legend={tile => tileNames[tile.key]} onChange={tiles => update("hero", { ...hero, tiles })}
+              fields={tile => [["label", `${tileNames[tile.key]} tile label`, 80], ["priceLabel", `${tileNames[tile.key]} starting-price label`, 80]]} />
+          </div>
+          <Notice tone="info">Starting-price labels are display text. Product prices and availability are managed in Keeri.</Notice>
+        </ContentPanel>
+        <ContentPanel data-preview-section="difference" title="The Maple Difference">
+          <TextFields value={difference} onChange={next => update("difference", next)} fields={[
+            ["eyebrow", "Difference eyebrow", 160], ["heading", "Difference heading", 160], ["cta", "Difference button", 80],
+            ...listFields(difference.promises, index => `Difference promise ${index + 1}`, 160, promises => update("difference", { ...difference, promises })),
+          ]} />
+        </ContentPanel>
+        <ContentPanel data-preview-section="nimbus" title="Nimbus">
+          <TextFields value={nimbus} onChange={next => update("nimbus", next)} fields={[
+            ["heading", "Nimbus heading", 160], ["tagline", "Nimbus tagline", 300], ["cta", "Nimbus button", 80],
+            ...listFields(nimbus.features, index => `Nimbus feature ${index + 1}`, 160, features => update("nimbus", { ...nimbus, features })),
+          ]} />
+        </ContentPanel>
+        <ContentPanel data-preview-section="testimonial" title="Customer testimonial">
+          <Notice tone="info">Use only approved customer wording and attribution.</Notice>
+          <TextFields value={testimonial} onChange={next => update("testimonial", next)} fields={[
+            ["title", "Testimonial title", 160], ["name", "Testimonial customer name", 120], ["attribution", "Testimonial attribution", 160],
+            ...testimonial.paragraphs.map((paragraph, index) => (
+              <div key={index} data-span="full" className="flex min-w-0 items-start gap-2"
+                ref={node => focus.track(index)(node?.querySelector("textarea") ?? null)}>
+                <Field className="flex-1" label={`Testimonial paragraph ${index + 1}`} value={paragraph} maxLength={2000} multiline
+                  onChange={value => paragraphs(testimonial.paragraphs.map((item, i) => i === index ? value : item))} />
+                <RemoveButton className="mt-7" label={`Remove testimonial paragraph ${index + 1}`} disabled={testimonial.paragraphs.length === 1}
+                  onClick={() => paragraphs(testimonial.paragraphs.filter((_, i) => i !== index), "add")} />
+              </div>
+            )),
+          ]} />
+          <div>
+            <ActionButton icon={Plus} ref={focus.track("add")} disabled={testimonial.paragraphs.length === 6}
+              onClick={() => paragraphs([...testimonial.paragraphs, ""], testimonial.paragraphs.length)}>Add testimonial paragraph</ActionButton>
+          </div>
+        </ContentPanel>
+        <ContentPanel data-preview-section="newsletter" title="Newsletter">
+          <TextFields value={page.newsletter} onChange={next => update("newsletter", next)} fields={[
+            ["heading", "Newsletter heading", 160], ["signupHeading", "Newsletter signup heading", 160], ["body", "Newsletter body", 2000, true],
+          ]} />
+        </ContentPanel>
+        <ContentPanel data-preview-section="values" title="Values">
+          <div className="grid gap-3">
+            <GroupedFields items={page.values} legend={item => valueNames[item.key]} onChange={values => update("values", values)}
+              fields={item => [["title", `${valueNames[item.key]} title`, 160], ["body", `${valueNames[item.key]} body`, 2000, true]]} />
+          </div>
+        </ContentPanel>
+        <ContentPanel data-preview-section="cities" title="Cities">
+          <TextFields value={page.cities} onChange={next => update("cities", next)} fields={[["eyebrow", "Cities eyebrow", 160], ["heading", "Cities heading", 160]]} />
+        </ContentPanel>
+        <ContentPanel data-preview-section="project" title="Project introduction">
+          <TextFields value={page.project} onChange={next => update("project", next)} fields={[
+            ["heading", "Project heading", 160], ["responseTime", "Project response time", 80],
+            ["introBefore", "Project text before response time", 1000, true], ["introAfter", "Project text after response time", 1000, true],
+            ["body", "Project body", 2000, true],
+          ]} />
+          <Notice tone="info">Spacing around the highlighted response time is added automatically. This text does not change enquiry handling.</Notice>
+        </ContentPanel>
+      </ContentPanels>
     </section>
   );
 }

@@ -161,7 +161,7 @@ test("a draft conflict retains artwork edits and prevents additional writes", as
     assert.match(container.textContent ?? "", /Another editor saved/);
     assert.equal(input("Desktop image URL").value, "/media/newsletter.webp");
     assert.equal(button("Save draft").disabled, true);
-    assert.equal(container.querySelector(".admin-panel > fieldset")?.hasAttribute("disabled"), true);
+    assert.equal(container.querySelector("[data-admin-panel] > fieldset")?.hasAttribute("disabled"), true);
     assert.equal(app.calls.filter(c=>c.startsWith("PUT")).length, 1);
   } finally { await app.close(); }
 });

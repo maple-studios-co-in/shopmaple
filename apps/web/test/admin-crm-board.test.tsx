@@ -155,7 +155,20 @@ test("a stage with more than the column limit shows a capped count and points at
     await act(async () => root.render(<CrmBoard session={session} onDenied={() => {}} onOpenEnquiry={() => {}} onOpenContact={() => {}} today="2030-01-10" />));
     const won = container.querySelector<HTMLElement>('[data-stage-column="won"]')!;
     assert.match(won.querySelector("[data-column-capped]")?.textContent ?? "", /list view/i);
-    assert.match(won.querySelector(".crm-column-count")?.textContent ?? "", /\+$/, "the count is marked as a lower bound");
+    assert.match(won.querySelector("[data-column-count]")?.textContent ?? "", /\+$/, "the count is marked as a lower bound");
     assert.equal(container.querySelector('[data-stage-column="new"] [data-column-capped]'), null);
   } finally { wonCursor = null; await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("the stage columns sit in one labelled, keyboard-focusable scroll region with a hint for narrow screens", async () => {
+  const previous = fetch; globalThis.fetch = transport(() => Response.json({}));
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<CrmBoard session={session} onDenied={() => {}} onOpenEnquiry={() => {}} onOpenContact={() => {}} today="2030-01-10" />));
+    const region = container.querySelector<HTMLElement>('[role="region"][aria-label="Pipeline stages"]');
+    assert.ok(region, "the board is a named region");
+    assert.equal(region.tabIndex, 0, "keyboard users can focus the region and scroll it with the arrow keys");
+    assert.deepEqual([...region.querySelectorAll<HTMLElement>("[data-stage-column]")].map(column => column.dataset.stageColumn), ["new", "contacted", "quoted", "won", "lost"], "all five stages live in the region");
+    assert.match(container.textContent!, /Scroll for more stages/, "narrow screens get a scroll hint");
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });

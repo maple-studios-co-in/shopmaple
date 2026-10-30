@@ -3,7 +3,9 @@ import { useState } from "react";
 import type { EditorialContent, EditorialNode, EditorialPolicy, EditorialBlog, EditorialArticle } from "@shopmaple/contracts";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 import { StoreContent } from "@/components/store-content";
-import { Field } from "./forms";
+import { NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
+import { Field } from "./field";
+import { DisclosureSummary, EditorWithPreview, PreviewPanel, PreviewTitle, SectionHeading, SelectField } from "./kit";
 
 const labels: Record<string, string> = {
   p: "Paragraph", h1: "Heading", h2: "Heading 2", h3: "Heading 3", h4: "Heading 4", h5: "Heading 5", h6: "Heading 6",
@@ -16,21 +18,25 @@ function TextFields({ nodes, original, onChange, path = [] }: {
   nodes: EditorialNode[]; original: EditorialNode[]; onChange: (nodes: EditorialNode[]) => void; path?: number[];
 }) {
   return <>{nodes.map((node, index) => {
-    const position = [...path, index + 1];
-    const identity = position.join(".");
-    const baseline = original[index];
+    const position = [...path, index + 1], identity = position.join("."), baseline = original[index];
     const replace = (next: EditorialNode) => onChange(nodes.map((item, i) => i === index ? next : item));
     if (typeof node === "string") {
       if (!node.trim() && !(typeof baseline === "string" && baseline.trim())) return null;
       return <Field key={index} label={`Text ${identity}`} value={node} maxLength={16000} multiline onChange={replace} />;
     }
     if (node.tag === "br" || node.tag === "hr") return null;
-    if (node.tag === "img") return <Field key={index} label={`Image description ${identity}`} value={node.alt ?? ""} maxLength={200} onChange={alt => replace({ ...node, alt })} />;
-    const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position} onChange={children => replace({ ...node, children })} />;
-    if (!labels[node.tag]) return <div key={index}>{children}</div>;
-    return <details key={index}>
-      <summary>{labels[node.tag]} · {previewText(node.children) || "Empty text"}</summary>
-      <div className="admin-fields">{children}</div>
+    if (node.tag === "img") {
+      return <Field key={index} label={`Image description ${identity}`} value={node.alt ?? ""} maxLength={200} onChange={alt => replace({ ...node, alt })} />;
+    }
+    const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position}
+      onChange={children => replace({ ...node, children })} />;
+    if (!labels[node.tag]) return <div key={index} className="grid gap-3">{children}</div>;
+    return <details key={index} className="min-w-0 rounded-lg border border-border bg-card shadow-xs open:shadow-sm">
+      <DisclosureSummary className="min-w-0 px-3 py-2.5">
+        <span className="shrink-0 font-semibold">{labels[node.tag]}</span>
+        <span className="truncate font-normal text-muted-foreground"> · {previewText(node.children) || "Empty text"}</span>
+      </DisclosureSummary>
+      <div className="grid gap-3 border-t border-line-soft p-3">{children}</div>
     </details>;
   })}</>;
 }
@@ -62,29 +68,32 @@ export function EditorialFields({ value, onChange }: { value?: EditorialContent;
     }
   }
   return <section aria-label="Policies and blogs editor">
-    <h2>Policies &amp; blogs</h2>
-    <p>Edit the existing pages. Changes stay in your draft until published. Original formatting, page addresses, publication dates and artwork stay in place.</p>
-    <label className="admin-field"><span>Policy or blog page</span>
-      <select aria-label="Policy or blog page" value={selected} onChange={event => setSelected(event.target.value)}>
-        <optgroup label="Policies">{Object.entries(resolved.policies).map(([slug, item]) => <option key={slug} value={`policy:${slug}`}>{item.title}</option>)}</optgroup>
-        <optgroup label="Blog pages">{resolved.blogs.map(item => <option key={item.handle} value={`blog:${item.handle}`}>{item.title}</option>)}</optgroup>
-        <optgroup label="Articles">{resolved.blogs.flatMap(item => item.articles.map(post => <option key={`${item.handle}/${post.handle}`} value={`article:${item.handle}/${post.handle}`}>{post.title}</option>))}</optgroup>
-      </select>
-    </label>
-    {document && <div className="admin-editor-preview" key={selected}>
-      <div>
+    <SectionHeading description="Edit the existing pages. Changes stay in your draft until published. Original formatting, page addresses, publication dates and artwork stay in place.">
+      Existing policies and blog posts
+    </SectionHeading>
+    <SelectField label="Policy or blog page" className="mb-6 max-w-md" value={selected} onChange={event => setSelected(event.target.value)}>
+      {([
+        ["Policies", Object.entries(resolved.policies).map(([slug, item]) => [`policy:${slug}`, item.title])],
+        ["Blog pages", resolved.blogs.map(item => [`blog:${item.handle}`, item.title])],
+        ["Articles", resolved.blogs.flatMap(item => item.articles.map(post => [`article:${item.handle}/${post.handle}`, post.title]))],
+      ] as const).map(([group, options]) => <NativeSelectOptGroup key={group} label={group}>
+        {options.map(([key, title]) => <NativeSelectOption key={key} value={key}>{title}</NativeSelectOption>)}
+      </NativeSelectOptGroup>)}
+    </SelectField>
+    {document && <EditorWithPreview key={selected}>
+      <div className="grid gap-4">
         <Field label="Editorial page title" value={document.title} maxLength={article ? 300 : 160} onChange={title => update({ title })} />
         {article && <Field label="Article excerpt" value={article.excerpt} maxLength={2000} multiline onChange={excerpt => update({ excerpt })} />}
-        {content && <><h3>Page text</h3><p>Open a paragraph, heading, list or table to edit its text. HTML is treated as text.</p>
-          <TextFields nodes={content} original={original ?? []} onChange={content => update({ content })} />
+        {content && <>
+          <SectionHeading as="h4" className="mt-4 mb-0" description="Open a paragraph, heading, list or table to edit its text. HTML is treated as text.">Page text</SectionHeading>
+          <div className="grid gap-2"><TextFields nodes={content} original={original ?? []} onChange={content => update({ content })} /></div>
         </>}
       </div>
-      <aside className="admin-preview" aria-label="Editorial preview">
-        <h3>Text preview</h3><h4>{document.title}</h4>
-        {article && <p>{article.excerpt}</p>}
+      <PreviewPanel aria-label="Editorial preview" eyebrow="Text preview" footnote={<>Local preview · {url}</>}>
+        <PreviewTitle>{document.title}</PreviewTitle>
+        {article && <p className="text-muted-foreground">{article.excerpt}</p>}
         {content && <div className="store-prose"><StoreContent nodes={content} /></div>}
-        <small>Local preview · {url}</small>
-      </aside>
-    </div>}
+      </PreviewPanel>
+    </EditorWithPreview>}
   </section>;
 }

@@ -204,3 +204,14 @@ test("article and block limits disable additions while keeping existing content 
     assert.equal(state.saved[0].content.authoredArticles[0].blocks[0].text, "Updated at the limit");
   } finally { await state.cleanup(); }
 });
+// Catches an empty article list offering no clear starting point.
+test("no authored articles shows an empty state whose action starts a new article", async () => {
+  const { AuthoredArticleFields } = await import("../components/admin/authored-article-fields");
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AuthoredArticleFields value={[]} onChange={() => {}} session={{ user: { id: "editor", email: "editor@example.test", role: "editor" }, csrfToken: "c".repeat(64) }} onExpired={() => {}} />));
+    const empty = container.querySelector<HTMLElement>("[data-empty]"); assert.ok(empty, "An empty article list is a designed state");
+    await click("New article", empty);
+    assert.ok(field("New article slug")); assert.equal(container.querySelector("[data-empty]"), null);
+  } finally { await act(async () => root.unmount()); }
+});

@@ -99,3 +99,63 @@ test("the view switcher moves between list, board, follow-ups and contacts witho
     assert.ok(container.querySelector(`[data-enquiry-row="${rows[0]!.id}"]`));
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
+
+// Review finding 15 (intentional behaviour change): the table no longer has its own stage, assignee and
+// name filters. The server filters and the one search cover the whole inbox, not just the loaded page.
+test("the list has one set of filters (the server's) and one text search, and headers still sort", async () => {
+  const previous = fetch; const paths: string[] = [];
+  globalThis.fetch = transport(path => { paths.push(path); return undefined; });
+  const root = createRoot(container);
+  const visible = () => [...container.querySelectorAll<HTMLElement>("[data-enquiry-row]")].map(row => row.dataset.enquiryRow);
+  const count = (selector: string) => container.querySelectorAll(selector).length;
+  try {
+    await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}} />));
+    assert.deepEqual(visible(), [rows[0]!.id, rows[1]!.id]);
+    assert.equal(count('[aria-label^="Filter by"]'), 0, "no column filters duplicate the server filters");
+    assert.equal(count('select[aria-label="Enquiry status"]'), 1, "one stage filter");
+    assert.equal(count('select[aria-label="Assignee"]'), 1, "one assignee filter");
+    assert.equal(count('input:not([type="date"])'), 1, "one text search");
+    assert.ok(control("Search enquiries"), "the text search is the whole-inbox search");
+    assert.doesNotMatch(container.textContent!, /column filters/i);
+    const header = [...container.querySelectorAll<HTMLButtonElement>("th button")].find(item => item.textContent?.trim() === "Customer");
+    assert.ok(header, "the customer column header sorts");
+    await act(async () => header.click()); await act(async () => header.click());
+    assert.equal(header.closest("th")?.getAttribute("aria-sort"), "descending");
+    assert.deepEqual(visible(), [rows[1]!.id, rows[0]!.id], "descending by name puts Rahul first");
+    const stage = [...container.querySelectorAll<HTMLButtonElement>("th button")].find(item => item.textContent?.trim() === "Stage");
+    assert.ok(stage, "the stage column still sorts");
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("on narrow screens a Filters button shows the active count and opens the filters in a sheet that applies them together", async () => {
+  const previous = fetch; const paths: string[] = [];
+  globalThis.fetch = transport(path => { paths.push(path); return undefined; });
+  const root = createRoot(container);
+  const filters = () => [...container.querySelectorAll<HTMLButtonElement>("button")].find(item => /^Filters/.test(item.textContent?.trim() ?? ""));
+  const sheet = () => document.querySelector<HTMLElement>('[role="dialog"]');
+  try {
+    await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}} />));
+    assert.equal(filters()?.textContent?.trim(), "Filters", "no count while nothing is filtered");
+    await setValue(dom, control("Enquiry status"), "quoted", "change");
+    await setValue(dom, control("Enquiry kind"), "bulk", "change");
+    assert.equal(filters()?.textContent?.trim(), "Filters (2)");
+    await act(async () => filters()!.click());
+    const panel = sheet();
+    assert.ok(panel, "the filters open in a sheet");
+    const inSheet = (label: string) => panel.querySelector<HTMLSelectElement | HTMLInputElement>(`[aria-label="${label}"]`);
+    for (const label of ["Enquiry kind", "Enquiry status", "Enquiry assignment", "Assignee", "From date", "To date"]) assert.ok(inSheet(label), `${label} is in the sheet`);
+    assert.equal(inSheet("Enquiry kind")!.value, "bulk", "the sheet starts from the active filters");
+    const before = paths.length;
+    await setValue(dom, inSheet("Enquiry assignment"), "unassigned", "change");
+    await setValue(dom, inSheet("From date"), "2030-01-01", "change");
+    assert.equal(paths.length, before, "nothing is requested until the filters are applied");
+    const apply = [...panel.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent?.trim() === "Apply filters");
+    assert.ok(apply, "the sheet has an apply action");
+    await act(async () => apply.click());
+    assert.equal(paths.length, before + 1, "applying sends one request");
+    assert.equal(paths.at(-1), "/api/admin/enquiries?kind=bulk&status=quoted&assignment=unassigned&from=2030-01-01");
+    assert.equal(sheet(), null, "applying closes the sheet");
+    assert.equal(filters()?.textContent?.trim(), "Filters (4)");
+    assert.equal((control("Enquiry assignment") as HTMLSelectElement).value, "unassigned", "the inline bar shows the same state");
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});

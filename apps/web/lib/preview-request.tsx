@@ -16,10 +16,12 @@ export async function loadPreviewRequest(searchParams: Promise<Record<string, st
 
 export function PreviewUnavailable({ draft }: { draft: Extract<DraftPreview, { ok: false }> }) {
   return (
-    <section className="shop-admin admin-preview-unavailable" aria-labelledby="preview-unavailable">
-      <h1 id="preview-unavailable">Draft preview unavailable</h1>
-      <p role="alert">{draft.status === 401 ? "Sign in to the admin dashboard, then open the preview again from the editor." : draft.message}</p>
-      <p><a href="/admin">Back to editor</a></p>
+    <section className="shop-admin grid min-h-dvh place-items-center bg-background px-6 py-12" aria-labelledby="preview-unavailable">
+      <div className="grid max-w-[60ch] gap-4">
+        <h1 id="preview-unavailable" className="font-display text-3xl leading-tight font-normal">Draft preview unavailable</h1>
+        <p role="alert" className="rounded-lg border border-danger/20 bg-danger-bg px-4 py-3 text-sm font-medium text-danger">{draft.status === 401 ? "Sign in to the admin dashboard, then open the preview again from the editor." : draft.message}</p>
+        <p><a href="/admin" className="rounded-sm text-sm font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a></p>
+      </div>
     </section>
   );
 }

@@ -89,8 +89,10 @@ test("the top bar shows the draft and published versions, the signed-in staff me
     assert.match(account.textContent ?? "", /priya\.menon@example\.test/);
     assert.match(account.textContent ?? "", /Publisher/);
     assert.equal(account.querySelector("[data-avatar]")?.textContent, "PM");
-    const signOut = [...bar.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "Sign out");
-    assert.ok(signOut, "Sign out lives in the top bar");
+    // Sign out lives in the staff menu opened from the account in the top bar (a Radix menu opens on Enter).
+    await act(async () => { account.focus(); account.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    const signOut = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) => item.textContent === "Sign out");
+    assert.ok(signOut, "Sign out lives in the top bar's staff menu");
     await act(async () => signOut.click());
     assert.equal(signedOut, 1);
     assert.equal([...bar.querySelectorAll("button")].some((b) => b.textContent === "Publish draft"), true, "Publishers can publish from the top bar");
@@ -105,5 +107,37 @@ test("an unpublished store and an editor role are reflected in the top bar", asy
     assert.match(bar.querySelector("[data-publish-status]")?.textContent ?? "", /Not published/i);
     assert.equal([...bar.querySelectorAll("button")].some((b) => b.textContent === "Publish draft"), false);
     assert.match(bar.querySelector("[data-staff-account]")?.textContent ?? "", /Editor/);
+  } finally { await app.close(); }
+});
+
+test("the command palette moves focus to the chosen screen's heading", async () => {
+  const app = await setup({ canManageEnquiries: true });
+  // cmdk scrolls the active item into view; jsdom has no layout.
+  dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  try {
+    await act(async () => { document.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true })); });
+    const input = document.querySelector<HTMLInputElement>('input[placeholder="Jump to a screen or action"]');
+    assert.ok(input, "Ctrl+K opens the palette");
+    const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => { setValue.call(input, "media"); input.dispatchEvent(new dom.window.Event("input", { bubbles: true })); });
+    await act(async () => { input.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    assert.deepEqual(current(), ["Media"]);
+    const heading = container.querySelector<HTMLElement>("[data-admin-panel] h2");
+    assert.ok(heading && document.activeElement === heading, "Focus lands on the Media heading, not the page body");
+  } finally { await app.close(); }
+});
+
+test("draft actions show only on screens that edit the draft", async () => {
+  const app = await setup({ canManageEnquiries: true });
+  try {
+    const bar = () => container.querySelector<HTMLElement>("[data-admin-topbar]")!;
+    const actions = () => [...bar().querySelectorAll("button")].map((b) => b.textContent).filter((text) => ["Save draft", "Preview draft", "Publish draft", "Live preview"].includes(text ?? ""));
+    await act(async () => navButton("Homepage").click());
+    assert.deepEqual(actions().sort(), ["Live preview", "Preview draft", "Publish draft", "Save draft"]);
+    for (const screen of ["Media", "Enquiries"]) {
+      await act(async () => navButton(screen).click());
+      assert.deepEqual(actions(), [], `${screen} has no draft actions`);
+    }
   } finally { await app.close(); }
 });

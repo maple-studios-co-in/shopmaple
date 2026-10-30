@@ -3,19 +3,16 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { SiteChrome } from "@shopmaple/contracts";
 import { StoreChromeView } from "@/components/admin/store-chrome";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
+import { AdminRoot } from "./admin-root";
 import { previewDevices, previewMessageSource, readPreviewMessage, type PreviewDevice } from "@/lib/live-preview";
 
 export type PreviewPageOption = { label: string; segments: string[] };
 
 /** Fixed banner, page switcher and width toggle around the draft preview frame. */
 export function PreviewShell({ token, segments, pages, version, publishedVersion, expiresAt, title }: {
-  token: string;
-  segments: string[];
-  pages: PreviewPageOption[];
-  version: number;
-  publishedVersion: number | null;
-  expiresAt: string;
-  title: string;
+  token: string; segments: string[]; pages: PreviewPageOption[]; version: number; publishedVersion: number | null; expiresAt: string; title: string;
 }) {
   const router = useRouter();
   const [width, setWidth] = useState<PreviewDevice>("desktop");
@@ -23,37 +20,31 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
   const query = `?token=${encodeURIComponent(token)}`;
   const expires = new Date(expiresAt);
   return (
-    <div className="admin-preview-shell">
-      <header className="admin-preview-bar">
-        <strong>Draft preview, not published</strong>
-        <span>
+    <AdminRoot aria-label="Draft preview" className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-x-4 gap-y-2.5 border-b border-line-soft bg-surface/90 px-[clamp(16px,3vw,28px)] py-2.5 backdrop-blur-md backdrop-saturate-150">
+        <strong className="inline-flex items-center gap-2 text-sm font-semibold text-primary"><span aria-hidden="true" className="size-[7px] rounded-full bg-primary" />Draft preview, not published</strong>
+        <span className="text-xs text-muted-foreground tabular-nums">
           Draft version {version}. {publishedVersion ? `Published version ${publishedVersion}.` : "Nothing published yet."} Link expires at{" "}
           {Number.isFinite(expires.getTime()) ? expires.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "an unknown time"}.
         </span>
-        <label>
+        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <span>Page</span>
-          <select aria-label="Preview page" value={current} onChange={(event) => router.push(`/admin/preview/${event.target.value}${query}`)}>
-            {pages.map((page) => (
-              <option key={page.segments.join("/")} value={page.segments.join("/")}>{page.label}</option>
-            ))}
-          </select>
+          <NativeSelect size="sm" aria-label="Preview page" className="max-w-[260px] bg-card" value={current} onChange={(event) => router.push(`/admin/preview/${event.target.value}${query}`)}>
+            {pages.map((page) => <NativeSelectOption key={page.segments.join("/")} value={page.segments.join("/")}>{page.label}</NativeSelectOption>)}
+          </NativeSelect>
         </label>
-        <div role="group" aria-label="Preview width" className="admin-preview-widths">
+        <div role="group" aria-label="Preview width" className="inline-flex gap-0.5 rounded-full bg-black/[0.07] p-[3px]">
           {previewDevices.map((device) => (
-            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)}>{device.label}</button>
+            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)} className="h-7 rounded-full px-3 text-xs font-semibold text-neutral focus-visible:outline-none transition-colors duration-150 ease-admin hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs">{device.label}</button>
           ))}
         </div>
-        <a href="/admin">Back to editor</a>
+        <a href="/admin" className="ml-auto rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a>
       </header>
-      <div className={`admin-preview-frame-wrap is-${width}`}>
-        <iframe
-          className="admin-preview-frame"
-          title={`Draft preview of ${title}`}
-          src={`/admin/preview-frame/${current}${query}`}
-          referrerPolicy="same-origin"
-        />
+      <div className="flex flex-1 justify-center p-4">
+        <iframe title={`Draft preview of ${title}`} src={`/admin/preview-frame/${current}${query}`} referrerPolicy="same-origin"
+          className={cn("h-[calc(100dvh-84px)] min-h-[480px] w-full max-w-full rounded-xl border-0 bg-white shadow-lg motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-admin", width === "tablet" && "w-[820px]", width === "phone" && "w-[390px]")} />
       </div>
-    </div>
+    </AdminRoot>
   );
 }
 
@@ -85,7 +76,7 @@ export function PreviewNavigation({ token, children, navigate = (url) => window.
     navigate(`/admin/preview-frame${path}${query}`);
   }
   // display: contents, so the wrapper changes no layout; it only has to be an ancestor of every link.
-  return <div onClickCapture={onClick} className="admin-preview-navigation" data-preview-navigation="">{children}</div>;
+  return <div onClickCapture={onClick} className="contents" data-preview-navigation="">{children}</div>;
 }
 
 /**
@@ -128,10 +119,18 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
   view?: "draft" | "published";
 }) {
   return (
-    <div className="admin-preview-document" data-preview-version={version} data-preview-path={path} data-preview-view={view}>
+    // Storefront markup inside the frame is not the admin's to class, so the section highlight
+    // reaches it with an arbitrary variant; the ribbon sits in space reserved at the bottom.
+    <div
+      data-admin-tokens=""
+      className="relative pb-[26px] [&_[data-home-section][data-preview-highlight=true]]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]]:outline-2 [&_[data-home-section][data-preview-highlight=true]]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]]:outline-primary [&_[data-home-section][data-preview-highlight=true]]:outline-solid motion-safe:[&_[data-home-section]]:transition-shadow motion-safe:[&_[data-home-section]]:duration-500"
+      data-preview-version={version}
+      data-preview-path={path}
+      data-preview-view={view}
+    >
       <PreviewNavigation token={token} navigate={navigate} view={view}>
         <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
-        <p className="admin-preview-ribbon" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
+        <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
       </PreviewNavigation>
       <PreviewFrameBridge path={path} version={version} />
     </div>

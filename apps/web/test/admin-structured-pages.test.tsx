@@ -55,7 +55,7 @@ test("legacy page opening and saving preserve plain text and absent blocks", asy
   const state = await mount(contentWithPages(original));
   try {
     assert.equal(field("Page body").value, original);
-    assert.equal(container.querySelector('[aria-label="Page preview"] .admin-plain-copy')?.textContent, original);
+    assert.equal(container.querySelector('[aria-label="Page preview"] [data-plain-copy]')?.textContent, original);
     await fill("Page title", "Revised title"); await click("Save draft");
     assert.equal(state.saved[0].content.pages[0].body, original);
     assert.equal(Object.hasOwn(state.saved[0].content.pages[0], "blocks"), false);
@@ -202,4 +202,22 @@ test("conversion treats consecutive blank lines as separators while retaining pa
     assert.equal(state.saved[0].content.pages[0].blocks[0].text, "  First  \r");
     assert.equal(state.saved[0].content.pages[0].blocks[1].text, "  Second\r\ncontinued  ");
   } finally { await state.cleanup(); }
+});
+// Catches an empty list rendering as a bare sentence with no way to fill it.
+test("empty page and Instagram lists show an empty state whose one action fills them", async () => {
+  const { PageFields, InstagramFields } = await import("../components/admin/forms");
+  const root = createRoot(container); let current: StorefrontContent = { ...contentWithPages(), instagramPosts: [] };
+  function Harness() {
+    const [value, setValue] = React.useState(current);
+    const change = (next: StorefrontContent) => { current = next; setValue(next); };
+    return <><PageFields content={value} onChange={change} /><InstagramFields content={value} onChange={change} /></>;
+  }
+  try {
+    await act(async () => root.render(<Harness />));
+    const empties = [...container.querySelectorAll<HTMLElement>("[data-empty]")];
+    assert.equal(empties.length, 2, "Both lists show a designed empty state");
+    await click("Add page", empties[0]); assert.equal(current.pages.length, 1); assert.ok(field("Page title"));
+    await click("Add Instagram post", empties[1]); assert.equal(current.instagramPosts.length, 1); assert.ok(field("Post 1 link"));
+    assert.equal(container.querySelector("[data-empty]"), null);
+  } finally { await act(async () => root.unmount()); }
 });

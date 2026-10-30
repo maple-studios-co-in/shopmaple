@@ -13,6 +13,12 @@ These rules apply across the monorepo. Read any more-specific `AGENTS.md` before
 - Pure prose, generated output, and declarative configuration do not need artificial unit tests. Validate with the actual parser, build, scanner, or workflow. Any custom executable logic still requires behavior tests first.
 - Include RED/GREEN commands, results, and limitations in the PR. Do not claim a failing suite passed or omit unrelated failures. Never change a test only to conceal a real failure.
 
+## Admin UI
+
+- The shop admin is built on shadcn/ui. Components come from `apps/web/components/ui` (owned code from `components.json`); compose them with Tailwind utilities in the admin components.
+- Write no new hand-written CSS for the admin. `apps/web/styles/admin.css` is the token file: `--admin-*` tokens, their `--crm-*` aliases, the shadcn variable mapping, the Tailwind imports and the scoped base. Change a token there instead of adding a rule.
+- Tailwind is scoped to the admin: no global preflight, and the storefront's stylesheets must not change because of admin work. Overlays render inside `.shop-admin` through `AdminRoot`.
+
 ## Security and delivery
 
 - Follow [SECURITY.md](SECURITY.md). Run dependency, secret, and static checks for each implementation increment and again on the final commit. Review findings before merge.

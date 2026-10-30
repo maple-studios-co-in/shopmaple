@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { z } from "zod";
 import { enquiryAssigneeListSchema, enquiryStageLabels, type EnquiryAssignee, type EnquiryStage } from "@shopmaple/contracts";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton as SkeletonBlock } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 /** The viewer's local calendar date; the API never guesses a timezone. */
@@ -35,31 +38,47 @@ export function formatDateTime(value: string) {
   return new Date(value).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+const stageTone: Record<string, string> = {
+  new: "bg-neutral-bg text-neutral",
+  contacted: "bg-info-bg text-info",
+  quoted: "bg-warning-bg text-warning",
+  won: "bg-success-bg text-success",
+  lost: "bg-danger-bg text-danger",
+};
 export function StageChip({ stage, children }: { stage: string; children?: ReactNode }) {
   const label = (enquiryStageLabels as Record<string, string>)[stage] ?? stage;
-  return <span className="crm-chip" data-stage={stage}>{label}{children}</span>;
+  return <Badge variant="secondary" data-stage={stage} className={cn("rounded-md border-0 font-semibold", stageTone[stage] ?? stageTone.new)}>{label}{children}</Badge>;
 }
-export function Avatar({ email, title }: { email: string; title?: string }) {
-  return <span className="crm-avatar" data-avatar title={title ?? email} aria-label={title ?? email}>{initials(email)}</span>;
+export function Avatar({ email, title, className }: { email: string; title?: string; className?: string }) {
+  return <span data-avatar title={title ?? email} aria-label={title ?? email} className={cn("inline-grid size-7 shrink-0 place-items-center rounded-[9px] bg-primary text-2xs font-bold tracking-[0.04em] text-primary-foreground", className)}>{initials(email)}</span>;
 }
+const dueTone: Record<DueState, string> = { overdue: "bg-danger-bg text-danger", today: "bg-warning-bg text-warning", upcoming: "bg-neutral-bg text-neutral" };
 export function DueBadge({ state, children }: { state: DueState; children?: ReactNode }) {
-  return <span className="crm-due" data-due={state}>{children ?? dueLabels[state]}</span>;
+  return <Badge variant="secondary" data-due={state} className={cn("rounded-md border-0 font-semibold tabular-nums", dueTone[state])}>{children ?? dueLabels[state]}</Badge>;
 }
+/** Placeholder rows, tiles or cards shaped like the content that is loading. */
 export function Skeleton({ rows = 3, variant = "row" }: { rows?: number; variant?: "row" | "tile" | "card" }) {
-  return <div className={`crm-skeleton crm-skeleton-${variant}`} aria-hidden="true">
-    {Array.from({ length: rows }, (_, index) => <div key={index} data-skeleton className="crm-skeleton-item" style={{ animationDelay: `${index * 90}ms` }} />)}
+  return <div aria-hidden="true" className={cn("grid gap-3", variant === "tile" && "grid-cols-2 sm:grid-cols-3", variant === "card" && "sm:grid-cols-2")}>
+    {Array.from({ length: rows }, (_, index) => <SkeletonBlock key={index} data-skeleton className={cn("rounded-lg", variant === "row" ? "h-12" : variant === "tile" ? "h-24" : "h-40")} style={{ animationDelay: `${index * 90}ms` }} />)}
   </div>;
 }
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
-  return <div className="crm-empty" data-empty>
-    <p className="crm-empty-title">{title}</p>
-    {children && <p className="crm-empty-body">{children}</p>}
-    {action && <div className="crm-empty-action">{action}</div>}
+/** A composed empty state: what is missing, why, and the one action that fills it. */
+export function EmptyState({ title, children, action, icon }: { title: string; children?: ReactNode; action?: ReactNode; icon?: ReactNode }) {
+  return <div data-empty className="grid justify-items-start gap-2 rounded-xl border border-dashed border-border bg-surface px-6 py-8">
+    {icon && <span aria-hidden="true" className="mb-1 grid size-9 place-items-center rounded-lg bg-accent-tint text-primary [&_svg]:size-[18px]">{icon}</span>}
+    <p className="text-base font-semibold text-foreground">{title}</p>
+    {children && <p className="max-w-[56ch] text-sm leading-relaxed text-muted-foreground">{children}</p>}
+    {action && <div className="mt-2 flex flex-wrap gap-2">{action}</div>}
   </div>;
 }
-export function Notice({ tone, children }: { tone: "error" | "status" | "info"; children: ReactNode }) {
-  if (tone === "info") return <p className="crm-notice crm-notice-info">{children}</p>;
-  return <p role={tone === "error" ? "alert" : "status"} className={`crm-notice crm-notice-${tone}`}>{children}</p>;
+const noticeTone = {
+  error: "border-danger/20 bg-danger-bg text-danger",
+  status: "border-success/20 bg-success-bg text-success",
+  info: "border-border bg-sunken text-muted-foreground",
+} as const;
+/** An inline message: errors are alerts, confirmations are statuses, info is neither. */
+export function Notice({ tone, children, className, ...props }: { tone: "error" | "status" | "info"; children: ReactNode; className?: string } & Record<`data-${string}`, unknown>) {
+  return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} {...props} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
 }
 
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };

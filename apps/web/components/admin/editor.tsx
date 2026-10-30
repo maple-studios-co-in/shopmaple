@@ -1,15 +1,21 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  BookOpen, ChevronDown, ChevronUp, CircleCheck, Eye, ExternalLink, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  LayoutDashboard, LayoutGrid, LogOut, Megaphone, PanelsTopLeft, Tags, TriangleAlert, X,
+  BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Tags, TriangleAlert, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
   storefrontContentSchema,
   type StorefrontContent,
 } from "@shopmaple/contracts";
-import { Field, CampaignFields, InstagramFields, PageFields } from "./forms";
+import { Button } from "@/components/ui/button";
+import { DisabledScope } from "@/components/ui/disabled-scope";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { CampaignFields, InstagramFields, PageFields } from "./forms";
 import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
@@ -17,46 +23,29 @@ import { NimbusFields } from "./nimbus-fields";
 import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
 import { AuthoredArticleFields } from "./authored-article-fields";
-import { HomeDetailsFields } from "./home-details-fields";
-import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
-import { CrmSummary } from "./crm-summary";
-import { SortableList } from "./sortable-list";
 import { LivePreview, type MintResult } from "./live-preview";
-import { EmptyState, Skeleton, initials } from "./crm-primitives";
+import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
+import { EmptyState, Notice, Skeleton } from "./crm-primitives";
+import { HistoryPanel, type Revision } from "./history-panel";
+import { HomepagePanel } from "./homepage-panel";
+import { OverviewPanel } from "./overview-panel";
+import { PanelHeader, SelectField } from "./kit";
 import type { StaffSession } from "./dashboard";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
+export { titleCase } from "./homepage-panel";
 type Document = {
   version: number;
   draft: StorefrontContent | null;
   publishedVersion: number | null;
   updatedAt: string | null;
 };
-type Revision = {
-  id: string;
-  version: number;
-  action: string;
-  actorEmail: string;
-  createdAt: string;
-};
 const tabs = [
-  "Overview",
-  "Homepage",
-  "Navigation & footer",
-  "Merchandising",
-  "Artwork",
-  "Campaigns",
-  "Instagram",
-  "Pages",
-  "Existing pages",
-  "Policies & blogs",
-  "Category pages",
-  "Media",
-  "Enquiries",
-  "History",
+  "Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram",
+  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
@@ -69,72 +58,29 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: "Publishing", items: ["History"] },
 ];
 const icons: Record<Tab, typeof House> = {
-  Overview: LayoutDashboard,
-  Homepage: House,
-  "Navigation & footer": PanelsTopLeft,
-  Merchandising: LayoutGrid,
-  Artwork: ImageIcon,
-  Campaigns: Megaphone,
-  Instagram,
-  Pages: FileText,
-  "Existing pages": Files,
-  "Policies & blogs": BookOpen,
-  "Category pages": Tags,
-  Media: Images,
-  Enquiries: Inbox,
-  History,
+  Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, Artwork: ImageIcon,
+  Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
+  Media: Images, Enquiries: Inbox, History,
 };
+/** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
+const existingPages = [
+  ["story", "Our Story", "pages/our-story"], ["nimbus", "The Nimbus Collection", "pages/nimbus-collection"], ["contact", "Contact", "pages/contact"],
+  ["bulk", "Bulk Enquiry", "pages/bulk-enquiry"], ["returns", "Return & Exchange", "pages/returns"],
+] as const;
+type ExistingPage = (typeof existingPages)[number][0];
 /** Sections whose edits show on a storefront page and can therefore use the live preview. */
 const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
-const copyLabels: Record<keyof StorefrontContent["homeCopy"], string> = {
-  categoryHeading: "Category heading",
-  bestsellersHeading: "Bestsellers heading",
-  chairsHeading: "Chairs heading",
-  socialHeading: "Social heading",
-  ticker: "Brand ticker",
-  testimonialHeading: "Testimonial heading",
-  testimonialSubheading: "Testimonial subheading",
-};
-export const titleCase = (value: string) =>
-  value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 function parseDocument(value: unknown): Document {
   const document = value as Document;
-  if (
-    !document ||
-    !Number.isSafeInteger(document.version) ||
-    document.version < 0 ||
-    !(
-      document.updatedAt === null ||
-      (typeof document.updatedAt === "string" &&
-        document.updatedAt.length <= 64 &&
-        Number.isFinite(Date.parse(document.updatedAt)))
-    ) ||
-    !(
-      document.publishedVersion === null ||
-      (Number.isSafeInteger(document.publishedVersion) &&
-        document.publishedVersion >= 0 &&
-        document.publishedVersion <= document.version)
-    )
-  )
-    throw new Error("Invalid response");
-  return {
-    ...document,
-    draft:
-      document.draft === null
-        ? null
-        : storefrontContentSchema.parse(document.draft),
-  };
+  const validUpdatedAt = document?.updatedAt === null || (typeof document?.updatedAt === "string" && document.updatedAt.length <= 64 && Number.isFinite(Date.parse(document.updatedAt)));
+  const validPublished = document?.publishedVersion === null || (Number.isSafeInteger(document?.publishedVersion) && document.publishedVersion! >= 0 && document.publishedVersion! <= document.version);
+  if (!document || !Number.isSafeInteger(document.version) || document.version < 0 || !validUpdatedAt || !validPublished) throw new Error("Invalid response");
+  return { ...document, draft: document.draft === null ? null : storefrontContentSchema.parse(document.draft) };
 }
 /** A request the hook aborted because the component went away; never worth reporting. */
 const aborted = (error: unknown) => error instanceof Error && error.name === "AbortError";
 
-export function ContentEditor({
-  session,
-  initialContent,
-  onExpired,
-  account,
-  livePreviewDebounceMs = 1200,
-}: {
+export function ContentEditor({ session, initialContent, onExpired, account, livePreviewDebounceMs = 1200 }: {
   session: StaffSession;
   initialContent: StorefrontContent;
   onExpired: () => void;
@@ -144,7 +90,7 @@ export function ContentEditor({
 }) {
   const adminRequest = useAdminRequest();
   const [tab, setTab] = useState<Tab>("Overview");
-  const [existingPage, setExistingPage] = useState<"story" | "nimbus" | "contact" | "bulk" | "returns">("story");
+  const [existingPage, setExistingPage] = useState<ExistingPage>("story");
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<StorefrontContent | null>(null);
   const [busy, setBusy] = useState(false);
@@ -202,36 +148,22 @@ export function ContentEditor({
     setError("");
     setNotice("");
     try {
-      const response = await adminRequest("/api/admin/content", {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
+      const response = await adminRequest("/api/admin/content", { cache: "no-store", credentials: "same-origin" });
       if (!current()) return;
-      if (response.status === 401) {
-        onExpired();
-        return;
-      }
+      if (response.status === 401) return onExpired();
       if (!response.ok) throw new Error("Read failed");
       acceptDocument(await response.json());
     } catch (error) {
       if (aborted(error) || !current()) return;
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Loading your draft timed out. Please try again."
-          : "We couldn't load your draft. Please try again.",
-      );
+      setError(error instanceof AdminRequestTimeout ? "Loading your draft timed out. Please try again." : "We couldn't load your draft. Please try again.");
     } finally {
       if (current()) setBusy(false);
     }
   }
-  useEffect(() => {
-    void load();
-  }, [session.user.id]);
+  useEffect(() => { void load(); }, [session.user.id]);
   useEffect(() => {
     if (!dirty && !scheduleEditing) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, scheduleEditing]);
@@ -240,25 +172,15 @@ export function ContentEditor({
     setBusy(true);
     setError("");
     try {
-      const response = await adminRequest("/api/admin/content/revisions", {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (response.status === 401) {
-        onExpired();
-        return;
-      }
+      const response = await adminRequest("/api/admin/content/revisions", { cache: "no-store", credentials: "same-origin" });
+      if (response.status === 401) return onExpired();
       if (!response.ok) throw new Error("Read failed");
       const result = await response.json();
       if (!Array.isArray(result.revisions)) throw new Error("Invalid history");
       setRevisions(result.revisions);
     } catch (error) {
       if (aborted(error) || !alive.current) return;
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Loading revision history timed out. Open History to try again."
-          : "We couldn't load revision history. Open History to try again.",
-      );
+      setError(error instanceof AdminRequestTimeout ? "Loading revision history timed out. Open History to try again." : "We couldn't load revision history. Open History to try again.");
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -273,12 +195,7 @@ export function ContentEditor({
   /** Storefront address the preview opens on, chosen from what is being edited. */
   function previewPath() {
     if (tab === "Category pages") return "pages/sofas";
-    if (tab === "Existing pages")
-      return existingPage === "story" ? "pages/our-story"
-        : existingPage === "nimbus" ? "pages/nimbus-collection"
-        : existingPage === "contact" ? "pages/contact"
-        : existingPage === "bulk" ? "pages/bulk-enquiry"
-        : "pages/returns";
+    if (tab === "Existing pages") return existingPages.find(([key]) => key === existingPage)![2];
     if (tab === "Pages") {
       const page = [content?.pages[selectedPage], ...(content?.pages ?? [])].find((item) => item?.slug);
       if (page) return `pages/${encodeURIComponent(page.slug)}`;
@@ -295,15 +212,10 @@ export function ContentEditor({
   const mintPreviewToken = useCallback(async (version: number): Promise<MintResult | null> => {
     try {
       const response = await adminRequest("/api/admin/content/preview", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
         body: JSON.stringify({ expectedVersion: version }),
       });
-      if (response.status === 401) {
-        onExpired();
-        return null;
-      }
+      if (response.status === 401) { onExpired(); return null; }
       if (response.status === 409) {
         const body: unknown = await response.json().catch(() => null);
         const code = body && typeof body === "object" ? (body as { code?: unknown }).code : undefined;
@@ -319,13 +231,7 @@ export function ContentEditor({
       return { ok: true, token: record.token, expiresAt: typeof record.expiresAt === "string" ? record.expiresAt : "" };
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      return {
-        ok: false,
-        code: "unavailable",
-        message: error instanceof AdminRequestTimeout
-          ? "Opening the preview timed out. Please try again."
-          : "We couldn't open the preview. Please try again.",
-      };
+      return { ok: false, code: "unavailable", message: error instanceof AdminRequestTimeout ? "Opening the preview timed out. Please try again." : "We couldn't open the preview. Please try again." };
     }
   }, [adminRequest, session.csrfToken, onExpired]);
   async function preview() {
@@ -336,34 +242,23 @@ export function ContentEditor({
     let version = document.version;
     if (dirty || document.draft === null) {
       const saved = await write("save");
-      if (!saved) {
-        popup?.close();
-        return;
-      }
+      if (!saved) return popup?.close();
       version = saved.version;
     }
     setBusy(true);
     setError("");
     const minted = await mintPreviewToken(version);
     if (alive.current) setBusy(false);
-    if (!minted) {
+    if (!minted || !minted.ok) {
       popup?.close();
-      return;
-    }
-    if (!minted.ok) {
-      popup?.close();
-      setError(minted.message);
+      if (minted) setError(minted.message);
       return;
     }
     const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(minted.token)}`;
     if (popup) popup.location.href = url;
     else setPreviewLink(url);
   }
-  async function write(
-    action: "save" | "publish" | "restore",
-    revisionId?: string,
-    options: { quiet?: boolean } = {},
-  ): Promise<Document | null> {
+  async function write(action: "save" | "publish" | "restore", revisionId?: string, options: { quiet?: boolean } = {}): Promise<Document | null> {
     if (!document || !content || busy || inFlight.current || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
@@ -385,46 +280,21 @@ export function ContentEditor({
     if (!quiet) { setError(""); setNotice(""); }
     const fail = (message: string) => { if (quiet) setAutoSaveFailed(message); else setError(message); };
     try {
-      const response = await adminRequest(
-        `/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`,
-        {
-          method: action === "save" ? "PUT" : "POST",
-          credentials: "same-origin",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": session.csrfToken,
-          },
-          body: JSON.stringify({
-            expectedVersion: document.version,
-            ...(action === "save"
-              ? { content }
-              : action === "restore"
-                ? { revisionId }
-                : {}),
-          }),
-        },
-      );
-      if (response.status === 401) {
-        onExpired();
-        return null;
-      }
+      const response = await adminRequest(`/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`, {
+        method: action === "save" ? "PUT" : "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        body: JSON.stringify({ expectedVersion: document.version, ...(action === "save" ? { content } : action === "restore" ? { revisionId } : {}) }),
+      });
+      if (response.status === 401) { onExpired(); return null; }
       if (response.status === 409) {
         setConflict(true);
-        setError(
-          "Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.",
-        );
-        return null;
-      }
-      if (response.status === 403) {
-        fail("Your permission or session has changed. Sign out and sign in again before continuing.");
+        setError("Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.");
         return null;
       }
       if (!response.ok) {
-        fail(
-          response.status === 400
-            ? "Some content is invalid. Check your links and fields, then save again."
-            : "We couldn't complete that change. Your local edits are still here. Please try again.",
-        );
+        fail(response.status === 403 ? "Your permission or session has changed. Sign out and sign in again before continuing."
+          : response.status === 400 ? "Some content is invalid. Check your links and fields, then save again."
+          : "We couldn't complete that change. Your local edits are still here. Please try again.");
         return null;
       }
       const raw: unknown = await response.json();
@@ -432,21 +302,13 @@ export function ContentEditor({
       if (quiet && action === "save") acceptQuietSave(raw, sent!);
       else acceptDocument(raw);
       setAutoSaveFailed("");
-      if (!quiet) setNotice(
-        action === "save"
-          ? "Draft saved. The published storefront has not changed."
-          : action === "publish"
-            ? "Draft published. The storefront now uses this version."
-            : "Restored as a draft. Review it, then publish when ready.",
-      );
+      if (!quiet) setNotice(action === "save" ? "Draft saved. The published storefront has not changed."
+        : action === "publish" ? "Draft published. The storefront now uses this version." : "Restored as a draft. Review it, then publish when ready.");
       return accepted;
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      fail(
-        error instanceof AdminRequestTimeout
-          ? "The request timed out. Your local edits are still here. Please try again."
-          : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.",
-      );
+      fail(error instanceof AdminRequestTimeout ? "The request timed out. Your local edits are still here. Please try again."
+        : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.");
       return null;
     } finally {
       inFlight.current = false;
@@ -479,180 +341,196 @@ export function ContentEditor({
   const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
   const roleLabel = session.user.role === "publisher" ? "Publisher" : "Editor";
   const unavailableDraft = busy ? (
-    <div className="admin-empty" aria-busy="true">
-      <p role="status" className="admin-sr-only">Loading store content</p>
+    <div aria-busy="true">
+      <p role="status" className="sr-only">Loading store content</p>
       <Skeleton rows={4} />
     </div>
   ) : (
-    <EmptyState title="Your draft is unavailable" action={<button type="button" onClick={() => void load()}>Retry loading draft</button>}>
+    <EmptyState title="Your draft is unavailable" icon={<TriangleAlert strokeWidth={1.5} />} action={<Button type="button" variant="outline" onClick={() => void load()}>Retry loading draft</Button>}>
       The draft could not be loaded. Check your connection, then try again.
     </EmptyState>
   );
-  const navButton = (name: Tab) => {
-    const Icon = icons[name];
-    return (
-      <button
-        key={name}
-        type="button"
-        aria-current={tab === name ? "page" : undefined}
-        disabled={navDisabled(name)}
-        onClick={() => selectTab(name)}
-      >
-        <Icon aria-hidden="true" strokeWidth={1.5} />
-        {name}
-      </button>
-    );
-  };
+  const saveDisabled = !content || !dirty || busy || saving || conflict || scheduleEditing;
+  const previewDisabled = !document || !content || busy || saving || conflict || scheduleEditing;
+  const publishDisabled = !document?.version || dirty || busy || saving || conflict || scheduleEditing;
+  const draftTone = conflict ? "conflict" : busy || saving ? "saving" : dirty ? "unsaved" : "accent";
+  const draftScreen = previewable.has(tab);
+  const liveDisabled = !document || !content || !draftScreen;
+  const publisher = session.user.role === "publisher";
+  /** After the palette navigates, the new screen's heading takes focus (never the page body). */
+  const focusPanelHeading = () => requestAnimationFrame(() => {
+    const heading = window.document.querySelector<HTMLElement>("[data-admin-panel] h2");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus();
+  });
+  // One width rule for every screen: full width up to 1180 px; beside the live preview, the split decides.
+  const panelClass = cn("min-w-0 rounded-xl border border-border bg-card p-5 shadow-xs sm:p-7", !liveActive && "max-w-[1180px]");
+
+  /** The draft editor for the current screen (Enquiries renders outside the draft). */
+  function screen() {
+    if (!content) return null;
+    const set = <K extends keyof StorefrontContent>(key: K) => (value: StorefrontContent[K]) => edit({ ...content, [key]: value });
+    switch (tab) {
+      case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
+      case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} />;
+      case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
+        const next = { ...content };
+        if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
+        edit(next);
+      }} />;
+      case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
+      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} />;
+      case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
+      case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />;
+      case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />;
+      case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
+      case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
+      case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
+      case "Policies & blogs": return <>
+        <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
+        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} />
+        <AuthoredArticleFields value={content.authoredArticles} onChange={set("authoredArticles")} session={session} onExpired={onExpired} />
+      </>;
+      case "Existing pages": return <>
+        <PanelHeader title="Existing pages" description="Edit the storefront pages that ship with the theme. Changes stay in your draft until published." />
+        <SelectField label="Existing page" className="mb-6 max-w-sm" value={existingPage} onChange={(event) => setExistingPage(event.target.value as ExistingPage)}>
+          {existingPages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </SelectField>
+        {existingPage === "story" ? <StoryFields value={content.storyPage} onChange={set("storyPage")} />
+          : existingPage === "nimbus" ? <NimbusFields value={content.nimbusPage} onChange={set("nimbusPage")} />
+          : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={set("servicePages")} />}
+      </>;
+      default: return null;
+    }
+  }
 
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <a className="admin-brand" href="/">
-          <strong>Maple Furnishers</strong>
-          <span>Shop admin</span>
-        </a>
-        <nav className="admin-nav" aria-label="Admin sections">
-          {visibleGroups.map((group) =>
-            group.label === null ? (
-              <div className="admin-nav-group" key="top">{group.items.map(navButton)}</div>
-            ) : (
-              <div className="admin-nav-group" key={group.label} data-nav-group={group.label}>
-                <p className="admin-nav-group-label">{group.label}</p>
-                {group.items.map(navButton)}
-              </div>
-            ),
+    <SidebarProvider className="min-h-dvh bg-background" style={{ "--sidebar-width": "15.5rem" } as React.CSSProperties}>
+      <AdminSidebar
+        groups={visibleGroups}
+        current={tab}
+        icons={icons}
+        disabled={navDisabled}
+        onSelect={selectTab}
+        publishedVersion={document?.publishedVersion ?? null}
+      />
+      <SidebarInset className="min-w-0 bg-background">
+        <header data-admin-topbar className="sticky top-0 z-10 flex min-h-16 flex-wrap items-center lg:flex-nowrap gap-x-3 gap-y-2 border-b border-line-soft bg-background/85 px-4 py-2.5 backdrop-blur-md backdrop-saturate-150 sm:px-6">
+          <SidebarTrigger className="-ml-1 hidden text-muted-foreground md:inline-flex" />
+          <Separator orientation="vertical" className="hidden h-5 md:block" />
+          <SectionPicker groups={visibleGroups} current={tab} disabled={navDisabled} onSelect={selectTab} />
+          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2 max-md:order-last max-md:basis-full">
+            <StatusChip tone={draftTone} data-draft-status="">
+              {document ? `Draft version ${document.version}` : "Loading draft"}
+              {conflict ? ", conflict" : busy || saving ? ", saving" : dirty ? ", unsaved changes" : ""}
+            </StatusChip>
+            <StatusChip tone={document?.publishedVersion ? "published" : "unpublished"} data-publish-status="">
+              {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
+            </StatusChip>
+          </div>
+          <div className="flex-1 max-md:hidden" aria-hidden="true" />
+          <CommandPalette
+            groups={visibleGroups}
+            icons={icons}
+            disabled={navDisabled}
+            onSelect={selectTab}
+            afterSelect={focusPanelHeading}
+            actions={draftScreen ? [
+              { label: "Save draft", run: () => void write("save"), disabled: saveDisabled },
+              { label: "Preview draft", run: () => void preview(), disabled: previewDisabled },
+              ...(publisher ? [{ label: "Publish draft", run: () => void write("publish"), disabled: publishDisabled }] : []),
+              { label: liveOpen ? "Close live preview" : "Open live preview", run: () => setLiveOpen((value) => !value), disabled: liveDisabled },
+            ] : []}
+          />
+          {draftScreen && (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" size="sm" aria-pressed={liveOpen} disabled={liveDisabled} onClick={() => setLiveOpen((value) => !value)}
+                className="hidden text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary xl:inline-flex">
+                <Eye aria-hidden="true" strokeWidth={1.5} />Live preview
+              </Button>
+              <Button type="button" variant="outline" size="sm" data-action="save" disabled={saveDisabled} onClick={() => void write("save")}>
+                <Save aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Save draft</span>
+              </Button>
+              <Button type="button" variant="outline" size="sm" data-action="preview" disabled={previewDisabled} onClick={() => void preview()} className="hidden xl:inline-flex">
+                Preview draft
+              </Button>
+              {publisher && (
+                <Button type="button" size="sm" disabled={publishDisabled} onClick={() => void write("publish")}>
+                  <Upload aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Publish draft</span>
+                </Button>
+              )}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label="More draft actions" className="xl:hidden"><Ellipsis aria-hidden="true" strokeWidth={1.5} /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled={liveDisabled} onSelect={() => setLiveOpen((value) => !value)}><Eye aria-hidden="true" strokeWidth={1.5} />{liveOpen ? "Close live preview" : "Open live preview"}</DropdownMenuItem>
+                  <DropdownMenuItem disabled={previewDisabled} onSelect={() => void preview()}><ExternalLink aria-hidden="true" strokeWidth={1.5} />Preview draft in a new tab</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
-        </nav>
-        <div className="admin-sidebar-foot">
-          <span>{document?.publishedVersion ? `Live storefront on version ${document.publishedVersion}` : "Storefront not published yet"}</span>
-          <a href="/" target="_blank" rel="noopener noreferrer">Open storefront <ExternalLink aria-hidden="true" strokeWidth={1.5} /></a>
-        </div>
-      </aside>
-      <div className="admin-main">
-        <header className="admin-topbar" data-admin-topbar>
-          <div className="admin-topbar-context">
-            <label className="admin-section-picker">
-              <span className="admin-sr-only">Admin section</span>
-              <select aria-label="Admin section" value={tab} onChange={(event) => selectTab(event.target.value as Tab)}>
-                {visibleGroups.map((group) =>
-                  group.label === null
-                    ? group.items.map((name) => <option key={name} value={name} disabled={navDisabled(name)}>{name}</option>)
-                    : (
-                      <optgroup key={group.label} label={group.label}>
-                        {group.items.map((name) => <option key={name} value={name} disabled={navDisabled(name)}>{name}</option>)}
-                      </optgroup>
-                    ),
-                )}
-              </select>
-            </label>
-            <div className="admin-status-group">
-              <span className="admin-chip" data-draft-status data-tone={conflict ? "conflict" : busy || saving ? "saving" : dirty ? "unsaved" : "accent"}>
-                {document ? `Draft version ${document.version}` : "Loading draft"}
-                {conflict ? ", conflict" : busy || saving ? ", saving" : dirty ? ", unsaved changes" : ""}
-              </span>
-              <span className="admin-chip" data-publish-status data-tone={document?.publishedVersion ? "published" : "unpublished"}>
-                {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
-              </span>
-            </div>
-          </div>
-          <div className="admin-topbar-actions">
-            <button
-              type="button"
-              className="admin-quiet"
-              aria-pressed={liveOpen}
-              disabled={!document || !content || !previewable.has(tab)}
-              onClick={() => setLiveOpen((value) => !value)}
-            >
-              <Eye aria-hidden="true" strokeWidth={1.5} />
-              Live preview
-            </button>
-            <button
-              data-action="save"
-              disabled={!content || !dirty || busy || saving || conflict || scheduleEditing}
-              onClick={() => void write("save")}
-            >
-              Save draft
-            </button>
-            <button
-              data-action="preview"
-              disabled={!document || !content || busy || saving || conflict || scheduleEditing}
-              onClick={() => void preview()}
-            >
-              Preview draft
-            </button>
-            {session.user.role === "publisher" && (
-              <button
-                className="admin-primary"
-                disabled={!document?.version || dirty || busy || saving || conflict || scheduleEditing}
-                onClick={() => void write("publish")}
-              >
-                Publish draft
-              </button>
-            )}
-          </div>
           {account && (
-            <div className="admin-account" data-staff-account>
-              <span className="admin-avatar" data-avatar aria-hidden="true">{initials(session.user.email)}</span>
-              <span className="admin-account-text">
-                <strong>{session.user.email}</strong>
-                <span>{roleLabel}</span>
-              </span>
-              <button type="button" className="admin-quiet admin-small" disabled={account.busy} onClick={account.onSignOut}>
-                <LogOut aria-hidden="true" strokeWidth={1.5} />
-                Sign out
-              </button>
-            </div>
+            <>
+              <Separator orientation="vertical" className="hidden h-6 sm:block" />
+              <StaffMenu email={session.user.email} role={roleLabel} busy={account.busy} onSignOut={account.onSignOut} />
+            </>
           )}
         </header>
-        <div className="admin-notices">
-          {error && (
-            <p role="alert" className="admin-alert">
-              <TriangleAlert aria-hidden="true" strokeWidth={1.5} />
-              <span>{error}</span>
-              {conflict ? (
-                <button type="button" className="admin-small admin-notice-action" onClick={() => void load()} disabled={busy}>Reload latest draft</button>
-              ) : (
-                <button type="button" className="admin-icon-button admin-notice-action" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></button>
-              )}
-            </p>
-          )}
-          {autoSaveFailed && (
-            <p role="alert" className="admin-alert" data-autosave-failed>
-              <TriangleAlert aria-hidden="true" strokeWidth={1.5} />
-              <span>Live updates are paused: the last save failed. {autoSaveFailed}</span>
-              <button type="button" className="admin-small admin-notice-action" onClick={() => void write("save")} disabled={busy || saving || conflict || !dirty}>Retry save</button>
-            </p>
-          )}
-          {notice && (
-            <p role="status" className="admin-notice">
-              <CircleCheck aria-hidden="true" strokeWidth={1.5} />
-              <span>{notice}</span>
-              <button type="button" className="admin-icon-button admin-notice-action" aria-label="Dismiss message" onClick={() => setNotice("")}><X aria-hidden="true" strokeWidth={1.5} /></button>
-            </p>
-          )}
-          {previewLink && (
-            <p role="status" className="admin-notice" data-tone="info">
-              <span>
-                Your browser blocked the preview tab.{" "}
-                <a href={previewLink} target="_blank" rel="noopener noreferrer">
-                  Open draft preview
-                </a>
-              </span>
-            </p>
-          )}
-        </div>
+        {(error || autoSaveFailed || notice || previewLink) && (
+          <div className="grid gap-2 px-4 pt-4 sm:px-6">
+            {error && (
+              <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span className="flex-1">{error}</span>
+                {conflict
+                  ? <Button type="button" size="xs" variant="outline" className="self-center" onClick={() => void load()} disabled={busy}>Reload latest draft</Button>
+                  : <Button type="button" size="icon-xs" variant="ghost" className="self-center" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>}
+              </Notice>
+            )}
+            {autoSaveFailed && (
+              <Notice tone="error" data-autosave-failed><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" />
+                <span className="flex-1">Live updates are paused: the last save failed. {autoSaveFailed}</span>
+                <Button type="button" size="xs" variant="outline" className="self-center" onClick={() => void write("save")} disabled={busy || saving || conflict || !dirty}>Retry save</Button>
+              </Notice>
+            )}
+            {notice && (
+              <Notice tone="status"><CircleCheck aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span className="flex-1">{notice}</span>
+                <Button type="button" size="icon-xs" variant="ghost" className="self-center" aria-label="Dismiss message" onClick={() => setNotice("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>
+              </Notice>
+            )}
+            {previewLink && <Notice tone="status"><span>Your browser blocked the preview tab. <a href={previewLink} target="_blank" rel="noopener noreferrer">Open draft preview</a></span></Notice>}
+          </div>
+        )}
         {!content && !canManageEnquiries ? (
-          <div className="admin-workspace"><section className="admin-panel" data-admin-panel>{unavailableDraft}</section></div>
+          <div className="p-4 sm:p-6"><section className={panelClass} data-admin-panel>{unavailableDraft}</section></div>
         ) : (
-          <div className="admin-workspace" data-split={liveActive ? "true" : "false"} data-mobile-pane={liveActive ? mobilePane : undefined}>
+          <div
+            data-split={liveActive ? "true" : "false"}
+            data-mobile-pane={liveActive ? mobilePane : undefined}
+            className={cn(
+              "grid flex-1 items-start gap-5 p-4 sm:p-6",
+              liveActive && "xl:grid-cols-[minmax(380px,0.85fr)_minmax(0,1.15fr)]",
+              liveActive && mobilePane === "preview" && "max-md:[&>[data-admin-panel]]:hidden",
+              liveActive && mobilePane === "editor" && "max-md:[&>[data-live-preview]]:hidden",
+            )}
+          >
             {liveActive && (
-              <div className="admin-segmented admin-mobile-pane-toggle" role="group" aria-label="Show editor or preview">
-                <button type="button" aria-pressed={mobilePane === "editor"} onClick={() => setMobilePane("editor")}>Editor</button>
-                <button type="button" aria-pressed={mobilePane === "preview"} onClick={() => setMobilePane("preview")}>Preview</button>
+              <div className="inline-flex w-fit rounded-lg bg-sunken p-1 md:hidden" role="group" aria-label="Show editor or preview">
+                {(["editor", "preview"] as const).map((pane) => (
+                  <button
+                    key={pane}
+                    type="button"
+                    aria-pressed={mobilePane === pane}
+                    onClick={() => setMobilePane(pane)}
+                    className="h-8 rounded-md px-3 text-xs font-semibold text-muted-foreground focus-visible:outline-none transition-colors duration-150 ease-admin focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs"
+                  >
+                    {pane === "editor" ? "Editor" : "Preview"}
+                  </button>
+                ))}
               </div>
             )}
             <section
-              className="admin-panel"
+              className={panelClass}
               data-admin-panel
               data-wide={tab === "Enquiries" ? "true" : undefined}
               aria-label={`${tab} editor`}
@@ -664,380 +542,23 @@ export function ContentEditor({
               {tab === "Enquiries" && canManageEnquiries ? (
                 <EnquiryInbox session={session} onExpired={onExpired} />
               ) : !content ? unavailableDraft : (
-              <fieldset disabled={busy || conflict}>
-                <legend className="admin-sr-only">{tab} editor</legend>
-                {tab === "Overview" && (
-                  <OverviewPanel content={content} session={session} onExpired={onExpired} document={document} dirty={dirty} />
-                )}
-                {tab === "Navigation & footer" && <SiteChromeFields value={content.siteChrome} onChange={siteChrome => {
-                  const next = {...content};
-                  if (siteChrome === undefined) delete next.siteChrome;
-                  else next.siteChrome = siteChrome;
-                  edit(next);
-                }} />}
-                {tab === "Homepage" && (
-                  <>
-                    <div className="admin-panel-head">
-                      <div>
-                        <h2>Homepage</h2>
-                        <p>Drag sections into order, or use the Move buttons, and choose what visitors see. Focus a section to find it in the live preview.</p>
-                      </div>
-                    </div>
-                    <SortableList
-                      items={content.homeSections}
-                      getId={(section) => section.key}
-                      getLabel={(section) => titleCase(section.key)}
-                      className="admin-section-list"
-                      onReorder={(homeSections) => edit({ ...content, homeSections })}
-                      rowProps={(section) => ({ "data-preview-section": section.key, "data-preview-focused": focusedSection === section.key ? "true" : undefined })}
-                      renderItem={(section, index, handle) => (
-                        <>
-                          {handle}
-                          <label>
-                            <input
-                              type="checkbox"
-                              aria-label={`Show ${titleCase(section.key)}`}
-                              checked={section.enabled}
-                              onChange={(e) =>
-                                edit({
-                                  ...content,
-                                  homeSections: content.homeSections.map((s) =>
-                                    s.key === section.key
-                                      ? { ...s, enabled: e.target.checked }
-                                      : s,
-                                  ),
-                                })
-                              }
-                            />
-                            <span>{titleCase(section.key)}</span>
-                          </label>
-                          <div className="admin-row-actions">
-                            {([-1, 1] as const).map((direction) => (
-                              <button
-                                key={direction}
-                                type="button"
-                                aria-label={`Move ${titleCase(section.key)} ${direction === -1 ? "up" : "down"}`}
-                                title={direction === -1 ? "Move up" : "Move down"}
-                                disabled={
-                                  index + direction < 0 ||
-                                  index + direction >= content.homeSections.length
-                                }
-                                onClick={() => {
-                                  const sections = [...content.homeSections];
-                                  [sections[index], sections[index + direction]] =
-                                    [
-                                      sections[index + direction]!,
-                                      sections[index]!,
-                                    ];
-                                  edit({ ...content, homeSections: sections });
-                                }}
-                              >
-                                {direction === -1 ? <ChevronUp aria-hidden="true" strokeWidth={1.5} /> : <ChevronDown aria-hidden="true" strokeWidth={1.5} />}
-                                <span className="admin-sr-only">{direction === -1 ? "Move up" : "Move down"}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    />
-                    <h3>Homepage copy</h3>
-                    <div className="admin-fields">
-                      {(
-                        Object.keys(
-                          copyLabels,
-                        ) as (keyof StorefrontContent["homeCopy"])[]
-                      ).map((key) => (
-                        <Field
-                          key={key}
-                          label={copyLabels[key]}
-                          value={content.homeCopy[key] ?? "Chairs"}
-                          multiline={key === "ticker"}
-                          maxLength={
-                            key === "ticker"
-                              ? 600
-                              : key === "testimonialSubheading"
-                                ? 300
-                                : 160
-                          }
-                          onChange={(value) =>
-                            edit({
-                              ...content,
-                              homeCopy: { ...content.homeCopy, [key]: value },
-                            })
-                          }
-                        />
-                      ))}
-                    </div>
-                    <HomeDetailsFields value={content.homeDetails} onChange={homeDetails => edit({ ...content, homeDetails })} />
-                    <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={homeCitiesLayout => edit({ ...content, homeCitiesLayout })} />
-                    <h3>Motion</h3>
-                    <label className="admin-check">
-                      <input
-                        type="checkbox"
-                        checked={content.motion.autoplayTicker ?? true}
-                        onChange={(event) => edit({ ...content, motion: {
-                          ...content.motion, autoplayTicker: event.target.checked,
-                        } })}
-                      />
-                      Automatically move the homepage ticker
-                    </label>
-                    <label className="admin-check">
-                      <input
-                        type="checkbox"
-                        checked={content.motion.autoplaySocial}
-                        onChange={(e) =>
-                          edit({
-                            ...content,
-                            motion: {
-                              ...content.motion,
-                              autoplaySocial: e.target.checked,
-                            },
-                          })
-                        }
-                      />
-                      Automatically move Instagram posts
-                    </label>
-                    <label className="admin-check">
-                      <input
-                        type="checkbox"
-                        checked={content.motion.autoplayCities}
-                        onChange={(e) =>
-                          edit({
-                            ...content,
-                            motion: {
-                              ...content.motion,
-                              autoplayCities: e.target.checked,
-                            },
-                          })
-                        }
-                      />
-                      Automatically move city illustrations
-                    </label>
-                    <p>
-                      Visitors can pause motion. Their reduced-motion preference
-                      takes priority.
-                    </p>
-                    <label className="admin-check">
-                      <input type="checkbox" checked={content.motion.revealSections}
-                        onChange={(event) => edit({ ...content, motion: {
-                          ...content.motion, revealSections: event.target.checked,
-                        } })} />
-                      Section reveal effects
-                    </label>
-                  </>
-                )}
-                {tab === "Merchandising" && (
-                  <HomeMerchandisingFields value={content.homeMerchandising} onChange={homeMerchandising => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />
-                )}
-                {tab === "Campaigns" && (
-                  <CampaignFields
-                    content={content}
-                    onChange={edit}
-                    session={session}
-                    onExpired={onExpired}
-                    onScheduleEditingChange={setScheduleEditing}
-                  />
-                )}
-                {tab === "Instagram" && (
-                  <InstagramFields
-                    content={content}
-                    onChange={edit}
-                    session={session}
-                    onExpired={onExpired}
-                  />
-                )}
-                {tab === "Pages" && (
-                  <PageFields
-                    content={content}
-                    onChange={edit}
-                    session={session}
-                    onExpired={onExpired}
-                    onSelectedPageChange={setSelectedPage}
-                  />
-                )}
-                {tab === "Category pages" && (
-                  <CategoryFields
-                    value={content.landingPages}
-                    onChange={(landingPages) =>
-                      edit({ ...content, landingPages })
-                    }
-                  />
-                )}
-                {tab === "Existing pages" && (
-                  <>
-                    <div className="admin-panel-head">
-                      <div>
-                        <h2>Existing pages</h2>
-                        <p>Edit the storefront pages that ship with the theme. Changes stay in your draft until published.</p>
-                      </div>
-                    </div>
-                    <label className="admin-field">
-                      <span>Existing page</span>
-                      <select aria-label="Existing page" value={existingPage} onChange={event => {
-                        const value = event.target.value;
-                        setExistingPage(value === "nimbus" || value === "contact" || value === "bulk" || value === "returns" ? value : "story");
-                      }}>
-                        <option value="story">Our Story</option>
-                        <option value="nimbus">The Nimbus Collection</option>
-                        <option value="contact">Contact</option>
-                        <option value="bulk">Bulk Enquiry</option>
-                        <option value="returns">Return &amp; Exchange</option>
-                      </select>
-                    </label>
-                    {existingPage === "story"
-                      ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
-                      : existingPage === "nimbus"
-                        ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
-                        : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
-                  </>
-                )}
-                {tab === "Artwork" && (
-                  <TemplateArtworkFields value={content.templateMedia} onChange={templateMedia => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
-                )}
-                {tab === "Media" && (
-                  <MediaLibrary session={session} onExpired={onExpired} heading="h2" />
-                )}
-                {tab === "Policies & blogs" && (
-                  <>
-                    <div className="admin-panel-head">
-                      <div>
-                        <h2>Policies &amp; blogs</h2>
-                        <p>Policies, blog indexes and authored articles share the storefront's editorial layout.</p>
-                      </div>
-                    </div>
-                    <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
-                    <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
-                  </>
-                )}
-                {tab === "History" && (
-                  <>
-                    <div className="admin-panel-head">
-                      <div>
-                        <h2>Revision history</h2>
-                        <p>
-                          Restore saved content as a new draft. Save local changes
-                          before restoring.
-                        </p>
-                      </div>
-                    </div>
-                    {busy && revisions.length === 0 ? (
-                      <Skeleton rows={3} />
-                    ) : revisions.length === 0 ? (
-                      <EmptyState title="No revisions yet">Save a draft to start its history.</EmptyState>
-                    ) : (
-                      <ul className="admin-history">
-                        {revisions.map((revision) => (
-                          <li key={revision.id}>
-                            <span className="admin-history-version" aria-hidden="true">{revision.version}</span>
-                            <div>
-                              <strong>
-                                Version {revision.version}, {titleCase(revision.action)}
-                              </strong>
-                              <span>
-                                {revision.actorEmail}, {new Date(revision.createdAt).toLocaleString()}
-                              </span>
-                            </div>
-                            {session.user.role === "publisher" && (
-                              <button
-                                className="admin-small"
-                                disabled={dirty}
-                                onClick={() => void write("restore", revision.id)}
-                              >
-                                Restore version {revision.version}
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </>
-                )}
+              <DisabledScope disabled={busy || conflict} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : undefined}>
+              <fieldset disabled={busy || conflict} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">
+                <legend className="sr-only">{tab} editor</legend>
+                {screen()}
               </fieldset>
+              </DisabledScope>
               )}
             </section>
             {liveActive && (
-              <LivePreview
-                path={previewPath()}
-                title={previewTitle}
-                version={document?.version ?? null}
-                publishedVersion={document?.publishedVersion ?? null}
-                draftRequired={document?.draft === null}
-                onSaveFirst={() => void write("save")}
-                paused={autoSaveFailed !== ""}
-                dirty={dirty}
-                busy={busy || saving}
-                blocked={liveBlocked}
-                auto={liveAuto}
-                onAutoChange={setLiveAuto}
-                onUpdateNow={() => void write("save", undefined, { quiet: true })}
-                onClose={() => setLiveOpen(false)}
-                mint={mintPreviewToken}
-                focusedSection={focusedSection}
-              />
+              <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
+                draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
+                blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
+                onClose={() => setLiveOpen(false)} mint={mintPreviewToken} focusedSection={focusedSection} />
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function OverviewPanel({ content, session, onExpired, document, dirty }: {
-  content: StorefrontContent;
-  session: StaffSession;
-  onExpired: () => void;
-  document: Document | null;
-  dirty: boolean;
-}) {
-  const visible = content.homeSections.filter((s) => s.enabled).length;
-  const stat = (label: string, value: ReactNode, note: string) => (
-    <div className="admin-stat">
-      <span className="admin-stat-label">{label}</span>
-      <span className="admin-stat-value">{value}<small>{note}</small></span>
-    </div>
-  );
-  return (
-    <>
-      <div className="admin-panel-head">
-        <div>
-          <h2>Overview</h2>
-          <p>What is in the draft right now, and where the storefront stands.</p>
-        </div>
-      </div>
-      <div className="admin-overview-grid" role="group" aria-label="Draft summary">
-        {stat("Homepage sections", visible, `visible of ${content.homeSections.length}`)}
-        {stat("Campaigns", content.campaigns.length, "editable")}
-        {stat("Informational pages", content.pages.length, content.pages.length === 1 ? "page" : "pages")}
-      </div>
-      {session.user.canManageEnquiries === true && <CrmSummary session={session} onExpired={onExpired} />}
-      <div className="admin-overview-cols">
-        <div className="admin-overview-card">
-          <h3>Publishing</h3>
-          <p>
-            {session.user.role === "publisher"
-              ? "You can edit and publish. Save any unsaved changes before publishing."
-              : "You can edit and save drafts. A publisher must publish your changes."}
-          </p>
-          <p>
-            Restoring a revision creates a draft. It does not change the
-            live storefront until published.
-          </p>
-          <p>
-            {document?.publishedVersion
-              ? `The storefront is on version ${document.publishedVersion}; the draft is version ${document.version}${dirty ? " with unsaved changes" : ""}.`
-              : "Nothing is published yet. Visitors see the bundled storefront content until the first publish."}
-          </p>
-        </div>
-        <div className="admin-overview-card">
-          <h3>Storefront</h3>
-          <p>Open the live storefront in a new tab, or use Live preview in the top bar to see the draft beside the editor.</p>
-          <div className="admin-actions">
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              Open storefront
-            </a>
-          </div>
-        </div>
-      </div>
-    </>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

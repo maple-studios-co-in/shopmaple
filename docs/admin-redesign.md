@@ -27,7 +27,11 @@ Patterns preserved: every route, API contract, form field name, `aria-label`, ke
 
 ## 2. Design system
 
-All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` custom properties. The CRM's `--crm-*` names remain as aliases of the admin tokens so the CRM components did not need to change.
+All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` custom properties (the old `--crm-*` aliases were removed once nothing read them).
+
+Since 29 October 2026 the admin is built on **shadcn/ui** (`apps/web/components.json`, primitives in `apps/web/components/ui`) and **Tailwind 4**, and `admin.css` is the token file only: the tokens, the shadcn variable mapping (`--background`, `--primary`, `--border`, `--ring`, `--sidebar-*` ... all point at `--admin-*`), the `@theme inline` block that turns them into utilities (`bg-card`, `text-muted-foreground`, `text-faint`, `bg-success-bg`, `font-display`, `ease-admin` ...), and a scoped base. There is no component CSS: screens compose `components/ui` and the admin kit (`components/admin/kit.tsx`, `crm-primitives.tsx`, `data-table.tsx`, `field.tsx`, `sortable-list.tsx`) with utilities. AGENTS.md forbids new hand-written admin CSS.
+
+How it stays off the storefront: Tailwind's theme variables load in a cascade layer, there is no global preflight, and only admin sources are scanned. Utilities are emitted last and unlayered, without `!important`: one class beats the storefront's global element rules (which the root layout loads on every route), and inline styles (dnd-kit transforms, animation delays) still win. The scoped base uses `:where(.shop-admin)`, so it ties those element rules and wins by order (the admin stylesheet loads after them) while every utility beats it. Text sizes come from one scale, `text-2xs` 11 px to `text-4xl` 44 px; there are no arbitrary pixel sizes. Overlays (dialog, sheet, menus, tooltips) portal into the `.shop-admin` element through `AdminRoot`, and dialogs and sheets opened from the draft editor follow its lock (`DisabledScope`): while it saves or after a version conflict their fields are disabled and they say why. Markup the admin draws inside the storefront preview frame (the ribbon, the section highlight) reads the tokens through `[data-admin-tokens]` without the base.
 
 ### Colour
 
@@ -40,22 +44,22 @@ All tokens live on `.shop-admin` in `apps/web/styles/admin.css` as `--admin-*` c
 | `--admin-ink` / `-muted` / `-faint` | `#23261f` / `#5b5e57` / `#62655f` | Text hierarchy. Contrast on the surface `#fbfaf6`: 15.0:1, 7.1:1 and 5.7:1; faint on the sunken surface `#e4e2d9` is 4.7:1, so the 11 to 12.5 px labels (nav groups, roles, CRM meta, eyebrows) clear AA |
 | `--admin-accent` / `-strong` / `-tint` | `#741a14` / `#57140f` / `rgba(116,26,20,.07)` | The single accent: primary actions, current state, focus |
 | `--admin-line-soft` / `-line` / `-line-strong` | ink at 8 % / 50 % / 62 % | Decorative dividers only (soft); control boundaries at 3.1:1 on the surface (line); field borders at 4.5:1 on white (line-strong), meeting the 3:1 non-text minimum |
-| `--admin-success`, `--admin-warning`, `--admin-info`, `--admin-danger` | green, ochre, slate, burgundy (+ `-bg` tints) | Semantic state only: notices, chips, due badges |
+| `--admin-success`, `--admin-warning`, `--admin-info`, `--admin-danger` | green, ochre, slate, burgundy (+ `-bg` tints) | Semantic state only: notices, chips, due badges. Warning is `#71530f` so the unsaved chip clears 4.5:1 on its tint over the canvas (5.2:1) and the sunken surface (4.8:1) |
 
 Shadows are tinted with the ink colour, never pure black: `--admin-shadow-s` (hairline lift), `--admin-shadow-m` (hover), `--admin-shadow-lift` (dragging, dialogs, the preview device frame).
 
 ### Type
 
 - **Display**: `--admin-font-display: "TAN Pearl", "Newsreader", Georgia, serif`. Words only: page titles, the sign-in title and empty-state titles. TAN Pearl's zero reads as parentheses, so it is never used for numbers. The fallback is the storefront serif, so the admin reads correctly when the licensed file is absent.
-- **Text**: `--admin-font-text: "Geist Variable", "Manrope", system-ui, sans-serif`, self-hosted from `@fontsource-variable/geist` (OFL); no font CDN is called. Every number (overview and CRM tiles, versions, history badges, dates) uses this face with tabular figures (`--admin-tnum`).
-- Scale (`--admin-type-*`): 11 / 12.5 / 13.5 / 15 / 18 / 22 / 28 / 36 / 44 px. Line heights 1.2 for display, 1.5 for UI text, 1.6 for prose. Tracking: -0.01 em on titles, +0.06 em on the few uppercase labels.
+- **Text**: `--admin-font-text: "Geist Variable", "Manrope", system-ui, sans-serif`, self-hosted from `@fontsource-variable/geist` (OFL); no font CDN is called. Every number (overview and CRM tiles, versions, history badges, dates) uses this face with tabular figures (`tabular-nums`).
+- Scale (Tailwind `text-2xs`, `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`): 11 / 12.5 / 13.5 / 15 / 18 / 22 / 28 / 36 / 44 px. Line heights 1.2 for display, 1.5 for UI text, 1.6 for prose. Tracking: -0.01 em on titles, +0.06 em on the few uppercase labels.
 
 ### Space, shape, elevation, density
 
-- Spacing scale `--admin-space-1..8`: 4, 8, 12, 16, 24, 32, 48, 64 px.
+- Spacing: Tailwind's 4 px scale (`p-1` is 4 px, `p-6` is 24 px).
 - One radius scale: `--admin-radius-s` 6 px (controls), `-m` 10 px (cards, fields), `-l` 16 px (shells). Nested surfaces use `calc(outer - padding)` so curves stay concentric.
-- Density: 36 px sidebar rows, 40 px fields, 38 px buttons (32 px small), 14 px body text, 2-column field grids above 720 px.
-- Z scale: `--admin-z-sticky` 10, `-drag` 20, `-overlay` 40, `-dialog` 50.
+- Density: 32 px sidebar rows, 40 px fields, 36 px buttons (32 px small), 13.5 px body text, 2-column field grids from 640 px.
+- Layers: the sticky top bar at `z-10`, a dragged row at `z-20`, the full-screen preview at `z-40`, overlays from the primitives at `z-50`.
 
 ### Motion
 

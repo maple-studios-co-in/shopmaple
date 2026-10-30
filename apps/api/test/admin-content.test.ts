@@ -529,3 +529,34 @@ test("homepage city and icon drafts enforce authority, CSRF, conflicts and draft
     assert.equal(legacyRestored.body.draft.templateMedia, undefined);
     assert.deepEqual((await publicRequest()).body, published);
 });
+test("staff read one revision's saved content for the history diff; anonymous callers and other documents' revisions get nothing", async () => {
+    const publisher = await login();
+    const editor = await login(createApp(db, config), "editor@example.invalid");
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const saved = await save(editor.agent, editor.csrf, initial.version, { ...content, homeCopy: { ...content.homeCopy, chairsHeading: "Lounge chairs" } });
+    assert.equal(saved.status, 200);
+    const listed = (await publisher.agent.get("/api/admin/content/revisions")).body.revisions[0];
+    const path = `/api/admin/content/revisions/${listed.id}`;
+    const detail = await publisher.agent.get(path);
+    assert.equal(detail.status, 200);
+    assert.match(String(detail.headers["cache-control"]), /no-store/);
+    assert.deepEqual({ ...detail.body, content: undefined }, { ...listed, content: undefined }, "The detail repeats the listed metadata");
+    assert.equal(detail.body.content.homeCopy.chairsHeading, "Lounge chairs");
+    assert.equal(detail.body.content.pages[0].slug, "care-guide");
+    assert.equal((await editor.agent.get(path)).status, 200, "Editors read history as well as publishers");
+    const anonymous = await request(createApp(db, config)).get(path);
+    assert.equal(anonymous.status, 401);
+    assert.equal(anonymous.body.content, undefined);
+    const missing = await publisher.agent.get("/api/admin/content/revisions/does-not-exist");
+    assert.equal(missing.status, 404);
+    assert.equal(missing.body.code, "CONTENT_REVISION_NOT_FOUND");
+    assert.equal((await publisher.agent.get(`/api/admin/content/revisions/${"x".repeat(101)}`)).status, 400, "Oversized ids are rejected before the database");
+    await db.shopContent.create({ data: { id: "other-document", draft: content } });
+    const foreign = await db.shopContentRevision.create({ data: { documentId: "other-document", version: 1, action: "save", content, actorId: publisherId } });
+    try {
+        assert.equal((await publisher.agent.get(`/api/admin/content/revisions/${foreign.id}`)).status, 404, "Only the storefront document's revisions are readable");
+    } finally {
+        await db.shopContentRevision.delete({ where: { id: foreign.id } });
+        await db.shopContent.delete({ where: { id: "other-document" } });
+    }
+});

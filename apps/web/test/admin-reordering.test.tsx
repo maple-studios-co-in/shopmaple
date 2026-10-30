@@ -34,6 +34,11 @@ async function select(label: string, value: string) {
   const input = container.querySelector<HTMLSelectElement>(`select[aria-label="${label}"]`); assert.ok(input, `Missing ${label} selector`);
   await act(async () => { input.value = value; input.dispatchEvent(new dom.window.Event("change", { bubbles: true })); });
 }
+async function tab(list: string, name: string) {
+  const found = [...container.querySelectorAll<HTMLButtonElement>(`[role="tablist"][aria-label="${list}"] [role="tab"]`)].find(t => t.textContent === name);
+  assert.ok(found, `Missing ${name} tab`);
+  await act(async () => found.click());
+}
 async function key(target: Element, code: string) {
   await act(async () => { target.dispatchEvent(new dom.window.KeyboardEvent("keydown", { code, key: code, bubbles: true, cancelable: true })); });
 }
@@ -152,9 +157,9 @@ test("service page sections drag and save", async () => {
 test("navigation items and footer columns drag and save", async () => {
   const app = await setup(content => { delete content.siteChrome; });
   try {
-    await click("Navigation & footer"); await select("Navigation & footer section", "navigation");
+    await click("Navigation & footer"); await tab("Navigation & footer section", "Main navigation");
     await drag("navigation item 5", "ArrowUp", 1);
-    await select("Navigation & footer section", "footer");
+    await tab("Navigation & footer section", "Footer");
     await drag("footer care", "ArrowUp", 2);
     const content = await app.save();
     assert.deepEqual(content.siteChrome!.navigation.map(item => item.id), ["nav-1", "nav-2", "nav-3", "nav-5", "nav-4"]);
