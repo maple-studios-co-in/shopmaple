@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { usePortalContainer } from "@/components/ui/portal-container"
+import { DisabledScopeContent } from "@/components/ui/disabled-scope"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
@@ -67,7 +68,7 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        <DisabledScopeContent>{children}</DisabledScopeContent>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

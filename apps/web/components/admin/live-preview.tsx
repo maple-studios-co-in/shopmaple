@@ -48,9 +48,12 @@ export type LivePreviewProps = {
 
 const emptyToken: PreviewTokenState = { token: "", version: null, expiresAt: null };
 const draftRequiredMessage = "Save the draft once to start the live preview.";
-/** Device frame outer widths (frame width plus the bezel padding) used to scale the frame to the pane. */
-const deviceOuterWidth: Record<PreviewDevice, number | null> = {
-  desktop: null,
+/**
+ * Device frame outer widths (frame width plus the bezel padding). Every device renders at its
+ * true width (desktop as a 1280 px storefront) and scales down to fit the pane.
+ */
+const deviceOuterWidth: Record<PreviewDevice, number> = {
+  desktop: 1280 + 8,
   tablet: (previewDeviceWidths.tablet ?? 820) + 8,
   phone: (previewDeviceWidths.phone ?? 390) + 12,
 };
@@ -140,7 +143,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   useLayoutEffect(() => {
     const node = stage.current;
     const outer = deviceOuterWidth[device];
-    if (!node || outer === null) { setScale(1); return; }
+    if (!node) { setScale(1); return; }
     const fit = () => {
       const styles = window.getComputedStyle(node);
       const available = node.clientWidth - parseFloat(styles.paddingLeft || "0") - parseFloat(styles.paddingRight || "0");
@@ -153,24 +156,13 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     return () => observer.disconnect();
   }, [device, fullscreen]);
 
-  const state = draftRequired ? "blocked"
-    : mintError ? "error"
-      : paused || blocked || unpublished ? "blocked"
-        : busy ? "saving"
-          : minting || !hasToken ? "loading"
-            : frameStatus === "loading" ? "loading"
-              : dirty ? "pending" : "ready";
-  const statusLabel =
-    draftRequired ? draftRequiredMessage
-      : mintError ? mintError.message
-        : paused ? "Live updates paused until the draft saves"
-          : unpublished ? "Nothing published yet"
-            : state === "blocked" ? blocked
-              : state === "saving" ? "Saving draft"
-                : minting || !hasToken ? "Preparing preview, loading"
-                  : state === "loading" ? "Loading preview"
-                    : state === "pending" ? (auto ? "Unsaved edits, updating shortly" : "Unsaved edits, update to refresh")
-                      : `Preview ready${view === "published" ? ", published version" : ", draft version"} ${view === "published" ? publishedVersion ?? "" : version ?? ""}`;
+  const state = draftRequired ? "blocked" : mintError ? "error" : paused || blocked || unpublished ? "blocked" : busy ? "saving"
+    : minting || !hasToken || frameStatus === "loading" ? "loading" : dirty ? "pending" : "ready";
+  const statusLabel = draftRequired ? draftRequiredMessage : mintError ? mintError.message : paused ? "Live updates paused until the draft saves"
+    : unpublished ? "Nothing published yet" : state === "blocked" ? blocked : state === "saving" ? "Saving draft"
+    : minting || !hasToken ? "Preparing preview, loading" : state === "loading" ? "Loading preview"
+    : state === "pending" ? (auto ? "Unsaved edits, updating shortly" : "Unsaved edits, update to refresh")
+    : `Preview ready${view === "published" ? ", published version" : ", draft version"} ${view === "published" ? publishedVersion ?? "" : version ?? ""}`;
   const viewLabel = view === "published" ? "Published storefront" : "Draft preview";
   const frameTitle = `${viewLabel} of ${title}${framePath && framePath !== "/" ? ` (${framePath})` : ""}`;
   const onViewChange = useCallback((next: PreviewView) => setView(next), []);
@@ -179,16 +171,9 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-neutral focus-visible:outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
   const segmentOn = "aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs has-[input:checked]:bg-card has-[input:checked]:text-foreground has-[input:checked]:shadow-xs has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-ring/60";
   const dot = { ready: "bg-success", loading: "bg-info motion-safe:animate-pulse", saving: "bg-info motion-safe:animate-pulse", blocked: "bg-warning", error: "bg-danger", pending: "bg-faint" }[state];
-  const deviceFrame = device === "desktop"
-    ? "h-full w-full max-w-full"
-    : cn("flex-none origin-top [height:calc(100%/var(--device-scale,1))] [transform:scale(var(--device-scale,1))]", device === "tablet" ? "w-[828px]" : "w-[402px] rounded-[22px] p-1.5");
+  const deviceFrame = cn("flex-none origin-top [height:calc(100%/var(--device-scale,1))] [transform:scale(var(--device-scale,1))]", device === "phone" && "rounded-[22px] p-1.5");
   return (
-    <aside
-      data-live-preview
-      data-device={device}
-      data-fullscreen={full ? "true" : "false"}
-      aria-label="Live preview"
-      style={{ "--device-scale": scale } as React.CSSProperties}
+    <aside data-live-preview data-device={device} data-fullscreen={full ? "true" : "false"} aria-label="Live preview" style={{ "--device-scale": scale } as React.CSSProperties}
       className={cn(
         "flex min-w-0 flex-col bg-sunken shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-line-soft",
         full
@@ -196,7 +181,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
           : "relative h-[72dvh] min-h-[520px] rounded-xl md:h-[calc(100dvh-8.5rem)] xl:sticky xl:top-20",
       )}
     >
-      <div className={cn("flex min-w-0 items-center gap-2 px-3 py-2", full ? "flex-wrap" : "flex-nowrap")}>
+      <div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-2 md:flex-nowrap">
         <div className="inline-flex shrink-0 gap-0.5 rounded-full bg-black/[0.07] p-[3px]" role="group" aria-label="Preview device">
           {previewDevices.map((item) => (
             <button key={item.key} type="button" aria-pressed={device === item.key} title={item.label} onClick={() => setDevice(item.key)} className={cn(segment, segmentOn, !full && "px-2")}>
@@ -213,7 +198,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
             </label>
           ))}
         </fieldset>
-        <span data-preview-status data-state={state} role="status" title={statusLabel} className={cn("inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap text-muted-foreground", full && "max-md:basis-full")}>
+        <span data-preview-status data-state={state} role="status" title={statusLabel} className={cn("inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap text-muted-foreground", "max-md:order-last max-md:basis-full")}>
           <span aria-hidden="true" className={cn("size-[7px] shrink-0 rounded-full", dot)} />
           <span className="truncate">{statusLabel}</span>
         </span>
@@ -235,7 +220,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
         </div>
       </div>
       <div className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden px-3 pb-3" ref={stage}>
-        <div className={cn("flex min-h-0 rounded-[14px] bg-black/10 p-1 shadow-lg motion-safe:transition-[max-width] motion-safe:duration-300 motion-safe:ease-admin", deviceFrame)}>
+        <div data-device-frame style={{ width: deviceOuterWidth[device] }} className={cn("flex min-h-0 rounded-[14px] bg-black/10 p-1 shadow-lg", deviceFrame)}>
           {draftRequired ? (
             <div className={placeholder} data-preview-draft-required>
               <EmptyState title="No draft yet" action={<Button type="button" disabled={busy} onClick={onSaveFirst}>Save draft to start the preview</Button>}>{draftRequiredMessage} Saving creates the first draft version; nothing is published.</EmptyState>

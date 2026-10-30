@@ -3,10 +3,9 @@ import { useState } from "react";
 import type { EditorialContent, EditorialNode, EditorialPolicy, EditorialBlog, EditorialArticle } from "@shopmaple/contracts";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 import { StoreContent } from "@/components/store-content";
-import { ChevronRight } from "lucide-react";
 import { NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
-import { EditorWithPreview, Field, PreviewPanel, PreviewTitle } from "./forms";
-import { SectionHeading, SelectField } from "./kit";
+import { Field } from "./field";
+import { DisclosureSummary, EditorWithPreview, PreviewPanel, PreviewTitle, SectionHeading, SelectField } from "./kit";
 
 const labels: Record<string, string> = {
   p: "Paragraph", h1: "Heading", h2: "Heading 2", h3: "Heading 3", h4: "Heading 4", h5: "Heading 5", h6: "Heading 6",
@@ -32,11 +31,10 @@ function TextFields({ nodes, original, onChange, path = [] }: {
     const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position} onChange={children => replace({ ...node, children })} />;
     if (!labels[node.tag]) return <div key={index} className="grid gap-3">{children}</div>;
     return <details key={index} className="min-w-0 rounded-lg border border-border bg-card shadow-xs open:shadow-sm">
-      <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2.5 text-sm focus-visible:outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
-        <ChevronRight aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-admin motion-reduce:transition-none [details[open]>summary>&]:rotate-90" />
-        <span className="shrink-0 font-semibold text-foreground">{labels[node.tag]}</span>
-        <span className="truncate text-muted-foreground"> · {previewText(node.children) || "Empty text"}</span>
-      </summary>
+      <DisclosureSummary className="min-w-0 px-3 py-2.5">
+        <span className="shrink-0 font-semibold">{labels[node.tag]}</span>
+        <span className="truncate font-normal text-muted-foreground"> · {previewText(node.children) || "Empty text"}</span>
+      </DisclosureSummary>
       <div className="grid gap-3 border-t border-line-soft p-3">{children}</div>
     </details>;
   })}</>;
@@ -75,7 +73,9 @@ export function EditorialFields({ value, onChange }: { value?: EditorialContent;
     <SelectField label="Policy or blog page" className="mb-6 max-w-md" value={selected} onChange={event => setSelected(event.target.value)}>
       <NativeSelectOptGroup label="Policies">{Object.entries(resolved.policies).map(([slug, item]) => <NativeSelectOption key={slug} value={`policy:${slug}`}>{item.title}</NativeSelectOption>)}</NativeSelectOptGroup>
       <NativeSelectOptGroup label="Blog pages">{resolved.blogs.map(item => <NativeSelectOption key={item.handle} value={`blog:${item.handle}`}>{item.title}</NativeSelectOption>)}</NativeSelectOptGroup>
-      <NativeSelectOptGroup label="Articles">{resolved.blogs.flatMap(item => item.articles.map(post => <NativeSelectOption key={`${item.handle}/${post.handle}`} value={`article:${item.handle}/${post.handle}`}>{post.title}</NativeSelectOption>))}</NativeSelectOptGroup>
+      <NativeSelectOptGroup label="Articles">
+        {resolved.blogs.flatMap(item => item.articles.map(post => <NativeSelectOption key={`${item.handle}/${post.handle}`} value={`article:${item.handle}/${post.handle}`}>{post.title}</NativeSelectOption>))}
+      </NativeSelectOptGroup>
     </SelectField>
     {document && <EditorWithPreview key={selected}>
       <div className="grid gap-4">

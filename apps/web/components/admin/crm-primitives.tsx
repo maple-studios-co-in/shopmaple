@@ -77,8 +77,8 @@ const noticeTone = {
   info: "border-border bg-sunken text-muted-foreground",
 } as const;
 /** An inline message: errors are alerts, confirmations are statuses, info is neither. */
-export function Notice({ tone, children, className }: { tone: "error" | "status" | "info"; children: ReactNode; className?: string }) {
-  return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
+export function Notice({ tone, children, className, ...props }: { tone: "error" | "status" | "info"; children: ReactNode; className?: string } & Record<`data-${string}`, unknown>) {
+  return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} {...props} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
 }
 
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };

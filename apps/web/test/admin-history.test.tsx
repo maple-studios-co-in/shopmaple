@@ -59,6 +59,7 @@ test("history lists revisions in a table and previews a revision's changes in a 
     assert.ok(app.requests.includes("/api/admin/content/revisions/rev-4"), "The revision's content is read on demand");
     const sheet = document.querySelector<HTMLElement>('[data-slot="sheet-content"]');
     assert.ok(sheet, "The changes open in a sheet");
+    assert.ok(document.activeElement === sheet.querySelector('[data-slot="sheet-title"]'), "Opening the changes focuses the sheet title, never the destructive Restore");
     assert.match(sheet.querySelector('[data-slot="sheet-title"]')?.textContent ?? "", /Version 4/);
     const change = [...sheet.querySelectorAll<HTMLElement>("[data-change]")].find((row) => row.dataset.change === "homeCopy > chairsHeading");
     assert.ok(change, "The changed field is listed");
@@ -85,5 +86,17 @@ test("a revision with no differences says so, editors see no restore, and a fail
     await act(async () => retry.click());
     await settle();
     assert.match(sheet().textContent ?? "", /same as the current draft/i);
+  } finally { await app.close(); }
+});
+
+test("a publisher is not offered Restore for a revision that matches the draft", async () => {
+  const app = await open("publisher", (id) => Response.json({ ...revisions.find((revision) => revision.id === id), content: structuredClone(defaultStorefrontContent) }));
+  try {
+    const preview = [...container.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.getAttribute("aria-label") === "Preview changes in version 4")!;
+    await act(async () => preview.click());
+    await settle();
+    const sheet = document.querySelector<HTMLElement>('[data-slot="sheet-content"]')!;
+    assert.match(sheet.textContent ?? "", /same as the current draft/i);
+    assert.equal([...sheet.querySelectorAll("button")].some((b) => b.textContent === "Restore version 4"), false, "Nothing to restore");
   } finally { await app.close(); }
 });

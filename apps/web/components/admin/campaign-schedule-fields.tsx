@@ -91,28 +91,14 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
         <>
           <Notice tone="info">Schedule edit in progress. Apply or cancel before saving, publishing, or switching sections.</Notice>
           <FieldGrid>
-            <label className="grid min-w-0 gap-2">
-              <span className="text-xs font-medium text-foreground">Starts at (India time)</span>
-              <Input type="datetime-local" step="0.001" aria-label="Starts at (India time)" value={starts}
-                className="h-10 bg-card text-sm tabular-nums"
-                aria-describedby={describedBy} aria-invalid={Boolean(error)}
-                onChange={() => {}}
-                onInput={(event) => {
-                  setStarts(event.currentTarget.value);
-                  setBadStart(event.currentTarget.validity.badInput);
-                }} />
-            </label>
-            <label className="grid min-w-0 gap-2">
-              <span className="text-xs font-medium text-foreground">Ends at (India time)</span>
-              <Input type="datetime-local" step="0.001" aria-label="Ends at (India time)" value={ends}
-                className="h-10 bg-card text-sm tabular-nums"
-                aria-describedby={describedBy} aria-invalid={Boolean(error)}
-                onChange={() => {}}
-                onInput={(event) => {
-                  setEnds(event.currentTarget.value);
-                  setBadEnd(event.currentTarget.validity.badInput);
-                }} />
-            </label>
+            {([["Starts at (India time)", starts, setStarts, setBadStart], ["Ends at (India time)", ends, setEnds, setBadEnd]] as const).map(([label, text, setText, setBad]) => (
+              <label key={label} className="grid min-w-0 gap-2">
+                <span className="text-xs font-medium text-foreground">{label}</span>
+                <Input type="datetime-local" step="0.001" aria-label={label} value={text} className="h-10 bg-card text-sm tabular-nums"
+                  aria-describedby={describedBy} aria-invalid={Boolean(error)} onChange={() => {}}
+                  onInput={(event) => { setText(event.currentTarget.value); setBad(event.currentTarget.validity.badInput); }} />
+              </label>
+            ))}
           </FieldGrid>
           {error && <div id={errorId}><Notice tone="error">{error}</Notice></div>}
           <div className="flex flex-wrap gap-2">

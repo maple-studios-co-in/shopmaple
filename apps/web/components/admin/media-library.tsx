@@ -10,16 +10,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { StaffSession } from "./dashboard";
 import { EmptyState, Notice } from "./crm-primitives";
-import { PanelHeader } from "./kit";
+import { ActionButton, PanelHeader, SectionHeading } from "./kit";
 import { useAdminRequest } from "./use-admin-request";
 export type MediaAsset = { id: string; sha256: string; label: string; width: number; height: number; bytes: number; mimeType: string; createdAt: string; publicAt: string | null; url: string; previewUrl: string };
 const identifier = (value: unknown): value is string => typeof value === "string" && /^[a-z0-9]{1,100}$/.test(value);
 const timestamp = (value: unknown): value is string => typeof value === "string" && value.length <= 40 && Number.isFinite(Date.parse(value));
 function parseAsset(value: unknown): MediaAsset {
  if (!value || typeof value !== "object") throw Error("Invalid image response");
- const row = value as Partial<MediaAsset>;
- if (!identifier(row.id) || typeof row.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(row.sha256) || typeof row.label !== "string" || row.label.length < 1 || row.label.length > 160 || !Number.isInteger(row.width) || !Number.isInteger(row.height) || row.width! < 1 || row.width! > 2560 || row.height! < 1 || row.height! > 2560 || !Number.isInteger(row.bytes) || row.bytes! < 1 || row.bytes! > 250 * 1024 * 1024 || row.mimeType !== "image/webp" || !timestamp(row.createdAt) || !(row.publicAt === null || timestamp(row.publicAt)) || row.url !== `/media/uploads/${row.sha256}.webp` || row.previewUrl !== `/api/admin/media/${row.sha256}/preview`) throw Error("Invalid image response");
- return { id: row.id, sha256: row.sha256, label: row.label, width: row.width!, height: row.height!, bytes: row.bytes!, mimeType: row.mimeType, createdAt: row.createdAt, publicAt: row.publicAt, url: row.url, previewUrl: row.previewUrl };
+ const { id, sha256, label, width, height, bytes, mimeType, createdAt, publicAt, url, previewUrl } = value as Partial<MediaAsset>;
+ const count = (n: unknown, max: number) => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= max;
+ if (!(identifier(id) && typeof sha256 === "string" && /^[a-f0-9]{64}$/.test(sha256) && typeof label === "string" && label.length >= 1 && label.length <= 160
+  && count(width, 2560) && count(height, 2560) && count(bytes, 250 * 1024 * 1024) && mimeType === "image/webp"
+  && timestamp(createdAt) && (publicAt === null || timestamp(publicAt))
+  && url === `/media/uploads/${sha256}.webp` && previewUrl === `/api/admin/media/${sha256}/preview`)) throw Error("Invalid image response");
+ return { id, sha256, label, width, height, bytes, mimeType, createdAt, publicAt, url, previewUrl } as MediaAsset;
 }
 function parsePage(value: unknown) {
  if (!value || typeof value !== "object") throw Error("Invalid image page");
@@ -105,13 +109,13 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
    if (active.current) setCopied({ tone: "status", text: `Copied ${count} ${count === 1 ? "link" : "links"}. Private images open only once a published page uses them.` });
   } catch { if (active.current) setCopied({ tone: "error", text: "We couldn't copy the links. Allow clipboard access and try again." }); }
  }
- const uploadButton = (ref?: Ref<HTMLButtonElement>) => <Button type="button" ref={ref} disabled={busy||uploading!==null} onClick={event=>openUpload(event.currentTarget)}><Upload aria-hidden="true" strokeWidth={1.5} />Upload image</Button>;
+ const uploadButton = (ref?: Ref<HTMLButtonElement>) => <ActionButton icon={Upload} variant="default" size="default" ref={ref} disabled={busy||uploading!==null} onClick={event=>openUpload(event.currentTarget)}>Upload image</ActionButton>;
  const status = busy ? (assets.length ? "Loading more images" : "") : loaded ? `${assets.length} ${assets.length === 1 ? "image" : "images"}${cursor ? " loaded so far" : ""}` : "";
  return <section aria-label="Media library" aria-busy={busy||uploading!==null} className="min-w-0">
   {Heading === "h2"
    ? <PanelHeader title="Media library" description={description} actions={uploadButton(headerTrigger)} />
    : <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-    <div className="grid max-w-[68ch] gap-1"><h3 className="text-base font-semibold tracking-[-0.01em] text-foreground">Media library</h3><p className="text-xs leading-relaxed text-muted-foreground">{description}</p></div>
+    <SectionHeading className="m-0" description={description}>Media library</SectionHeading>
     {uploadButton(headerTrigger)}
    </div>}
   <p aria-live="polite" className="mb-3 min-h-[18px] text-xs tabular-nums text-muted-foreground">{status}</p>
@@ -124,7 +128,9 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
     <Card data-selected={selectable && isSelected ? "" : undefined} className="h-full gap-0 overflow-hidden py-0 shadow-xs transition-colors duration-150 ease-admin data-[selected]:border-primary data-[selected]:ring-2 data-[selected]:ring-primary/25">
      <div className="relative aspect-[4/3] border-b border-line-soft bg-sunken">
       <img src={asset.previewUrl} alt={asset.label} width={asset.width} height={asset.height} loading="lazy" className="size-full object-contain" />
-      {selectable&&<label className="absolute top-2 left-2 grid size-8 cursor-pointer place-items-center rounded-md bg-card/95 shadow-xs"><NativeCheckbox aria-label={`Select ${asset.label}`} checked={isSelected} onChange={event=>toggle(asset.id,event.currentTarget.checked)} /></label>}
+      {selectable&&<label className="absolute top-2 left-2 grid size-8 cursor-pointer place-items-center rounded-md bg-card/95 shadow-xs">
+       <NativeCheckbox aria-label={`Select ${asset.label}`} checked={isSelected} onChange={event=>toggle(asset.id,event.currentTarget.checked)} />
+      </label>}
      </div>
      <div className="grid gap-1.5 p-3">
       <p title={asset.label} className="truncate text-sm font-medium text-foreground">{asset.label}</p>
@@ -142,12 +148,13 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
    <span className="text-sm font-medium tabular-nums text-foreground">{chosen.length} selected</span>
    {copied&&<span role={copied.tone === "error" ? "alert" : "status"} className={cn("text-xs", copied.tone === "error" ? "text-danger" : "text-muted-foreground")}>{copied.text}</span>}
    <div className="ml-auto flex flex-wrap gap-2">
-    <Button type="button" size="sm" variant="outline" onClick={()=>void copyLinks()}><Copy aria-hidden="true" strokeWidth={1.5} />Copy links</Button>
-    <Button type="button" size="sm" variant="ghost" onClick={clearSelection}><X aria-hidden="true" strokeWidth={1.5} />Clear selection</Button>
+    <ActionButton icon={Copy} onClick={()=>void copyLinks()}>Copy links</ActionButton>
+    <ActionButton icon={X} variant="ghost" onClick={clearSelection}>Clear selection</ActionButton>
    </div>
   </div>}
   <Dialog open={uploadOpen} onOpenChange={open=>{if(uploading===null){setUploadOpen(open);if(!open)setUploadError("");}}}>
-   <DialogContent aria-busy={uploading!==null} className="bg-card sm:max-w-md" onKeyDown={event=>{if(event.key==="Escape")event.stopPropagation();}} onCloseAutoFocus={event=>{event.preventDefault();(lastTrigger.current?.isConnected?lastTrigger.current:headerTrigger.current)?.focus();}}>
+   <DialogContent aria-busy={uploading!==null} className="bg-card sm:max-w-md" onKeyDown={event=>{if(event.key==="Escape")event.stopPropagation();}}
+    onCloseAutoFocus={event=>{event.preventDefault();(lastTrigger.current?.isConnected?lastTrigger.current:headerTrigger.current)?.focus();}}>
     <DialogHeader>
      <DialogTitle className="text-base">Upload an image</DialogTitle>
      <DialogDescription className="text-xs">JPEG, PNG or WebP up to 8 MiB. It stays private until you publish content that uses it.</DialogDescription>
@@ -156,9 +163,12 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
      <ImageUp aria-hidden="true" strokeWidth={1.5} className="mb-1 size-6 text-primary" />
      <span className="text-sm font-medium text-foreground">Upload image</span>
      <span id={hint} className="text-xs text-muted-foreground">Choose a file from your computer</span>
-     <input type="file" aria-label="Upload image" aria-describedby={hint} className="sr-only" accept={accepted.join(",")} disabled={uploading!==null} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/>
+     <input type="file" aria-label="Upload image" aria-describedby={hint} className="sr-only" accept={accepted.join(",")} disabled={uploading!==null}
+      onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/>
     </label>
-    {uploading!==null&&<p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle aria-hidden="true" strokeWidth={1.5} className="size-4 motion-safe:animate-spin" /><span className="truncate">Uploading {uploading}</span></p>}
+    {uploading!==null&&<p role="status" className="flex items-center gap-2 text-xs text-muted-foreground">
+     <LoaderCircle aria-hidden="true" strokeWidth={1.5} className="size-4 motion-safe:animate-spin" /><span className="truncate">Uploading {uploading}</span>
+    </p>}
     {uploadError&&<Notice tone="error">{uploadError}</Notice>}
     <DialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={uploading!==null}>Cancel</Button></DialogClose></DialogFooter>
    </DialogContent>

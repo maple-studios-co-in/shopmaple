@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { usePortalContainer } from "@/components/ui/portal-container"
+import { DisabledScopeContent } from "@/components/ui/disabled-scope"
 import { XIcon } from "lucide-react"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
@@ -73,7 +74,7 @@ function SheetContent({
         )}
         {...props}
       >
-        {children}
+        <DisabledScopeContent>{children}</DisabledScopeContent>
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute top-3 right-3 grid size-8 place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-admin hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 focus-visible:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
             <XIcon className="size-4" />

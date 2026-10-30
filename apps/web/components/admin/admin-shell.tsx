@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ExternalLink, LogOut, Search, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,35 +20,23 @@ export type NavGroup<T extends string> = { label: string | null; items: T[] };
 
 /** The grouped section navigation: collapsible groups, icons, the current section marked. */
 export function AdminSidebar<T extends string>({ groups, current, icons, disabled, onSelect, publishedVersion }: {
-  groups: NavGroup<T>[];
-  current: T;
-  icons: Record<T, LucideIcon>;
-  disabled: (name: T) => boolean;
-  onSelect: (name: T) => void;
-  publishedVersion: number | null;
+  groups: NavGroup<T>[]; current: T; icons: Record<T, LucideIcon>; disabled: (name: T) => boolean; onSelect: (name: T) => void; publishedVersion: number | null;
 }) {
   const item = (name: T) => {
     const Icon: LucideIcon = icons[name];
     return (
       <SidebarMenuItem key={name}>
-        <SidebarMenuButton
-          type="button"
-          isActive={current === name}
-          aria-current={current === name ? "page" : undefined}
-          disabled={disabled(name)}
-          tooltip={name}
-          onClick={() => onSelect(name)}
-          className="h-9 text-sm font-medium text-muted-foreground data-[active=true]:bg-card data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:shadow-xs [&>svg]:text-faint data-[active=true]:[&>svg]:text-primary"
+        <SidebarMenuButton type="button" isActive={current === name} aria-current={current === name ? "page" : undefined} disabled={disabled(name)} tooltip={name} onClick={() => onSelect(name)}
+          className="h-8 text-sm font-medium text-muted-foreground data-[active=true]:bg-card data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:shadow-xs [&>svg]:text-faint data-[active=true]:[&>svg]:text-primary"
         >
-          <Icon aria-hidden="true" strokeWidth={1.5} />
-          <span>{name}</span>
+          <Icon aria-hidden="true" strokeWidth={1.5} /><span>{name}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
   };
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarHeader className="px-4 pt-5 pb-3 group-data-[collapsible=icon]:px-2">
+      <SidebarHeader className="px-4 pt-4 pb-2 group-data-[collapsible=icon]:px-2">
         <a href="/" className="grid gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden">
           <strong className="font-display text-lg leading-tight font-normal text-foreground">Maple Furnishers</strong>
           <span className="text-2xs font-medium text-faint">Shop admin</span>
@@ -58,14 +46,14 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
       <SidebarContent>
         <nav aria-label="Admin sections" className="grid gap-1">
           {groups.map((group) => group.label === null ? (
-            <SidebarGroup key="top" className="py-1">
+            <SidebarGroup key="top" className="py-0.5">
               <SidebarGroupContent><SidebarMenu>{group.items.map(item)}</SidebarMenu></SidebarGroupContent>
             </SidebarGroup>
           ) : (
             <Collapsible key={group.label} defaultOpen className="group/collapsible">
-              <SidebarGroup data-nav-group={group.label} className="py-1">
+              <SidebarGroup data-nav-group={group.label} className="py-0.5">
                 <div className="flex items-center justify-between pr-1">
-                  <SidebarGroupLabel className="text-2xs font-semibold tracking-[0.04em] text-faint">{group.label}</SidebarGroupLabel>
+                  <SidebarGroupLabel className="h-7 text-2xs font-semibold tracking-[0.04em] text-faint">{group.label}</SidebarGroupLabel>
                   <CollapsibleTrigger
                     aria-label={`Toggle ${group.label} group`}
                     className="grid size-6 place-items-center rounded-md text-faint focus-visible:outline-none transition-colors duration-150 ease-admin hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden"
@@ -81,7 +69,7 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
           ))}
         </nav>
       </SidebarContent>
-      <SidebarFooter className="gap-2 border-t border-line-soft px-4 py-4 text-xs group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="gap-1 border-t border-line-soft px-4 py-3 text-xs group-data-[collapsible=icon]:hidden">
         <span className="text-muted-foreground">{publishedVersion ? `Live storefront on version ${publishedVersion}` : "Storefront not published yet"}</span>
         <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1.5 rounded-sm font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">
           Open storefront <ExternalLink aria-hidden="true" strokeWidth={1.5} className="size-3.5" />
@@ -135,7 +123,7 @@ export function StaffMenu({ email, role, busy, onSignOut }: { email: string; rol
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button type="button" data-staff-account className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1 text-left focus-visible:outline-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 data-[state=open]:bg-accent">
-          <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-primary text-2xs font-bold tracking-[0.04em] text-primary-foreground">{initials(email)}</span>
+          <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-neutral text-2xs font-bold tracking-[0.04em] text-white ring-2 ring-card">{initials(email)}</span>
           <span className="hidden min-w-0 gap-px leading-tight 2xl:grid">
             <strong className="max-w-[22ch] truncate text-xs font-semibold text-foreground">{email}</strong>
             <span className="text-2xs text-faint">{role}</span>
@@ -160,14 +148,17 @@ export function StaffMenu({ email, role, busy, onSignOut }: { email: string; rol
 }
 
 /** Jump to any screen (and a few actions) by typing; opens with Cmd/Ctrl+K. */
-export function CommandPalette<T extends string>({ groups, icons, disabled, onSelect, actions }: {
+export function CommandPalette<T extends string>({ groups, icons, disabled, onSelect, afterSelect, actions }: {
   groups: NavGroup<T>[];
   icons: Record<T, LucideIcon>;
   disabled: (name: T) => boolean;
   onSelect: (name: T) => void;
+  /** Runs once the palette has closed after a screen was chosen (moves focus to that screen). */
+  afterSelect?: () => void;
   actions: { label: string; run: () => void; disabled?: boolean }[];
 }) {
   const [open, setOpen] = useState(false);
+  const navigated = useRef(false);
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); setOpen((value) => !value); }
@@ -183,7 +174,8 @@ export function CommandPalette<T extends string>({ groups, icons, disabled, onSe
         <span className="flex-1 text-left">Jump to</span>
         <kbd className="rounded-sm border border-border bg-surface px-1.5 font-sans text-2xs font-semibold text-faint">⌘K</kbd>
       </Button>
-      <CommandDialog open={open} onOpenChange={setOpen} title="Jump to" description="Go to an admin screen or run an action.">
+      <CommandDialog open={open} onOpenChange={setOpen} title="Jump to" description="Go to an admin screen or run an action."
+        onCloseAutoFocus={(event) => { if (!navigated.current) return; navigated.current = false; event.preventDefault(); afterSelect?.(); }}>
         <CommandInput placeholder="Jump to a screen or action" />
         <CommandList>
           <CommandEmpty>Nothing matches. Try a screen name such as Homepage or Media.</CommandEmpty>
@@ -194,7 +186,7 @@ export function CommandPalette<T extends string>({ groups, icons, disabled, onSe
               <CommandGroup key={group.label ?? "top"} heading={group.label ?? "Start"}>
                 {items.map((name) => {
                   const Icon: LucideIcon = icons[name];
-                  return <CommandItem key={name} value={name} onSelect={() => run(() => onSelect(name))}><Icon aria-hidden="true" strokeWidth={1.5} />{name}</CommandItem>;
+                  return <CommandItem key={name} value={name} onSelect={() => run(() => { navigated.current = true; onSelect(name); })}><Icon aria-hidden="true" strokeWidth={1.5} />{name}</CommandItem>;
                 })}
               </CommandGroup>
             );

@@ -12,13 +12,7 @@ export type PreviewPageOption = { label: string; segments: string[] };
 
 /** Fixed banner, page switcher and width toggle around the draft preview frame. */
 export function PreviewShell({ token, segments, pages, version, publishedVersion, expiresAt, title }: {
-  token: string;
-  segments: string[];
-  pages: PreviewPageOption[];
-  version: number;
-  publishedVersion: number | null;
-  expiresAt: string;
-  title: string;
+  token: string; segments: string[]; pages: PreviewPageOption[]; version: number; publishedVersion: number | null; expiresAt: string; title: string;
 }) {
   const router = useRouter();
   const [width, setWidth] = useState<PreviewDevice>("desktop");
@@ -36,9 +30,7 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
         <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <span>Page</span>
           <NativeSelect size="sm" aria-label="Preview page" className="max-w-[260px] bg-card" value={current} onChange={(event) => router.push(`/admin/preview/${event.target.value}${query}`)}>
-            {pages.map((page) => (
-              <NativeSelectOption key={page.segments.join("/")} value={page.segments.join("/")}>{page.label}</NativeSelectOption>
-            ))}
+            {pages.map((page) => <NativeSelectOption key={page.segments.join("/")} value={page.segments.join("/")}>{page.label}</NativeSelectOption>)}
           </NativeSelect>
         </label>
         <div role="group" aria-label="Preview width" className="inline-flex gap-0.5 rounded-full bg-black/[0.07] p-[3px]">
@@ -49,12 +41,8 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
         <a href="/admin" className="ml-auto rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a>
       </header>
       <div className="flex flex-1 justify-center p-4">
-        <iframe
-          className={cn("h-[calc(100dvh-84px)] min-h-[480px] w-full max-w-full rounded-xl border-0 bg-white shadow-lg motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-admin", width === "tablet" && "w-[820px]", width === "phone" && "w-[390px]")}
-          title={`Draft preview of ${title}`}
-          src={`/admin/preview-frame/${current}${query}`}
-          referrerPolicy="same-origin"
-        />
+        <iframe title={`Draft preview of ${title}`} src={`/admin/preview-frame/${current}${query}`} referrerPolicy="same-origin"
+          className={cn("h-[calc(100dvh-84px)] min-h-[480px] w-full max-w-full rounded-xl border-0 bg-white shadow-lg motion-safe:transition-[width] motion-safe:duration-500 motion-safe:ease-admin", width === "tablet" && "w-[820px]", width === "phone" && "w-[390px]")} />
       </div>
     </AdminRoot>
   );

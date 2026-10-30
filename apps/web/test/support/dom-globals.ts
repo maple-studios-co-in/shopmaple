@@ -14,7 +14,7 @@ if (typeof globalThis.requestAnimationFrame !== "function") {
 // Overlays (menus, popovers, dialogs) dispatch CustomEvent/FocusEvent instances and measure with
 // ResizeObserver. jsdom only dispatches its own event classes, so these globals resolve to the
 // current test window's constructors; a test that assigns its own value replaces the lookup.
-for (const name of ["Event", "CustomEvent", "KeyboardEvent", "MouseEvent", "FocusEvent", "PointerEvent", "ResizeObserver", "MutationObserver", "DocumentFragment", "HTMLFormElement", "HTMLInputElement", "SVGElement", "Node", "Element"] as const) {
+for (const name of ["Event", "CustomEvent", "KeyboardEvent", "MouseEvent", "FocusEvent", "PointerEvent", "ResizeObserver", "MutationObserver", "NodeFilter", "DocumentFragment", "HTMLFormElement", "HTMLInputElement", "SVGElement", "Node", "Element"] as const) {
   const native = (globalThis as Record<string, unknown>)[name];
   Object.defineProperty(globalThis, name, {
     configurable: true,

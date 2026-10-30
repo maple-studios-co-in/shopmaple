@@ -6,16 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { StaffSession } from "./dashboard";
+import { useLatest } from "./kit";
 import { Notice, Skeleton, EmptyState, localToday, readJson, stageOptions } from "./crm-primitives";
 import { useAdminRequest } from "./use-admin-request";
 
 const stageAccent: Record<string, string> = { new: "bg-neutral", contacted: "bg-info", quoted: "bg-warning", won: "bg-success", lost: "bg-danger", overdue: "bg-danger", today: "bg-warning", week: "bg-primary" };
-/** One count on a raised tile: a small label, a large tabular number, a dot in the stage's tone. */
-function Tile({ stat, label, value }: { stat: string; label: string; value: number }) {
-  return <Card className="gap-2 rounded-lg px-4 py-3.5 shadow-xs">
-    <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><span aria-hidden="true" className={cn("size-2 rounded-full", stageAccent[stat])} />{label}</span>
+/** Counts on raised tiles: a small label, a large tabular number, a dot in the stage's tone. */
+function Tiles({ label, className, tiles }: { label: string; className: string; tiles: [stat: string, label: string, value: number][] }) {
+  return <div className={cn("grid grid-cols-2 gap-3", className)} role="group" aria-label={label}>{tiles.map(([stat, text, value]) => <Card key={stat} className="gap-2 rounded-lg px-4 py-3.5 shadow-xs">
+    <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><span aria-hidden="true" className={cn("size-2 rounded-full", stageAccent[stat])} />{text}</span>
     <span className="text-2xl leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums" data-stat={stat}>{value}</span>
-  </Card>;
+  </Card>)}</div>;
 }
 
 export function CrmSummary({ session, onExpired, today = localToday() }: { session: StaffSession; onExpired: () => void; today?: string }) {
@@ -23,19 +24,16 @@ export function CrmSummary({ session, onExpired, today = localToday() }: { sessi
   const [value, setValue] = useState<Summary | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
-  const expired = useRef(onExpired);
-  expired.current = onExpired;
+  const expired = useLatest(onExpired);
   const sequence = useRef(0);
   const load = useCallback(async () => {
     const current = ++sequence.current;
     setBusy(true); setError("");
     const result = await readJson(request, `/api/admin/crm/summary?today=${today}`, crmSummarySchema, "Pipeline summary");
     if (current !== sequence.current) return;
-    setBusy(false);
-    if (result.ok) { setValue(result.value); return; }
-    setValue(null);
-    if (result.denied) { if (result.denied === 401) expired.current(); else setError("Your account does not have access to customer enquiries."); return; }
-    setError(result.message);
+    setBusy(false); setValue(result.ok ? result.value : null);
+    if (!result.ok && result.denied === 401) expired.current();
+    else if (!result.ok) setError(result.denied ? "Your account does not have access to customer enquiries." : result.message);
   }, [request, today]);
   useEffect(() => { void load(); return () => { sequence.current++; }; }, [load, session.user.id]);
   const total = value ? Object.values(value.stages).reduce((sum, count) => sum + count, 0) : 0;
@@ -51,14 +49,8 @@ export function CrmSummary({ session, onExpired, today = localToday() }: { sessi
     {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Try again</Button></div>}
     {value && total === 0 && !error && <EmptyState title="No enquiries yet.">Contact, project and bulk enquiries from the storefront appear here as soon as they arrive, with their stage, follow-ups and contact.</EmptyState>}
     {value && total > 0 && <div className="grid gap-3">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Enquiries per stage">
-        {stageOptions.map(([stage, label]) => <Tile key={stage} stat={stage} label={label} value={value.stages[stage]} />)}
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" role="group" aria-label="Follow-ups and recent enquiries">
-        <Tile stat="overdue" label="Overdue follow-ups" value={value.overdueTasks} />
-        <Tile stat="today" label="Due today" value={value.dueTodayTasks} />
-        <Tile stat="week" label="New in the last 7 days" value={value.newLastSevenDays} />
-      </div>
+      <Tiles label="Enquiries per stage" className="sm:grid-cols-3 lg:grid-cols-5" tiles={stageOptions.map(([stage, label]) => [stage, label, value.stages[stage]])} />
+      <Tiles label="Follow-ups and recent enquiries" className="sm:grid-cols-3" tiles={[["overdue", "Overdue follow-ups", value.overdueTasks], ["today", "Due today", value.dueTodayTasks], ["week", "New in the last 7 days", value.newLastSevenDays]]} />
       <p className="text-xs text-muted-foreground">Counts as of today. Open the Enquiries tab to work the pipeline.</p>
     </div>}
   </section>;

@@ -27,6 +27,7 @@ const ui = {
   ...(await import("../components/ui/separator")),
   ...(await import("../components/ui/table")),
   ...(await import("../components/ui/collapsible")),
+  ...(await import("../components/ui/disabled-scope")),
   ...(await import("../components/ui/sidebar")),
 };
 const container = document.getElementById("root")!;
@@ -270,5 +271,29 @@ test("display: card, badge, skeleton, separator and table render their roles", a
     assert.equal(app.admin.querySelector('[data-slot="separator"]')?.getAttribute("role"), "separator");
     assert.equal(app.admin.querySelector("table th")?.textContent, "Name");
     assert.equal(app.admin.querySelector("table td")?.textContent, "Asha");
+  } finally { await app.close(); }
+});
+
+test("overlays: a sheet or dialog opened inside a disabled scope disables its fields and says why, but can still close", async () => {
+  const app = await mount(
+    <ui.DisabledScope disabled notice="Another editor saved a newer version. Reload the latest draft first.">
+      <ui.Sheet defaultOpen>
+        <ui.SheetContent>
+          <ui.SheetTitle>Version 4</ui.SheetTitle>
+          <ui.SheetDescription>Changes</ui.SheetDescription>
+          <ui.Input aria-label="Chairs heading" />
+          <ui.Button>Restore version 4</ui.Button>
+        </ui.SheetContent>
+      </ui.Sheet>
+    </ui.DisabledScope>,
+  );
+  try {
+    await settle();
+    const sheet = document.querySelector<HTMLElement>('[data-slot="sheet-content"]')!;
+    assert.equal(sheet.querySelector<HTMLInputElement>('input[aria-label="Chairs heading"]')!.matches(":disabled"), true, "Fields in the sheet follow the editor's lock");
+    assert.equal(byText(sheet, "button", "Restore version 4")!.matches(":disabled"), true, "Actions in the sheet follow the lock");
+    assert.match(sheet.querySelector('[role="alert"]')?.textContent ?? "", /newer version/, "The sheet says why");
+    const close = sheet.querySelector<HTMLButtonElement>('[data-slot="sheet-close"], button:has(.sr-only)') ?? [...sheet.querySelectorAll("button")].find((b) => b.textContent === "Close");
+    assert.ok(close && !close.matches(":disabled"), "The sheet can still be closed");
   } finally { await app.close(); }
 });

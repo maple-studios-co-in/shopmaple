@@ -1,10 +1,6 @@
 "use client";
-import { useState } from "react";
-import { PencilLine } from "lucide-react";
 import type { StorefrontContent } from "@shopmaple/contracts";
-import { Button } from "@/components/ui/button";
 import { NativeCheckbox } from "@/components/ui/native-checkbox";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Field } from "./field";
 import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
@@ -23,15 +19,6 @@ const copyLabels: Record<keyof Copy, string> = {
   testimonialSubheading: "Testimonial subheading",
 };
 const copyLimit = (key: keyof Copy) => key === "ticker" ? 600 : key === "testimonialSubheading" ? 300 : 160;
-/** The homepage copy each section shows, so a section's own words can be edited beside it. */
-const sectionCopy: Partial<Record<StorefrontContent["homeSections"][number]["key"], (keyof Copy)[]>> = {
-  categories: ["categoryHeading"],
-  ticker: ["ticker"],
-  instagram: ["socialHeading"],
-  bestsellers: ["bestsellersHeading"],
-  chairs: ["chairsHeading"],
-  testimonial: ["testimonialHeading", "testimonialSubheading"],
-};
 export const titleCase = (value: string) =>
   value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -40,7 +27,6 @@ export function HomepagePanel({ content, edit, focusedSection }: {
   edit: (next: StorefrontContent) => void;
   focusedSection: string | null;
 }) {
-  const [editing, setEditing] = useState<StorefrontContent["homeSections"][number]["key"] | null>(null);
   const copyField = (key: keyof Copy) => (
     <Field
       key={key}
@@ -91,12 +77,6 @@ export function HomepagePanel({ content, edit, focusedSection }: {
               />
               <span className={cn("truncate text-sm font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{titleCase(section.key)}</span>
             </label>
-            {sectionCopy[section.key] && (
-              <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" aria-label={`Edit ${titleCase(section.key)} copy`} onClick={() => setEditing(section.key)}>
-                <PencilLine aria-hidden="true" strokeWidth={1.5} />
-                <span className="hidden sm:inline">Copy</span>
-              </Button>
-            )}
             <MoveButtons
               name={titleCase(section.key)}
               index={index}
@@ -110,18 +90,6 @@ export function HomepagePanel({ content, edit, focusedSection }: {
           </>
         )}
       />
-      <Sheet open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}>
-        <SheetContent className="w-full gap-0 sm:max-w-md">
-          <SheetHeader className="border-b border-line-soft px-6 py-5">
-            <SheetTitle className="font-display text-xl font-normal">{editing ? titleCase(editing) : ""}</SheetTitle>
-            <SheetDescription>The words this section shows on the homepage. Changes stay in your draft.</SheetDescription>
-          </SheetHeader>
-          <div className="grid gap-4 overflow-y-auto px-6 py-5">{editing && sectionCopy[editing]?.map(copyField)}</div>
-          <SheetFooter className="border-t border-line-soft px-6 py-4">
-            <Button type="button" variant="outline" onClick={() => setEditing(null)}>Done</Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
       <SectionHeading>Homepage copy</SectionHeading>
       <FieldGrid>{(Object.keys(copyLabels) as (keyof Copy)[]).map(copyField)}</FieldGrid>
       <HomeDetailsFields value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} />

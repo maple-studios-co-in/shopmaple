@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { enquiryAdminDetailSchema, type EnquiryAdminDetail } from "@shopmaple/contracts";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,18 +7,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { StaffSession } from "./dashboard";
+import { Subsection, useLatest, useWrite } from "./kit";
 import { Notice, writeOptions } from "./crm-primitives";
-import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
+import { useAdminRequest } from "./use-admin-request";
 
 const bodyLimit = 5000, subjectLimit = 150;
-const messages = {
-  unconfigured: "Email replies are not configured on this server. Contact the customer by phone or from your own mailbox.",
-  limited: "You have sent many replies recently. Wait a while before sending more.",
-  failed: "The email provider did not accept the reply. It was recorded as failed in activity; check there before trying again.",
-  stale: "This enquiry changed. Reload the enquiry before sending again. Your draft is kept.",
-  generic: "We couldn't send the reply. Your draft is kept; reload the enquiry and check activity before trying again.",
-  timeout: "The reply request timed out. Your draft is kept; check activity before sending again so the customer is not emailed twice.",
+const unconfigured = "Email replies are not configured on this server. Contact the customer by phone or from your own mailbox.";
+const refusals: Record<number, string> = {
+  409: "This enquiry changed. Reload the enquiry before sending again. Your draft is kept.",
+  429: "You have sent many replies recently. Wait a while before sending more.",
+  502: "The email provider did not accept the reply. It was recorded as failed in activity; check there before trying again.",
+  503: unconfigured,
 };
+const fieldLabel = "grid gap-1.5 text-xs font-medium text-foreground";
 
 export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied, onBusy }: {
   detail: EnquiryAdminDetail; session: StaffSession;
@@ -31,64 +32,44 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
   const enabled = refused ? false : emailEnabled;
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
   const [stale, setStale] = useState(false);
   const [denied, setDenied] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [open, setOpen] = useState(false);
-  const active = useRef(true);
-  const callbacks = useRef({ onChange, onDenied, onBusy });
-  callbacks.current = { onChange, onDenied, onBusy };
-  const path = `/api/admin/enquiries/${encodeURIComponent(detail.id)}`;
-  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  const callbacks = useLatest({ onChange, onDenied });
+  const { busy, error, setError, notice, setNotice, active, run } = useWrite(onBusy);
   // A newer enquiry version from elsewhere clears a stale marker so the draft can be sent again.
   useEffect(() => { setStale(false); }, [detail.version]);
   const ready = enabled !== false && !denied && !stale && !busy && subject.trim().length > 0 && body.trim().length > 0 && subject.length <= subjectLimit && body.length <= bodyLimit;
-  async function send() {
-    if (!ready) return;
-    setBusy(true); callbacks.current.onBusy(true); setError(""); setNotice("");
-    try {
-      const response = await request(`${path}/reply`, writeOptions(session.csrfToken, { expectedVersion: detail.version, subject: subject.trim(), body: body.trim() }));
-      if (!active.current) return;
-      if (response.status === 401 || response.status === 403) { setDenied(true); setSubject(""); setBody(""); callbacks.current.onDenied(response.status); return; }
-      if (response.status === 409) { setStale(true); setError(messages.stale); return; }
-      if (response.status === 429) { setError(messages.limited); return; }
-      if (response.status === 502) { setError(messages.failed); return; }
-      if (response.status === 503) { setRefused(true); setError(messages.unconfigured); return; }
-      if (!response.ok) throw Error("send");
-      const value = enquiryAdminDetailSchema.parse(await response.json());
-      if (!active.current) return;
-      if (value.id !== detail.id) throw Error("Wrong enquiry");
-      callbacks.current.onChange(value);
-      setSubject(""); setBody(""); setOpen(false);
-      setNotice("Reply sent to the customer and recorded in activity.");
-    } catch (failure) {
-      if (active.current) setError(failure instanceof AdminRequestTimeout ? messages.timeout : messages.generic);
-    } finally {
-      if (active.current) { setBusy(false); callbacks.current.onBusy(false); }
-    }
-  }
-  const fieldLabel = "grid gap-1.5 text-xs font-medium text-foreground";
-  if (denied) return <section className="grid gap-3" aria-label="Reply by email"><h4 className="text-sm font-semibold text-foreground">Reply by email</h4><Notice tone="info">Replies are unavailable for this account.</Notice></section>;
-  return <section className="grid gap-3" aria-label="Reply by email" aria-busy={busy}>
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="grid max-w-[56ch] gap-1">
-        <h4 className="text-sm font-semibold text-foreground">Reply by email</h4>
-        <p className="text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong> from the shop&apos;s configured sender. The full message is kept in activity.</p>
-      </div>
-      <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setOpen(true)}><Mail aria-hidden="true" strokeWidth={1.5} />Reply</Button>
-    </div>
-    {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
+  const send = () => ready && run(async () => {
+    const response = await request(`/api/admin/enquiries/${encodeURIComponent(detail.id)}/reply`, writeOptions(session.csrfToken, { expectedVersion: detail.version, subject: subject.trim(), body: body.trim() }));
+    if (!active.current) return;
+    if (response.status === 401 || response.status === 403) { setDenied(true); setSubject(""); setBody(""); callbacks.current.onDenied(response.status); return; }
+    if (refusals[response.status]) { setStale(response.status === 409); setRefused(current => current || response.status === 503); setError(refusals[response.status]!); return; }
+    if (!response.ok) throw Error("send");
+    const value = enquiryAdminDetailSchema.parse(await response.json());
+    if (!active.current) return;
+    if (value.id !== detail.id) throw Error("Wrong enquiry");
+    callbacks.current.onChange(value);
+    setSubject(""); setBody(""); setOpen(false);
+    setNotice("Reply sent to the customer and recorded in activity.");
+  }, timedOut => timedOut
+    ? "The reply request timed out. Your draft is kept; check activity before sending again so the customer is not emailed twice."
+    : "We couldn't send the reply. Your draft is kept; reload the enquiry and check activity before trying again.");
+  if (denied) return <Subsection title="Reply by email" aria-label="Reply by email"><Notice tone="info">Replies are unavailable for this account.</Notice></Subsection>;
+  const recipient = <strong className="font-semibold text-foreground">{detail.email}</strong>;
+  return <Subsection title="Reply by email" aria-label="Reply by email" aria-busy={busy}
+    description={<>Plain text goes to {recipient} from the shop&apos;s configured sender. The full message is kept in activity.</>}
+    actions={<Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setOpen(true)}><Mail aria-hidden="true" strokeWidth={1.5} />Reply</Button>}>
+    {enabled === false && <Notice tone="info">{unconfigured}</Notice>}
     {!open && error && <Notice tone="error">{error}</Notice>}
     {notice && <Notice tone="status">{notice}</Notice>}
     <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
       <DialogContent className="gap-5 bg-card sm:max-w-xl" aria-busy={busy}>
         <DialogHeader>
           <DialogTitle className="text-lg">Reply to {detail.name || "the customer"}</DialogTitle>
-          <DialogDescription className="text-xs leading-relaxed [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong>. The full message is kept in activity.</DialogDescription>
+          <DialogDescription className="text-xs leading-relaxed [overflow-wrap:anywhere]">Plain text goes to {recipient}. The full message is kept in activity.</DialogDescription>
         </DialogHeader>
-        {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
+        {enabled === false && <Notice tone="info">{unconfigured}</Notice>}
         <div className="grid gap-4">
           <label className={fieldLabel}>Subject<Input aria-label="Reply subject" value={subject} maxLength={subjectLimit} disabled={busy || enabled === false} className="h-10 bg-card text-sm" onInput={event => setSubject(event.currentTarget.value)} onChange={() => {}} /></label>
           <label className={fieldLabel}>Message<Textarea aria-label="Reply message" aria-describedby="enquiry-reply-count" value={body} maxLength={bodyLimit} rows={8} disabled={busy || enabled === false} className="min-h-40 bg-card text-sm leading-relaxed" onInput={event => setBody(event.currentTarget.value)} onChange={() => {}} /></label>
@@ -101,5 +82,5 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  </section>;
+  </Subsection>;
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { AuthoredBlock } from "@shopmaple/contracts";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
@@ -11,13 +11,9 @@ import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { Notice } from "./crm-primitives";
-import { CheckField, FieldGrid, SectionHeading, SelectField, rowCard } from "./kit";
+import { ActionButton, CheckField, FieldGrid, Hint, SectionHeading, SelectField, rowCard, swap } from "./kit";
 
 const blockTypeLabels: Record<AuthoredBlock["type"], string> = { paragraph: "Paragraph", heading: "Heading", quote: "Quotation", list: "List", link: "Link", image: "Image" };
-/** A short hint under a block's fields. */
-function Hint({ children }: { children: ReactNode }) {
-  return <p data-span="full" className="text-xs leading-relaxed text-muted-foreground">{children}</p>;
-}
 
 export function newAuthoredBlock(type: Exclude<AuthoredBlock["type"], "image">): AuthoredBlock {
   const id = crypto.randomUUID();
@@ -55,8 +51,7 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
   }
   function moveBlock(index: number, direction: -1 | 1) {
     if (index + direction < 0 || index + direction >= value.length) return;
-    const blocks = [...value];
-    [blocks[index], blocks[index + direction]] = [blocks[index + direction]!, blocks[index]!];
+    const blocks = swap(value, index, direction);
     // Boundary moves disable their control; retain keyboard focus in the moved block.
     if (index + direction === 0 || index + direction === blocks.length - 1) focusBlock.current = blocks[index + direction]!.id;
     onChange(blocks);
@@ -84,7 +79,8 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
         <Badge variant="secondary" className="rounded-md border-0 bg-neutral-bg font-medium text-neutral">{blockTypeLabels[block.type]}</Badge>
       </legend>
       <FieldGrid className="col-span-2 row-start-2">
-        {(block.type === "paragraph" || block.type === "quote" || block.type === "heading") && <Field label={`Block ${index + 1} text`} value={block.text} maxLength={block.type === "heading" ? 300 : 8000} multiline={block.type !== "heading"} onChange={text => replaceBlock(block.id, { ...block, text })} />}
+        {(block.type === "paragraph" || block.type === "quote" || block.type === "heading") && <Field label={`Block ${index + 1} text`} value={block.text}
+          maxLength={block.type === "heading" ? 300 : 8000} multiline={block.type !== "heading"} onChange={text => replaceBlock(block.id, { ...block, text })} />}
         {block.type === "heading" && <SelectField label="Heading level" aria-label={`Block ${index + 1} heading level`} value={block.level} onChange={event => replaceBlock(block.id, { ...block, level: Number(event.target.value) as 2 | 3 })}>
           <NativeSelectOption value={2}>Heading 2</NativeSelectOption>
           <NativeSelectOption value={3}>Heading 3</NativeSelectOption>
@@ -100,28 +96,30 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
           <Hint>Use a store address such as /collections/all.</Hint>
         </>}
         {block.type === "image" && <>
-          {session && onExpired ? <MediaPicker label={`Block ${index + 1} image`} value={block.src} session={session} onExpired={onExpired} onChange={src => replaceBlock(block.id, { ...block, src })} /> : <div data-span="full"><Notice tone="info">Sign in to choose an image from the media library.</Notice></div>}
+          {session && onExpired
+            ? <MediaPicker label={`Block ${index + 1} image`} value={block.src} session={session} onExpired={onExpired} onChange={src => replaceBlock(block.id, { ...block, src })} />
+            : <div data-span="full"><Notice tone="info">Sign in to choose an image from the media library.</Notice></div>}
           <Field label={`Block ${index + 1} image description`} value={block.alt} maxLength={200} className="sm:col-span-2" onChange={alt => replaceBlock(block.id, { ...block, alt })} />
         </>}
       </FieldGrid>
       {/* The fields come first in the DOM so focus after a reorder lands on the block's text, not its controls. */}
       <div className="col-start-2 row-start-1 flex items-center gap-0.5">
         {handle}
-        <Button type="button" variant="ghost" size="icon-sm" title="Move up" disabled={index === 0} onClick={() => moveBlock(index, -1)}>
-          <ChevronUp aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Move up</span>
-        </Button>
-        <Button type="button" variant="ghost" size="icon-sm" title="Move down" disabled={index === value.length - 1} onClick={() => moveBlock(index, 1)}>
-          <ChevronDown aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Move down</span>
-        </Button>
-        <Button type="button" variant="ghost" size="icon-sm" title="Remove block" className="text-muted-foreground hover:bg-danger-bg hover:text-danger" disabled={value.length <= 1} onClick={() => removeBlock(index)}>
-          <X aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">Remove block</span>
-        </Button>
+        {([["Move up", ChevronUp, index === 0, () => moveBlock(index, -1)], ["Move down", ChevronDown, index === value.length - 1, () => moveBlock(index, 1)],
+          ["Remove block", X, value.length <= 1, () => removeBlock(index)]] as const).map(([name, Icon, disabled, onClick]) => (
+          <Button key={name} type="button" variant="ghost" size="icon-sm" title={name} disabled={disabled} onClick={onClick}
+            className={name === "Remove block" ? "text-muted-foreground hover:bg-danger-bg hover:text-danger" : undefined}>
+            <Icon aria-hidden="true" strokeWidth={1.5} /><span className="sr-only">{name}</span>
+          </Button>
+        ))}
       </div>
     </>} />
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <span className="mr-1 text-xs font-medium text-muted-foreground">Add a block</span>
-      {(["paragraph", "heading", "quote", "list", "link"] as const).map(type => <Button key={type} type="button" variant="outline" size="sm" disabled={atLimit} onClick={() => addBlock(newAuthoredBlock(type))}><Plus aria-hidden="true" strokeWidth={1.5} />Add {type}</Button>)}
-      <Button type="button" variant="outline" size="sm" disabled={atLimit || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}><ImagePlus aria-hidden="true" strokeWidth={1.5} />Add image</Button>
+      {(["paragraph", "heading", "quote", "list", "link"] as const).map(type => (
+        <ActionButton key={type} icon={Plus} disabled={atLimit} onClick={() => addBlock(newAuthoredBlock(type))}>Add {type}</ActionButton>
+      ))}
+      <ActionButton icon={ImagePlus} disabled={atLimit || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}>Add image</ActionButton>
     </div>
     {addingImage && session && onExpired && <div aria-label="New image block" className="mt-3 grid gap-3 rounded-lg border border-border bg-card p-3 shadow-xs sm:p-4">
       <MediaPicker label="New block image" value="" session={session} onExpired={onExpired} onChange={src => { if (src) { addBlock({ id: crypto.randomUUID(), type: "image", src, alt: "" }); setAddingImage(false); } }} />

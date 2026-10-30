@@ -5,20 +5,17 @@ import { AuthoredArticleBody } from "@/components/authored-article-body";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
 import { AuthoredBlockFields, newAuthoredBlock } from "./authored-block-fields";
-import { MediaPicker } from "./media-picker";
+import { MediaPicker, mediaPreviewUrl } from "./media-picker";
 import { Newspaper, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { EmptyState, Notice } from "./crm-primitives";
-import { ConfirmPanel, DangerZone, EditorWithPreview, Hint, PreviewPanel, PreviewTitle, dangerButton } from "./forms";
-import { FieldGrid, SectionHeading, SelectField } from "./kit";
+import {
+  ActionButton, ConfirmPanel, DangerZone, EditorWithPreview, FieldGrid, Hint, PreviewPanel, PreviewTitle, SectionHeading, SelectField, dangerButton,
+} from "./kit";
 
 const identity = (article: AuthoredArticle) => `${article.blog}/${article.handle}`;
 const blogLabels: Record<AuthoredArticle["blog"], string> = { news: "News", "buying-guidelines": "Buying guidelines", "life-culture": "Life & culture", "recent-stories": "Recent stories" };
-function previewImage(src: string) {
-  const match = /^\/media\/uploads\/([a-f0-9]{64})\.webp$/.exec(src);
-  return match ? `/api/admin/media/${match[1]}/preview` : src;
-}
 export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
   value?: AuthoredArticle[]; onChange: (value: AuthoredArticle[]) => void; session: StaffSession; onExpired: () => void;
 }) {
@@ -45,9 +42,9 @@ export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
     if (articles.length >= 20) { setError("Use at most 20 authored articles"); return; }
     onChange([...articles, next]); setSelected(identity(next)); setCreating(false); setRemoving(false); setError(""); setHandle(""); setTitle("");
   }
-  const newArticleButton = <Button type="button" disabled={articles.length >= 20 || creating} onClick={() => { setCreating(true); setError(""); setRemoving(false); }}>
-    <Plus aria-hidden="true" strokeWidth={1.5} />New article
-  </Button>;
+  const newArticleButton = <ActionButton icon={Plus} variant="default" size="default" disabled={articles.length >= 20 || creating} onClick={() => { setCreating(true); setError(""); setRemoving(false); }}>
+    New article
+  </ActionButton>;
   return <section aria-label="New articles editor" className="mt-10 border-t border-line-soft pt-8" onKeyDown={event => {
     if (event.key === "Enter" && event.target instanceof window.HTMLInputElement && event.target.type === "text") event.preventDefault();
   }}>
@@ -100,13 +97,9 @@ export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
           </FieldGrid>
           <AuthoredBlockFields value={article.blocks} onChange={blocks => update({ blocks })} session={session} onExpired={onExpired} />
           <DangerZone note={removing ? undefined : "Removal stays in your draft until it is published. Saved versions remain in History."}>
-            <Button type="button" variant="ghost" size="sm" className={dangerButton} onClick={() => setRemoving(true)}>
-              <Trash2 aria-hidden="true" strokeWidth={1.5} />Remove article
-            </Button>
-            {removing && <ConfirmPanel actions={<>
-              <Button type="button" variant="destructive" size="sm" onClick={() => { onChange(articles.filter(item => identity(item) !== identity(article))); setSelected(""); setRemoving(false); }}>Confirm remove article</Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setRemoving(false)}>Keep article</Button>
-            </>}>
+            <ActionButton icon={Trash2} variant="ghost" className={dangerButton} onClick={() => setRemoving(true)}>Remove article</ActionButton>
+            {removing && <ConfirmPanel confirm="Confirm remove article" cancel="Keep article" onCancel={() => setRemoving(false)}
+              onConfirm={() => { onChange(articles.filter(item => identity(item) !== identity(article))); setSelected(""); setRemoving(false); }}>
               Remove “{article.title}” and all its blocks from this draft? This takes effect publicly only when the whole draft is published. Saved versions remain in History.
             </ConfirmPanel>}
           </DangerZone>
@@ -114,7 +107,7 @@ export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
         <PreviewPanel aria-label="Authored article preview" eyebrow="Local article preview" footnote={<>Local preview · /blogs/{identity(article)}</>}>
           <PreviewTitle>{article.title || "Untitled article"}</PreviewTitle>
           {article.excerpt && <p className="text-muted-foreground">{article.excerpt}</p>}
-          {article.cover && contentImageSchema.safeParse(article.cover.src).success && <img src={previewImage(article.cover.src)} alt={article.cover.alt} width={480} height={320} className="h-auto w-full rounded-md bg-sunken object-contain" />}
+          {article.cover && contentImageSchema.safeParse(article.cover.src).success && <img src={mediaPreviewUrl(article.cover.src)} alt={article.cover.alt} width={480} height={320} className="h-auto w-full rounded-md bg-sunken object-contain" />}
           <div className="store-prose"><AuthoredArticleBody blocks={article.blocks} preview /></div>
         </PreviewPanel>
       </EditorWithPreview>

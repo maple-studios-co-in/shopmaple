@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  BookOpen, CircleCheck, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
+  BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
   ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Tags, TriangleAlert, Upload, X,
 } from "lucide-react";
 import {
@@ -10,6 +10,8 @@ import {
   type StorefrontContent,
 } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
+import { DisabledScope } from "@/components/ui/disabled-scope";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -27,7 +29,7 @@ import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview, type MintResult } from "./live-preview";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
-import { EmptyState, Skeleton } from "./crm-primitives";
+import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
 import { HomepagePanel } from "./homepage-panel";
 import { OverviewPanel } from "./overview-panel";
@@ -42,20 +44,8 @@ type Document = {
   updatedAt: string | null;
 };
 const tabs = [
-  "Overview",
-  "Homepage",
-  "Navigation & footer",
-  "Merchandising",
-  "Artwork",
-  "Campaigns",
-  "Instagram",
-  "Pages",
-  "Existing pages",
-  "Policies & blogs",
-  "Category pages",
-  "Media",
-  "Enquiries",
-  "History",
+  "Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram",
+  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
@@ -68,61 +58,29 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: "Publishing", items: ["History"] },
 ];
 const icons: Record<Tab, typeof House> = {
-  Overview: LayoutDashboard,
-  Homepage: House,
-  "Navigation & footer": PanelsTopLeft,
-  Merchandising: LayoutGrid,
-  Artwork: ImageIcon,
-  Campaigns: Megaphone,
-  Instagram,
-  Pages: FileText,
-  "Existing pages": Files,
-  "Policies & blogs": BookOpen,
-  "Category pages": Tags,
-  Media: Images,
-  Enquiries: Inbox,
-  History,
+  Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, Artwork: ImageIcon,
+  Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
+  Media: Images, Enquiries: Inbox, History,
 };
+/** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
+const existingPages = [
+  ["story", "Our Story", "pages/our-story"], ["nimbus", "The Nimbus Collection", "pages/nimbus-collection"], ["contact", "Contact", "pages/contact"],
+  ["bulk", "Bulk Enquiry", "pages/bulk-enquiry"], ["returns", "Return & Exchange", "pages/returns"],
+] as const;
+type ExistingPage = (typeof existingPages)[number][0];
 /** Sections whose edits show on a storefront page and can therefore use the live preview. */
 const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
 function parseDocument(value: unknown): Document {
   const document = value as Document;
-  if (
-    !document ||
-    !Number.isSafeInteger(document.version) ||
-    document.version < 0 ||
-    !(
-      document.updatedAt === null ||
-      (typeof document.updatedAt === "string" &&
-        document.updatedAt.length <= 64 &&
-        Number.isFinite(Date.parse(document.updatedAt)))
-    ) ||
-    !(
-      document.publishedVersion === null ||
-      (Number.isSafeInteger(document.publishedVersion) &&
-        document.publishedVersion >= 0 &&
-        document.publishedVersion <= document.version)
-    )
-  )
-    throw new Error("Invalid response");
-  return {
-    ...document,
-    draft:
-      document.draft === null
-        ? null
-        : storefrontContentSchema.parse(document.draft),
-  };
+  const validUpdatedAt = document?.updatedAt === null || (typeof document?.updatedAt === "string" && document.updatedAt.length <= 64 && Number.isFinite(Date.parse(document.updatedAt)));
+  const validPublished = document?.publishedVersion === null || (Number.isSafeInteger(document?.publishedVersion) && document.publishedVersion! >= 0 && document.publishedVersion! <= document.version);
+  if (!document || !Number.isSafeInteger(document.version) || document.version < 0 || !validUpdatedAt || !validPublished) throw new Error("Invalid response");
+  return { ...document, draft: document.draft === null ? null : storefrontContentSchema.parse(document.draft) };
 }
 /** A request the hook aborted because the component went away; never worth reporting. */
 const aborted = (error: unknown) => error instanceof Error && error.name === "AbortError";
 
-export function ContentEditor({
-  session,
-  initialContent,
-  onExpired,
-  account,
-  livePreviewDebounceMs = 1200,
-}: {
+export function ContentEditor({ session, initialContent, onExpired, account, livePreviewDebounceMs = 1200 }: {
   session: StaffSession;
   initialContent: StorefrontContent;
   onExpired: () => void;
@@ -132,7 +90,7 @@ export function ContentEditor({
 }) {
   const adminRequest = useAdminRequest();
   const [tab, setTab] = useState<Tab>("Overview");
-  const [existingPage, setExistingPage] = useState<"story" | "nimbus" | "contact" | "bulk" | "returns">("story");
+  const [existingPage, setExistingPage] = useState<ExistingPage>("story");
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<StorefrontContent | null>(null);
   const [busy, setBusy] = useState(false);
@@ -190,36 +148,22 @@ export function ContentEditor({
     setError("");
     setNotice("");
     try {
-      const response = await adminRequest("/api/admin/content", {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
+      const response = await adminRequest("/api/admin/content", { cache: "no-store", credentials: "same-origin" });
       if (!current()) return;
-      if (response.status === 401) {
-        onExpired();
-        return;
-      }
+      if (response.status === 401) return onExpired();
       if (!response.ok) throw new Error("Read failed");
       acceptDocument(await response.json());
     } catch (error) {
       if (aborted(error) || !current()) return;
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Loading your draft timed out. Please try again."
-          : "We couldn't load your draft. Please try again.",
-      );
+      setError(error instanceof AdminRequestTimeout ? "Loading your draft timed out. Please try again." : "We couldn't load your draft. Please try again.");
     } finally {
       if (current()) setBusy(false);
     }
   }
-  useEffect(() => {
-    void load();
-  }, [session.user.id]);
+  useEffect(() => { void load(); }, [session.user.id]);
   useEffect(() => {
     if (!dirty && !scheduleEditing) return;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, scheduleEditing]);
@@ -228,25 +172,15 @@ export function ContentEditor({
     setBusy(true);
     setError("");
     try {
-      const response = await adminRequest("/api/admin/content/revisions", {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (response.status === 401) {
-        onExpired();
-        return;
-      }
+      const response = await adminRequest("/api/admin/content/revisions", { cache: "no-store", credentials: "same-origin" });
+      if (response.status === 401) return onExpired();
       if (!response.ok) throw new Error("Read failed");
       const result = await response.json();
       if (!Array.isArray(result.revisions)) throw new Error("Invalid history");
       setRevisions(result.revisions);
     } catch (error) {
       if (aborted(error) || !alive.current) return;
-      setError(
-        error instanceof AdminRequestTimeout
-          ? "Loading revision history timed out. Open History to try again."
-          : "We couldn't load revision history. Open History to try again.",
-      );
+      setError(error instanceof AdminRequestTimeout ? "Loading revision history timed out. Open History to try again." : "We couldn't load revision history. Open History to try again.");
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -261,12 +195,7 @@ export function ContentEditor({
   /** Storefront address the preview opens on, chosen from what is being edited. */
   function previewPath() {
     if (tab === "Category pages") return "pages/sofas";
-    if (tab === "Existing pages")
-      return existingPage === "story" ? "pages/our-story"
-        : existingPage === "nimbus" ? "pages/nimbus-collection"
-        : existingPage === "contact" ? "pages/contact"
-        : existingPage === "bulk" ? "pages/bulk-enquiry"
-        : "pages/returns";
+    if (tab === "Existing pages") return existingPages.find(([key]) => key === existingPage)![2];
     if (tab === "Pages") {
       const page = [content?.pages[selectedPage], ...(content?.pages ?? [])].find((item) => item?.slug);
       if (page) return `pages/${encodeURIComponent(page.slug)}`;
@@ -283,15 +212,10 @@ export function ContentEditor({
   const mintPreviewToken = useCallback(async (version: number): Promise<MintResult | null> => {
     try {
       const response = await adminRequest("/api/admin/content/preview", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
         body: JSON.stringify({ expectedVersion: version }),
       });
-      if (response.status === 401) {
-        onExpired();
-        return null;
-      }
+      if (response.status === 401) { onExpired(); return null; }
       if (response.status === 409) {
         const body: unknown = await response.json().catch(() => null);
         const code = body && typeof body === "object" ? (body as { code?: unknown }).code : undefined;
@@ -307,13 +231,7 @@ export function ContentEditor({
       return { ok: true, token: record.token, expiresAt: typeof record.expiresAt === "string" ? record.expiresAt : "" };
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      return {
-        ok: false,
-        code: "unavailable",
-        message: error instanceof AdminRequestTimeout
-          ? "Opening the preview timed out. Please try again."
-          : "We couldn't open the preview. Please try again.",
-      };
+      return { ok: false, code: "unavailable", message: error instanceof AdminRequestTimeout ? "Opening the preview timed out. Please try again." : "We couldn't open the preview. Please try again." };
     }
   }, [adminRequest, session.csrfToken, onExpired]);
   async function preview() {
@@ -324,34 +242,23 @@ export function ContentEditor({
     let version = document.version;
     if (dirty || document.draft === null) {
       const saved = await write("save");
-      if (!saved) {
-        popup?.close();
-        return;
-      }
+      if (!saved) return popup?.close();
       version = saved.version;
     }
     setBusy(true);
     setError("");
     const minted = await mintPreviewToken(version);
     if (alive.current) setBusy(false);
-    if (!minted) {
+    if (!minted || !minted.ok) {
       popup?.close();
-      return;
-    }
-    if (!minted.ok) {
-      popup?.close();
-      setError(minted.message);
+      if (minted) setError(minted.message);
       return;
     }
     const url = `/admin/preview/${previewPath()}?token=${encodeURIComponent(minted.token)}`;
     if (popup) popup.location.href = url;
     else setPreviewLink(url);
   }
-  async function write(
-    action: "save" | "publish" | "restore",
-    revisionId?: string,
-    options: { quiet?: boolean } = {},
-  ): Promise<Document | null> {
+  async function write(action: "save" | "publish" | "restore", revisionId?: string, options: { quiet?: boolean } = {}): Promise<Document | null> {
     if (!document || !content || busy || inFlight.current || conflict || scheduleEditing) return null;
     if (action === "save") {
       const validation = storefrontContentSchema.safeParse(content);
@@ -373,46 +280,21 @@ export function ContentEditor({
     if (!quiet) { setError(""); setNotice(""); }
     const fail = (message: string) => { if (quiet) setAutoSaveFailed(message); else setError(message); };
     try {
-      const response = await adminRequest(
-        `/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`,
-        {
-          method: action === "save" ? "PUT" : "POST",
-          credentials: "same-origin",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": session.csrfToken,
-          },
-          body: JSON.stringify({
-            expectedVersion: document.version,
-            ...(action === "save"
-              ? { content }
-              : action === "restore"
-                ? { revisionId }
-                : {}),
-          }),
-        },
-      );
-      if (response.status === 401) {
-        onExpired();
-        return null;
-      }
+      const response = await adminRequest(`/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`, {
+        method: action === "save" ? "PUT" : "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
+        body: JSON.stringify({ expectedVersion: document.version, ...(action === "save" ? { content } : action === "restore" ? { revisionId } : {}) }),
+      });
+      if (response.status === 401) { onExpired(); return null; }
       if (response.status === 409) {
         setConflict(true);
-        setError(
-          "Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.",
-        );
-        return null;
-      }
-      if (response.status === 403) {
-        fail("Your permission or session has changed. Sign out and sign in again before continuing.");
+        setError("Another editor saved a newer version. Your changes are still here. Reload the latest draft before editing again; reloading discards these local changes.");
         return null;
       }
       if (!response.ok) {
-        fail(
-          response.status === 400
-            ? "Some content is invalid. Check your links and fields, then save again."
-            : "We couldn't complete that change. Your local edits are still here. Please try again.",
-        );
+        fail(response.status === 403 ? "Your permission or session has changed. Sign out and sign in again before continuing."
+          : response.status === 400 ? "Some content is invalid. Check your links and fields, then save again."
+          : "We couldn't complete that change. Your local edits are still here. Please try again.");
         return null;
       }
       const raw: unknown = await response.json();
@@ -420,21 +302,13 @@ export function ContentEditor({
       if (quiet && action === "save") acceptQuietSave(raw, sent!);
       else acceptDocument(raw);
       setAutoSaveFailed("");
-      if (!quiet) setNotice(
-        action === "save"
-          ? "Draft saved. The published storefront has not changed."
-          : action === "publish"
-            ? "Draft published. The storefront now uses this version."
-            : "Restored as a draft. Review it, then publish when ready.",
-      );
+      if (!quiet) setNotice(action === "save" ? "Draft saved. The published storefront has not changed."
+        : action === "publish" ? "Draft published. The storefront now uses this version." : "Restored as a draft. Review it, then publish when ready.");
       return accepted;
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
-      fail(
-        error instanceof AdminRequestTimeout
-          ? "The request timed out. Your local edits are still here. Please try again."
-          : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.",
-      );
+      fail(error instanceof AdminRequestTimeout ? "The request timed out. Your local edits are still here. Please try again."
+        : "We couldn't complete that change. Check your connection and try again. Your local edits are still here.");
       return null;
     } finally {
       inFlight.current = false;
@@ -480,7 +354,56 @@ export function ContentEditor({
   const previewDisabled = !document || !content || busy || saving || conflict || scheduleEditing;
   const publishDisabled = !document?.version || dirty || busy || saving || conflict || scheduleEditing;
   const draftTone = conflict ? "conflict" : busy || saving ? "saving" : dirty ? "unsaved" : "accent";
-  const panelClass = "min-w-0 rounded-xl border border-border bg-card p-5 shadow-xs sm:p-7";
+  const draftScreen = previewable.has(tab);
+  const liveDisabled = !document || !content || !draftScreen;
+  const publisher = session.user.role === "publisher";
+  /** After the palette navigates, the new screen's heading takes focus (never the page body). */
+  const focusPanelHeading = () => requestAnimationFrame(() => {
+    const heading = window.document.querySelector<HTMLElement>("[data-admin-panel] h2");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus();
+  });
+  // One width rule for every screen: full width up to 1180 px; beside the live preview, the split decides.
+  const panelClass = cn("min-w-0 rounded-xl border border-border bg-card p-5 shadow-xs sm:p-7", !liveActive && "max-w-[1180px]");
+
+  /** The draft editor for the current screen (Enquiries renders outside the draft). */
+  function screen() {
+    if (!content) return null;
+    const set = <K extends keyof StorefrontContent>(key: K) => (value: StorefrontContent[K]) => edit({ ...content, [key]: value });
+    switch (tab) {
+      case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
+      case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} />;
+      case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
+        const next = { ...content };
+        if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
+        edit(next);
+      }} />;
+      case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
+      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} />;
+      case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
+      case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />;
+      case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />;
+      case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
+      case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
+      case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
+      case "Policies & blogs": return <>
+        <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
+        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} />
+        <AuthoredArticleFields value={content.authoredArticles} onChange={set("authoredArticles")} session={session} onExpired={onExpired} />
+      </>;
+      case "Existing pages": return <>
+        <PanelHeader title="Existing pages" description="Edit the storefront pages that ship with the theme. Changes stay in your draft until published." />
+        <SelectField label="Existing page" className="mb-6 max-w-sm" value={existingPage} onChange={(event) => setExistingPage(event.target.value as ExistingPage)}>
+          {existingPages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </SelectField>
+        {existingPage === "story" ? <StoryFields value={content.storyPage} onChange={set("storyPage")} />
+          : existingPage === "nimbus" ? <NimbusFields value={content.nimbusPage} onChange={set("nimbusPage")} />
+          : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={set("servicePages")} />}
+      </>;
+      default: return null;
+    }
+  }
 
   return (
     <SidebarProvider className="min-h-dvh bg-background" style={{ "--sidebar-width": "15.5rem" } as React.CSSProperties}>
@@ -512,38 +435,42 @@ export function ContentEditor({
             icons={icons}
             disabled={navDisabled}
             onSelect={selectTab}
-            actions={[
+            afterSelect={focusPanelHeading}
+            actions={draftScreen ? [
               { label: "Save draft", run: () => void write("save"), disabled: saveDisabled },
               { label: "Preview draft", run: () => void preview(), disabled: previewDisabled },
-              ...(session.user.role === "publisher" ? [{ label: "Publish draft", run: () => void write("publish"), disabled: publishDisabled }] : []),
-              { label: liveOpen ? "Close live preview" : "Open live preview", run: () => setLiveOpen((value) => !value), disabled: !document || !content || !previewable.has(tab) },
-            ]}
+              ...(publisher ? [{ label: "Publish draft", run: () => void write("publish"), disabled: publishDisabled }] : []),
+              { label: liveOpen ? "Close live preview" : "Open live preview", run: () => setLiveOpen((value) => !value), disabled: liveDisabled },
+            ] : []}
           />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-pressed={liveOpen}
-              className="text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary"
-              disabled={!document || !content || !previewable.has(tab)}
-              onClick={() => setLiveOpen((value) => !value)}
-            >
-              <Eye aria-hidden="true" strokeWidth={1.5} />
-              <span className="max-sm:sr-only">Live preview</span>
-            </Button>
-            <Button type="button" variant="outline" size="sm" data-action="save" disabled={saveDisabled} onClick={() => void write("save")}>
-              <Save aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Save draft</span>
-            </Button>
-            <Button type="button" variant="outline" size="sm" data-action="preview" disabled={previewDisabled} onClick={() => void preview()}>
-              <ExternalLink aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Preview draft</span>
-            </Button>
-            {session.user.role === "publisher" && (
-              <Button type="button" size="sm" disabled={publishDisabled} onClick={() => void write("publish")}>
-                <Upload aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Publish draft</span>
+          {draftScreen && (
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" size="sm" aria-pressed={liveOpen} disabled={liveDisabled} onClick={() => setLiveOpen((value) => !value)}
+                className="hidden text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary xl:inline-flex">
+                <Eye aria-hidden="true" strokeWidth={1.5} />Live preview
               </Button>
-            )}
-          </div>
+              <Button type="button" variant="outline" size="sm" data-action="save" disabled={saveDisabled} onClick={() => void write("save")}>
+                <Save aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Save draft</span>
+              </Button>
+              <Button type="button" variant="outline" size="sm" data-action="preview" disabled={previewDisabled} onClick={() => void preview()} className="hidden xl:inline-flex">
+                Preview draft
+              </Button>
+              {publisher && (
+                <Button type="button" size="sm" disabled={publishDisabled} onClick={() => void write("publish")}>
+                  <Upload aria-hidden="true" strokeWidth={1.5} className="sm:hidden" /><span className="max-sm:sr-only">Publish draft</span>
+                </Button>
+              )}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" size="icon-sm" aria-label="More draft actions" className="xl:hidden"><Ellipsis aria-hidden="true" strokeWidth={1.5} /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem disabled={liveDisabled} onSelect={() => setLiveOpen((value) => !value)}><Eye aria-hidden="true" strokeWidth={1.5} />{liveOpen ? "Close live preview" : "Open live preview"}</DropdownMenuItem>
+                  <DropdownMenuItem disabled={previewDisabled} onSelect={() => void preview()}><ExternalLink aria-hidden="true" strokeWidth={1.5} />Preview draft in a new tab</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
           {account && (
             <>
               <Separator orientation="vertical" className="hidden h-6 sm:block" />
@@ -554,38 +481,24 @@ export function ContentEditor({
         {(error || autoSaveFailed || notice || previewLink) && (
           <div className="grid gap-2 px-4 pt-4 sm:px-6">
             {error && (
-              <p role="alert" className={bannerClass("error")}>
-                <TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" />
-                <span className="flex-1">{error}</span>
-                {conflict ? (
-                  <Button type="button" size="xs" variant="outline" className="self-center" onClick={() => void load()} disabled={busy}>Reload latest draft</Button>
-                ) : (
-                  <Button type="button" size="icon-xs" variant="ghost" className="self-center hover:bg-danger/10" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>
-                )}
-              </p>
+              <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span className="flex-1">{error}</span>
+                {conflict
+                  ? <Button type="button" size="xs" variant="outline" className="self-center" onClick={() => void load()} disabled={busy}>Reload latest draft</Button>
+                  : <Button type="button" size="icon-xs" variant="ghost" className="self-center" aria-label="Dismiss message" onClick={() => setError("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>}
+              </Notice>
             )}
             {autoSaveFailed && (
-              <p role="alert" className={bannerClass("error")} data-autosave-failed>
-                <TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" />
+              <Notice tone="error" data-autosave-failed><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" />
                 <span className="flex-1">Live updates are paused: the last save failed. {autoSaveFailed}</span>
                 <Button type="button" size="xs" variant="outline" className="self-center" onClick={() => void write("save")} disabled={busy || saving || conflict || !dirty}>Retry save</Button>
-              </p>
+              </Notice>
             )}
             {notice && (
-              <p role="status" className={bannerClass("status")}>
-                <CircleCheck aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" />
-                <span className="flex-1">{notice}</span>
-                <Button type="button" size="icon-xs" variant="ghost" className="self-center hover:bg-success/10" aria-label="Dismiss message" onClick={() => setNotice("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>
-              </p>
+              <Notice tone="status"><CircleCheck aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span className="flex-1">{notice}</span>
+                <Button type="button" size="icon-xs" variant="ghost" className="self-center" aria-label="Dismiss message" onClick={() => setNotice("")}><X aria-hidden="true" strokeWidth={1.5} /></Button>
+              </Notice>
             )}
-            {previewLink && (
-              <p role="status" className={bannerClass("info")}>
-                <span className="flex-1">
-                  Your browser blocked the preview tab.{" "}
-                  <a href={previewLink} target="_blank" rel="noopener noreferrer">Open draft preview</a>
-                </span>
-              </p>
-            )}
+            {previewLink && <Notice tone="status"><span>Your browser blocked the preview tab. <a href={previewLink} target="_blank" rel="noopener noreferrer">Open draft preview</a></span></Notice>}
           </div>
         )}
         {!content && !canManageEnquiries ? (
@@ -617,7 +530,7 @@ export function ContentEditor({
               </div>
             )}
             <section
-              className={cn(panelClass, !liveActive && tab !== "Enquiries" && "max-w-[980px]")}
+              className={panelClass}
               data-admin-panel
               data-wide={tab === "Enquiries" ? "true" : undefined}
               aria-label={`${tab} editor`}
@@ -629,109 +542,23 @@ export function ContentEditor({
               {tab === "Enquiries" && canManageEnquiries ? (
                 <EnquiryInbox session={session} onExpired={onExpired} />
               ) : !content ? unavailableDraft : (
+              <DisabledScope disabled={busy || conflict} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : undefined}>
               <fieldset disabled={busy || conflict} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">
                 <legend className="sr-only">{tab} editor</legend>
-                {tab === "Overview" && (
-                  <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />
-                )}
-                {tab === "Navigation & footer" && <SiteChromeFields value={content.siteChrome} onChange={siteChrome => {
-                  const next = {...content};
-                  if (siteChrome === undefined) delete next.siteChrome;
-                  else next.siteChrome = siteChrome;
-                  edit(next);
-                }} />}
-                {tab === "Homepage" && <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} />}
-                {tab === "Merchandising" && (
-                  <HomeMerchandisingFields value={content.homeMerchandising} onChange={homeMerchandising => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />
-                )}
-                {tab === "Campaigns" && (
-                  <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />
-                )}
-                {tab === "Instagram" && (
-                  <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />
-                )}
-                {tab === "Pages" && (
-                  <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />
-                )}
-                {tab === "Category pages" && (
-                  <CategoryFields value={content.landingPages} onChange={(landingPages) => edit({ ...content, landingPages })} />
-                )}
-                {tab === "Existing pages" && (
-                  <>
-                    <PanelHeader title="Existing pages" description="Edit the storefront pages that ship with the theme. Changes stay in your draft until published." />
-                    <SelectField label="Existing page" className="mb-6 max-w-sm" value={existingPage} onChange={event => {
-                      const value = event.target.value;
-                      setExistingPage(value === "nimbus" || value === "contact" || value === "bulk" || value === "returns" ? value : "story");
-                    }}>
-                      <option value="story">Our Story</option>
-                      <option value="nimbus">The Nimbus Collection</option>
-                      <option value="contact">Contact</option>
-                      <option value="bulk">Bulk Enquiry</option>
-                      <option value="returns">Return &amp; Exchange</option>
-                    </SelectField>
-                    {existingPage === "story"
-                      ? <StoryFields value={content.storyPage} onChange={storyPage => edit({ ...content, storyPage })} />
-                      : existingPage === "nimbus"
-                        ? <NimbusFields value={content.nimbusPage} onChange={nimbusPage => edit({ ...content, nimbusPage })} />
-                        : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={servicePages => edit({ ...content, servicePages })} />}
-                  </>
-                )}
-                {tab === "Artwork" && (
-                  <TemplateArtworkFields value={content.templateMedia} onChange={templateMedia => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
-                )}
-                {tab === "Media" && <MediaLibrary session={session} onExpired={onExpired} heading="h2" />}
-                {tab === "Policies & blogs" && (
-                  <>
-                    <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
-                    <EditorialFields value={content.editorialContent} onChange={editorialContent => edit({ ...content, editorialContent })} />
-                    <AuthoredArticleFields value={content.authoredArticles} onChange={authoredArticles => edit({ ...content, authoredArticles })} session={session} onExpired={onExpired} />
-                  </>
-                )}
-                {tab === "History" && (
-                  <HistoryPanel
-                    revisions={revisions}
-                    loading={busy}
-                    canRestore={session.user.role === "publisher"}
-                    dirty={dirty}
-                    current={content}
-                    onRestore={(id) => void write("restore", id)}
-                    onExpired={onExpired}
-                  />
-                )}
+                {screen()}
               </fieldset>
+              </DisabledScope>
               )}
             </section>
             {liveActive && (
-              <LivePreview
-                path={previewPath()}
-                title={previewTitle}
-                version={document?.version ?? null}
-                publishedVersion={document?.publishedVersion ?? null}
-                draftRequired={document?.draft === null}
-                onSaveFirst={() => void write("save")}
-                paused={autoSaveFailed !== ""}
-                dirty={dirty}
-                busy={busy || saving}
-                blocked={liveBlocked}
-                auto={liveAuto}
-                onAutoChange={setLiveAuto}
-                onUpdateNow={() => void write("save", undefined, { quiet: true })}
-                onClose={() => setLiveOpen(false)}
-                mint={mintPreviewToken}
-                focusedSection={focusedSection}
-              />
+              <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
+                draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
+                blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
+                onClose={() => setLiveOpen(false)} mint={mintPreviewToken} focusedSection={focusedSection} />
             )}
           </div>
         )}
       </SidebarInset>
     </SidebarProvider>
-  );
-}
-
-/** A notice under the top bar: one tone each for errors, confirmations and information. */
-function bannerClass(tone: "error" | "status" | "info") {
-  return cn(
-    "flex items-start gap-3 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2",
-    tone === "error" ? "border-danger/20 bg-danger-bg text-danger" : tone === "status" ? "border-success/20 bg-success-bg text-success" : "border-border bg-sunken text-foreground",
   );
 }

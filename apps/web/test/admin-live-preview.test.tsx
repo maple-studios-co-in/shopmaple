@@ -206,6 +206,7 @@ test("device toggles resize the frame, the published switch changes the view, an
     const pane = () => container.querySelector<HTMLElement>("[data-live-preview]")!;
     assert.equal(pane().dataset.device, "desktop");
     assert.equal(button("Desktop").getAttribute("aria-pressed"), "true");
+    assert.equal(pane().querySelector<HTMLElement>("[data-device-frame]")?.style.width, "1288px", "Desktop renders a true 1280 px storefront (plus the bezel), scaled to fit");
     await click("Phone");
     assert.equal(pane().dataset.device, "phone");
     assert.equal(button("Phone").getAttribute("aria-pressed"), "true");

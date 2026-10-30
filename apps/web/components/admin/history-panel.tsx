@@ -101,9 +101,10 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
         />
       )}
       <Sheet open={open !== null} onOpenChange={(next) => { if (!next) setOpen(null); }}>
-        <SheetContent className="w-full gap-0 sm:max-w-xl">
+        {/* Opening focuses the title, so Enter can never restore by accident. */}
+        <SheetContent className="w-full gap-0 sm:max-w-xl" onOpenAutoFocus={(event) => { event.preventDefault(); (event.currentTarget as HTMLElement).querySelector<HTMLElement>("[data-slot=sheet-title]")?.focus(); }}>
           <SheetHeader className="border-b border-line-soft px-6 py-5">
-            <SheetTitle className="text-xl font-semibold tracking-[-0.01em] tabular-nums">Version {open?.version}</SheetTitle>
+            <SheetTitle tabIndex={-1} className="text-xl font-semibold tracking-[-0.01em] tabular-nums">Version {open?.version}</SheetTitle>
             <SheetDescription>
               {open ? `${titleCase(open.action)} by ${open.actorEmail}, ${new Date(open.createdAt).toLocaleString()}. Compared with the draft you are editing.` : ""}
             </SheetDescription>
@@ -123,7 +124,7 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
                   <ul className="grid gap-2">
                     {changes.slice(0, 60).map((change) => (
                       <li key={change.path} data-change={change.path} className="grid gap-1.5 rounded-lg border border-border bg-card p-3 text-xs">
-                        <code className="font-sans text-2xs font-medium text-faint">{change.path}</code>
+                        <span className="text-2xs font-semibold text-muted-foreground">{change.label}</span>
                         <div className="grid gap-1 sm:grid-cols-2 sm:gap-3">
                           <p className="rounded-md bg-accent-tint px-2 py-1.5 break-words text-foreground"><span className="block text-2xs font-semibold text-primary">In version {open?.version}</span>{change.revision}</p>
                           <p className="rounded-md bg-sunken px-2 py-1.5 break-words text-foreground"><span className="block text-2xs font-semibold text-muted-foreground">Current draft</span>{change.current}</p>
@@ -135,7 +136,7 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
                 </section>
               ))}
           </div>
-          {canRestore && open && (
+          {canRestore && open && detail.status === "ready" && detail.changes.length > 0 && (
             <SheetFooter className="border-t border-line-soft px-6 py-4">
               {dirty && <p className="text-xs text-muted-foreground">Save local changes before restoring.</p>}
               {restoreButton(open)}

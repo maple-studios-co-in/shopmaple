@@ -239,3 +239,25 @@ test("changing filters hides prior rows while the replacement list loads", async
         assert.match(page.textContent!, /No enquiries match/);
     } finally { await act(async () => resolveList(Response.json({ items: [], nextCursor: null }))); await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
+
+test("on narrow screens a native stage select drives the same stage change, and Lost still asks for a reason", async () => {
+    const previous = fetch; const writes: { path: string; body: any }[] = [];
+    globalThis.fetch = transport((path, options) => { if (options?.method === "POST") { const body = JSON.parse(String(options.body)); writes.push({ path, body }); return Response.json({ ...detail, status: body.stage ?? detail.status, version: writes.length }); } });
+    const root = createRoot(container);
+    const stage = () => page.querySelector<HTMLSelectElement>('select[aria-label="Pipeline stage"]');
+    const pick = async (value: string) => act(async () => { const select = stage()!; select.value = value; select.dispatchEvent(new dom.window.Event("change", { bubbles: true })); });
+    try {
+        await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}}/>)); await click("Open enquiry");
+        assert.ok(stage(), "a native stage select is available");
+        assert.equal(stage()!.value, "new", "the select shows the current stage");
+        assert.deepEqual([...stage()!.options].map(option => option.textContent), ["New", "Contacted", "Quoted", "Won", "Lost"]);
+        await pick("contacted");
+        assert.deepEqual(writes, [{ path: `/api/admin/enquiries/${row.id}/stage`, body: { expectedVersion: 0, stage: "contacted" } }]);
+        assert.equal(stage()!.value, "contacted");
+        assert.equal(button("Contacted").getAttribute("aria-pressed"), "true", "the segmented control shows the same state");
+        await pick("lost");
+        assert.equal(writes.length, 1, "Lost waits for a reason");
+        assert.ok(page.querySelector('textarea[aria-label="Reason for losing"]'), "the reason prompt opens");
+        assert.equal(stage()!.value, "contacted", "the select keeps the saved stage until Lost is confirmed");
+    } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
