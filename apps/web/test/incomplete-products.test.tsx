@@ -34,22 +34,22 @@ async function mount(ui: React.ReactNode, check: () => void | Promise<void>, car
 }
 test("model-only cards remain browsable with an honest price and image placeholder", async () => {
   await mount(<ProductCard product={toProductCard(model)} />, () => {
-    assert.match(document.querySelector(".product-card-price")!.textContent!, /Price on request/);
+    assert.match(document.querySelector("[data-card-price]")!.textContent!, /Price on request/);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
     assert.ok(document.querySelector('a[href="/products/new-model"]'));
-    assert.equal(document.querySelector(".card-sale"), null);
+    assert.equal(document.querySelector("[data-card-sale]"), null);
   });
 });
 test("unknown option prices never become zero or a discount", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown] })} />, () => {
-    assert.equal(document.querySelector(".product-card-price")!.textContent?.trim(), "Price on request");
-    assert.equal(document.querySelector(".card-sale"), null);
+    assert.equal(document.querySelector("[data-card-price]")!.textContent?.trim(), "Price on request");
+    assert.equal(document.querySelector("[data-card-sale]"), null);
   });
 });
 test("mixed known and unknown options show the known starting price and disclose other prices on request", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown, known] })} />, () => {
-    assert.match(document.querySelector(".product-card-price")!.textContent!, /From Rs. 250.00/);
-    assert.match(document.querySelector(".product-card")!.textContent!, /Other options on request/);
+    assert.match(document.querySelector("[data-card-price]")!.textContent!, /From Rs. 250.00/);
+    assert.match(document.querySelector("[data-product-card]")!.textContent!, /Other options on request/);
   });
 });
 test("a model-only detail page offers an enquiry without inventing a variant, SKU or category", async () => {
@@ -80,9 +80,9 @@ test("selecting an unpriced option replaces cart purchase with enquiry without a
 });
 test("failed product images retain a neutral accessible fallback", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, images: ["https://example.com/unavailable.jpg"], variants: [known] })} />, async () => {
-    await act(async () => document.querySelector(".product-card-image img")!.dispatchEvent(new dom.window.Event("error")));
+    await act(async () => document.querySelector("[data-card-image] img")!.dispatchEvent(new dom.window.Event("error")));
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
-    assert.equal(document.querySelector(".product-card-image img"), null);
+    assert.equal(document.querySelector("[data-card-image] img"), null);
   });
 });
 test("an unpriced saved cart uses unknown totals and an enquiry instead of checkout", async () => {

@@ -79,12 +79,12 @@ export function SearchDialog({ onClose }: { onClose: () => void }) {
       {products.map(product => <li key={product.handle}>
         <Link className="search-product-card" href={"/products/" + product.handle} aria-label={product.title}>
           <span className="search-product-image"><ProductImage src={product.image ?? undefined} alt="" fill sizes="(max-width: 749px) calc((100vw - 64px) / 2), 147px" /></span>
-          <span className="product-card-name">{product.title}</span>
-          <span className="product-card-price">
+          <span data-card-name className="product-card-name">{product.title}</span>
+          <span data-card-price className="product-card-price">
             {product.compareAtPaise !== null && <del><span className="sr-only">Regular price </span>{shopMoney(product.compareAtPaise)}</del>}
             <span><span className="sr-only">{product.compareAtPaise !== null ? "Sale price " : "Price "}</span>{product.priceFrom ? "From " : ""}{shopMoney(product.pricePaise)}</span>
           </span>
-          {product.otherOptionsOnRequest && <span className="product-card-options">Other options on request</span>}
+          {product.otherOptionsOnRequest && <span data-card-options className="product-card-options">Other options on request</span>}
         </Link>
       </li>)}
     </ul>

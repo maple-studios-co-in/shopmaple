@@ -39,7 +39,7 @@ test("saved product, unavailable piece and empty wishlist preserve their origina
   await mount(["alpha", "missing"], async (requests) => {
     assert.equal(document.querySelector('[role="status"]')?.textContent, "Loading saved furniture…");
     await settle(requests, "alpha"); await settle(requests, "missing", new Response(null, { status: 404 }));
-    assert.equal(document.querySelector('.product-card-name')?.textContent, "alpha Chair");
+    assert.equal(document.querySelector('[data-card-name]')?.textContent, "alpha Chair");
     assert.match(document.body.textContent!, /This saved piece is no longer available: missing\./);
     await click(button("Remove"));
     for (const request of requests.filter((entry) => entry.handle === "alpha" && !entry.signal?.aborted)) await act(async () => request.resolve(Response.json(product("alpha"))));
@@ -59,10 +59,10 @@ test("failed requests retain the error explanation and offer recovery", async ()
 test("removal retains settled cards without refetching and moves focused controls next, previous, then to Explore", async () => {
   await mount(["alpha", "bravo", "charlie"], async (requests) => {
     for (const handle of ["alpha", "bravo", "charlie"]) await settle(requests, handle);
-    const alpha = document.querySelector('.product-card')!;
+    const alpha = document.querySelector('[data-product-card]')!;
     const charlie = button("Unsave charlie Chair");
     await click(button("Unsave bravo Chair"));
-    assert.equal(document.querySelector('.product-card'), alpha, "settled cards must not unmount on removal");
+    assert.equal(document.querySelector('[data-product-card]'), alpha, "settled cards must not unmount on removal");
     assert.equal(requests.length, 3, "removing a saved product needs no product requests");
     assert.equal(document.activeElement, charlie, "focus moves to the next remaining remove control");
     await click(charlie);
@@ -74,16 +74,16 @@ test("removal retains settled cards without refetching and moves focused control
 test("adding a pending piece keeps settled cards and removed pending responses cannot resurrect it", async () => {
   await mount(["alpha"], async (requests) => {
     await settle(requests, "alpha");
-    const alpha = document.querySelector('.product-card');
+    const alpha = document.querySelector('[data-product-card]');
     await click(button("Toggle charlie elsewhere"));
-    assert.equal(document.querySelector('.product-card'), alpha, "loading an addition retains existing furniture");
+    assert.equal(document.querySelector('[data-product-card]'), alpha, "loading an addition retains existing furniture");
     assert.equal(requests.filter((entry) => entry.handle === "alpha").length, 1);
     const pending = requests.find((entry) => entry.handle === "charlie")!;
     await click(button("Toggle charlie elsewhere"));
     assert.equal(pending.signal?.aborted, true);
     await act(async () => pending.resolve(Response.json(product("charlie"))));
-    assert.equal(document.querySelectorAll('.product-card').length, 1);
-    assert.equal(document.querySelector('.product-card'), alpha);
+    assert.equal(document.querySelectorAll('[data-product-card]').length, 1);
+    assert.equal(document.querySelector('[data-product-card]'), alpha);
     assert.equal(document.querySelector('[role="status"]'), null);
     assert.equal(document.activeElement, button("Toggle charlie elsewhere"), "external controls retain focus");
   });
@@ -93,7 +93,7 @@ test("one failed request does not hide successful pieces and missing removal ret
     await settle(requests, "alpha");
     await settle(requests, "missing", new Response(null, { status: 404 }));
     await settle(requests, "bravo", new Response(null, { status: 503 }));
-    assert.ok(document.querySelector('.product-card'), "a failed piece must not hide the successfully loaded piece");
+    assert.ok(document.querySelector('[data-product-card]'), "a failed piece must not hide the successfully loaded piece");
     assert.match(document.querySelector('[role="alert"]')?.textContent ?? "", /Saved furniture couldn’t be loaded/);
     await click(button("Remove"));
     assert.equal(document.activeElement, button("Unsave alpha Chair"));
@@ -112,8 +112,8 @@ test("unrelated pending requests survive removal and old responses cannot replac
     await click(button("Toggle bravo elsewhere"));
     await settle(requests, "bravo", Response.json(cardEnvelope("bravo", "Current chair")));
     await act(async () => bravo.resolve(Response.json(cardEnvelope("bravo", "Obsolete chair"))));
-    assert.equal(document.querySelector('.product-card-name')?.textContent, "Current chair");
-    assert.equal(document.querySelectorAll('.product-card').length, 1);
+    assert.equal(document.querySelector('[data-card-name]')?.textContent, "Current chair");
+    assert.equal(document.querySelectorAll('[data-product-card]').length, 1);
   });
 });
 test("removal does not steal unrelated focus and malformed responses remain bounded to their own piece", async () => {
@@ -125,7 +125,7 @@ test("removal does not steal unrelated focus and malformed responses remain boun
     elsewhere.focus();
     await click(button("Unsave alpha Chair"), false);
     assert.equal(document.activeElement, elsewhere);
-    assert.equal(document.querySelectorAll('.product-card').length, 0);
+    assert.equal(document.querySelectorAll('[data-product-card]').length, 0);
     assert.ok(document.querySelector('[role="alert"]'));
   });
 });
@@ -143,7 +143,7 @@ test("removing the only loaded card retains focus within the wishlist while anot
 test("a response for a different handle cannot produce a removal control for the wrong saved piece", async () => {
   await mount(["alpha"], async (requests) => {
     await settle(requests, "alpha", Response.json(product("bravo")));
-    assert.equal(document.querySelectorAll('.product-card').length, 0);
+    assert.equal(document.querySelectorAll('[data-product-card]').length, 0);
     assert.ok(document.querySelector('[role="alert"]'));
     assert.equal(localStorage.getItem("maple-favourites"), '["alpha"]');
   });
@@ -153,7 +153,7 @@ test("strict effect replay resolves the active request and unmount aborts outsta
   let pending: Request | undefined;
   await mount(["alpha"], async (requests) => {
     await settle(requests, "alpha");
-    assert.equal(document.querySelector('.product-card-name')?.textContent, "alpha Chair");
+    assert.equal(document.querySelector('[data-card-name]')?.textContent, "alpha Chair");
     await click(button("Toggle charlie elsewhere"));
     pending = requests.find((entry) => entry.handle === "charlie" && !entry.signal?.aborted);
     assert.ok(pending);

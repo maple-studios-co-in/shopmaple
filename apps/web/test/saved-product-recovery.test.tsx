@@ -41,12 +41,12 @@ async function click(target: HTMLElement, focus = true) { if (focus) target.focu
 test("successful and missing saved pieces preserve loaded cards and removal", async () => {
   await mount(["alpha", "missing"], async (requests) => {
     await settle(requests[0]!);
-    const card = document.querySelector('.product-card');
-    assert.equal(document.querySelector('.product-card-name')?.textContent, "alpha Chair");
+    const card = document.querySelector('[data-product-card]');
+    assert.equal(document.querySelector('[data-card-name]')?.textContent, "alpha Chair");
     await settle(requests[1]!, new Response(null, { status: 404 }));
-    assert.equal(document.querySelector('.product-card'), card);
+    assert.equal(document.querySelector('[data-product-card]'), card);
     await click(button(/^Remove$/));
-    assert.equal(document.querySelector('.product-card'), card);
+    assert.equal(document.querySelector('[data-product-card]'), card);
     assert.equal(localStorage.getItem("maple-favourites"), '["alpha"]');
   });
 });
@@ -64,7 +64,7 @@ test("a saved-product header request ends its loading state at six seconds even 
       assert.ok(document.querySelector('[role="alert"]'), "the shopper receives an actionable failure");
       assert.equal(requests[0]!.signal?.aborted, true, "deadline cancels transport");
       await settle(requests[0]!);
-      assert.equal(document.querySelectorAll('.product-card').length, 0, "late success cannot overwrite the failure");
+      assert.equal(document.querySelectorAll('[data-product-card]').length, 0, "late success cannot overwrite the failure");
     });
   } finally { t.mock.timers.reset(); }
 });
@@ -87,7 +87,7 @@ test("the same six-second deadline includes reading a saved-product response bod
       assert.ok(document.querySelector('[role="alert"]'));
       assert.equal(requests[0]!.signal?.aborted, true);
       await act(async () => release(product("alpha")));
-      assert.equal(document.querySelectorAll('.product-card').length, 0);
+      assert.equal(document.querySelectorAll('[data-product-card]').length, 0);
     });
   } finally { t.mock.timers.reset(); }
 });
@@ -96,7 +96,7 @@ test("the same six-second deadline includes reading a saved-product response bod
 test("an unpublished saved-product response never renders a furniture card", async () => {
   await mount(["alpha"], async (requests) => {
     await settle(requests[0]!, Response.json({ ...product("alpha"), published: false }));
-    assert.equal(document.querySelectorAll('.product-card').length, 0, "only published matching products may appear");
+    assert.equal(document.querySelectorAll('[data-product-card]').length, 0, "only published matching products may appear");
     assert.ok(document.querySelector('[role="alert"]'));
     assert.equal(localStorage.getItem("maple-favourites"), '["alpha"]');
   });
@@ -108,15 +108,15 @@ test("Retry reloads only failed items while loaded cards, missing pieces and pen
     await settle(requests[0]!);
     await settle(requests[1]!, new Response(null, { status: 503 }));
     await settle(requests[2]!, new Response(null, { status: 404 }));
-    const card = document.querySelector('.product-card');
+    const card = document.querySelector('[data-product-card]');
     await click(button(/^Retry failed items$/));
-    assert.ok(document.querySelector('.product-card') === card, "retry retains the loaded card DOM");
+    assert.ok(document.querySelector('[data-product-card]') === card, "retry retains the loaded card DOM");
     assert.deepEqual(requests.map((entry) => entry.handle), ["alpha", "bravo", "missing", "pending", "bravo"]);
     assert.equal(requests[3]!.signal?.aborted, false, "unrelated pending requests keep running");
     assert.match(document.body.textContent!, /This saved piece is no longer available: missing\./);
     assert.equal(document.activeElement?.getAttribute("aria-label"), "Saved furniture", "focus survives Retry disappearing");
     await settle(requests[4]!);
-    assert.deepEqual([...document.querySelectorAll('.product-card-name')].map((node) => node.textContent), ["alpha Chair", "bravo Chair"]);
+    assert.deepEqual([...document.querySelectorAll('[data-card-name]')].map((node) => node.textContent), ["alpha Chair", "bravo Chair"]);
     assert.equal(document.querySelector('[role="alert"]'), null);
     assert.equal(document.activeElement?.getAttribute("aria-label"), "Saved furniture");
     await settle(requests[3]!);
@@ -137,8 +137,8 @@ test("retry after a timed-out body accepts the current piece and ignores the obs
       await click(button(/^Retry failed items$/));
       await settle(requests[1]!, Response.json(cardEnvelope("bravo", "Current chair")));
       await act(async () => release(cardEnvelope("bravo", "Obsolete chair")));
-      assert.equal(document.querySelector('.product-card-name')?.textContent, "Current chair");
-      assert.equal(document.querySelectorAll('.product-card').length, 1);
+      assert.equal(document.querySelector('[data-card-name]')?.textContent, "Current chair");
+      assert.equal(document.querySelectorAll('[data-product-card]').length, 1);
       assert.equal(document.querySelector('[role="alert"]'), null);
     });
   } finally { t.mock.timers.reset(); }
@@ -158,7 +158,7 @@ test("a stalled retry is bounded again and repeated recovery remains available w
       assert.equal(requests.length, 2, "recovery is initiated only by the shopper");
       await click(button(/^Retry failed items$/));
       await settle(requests[2]!);
-      assert.equal(document.querySelector('.product-card-name')?.textContent, "bravo Chair");
+      assert.equal(document.querySelector('[data-card-name]')?.textContent, "bravo Chair");
     });
   } finally { t.mock.timers.reset(); }
 });
@@ -172,7 +172,7 @@ test("retry preserves unrelated keyboard focus and removing its pending piece ca
     await click(elsewhere);
     assert.equal(requests[2]!.signal?.aborted, true);
     await settle(requests[2]!);
-    assert.deepEqual([...document.querySelectorAll('.product-card-name')].map((node) => node.textContent), ["alpha Chair"]);
+    assert.deepEqual([...document.querySelectorAll('[data-card-name]')].map((node) => node.textContent), ["alpha Chair"]);
     assert.equal(document.querySelector('[role="alert"]'), null);
     assert.equal(document.querySelector('[role="status"]'), null);
     assert.ok(document.activeElement === elsewhere);
@@ -188,7 +188,7 @@ test("unmount aborts an active retry and a late result cannot populate a newly m
   assert.equal(pending.signal?.aborted, true);
   await mount(["alpha"], async (requests) => {
     await settle(requests[0]!); await settle(pending);
-    assert.deepEqual([...document.querySelectorAll('.product-card-name')].map((node) => node.textContent), ["alpha Chair"]);
+    assert.deepEqual([...document.querySelectorAll('[data-card-name]')].map((node) => node.textContent), ["alpha Chair"]);
   });
 });
 

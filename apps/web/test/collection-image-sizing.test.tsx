@@ -34,7 +34,7 @@ test("changing collection density updates image slots while retaining product ar
     assert.equal(image.closest("a")?.getAttribute("href"), "/products/chair");
     await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Standard grid"]')!.click());
     assert.equal(image.sizes, standard);
-    assert.equal(document.querySelectorAll(".collection-products .product-card").length, 1);
+    assert.equal(document.querySelectorAll(".collection-products [data-product-card]").length, 1);
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = previousFetch;
