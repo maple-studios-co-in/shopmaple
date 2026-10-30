@@ -122,12 +122,12 @@ function EnquiryInboxSession({ session, onExpired }: { session: StaffSession; on
   const viewProps = { session, today, onDenied: denied, onOpenEnquiry: openEnquiry, onOpenContact: openContact };
   return <section className="grid min-w-0" aria-label="Customer enquiries" aria-busy={busy}>
     <PanelHeader title="Customer enquiries" description="Every contact, project and bulk enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal." />
-    <TabBar label="CRM views" tabs={views} value={contactId === null ? view : ""} onSelect={selectView} disabled={workflowBusy || deliveryBusy} className="gap-5">
+    <TabBar label="CRM views" tabs={views} value={contactId === null ? view : ""} onSelect={selectView} disabled={workflowBusy || deliveryBusy} className="min-w-0 gap-5">
       {contactId !== null && <ContactPage {...viewProps} contactId={contactId} onBack={() => setContactId(null)} backLabel={view === "list" ? "Back to enquiries" : "Back"} />}
       <TabsContent value="board"><CrmBoard {...viewProps} /></TabsContent>
       <TabsContent value="tasks"><TaskViews {...viewProps} /></TabsContent>
       <TabsContent value="contacts"><ContactsDirectory {...viewProps} /></TabsContent>
-      <TabsContent value="list" className="grid gap-4">
+      <TabsContent value="list" className="grid min-w-0 gap-4">
         <form className="grid gap-3 rounded-xl border border-line-soft bg-surface p-4" onSubmit={event => { event.preventDefault(); setQuery(term.trim()); }} aria-label="Search the inbox">
           <div className="hidden flex-wrap items-end gap-3 md:flex"><FilterFields value={filters} onChange={setFilters} staff={staff} disabled={busy} /></div>
           <div className="flex flex-wrap items-end gap-2">
@@ -141,7 +141,7 @@ function EnquiryInboxSession({ session, onExpired }: { session: StaffSession; on
         {loading && items.length === 0 && !detail && <Skeleton rows={4} />}
         {page && items.length === 0 && <EmptyState title="No enquiries match these filters."
           action={<Button type="button" size="sm" variant="outline" onClick={clearFilters}>Clear filters</Button>}>Try a wider date range, another stage, or part of a name, email, phone, product or SKU.</EmptyState>}
-        {items.length > 0 && <div ref={listRegion}><DataTable columns={columns} data={items} label="Enquiries" getRowId={row => row.id} empty="No enquiries on this page."
+        {items.length > 0 && <div ref={listRegion} className="min-w-0"><DataTable columns={columns} data={items} label="Enquiries" getRowId={row => row.id} empty="No enquiries on this page."
           rowProps={row => ({ "data-enquiry-row": row.original.id })} rowLabel={row => `Open enquiry from ${row.name || "No name given"}`} onRowOpen={row => openDetail(row.id, rowOpener())} /></div>}
         {page?.nextCursor && <Button type="button" variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => void load(page.nextCursor)}>Next page</Button>}
       </TabsContent></TabBar>
