@@ -70,7 +70,7 @@ test("priced unverified items can be selected for cart but unknown prices keep e
     const cleanup = await mount(async () => Response.json(empty), { ...product, variants: [{ ...product.variants[0]!, stockPolicy: "unverified", pricePaise }] });
     try {
       assert.equal(Boolean(button("Add to cart")), pricePaise !== null);
-      assert.equal(Boolean(document.querySelector(".pdp-purchase a")), pricePaise === null);
+      assert.equal(Boolean(document.querySelector("[data-purchase] a")), pricePaise === null);
     } finally { await cleanup(); }
   }
 });

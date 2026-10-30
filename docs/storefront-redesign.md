@@ -8,7 +8,7 @@ Since 30 October 2026 the storefront follows the "Maple Website review" Figma fi
 | Mega-menu ("Maple / Mega-menu open") | `1049:45634` | Built: the desktop menu panel |
 | Product card ("MF / product/243") | `1046:792` | Built: every grid and rail that shows products |
 | The Maple promise ("MF / The Maple promise") | `1046:505` | Built: listing and menu |
-| Product page ("1440w light") | `999:3` | Next |
+| Product page ("1440w light") | `999:3` | Built: `/products/[handle]` (gallery, purchase card, "Precision in every detail", related) |
 | Homepage ("Maple / Impact Layout") | `1049:27656` | Later |
 | Our Story, Help Center, Bulk Enquiry, Wishlist and Account | review images in `251:455` | Later |
 
@@ -42,4 +42,4 @@ Not invented; built only when the data exists:
 
 - Card subtitles ("Accent seating", "Cream fabric"): the catalogue card has no category or fabric field.
 - Material, colour and size filters: the catalogue has no such facets. The listing keeps the real filters (search, availability, price, category on the all-furniture page).
-- Ratings and review counts, a deal countdown, store pickup and delivery estimates (product page design): no data behind them.
+- Product page: ratings and review counts, the deal countdown and coupon, "Buy it now" (checkout is still closed; the outlined button asks the team instead), the stock counter, store pickup, the FlexCore video banner, the FAQ and the free-shipping and secure-checkout trust strip. The page keeps its real equivalents: the enquiry link, the postcode enquiry, the accordions and the three promises the shop does make.

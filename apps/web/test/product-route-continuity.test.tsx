@@ -36,7 +36,7 @@ const input = () => document.querySelector<HTMLInputElement>("#delivery-pincode"
 const option = (id: string) => document.querySelector<HTMLInputElement>(`input[name="variant"][value="${id}"]`)!;
 const button = (label: string) => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
 const selected = () => document.querySelector<HTMLInputElement>('input[name="variant"]:checked')?.value;
-const selectedImage = () => document.querySelector('.product-thumbnails [aria-pressed="true"]')?.getAttribute("aria-label");
+const selectedImage = () => document.querySelector('[data-thumbnails] [aria-pressed="true"]')?.getAttribute("aria-label");
 async function fillPin(value = "110015") {
   await act(async () => {
     // React's legacy input-event path in JSDOM observes keyup on the focused input.
@@ -45,7 +45,7 @@ async function fillPin(value = "110015") {
     input().dispatchEvent(new dom.window.KeyboardEvent("keyup", { key: "5", bubbles: true }));
   });
   await act(async () => input().form!.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })));
-  assert.match(document.querySelector(".pdp-serviceability [role=status]")!.textContent!, /110015/);
+  assert.match(document.querySelector("[data-serviceability] [role=status]")!.textContent!, /110015/);
 }
 async function withRoute(run: (render: (variant?: string, handle?: string, retainUrl?: boolean) => Promise<void>, replacements: string[]) => Promise<void>, initial?: string) {
   const root = createRoot(document.getElementById("root")!);
@@ -76,8 +76,8 @@ test("the real product route honors explicit options, legacy aliases and safe fa
     assert.equal(selected(), "second");
     await render("third");
     assert.equal(selected(), "preview-third");
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
-    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
+    assert.equal(document.querySelector("[data-purchase] button"), null);
+    assert.match(document.querySelector("[data-disclosure]")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
     await render("unknown");
     assert.equal(selected(), "first");
   }, "second");
@@ -113,7 +113,7 @@ test("same-product variant navigation retains postcode, quantity, gallery and ke
     assert.equal(document.querySelector('output[aria-label="Quantity"]')?.textContent, "2");
     assert.equal(selectedImage(), "Show product image 2");
     assert.equal(selected(), "second");
-    const enquiry = document.querySelector<HTMLAnchorElement>(".pdp-custom a")!;
+    const enquiry = document.querySelector<HTMLAnchorElement>("[data-custom] a")!;
     assert.equal(new URL(enquiry.href).searchParams.get("pincode"), "110015");
     assert.equal(new URL(enquiry.href).searchParams.get("sku"), "SECOND");
   });

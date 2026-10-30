@@ -9,6 +9,7 @@ import { CategoryLanding, CategoryProducts } from "../components/category-landin
 import { NimbusLanding } from "../components/category-nimbus";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductCard } from "../components/product-card";
+import { RelatedProducts } from "../components/store/related-products";
 import { ProductDetail } from "../components/product-detail";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultCategoryPages } from "../lib/category-content-defaults";
@@ -198,7 +199,7 @@ test("PDP retains full main detail and requests five compact related cards befor
       const detail = propsOf(node, ProductDetail)[0]!;
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
-      assert.deepEqual(propsOf(node, ProductCard).map(p => p.product), ["first", "second", "third", "fourth"].map(card));
+      assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
       assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs"]);
     }, { related });
   }

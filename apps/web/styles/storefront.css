@@ -828,67 +828,6 @@ input::placeholder {
   gap: 30px;
   margin-top: 36px;
 }
-.product-detail {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 48px;
-  max-width: 1440px;
-  margin: auto;
-  padding: 36px 40px 64px;
-}
-.product-main-image {
-  position: relative;
-  aspect-ratio: 1;
-  background: #e9e4df;
-  border-radius: 12px;
-  overflow: hidden;
-}
-.product-main-image img {
-  object-fit: cover;
-}
-.product-thumbnails {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 16px 2px;
-}
-.product-thumbnails button {
-  padding: 0;
-  flex: 0 0 80px;
-  border: 1px solid transparent;
-  background: transparent;
-}
-.product-thumbnails button[aria-pressed="true"] {
-  border-color: var(--burgundy);
-}
-.product-thumbnails img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-}
-.product-information h1 {
-  font-size: 42px;
-  color: var(--burgundy);
-  line-height: 1.1;
-  margin-bottom: 22px;
-}
-.product-information .breadcrumb {
-  margin-bottom: 20px;
-}
-.product-price {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.product-price strong {
-  font-size: 25px;
-  font-weight: 500;
-  color: var(--burgundy);
-}
-.product-price del {
-  color: var(--muted);
-  font-size: 16px;
-}
 .variant-options {
   margin: 26px 0;
   display: grid;
@@ -910,28 +849,6 @@ input::placeholder {
   height: 50px;
   flex: none;
   border: 1px solid var(--line);
-}
-.product-accordions {
-  border-top: 1px solid var(--line);
-  margin-top: 24px;
-}
-.product-accordions details {
-  border-bottom: 1px solid var(--line);
-  padding: 16px 0;
-}
-.product-accordions summary {
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
-}
-.product-accordions p {
-  font-size: 13px;
-  line-height: 1.9;
-  white-space: pre-line;
-}
-.product-accordions a {
-  color: var(--burgundy);
-  text-decoration: underline;
 }
 .sku {
   color: var(--muted);
@@ -1022,13 +939,6 @@ input::placeholder {
   .footer-brand {
     grid-column: 1/-1;
     font-size: 60px;
-  }
-  .product-detail {
-    padding: 30px 24px;
-    gap: 28px;
-  }
-  .product-information h1 {
-    font-size: 34px;
   }
   .sort-label {
     font-size: 12px;
@@ -1246,30 +1156,6 @@ input::placeholder {
     padding: 6px 10px;
     font-size: 11px;
   }
-  .product-detail {
-    grid-template-columns: 1fr;
-    padding: 20px 16px 36px;
-    gap: 24px;
-  }
-  .product-information h1 {
-    font-size: 34px;
-  }
-  .product-information .breadcrumb {
-    margin-bottom: 14px;
-  }
-  .product-price strong {
-    font-size: 23px;
-  }
-  .product-thumbnails {
-    gap: 8px;
-  }
-  .product-thumbnails button {
-    flex-basis: 64px;
-  }
-  .product-thumbnails img {
-    width: 64px;
-    height: 64px;
-  }
   .search-form {
     flex-direction: column;
   }
@@ -1314,8 +1200,4 @@ input::placeholder {
   background: #f3f1eb;
   font-size: 12px;
   text-align: center;
-}
-
-.pdp-gallery div.product-main-image {
-  cursor: default;
 }

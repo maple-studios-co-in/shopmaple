@@ -207,16 +207,16 @@ test("product variants update price, gallery and enquiry while delivery stays an
       />
     </AppRouterContext.Provider>,
     async () => {
-      const phone = document.querySelector<HTMLAnchorElement>(".pdp-phone");
+      const phone = document.querySelector<HTMLAnchorElement>("[data-phone]");
       assert.equal(phone?.getAttribute("href"), "tel:+918796130252");
       assert.match(phone?.textContent ?? "", /\+91 87961 30252/);
       assert.match(
-        document.querySelector(".pdp-serviceability label")!.textContent!,
+        document.querySelector("[data-serviceability] label")!.textContent!,
         /Delivery enquiry/,
         "a postcode field must not promise an availability lookup",
       );
       assert.doesNotMatch(
-        document.querySelector(".pdp-info")!.textContent!,
+        document.querySelector("[data-product-info]")!.textContent!,
         /Taxes included|36 Month|Delivery Across India/,
       );
       const option =
@@ -224,11 +224,11 @@ test("product variants update price, gallery and enquiry while delivery stays an
       window.history.replaceState(null, "", "/products/chair?campaign=diwali#delivery-enquiry");
       await act(async () => option.click());
       assert.match(
-        document.querySelector(".pdp-price-block strong")!.textContent!,
+        document.querySelector("[data-price-block] strong")!.textContent!,
         /12,000/,
       );
       assert.equal(
-        document.querySelector(".product-main-image img")?.getAttribute("src"),
+        document.querySelector("[data-main-image] img")?.getAttribute("src"),
         product.images[1],
       );
       assert.equal(window.location.pathname, "/products/chair");
@@ -237,7 +237,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
       assert.equal(window.location.hash, "#delivery-enquiry");
       assert.deepEqual(replacements, [], "variant changes do not request a new server route");
       const enquiry =
-        document.querySelector<HTMLAnchorElement>(".pdp-custom a")!;
+        document.querySelector<HTMLAnchorElement>("[data-custom] a")!;
       assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");
       assert.equal(new URL(enquiry.href).searchParams.get("sku"), "RED");
       assert.ok(

@@ -53,8 +53,8 @@ async function mount(check: () => Promise<void>) {
     await check();
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
-const thumbButtons = () => [...document.querySelectorAll<HTMLButtonElement>(".product-thumbnails button")];
-const thumbImages = () => document.querySelectorAll(".product-thumbnails img").length;
+const thumbButtons = () => [...document.querySelectorAll<HTMLButtonElement>("[data-thumbnails] button")];
+const thumbImages = () => document.querySelectorAll("[data-thumbnails] img").length;
 const button = (label: string) => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
 async function key(target: Element, value: string) {
   await act(async () => { target.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true })); });
@@ -75,9 +75,9 @@ test("a sixty-image strip only mounts thumbnail images near the viewport until t
 
 test("arrow navigation keeps the selected thumbnail visible and rendered without scrolling the page", async () => {
   await mount(async () => {
-    const strip = document.querySelector<HTMLElement>(".product-thumbnails")!;
+    const strip = document.querySelector<HTMLElement>("[data-thumbnails]")!;
     assert.equal(scrolled.length, 0, "mounting never scrolls the strip");
-    const gallery = document.querySelector<HTMLElement>(".product-gallery")!;
+    const gallery = document.querySelector<HTMLElement>("[data-gallery]")!;
     gallery.focus();
     await key(gallery, "ArrowLeft");
     const last = thumbButtons()[59]!;
@@ -95,12 +95,12 @@ test("arrow navigation keeps the selected thumbnail visible and rendered without
 test("the photos next to the current one are preloaded once the current photo has settled", async () => {
   await mount(async () => {
     const preloads = () => [...document.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="image"]')].map(link => link.getAttribute("href"));
-    await act(async () => { document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("load")); });
+    await act(async () => { document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("load")); });
     assert.ok(preloads().includes(images[1]!), `next photo is preloaded, found ${preloads().join(", ")}`);
     assert.ok(preloads().includes(images[59]!), "previous photo (wrapping) is preloaded");
     assert.equal(preloads().length, 2, "only the two neighbours are preloaded");
     await act(async () => button("Next product image").click());
-    await act(async () => { document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("load")); });
+    await act(async () => { document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("load")); });
     assert.ok(preloads().includes(images[2]!), "moving forward preloads the following photo");
   });
 });
