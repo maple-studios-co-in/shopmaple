@@ -191,15 +191,16 @@
    any utility class wins over both. Focus is the one rule a class deep, to beat the
    storefront's button:focus-visible; focus-visible utilities still win (they come later). */
 :where(.shop-admin) *, :where(.shop-admin) ::before, :where(.shop-admin) ::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid var(--border); }
+:where(.shop-admin) :is(h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd) { margin: 0; }
 :where(.shop-admin) :is(h1, h2, h3, h4, h5, h6) { font: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; }
 :where(.shop-admin) :is(ol, ul, menu) { list-style: none; }
 :where(.shop-admin) :is(img, svg, video, canvas, iframe) { display: block; vertical-align: middle; }
 :where(.shop-admin) :is(img, video) { max-width: 100%; height: auto; }
-:where(.shop-admin) :is(button, input, select, optgroup, textarea) { font: inherit; letter-spacing: inherit; color: inherit; background-color: transparent; border-radius: 0; opacity: 1; min-height: 0; }
+:where(.shop-admin) :is(button, input, select, optgroup, textarea) { font: inherit; letter-spacing: inherit; color: inherit; background-color: transparent; border: 0 solid var(--border); border-radius: 0; padding: 0; opacity: 1; min-height: 0; }
 :where(.shop-admin) :is(button, [role="button"]) { cursor: pointer; }
-:where(.shop-admin) :is(button, input, select, textarea):disabled { cursor: not-allowed; }
+:where(.shop-admin) :is(button, input, select, textarea):disabled { cursor: not-allowed; opacity: 1; }
 :where(.shop-admin) textarea { resize: vertical; }
-:where(.shop-admin) ::placeholder { color: var(--muted-foreground); opacity: 1; }
+:where(.shop-admin) :is(input, textarea)::placeholder { color: var(--muted-foreground); opacity: 1; }
 :where(.shop-admin) :is(a, a:hover) { color: inherit; text-decoration: inherit; }
 :where(.shop-admin) :is(b, strong) { font-weight: 600; }
 :where(.shop-admin) :is(code, kbd, samp, pre) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1em; }
@@ -208,5 +209,7 @@
 :where(.shop-admin) [hidden]:where(:not([hidden="until-found"])) { display: none !important; }
 :where(.shop-admin) ::selection { background: var(--admin-accent); color: var(--admin-accent-contrast); }
 .shop-admin :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* Headings that receive focus from code (tabindex=-1) to start screen readers there are not controls. */
+.shop-admin [tabindex="-1"]:focus-visible { outline: none; }
 
 @tailwind utilities source(none);
