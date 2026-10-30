@@ -4,6 +4,7 @@
  * messaging rules are testable without a browser.
  */
 import { homeSectionKeys } from "@shopmaple/contracts";
+import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
 export type PreviewDevice = "desktop" | "tablet" | "phone";
@@ -33,7 +34,9 @@ export function previewTokenState(state: PreviewTokenState, version: number, now
 
 export type FrameToParentMessage =
   | { type: "ready"; path: string; version: number; sections: string[] }
-  | { type: "navigate"; path: string };
+  | { type: "navigate"; path: string }
+  /** The staff member pressed Edit on a section inside the preview. */
+  | { type: "select"; section: string };
 export type ParentToFrameMessage = { type: "focus"; section: string | null };
 export type PreviewMessage = FrameToParentMessage | ParentToFrameMessage;
 
@@ -62,6 +65,7 @@ export function readPreviewMessage(
     return { type: "ready", path: message.path, version: message.version as number, sections: message.sections };
   }
   if (message.type === "navigate") return isPath(message.path) ? { type: "navigate", path: message.path } : null;
+  if (message.type === "select") return isSection(message.section) ? { type: "select", section: message.section } : null;
   if (message.type === "focus") {
     if (message.section === null) return { type: "focus", section: null };
     return isSection(message.section) ? { type: "focus", section: message.section } : null;
@@ -71,3 +75,13 @@ export function readPreviewMessage(
 
 /** Section keys the frame can scroll to; homepage sections today. */
 export const previewSectionKeys: readonly string[] = homeSectionKeys;
+
+/**
+ * The `section` parameter of a frame address: null when absent (render the whole page), the
+ * section key for a homepage section on the home page, false for anything else.
+ */
+export function readThumbnailSection(page: readonly string[], section: unknown): HomeSectionKey | null | false {
+  if (section === undefined) return null;
+  const home = page.length === 0 || (page.length === 1 && page[0] === "home");
+  return home && typeof section === "string" && (homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : false;
+}

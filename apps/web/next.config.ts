@@ -56,6 +56,14 @@ const config: NextConfig = {
         source: "/admin/preview-frame/:path*",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
       },
+      {
+        // A section thumbnail (?section=) runs only React's inline streaming scripts, which swap
+        // the rendered section in for the loading fallback; the app bundles never load, so
+        // eighteen thumbnails are static documents rather than eighteen hydrated storefronts.
+        source: "/admin/preview-frame/:path*",
+        has: [{ type: "query", key: "section" }],
+        headers: [{ key: "Content-Security-Policy", value: "script-src 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'" }],
+      },
     ];
   },
 };

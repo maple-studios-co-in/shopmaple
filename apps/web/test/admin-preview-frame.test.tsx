@@ -101,3 +101,28 @@ test("links followed inside the published view stay on the published view", asyn
     globalThis.fetch = previous;
   }
 });
+
+test("a section thumbnail renders that one section alone: no navigation, footer, ribbon or link capture", async () => {
+  const { SectionThumbnailDocument } = await import("../components/admin/preview-shell");
+  const { thumbnailContent } = await import("../lib/section-thumbnails");
+  const hidden = { ...content, campaignsAvailable: true, homeSections: content.homeSections.map((section) => ({ ...section, enabled: section.key !== "values" })) };
+  const route = renderStorefrontRoute(["home"], thumbnailContent(hidden, "values"));
+  assert.ok(route);
+  const html = await new Response(await renderToReadableStream(
+    <ShopProvider><SectionThumbnailDocument section="values">{route.node}</SectionThumbnailDocument></ShopProvider>,
+  )).text();
+  const page = new JSDOM(html).window.document;
+  assert.deepEqual([...page.querySelectorAll<HTMLElement>("[data-home-section]")].map((node) => node.dataset.homeSection), ["values"], "only the requested section, even though the draft hides it");
+  assert.equal(page.querySelector("[data-section-thumbnail]")?.getAttribute("data-section-thumbnail"), "values");
+  assert.equal(page.querySelector("header, footer, [role=status], [data-preview-navigation]"), null);
+});
+
+test("the frame takes a thumbnail section only for a homepage section on the home page", async () => {
+  const { readThumbnailSection } = await import("../lib/live-preview");
+  assert.equal(readThumbnailSection(["home"], undefined), null, "no section asked for: the whole page");
+  assert.equal(readThumbnailSection(["home"], "dining-banner"), "dining-banner");
+  assert.equal(readThumbnailSection([], "hero"), "hero", "the bare address is the home page");
+  assert.equal(readThumbnailSection(["home"], "footer"), false, "not a homepage section");
+  assert.equal(readThumbnailSection(["home"], ["hero", "values"]), false, "repeated parameters are refused");
+  assert.equal(readThumbnailSection(["pages", "sofas"], "hero"), false, "sections exist only on the home page");
+});

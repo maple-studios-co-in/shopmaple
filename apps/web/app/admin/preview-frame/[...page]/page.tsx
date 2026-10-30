@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { PreviewFrameDocument } from "@/components/admin/preview-shell";
+import { PreviewFrameDocument, SectionThumbnailDocument } from "@/components/admin/preview-shell";
 import { getPublishedContent } from "@/lib/content";
 import { previewMediaContent } from "@/lib/draft-preview";
+import { readThumbnailSection } from "@/lib/live-preview";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
+import { thumbnailContent } from "@/lib/section-thumbnails";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
 import "@/styles/admin.css";
 
@@ -16,7 +18,8 @@ export const metadata: Metadata = {
  * The storefront rendered from the draft, with the draft's own navigation and footer.
  * With `view=published` the same staff-only route (session plus token still required)
  * renders the published snapshot instead, so the live preview can compare the two
- * without ever framing the public storefront.
+ * without ever framing the public storefront. With `section=<key>` on the home page it renders
+ * that one homepage section of the draft alone, for a section card's thumbnail.
  */
 export default async function PreviewFrame({ params, searchParams }: {
   params: Promise<{ page: string[] }>;
@@ -25,7 +28,15 @@ export default async function PreviewFrame({ params, searchParams }: {
   const { page } = await params;
   const { token, draft } = await loadPreviewRequest(searchParams);
   if (!draft.ok) return <PreviewUnavailable draft={draft} />;
-  const { view } = await searchParams;
+  const { view, section: sectionParam } = await searchParams;
+  const section = readThumbnailSection(page, sectionParam);
+  if (section === false) {
+    return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no homepage section at this address to preview." }} />;
+  }
+  if (section) {
+    const route = renderStorefrontRoute(["home"], thumbnailContent(previewMediaContent(draft.content), section));
+    return route && <SectionThumbnailDocument section={section}>{route.node}</SectionThumbnailDocument>;
+  }
   const published = view === "published";
   if (published && draft.publishedVersion === null) {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_NOT_PUBLISHED", message: "Nothing is published yet. Publish the draft to compare it with the live storefront." }} />;
