@@ -79,8 +79,8 @@ function SourceProductCard({ product }: { product: SourceProduct }) {
   // Keep editorial products absent from the live catalogue enquiry-only.
   const href = `/pages/contact?product=${encodeURIComponent(product.title)}`;
   return (
-    <article className="product-card landing-source-product">
-      <div className="product-card-image">
+    <article data-product-card className="product-card landing-source-product">
+      <div data-card-image className="product-card-image">
         <a href={href}>
           <Image
             src={product.image}
@@ -90,10 +90,10 @@ function SourceProductCard({ product }: { product: SourceProduct }) {
           />
         </a>
       </div>
-      <a className="product-card-name" href={href}>
+      <a data-card-name className="product-card-name" href={href}>
         {product.title}
       </a>
-      <p className="product-card-price">
+      <p data-card-price className="product-card-price">
         <span>Price on request</span>
       </p>
     </article>

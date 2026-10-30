@@ -132,8 +132,8 @@ test("legacy published homepage preserves original collection copy, media, links
     "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_2.webp?v=1778269923",
   ]);
-  assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] .product-card-name', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
-  assert.deepEqual(attributes(doc, '[data-home-section="chairs"] .product-card-name', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
+  assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
+  assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
 });
 
 test("published tiles follow saved order, visibility, full image URLs and accessible descriptions", async () => {
@@ -148,7 +148,7 @@ test("published tiles follow saved order, visibility, full image URLs and access
   assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
   assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
   assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("alt"), "Discover our furniture offer");
-  assert.equal(doc.querySelector(".product-card"), null);
+  assert.equal(doc.querySelector("[data-product-card]"), null);
 });
 
 test("published rails preserve product order, omit missing, unavailable and unpublished products, and use catalogue prices", async () => {
@@ -159,17 +159,17 @@ test("published rails preserve product order, omit missing, unavailable and unpu
     "custom-chair-one": product("custom-chair-one", 850000),
     "custom-chair-two": product("custom-chair-two", 900000),
   } });
-  assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] .product-card-name'), ["Catalogue custom-second", "Catalogue custom-first"]);
-  assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] .product-card-price'), ["Rs. 47,890.00", "Rs. 12,345.00"]);
-  assert.deepEqual(attributes(doc, '[data-home-section="chairs"] .product-card-name', "href"), ["/products/custom-chair-two", "/products/custom-chair-one"]);
-  assert.deepEqual(texts(doc, '[data-home-section="chairs"] .product-card-price'), ["Rs. 9,000.00", "Rs. 8,500.00"]);
+  assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] [data-card-name]'), ["Catalogue custom-second", "Catalogue custom-first"]);
+  assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] [data-card-price]'), ["Rs. 47,890.00", "Rs. 12,345.00"]);
+  assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/custom-chair-two", "/products/custom-chair-one"]);
+  assert.deepEqual(texts(doc, '[data-home-section="chairs"] [data-card-price]'), ["Rs. 9,000.00", "Rs. 8,500.00"]);
   assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|catalogue\/cards)$/.test(url)), "Rendering only reads published content and catalogue data");
   assert.equal(doc.querySelector('[href="/checkout"], button[name="checkout"]'), null);
 });
 
 test("explicitly empty merchandising keeps rails honestly empty without restoring legacy products or tiles", async () => {
   const { doc } = await renderHome({ merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } });
-  assert.equal(doc.querySelectorAll(".product-card, .home-categories > a, .home-offer-tiles > a").length, 0);
+  assert.equal(doc.querySelectorAll("[data-product-card], .home-categories > a, .home-offer-tiles > a").length, 0);
   assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
   assert.deepEqual(attributes(doc, ".home-catalogue-unavailable a", "href"), ["/collections/all", "/collections/all"]);
 });
@@ -179,6 +179,6 @@ test("a rail with no published catalogue products shows the existing unavailable
   merchandising.bestsellers = ["private-product", "missing-product", "broken-product"];
   merchandising.chairs = [];
   const { doc } = await renderHome({ merchandising, products: { "private-product": product("private-product", 90000, false) } });
-  assert.equal(doc.querySelectorAll(".product-card").length, 0);
+  assert.equal(doc.querySelectorAll("[data-product-card]").length, 0);
   assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
 });

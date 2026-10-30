@@ -42,15 +42,15 @@ for (const scenario of [
     const product = { ...base, variants: scenario.variants };
     const original = structuredClone(product);
     await card(product, (doc) => {
-      assert.equal(doc.querySelector(".product-card-price span")?.textContent, scenario.price);
-      assert.equal(doc.querySelector(".product-card-price del")?.textContent ?? null, scenario.sale);
-      assert.equal(Boolean(doc.querySelector(".card-sale")), scenario.sale !== null);
-      assert.equal(doc.querySelector(".product-card p.product-card-options")?.textContent ?? null,
+      assert.equal(doc.querySelector("[data-card-price] span")?.textContent, scenario.price);
+      assert.equal(doc.querySelector("[data-card-price] del")?.textContent ?? null, scenario.sale);
+      assert.equal(Boolean(doc.querySelector("[data-card-sale]")), scenario.sale !== null);
+      assert.equal(doc.querySelector("[data-product-card] p[data-card-options]")?.textContent ?? null,
         scenario.request ? "Other options on request" : null);
-      assert.equal(doc.querySelector("a.product-card-options")?.textContent?.trim() ?? null,
+      assert.equal(doc.querySelector("a[data-card-options]")?.textContent?.trim() ?? null,
         scenario.variants.length > 1 ? `${scenario.variants.length} options` : null);
-      assert.equal(doc.querySelector(".product-card img")?.getAttribute("src"), "https://example.com/first.jpg");
-      assert.equal(doc.querySelector(".product-card-name")?.getAttribute("href"), "/products/display-chair");
+      assert.equal(doc.querySelector("[data-product-card] img")?.getAttribute("src"), "https://example.com/first.jpg");
+      assert.equal(doc.querySelector("[data-card-name]")?.getAttribute("href"), "/products/display-chair");
       assert.deepEqual(product, original, "pricing must not mutate source variant order");
     });
   });

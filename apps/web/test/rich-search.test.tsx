@@ -34,7 +34,7 @@ async function setup(t: TestContext, history?: string) {
   return { requests, root, close: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; t.mock.timers.reset(); } };
 }
 async function settle(request: Request, response: Response) { await act(async () => request.resolve(response)); }
-const names = () => [...document.querySelectorAll('.search-discovery .product-card-name')].map(e=>e.textContent);
+const names = () => [...document.querySelectorAll('.search-discovery [data-card-name]')].map(e=>e.textContent);
 
 test("existing search opens from the header and provides a local full-results form", async t => {
   const app = await setup(t); try { await click("Search furniture"); assert.equal(input().name, "q"); assert.equal(input().form?.getAttribute("action"), "/collections/all"); } finally { await app.close(); }
@@ -94,7 +94,7 @@ test("recent handles resolve fresh public records, omit missing pieces and clear
     localStorage.setItem("other-preference","preserved"); await click("Search furniture");
     const alpha=app.requests.find(r=>r.url==="/api/catalogue/cards/alpha"); const missing=app.requests.find(r=>r.url==="/api/catalogue/cards/missing"); assert.ok(alpha,"recent product lookup"); assert.ok(missing);
     await settle(alpha,Response.json(cardEnvelope("alpha", "Current alpha"))); await settle(missing,new Response(null,{status:404}));
-    assert.equal(document.querySelector('[aria-label="Recently viewed"] .product-card-name')?.textContent,"Current alpha");
+    assert.equal(document.querySelector('[aria-label="Recently viewed"] [data-card-name]')?.textContent,"Current alpha");
     await click("Clear recently viewed"); assert.equal(localStorage.getItem(storageKey),null); assert.equal(localStorage.getItem("other-preference"),"preserved"); assert.equal(document.querySelector('[aria-label="Recently viewed"]'),null); assert.equal(document.activeElement,input());
   } finally { await app.close(); }
 });

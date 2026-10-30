@@ -7,7 +7,7 @@ import { ProductCard } from "./product-card";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 type Resolution = { product: ProductCardModel | null; failed: boolean };
-const removeSelector = '.save-button[aria-pressed="true"], [data-remove-missing]';
+const removeSelector = '[data-save-button][aria-pressed="true"], [data-remove-missing]';
 
 export function Favourites({
   onNavigate,
