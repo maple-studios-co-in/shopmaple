@@ -136,3 +136,11 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
     </div>
   );
 }
+
+/**
+ * One homepage section on its own, for a section card's thumbnail. The card frames it without
+ * scripts, so nothing here may depend on hydration: no ribbon, no link capture, no bridge.
+ */
+export function SectionThumbnailDocument({ section, children }: { section: string; children: ReactNode }) {
+  return <div data-section-thumbnail={section} className="pointer-events-none select-none">{children}</div>;
+}

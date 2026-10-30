@@ -4,6 +4,7 @@
  * messaging rules are testable without a browser.
  */
 import { homeSectionKeys } from "@shopmaple/contracts";
+import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
 export type PreviewDevice = "desktop" | "tablet" | "phone";
@@ -71,3 +72,13 @@ export function readPreviewMessage(
 
 /** Section keys the frame can scroll to; homepage sections today. */
 export const previewSectionKeys: readonly string[] = homeSectionKeys;
+
+/**
+ * The `section` parameter of a frame address: null when absent (render the whole page), the
+ * section key for a homepage section on the home page, false for anything else.
+ */
+export function readThumbnailSection(page: readonly string[], section: unknown): HomeSectionKey | null | false {
+  if (section === undefined) return null;
+  const home = page.length === 0 || (page.length === 1 && page[0] === "home");
+  return home && typeof section === "string" && (homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : false;
+}
