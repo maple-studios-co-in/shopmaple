@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 import type { ChromeLink, ChromeNavigationItem, FooterContent, SiteChrome } from "@shopmaple/contracts";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
@@ -16,7 +16,6 @@ const newId = () => `chrome-${crypto.randomUUID()}`;
 const newLink = (): ChromeLink => ({ id: newId(), label: "New link", href: "/collections/all", enabled: true });
 const lower = (value: string) => value.charAt(0).toLowerCase() + value.slice(1);
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
-/** Nested lists sit on the panel tone. */
 const nestedCard = cn(stackCard, "border-line-soft bg-surface shadow-none");
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return <CheckField label={label} aria-label={label} checked={checked} onChange={event => onChange(event.currentTarget.checked)} />;
@@ -34,19 +33,15 @@ function Rows<T>({ title, nested = false, ...props }: EditableListProps<T> & { t
 function LinkFields<T extends ChromeLink>({ link, name, onChange }: { link: T; name: string; onChange: (value: T) => void }) {
   return <FieldGrid>
     {textFields<ChromeLink>(link, [["label", `${name} label`, 120], ["href", `${name} destination`, 300]], next => onChange(next as T))}
-    <Field label={`${name} enquiry subject`} value={link.enquirySubject ?? ""} maxLength={160} onChange={enquirySubject => {
-      const next = { ...link };
-      if (enquirySubject) next.enquirySubject = enquirySubject; else delete next.enquirySubject;
-      onChange(next);
-    }} />
+    <Field label={`${name} enquiry subject`} value={link.enquirySubject ?? ""} maxLength={160}
+      onChange={subject => { const { enquirySubject: _, ...rest } = link; onChange((subject ? { ...link, enquirySubject: subject } : rest) as T); }} />
     {"cta" in link && <Field label={`${name} call to action`} value={String(link.cta)} maxLength={80} onChange={cta => onChange({ ...link, cta })} />}
     <Toggle label={`Show ${lower(name)}`} checked={link.enabled} onChange={enabled => onChange({ ...link, enabled })} />
     {"parent" in link && <Toggle label={`${name} parent style`} checked={Boolean(link.parent)} onChange={parent => onChange({ ...link, parent })} />}
   </FieldGrid>;
 }
-function Links<T extends ChromeLink>({ name, ...props }: {
-  title: string; name: string; items: T[]; onChange: (items: T[]) => void; max: number; min?: number; create: () => T; nested?: boolean;
-}) {
+type LinksProps<T> = { title: string; name: string; items: T[]; onChange: (items: T[]) => void; max: number; min?: number; create: () => T; nested?: boolean };
+function Links<T extends ChromeLink>({ name, ...props }: LinksProps<T>) {
   return <Rows {...props} name={name} identity={item => item.id}
     render={(link, index, update) => <LinkFields link={link} name={`${name} ${index + 1}`} onChange={update} />} />;
 }
@@ -137,19 +132,17 @@ function FooterFields({ value, onChange }: { value: FooterContent; onChange: (va
 const sections = [["announcement", "Announcement & WhatsApp"], ["header", "Header links"], ["navigation", "Main navigation"], ["footer", "Footer"]] as const;
 type Section = (typeof sections)[number][0];
 export function SiteChromeFields({ value, onChange }: { value?: SiteChrome; onChange: (value: SiteChrome | undefined) => void }) {
-  const current = value ?? resolveSiteChrome(), heading = useRef<HTMLSpanElement>(null), resetFocus = useRef(false);
+  const current = value ?? resolveSiteChrome(), focus = usePendingFocus(value);
   const [section, setSection] = useState<Section>("announcement");
-  useLayoutEffect(() => { if (resetFocus.current) { heading.current?.focus(); resetFocus.current = false; } }, [value]);
   function update(patch: Partial<SiteChrome>) { onChange({ ...current, ...patch }); }
   const { announcement, whatsapp } = current;
   return <section aria-label="Navigation and footer controls">
     <PanelHeader
       // The title is focusable so restoring the original moves focus back to the top of the screen.
-      title={<span ref={heading} tabIndex={-1} className={cn("rounded-sm", focusRing)}>Navigation &amp; footer</span>}
+      title={<span ref={focus.track("heading")} tabIndex={-1} className={cn("rounded-sm", focusRing)}>Navigation &amp; footer</span>}
       description="Edit storefront links and contact information. Save a draft, then publish when ready. Product availability and prices remain managed by Keeri."
-      actions={<ActionButton icon={RotateCcw} disabled={value === undefined} onClick={() => { resetFocus.current = true; onChange(undefined); }}>
-        Restore original navigation &amp; footer
-      </ActionButton>}
+      actions={<ActionButton icon={RotateCcw} disabled={value === undefined}
+        onClick={() => { focus.focusAfter("heading"); onChange(undefined); }}>Restore original navigation &amp; footer</ActionButton>}
     />
     <Prose className="-mt-3 mb-6 text-xs">
       Destinations must be local storefront paths (for example /collections/all or /pages/contact). Enquiry subjects are optional and only work with

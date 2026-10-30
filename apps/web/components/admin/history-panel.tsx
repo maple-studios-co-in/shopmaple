@@ -54,18 +54,12 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
     </Button>
   );
   const columns = useMemo(() => [
-    column.accessor("version", {
-      header: "Version",
-      cell: (info) => <span className="text-base font-semibold text-foreground tabular-nums">{info.getValue()}</span>,
-      meta: { className: "w-20" },
-    }),
+    column.accessor("version", { header: "Version", meta: { className: "w-20" }, cell: (info) => <span className="text-base font-semibold text-foreground tabular-nums">{info.getValue()}</span> }),
     column.accessor("action", {
       header: "Change",
       cell: (info) => <Badge variant="secondary" className={cn("rounded-md border-0 font-semibold", actionTone[info.getValue()] ?? actionTone.save)}>{titleCase(info.getValue())}</Badge>,
-      meta: { filter: "select", label: "Change", options: [...new Set(revisions.map((revision) => revision.action))].map((action) => [action, titleCase(action)] as const) },
-      filterFn: "equalsString",
     }),
-    column.accessor("actorEmail", { header: "By", cell: (info) => <span className="text-muted-foreground">{info.getValue()}</span>, meta: { filter: "text", label: "Staff" }, filterFn: "includesString" }),
+    column.accessor("actorEmail", { header: "By", cell: (info) => <span className="text-muted-foreground">{info.getValue()}</span> }),
     column.accessor("createdAt", { header: "When", cell: (info) => <time dateTime={info.getValue()} className="text-muted-foreground tabular-nums">{new Date(info.getValue()).toLocaleString()}</time> }),
     column.display({
       id: "actions",
@@ -97,7 +91,7 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
           columns={columns}
           data={revisions}
           getRowId={(revision) => revision.id}
-          empty="No revisions match these filters."
+          empty="No revisions yet."
         />
       )}
       <Sheet open={open !== null} onOpenChange={(next) => { if (!next) setOpen(null); }}>

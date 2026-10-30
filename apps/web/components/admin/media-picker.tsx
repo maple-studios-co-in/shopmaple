@@ -14,7 +14,9 @@ export function mediaPreviewUrl(src: string) {
 }
 
 /** Choose an approved image from the media library; previews go through the private admin transport. */
-export function MediaPicker({ label, value, onChange, session, onExpired }: { label: string; value: string; onChange: (url: string) => void; session: StaffSession; onExpired: () => void }) {
+export function MediaPicker({ label, value, onChange, session, onExpired }: {
+  label: string; value: string; onChange: (url: string) => void; session: StaffSession; onExpired: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const labelId = useId();

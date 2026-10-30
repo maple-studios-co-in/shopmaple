@@ -10,8 +10,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import {
-  ActionButton, CheckField, EditableList, FieldGrid, PanelHeader, Prose, RemoveButton, SectionHeading,
-  focusRing, rowCard, swap, textFields, usePendingFocus,
+  ActionButton, CheckField, EditableList, FieldGrid, PanelHeader, Prose, RemoveButton, SectionHeading, focusRing, rowCard, swap, textFields, useLatest, usePendingFocus,
 } from "./kit";
 import { MediaPicker } from "./media-picker";
 import { SortableList } from "./sortable-list";
@@ -31,10 +30,7 @@ function ProductName({ title, handle }: { title: string; handle: string }) {
 }
 
 export function HomeMerchandisingFields({ value, onChange, session, onExpired }: {
-  value?: HomeMerchandising;
-  onChange: (value: HomeMerchandising) => void;
-  session: StaffSession;
-  onExpired: () => void;
+  value?: HomeMerchandising; onChange: (value: HomeMerchandising) => void; session: StaffSession; onExpired: () => void;
 }) {
   const current = useMemo(() => resolveHomeMerchandising(value), [value]);
   const send = useAdminRequest();
@@ -43,15 +39,9 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
   const [results, setResults] = useState<ProductList | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const generation = useRef(0);
-  const expired = useRef(onExpired); expired.current = onExpired;
-  const keyCounter = useRef(0);
-  const focus = usePendingFocus(current);
-  const remember = focus.track;
-  function update(next: HomeMerchandising, target?: string) {
-    focus.focusAfter(target ?? null);
-    onChange(next);
-  }
+  const generation = useRef(0), keyCounter = useRef(0), expired = useLatest(onExpired);
+  const focus = usePendingFocus(current), remember = focus.track;
+  function update(next: HomeMerchandising, target?: string) { focus.focusAfter(target ?? null); onChange(next); }
   async function load(term: string, page: number) {
     const request = ++generation.current;
     setSearch({ query: term, page });
@@ -66,18 +56,14 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
       if (parsed.page !== page || parsed.limit !== 20 || parsed.total < 0 || parsed.products.length > 20) throw new Error("Invalid catalog page");
       setResults(parsed);
     } catch (cause) {
-      if (request === generation.current) setError(cause instanceof AdminRequestTimeout
-        ? "Loading products timed out. Please try again."
-        : "We couldn't load products. Please try again.");
+      if (request === generation.current) {
+        setError(cause instanceof AdminRequestTimeout ? "Loading products timed out. Please try again." : "We couldn't load products. Please try again.");
+      }
     } finally {
       if (request === generation.current) setBusy(false);
     }
   }
-  useEffect(() => {
-    void load("", 1);
-    return () => { generation.current++; };
-  }, [send]);
-
+  useEffect(() => { void load("", 1); return () => { generation.current++; }; }, [send]);
   function newTile(group: "categories" | "offers"): HomeCollectionTile {
     let key: string;
     do { key = `tile-${++keyCounter.current}`; } while (current[group].some(tile => tile.key === key));
@@ -111,8 +97,7 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
                 {direction === -1 ? <ChevronUp aria-hidden="true" strokeWidth={1.5} /> : <ChevronDown aria-hidden="true" strokeWidth={1.5} />}
               </Button>)}
               <RemoveButton label={`Remove ${handle} from ${rail.label}`} onClick={() => {
-                const next = current[rail.key].filter(item => item !== handle);
-                const neighbor = next[Math.min(index, next.length - 1)];
+                const next = current[rail.key].filter(item => item !== handle), neighbor = next[Math.min(index, next.length - 1)];
                 update({ ...current, [rail.key]: next }, neighbor ? `${rail.key}:${neighbor}` : "search");
               }} />
             </div>
@@ -143,17 +128,15 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
           <div className="flex flex-wrap items-center gap-1.5">{rails.map(rail => {
             const selected = current[rail.key].includes(product.handle);
             const blocked = !product.published || selected || current[rail.key].length >= limit;
-            return <Button key={rail.key} type="button" variant={selected ? "ghost" : "outline"} size="xs" aria-label={`Add ${product.handle} to ${rail.label}`}
-              disabled={blocked} onClick={() => {
-                if (blocked) return;
-                update({ ...current, [rail.key]: [...current[rail.key], product.handle] }, `${rail.key}:${product.handle}`);
-              }}>{selected ? <Check aria-hidden="true" strokeWidth={1.5} /> : <Plus aria-hidden="true" strokeWidth={1.5} />}{rail.label}</Button>;
+            const add = () => update({ ...current, [rail.key]: [...current[rail.key], product.handle] }, `${rail.key}:${product.handle}`);
+            return <ActionButton key={rail.key} icon={selected ? Check : Plus} variant={selected ? "ghost" : "outline"} size="xs"
+              aria-label={`Add ${product.handle} to ${rail.label}`} disabled={blocked} onClick={add}>{rail.label}</ActionButton>;
           })}</div>
         </li>)}</ul>}
         <div className="flex items-center justify-end gap-2">
           <ActionButton icon={ChevronLeft} disabled={search.page <= 1} onClick={() => void load(search.query, search.page - 1)}>Previous products</ActionButton>
-          <Button type="button" variant="outline" size="sm" disabled={search.page * results.limit >= results.total} onClick={() => void load(search.query, search.page + 1)}>
-            Next products<ChevronRight aria-hidden="true" strokeWidth={1.5} />
+          <Button type="button" variant="outline" size="sm" disabled={search.page * results.limit >= results.total}
+            onClick={() => void load(search.query, search.page + 1)}>Next products<ChevronRight aria-hidden="true" strokeWidth={1.5} />
           </Button>
         </div>
       </>}
@@ -174,7 +157,9 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
           const name = `${group.label} tile ${index + 1}`, patch = (next: Partial<HomeCollectionTile>) => edit({ ...tile, ...next });
           return <>
             <FieldGrid>
-              {textFields(tile, [["title", `${name} title`, 120], ["collectionHandle", `${name} collection handle`, 200], ["alt", `${name} image description`, 200]], edit)}
+              {textFields(tile, [
+                ["title", `${name} title`, 120], ["collectionHandle", `${name} collection handle`, 200], ["alt", `${name} image description`, 200],
+              ], edit)}
             </FieldGrid>
             <MediaPicker label={`${name} image`} value={tile.image} onChange={image => patch({ image })} session={session} onExpired={onExpired} />
             <CheckField label="Show this tile" aria-label={`Show ${group.singular} tile ${index + 1}`} checked={tile.enabled}

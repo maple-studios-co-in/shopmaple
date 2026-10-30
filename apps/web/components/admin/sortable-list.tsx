@@ -9,10 +9,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SortableRowProps = Record<string, unknown> & {
-  ref?: (node: HTMLElement | null) => void;
-  className?: string;
-};
+export type SortableRowProps = Record<string, unknown> & { ref?: (node: HTMLElement | null) => void; className?: string };
 export type SortableListProps<T> = {
   items: readonly T[];
   /** Stable identity for each item; it must be unique within the list. */
@@ -40,36 +37,21 @@ const verticalOnly: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 const instructions = "To pick up an item, press space or enter. While lifted, use the up and down arrow keys to move it. Press space or enter again to drop it in its new position, or press escape to cancel.";
 
 function SortableRow({ id, label, tag, dragging, dropTarget, rowProps, children }: {
-  id: string;
-  label: string;
-  tag: NonNullable<SortableListProps<unknown>["rowTag"]>;
-  dragging: boolean;
-  dropTarget: "before" | "after" | null;
-  rowProps: SortableRowProps;
-  children: (handle: ReactNode) => ReactNode;
+  id: string; label: string; tag: NonNullable<SortableListProps<unknown>["rowTag"]>; dragging: boolean;
+  dropTarget: "before" | "after" | null; rowProps: SortableRowProps; children: (handle: ReactNode) => ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition } = useSortable({ id });
   const { ref, className, ...rest } = rowProps;
   const handle = (
-    <button
-      type="button"
-      className="inline-grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-md text-faint transition-colors duration-150 ease-admin focus-visible:outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 active:cursor-grabbing"
-      ref={setActivatorNodeRef}
-      {...attributes}
-      {...listeners}
-      aria-label={`Drag ${label}`}
-    >
+    <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners} aria-label={`Drag ${label}`}
+      className="inline-grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-md text-faint transition-colors duration-150 ease-admin focus-visible:outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 active:cursor-grabbing">
       <GripVertical aria-hidden="true" size={16} strokeWidth={1.5} />
     </button>
   );
   return createElement(tag, {
-    ...rest,
-    ref: (node: HTMLElement | null) => { setNodeRef(node); ref?.(node); },
-    className: className || undefined,
+    ...rest, ref: (node: HTMLElement | null) => { setNodeRef(node); ref?.(node); }, className: className || undefined,
     style: { transform: CSS.Transform.toString(transform), transition },
-    "data-sortable-row": "",
-    "data-dragging": dragging ? "true" : undefined,
-    "data-drop-target": dropTarget ?? undefined,
+    "data-sortable-row": "", "data-dragging": dragging ? "true" : undefined, "data-drop-target": dropTarget ?? undefined,
   }, children(handle));
 }
 

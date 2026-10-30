@@ -18,17 +18,18 @@ function TextFields({ nodes, original, onChange, path = [] }: {
   nodes: EditorialNode[]; original: EditorialNode[]; onChange: (nodes: EditorialNode[]) => void; path?: number[];
 }) {
   return <>{nodes.map((node, index) => {
-    const position = [...path, index + 1];
-    const identity = position.join(".");
-    const baseline = original[index];
+    const position = [...path, index + 1], identity = position.join("."), baseline = original[index];
     const replace = (next: EditorialNode) => onChange(nodes.map((item, i) => i === index ? next : item));
     if (typeof node === "string") {
       if (!node.trim() && !(typeof baseline === "string" && baseline.trim())) return null;
       return <Field key={index} label={`Text ${identity}`} value={node} maxLength={16000} multiline onChange={replace} />;
     }
     if (node.tag === "br" || node.tag === "hr") return null;
-    if (node.tag === "img") return <Field key={index} label={`Image description ${identity}`} value={node.alt ?? ""} maxLength={200} onChange={alt => replace({ ...node, alt })} />;
-    const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position} onChange={children => replace({ ...node, children })} />;
+    if (node.tag === "img") {
+      return <Field key={index} label={`Image description ${identity}`} value={node.alt ?? ""} maxLength={200} onChange={alt => replace({ ...node, alt })} />;
+    }
+    const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position}
+      onChange={children => replace({ ...node, children })} />;
     if (!labels[node.tag]) return <div key={index} className="grid gap-3">{children}</div>;
     return <details key={index} className="min-w-0 rounded-lg border border-border bg-card shadow-xs open:shadow-sm">
       <DisclosureSummary className="min-w-0 px-3 py-2.5">
@@ -71,11 +72,13 @@ export function EditorialFields({ value, onChange }: { value?: EditorialContent;
       Existing policies and blog posts
     </SectionHeading>
     <SelectField label="Policy or blog page" className="mb-6 max-w-md" value={selected} onChange={event => setSelected(event.target.value)}>
-      <NativeSelectOptGroup label="Policies">{Object.entries(resolved.policies).map(([slug, item]) => <NativeSelectOption key={slug} value={`policy:${slug}`}>{item.title}</NativeSelectOption>)}</NativeSelectOptGroup>
-      <NativeSelectOptGroup label="Blog pages">{resolved.blogs.map(item => <NativeSelectOption key={item.handle} value={`blog:${item.handle}`}>{item.title}</NativeSelectOption>)}</NativeSelectOptGroup>
-      <NativeSelectOptGroup label="Articles">
-        {resolved.blogs.flatMap(item => item.articles.map(post => <NativeSelectOption key={`${item.handle}/${post.handle}`} value={`article:${item.handle}/${post.handle}`}>{post.title}</NativeSelectOption>))}
-      </NativeSelectOptGroup>
+      {([
+        ["Policies", Object.entries(resolved.policies).map(([slug, item]) => [`policy:${slug}`, item.title])],
+        ["Blog pages", resolved.blogs.map(item => [`blog:${item.handle}`, item.title])],
+        ["Articles", resolved.blogs.flatMap(item => item.articles.map(post => [`article:${item.handle}/${post.handle}`, post.title]))],
+      ] as const).map(([group, options]) => <NativeSelectOptGroup key={group} label={group}>
+        {options.map(([key, title]) => <NativeSelectOption key={key} value={key}>{title}</NativeSelectOption>)}
+      </NativeSelectOptGroup>)}
     </SelectField>
     {document && <EditorWithPreview key={selected}>
       <div className="grid gap-4">

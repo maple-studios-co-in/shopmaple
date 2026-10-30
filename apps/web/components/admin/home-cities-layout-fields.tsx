@@ -9,10 +9,7 @@ export function HomeCitiesLayoutFields({ value, onChange }: { value?: HomeCities
   const current = value ?? defaultHomeCitiesLayout;
   const rows = usePendingFocus<HomeCityKey>(current);
   const original = current.every((item, index) => item.key === defaultHomeCitiesLayout[index]?.key && item.enabled === defaultHomeCitiesLayout[index]?.enabled);
-  function update(next: HomeCitiesLayout, focus: HomeCityKey) {
-    rows.focusAfter(focus);
-    onChange(next);
-  }
+  function update(next: HomeCitiesLayout, focus: HomeCityKey) { rows.focusAfter(focus); onChange(next); }
   return (
     <section aria-label="Homepage cities layout" className="grid gap-3">
       <SectionHeading className="mb-0"
@@ -23,11 +20,8 @@ export function HomeCitiesLayoutFields({ value, onChange }: { value?: HomeCities
       <ToggleRows items={current} name={item => homeCityNames[item.key]} label={item => homeCityNames[item.key]} onChange={onChange}
         onReorder={(next, moved) => update(next, moved.key)}
         rowProps={item => ({ tabIndex: -1, "aria-label": `City artwork ${homeCityNames[item.key]}`, ref: rows.track(item.key) })} />
-      <div>
-        <ActionButton icon={RotateCcw} disabled={original} onClick={() => update(defaultHomeCitiesLayout.map(item => ({ ...item })), "delhi")}>
-          Restore original city layout
-        </ActionButton>
-      </div>
+      <div><ActionButton icon={RotateCcw} disabled={original}
+        onClick={() => update(defaultHomeCitiesLayout.map(item => ({ ...item })), "delhi")}>Restore original city layout</ActionButton></div>
     </section>
   );
 }

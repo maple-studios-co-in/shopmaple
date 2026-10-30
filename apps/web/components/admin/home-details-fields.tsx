@@ -1,31 +1,20 @@
 "use client";
-import { useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { Notice } from "./crm-primitives";
 import { Field } from "./field";
-import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, TextFields, listFields } from "./kit";
+import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, TextFields, listFields, usePendingFocus } from "./kit";
 
 const tileNames = { sofas: "Sofas", chairs: "Chairs", tables: "Tables", beds: "Beds" };
 const valueNames = { "quiet-luxury": "Quiet luxury", "real-living": "Real living", "ages-beautifully": "Ages beautifully", strength: "Strength" };
 export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; onChange: (value: HomeDetails) => void }) {
   const page = resolveHomeDetails(value);
   const { hero, difference, nimbus, testimonial } = page;
-  const paragraphFields = useRef<HTMLDivElement>(null);
-  const addParagraph = useRef<HTMLButtonElement>(null);
-  const pendingFocus = useRef<number | "add" | null>(null);
-  useEffect(() => {
-    const target = pendingFocus.current;
-    if (target === "add") addParagraph.current?.focus();
-    else if (target !== null) paragraphFields.current?.querySelectorAll("textarea")[target]?.focus();
-    pendingFocus.current = null;
-  }, [testimonial.paragraphs.length]);
-  function update<K extends keyof HomeDetails>(key: K, value: HomeDetails[K]) {
-    onChange({ ...page, [key]: value });
-  }
-  function paragraphs(next: string[], focus: number | "add" | null = null) {
-    pendingFocus.current = focus;
+  const focus = usePendingFocus<number | "add">(testimonial.paragraphs.length);
+  const update = <K extends keyof HomeDetails>(key: K, value: HomeDetails[K]) => onChange({ ...page, [key]: value });
+  function paragraphs(next: string[], target: number | "add" | null = null) {
+    focus.focusAfter(target);
     update("testimonial", { ...testimonial, paragraphs: next });
   }
   return (
@@ -53,10 +42,11 @@ export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; on
         </ContentPanel>
         <ContentPanel data-preview-section="testimonial" title="Customer testimonial">
           <Notice tone="info">Use only approved customer wording and attribution.</Notice>
-          <TextFields ref={paragraphFields} value={testimonial} onChange={next => update("testimonial", next)} fields={[
+          <TextFields value={testimonial} onChange={next => update("testimonial", next)} fields={[
             ["title", "Testimonial title", 160], ["name", "Testimonial customer name", 120], ["attribution", "Testimonial attribution", 160],
             ...testimonial.paragraphs.map((paragraph, index) => (
-              <div key={index} data-span="full" className="flex min-w-0 items-start gap-2">
+              <div key={index} data-span="full" className="flex min-w-0 items-start gap-2"
+                ref={node => focus.track(index)(node?.querySelector("textarea") ?? null)}>
                 <Field className="flex-1" label={`Testimonial paragraph ${index + 1}`} value={paragraph} maxLength={2000} multiline
                   onChange={value => paragraphs(testimonial.paragraphs.map((item, i) => i === index ? value : item))} />
                 <RemoveButton className="mt-7" label={`Remove testimonial paragraph ${index + 1}`} disabled={testimonial.paragraphs.length === 1}
@@ -65,7 +55,7 @@ export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; on
             )),
           ]} />
           <div>
-            <ActionButton icon={Plus} ref={addParagraph} disabled={testimonial.paragraphs.length === 6}
+            <ActionButton icon={Plus} ref={focus.track("add")} disabled={testimonial.paragraphs.length === 6}
               onClick={() => paragraphs([...testimonial.paragraphs, ""], testimonial.paragraphs.length)}>Add testimonial paragraph</ActionButton>
           </div>
         </ContentPanel>

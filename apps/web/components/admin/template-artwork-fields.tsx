@@ -15,39 +15,28 @@ import { MediaPicker } from "./media-picker";
 
 const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"] as const;
 export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
-  value?: TemplateMedia;
-  onChange: (value: TemplateMedia) => void;
-  session: StaffSession;
-  onExpired: () => void;
+  value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void;
 }) {
   const [selected, setSelected] = useState<TemplateMediaKey>("home-workshop-poster");
   const placement = useRef<HTMLSelectElement>(null);
   const slot = templateMediaSlots.find(item => item.key === selected)!;
   const artwork = resolveTemplateMedia(selected, value);
-  const responsive = templateMediaResponsiveKeys.some(key => key === selected);
+  const responsive = templateMediaResponsiveKeys.some(key => key === selected), decorative = templateMediaDecorativeKeys.some(key => key === selected);
   const overridden = value?.some(item => item.key === selected) ?? false;
-  const poster = selected.endsWith("-poster");
-  const decorative = templateMediaDecorativeKeys.some(key => key === selected);
   function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt">>) {
     const next = { ...artwork, ...patch };
-    onChange(overridden
-      ? value!.map(item => item.key === selected ? next : item)
-      : [...(value ?? []), next]);
+    onChange(overridden ? value!.map(item => item.key === selected ? next : item) : [...(value ?? []), next]);
   }
+  const select = (slot?: (typeof templateMediaSlots)[number]) => slot && setSelected(slot.key);
   return (
     <section aria-label="Template artwork">
       <PanelHeader title="Artwork" description="Choose a page and placement to replace its image. Save a draft, then publish when ready." />
       <FieldGrid className="mb-6">
-        <SelectField label="Artwork group" value={slot.group} onChange={event => {
-          const first = templateMediaSlots.find(item => item.group === event.target.value);
-          if (first) setSelected(first.key);
-        }}>
+        <SelectField label="Artwork group" value={slot.group} onChange={event => select(templateMediaSlots.find(item => item.group === event.target.value))}>
           {groups.map(group => <NativeSelectOption key={group} value={group}>{group}</NativeSelectOption>)}
         </SelectField>
-        <SelectField ref={placement} label="Artwork placement" value={selected} onChange={event => {
-          const next = templateMediaSlots.find(item => item.key === event.target.value);
-          if (next) setSelected(next.key);
-        }}>
+        <SelectField ref={placement} label="Artwork placement" value={selected}
+          onChange={event => select(templateMediaSlots.find(item => item.key === event.target.value))}>
           {templateMediaSlots.filter(item => item.group === slot.group).map(item => <NativeSelectOption key={item.key} value={item.key}>{item.label}</NativeSelectOption>)}
         </SelectField>
       </FieldGrid>
@@ -58,7 +47,7 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
             {overridden ? "Custom artwork in this draft" : "Using original artwork"}
           </Badge>
         </div>
-        {poster && <Notice tone="info">
+        {selected.endsWith("-poster") && <Notice tone="info">
           Changing this poster replaces the still image; the video stays unchanged.{selected !== "home-workshop-poster" && " The image description also labels the video."}
         </Notice>}
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
@@ -78,12 +67,8 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
             ? "Leave the description blank if this artwork is decorative. Otherwise describe what it communicates."
             : "Describe what the image communicates for visitors using a screen reader. A description is required."}</Prose>
         </div>
-        <div>
-          <ActionButton icon={RotateCcw} disabled={!overridden} onClick={() => {
-            onChange((value ?? []).filter(item => item.key !== selected));
-            placement.current?.focus();
-          }}>Restore original</ActionButton>
-        </div>
+        <div><ActionButton icon={RotateCcw} disabled={!overridden}
+          onClick={() => { onChange((value ?? []).filter(item => item.key !== selected)); placement.current?.focus(); }}>Restore original</ActionButton></div>
       </Card>
     </section>
   );

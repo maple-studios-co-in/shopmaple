@@ -8,7 +8,6 @@ const labels: Record<StorySectionKey, string> = { hero: "Hero", "belief-film": "
 export function StoryFields({ value, onChange }: { value?: StoryPageContent; onChange: (value: StoryPageContent) => void }) {
   const page = resolveStoryPageContent(value);
   const patch = (next: Partial<StoryPageContent>) => onChange({ ...page, ...next });
-  /** A heading edited one line per heading line. */
   const lines = (label: string, key: "heroHeading" | "beliefHeading" | "filmHeading") => (
     <Field key={key} label={label} value={page[key].join("\n")} multiline maxLength={482} onChange={value => patch({ [key]: value.split("\n") })} />
   );

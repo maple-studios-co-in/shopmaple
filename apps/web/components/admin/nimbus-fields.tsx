@@ -10,6 +10,11 @@ const sections: Record<NimbusSectionKey, string> = {
 const rooms = { bedroom: "Bedroom", living: "Living room", dining: "Dining room" };
 const principles = { comfort: "Cloud comfort", silhouettes: "Soft silhouettes", luxury: "Airy luxury", spaces: "Modern spaces" };
 const promises = { custom: "Customization", delivery: "Delivery", craft: "Craftsmanship", warranty: "Warranty" };
+/** One field per keyed entry, editing its `prop`. */
+function keyed<T extends { key: string }>(items: T[], prop: keyof T & string, label: (key: T["key"]) => string, onChange: (items: T[]) => void) {
+  const change = (item: T, text: string) => onChange(patchKey(items, item.key, { [prop]: text } as Partial<T>));
+  return <FieldGrid>{items.map(item => textField(label(item.key), String(item[prop]), 160, text => change(item, text)))}</FieldGrid>;
+}
 export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; onChange: (value: NimbusPageContent) => void }) {
   const page = resolveNimbusPageContent(value);
   const patch = (next: Partial<NimbusPageContent>) => onChange({ ...page, ...next });
@@ -24,10 +29,7 @@ export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; o
           <TextFields value={page.intro} onChange={intro => patch({ intro })}
             fields={[["heading", "Nimbus introduction heading", 160], ["body", "Nimbus introduction body", 2000, true]]} />
         </ContentPanel>
-        <ContentPanel title="Room tiles"><FieldGrid>
-          {page.roomTiles.map(tile => textField(`Nimbus ${rooms[tile.key]} tile title`, tile.title, 160,
-            title => patch({ roomTiles: patchKey(page.roomTiles, tile.key, { title }) })))}
-        </FieldGrid></ContentPanel>
+        <ContentPanel title="Room tiles">{keyed(page.roomTiles, "title", key => `Nimbus ${rooms[key]} tile title`, roomTiles => patch({ roomTiles }))}</ContentPanel>
         <ContentPanel title="Origin">
           <TextFields value={page.origin} onChange={origin => patch({ origin })}
             fields={[["eyebrow", "Nimbus origin eyebrow", 160], ["heading", "Nimbus origin heading", 160], ["body", "Nimbus origin body", 8000, true]]} />
@@ -37,10 +39,7 @@ export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; o
           <GroupedFields items={page.principles.items} legend={item => principles[item.key]} onChange={items => patch({ principles: { ...page.principles, items } })}
             fields={item => [["title", `Nimbus ${principles[item.key]} title`, 160], ["body", `Nimbus ${principles[item.key]} body`, 2000, true]]} />
         </ContentPanel>
-        <ContentPanel title="Room slideshow"><FieldGrid>
-          {page.roomSlides.map(slide => textField(`Nimbus ${rooms[slide.key]} slide label`, slide.label, 160,
-            label => patch({ roomSlides: patchKey(page.roomSlides, slide.key, { label }) })))}
-        </FieldGrid></ContentPanel>
+        <ContentPanel title="Room slideshow">{keyed(page.roomSlides, "label", key => `Nimbus ${rooms[key]} slide label`, roomSlides => patch({ roomSlides }))}</ContentPanel>
         <ContentPanel title="Series">
           <TextFields value={page.series} onChange={series => patch({ series })}
             fields={[["eyebrow", "Nimbus series eyebrow", 300], ["heading", "Nimbus series heading", 160]]} />
@@ -49,10 +48,7 @@ export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; o
           <TextFields value={page.project} onChange={project => patch({ project })}
             fields={[["heading", "Nimbus project heading", 160], ["body", "Nimbus project body", 2000, true]]} />
         </ContentPanel>
-        <ContentPanel title="Promises"><FieldGrid>
-          {page.promises.map(item => textField(`Nimbus ${promises[item.key]} promise`, item.title, 160,
-            title => patch({ promises: patchKey(page.promises, item.key, { title }) })))}
-        </FieldGrid></ContentPanel>
+        <ContentPanel title="Promises">{keyed(page.promises, "title", key => `Nimbus ${promises[key]} promise`, items => patch({ promises: items }))}</ContentPanel>
       </ContentPanels>
     </PageEditor>
   );
