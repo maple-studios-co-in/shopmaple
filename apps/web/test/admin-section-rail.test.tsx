@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
 // The Homepage screen as a section builder: every section is a card with a live thumbnail
-// (the real section rendered from the draft by the staff-only frame, framed without scripts),
+// (the real section rendered from the draft by the staff-only frame, with no app bundle loaded),
 // thumbnails share one preview token and reload only when their own section changes, a card
 // says where its content is edited, and hidden sections come back through an Add section picker.
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
@@ -84,7 +84,7 @@ async function setup() {
   };
 }
 
-test("every homepage section is a card with a script-free thumbnail of that section, all from one token", async () => {
+test("every homepage section is a card with a thumbnail of that section, hidden from assistive technology, all from one token", async () => {
   const app = await setup();
   try {
     assert.deepEqual(order(), defaultStorefrontContent.homeSections.map((section) => section.key));
@@ -93,7 +93,6 @@ test("every homepage section is a card with a script-free thumbnail of that sect
       const frame = thumbnail(key);
       assert.ok(frame, `${key} has a thumbnail`);
       assert.equal(frame.getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenA)}&section=${key}`);
-      assert.equal(frame.getAttribute("sandbox"), "allow-same-origin", "the thumbnail runs no scripts");
       assert.equal(frame.getAttribute("aria-hidden"), "true");
       assert.equal(frame.getAttribute("tabindex"), "-1");
     }

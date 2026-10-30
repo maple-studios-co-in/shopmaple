@@ -50,6 +50,12 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
   );
 }
 
+/**
+ * The box a homepage section draws. HomePage wraps each section in a `display: contents`
+ * element that has no box of its own, so measuring, scrolling and outlining use its first child.
+ */
+const sectionBox = (node: HTMLElement) => (node.firstElementChild as HTMLElement | null) ?? node;
+
 /** The parent window when this document is embedded by the same-origin admin, else null. */
 function embeddingParent(): Window | null {
   if (typeof window === "undefined" || window.parent === window) return null;
@@ -104,7 +110,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         if (message.section !== null && node.dataset.homeSection === message.section) {
           node.setAttribute("data-preview-highlight", "true");
           const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-          node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+          sectionBox(node).scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
         } else node.removeAttribute("data-preview-highlight");
       }
     }
@@ -117,7 +123,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     let current: HTMLElement | null = null;
     const place = () => {
       if (!current) return;
-      const rect = current.getBoundingClientRect();
+      const rect = sectionBox(current).getBoundingClientRect();
       setHover({ section: current.dataset.homeSection ?? "", top: Math.max(8, rect.top + 8), left: Math.max(8, rect.left + 8) });
     };
     function onOver(event: MouseEvent) {
@@ -160,10 +166,11 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
 }) {
   return (
     // Storefront markup inside the frame is not the admin's to class, so the section highlight
-    // reaches it with an arbitrary variant; the ribbon sits in space reserved at the bottom.
+    // reaches it with an arbitrary variant, on the section's own box (its wrapper is
+    // display: contents); the ribbon sits in space reserved at the bottom.
     <div
       data-admin-tokens=""
-      className="relative pb-[26px] [&_[data-home-section][data-preview-highlight=true]]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]]:outline-2 [&_[data-home-section][data-preview-highlight=true]]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]]:outline-primary [&_[data-home-section][data-preview-highlight=true]]:outline-solid [&_[data-home-section][data-preview-hover=true]]:outline-1 [&_[data-home-section][data-preview-hover=true]]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]]:outline-dashed motion-safe:[&_[data-home-section]]:transition-shadow motion-safe:[&_[data-home-section]]:duration-500"
+      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500"
       data-preview-version={version}
       data-preview-path={path}
       data-preview-view={view}
@@ -178,8 +185,9 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
 }
 
 /**
- * One homepage section on its own, for a section card's thumbnail. The card frames it without
- * scripts, so nothing here may depend on hydration: no ribbon, no link capture, no bridge.
+ * One homepage section on its own, for a section card's thumbnail. The address is served with a
+ * policy that blocks the app bundles, so nothing here may depend on hydration: no ribbon, no link
+ * capture, no bridge.
  */
 export function SectionThumbnailDocument({ section, children }: { section: string; children: ReactNode }) {
   return <div data-section-thumbnail={section} className="pointer-events-none select-none">{children}</div>;

@@ -280,6 +280,21 @@ test("inside the frame: the bridge announces its sections to the parent and scro
   } finally { await act(async () => root.unmount()); }
 });
 
+test("inside the frame: a focused section scrolls and highlights its own box, not its box-less display: contents wrapper", async () => {
+  const scrolled: string[] = [];
+  (dom.window.HTMLElement.prototype as any).scrollIntoView = function (this: HTMLElement) { scrolled.push(this.tagName); };
+  const parent = { postMessage: () => {} } as unknown as Window;
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(
+      <div><div data-home-section="values" className="contents"><section>Values</section></div><PreviewFrameBridge path="/" version={7} parentWindow={parent} /></div>,
+    ));
+    const focus = { source: previewMessageSource, type: "focus", section: "values" };
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: focus, origin: "http://localhost:3000", source: parent })); });
+    assert.deepEqual(scrolled, ["SECTION"]);
+  } finally { await act(async () => root.unmount()); }
+});
+
 test("inside the frame: hovering a draft section offers Edit, which selects that section in the editor; the published view offers nothing", async () => {
   const parentMessages: { data: any; origin: string }[] = [];
   const parent = { postMessage: (data: unknown, origin: string) => { parentMessages.push({ data, origin }); } } as unknown as Window;

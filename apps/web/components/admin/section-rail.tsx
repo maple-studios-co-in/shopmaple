@@ -42,9 +42,10 @@ export type ThumbnailSource = {
 };
 
 /**
- * One section drawn by the real storefront from the draft, scaled down. The frame runs no
- * scripts and takes no input; it loads once the card is on screen and reloads only when the
- * section's own content was saved with a change (sectionSignature), never on reorder or hide.
+ * One section drawn by the real storefront from the draft, scaled down. The frame address is
+ * served with a script policy that lets no app bundle load (next.config.ts), so nothing hydrates;
+ * it takes no input, loads once the card is on screen and reloads only when the section's own
+ * content was saved with a change (sectionSignature), never on reorder or hide.
  */
 export function SectionThumbnail({ section, content, source, width }: {
   section: HomeSectionKey; content: StorefrontContent; source: ThumbnailSource; width: number;
@@ -78,7 +79,7 @@ export function SectionThumbnail({ section, content, source, width }: {
   return (
     <div ref={box} className="relative shrink-0 overflow-hidden rounded-md bg-sunken ring-1 ring-line-soft" style={{ width, height }}>
       {frame && (
-        <iframe data-section-thumbnail-frame src={frame.src} title={`${sectionName(section)} thumbnail`} sandbox="allow-same-origin" aria-hidden="true"
+        <iframe data-section-thumbnail-frame src={frame.src} title={`${sectionName(section)} thumbnail`} aria-hidden="true"
           tabIndex={-1} loading="lazy" scrolling="no" referrerPolicy="same-origin" onLoad={() => setReady(true)}
           className="pointer-events-none absolute top-0 left-0 origin-top-left border-0 bg-white"
           style={{ width: frameWidth, height: frameHeight, transform: `scale(${width / frameWidth})` }} />
@@ -149,6 +150,9 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
         items={sections}
         getId={(section) => section.key}
         getLabel={(section) => sectionName(section.key)}
+        // Beside the live preview the list is narrow: cards drop their subtitle and Move buttons
+        // there (the drag handle still moves a card by keyboard) so the name stays readable.
+        className="@container"
         rowClassName={cn(rowCard, "gap-2.5 py-2 aria-[current=true]:border-primary aria-[current=true]:shadow-[0_0_0_1px_var(--primary)]")}
         onReorder={setSections}
         rowProps={(section) => ({
@@ -175,12 +179,12 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
                     onChange={(event) => setSections(sections.map((item) => item.key === section.key ? { ...item, enabled: event.target.checked } : item))} />
                   <span className={cn("truncate text-sm font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{name}</span>
                 </label>
-                <span className="truncate pl-6 text-xs text-muted-foreground">{section.enabled ? elsewhere ? `Content in ${elsewhere}` : "Content on this screen" : "Hidden from visitors"}</span>
+                <span className="truncate pl-6 text-xs text-muted-foreground @max-md:hidden">{section.enabled ? elsewhere ? `Content in ${elsewhere}` : "Content on this screen" : "Hidden from visitors"}</span>
               </div>
               <Button type="button" variant="ghost" size="sm" className="shrink-0"
                 aria-label={elsewhere ? (name === elsewhere ? `Edit ${name}` : `Edit ${name} in ${elsewhere}`) : `Edit ${name} content`}
                 onClick={() => openContent(section)}>Edit</Button>
-              <MoveButtons name={name} index={index} length={sections.length} onMove={(direction) => {
+              <MoveButtons className="@max-md:hidden" name={name} index={index} length={sections.length} onMove={(direction) => {
                 const next = [...sections];
                 [next[index], next[index + direction]] = [next[index + direction]!, next[index]!];
                 setSections(next);
