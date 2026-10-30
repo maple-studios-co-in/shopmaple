@@ -62,13 +62,13 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
       )!;
     await act(async () => button("Living Room").click());
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "true");
-    assert.equal(document.querySelectorAll(".maple-mega-column").length, 4);
+    assert.equal(document.querySelectorAll("[data-mega-column]").length, 4);
     assert.ok(document.querySelector('a[href="/collections/dining-chair"]'));
     await act(async () => button("Bedroom").click());
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "false");
-    assert.equal(document.querySelectorAll(".maple-mega-column").length, 3);
+    assert.equal(document.querySelectorAll("[data-mega-column]").length, 3);
     await act(async () =>
-      document.querySelector(".maple-mega a")!.dispatchEvent(
+      document.querySelector("[data-mega] a")!.dispatchEvent(
         new dom.window.KeyboardEvent("keydown", {
           key: "Escape",
           bubbles: true,
@@ -144,7 +144,7 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
       (button) => button.textContent === "Living Room",
     )!;
     await act(async () => living.click());
-    const panel = document.querySelector(".maple-mega")!;
+    const panel = document.querySelector("[data-mega]")!;
     assert.ok(
       panel.querySelector("img"),
       "menu should include a real furniture discovery image",
@@ -223,7 +223,7 @@ test("desktop mouse-only departure and focus outside still dismiss the menu", as
     await leaveWithMouse(document.querySelector("nav")!);
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     await act(async () => trigger.click());
-    await act(async () => document.querySelector<HTMLAnchorElement>(".maple-mega a")!.focus());
+    await act(async () => document.querySelector<HTMLAnchorElement>("[data-mega] a")!.focus());
     await act(async () => document.getElementById("outside")!.focus());
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, document.getElementById("outside"));
@@ -261,7 +261,7 @@ test("desktop mouse departure preserves the focused submenu until Escape", async
     await act(async () => root.render(<DesktopNavigation />));
     const trigger = [...document.querySelectorAll("button")].find(button => button.textContent === "Living Room")!;
     await act(async () => trigger.click());
-    const link = document.querySelector<HTMLAnchorElement>(".maple-mega a")!;
+    const link = document.querySelector<HTMLAnchorElement>("[data-mega] a")!;
     await act(async () => link.focus());
     await leaveWithMouse(document.querySelector("nav")!);
     assert.equal(trigger.getAttribute("aria-expanded"), "true", "mouse departure must preserve the focused panel");

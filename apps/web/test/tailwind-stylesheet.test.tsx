@@ -75,12 +75,11 @@ test("storefront tokens resolve to the design's values", () => {
 });
 
 test("no utility lands on a class name the legacy storefront still uses", () => {
-  // Class tokens in the storefront components that are not rebuilt on Tailwind, and class
-  // selectors in the storefront stylesheets.
+  // Class tokens in the top-level storefront components (rebuilt ones live in components/store
+  // and are only re-exported there), and class selectors in the storefront stylesheets.
   const legacy = new Set<string>();
   const tsx = readdirSync(web + "components").filter((name) => name.endsWith(".tsx")).map((name) => readFileSync(web + "components/" + name, "utf8"));
   for (const source of tsx) {
-    if (source.includes("@/components/store/")) continue;
     for (const [, classes] of source.matchAll(/className=["{`]+([^"`}]+)/g)) for (const token of classes!.split(/\s+/)) if (/^[a-z][a-z0-9-]*$/.test(token)) legacy.add(token);
   }
   for (const name of readdirSync(web + "styles").filter((file) => file.endsWith(".css") && !["admin.css", "tailwind.css"].includes(file))) {

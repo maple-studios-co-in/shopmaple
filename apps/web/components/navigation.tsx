@@ -9,6 +9,7 @@ import products from "../data/navigation-products.json";
 import { shopFile, shopMoney } from "../lib/format";
 import { recentProduct } from "../lib/search-products";
 import type { ProductCardModel } from "../lib/product-card-model";
+import { MegaPanel } from "./store/mega-panel";
 function CategoryLink({
   item,
   onNavigate,
@@ -67,7 +68,7 @@ export function DesktopNavigation({
         if (
           event.pointerType === "mouse" &&
           !event.currentTarget
-            .querySelector(".maple-mega")
+            .querySelector("[data-mega]")
             ?.contains(document.activeElement)
         ) {
           setActive(null);
@@ -111,7 +112,7 @@ export function DesktopNavigation({
                   setActive(item.id);
                   requestAnimationFrame(() =>
                     nav.current
-                      ?.querySelector<HTMLAnchorElement>(".maple-mega a")
+                      ?.querySelector<HTMLAnchorElement>("[data-mega] a")
                       ?.focus(),
                   );
                 }
@@ -119,81 +120,8 @@ export function DesktopNavigation({
             >
               {item.label}
             </button>
-            {active === item.id && (
-              <div
-                id={`maple-panel-${item.id}`}
-                className="maple-mega"
-                aria-labelledby={`maple-trigger-${item.id}`}
-              >
-                {item.feature !== "none" && (
-                  <div className="maple-mega-feature">
-                    <Image
-                      src={shopFile(
-                        item.feature === "bedroom"
-                          ? "engaged_9_1.jpg?v=1767448207"
-                          : "engaged_5.jpg?v=1767435623",
-                      )}
-                      alt={
-                        item.feature === "bedroom"
-                          ? "Upholstered bed"
-                          : "A thoughtfully furnished living room"
-                      }
-                      width={320}
-                      height={260}
-                      sizes="220px"
-                    />
-                    <span>{item.label}</span>
-                    <h2>{item.label}</h2>
-                    <Link href={item.href} onClick={() => setActive(null)}>
-                      View all <ArrowUpRight size={15} />
-                    </Link>
-                  </div>
-                )}
-                <div className="maple-mega-grid">
-                  {group?.columns
-                    .filter((column) =>
-                      column.links.some((link) => link.enabled),
-                    )
-                    .map((column) => (
-                      <div className="maple-mega-column" key={column.id}>
-                        {column.links
-                          .filter((link) => link.enabled)
-                          .map((link) => (
-                            <CategoryLink
-                              key={link.id}
-                              item={link}
-                              onNavigate={() => setActive(null)}
-                            />
-                          ))}
-                      </div>
-                    ))}
-                </div>
-                {siteChrome.desktopDiscovery.some((link) => link.enabled) && (
-                  <div className="maple-mega-discovery">
-                    {siteChrome.desktopDiscovery
-                      .filter((link) => link.enabled)
-                      .map((link) => (
-                        <Link
-                          key={link.id}
-                          href={chromeHref(link)}
-                          aria-label={
-                            link.enquirySubject === "Custom furniture" &&
-                            (link.label === "Fully Customizable" ||
-                              link.label === "Custom furniture")
-                              ? "Enquire about custom furniture"
-                              : undefined
-                          }
-                          onClick={() => setActive(null)}
-                        >
-                          <strong>{link.label}</strong>
-                          <span>
-                            {link.cta} <ArrowUpRight size={15} />
-                          </span>
-                        </Link>
-                      ))}
-                  </div>
-                )}
-              </div>
+            {active === item.id && group && (
+              <MegaPanel item={group} siteChrome={siteChrome} onNavigate={() => setActive(null)} />
             )}
           </div>
         ) : (

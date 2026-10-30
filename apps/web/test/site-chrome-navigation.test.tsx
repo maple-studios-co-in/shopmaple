@@ -49,20 +49,20 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
     assert.equal(trigger.textContent, "Lounge");
     await act(async () => trigger.click());
     assert.match(
-      document.querySelector(".maple-mega-feature img")!.getAttribute("src")!,
+      document.querySelector("[data-mega-feature] img")!.getAttribute("src")!,
       /engaged_5/,
     );
     assert.equal(
-      document.querySelector(".maple-mega-feature a")?.getAttribute("href"),
+      document.querySelector("[data-mega-feature] a")?.getAttribute("href"),
       "/collections/all",
     );
     assert.equal(
-      document.querySelector(".maple-mega-grid a")?.textContent,
+      document.querySelector("[data-mega-grid] a")?.textContent,
       "New seating",
     );
-    assert.equal(document.querySelectorAll(".maple-mega-grid a").length, 1);
+    assert.equal(document.querySelectorAll("[data-mega-grid] a").length, 1);
     const discovery = document.querySelector<HTMLAnchorElement>(
-      ".maple-mega-discovery a",
+      "[data-mega-discovery] a",
     )!;
     assert.equal(discovery.textContent?.trim(), "Made for youAsk us");
     const url = new URL(discovery.href);
@@ -82,10 +82,10 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
       "true",
     );
     assert.equal(
-      document.querySelector(".maple-mega h2")?.textContent,
+      document.querySelector("[data-mega] h2")?.textContent,
       "Relax",
     );
-    const link = document.querySelector<HTMLAnchorElement>(".maple-mega a")!;
+    const link = document.querySelector<HTMLAnchorElement>("[data-mega] a")!;
     await act(async () => {
       link.focus();
       link.dispatchEvent(
@@ -95,7 +95,7 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
         }),
       );
     });
-    assert.equal(document.querySelector(".maple-mega"), null);
+    assert.equal(document.querySelector("[data-mega]"), null);
     assert.equal(document.activeElement, trigger);
   } finally {
     await act(async () => root.unmount());
@@ -208,7 +208,7 @@ for (const mode of ["desktop", "mobile"] as const) {
       );
       await frame();
       const target = document.querySelector<HTMLAnchorElement>(
-        mode === "desktop" ? ".maple-mega a" : ".maple-drawer-submenu a",
+        mode === "desktop" ? "[data-mega] a" : ".maple-drawer-submenu a",
       )!;
       await act(async () => target.focus());
       value.navigation[0]!.enabled = false;
@@ -216,7 +216,7 @@ for (const mode of ["desktop", "mobile"] as const) {
       await frame();
       assert.equal(
         !!document.querySelector(
-          ".maple-mega,.maple-drawer-submenu,.maple-drawer-back",
+          "[data-mega],.maple-drawer-submenu,.maple-drawer-back",
         ),
         false,
       );
@@ -273,7 +273,7 @@ test("renamed enquiry links expose the edited label instead of the old default a
     );
     assert.equal(
       document
-        .querySelector(".maple-mega-discovery a")
+        .querySelector("[data-mega-discovery] a")
         ?.getAttribute("aria-label"),
       null,
     );

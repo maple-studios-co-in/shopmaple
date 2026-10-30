@@ -37,38 +37,6 @@
 .maple-desktop-nav > a:hover {
   color: #555;
 }
-.maple-mega {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: var(--paper);
-  border-bottom: 1px solid #e2e2e2;
-}
-.maple-mega-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 20px;
-  padding: 28px 40px 28px;
-}
-.maple-mega-column {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  padding-right: 20px;
-}
-.maple-mega-column:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  right: -10px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: #e2e2e2;
-}
-.maple-mega-column:not(:first-child) {
-  padding-left: 34px;
-}
 .maple-menu-link,
 .maple-menu-parent {
   display: block;
@@ -215,17 +183,6 @@
 .maple-menu-product del {
   color: #666;
 }
-@media (min-width: 750px) and (max-width: 1000px) {
-  .maple-mega-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-  .maple-mega-column:not(:first-child) {
-    padding-left: 8px;
-  }
-}
 @media (max-width: 749px) {
   .maple-desktop-nav,
   .utility-links,
@@ -284,37 +241,6 @@
   left: 0;
   right: 0;
 }
-.maple-mega {
-  left: 0;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) 190px;
-  gap: 24px;
-  padding: 24px;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 0 0 14px 14px;
-  box-shadow: 0 18px 30px #292d2814;
-  max-height: calc(100dvh - 190px);
-  overflow-y: auto;
-}
-.maple-mega-grid {
-  display: flex;
-  gap: 18px;
-  padding: 4px 0;
-}
-.maple-mega-column {
-  flex: 1;
-  padding: 0;
-  min-width: 0;
-}
-.maple-mega-column:not(:first-child) {
-  padding-left: 12px;
-}
-.maple-mega-column:not(:last-child)::after {
-  right: -8px;
-  background: #eeece7;
-}
 .maple-menu-link {
   font-size: 14px;
   line-height: 23.4px;
@@ -325,90 +251,6 @@
   font-size: 16px;
   padding-bottom: 10px;
   font-weight: 700;
-}
-.maple-mega-feature {
-  background: #f6f3ef;
-  padding: 12px;
-  border-radius: 8px;
-}
-.maple-mega-feature img {
-  width: 100%;
-  height: 146px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-.maple-mega-feature > span {
-  display: block;
-  color: var(--burgundy);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 16px;
-}
-.maple-mega-feature h2 {
-  font-size: 25px;
-  margin: 8px 0 16px;
-}
-.maple-mega-feature a {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--burgundy);
-  font-size: 11px;
-}
-.maple-mega-discovery {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #faf8f5;
-  padding: 10px 16px;
-  border-radius: 8px;
-}
-.maple-mega-discovery a {
-  padding: 16px 0;
-  font-size: 13px;
-}
-.maple-mega-discovery strong {
-  font-weight: 600;
-}
-.maple-mega-discovery span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 5px;
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
-}
-.maple-mega-discovery a:last-child {
-  margin-top: auto;
-  color: var(--burgundy);
-  border-top: 1px solid var(--line);
-}
-@media (min-width: 750px) and (max-width: 1100px) {
-  .maple-mega {
-    grid-template-columns: 160px minmax(0, 1fr);
-    gap: 18px;
-    padding: 18px;
-    left: 0;
-    width: 100%;
-  }
-  .maple-mega-discovery {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-  .maple-mega-discovery a:last-child {
-    margin: 0;
-    border: 0;
-  }
-  .maple-mega-feature img {
-    height: 120px;
-  }
-  .maple-mega-feature h2 {
-    font-size: 22px;
-  }
 }
 @media (max-width: 749px) {
   .header-actions .icon-button,
