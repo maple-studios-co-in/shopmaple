@@ -28,12 +28,12 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
   return (
     <AdminRoot aria-label="Draft preview" className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-20 flex flex-wrap items-center gap-x-4 gap-y-2.5 border-b border-line-soft bg-surface/90 px-[clamp(16px,3vw,28px)] py-2.5 backdrop-blur-md backdrop-saturate-150">
-        <strong className="inline-flex items-center gap-2 text-[13px] font-semibold text-primary"><span aria-hidden="true" className="size-[7px] rounded-full bg-primary" />Draft preview, not published</strong>
-        <span className="text-[12px] text-muted-foreground tabular-nums">
+        <strong className="inline-flex items-center gap-2 text-sm font-semibold text-primary"><span aria-hidden="true" className="size-[7px] rounded-full bg-primary" />Draft preview, not published</strong>
+        <span className="text-xs text-muted-foreground tabular-nums">
           Draft version {version}. {publishedVersion ? `Published version ${publishedVersion}.` : "Nothing published yet."} Link expires at{" "}
           {Number.isFinite(expires.getTime()) ? expires.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "an unknown time"}.
         </span>
-        <label className="flex items-center gap-2 text-[12px] font-semibold text-muted-foreground">
+        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           <span>Page</span>
           <NativeSelect size="sm" aria-label="Preview page" className="max-w-[260px] bg-card" value={current} onChange={(event) => router.push(`/admin/preview/${event.target.value}${query}`)}>
             {pages.map((page) => (
@@ -43,10 +43,10 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
         </label>
         <div role="group" aria-label="Preview width" className="inline-flex gap-0.5 rounded-full bg-black/[0.07] p-[3px]">
           {previewDevices.map((device) => (
-            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)} className="h-7 rounded-full px-3 text-[12.5px] font-semibold text-neutral outline-none transition-colors duration-150 ease-admin hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs">{device.label}</button>
+            <button key={device.key} type="button" aria-pressed={width === device.key} onClick={() => setWidth(device.key)} className="h-7 rounded-full px-3 text-xs font-semibold text-neutral focus-visible:outline-none transition-colors duration-150 ease-admin hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs">{device.label}</button>
           ))}
         </div>
-        <a href="/admin" className="ml-auto rounded-sm text-[12.5px] font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a>
+        <a href="/admin" className="ml-auto rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to editor</a>
       </header>
       <div className="flex flex-1 justify-center p-4">
         <iframe
@@ -142,7 +142,7 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
     >
       <PreviewNavigation token={token} navigate={navigate} view={view}>
         <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
-        <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-[11.5px] leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
+        <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
       </PreviewNavigation>
       <PreviewFrameBridge path={path} version={version} />
     </div>

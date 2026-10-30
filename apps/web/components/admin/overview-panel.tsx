@@ -13,10 +13,10 @@ function StatTile({ label, value, note }: { label: string; value: ReactNode; not
   return (
     <div className="rounded-xl bg-sunken/70 p-1 ring-1 ring-line-soft">
       <div className="grid h-full gap-3 rounded-[calc(var(--radius-xl)-4px)] bg-card px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-        <span className="text-[12px] font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
         <span className="flex items-baseline gap-2">
-          <strong className="text-[32px] leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums">{value}</strong>
-          <small className="text-[12.5px] text-muted-foreground">{note}</small>
+          <strong className="text-3xl leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums">{value}</strong>
+          <small className="text-xs text-muted-foreground">{note}</small>
         </span>
       </div>
     </div>
@@ -43,8 +43,8 @@ export function OverviewPanel({ content, session, onExpired, version, publishedV
       {session.user.canManageEnquiries === true && <div className="mt-8"><CrmSummary session={session} onExpired={onExpired} /></div>}
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card className="gap-3 py-5 shadow-xs">
-          <CardHeader className="px-5"><CardTitle className="text-[15px]"><h3>Publishing</h3></CardTitle></CardHeader>
-          <CardContent className="grid gap-2.5 px-5 text-[13.5px] leading-relaxed text-muted-foreground">
+          <CardHeader className="px-5"><CardTitle className="text-base"><h3>Publishing</h3></CardTitle></CardHeader>
+          <CardContent className="grid gap-2.5 px-5 text-sm leading-relaxed text-muted-foreground">
             <p>
               {session.user.role === "publisher"
                 ? "You can edit and publish. Save any unsaved changes before publishing."
@@ -60,8 +60,8 @@ export function OverviewPanel({ content, session, onExpired, version, publishedV
         </Card>
         <Card className="gap-3 py-5 shadow-xs">
           <CardHeader className="px-5">
-            <CardTitle className="text-[15px]"><h3>Storefront</h3></CardTitle>
-            <CardDescription className="text-[13.5px] leading-relaxed">Open the live storefront in a new tab, or use Live preview in the top bar to see the draft beside the editor.</CardDescription>
+            <CardTitle className="text-base"><h3>Storefront</h3></CardTitle>
+            <CardDescription className="text-sm leading-relaxed">Open the live storefront in a new tab, or use Live preview in the top bar to see the draft beside the editor.</CardDescription>
           </CardHeader>
           <CardContent className="px-5">
             <Button asChild variant="outline" size="sm">

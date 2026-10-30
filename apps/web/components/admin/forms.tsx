@@ -50,33 +50,33 @@ export function PreviewPanel({ eyebrow, footnote, tone = "card", className, chil
   return (
     <aside
       className={cn(
-        "grid gap-3 rounded-xl border p-5 text-[13.5px] leading-relaxed shadow-md [overflow-wrap:anywhere] @3xl:sticky @3xl:top-20",
+        "grid gap-3 rounded-xl border p-5 text-sm leading-relaxed shadow-md [overflow-wrap:anywhere] @3xl:sticky @3xl:top-20",
         tone === "accent" ? "border-transparent bg-primary text-primary-foreground" : "border-border bg-card text-foreground",
         className,
       )}
       {...props}
     >
-      <h3 className={cn("text-[11px] font-semibold tracking-[0.06em] uppercase", tone === "accent" ? "text-primary-foreground/80" : "text-faint")}>{eyebrow}</h3>
+      <h3 className={cn("text-2xs font-semibold tracking-[0.06em] uppercase", tone === "accent" ? "text-primary-foreground/80" : "text-faint")}>{eyebrow}</h3>
       {children}
-      <small className={cn("mt-2 block border-t pt-3 text-[11.5px]", tone === "accent" ? "border-primary-foreground/20 text-primary-foreground/80" : "border-line-soft text-muted-foreground")}>{footnote}</small>
+      <small className={cn("mt-2 block border-t pt-3 text-2xs", tone === "accent" ? "border-primary-foreground/20 text-primary-foreground/80" : "border-line-soft text-muted-foreground")}>{footnote}</small>
     </aside>
   );
 }
 
 /** The storefront-style title inside a preview card. */
 export function PreviewTitle({ className, ...props }: ComponentProps<"h4">) {
-  return <h4 className={cn("font-display text-[24px] leading-tight font-normal text-balance", className)} {...props} />;
+  return <h4 className={cn("font-display text-xl leading-tight font-normal text-balance", className)} {...props} />;
 }
 
 /** A short hint under a group of fields. */
 export function Hint({ className, ...props }: ComponentProps<"p">) {
-  return <p data-span="full" className={cn("max-w-[68ch] text-[12.5px] leading-relaxed text-muted-foreground", className)} {...props} />;
+  return <p data-span="full" className={cn("max-w-[68ch] text-xs leading-relaxed text-muted-foreground", className)} {...props} />;
 }
 
 /** An inline confirmation for a destructive step: what will happen, then the two choices. */
 export function ConfirmPanel({ children, actions }: { children: ReactNode; actions: ReactNode }) {
   return (
-    <div role="alert" className="grid gap-3 rounded-lg border border-danger/25 bg-danger-bg px-4 py-3.5 text-[13px] leading-relaxed text-foreground">
+    <div role="alert" className="grid gap-3 rounded-lg border border-danger/25 bg-danger-bg px-4 py-3.5 text-sm leading-relaxed text-foreground">
       <p className="max-w-[68ch]">{children}</p>
       <div className="flex flex-wrap gap-2">{actions}</div>
     </div>
@@ -88,7 +88,7 @@ export function DangerZone({ children, note }: { children: ReactNode; note?: Rea
   return (
     <div className="mt-8 grid justify-items-start gap-3 border-t border-line-soft pt-5">
       {children}
-      {note && <p className="max-w-[68ch] text-[12.5px] text-muted-foreground">{note}</p>}
+      {note && <p className="max-w-[68ch] text-xs text-muted-foreground">{note}</p>}
     </div>
   );
 }
@@ -276,8 +276,8 @@ export function CampaignFields({
               eyebrow="Copy preview"
               footnote="Local copy preview · Artwork is managed separately"
             >
-              <p className="text-[12px] font-semibold tracking-[0.04em] uppercase">{campaign.label}</p>
-              <PreviewTitle className="text-[26px]">
+              <p className="text-xs font-semibold tracking-[0.04em] uppercase">{campaign.label}</p>
+              <PreviewTitle className="text-2xl">
                 {campaign.headline.map((line, index) => (
                   <span key={index}>
                     {line}
@@ -287,8 +287,8 @@ export function CampaignFields({
               </PreviewTitle>
               <p>{campaign.supporting}</p>
               <p className="font-medium">{campaign.offer.join(" · ")}</p>
-              <p className="text-[12.5px] text-primary-foreground/85">{campaign.eligibility}</p>
-              <span className="w-fit rounded-sm bg-card px-4 py-2 text-[12.5px] font-semibold text-primary">{campaign.cta}</span>
+              <p className="text-xs text-primary-foreground/85">{campaign.eligibility}</p>
+              <span className="w-fit rounded-sm bg-card px-4 py-2 text-xs font-semibold text-primary">{campaign.cta}</span>
             </PreviewPanel>
           </EditorWithPreview>
         </>
@@ -337,7 +337,7 @@ export function InstagramFields({
         description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers."
         actions={posts.length > 0 && (
           <>
-            <span className="text-[12px] text-muted-foreground tabular-nums">{posts.length} of 30 posts</span>
+            <span className="text-xs text-muted-foreground tabular-nums">{posts.length} of 30 posts</span>
             {addPost}
           </>
         )}
@@ -479,7 +479,7 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
         description="Create a simple informational page at /pages/your-slug. Existing storefront and enquiry routes are reserved."
         actions={content.pages.length > 0 && (
           <>
-            <span className="text-[12px] text-muted-foreground tabular-nums">{content.pages.length} of 20 pages</span>
+            <span className="text-xs text-muted-foreground tabular-nums">{content.pages.length} of 20 pages</span>
             {addPageButton}
           </>
         )}
@@ -671,7 +671,7 @@ export function PageFields({ content, onChange, session, onExpired, onSelectedPa
               ? <div data-plain-copy className="whitespace-pre-wrap [overflow-wrap:anywhere]">{page.body}</div>
               : <div className="store-prose"><AuthoredArticleBody blocks={page.blocks} preview /></div>}
             {page.banner && (
-              <p className="rounded-md bg-sunken px-3 py-2 text-[12.5px] text-foreground">
+              <p className="rounded-md bg-sunken px-3 py-2 text-xs text-foreground">
                 Banner: {page.banner.alt || "Add an image description"} ·{" "}
                 {page.banner.label}
               </p>

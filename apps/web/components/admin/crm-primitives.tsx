@@ -50,7 +50,7 @@ export function StageChip({ stage, children }: { stage: string; children?: React
   return <Badge variant="secondary" data-stage={stage} className={cn("rounded-md border-0 font-semibold", stageTone[stage] ?? stageTone.new)}>{label}{children}</Badge>;
 }
 export function Avatar({ email, title, className }: { email: string; title?: string; className?: string }) {
-  return <span data-avatar title={title ?? email} aria-label={title ?? email} className={cn("inline-grid size-7 shrink-0 place-items-center rounded-[9px] bg-primary text-[11px] font-bold tracking-[0.04em] text-primary-foreground", className)}>{initials(email)}</span>;
+  return <span data-avatar title={title ?? email} aria-label={title ?? email} className={cn("inline-grid size-7 shrink-0 place-items-center rounded-[9px] bg-primary text-2xs font-bold tracking-[0.04em] text-primary-foreground", className)}>{initials(email)}</span>;
 }
 const dueTone: Record<DueState, string> = { overdue: "bg-danger-bg text-danger", today: "bg-warning-bg text-warning", upcoming: "bg-neutral-bg text-neutral" };
 export function DueBadge({ state, children }: { state: DueState; children?: ReactNode }) {
@@ -66,8 +66,8 @@ export function Skeleton({ rows = 3, variant = "row" }: { rows?: number; variant
 export function EmptyState({ title, children, action, icon }: { title: string; children?: ReactNode; action?: ReactNode; icon?: ReactNode }) {
   return <div data-empty className="grid justify-items-start gap-2 rounded-xl border border-dashed border-border bg-surface px-6 py-8">
     {icon && <span aria-hidden="true" className="mb-1 grid size-9 place-items-center rounded-lg bg-accent-tint text-primary [&_svg]:size-[18px]">{icon}</span>}
-    <p className="text-[15px] font-semibold text-foreground">{title}</p>
-    {children && <p className="max-w-[56ch] text-[13px] leading-relaxed text-muted-foreground">{children}</p>}
+    <p className="text-base font-semibold text-foreground">{title}</p>
+    {children && <p className="max-w-[56ch] text-sm leading-relaxed text-muted-foreground">{children}</p>}
     {action && <div className="mt-2 flex flex-wrap gap-2">{action}</div>}
   </div>;
 }
@@ -78,7 +78,7 @@ const noticeTone = {
 } as const;
 /** An inline message: errors are alerts, confirmations are statuses, info is neither. */
 export function Notice({ tone, children, className }: { tone: "error" | "status" | "info"; children: ReactNode; className?: string }) {
-  return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-[12.5px] leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
+  return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
 }
 
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };

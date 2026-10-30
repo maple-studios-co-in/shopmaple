@@ -16,7 +16,7 @@ import { SortableList, type SortableRowProps } from "./sortable-list";
 export function ContentPanel({ title, children, className, ...props }: Omit<ComponentProps<"details">, "title"> & { title: ReactNode }) {
   return (
     <details className={cn("group/panel min-w-0 rounded-lg border border-border bg-card shadow-xs", className)} {...props}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-4 py-3 text-[13.5px] font-medium text-foreground outline-none select-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-foreground focus-visible:outline-none select-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
         <ChevronRight aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-admin group-open/panel:rotate-90 motion-reduce:transition-none" />
         {title}
       </summary>
@@ -50,7 +50,7 @@ export function ToggleRows<T extends { key: string; enabled: boolean }>({ items,
   const moveTo = onMove ?? reorder;
   return (
     <SortableList items={items} getId={item => item.key} getLabel={item => name(item)} className={className}
-      rowClassName={cn(rowCard, "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60")}
+      rowClassName={cn(rowCard, "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60")}
       onReorder={(next, moved) => reorder(next, moved)}
       rowProps={rowProps}
       renderItem={(item, index, handle) => (

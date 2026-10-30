@@ -19,7 +19,7 @@ import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 const rails = [{ key: "bestsellers", label: "Bestsellers" }, { key: "chairs", label: "Chairs" }] as const;
 const tileGroups = [{ key: "categories", label: "Category", singular: "category" }, { key: "offers", label: "Offer", singular: "offer" }] as const;
 const limit = 12;
-const focusRing = "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60";
+const focusRing = "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60";
 /** A tile row holds a block of fields: the row card stacked vertically. */
 const tileCard = cn(rowCard, "grid items-stretch gap-4 p-4", focusRing);
 function Count({ value }: { value: number }) {
@@ -27,8 +27,8 @@ function Count({ value }: { value: number }) {
 }
 function ProductName({ title, handle }: { title: string; handle: string }) {
   return <div className="min-w-0 flex-1">
-    <strong className="block truncate text-[13.5px] font-medium text-foreground">{title}</strong>
-    <p className="truncate text-[12px] text-muted-foreground tabular-nums">{handle}</p>
+    <strong className="block truncate text-sm font-medium text-foreground">{title}</strong>
+    <p className="truncate text-xs text-muted-foreground tabular-nums">{handle}</p>
   </div>;
 }
 
@@ -142,15 +142,15 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
       <SectionHeading className="mt-0 mb-0">Find products</SectionHeading>
       <form className="flex flex-wrap items-end gap-2" onSubmit={event => { event.preventDefault(); void load(query.trim().slice(0, 80), 1); }}>
         <label className="grid min-w-0 flex-1 basis-60 gap-2">
-          <span className="text-[12.5px] font-medium text-foreground">Search catalog</span>
-          <Input aria-label="Search catalog" ref={remember("search")} value={query} maxLength={80} className="h-10 bg-card text-[13.5px]" onChange={event => setQuery(event.currentTarget.value)} />
+          <span className="text-xs font-medium text-foreground">Search catalog</span>
+          <Input aria-label="Search catalog" ref={remember("search")} value={query} maxLength={80} className="h-10 bg-card text-sm" onChange={event => setQuery(event.currentTarget.value)} />
         </label>
         <Button type="submit" variant="outline" className="h-10"><Search aria-hidden="true" strokeWidth={1.5} />Search products</Button>
       </form>
       {busy && <div><Skeleton rows={3} /><p role="status" className="sr-only">Loading products…</p></div>}
       {error && <Notice tone="error" className="items-center justify-between">{error} <Button type="button" variant="outline" size="xs" onClick={() => void load(search.query, search.page)}>Retry products</Button></Notice>}
       {results && <>
-        <p role="status" className="text-[12.5px] text-muted-foreground tabular-nums">{results.products.length === 0 ? "No products found. Try another search." : `${results.total} products · Page ${results.page}`}</p>
+        <p role="status" className="text-xs text-muted-foreground tabular-nums">{results.products.length === 0 ? "No products found. Try another search." : `${results.total} products · Page ${results.page}`}</p>
         {results.products.length > 0 && <ul className="grid gap-2">{results.products.map(product => <li key={product.handle} className={cn(rowCard, "flex-wrap")}>
           <ProductName title={product.title} handle={product.handle} />
           <div className="flex flex-wrap items-center gap-1.5">{rails.map(rail => {
@@ -171,7 +171,7 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
     </section>
     {tileGroups.map(group => <section key={group.key} aria-label={`${group.label} tiles`} className="mt-10 grid gap-3">
       <SectionHeading className="mt-0 mb-0" description="Use the collection handle from its store URL, such as chairs. Add an image and review the description before enabling a new tile.">{group.label} tiles<Count value={current[group.key].length} /></SectionHeading>
-      {group.key === "offers" && <Prose className="text-[12.5px]">Offer artwork contains its visible marketing copy. The title identifies the tile here; the image description provides accessible text.</Prose>}
+      {group.key === "offers" && <Prose className="text-xs">Offer artwork contains its visible marketing copy. The title identifies the tile here; the image description provides accessible text.</Prose>}
       {current[group.key].length === 0 && <EmptyState title="No tiles yet">Add a tile below, or use Homepage section visibility to hide this section.</EmptyState>}
       <SortableList items={current[group.key]} getId={tile => tile.key} getLabel={(_, index) => `${group.singular} tile ${index + 1}`} tag="div" rowTag="fieldset"
         rowClassName={tileCard}
@@ -181,7 +181,7 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
         <legend className="sr-only">{group.label} tile {index + 1}</legend>
         <div className="-my-1 -ml-1 flex min-w-0 items-center gap-2">
           {grip}
-          <span aria-hidden="true" className="text-[13px] font-semibold text-foreground">{group.label} tile {index + 1}</span>
+          <span aria-hidden="true" className="text-sm font-semibold text-foreground">{group.label} tile {index + 1}</span>
           {!tile.enabled && <Badge variant="secondary" className="rounded-md border-0 bg-neutral-bg font-semibold text-neutral">Hidden</Badge>}
           <div className="ml-auto flex items-center gap-0.5">
             <MoveButtons name={`${group.singular} tile ${index + 1}`} index={index} length={current[group.key].length} onMove={direction => {

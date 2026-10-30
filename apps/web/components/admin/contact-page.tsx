@@ -46,7 +46,7 @@ function ContactTimeline({ entries, staff, onOpenEnquiry }: { entries: ContactTi
       meta: <>
         <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
         {actor && <> by {actor}</>}
-        {entry.enquiryId && <> on <Button type="button" variant="link" size="xs" className="h-auto px-0.5 text-[12px]" onClick={() => onOpenEnquiry(entry.enquiryId!)}>enquiry {entry.enquiryId.slice(4, 12)}</Button></>}
+        {entry.enquiryId && <> on <Button type="button" variant="link" size="xs" className="h-auto px-0.5 text-xs" onClick={() => onOpenEnquiry(entry.enquiryId!)}>enquiry {entry.enquiryId.slice(4, 12)}</Button></>}
       </>,
     };
   });
@@ -130,12 +130,12 @@ export function ContactPage({ session, contactId, onDenied, onOpenEnquiry, onBac
   }
   const field = (key: keyof typeof draft, label: string, maxLength: number) =>
     <Field label={label} value={draft[key]} maxLength={maxLength} onChange={value => setDraft(current => ({ ...current, [key]: value }))} />;
-  const subheading = "text-[13.5px] font-semibold text-foreground";
+  const subheading = "text-sm font-semibold text-foreground";
   return <section className="grid gap-5" aria-label="Contact" aria-busy={loading || busy}>
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="grid gap-2">
         <Button type="button" variant="ghost" size="sm" className="-ml-2 w-fit text-muted-foreground" onClick={onBack}><ArrowLeft aria-hidden="true" strokeWidth={1.5} />{backLabel}</Button>
-        <h3 ref={heading} tabIndex={-1} className="text-[22px] leading-tight font-semibold tracking-[-0.01em] text-foreground outline-none [overflow-wrap:anywhere]">{contact?.name || (loading ? "Loading contact" : "Contact")}</h3>
+        <h3 ref={heading} tabIndex={-1} className="text-xl leading-tight font-semibold tracking-[-0.01em] text-foreground focus-visible:outline-none [overflow-wrap:anywhere]">{contact?.name || (loading ? "Loading contact" : "Contact")}</h3>
       </div>
       {contact && !editing && <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" variant="outline" disabled={busy} onClick={startEdit}><Pencil aria-hidden="true" strokeWidth={1.5} />Edit contact</Button>
@@ -145,7 +145,7 @@ export function ContactPage({ session, contactId, onDenied, onOpenEnquiry, onBac
     {loading && !contact && <Skeleton rows={2} variant="tile" />}
     {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" onClick={() => void load()}>Try again</Button></div>}
     {contact && !editing && <Card className="gap-0 px-5 py-4 shadow-xs">
-      <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2 lg:grid-cols-4 [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-[12px] [&_dt]:text-muted-foreground [&>div]:grid [&>div]:gap-0.5">
+      <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-4 [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-xs [&_dt]:text-muted-foreground [&>div]:grid [&>div]:gap-0.5">
         <div><dt>Email</dt><dd>{contact.email}</dd></div>
         <div><dt>Phone</dt><dd>{contact.phone || "Not provided"}</dd></div>
         <div><dt>City</dt><dd>{contact.city || "Not provided"}</dd></div>
@@ -159,9 +159,9 @@ export function ContactPage({ session, contactId, onDenied, onOpenEnquiry, onBac
         {field("name", "Contact name", 100)}
         {field("phone", "Phone", 30)}
         {field("city", "City", 100)}
-        <div className="grid gap-1.5">{field("tags", "Tags", 1000)}<p className="text-[12px] text-muted-foreground">Comma separated, for example trade, repeat.</p></div>
+        <div className="grid gap-1.5">{field("tags", "Tags", 1000)}<p className="text-xs text-muted-foreground">Comma separated, for example trade, repeat.</p></div>
         <Field label="Internal notes" value={draft.notes} maxLength={5000} multiline onChange={value => setDraft(current => ({ ...current, notes: value }))} />
-        <p data-span="full" className="text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]">Email is the contact key and cannot be edited here: {contact.email}</p>
+        <p data-span="full" className="text-xs text-muted-foreground [overflow-wrap:anywhere]">Email is the contact key and cannot be edited here: {contact.email}</p>
       </FieldGrid></fieldset>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={busy || stale || !draft.name.trim()} aria-busy={busy}>{busy ? "Saving contact…" : "Save contact"}</Button>
@@ -177,7 +177,7 @@ export function ContactPage({ session, contactId, onDenied, onOpenEnquiry, onBac
           <h4 className={subheading}>Enquiries</h4>
           {enquiries.length === 0 && <EmptyState title="No enquiries linked yet.">Enquiries from this email or phone number will attach to this contact automatically.</EmptyState>}
           {enquiries.length > 0 && <ul className="grid gap-2">{enquiries.map(row => <li key={row.id}><div className={rowCard} data-enquiry-row={row.id}>
-            <div className="grid min-w-0 flex-1 gap-0.5"><span className="text-[13.5px] font-semibold text-foreground [overflow-wrap:anywhere]">{row.product || "No product noted"}</span><span className="text-[12px] text-muted-foreground">{kindLabels[row.kind] ?? row.kind} enquiry, {ageLabel(row.createdAt, today) === "Today" ? "today" : `${ageLabel(row.createdAt, today)} ago`}</span></div>
+            <div className="grid min-w-0 flex-1 gap-0.5"><span className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">{row.product || "No product noted"}</span><span className="text-xs text-muted-foreground">{kindLabels[row.kind] ?? row.kind} enquiry, {ageLabel(row.createdAt, today) === "Today" ? "today" : `${ageLabel(row.createdAt, today)} ago`}</span></div>
             <StageChip stage={row.status} />
             <Button type="button" size="sm" variant="outline" onClick={() => onOpenEnquiry(row.id)}>Open enquiry</Button>
           </div></li>)}</ul>}
@@ -224,7 +224,7 @@ export function ContactsDirectory({ session, onDenied, onOpenContact }: { sessio
   useEffect(() => { active.current = true; void load(); return () => { active.current = false; sequence.current++; }; }, [load, session.user.id]);
   return <section className="grid gap-4" aria-label="Contacts" aria-busy={loading}>
     <form className="flex flex-wrap items-end gap-2 rounded-xl border border-line-soft bg-surface p-4" onSubmit={event => { event.preventDefault(); setQuery(term.trim()); }}>
-      <label className="grid min-w-64 flex-1 gap-1.5 text-[12px] font-medium text-muted-foreground">Search contacts<Input aria-label="Search contacts" className="h-8 bg-card text-[13px]" value={term} maxLength={100} placeholder="Name, email, phone or city" onInput={event => setTerm(event.currentTarget.value)} onChange={() => {}} /></label>
+      <label className="grid min-w-64 flex-1 gap-1.5 text-xs font-medium text-muted-foreground">Search contacts<Input aria-label="Search contacts" className="h-8 bg-card text-sm" value={term} maxLength={100} placeholder="Name, email, phone or city" onInput={event => setTerm(event.currentTarget.value)} onChange={() => {}} /></label>
       <Button type="submit" size="sm" disabled={loading}><Search aria-hidden="true" strokeWidth={1.5} />Search</Button>
       {query && <Button type="button" size="sm" variant="ghost" onClick={() => { setTerm(""); setQuery(""); }}>Clear</Button>}
     </form>
@@ -232,8 +232,8 @@ export function ContactsDirectory({ session, onDenied, onOpenContact }: { sessio
     {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" onClick={() => void load()}>Try again</Button></div>}
     {!loading && !error && items.length === 0 && <EmptyState title={query ? "No contacts match that search." : "No contacts yet."}>{query ? "Try part of a name, email address, phone number or city." : "Contacts are created automatically from enquiries."}</EmptyState>}
     {items.length > 0 && <ul className="grid gap-2">{items.map(contact => <li key={contact.id}><div className={cn(rowCard, "flex-wrap")} data-contact-row={contact.id}>
-      <div className="grid min-w-44 flex-1 gap-0.5"><span className="text-[13.5px] font-semibold text-foreground [overflow-wrap:anywhere]">{contact.name || contact.email}</span><span className="text-[12px] text-muted-foreground [overflow-wrap:anywhere]">{contact.email}</span></div>
-      <div className="grid min-w-32 gap-0.5 text-[12.5px] text-muted-foreground"><span>{contact.phone || "No phone"}</span><span>{contact.city || "No city"}</span></div>
+      <div className="grid min-w-44 flex-1 gap-0.5"><span className="text-sm font-semibold text-foreground [overflow-wrap:anywhere]">{contact.name || contact.email}</span><span className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{contact.email}</span></div>
+      <div className="grid min-w-32 gap-0.5 text-xs text-muted-foreground"><span>{contact.phone || "No phone"}</span><span>{contact.city || "No city"}</span></div>
       {contact.tags.length > 0 && <div className="flex flex-wrap gap-1.5">{contact.tags.map(tag => <Badge key={tag} variant="secondary" className="rounded-md">{tag}</Badge>)}</div>}
       <Button type="button" size="sm" variant="outline" className="ml-auto" aria-label={`Open contact ${contact.name || contact.email}`} onClick={() => onOpenContact(contact.id)}>Open contact</Button>
     </div></li>)}</ul>}

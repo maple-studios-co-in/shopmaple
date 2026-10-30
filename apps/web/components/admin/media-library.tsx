@@ -111,10 +111,10 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
   {Heading === "h2"
    ? <PanelHeader title="Media library" description={description} actions={uploadButton(headerTrigger)} />
    : <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-    <div className="grid max-w-[68ch] gap-1"><h3 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Media library</h3><p className="text-[12.5px] leading-relaxed text-muted-foreground">{description}</p></div>
+    <div className="grid max-w-[68ch] gap-1"><h3 className="text-base font-semibold tracking-[-0.01em] text-foreground">Media library</h3><p className="text-xs leading-relaxed text-muted-foreground">{description}</p></div>
     {uploadButton(headerTrigger)}
    </div>}
-  <p aria-live="polite" className="mb-3 min-h-[18px] text-[12.5px] tabular-nums text-muted-foreground">{status}</p>
+  <p aria-live="polite" className="mb-3 min-h-[18px] text-xs tabular-nums text-muted-foreground">{status}</p>
   {error&&<Notice tone="error" className="mb-4 items-center justify-between">{error} <Button type="button" size="xs" variant="outline" disabled={busy} onClick={()=>void load()}>Retry</Button></Notice>}
   {busy&&assets.length===0&&!error&&<><p role="status" className="sr-only">Loading images</p><MediaGridSkeleton /></>}
   {!busy&&!error&&loaded&&assets.length===0&&<EmptyState icon={<ImageUp strokeWidth={1.5} />} title="No images yet" action={uploadButton()}>Upload your first image. It stays private until a published page uses it.</EmptyState>}
@@ -127,10 +127,10 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
       {selectable&&<label className="absolute top-2 left-2 grid size-8 cursor-pointer place-items-center rounded-md bg-card/95 shadow-xs"><NativeCheckbox aria-label={`Select ${asset.label}`} checked={isSelected} onChange={event=>toggle(asset.id,event.currentTarget.checked)} /></label>}
      </div>
      <div className="grid gap-1.5 p-3">
-      <p title={asset.label} className="truncate text-[13px] font-medium text-foreground">{asset.label}</p>
+      <p title={asset.label} className="truncate text-sm font-medium text-foreground">{asset.label}</p>
       <div className="flex items-center justify-between gap-2">
-       <span className="text-[12px] tabular-nums text-muted-foreground">{asset.width} × {asset.height} · {Math.ceil(asset.bytes/1024)} KB</span>
-       <Badge variant="outline" className={cn("text-[11px]", asset.publicAt ? "border-success/20 bg-success-bg text-success" : "border-border bg-neutral-bg text-neutral")}>{asset.publicAt?"Published":"Private"}</Badge>
+       <span className="text-xs tabular-nums text-muted-foreground">{asset.width} × {asset.height} · {Math.ceil(asset.bytes/1024)} KB</span>
+       <Badge variant="outline" className={cn("text-2xs", asset.publicAt ? "border-success/20 bg-success-bg text-success" : "border-border bg-neutral-bg text-neutral")}>{asset.publicAt?"Published":"Private"}</Badge>
       </div>
       {onSelect&&<Button type="button" size="sm" variant="outline" className="mt-1 w-full" disabled={busy} onClick={()=>onSelect(asset)}>Use image<span className="sr-only">: {asset.label}</span></Button>}
      </div>
@@ -139,8 +139,8 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
   })}</ul>}
   {cursor&&<div className="mt-6 flex justify-center"><Button type="button" variant="outline" disabled={busy} onClick={()=>void load(cursor)}>Load more</Button></div>}
   {chosen.length>0&&<div role="toolbar" aria-label="Selected images" onKeyDown={toolbarKeys} className="sticky bottom-4 z-10 mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-card px-4 py-3 shadow-lg motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
-   <span className="text-[13.5px] font-medium tabular-nums text-foreground">{chosen.length} selected</span>
-   {copied&&<span role={copied.tone === "error" ? "alert" : "status"} className={cn("text-[12.5px]", copied.tone === "error" ? "text-danger" : "text-muted-foreground")}>{copied.text}</span>}
+   <span className="text-sm font-medium tabular-nums text-foreground">{chosen.length} selected</span>
+   {copied&&<span role={copied.tone === "error" ? "alert" : "status"} className={cn("text-xs", copied.tone === "error" ? "text-danger" : "text-muted-foreground")}>{copied.text}</span>}
    <div className="ml-auto flex flex-wrap gap-2">
     <Button type="button" size="sm" variant="outline" onClick={()=>void copyLinks()}><Copy aria-hidden="true" strokeWidth={1.5} />Copy links</Button>
     <Button type="button" size="sm" variant="ghost" onClick={clearSelection}><X aria-hidden="true" strokeWidth={1.5} />Clear selection</Button>
@@ -149,16 +149,16 @@ export function MediaLibrary({ session, onExpired, onSelect, heading: Heading = 
   <Dialog open={uploadOpen} onOpenChange={open=>{if(uploading===null){setUploadOpen(open);if(!open)setUploadError("");}}}>
    <DialogContent aria-busy={uploading!==null} className="bg-card sm:max-w-md" onKeyDown={event=>{if(event.key==="Escape")event.stopPropagation();}} onCloseAutoFocus={event=>{event.preventDefault();(lastTrigger.current?.isConnected?lastTrigger.current:headerTrigger.current)?.focus();}}>
     <DialogHeader>
-     <DialogTitle className="text-[15px]">Upload an image</DialogTitle>
-     <DialogDescription className="text-[12.5px]">JPEG, PNG or WebP up to 8 MiB. It stays private until you publish content that uses it.</DialogDescription>
+     <DialogTitle className="text-base">Upload an image</DialogTitle>
+     <DialogDescription className="text-xs">JPEG, PNG or WebP up to 8 MiB. It stays private until you publish content that uses it.</DialogDescription>
     </DialogHeader>
     <label className="grid cursor-pointer justify-items-center gap-1.5 rounded-lg border border-dashed border-input bg-surface px-6 py-8 text-center transition-colors duration-150 ease-admin hover:bg-accent has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-ring/60 has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60">
      <ImageUp aria-hidden="true" strokeWidth={1.5} className="mb-1 size-6 text-primary" />
-     <span className="text-[13.5px] font-medium text-foreground">Upload image</span>
-     <span id={hint} className="text-[12.5px] text-muted-foreground">Choose a file from your computer</span>
+     <span className="text-sm font-medium text-foreground">Upload image</span>
+     <span id={hint} className="text-xs text-muted-foreground">Choose a file from your computer</span>
      <input type="file" aria-label="Upload image" aria-describedby={hint} className="sr-only" accept={accepted.join(",")} disabled={uploading!==null} onChange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value="";if(file)void upload(file);}}/>
     </label>
-    {uploading!==null&&<p role="status" className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><LoaderCircle aria-hidden="true" strokeWidth={1.5} className="size-4 motion-safe:animate-spin" /><span className="truncate">Uploading {uploading}</span></p>}
+    {uploading!==null&&<p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle aria-hidden="true" strokeWidth={1.5} className="size-4 motion-safe:animate-spin" /><span className="truncate">Uploading {uploading}</span></p>}
     {uploadError&&<Notice tone="error">{uploadError}</Notice>}
     <DialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={uploading!==null}>Cancel</Button></DialogClose></DialogFooter>
    </DialogContent>

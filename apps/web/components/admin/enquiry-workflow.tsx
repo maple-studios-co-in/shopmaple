@@ -34,14 +34,14 @@ export function Timeline({ items, label }: { items: TimelineItem[]; label: strin
   return <ol data-timeline aria-label={label} className="relative grid gap-4 before:absolute before:top-2 before:bottom-2 before:left-[5px] before:w-px before:bg-line-soft">
     {items.map(item => <li key={item.id} data-timeline-entry={item.id} data-kind={item.kind} className="relative grid min-w-0 gap-1 pl-6 [overflow-wrap:anywhere]">
       <span aria-hidden="true" data-timeline-marker className={cn("absolute top-[5px] left-0 size-[11px] rounded-full ring-[3px] ring-background", markerTone[item.kind])} />
-      <span className="text-[13px] leading-snug font-semibold text-foreground">{item.title}</span>
-      {item.body && <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.body}</p>}
-      <span className="text-[12px] text-muted-foreground tabular-nums">{item.meta}</span>
+      <span className="text-sm leading-snug font-semibold text-foreground">{item.title}</span>
+      {item.body && <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.body}</p>}
+      <span className="text-xs text-muted-foreground tabular-nums">{item.meta}</span>
     </li>)}
   </ol>;
 }
-const subheading = "text-[13.5px] font-semibold text-foreground";
-const fieldLabel = "grid gap-1.5 text-[12.5px] font-medium text-foreground";
+const subheading = "text-sm font-semibold text-foreground";
+const fieldLabel = "grid gap-1.5 text-xs font-medium text-foreground";
 const activityKind = (action: EnquiryActivity["action"]): TimelineKind => action === "status_changed" ? "stage" : action.startsWith("email") ? "email" : action.startsWith("task") ? "task" : action === "note" ? "note" : "plain";
 
 export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, emailEnabled = null }: {
@@ -150,17 +150,17 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
     <div className="grid gap-3">
       <div className="grid gap-1">
         <h4 className={subheading}>Pipeline stage</h4>
-        <p className="flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted-foreground">Current: <StageChip stage={detail.status} /> Every change is recorded with your name. Lost needs a short reason.</p>
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">Current: <StageChip stage={detail.status} /> Every change is recorded with your name. Lost needs a short reason.</p>
       </div>
       <div role="group" aria-label="Pipeline stage" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border bg-surface p-1">
         {stageOptions.map(([stage, label]) => <Button key={stage} type="button" size="sm" variant="ghost" aria-pressed={detail.status === stage} disabled={busy || stale || replyBusy || detail.status === stage}
           aria-busy={pending === "stage" ? true : undefined}
-          className="h-7 px-3 text-[12.5px] aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:disabled:opacity-100"
+          className="h-7 px-3 text-xs aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:disabled:opacity-100"
           onClick={() => { if (stage === "lost") { setLostPrompt(true); return; } setLostPrompt(false); void save("stage", stage); }}>{label}</Button>)}
       </div>
-      {detail.status === "lost" && detail.lostReason && <p className="rounded-md border border-line-soft bg-surface px-3 py-2 text-[12.5px] text-muted-foreground">Reason: {detail.lostReason}</p>}
+      {detail.status === "lost" && detail.lostReason && <p className="rounded-md border border-line-soft bg-surface px-3 py-2 text-xs text-muted-foreground">Reason: {detail.lostReason}</p>}
       {lostPrompt && detail.status !== "lost" && <div className="grid max-w-[480px] gap-2 rounded-lg border border-border bg-card p-3 shadow-xs">
-        <label className={fieldLabel}>Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={lostReason} maxLength={500} rows={2} disabled={busy} className="min-h-16 bg-card text-[13px]" onInput={event => setLostReason(event.currentTarget.value)} /></label>
+        <label className={fieldLabel}>Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={lostReason} maxLength={500} rows={2} disabled={busy} className="min-h-16 bg-card text-sm" onInput={event => setLostReason(event.currentTarget.value)} /></label>
         <div className="flex gap-2">
           <Button type="button" size="sm" disabled={busy || stale || !lostReason.trim()} onClick={() => void save("stage", "lost")}>Confirm lost</Button>
           <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => { setLostPrompt(false); setLostReason(""); }}>Cancel</Button>
@@ -170,7 +170,7 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
     <div className="grid gap-3 border-t border-line-soft pt-6">
       <div className="grid gap-1">
         <h4 className={subheading}>Assignment</h4>
-        <p className="text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]">Current assignee: {current}</p>
+        <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">Current assignee: {current}</p>
       </div>
       <div className="flex flex-wrap items-end gap-2">
         <label className={cn(fieldLabel, "min-w-56 flex-1")}>Assign to<NativeSelect aria-label="Assign to" size="sm" containerClassName="w-full" className="bg-card" value={selected} disabled={busy || stale || directoryBusy} onChange={event => setSelected(event.target.value)}>
@@ -182,23 +182,23 @@ export function EnquiryWorkflow({ detail, session, onChange, onDenied, onBusy, e
         <Button type="button" size="sm" variant="ghost" disabled={busy || directoryBusy} onClick={() => void directory()}>Reload assignees</Button>
         {assigneeCursor && <Button type="button" size="sm" variant="ghost" disabled={busy || directoryBusy} onClick={() => void directory(assigneeCursor)}>More assignees</Button>}
       </div>
-      {directoryBusy && <p role="status" className="text-[12.5px] text-muted-foreground">Loading assignees…</p>}
+      {directoryBusy && <p role="status" className="text-xs text-muted-foreground">Loading assignees…</p>}
       {directoryError && <Notice tone="error">{directoryError}</Notice>}
     </div>
     <div className="grid gap-3 border-t border-line-soft pt-6">
       <div className="grid gap-1">
         <h4 className={subheading}>Internal notes</h4>
-        <p id="enquiry-note-help" className="text-[12.5px] text-muted-foreground">Visible to authorised staff only. Adding a note does not send a customer reply.</p>
+        <p id="enquiry-note-help" className="text-xs text-muted-foreground">Visible to authorised staff only. Adding a note does not send a customer reply.</p>
       </div>
-      <label className={fieldLabel}>Internal note<Textarea aria-label="Internal note" aria-describedby="enquiry-note-help enquiry-note-count" value={draft} rows={4} maxLength={2000} disabled={busy} className="min-h-24 bg-card text-[13.5px] leading-relaxed" onInput={event => setDraft(event.currentTarget.value)} /></label>
+      <label className={fieldLabel}>Internal note<Textarea aria-label="Internal note" aria-describedby="enquiry-note-help enquiry-note-count" value={draft} rows={4} maxLength={2000} disabled={busy} className="min-h-24 bg-card text-sm leading-relaxed" onInput={event => setDraft(event.currentTarget.value)} /></label>
       <div className="flex flex-wrap items-center gap-2">
-        <p id="enquiry-note-count" className="mr-auto text-[12px] text-muted-foreground tabular-nums">{draft.length}/2000 characters</p>
+        <p id="enquiry-note-count" className="mr-auto text-xs text-muted-foreground tabular-nums">{draft.length}/2000 characters</p>
         <Button type="button" size="sm" variant="ghost" aria-busy={pending === "reload" ? true : undefined} disabled={busy} onClick={() => void save("reload")}>Reload enquiry</Button>
         <Button type="button" size="sm" aria-busy={pending === "notes" ? true : undefined} disabled={busy || stale || !draft.trim() || draft.length > 2000} onClick={() => void save("notes")}>Add internal note</Button>
       </div>
       {error && <Notice tone="error">{error}</Notice>}
       {notice && <Notice tone="status">{notice}</Notice>}
-      {busy && <p role="status" className="text-[12.5px] text-muted-foreground">Saving or reloading enquiry…</p>}
+      {busy && <p role="status" className="text-xs text-muted-foreground">Saving or reloading enquiry…</p>}
     </div>
     <div className="grid gap-3 border-t border-line-soft pt-6">
       <div className="flex flex-wrap items-center justify-between gap-2">

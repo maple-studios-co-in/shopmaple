@@ -96,7 +96,7 @@ export function CategoryFields({
                     onReorder={(sections) => update({ ...page, sections })}
                     renderItem={(section, index, handle) => (
                       <>
-                        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-4 py-3 text-[13.5px] font-medium text-foreground capitalize outline-none select-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
+                        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-foreground capitalize focus-visible:outline-none select-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
                           <ChevronRight aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-admin group-open/section:rotate-90 motion-reduce:transition-none" />
                           {section.key.replaceAll("-", " ")}
                           {!section.enabled && <Badge variant="secondary" className="rounded-md border-0 bg-neutral-bg font-semibold text-neutral normal-case">Hidden</Badge>}

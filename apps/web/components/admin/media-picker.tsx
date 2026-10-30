@@ -16,7 +16,7 @@ export function MediaPicker({ label, value, onChange, session, onExpired }: { la
   const previewable = Boolean(value) && contentImageSchema.safeParse(value).success;
   return (
     <div role="group" aria-labelledby={labelId} data-span="full" className="grid min-w-0 gap-3 rounded-lg border border-line-soft bg-surface p-3 [overflow-wrap:anywhere] sm:p-4">
-      <p id={labelId} className="text-[12.5px] font-medium text-foreground">{label}</p>
+      <p id={labelId} className="text-xs font-medium text-foreground">{label}</p>
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <span className="grid h-[100px] w-[160px] shrink-0 place-items-center overflow-hidden rounded-md border border-line-soft bg-sunken">
           {previewable
@@ -24,7 +24,7 @@ export function MediaPicker({ label, value, onChange, session, onExpired }: { la
             : <ImageIcon aria-hidden="true" strokeWidth={1.5} className="size-5 text-muted-foreground" />}
         </span>
         <div className="grid min-w-0 flex-1 basis-48 gap-2">
-          <p className="text-[12px] text-muted-foreground">{previewable ? value : value ? "This address is not an approved image, so it is not previewed." : "No image chosen."}</p>
+          <p className="text-xs text-muted-foreground">{previewable ? value : value ? "This address is not an approved image, so it is not previewed." : "No image chosen."}</p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" ref={trigger} aria-expanded={open} onClick={() => setOpen(v => !v)}>
               <Images aria-hidden="true" strokeWidth={1.5} />

@@ -16,7 +16,7 @@ import { SortableList } from "./sortable-list";
 const newId = () => `chrome-${crypto.randomUUID()}`;
 const newLink = (): ChromeLink => ({id:newId(),label:"New link",href:"/collections/all",enabled:true});
 const lower = (value:string) => value.charAt(0).toLowerCase()+value.slice(1);
-const focusRing = "outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60";
+const focusRing = "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60";
 /** A list row holding a block of fields: the row card stacked vertically. Nested lists sit on the panel tone. */
 const stackCard = cn(rowCard, "grid items-stretch gap-4 p-4", focusRing);
 const nestedCard = cn(stackCard, "border-line-soft bg-surface shadow-none");
@@ -46,7 +46,7 @@ function Rows<T>({title,name,items,onChange,render,identity,create,min=0,max=99,
       return <>
         <div className="-my-1 -ml-1 flex min-w-0 items-center gap-2">
           {handle}
-          <span aria-hidden="true" className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">{label}</span>
+          <span aria-hidden="true" className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{label}</span>
           <MoveButtons name={lower(label)} index={index} length={items.length} onMove={direction=>{
             const next=[...items]; [next[index],next[index+direction]]=[next[index+direction]!,next[index]!]; update(next,id);
           }}/>
@@ -77,7 +77,7 @@ function Links<T extends ChromeLink>({title,name,items,onChange,max,min=0,create
 function Submenu({name,item,onChange}:{name:string;item:ChromeNavigationItem;onChange:(value:ChromeNavigationItem)=>void}) {
   const [expanded,setExpanded]=useState(false);
   return <details open={expanded} className="group/submenu min-w-0 rounded-md border border-line-soft bg-surface">
-    <summary className={cn("flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2.5 text-[13px] font-medium text-foreground select-none transition-colors duration-150 ease-admin hover:bg-accent [&::-webkit-details-marker]:hidden",focusRing)} onClick={event=>{event.preventDefault();setExpanded(!expanded);}}>
+    <summary className={cn("flex cursor-pointer list-none items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-foreground select-none transition-colors duration-150 ease-admin hover:bg-accent [&::-webkit-details-marker]:hidden",focusRing)} onClick={event=>{event.preventDefault();setExpanded(!expanded);}}>
       <ChevronRight aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-admin group-open/submenu:rotate-90 motion-reduce:transition-none"/>
       {name} submenu ({item.columns.length} columns)
     </summary>
@@ -85,7 +85,7 @@ function Submenu({name,item,onChange}:{name:string;item:ChromeNavigationItem;onC
       <Rows nested title={`${name} columns`} name={`${name} column`} items={item.columns} max={4} onChange={columns=>onChange({...item,columns})} identity={column=>column.id} create={()=>({id:newId(),links:[{...newLink(),parent:false}]})}
         render={(column,columnIndex,updateColumn)=><>
           <Toggle label={`Show ${lower(name)} column ${columnIndex+1}`} checked={column.links.some(link=>link.enabled)} onChange={enabled=>updateColumn({...column,links:column.links.map(link=>({...link,enabled}))})}/>
-          <Prose className="-mt-2 text-[12.5px]">Showing or hiding a column changes all its links.</Prose>
+          <Prose className="-mt-2 text-xs">Showing or hiding a column changes all its links.</Prose>
           <Links nested title={`${name} column ${columnIndex+1} links`} name={`${name} column ${columnIndex+1} link`} items={column.links} max={12} min={1} create={()=>({...newLink(),parent:false})} onChange={links=>updateColumn({...column,links})}/></>}/>
     </div>}
   </details>;
@@ -159,11 +159,11 @@ export function SiteChromeFields({value,onChange}:{value?:SiteChrome;onChange:(v
   return <section aria-label="Navigation and footer controls">
     <PanelHeader
       // The title is focusable so restoring the original moves focus back to the top of the screen.
-      title={<span ref={heading} tabIndex={-1} className="rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60">Navigation &amp; footer</span>}
+      title={<span ref={heading} tabIndex={-1} className="rounded-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60">Navigation &amp; footer</span>}
       description="Edit storefront links and contact information. Save a draft, then publish when ready. Product availability and prices remain managed by Keeri."
       actions={<Button type="button" variant="outline" size="sm" disabled={value===undefined} onClick={()=>{resetFocus.current=true;onChange(undefined);}}><RotateCcw aria-hidden="true" strokeWidth={1.5}/>Restore original navigation &amp; footer</Button>}
     />
-    <Prose className="-mt-3 mb-6 text-[12.5px]">Destinations must be local storefront paths (for example /collections/all or /pages/contact). Enquiry subjects are optional and only work with /pages/contact. Labels: up to 120 characters; enquiry subjects: up to 160.</Prose>
+    <Prose className="-mt-3 mb-6 text-xs">Destinations must be local storefront paths (for example /collections/all or /pages/contact). Enquiry subjects are optional and only work with /pages/contact. Labels: up to 120 characters; enquiry subjects: up to 160.</Prose>
     <Tabs value={section} onValueChange={next=>setSection(next as Section)} className="gap-6">
       <TabsList aria-label="Navigation & footer section" className="max-w-full flex-wrap justify-start group-data-[orientation=horizontal]/tabs:h-auto">
         {/* Radix activates tabs on mousedown and focus; a plain click selects too. */}

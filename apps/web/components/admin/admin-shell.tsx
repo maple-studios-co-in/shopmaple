@@ -38,7 +38,7 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
           disabled={disabled(name)}
           tooltip={name}
           onClick={() => onSelect(name)}
-          className="h-9 text-[13.5px] font-medium text-muted-foreground data-[active=true]:bg-card data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:shadow-xs [&>svg]:text-faint data-[active=true]:[&>svg]:text-primary"
+          className="h-9 text-sm font-medium text-muted-foreground data-[active=true]:bg-card data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:shadow-xs [&>svg]:text-faint data-[active=true]:[&>svg]:text-primary"
         >
           <Icon aria-hidden="true" strokeWidth={1.5} />
           <span>{name}</span>
@@ -49,11 +49,11 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-4 pt-5 pb-3 group-data-[collapsible=icon]:px-2">
-        <a href="/" className="grid gap-0.5 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden">
-          <strong className="font-display text-[19px] leading-tight font-normal text-foreground">Maple Furnishers</strong>
-          <span className="text-[11.5px] font-medium text-faint">Shop admin</span>
+        <a href="/" className="grid gap-0.5 rounded-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden">
+          <strong className="font-display text-lg leading-tight font-normal text-foreground">Maple Furnishers</strong>
+          <span className="text-2xs font-medium text-faint">Shop admin</span>
         </a>
-        <span aria-hidden="true" className="hidden size-8 place-items-center rounded-md bg-primary font-display text-[15px] text-primary-foreground group-data-[collapsible=icon]:grid">M</span>
+        <span aria-hidden="true" className="hidden size-8 place-items-center rounded-md bg-primary font-display text-base text-primary-foreground group-data-[collapsible=icon]:grid">M</span>
       </SidebarHeader>
       <SidebarContent>
         <nav aria-label="Admin sections" className="grid gap-1">
@@ -65,10 +65,10 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
             <Collapsible key={group.label} defaultOpen className="group/collapsible">
               <SidebarGroup data-nav-group={group.label} className="py-1">
                 <div className="flex items-center justify-between pr-1">
-                  <SidebarGroupLabel className="text-[11px] font-semibold tracking-[0.04em] text-faint">{group.label}</SidebarGroupLabel>
+                  <SidebarGroupLabel className="text-2xs font-semibold tracking-[0.04em] text-faint">{group.label}</SidebarGroupLabel>
                   <CollapsibleTrigger
                     aria-label={`Toggle ${group.label} group`}
-                    className="grid size-6 place-items-center rounded-md text-faint outline-none transition-colors duration-150 ease-admin hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden"
+                    className="grid size-6 place-items-center rounded-md text-faint focus-visible:outline-none transition-colors duration-150 ease-admin hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 group-data-[collapsible=icon]:hidden"
                   >
                     <ChevronDown aria-hidden="true" strokeWidth={1.5} className="size-3.5 transition-transform duration-200 ease-admin group-data-[state=closed]/collapsible:-rotate-90" />
                   </CollapsibleTrigger>
@@ -81,9 +81,9 @@ export function AdminSidebar<T extends string>({ groups, current, icons, disable
           ))}
         </nav>
       </SidebarContent>
-      <SidebarFooter className="gap-2 border-t border-line-soft px-4 py-4 text-[12px] group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="gap-2 border-t border-line-soft px-4 py-4 text-xs group-data-[collapsible=icon]:hidden">
         <span className="text-muted-foreground">{publishedVersion ? `Live storefront on version ${publishedVersion}` : "Storefront not published yet"}</span>
-        <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1.5 rounded-sm font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">
+        <a href="/" target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center gap-1.5 rounded-sm font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">
           Open storefront <ExternalLink aria-hidden="true" strokeWidth={1.5} className="size-3.5" />
         </a>
       </SidebarFooter>
@@ -103,7 +103,7 @@ const chipTone = {
 /** A status chip; the tone is exposed as data-tone for tests and the dot. */
 export function StatusChip({ tone, children, ...props }: { tone: keyof typeof chipTone; children: ReactNode } & Record<`data-${string}`, string | boolean | undefined>) {
   return (
-    <Badge variant="secondary" data-tone={tone} {...props} className={cn("h-7 gap-1.5 rounded-full border-0 px-2.5 text-[11.5px] font-semibold tabular-nums", chipTone[tone])}>
+    <Badge variant="secondary" data-tone={tone} {...props} className={cn("h-7 gap-1.5 rounded-full border-0 px-2.5 text-2xs font-semibold tabular-nums", chipTone[tone])}>
       <span aria-hidden="true" className={cn("size-1.5 rounded-full bg-current", tone === "saving" && "motion-safe:animate-pulse")} />
       {children}
     </Badge>
@@ -134,11 +134,11 @@ export function StaffMenu({ email, role, busy, onSignOut }: { email: string; rol
     // Non-modal: a modal menu marks the rest of the page aria-hidden while it stays focusable.
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button type="button" data-staff-account className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1 text-left outline-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 data-[state=open]:bg-accent">
-          <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-primary text-[11px] font-bold tracking-[0.04em] text-primary-foreground">{initials(email)}</span>
+        <button type="button" data-staff-account className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-2 pl-1 text-left focus-visible:outline-none transition-colors duration-150 ease-admin hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 data-[state=open]:bg-accent">
+          <span data-avatar aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-primary text-2xs font-bold tracking-[0.04em] text-primary-foreground">{initials(email)}</span>
           <span className="hidden min-w-0 gap-px leading-tight 2xl:grid">
-            <strong className="max-w-[22ch] truncate text-[12.5px] font-semibold text-foreground">{email}</strong>
-            <span className="text-[11.5px] text-faint">{role}</span>
+            <strong className="max-w-[22ch] truncate text-xs font-semibold text-foreground">{email}</strong>
+            <span className="text-2xs text-faint">{role}</span>
           </span>
           <span className="sr-only 2xl:hidden">{email}, {role}</span>
           <ChevronDown aria-hidden="true" strokeWidth={1.5} className="size-3.5 text-faint" />
@@ -146,8 +146,8 @@ export function StaffMenu({ email, role, busy, onSignOut }: { email: string; rol
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="grid gap-0.5">
-          <span className="truncate text-[12.5px] font-semibold">{email}</span>
-          <span className="text-[11.5px] font-normal text-muted-foreground">{role}</span>
+          <span className="truncate text-xs font-semibold">{email}</span>
+          <span className="text-2xs font-normal text-muted-foreground">{role}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -181,7 +181,7 @@ export function CommandPalette<T extends string>({ groups, icons, disabled, onSe
       <Button type="button" variant="outline" size="sm" className="hidden w-48 justify-start gap-2 px-2.5 font-normal text-muted-foreground xl:inline-flex" onClick={() => setOpen(true)}>
         <Search aria-hidden="true" strokeWidth={1.5} />
         <span className="flex-1 text-left">Jump to</span>
-        <kbd className="rounded-sm border border-border bg-surface px-1.5 font-sans text-[10.5px] font-semibold text-faint">⌘K</kbd>
+        <kbd className="rounded-sm border border-border bg-surface px-1.5 font-sans text-2xs font-semibold text-faint">⌘K</kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen} title="Jump to" description="Go to an admin screen or run an action.">
         <CommandInput placeholder="Jump to a screen or action" />

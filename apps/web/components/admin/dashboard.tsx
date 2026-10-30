@@ -135,7 +135,7 @@ export function AdminDashboard({
         <div className="grid min-h-dvh place-items-center p-6">
           <div aria-busy="true" className="grid w-full max-w-sm gap-4">
             <Skeleton rows={3} />
-            <p role="status" className="text-center text-[12.5px] text-muted-foreground">Checking your session</p>
+            <p role="status" className="text-center text-xs text-muted-foreground">Checking your session</p>
           </div>
         </div>
       </AdminRoot>
@@ -187,38 +187,38 @@ export function AdminDashboard({
       <div aria-hidden="true" className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:flex">
         <div className="pointer-events-none absolute -top-40 -right-40 size-[28rem] rounded-full bg-white/[0.06]" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 size-80 rounded-full bg-black/[0.12]" />
-        <strong className="relative font-display text-[22px] font-normal">Maple Furnishers</strong>
+        <strong className="relative font-display text-xl font-normal">Maple Furnishers</strong>
         <div className="relative grid max-w-md gap-4">
-          <h1 className="font-display text-[44px] leading-[1.08] font-normal text-balance">Shop admin</h1>
-          <p className="text-[15px] leading-relaxed text-white/85">Edit the storefront, preview the draft beside the editor, and publish when it is ready.</p>
+          <h1 className="font-display text-4xl leading-[1.08] font-normal text-balance">Shop admin</h1>
+          <p className="text-base leading-relaxed text-white/85">Edit the storefront, preview the draft beside the editor, and publish when it is ready.</p>
         </div>
-        <small className="relative text-[12.5px] text-white/75">Staff only. Nothing here is visible to visitors until it is published.</small>
+        <small className="relative text-xs text-white/75">Staff only. Nothing here is visible to visitors until it is published.</small>
       </div>
       <div className="grid place-items-center px-5 py-12 sm:px-10">
         <div className="w-full max-w-sm rounded-2xl bg-sunken/70 p-1.5 ring-1 ring-line-soft">
           <div className="grid gap-6 rounded-[calc(1rem-2px)] bg-card px-6 py-8 shadow-md sm:px-8">
             <div className="grid gap-1.5">
-              <strong className="font-display text-[17px] font-normal text-primary lg:hidden">Maple Furnishers</strong>
-              <h2 className="font-display text-[28px] leading-tight font-normal">Sign in</h2>
-              <p className="text-[13.5px] text-muted-foreground">Use your staff email and password.</p>
+              <strong className="font-display text-lg font-normal text-primary lg:hidden">Maple Furnishers</strong>
+              <h2 className="font-display text-2xl leading-tight font-normal">Sign in</h2>
+              <p className="text-sm text-muted-foreground">Use your staff email and password.</p>
             </div>
             {error && (
               <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span>{error}</span></Notice>
             )}
             <form onSubmit={login} className="grid gap-4">
-              <label className="grid gap-2 text-[12.5px] font-medium">
+              <label className="grid gap-2 text-xs font-medium">
                 Email
-                <Input name="email" aria-label="Email" type="email" autoComplete="username" required className="h-10 bg-card text-[13.5px]" />
+                <Input name="email" aria-label="Email" type="email" autoComplete="username" required className="h-10 bg-card text-sm" />
               </label>
-              <label className="grid gap-2 text-[12.5px] font-medium">
+              <label className="grid gap-2 text-xs font-medium">
                 Password
-                <Input name="password" aria-label="Password" type="password" autoComplete="current-password" required className="h-10 bg-card text-[13.5px]" />
+                <Input name="password" aria-label="Password" type="password" autoComplete="current-password" required className="h-10 bg-card text-sm" />
               </label>
               <Button disabled={busy} type="submit" size="lg" className="mt-1 w-full">
                 {busy ? "Signing in" : "Sign in"}
               </Button>
             </form>
-            <a href="/" className="w-fit rounded-sm text-[12.5px] font-semibold text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to the storefront</a>
+            <a href="/" className="w-fit rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to the storefront</a>
           </div>
         </div>
       </div>

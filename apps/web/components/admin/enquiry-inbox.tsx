@@ -24,7 +24,7 @@ const views = [["list", "List"], ["board", "Board"], ["tasks", "Follow-ups"], ["
 type View = (typeof views)[number][0];
 const kindLabels: Record<string, string> = { contact: "Contact", project: "Project", bulk: "Bulk" };
 const accessMessage = "Your account does not have access to customer enquiries. Contact your administrator.";
-const fieldLabel = "grid gap-1.5 text-[12px] font-medium text-muted-foreground";
+const fieldLabel = "grid gap-1.5 text-xs font-medium text-muted-foreground";
 const stageRank = (stage: string) => (enquiryStages as readonly string[]).indexOf(stage);
 
 export function EnquiryInbox(props: { session: StaffSession; onExpired: () => void }) {
@@ -178,8 +178,8 @@ function EnquiryInboxSession({ session, onExpired }: {
             meta: { filter: "text", label: "Name" },
             cell: ({ row: { original: row } }) => <div className="grid min-w-0 gap-0.5">
                 <span className="font-semibold text-foreground [overflow-wrap:anywhere]">{row.name || "No name given"}</span>
-                <span className="text-[12px] text-muted-foreground">{kindLabels[row.kind] ?? row.kind} enquiry</span>
-                <span className="max-w-48 truncate text-[11.5px] text-faint tabular-nums" title={row.id}>{row.id}</span>
+                <span className="text-xs text-muted-foreground">{kindLabels[row.kind] ?? row.kind} enquiry</span>
+                <span className="max-w-48 truncate text-2xs text-faint tabular-nums" title={row.id}>{row.id}</span>
             </div>,
         },
         { id: "product", header: "Product", accessorFn: row => row.product, cell: ({ row: { original: row } }) => <span className={row.product ? "text-foreground" : "text-muted-foreground"}>{row.product || "No product noted"}</span>, meta: { className: "max-w-56" } },
@@ -196,7 +196,7 @@ function EnquiryInboxSession({ session, onExpired }: {
         },
         {
             id: "received", header: "Received", accessorKey: "createdAt",
-            cell: ({ row: { original: row } }) => { const age = ageLabel(row.createdAt, live.current.today); return <span className="grid gap-0.5 tabular-nums"><time dateTime={row.createdAt}>{formatDate(row.createdAt)}</time><span className="text-[12px] text-muted-foreground">{age === "Today" ? "Today" : `${age} ago`}</span></span>; },
+            cell: ({ row: { original: row } }) => { const age = ageLabel(row.createdAt, live.current.today); return <span className="grid gap-0.5 tabular-nums"><time dateTime={row.createdAt}>{formatDate(row.createdAt)}</time><span className="text-xs text-muted-foreground">{age === "Today" ? "Today" : `${age} ago`}</span></span>; },
         },
         {
             id: "actions", header: () => <span className="sr-only">Actions</span>, enableSorting: false, meta: { className: "w-px text-right" },
@@ -212,7 +212,7 @@ function EnquiryInboxSession({ session, onExpired }: {
     <PanelHeader title="Customer enquiries" description="Every contact, project and bulk enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal." />
     <Tabs value={tabValue} onValueChange={value => selectView(value as View)} className="gap-5">
       <TabsList aria-label="CRM views" className="h-9">
-        {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-[13px]" disabled={workflowBusy || deliveryBusy} onClick={() => selectView(key)}>{label}</TabsTrigger>)}
+        {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-sm" disabled={workflowBusy || deliveryBusy} onClick={() => selectView(key)}>{label}</TabsTrigger>)}
       </TabsList>
       {contactId !== null && <ContactPage session={session} contactId={contactId} onDenied={denied} onOpenEnquiry={openEnquiry} onBack={() => setContactId(null)} backLabel={view === "list" ? "Back to enquiries" : "Back"} today={today} />}
       <TabsContent value="board"><CrmBoard session={session} onDenied={denied} onOpenEnquiry={openEnquiry} onOpenContact={openContact} today={today} /></TabsContent>
@@ -225,16 +225,16 @@ function EnquiryInboxSession({ session, onExpired }: {
             <label className={fieldLabel}>Stage<NativeSelect size="sm" className="min-w-32 bg-card" aria-label="Enquiry status" value={status} disabled={filtersDisabled} onChange={event => setStatus(event.target.value)}><NativeSelectOption value="">All stages</NativeSelectOption>{stageOptions.map(([stage, label]) => <NativeSelectOption key={stage} value={stage}>{label}</NativeSelectOption>)}</NativeSelect></label>
             <label className={fieldLabel}>Assignment<NativeSelect size="sm" className="min-w-36 bg-card" aria-label="Enquiry assignment" value={assignment} disabled={filtersDisabled} onChange={event => setAssignment(event.target.value)}><NativeSelectOption value="">All assignments</NativeSelectOption><NativeSelectOption value="mine">Assigned to me</NativeSelectOption><NativeSelectOption value="unassigned">Unassigned</NativeSelectOption></NativeSelect></label>
             <label className={fieldLabel}>Assignee<NativeSelect size="sm" className="min-w-40 bg-card" aria-label="Assignee" value={assigneeId} disabled={filtersDisabled} onChange={event => setAssigneeId(event.target.value)}><NativeSelectOption value="">Anyone</NativeSelectOption>{[...staff.values()].map(item => <NativeSelectOption key={item.id} value={item.id}>{item.email}</NativeSelectOption>)}</NativeSelect></label>
-            <label className={fieldLabel}>From<Input aria-label="From date" type="date" className="h-8 w-40 bg-card text-[13px]" value={from} disabled={filtersDisabled} onChange={event => setFrom(event.target.value)} /></label>
-            <label className={fieldLabel}>To<Input aria-label="To date" type="date" className="h-8 w-40 bg-card text-[13px]" value={to} disabled={filtersDisabled} onChange={event => setTo(event.target.value)} /></label>
+            <label className={fieldLabel}>From<Input aria-label="From date" type="date" className="h-8 w-40 bg-card text-sm" value={from} disabled={filtersDisabled} onChange={event => setFrom(event.target.value)} /></label>
+            <label className={fieldLabel}>To<Input aria-label="To date" type="date" className="h-8 w-40 bg-card text-sm" value={to} disabled={filtersDisabled} onChange={event => setTo(event.target.value)} /></label>
           </div>
           <div className="flex flex-wrap items-end gap-2">
-            <label className={`${fieldLabel} min-w-64 flex-1`}>Search<Input aria-label="Search enquiries" className="h-8 bg-card text-[13px]" value={term} maxLength={100} placeholder="Name, email, phone, product or SKU" disabled={filtersDisabled} onInput={event => setTerm(event.currentTarget.value)} onChange={() => {}} /></label>
+            <label className={`${fieldLabel} min-w-64 flex-1`}>Search<Input aria-label="Search enquiries" className="h-8 bg-card text-sm" value={term} maxLength={100} placeholder="Name, email, phone, product or SKU" disabled={filtersDisabled} onInput={event => setTerm(event.currentTarget.value)} onChange={() => {}} /></label>
             <Button type="submit" size="sm" disabled={filtersDisabled}><Search aria-hidden="true" strokeWidth={1.5} />Search</Button>
             <Button ref={reloadButton} type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Reload inbox</Button>
             {filtered && <Button type="button" size="sm" variant="ghost" disabled={filtersDisabled} onClick={clearFilters}>Clear filters</Button>}
           </div>
-          {query && <p className="text-[12.5px] text-muted-foreground">Showing results for &ldquo;{query}&rdquo;</p>}
+          {query && <p className="text-xs text-muted-foreground">Showing results for &ldquo;{query}&rdquo;</p>}
         </form>
         {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice>{error !== accessMessage && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Try again</Button>}</div>}
         {busy && <p role="status" className="sr-only">Loading enquiries…</p>}
@@ -244,7 +244,7 @@ function EnquiryInboxSession({ session, onExpired }: {
           <DataTable columns={columns} data={items} label="Enquiries" getRowId={row => row.id} rowProps={row => ({ "data-enquiry-row": row.original.id })}
             rowLabel={row => `Open enquiry from ${row.name || "No name given"}`} onRowOpen={row => openDetail(row.id, rowOpener())}
             empty="No loaded enquiries match these column filters. Clear a filter, or search the whole inbox above." />
-          <p className="text-[12px] text-muted-foreground">Column filters narrow the rows on this page. The search above covers the whole inbox.</p>
+          <p className="text-xs text-muted-foreground">Column filters narrow the rows on this page. The search above covers the whole inbox.</p>
         </div>}
         {cursor && <Button type="button" variant="outline" size="sm" className="w-fit" disabled={busy} onClick={() => void load(cursor)}>Next page</Button>}
       </TabsContent>
@@ -256,8 +256,8 @@ function EnquiryInboxSession({ session, onExpired }: {
         <SheetHeader className="gap-3 border-b border-line-soft bg-card px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="grid min-w-0 gap-1">
-              <SheetTitle ref={detailHeading} tabIndex={-1} className="text-[18px] leading-tight outline-none">Enquiry details</SheetTitle>
-              <SheetDescription className="text-[12.5px] [overflow-wrap:anywhere]">{detail.name || "No name given"}, {(kindLabels[detail.kind] ?? detail.kind).toLowerCase()} enquiry received <time dateTime={detail.createdAt}>{formatDate(detail.createdAt)}</time></SheetDescription>
+              <SheetTitle ref={detailHeading} tabIndex={-1} className="text-lg leading-tight focus-visible:outline-none">Enquiry details</SheetTitle>
+              <SheetDescription className="text-xs [overflow-wrap:anywhere]">{detail.name || "No name given"}, {(kindLabels[detail.kind] ?? detail.kind).toLowerCase()} enquiry received <time dateTime={detail.createdAt}>{formatDate(detail.createdAt)}</time></SheetDescription>
             </div>
             <Button type="button" size="sm" variant="outline" disabled={busy} onClick={closeDetail}>Close enquiry</Button>
           </div>
@@ -267,13 +267,13 @@ function EnquiryInboxSession({ session, onExpired }: {
           </div>
         </SheetHeader>
         <article aria-label="Enquiry detail" className="grid flex-1 content-start gap-7 overflow-y-auto px-6 py-6">
-          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-xl border border-border bg-card p-4 text-[13px] shadow-xs [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-muted-foreground">
+          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-xl border border-border bg-card p-4 text-sm shadow-xs [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-muted-foreground">
             <dt>Reference</dt><dd className="tabular-nums">{detail.id}</dd><dt>Name</dt><dd>{detail.name || "Not provided"}</dd><dt>Email</dt><dd>{detail.email}</dd><dt>Phone</dt><dd>{detail.phone || "Not provided"}</dd><dt>Product</dt><dd>{detail.context.product || "Not provided"}</dd><dt>Variant</dt><dd>{detail.context.variant || "Not provided"}</dd><dt>SKU</dt><dd>{detail.context.sku || "Not provided"}</dd><dt>Pincode</dt><dd>{detail.context.pincode || "Not provided"}</dd>
           </dl>
           <div className="grid gap-2">
-            <h4 className="text-[13.5px] font-semibold text-foreground">Message</h4>
-            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{detail.message || "No message supplied."}</p>
-            {detail.reviews.map(review => <p key={review.id} className="text-[12.5px] text-muted-foreground">Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleString()}</time> (before the pipeline existed).</p>)}
+            <h4 className="text-sm font-semibold text-foreground">Message</h4>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{detail.message || "No message supplied."}</p>
+            {detail.reviews.map(review => <p key={review.id} className="text-xs text-muted-foreground">Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>{new Date(review.createdAt).toLocaleString()}</time> (before the pipeline existed).</p>)}
           </div>
           <EnquiryWorkflow key={detail.id} detail={detail} session={session} emailEnabled={emailEnabled} onBusy={setWorkflowBusy} onChange={value => { setDetail(value); setItems(rows => rows.map(row => row.id === value.id ? { ...row, status: value.status, version: value.version, assignedToId: value.assignedToId } : row).filter(row => (!status || row.status === status) && (!assignment || (assignment === "mine" ? row.assignedToId === session.user.id : row.assignedToId === null)))); }} onDenied={denied} />
           <div className="border-t border-line-soft pt-6"><EnquiryDeliveryPanel enquiryId={detail.id} session={session} onBusy={setDeliveryBusy} onDenied={denied} onEnabled={setEmailEnabled} /></div>

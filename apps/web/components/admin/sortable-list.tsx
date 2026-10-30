@@ -53,7 +53,7 @@ function SortableRow({ id, label, tag, dragging, dropTarget, rowProps, children 
   const handle = (
     <button
       type="button"
-      className="inline-grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-md text-faint transition-colors duration-150 ease-admin outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 active:cursor-grabbing"
+      className="inline-grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-md text-faint transition-colors duration-150 ease-admin focus-visible:outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 active:cursor-grabbing"
       ref={setActivatorNodeRef}
       {...attributes}
       {...listeners}

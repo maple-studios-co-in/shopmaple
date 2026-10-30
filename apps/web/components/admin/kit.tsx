@@ -17,8 +17,8 @@ export function PanelHeader({ title, description, actions, className }: { title:
   return (
     <div className={cn("mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3", className)}>
       <div className="grid max-w-[68ch] gap-1.5">
-        <h2 className="font-display text-[28px] leading-tight font-normal text-balance text-foreground">{title}</h2>
-        {description && <p className="text-[13.5px] leading-relaxed text-pretty text-muted-foreground">{description}</p>}
+        <h2 className="font-display text-2xl leading-tight font-normal text-balance text-foreground">{title}</h2>
+        {description && <p className="text-sm leading-relaxed text-pretty text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -29,15 +29,15 @@ export function PanelHeader({ title, description, actions, className }: { title:
 export function SectionHeading({ children, description, className, as: Tag = "h3" }: { children: ReactNode; description?: ReactNode; className?: string; as?: "h3" | "h4" }) {
   return (
     <div className={cn("mt-8 mb-3 grid gap-1 first:mt-0", className)}>
-      <Tag className={cn("font-semibold tracking-[-0.01em] text-foreground", Tag === "h3" ? "text-[15px]" : "text-[13.5px]")}>{children}</Tag>
-      {description && <p className="max-w-[68ch] text-[12.5px] leading-relaxed text-muted-foreground">{description}</p>}
+      <Tag className={cn("font-semibold tracking-[-0.01em] text-foreground", Tag === "h3" ? "text-base" : "text-sm")}>{children}</Tag>
+      {description && <p className="max-w-[68ch] text-xs leading-relaxed text-muted-foreground">{description}</p>}
     </div>
   );
 }
 
 /** Body copy inside a screen: muted, measured. */
 export function Prose({ className, ...props }: ComponentProps<"p">) {
-  return <p className={cn("max-w-[68ch] text-[13.5px] leading-relaxed text-muted-foreground", className)} {...props} />;
+  return <p className={cn("max-w-[68ch] text-sm leading-relaxed text-muted-foreground", className)} {...props} />;
 }
 
 /** Fields in a responsive grid; a field with `data-span="full"` (multiline) takes the whole row. */
@@ -49,8 +49,8 @@ export function FieldGrid({ className, ...props }: ComponentProps<"div">) {
 export function FieldGroup({ legend, description, children, className, ...props }: Omit<ComponentProps<"fieldset">, "children"> & { legend: ReactNode; description?: ReactNode; children: ReactNode }) {
   return (
     <fieldset className={cn("grid min-w-0 gap-4 rounded-lg border border-line-soft bg-surface p-4 sm:p-5", className)} {...props}>
-      <legend className="float-left mb-1 w-full text-[13.5px] font-semibold text-foreground">{legend}</legend>
-      {description && <p className="clear-both -mt-2 max-w-[68ch] text-[12.5px] text-muted-foreground">{description}</p>}
+      <legend className="float-left mb-1 w-full text-sm font-semibold text-foreground">{legend}</legend>
+      {description && <p className="clear-both -mt-2 max-w-[68ch] text-xs text-muted-foreground">{description}</p>}
       <div className="clear-both grid gap-4">{children}</div>
     </fieldset>
   );
@@ -60,11 +60,11 @@ export function FieldGroup({ legend, description, children, className, ...props 
 export function CheckField({ label, description, className, ...props }: Omit<ComponentProps<"input">, "type"> & { label: ReactNode; description?: ReactNode }) {
   return (
     <div className={cn("grid gap-1", className)} data-span="full">
-      <label className="flex w-fit cursor-pointer items-start gap-3 text-[13.5px] leading-snug font-medium text-foreground has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60">
+      <label className="flex w-fit cursor-pointer items-start gap-3 text-sm leading-snug font-medium text-foreground has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60">
         <NativeCheckbox className="mt-0.5" {...props} />
         <span>{label}</span>
       </label>
-      {description && <p className="pl-7 text-[12.5px] text-muted-foreground">{description}</p>}
+      {description && <p className="pl-7 text-xs text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -73,7 +73,7 @@ export function CheckField({ label, description, className, ...props }: Omit<Com
 export function SelectField({ label, children, className, hideLabel = false, ...props }: Omit<ComponentProps<"select">, "size"> & { label: string; hideLabel?: boolean }) {
   return (
     <label className={cn("grid min-w-0 gap-2", className)}>
-      <span className={cn("text-[12.5px] font-medium text-foreground", hideLabel && "sr-only")}>{label}</span>
+      <span className={cn("text-xs font-medium text-foreground", hideLabel && "sr-only")}>{label}</span>
       <NativeSelect aria-label={label} containerClassName="w-full" className="h-10 bg-card" {...props}>{children}</NativeSelect>
     </label>
   );

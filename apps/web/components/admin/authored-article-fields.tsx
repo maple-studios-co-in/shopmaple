@@ -56,7 +56,7 @@ export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
         Write new articles
       </SectionHeading>
       {(articles.length > 0 || creating) && <div className="flex items-center gap-3">
-        <small className="text-[12px] text-muted-foreground tabular-nums">{articles.length} of 20 articles</small>
+        <small className="text-xs text-muted-foreground tabular-nums">{articles.length} of 20 articles</small>
         {newArticleButton}
       </div>}
     </div>
@@ -85,7 +85,7 @@ export function AuthoredArticleFields({ value, onChange, session, onExpired }: {
         <SelectField label="Authored article" className="w-full max-w-sm" value={identity(article)} onChange={event => { setSelected(event.target.value); setRemoving(false); }}>
           {articles.map(item => <NativeSelectOption key={identity(item)} value={identity(item)}>{item.title || "Untitled article"} · {blogLabels[item.blog]}</NativeSelectOption>)}
         </SelectField>
-        <dl className="grid gap-0.5 pb-1 text-[12.5px]">
+        <dl className="grid gap-0.5 pb-1 text-xs">
           <div className="flex gap-1.5"><dt className="text-muted-foreground">Address:</dt><dd className="font-medium [overflow-wrap:anywhere]">/blogs/{identity(article)}</dd></div>
           <div className="flex gap-1.5"><dt className="sr-only">Status</dt><dd className="text-muted-foreground">{article.publishedAt ? `First published: ${article.publishedAt}` : "Not published yet"}</dd></div>
         </dl>

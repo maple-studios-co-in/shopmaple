@@ -32,14 +32,14 @@ export function Field({
   return (
     <div data-slot="form-item" data-span={multiline ? "full" : undefined} className={cn("relative grid min-w-0 gap-2", className)}>
       <label className="grid min-w-0 gap-2">
-        <span className="pr-14 text-[12.5px] font-medium text-foreground">{label}</span>
+        <span className="pr-14 text-xs font-medium text-foreground">{label}</span>
         {multiline ? (
-          <Textarea {...props} rows={4} className="min-h-24 bg-card text-[13.5px] leading-relaxed" />
+          <Textarea {...props} rows={4} className="min-h-24 bg-card text-sm leading-relaxed" />
         ) : (
-          <Input {...props} type="text" className="h-10 bg-card text-[13.5px]" />
+          <Input {...props} type="text" className="h-10 bg-card text-sm" />
         )}
       </label>
-      {near && <span className="absolute top-0 right-0 text-[11px] text-faint tabular-nums" aria-hidden="true">{value.length}/{maxLength}</span>}
+      {near && <span className="absolute top-0 right-0 text-2xs text-faint tabular-nums" aria-hidden="true">{value.length}/{maxLength}</span>}
     </div>
   );
 }

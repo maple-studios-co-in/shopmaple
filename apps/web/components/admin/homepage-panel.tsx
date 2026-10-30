@@ -64,7 +64,7 @@ export function HomepagePanel({ content, edit, focusedSection }: {
       />
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <SectionHeading className="m-0">Sections</SectionHeading>
-        <span className="text-[12px] text-muted-foreground tabular-nums">{visible} of {content.homeSections.length} visible</span>
+        <span className="text-xs text-muted-foreground tabular-nums">{visible} of {content.homeSections.length} visible</span>
       </div>
       <SortableList
         items={content.homeSections}
@@ -89,7 +89,7 @@ export function HomepagePanel({ content, edit, focusedSection }: {
                   homeSections: content.homeSections.map((item) => item.key === section.key ? { ...item, enabled: event.target.checked } : item),
                 })}
               />
-              <span className={cn("truncate text-[13.5px] font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{titleCase(section.key)}</span>
+              <span className={cn("truncate text-sm font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{titleCase(section.key)}</span>
             </label>
             {sectionCopy[section.key] && (
               <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" aria-label={`Edit ${titleCase(section.key)} copy`} onClick={() => setEditing(section.key)}>
@@ -113,7 +113,7 @@ export function HomepagePanel({ content, edit, focusedSection }: {
       <Sheet open={editing !== null} onOpenChange={(open) => { if (!open) setEditing(null); }}>
         <SheetContent className="w-full gap-0 sm:max-w-md">
           <SheetHeader className="border-b border-line-soft px-6 py-5">
-            <SheetTitle className="font-display text-[22px] font-normal">{editing ? titleCase(editing) : ""}</SheetTitle>
+            <SheetTitle className="font-display text-xl font-normal">{editing ? titleCase(editing) : ""}</SheetTitle>
             <SheetDescription>The words this section shows on the homepage. Changes stay in your draft.</SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 overflow-y-auto px-6 py-5">{editing && sectionCopy[editing]?.map(copyField)}</div>

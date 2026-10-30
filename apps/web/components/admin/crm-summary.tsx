@@ -13,8 +13,8 @@ const stageAccent: Record<string, string> = { new: "bg-neutral", contacted: "bg-
 /** One count on a raised tile: a small label, a large tabular number, a dot in the stage's tone. */
 function Tile({ stat, label, value }: { stat: string; label: string; value: number }) {
   return <Card className="gap-2 rounded-lg px-4 py-3.5 shadow-xs">
-    <span className="flex items-center gap-2 text-[12px] font-medium text-muted-foreground"><span aria-hidden="true" className={cn("size-2 rounded-full", stageAccent[stat])} />{label}</span>
-    <span className="text-[26px] leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums" data-stat={stat}>{value}</span>
+    <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><span aria-hidden="true" className={cn("size-2 rounded-full", stageAccent[stat])} />{label}</span>
+    <span className="text-2xl leading-none font-semibold tracking-[-0.02em] text-foreground tabular-nums" data-stat={stat}>{value}</span>
   </Card>;
 }
 
@@ -42,8 +42,8 @@ export function CrmSummary({ session, onExpired, today = localToday() }: { sessi
   return <section className="grid gap-4" aria-label="Pipeline summary" aria-busy={busy}>
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="grid gap-1">
-        <p className="text-[11.5px] font-semibold tracking-[0.04em] text-muted-foreground uppercase">Enquiry pipeline</p>
-        <h3 className="text-[15px] font-semibold text-foreground tabular-nums">{value ? `${total} ${total === 1 ? "enquiry" : "enquiries"} in the pipeline` : "Pipeline"}</h3>
+        <p className="text-2xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">Enquiry pipeline</p>
+        <h3 className="text-base font-semibold text-foreground tabular-nums">{value ? `${total} ${total === 1 ? "enquiry" : "enquiries"} in the pipeline` : "Pipeline"}</h3>
       </div>
       <Button type="button" size="sm" variant="ghost" disabled={busy} aria-busy={busy} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Refresh</Button>
     </div>
@@ -59,7 +59,7 @@ export function CrmSummary({ session, onExpired, today = localToday() }: { sessi
         <Tile stat="today" label="Due today" value={value.dueTodayTasks} />
         <Tile stat="week" label="New in the last 7 days" value={value.newLastSevenDays} />
       </div>
-      <p className="text-[12px] text-muted-foreground">Counts as of today. Open the Enquiries tab to work the pipeline.</p>
+      <p className="text-xs text-muted-foreground">Counts as of today. Open the Enquiries tab to work the pipeline.</p>
     </div>}
   </section>;
 }

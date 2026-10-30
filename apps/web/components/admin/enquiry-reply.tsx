@@ -69,13 +69,13 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
       if (active.current) { setBusy(false); callbacks.current.onBusy(false); }
     }
   }
-  const fieldLabel = "grid gap-1.5 text-[12.5px] font-medium text-foreground";
-  if (denied) return <section className="grid gap-3" aria-label="Reply by email"><h4 className="text-[13.5px] font-semibold text-foreground">Reply by email</h4><Notice tone="info">Replies are unavailable for this account.</Notice></section>;
+  const fieldLabel = "grid gap-1.5 text-xs font-medium text-foreground";
+  if (denied) return <section className="grid gap-3" aria-label="Reply by email"><h4 className="text-sm font-semibold text-foreground">Reply by email</h4><Notice tone="info">Replies are unavailable for this account.</Notice></section>;
   return <section className="grid gap-3" aria-label="Reply by email" aria-busy={busy}>
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="grid max-w-[56ch] gap-1">
-        <h4 className="text-[13.5px] font-semibold text-foreground">Reply by email</h4>
-        <p className="text-[12.5px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong> from the shop&apos;s configured sender. The full message is kept in activity.</p>
+        <h4 className="text-sm font-semibold text-foreground">Reply by email</h4>
+        <p className="text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong> from the shop&apos;s configured sender. The full message is kept in activity.</p>
       </div>
       <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setOpen(true)}><Mail aria-hidden="true" strokeWidth={1.5} />Reply</Button>
     </div>
@@ -85,14 +85,14 @@ export function EnquiryReply({ detail, session, emailEnabled, onChange, onDenied
     <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
       <DialogContent className="gap-5 bg-card sm:max-w-xl" aria-busy={busy}>
         <DialogHeader>
-          <DialogTitle className="text-[17px]">Reply to {detail.name || "the customer"}</DialogTitle>
-          <DialogDescription className="text-[12.5px] leading-relaxed [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong>. The full message is kept in activity.</DialogDescription>
+          <DialogTitle className="text-lg">Reply to {detail.name || "the customer"}</DialogTitle>
+          <DialogDescription className="text-xs leading-relaxed [overflow-wrap:anywhere]">Plain text goes to <strong className="font-semibold text-foreground">{detail.email}</strong>. The full message is kept in activity.</DialogDescription>
         </DialogHeader>
         {enabled === false && <Notice tone="info">{messages.unconfigured}</Notice>}
         <div className="grid gap-4">
-          <label className={fieldLabel}>Subject<Input aria-label="Reply subject" value={subject} maxLength={subjectLimit} disabled={busy || enabled === false} className="h-10 bg-card text-[13.5px]" onInput={event => setSubject(event.currentTarget.value)} onChange={() => {}} /></label>
-          <label className={fieldLabel}>Message<Textarea aria-label="Reply message" aria-describedby="enquiry-reply-count" value={body} maxLength={bodyLimit} rows={8} disabled={busy || enabled === false} className="min-h-40 bg-card text-[13.5px] leading-relaxed" onInput={event => setBody(event.currentTarget.value)} onChange={() => {}} /></label>
-          <p id="enquiry-reply-count" className="-mt-2 justify-self-end text-[11.5px] text-muted-foreground tabular-nums">{body.length}/{bodyLimit}</p>
+          <label className={fieldLabel}>Subject<Input aria-label="Reply subject" value={subject} maxLength={subjectLimit} disabled={busy || enabled === false} className="h-10 bg-card text-sm" onInput={event => setSubject(event.currentTarget.value)} onChange={() => {}} /></label>
+          <label className={fieldLabel}>Message<Textarea aria-label="Reply message" aria-describedby="enquiry-reply-count" value={body} maxLength={bodyLimit} rows={8} disabled={busy || enabled === false} className="min-h-40 bg-card text-sm leading-relaxed" onInput={event => setBody(event.currentTarget.value)} onChange={() => {}} /></label>
+          <p id="enquiry-reply-count" className="-mt-2 justify-self-end text-2xs text-muted-foreground tabular-nums">{body.length}/{bodyLimit}</p>
         </div>
         {error && <Notice tone="error">{error}</Notice>}
         <DialogFooter>

@@ -36,29 +36,29 @@ function BoardCard({ card, today, staff, due, busy, lostPrompt, onMoveIntent, on
     className="relative gap-2.5 rounded-lg px-3 py-3 shadow-xs transition-[box-shadow,opacity] duration-200 ease-admin data-[dragging=true]:z-20 data-[dragging=true]:shadow-lg data-[pending=true]:opacity-60">
     <div className="flex items-start gap-2">
       <div className="grid min-w-0 flex-1 gap-0.5">
-        <p className="text-[13.5px] leading-snug font-semibold text-foreground [overflow-wrap:anywhere]">{card.name || "No name given"}</p>
-        <p className={cn("text-[12.5px] [overflow-wrap:anywhere]", card.product ? "text-muted-foreground" : "text-faint")}>{card.product || "No product noted"}</p>
+        <p className="text-sm leading-snug font-semibold text-foreground [overflow-wrap:anywhere]">{card.name || "No name given"}</p>
+        <p className={cn("text-xs [overflow-wrap:anywhere]", card.product ? "text-muted-foreground" : "text-faint")}>{card.product || "No product noted"}</p>
       </div>
       <Button type="button" variant="ghost" size="icon-sm" className="-mt-1 -mr-1.5 cursor-grab text-muted-foreground active:cursor-grabbing" data-drag-handle ref={setActivatorNodeRef} {...attributes} {...listeners} disabled={busy || card.pending} aria-label={`Drag ${name}`}><GripVertical aria-hidden="true" strokeWidth={1.5} /></Button>
     </div>
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[12px] font-medium text-muted-foreground tabular-nums" title={`Received ${new Date(card.createdAt).toLocaleDateString()}`}>{ageLabel(card.createdAt, today)}</span>
+      <span className="text-xs font-medium text-muted-foreground tabular-nums" title={`Received ${new Date(card.createdAt).toLocaleDateString()}`}>{ageLabel(card.createdAt, today)}</span>
       {due && <DueBadge state={due} />}
       <span className="ml-auto">{assignee ? <Avatar email={assignee.email} title={`Assigned to ${assignee.email}`} /> : card.assignedToId ? <Avatar email={card.assignedToId} title={`Assigned to staff ${card.assignedToId}`} /> : null}</span>
     </div>
-    {card.status === "lost" && card.lostReason && <p className="rounded-md bg-surface px-2.5 py-1.5 text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]">{card.lostReason}</p>}
+    {card.status === "lost" && card.lostReason && <p className="rounded-md bg-surface px-2.5 py-1.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">{card.lostReason}</p>}
     {lostPrompt && <form className="grid gap-2 border-t border-line-soft pt-2.5" aria-label={`Reason for losing ${name}`}
       // A form submission, not a click handler: dnd-kit swallows document clicks for 50ms after a drop,
       // while a submit button's default action still fires the submit event. The reason is always sent.
       onSubmit={event => { event.preventDefault(); if (!busy && reason.trim()) onConfirmLost(card, reason.trim()); }}>
-      <label className="grid gap-1.5 text-[12px] font-medium text-foreground">Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={reason} maxLength={500} rows={2} className="min-h-14 bg-card text-[13px]" onInput={event => setReason(event.currentTarget.value)} onChange={() => {}} /></label>
+      <label className="grid gap-1.5 text-xs font-medium text-foreground">Why was this enquiry lost?<Textarea aria-label="Reason for losing" value={reason} maxLength={500} rows={2} className="min-h-14 bg-card text-sm" onInput={event => setReason(event.currentTarget.value)} onChange={() => {}} /></label>
       <div className="flex gap-1.5">
         <Button type="submit" size="xs" disabled={busy || !reason.trim()}>Confirm lost</Button>
         <Button type="button" size="xs" variant="ghost" disabled={busy} onClick={() => { setReason(""); onCancelLost(); }}>Cancel</Button>
       </div>
     </form>}
     <div className="flex items-center gap-1 border-t border-line-soft pt-2.5">
-      <NativeSelect size="sm" aria-label={`Move ${name} to`} containerClassName="min-w-0 flex-1" className="h-7 bg-card text-[12.5px]" value={card.status} disabled={busy || card.pending} onChange={event => onMoveIntent(card, stageOf(event.currentTarget.value))}>
+      <NativeSelect size="sm" aria-label={`Move ${name} to`} containerClassName="min-w-0 flex-1" className="h-7 bg-card text-xs" value={card.status} disabled={busy || card.pending} onChange={event => onMoveIntent(card, stageOf(event.currentTarget.value))}>
         {stageOptions.map(([stage, label]) => <NativeSelectOption key={stage} value={stage}>{label}</NativeSelectOption>)}
       </NativeSelect>
       <Button type="button" variant="ghost" size="icon-sm" title="Open enquiry" aria-label={`Open enquiry from ${name}`} onClick={() => onOpenEnquiry(card.id)}><ArrowUpRight aria-hidden="true" strokeWidth={1.5} /></Button>
@@ -72,13 +72,13 @@ function BoardColumn({ stage, cards, loading, capped, children }: { stage: Enqui
   return <Card ref={setNodeRef} role="region" data-stage-column={stage} data-drop-active={isOver && active ? "true" : undefined} aria-label={`${enquiryStageLabels[stage]} column`}
     className="w-[268px] shrink-0 gap-0 rounded-xl bg-surface py-0 shadow-xs transition-[box-shadow,border-color] duration-200 ease-admin data-[drop-active=true]:border-primary data-[drop-active=true]:shadow-[0_0_0_1px_var(--primary)]">
     <header className="flex items-center justify-between gap-2 border-b border-line-soft px-3.5 py-3">
-      <h4 className="text-[13px] font-semibold text-foreground">{enquiryStageLabels[stage]}</h4>
-      <span data-column-count className="rounded-md bg-card px-2 py-0.5 text-[12px] font-semibold text-muted-foreground tabular-nums" aria-label={`${capped ? "more than " : ""}${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}{capped ? "+" : ""}</span>
+      <h4 className="text-sm font-semibold text-foreground">{enquiryStageLabels[stage]}</h4>
+      <span data-column-count className="rounded-md bg-card px-2 py-0.5 text-xs font-semibold text-muted-foreground tabular-nums" aria-label={`${capped ? "more than " : ""}${cards.length} in ${enquiryStageLabels[stage]}`}>{cards.length}{capped ? "+" : ""}</span>
     </header>
     <div className="grid min-h-40 content-start gap-2 p-2.5">
       {loading && cards.length === 0 ? <Skeleton rows={2} variant="card" /> : children}
-      {!loading && cards.length === 0 && <p className="rounded-lg border border-dashed border-border px-3 py-4 text-[12.5px] leading-relaxed text-muted-foreground">{emptyCopy[stage]}</p>}
-      {capped && <p className="px-1 text-[12px] leading-relaxed text-muted-foreground" data-column-capped={stage}>Showing the newest {cards.length}. More {enquiryStageLabels[stage].toLowerCase()} enquiries are in the list view.</p>}
+      {!loading && cards.length === 0 && <p className="rounded-lg border border-dashed border-border px-3 py-4 text-xs leading-relaxed text-muted-foreground">{emptyCopy[stage]}</p>}
+      {capped && <p className="px-1 text-xs leading-relaxed text-muted-foreground" data-column-capped={stage}>Showing the newest {cards.length}. More {enquiryStageLabels[stage].toLowerCase()} enquiries are in the list view.</p>}
     </div>
   </Card>;
 }
@@ -177,7 +177,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
   const total = enquiryStages.reduce((sum, stage) => sum + columns[stage].length, 0);
   return <section className="grid min-w-0 gap-4" aria-label="Pipeline board" aria-busy={loading || busy}>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-[13.5px] text-muted-foreground tabular-nums">{loading && total === 0 ? "Loading the pipeline…" : `${total} ${total === 1 ? "enquiry" : "enquiries"} across ${enquiryStages.length} stages. Drag a card or use its Move to control.`}</p>
+      <p className="text-sm text-muted-foreground tabular-nums">{loading && total === 0 ? "Loading the pipeline…" : `${total} ${total === 1 ? "enquiry" : "enquiries"} across ${enquiryStages.length} stages. Drag a card or use its Move to control.`}</p>
       <Button type="button" size="sm" variant="outline" disabled={loading || busy} aria-busy={loading} onClick={() => void load()}><RotateCw aria-hidden="true" strokeWidth={1.5} />Reload board</Button>
     </div>
     {error && <Notice tone="error">{error}</Notice>}
@@ -193,7 +193,7 @@ export function CrmBoard({ session, onDenied, onOpenEnquiry, onOpenContact, toda
           })}
         </BoardColumn>)}
       </div>
-      <p className="text-[12px] text-muted-foreground lg:hidden" aria-hidden="true">Scroll sideways to reach every stage.</p>
+      <p className="text-xs text-muted-foreground lg:hidden" aria-hidden="true">Scroll sideways to reach every stage.</p>
     </DndContext>
   </section>;
 }

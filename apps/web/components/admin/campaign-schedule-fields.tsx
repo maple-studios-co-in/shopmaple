@@ -72,7 +72,7 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
     <section aria-label="Campaign schedule" className="mt-8 grid gap-4 rounded-lg border border-line-soft bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <SectionHeading className="m-0" description="India time · Asia/Kolkata · UTC+05:30">Campaign schedule</SectionHeading>
-        <p role="status" className="flex items-center gap-2 rounded-md bg-card px-2.5 py-1.5 text-[12.5px] font-medium text-foreground shadow-xs tabular-nums">
+        <p role="status" className="flex items-center gap-2 rounded-md bg-card px-2.5 py-1.5 text-xs font-medium text-foreground shadow-xs tabular-nums">
           <CalendarClock aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground" />
           <span>
             Draft schedule: {!value?.startsAt && !value?.endsAt ? "Always visible" : (
@@ -82,7 +82,7 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
           </span>
         </p>
       </div>
-      <p id={descriptionId} className="max-w-[68ch] text-[12.5px] leading-relaxed text-muted-foreground">
+      <p id={descriptionId} className="max-w-[68ch] text-xs leading-relaxed text-muted-foreground">
         The banner is visible from the start time (inclusive) until the end time (exclusive), and hidden outside this window.
         Apply schedule changes, then Save draft and Publish draft to update the storefront.
         Leave either date empty for no limit.
@@ -92,9 +92,9 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
           <Notice tone="info">Schedule edit in progress. Apply or cancel before saving, publishing, or switching sections.</Notice>
           <FieldGrid>
             <label className="grid min-w-0 gap-2">
-              <span className="text-[12.5px] font-medium text-foreground">Starts at (India time)</span>
+              <span className="text-xs font-medium text-foreground">Starts at (India time)</span>
               <Input type="datetime-local" step="0.001" aria-label="Starts at (India time)" value={starts}
-                className="h-10 bg-card text-[13.5px] tabular-nums"
+                className="h-10 bg-card text-sm tabular-nums"
                 aria-describedby={describedBy} aria-invalid={Boolean(error)}
                 onChange={() => {}}
                 onInput={(event) => {
@@ -103,9 +103,9 @@ export function CampaignScheduleFields({ value, onChange, onEditingChange }: {
                 }} />
             </label>
             <label className="grid min-w-0 gap-2">
-              <span className="text-[12.5px] font-medium text-foreground">Ends at (India time)</span>
+              <span className="text-xs font-medium text-foreground">Ends at (India time)</span>
               <Input type="datetime-local" step="0.001" aria-label="Ends at (India time)" value={ends}
-                className="h-10 bg-card text-[13.5px] tabular-nums"
+                className="h-10 bg-card text-sm tabular-nums"
                 aria-describedby={describedBy} aria-invalid={Boolean(error)}
                 onChange={() => {}}
                 onInput={(event) => {

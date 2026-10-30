@@ -32,7 +32,7 @@ function TextFields({ nodes, original, onChange, path = [] }: {
     const children = <TextFields nodes={node.children} original={typeof baseline === "object" ? baseline.children : []} path={position} onChange={children => replace({ ...node, children })} />;
     if (!labels[node.tag]) return <div key={index} className="grid gap-3">{children}</div>;
     return <details key={index} className="min-w-0 rounded-lg border border-border bg-card shadow-xs open:shadow-sm">
-      <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2.5 text-sm focus-visible:outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
         <ChevronRight aria-hidden="true" strokeWidth={1.5} className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 ease-admin motion-reduce:transition-none [details[open]>summary>&]:rotate-90" />
         <span className="shrink-0 font-semibold text-foreground">{labels[node.tag]}</span>
         <span className="truncate text-muted-foreground"> · {previewText(node.children) || "Empty text"}</span>

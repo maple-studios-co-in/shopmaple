@@ -55,7 +55,7 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
       </FieldGrid>
       <Card className="gap-5 px-5 py-5 shadow-xs sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">{slot.label}</h3>
+          <h3 className="text-base font-semibold tracking-[-0.01em] text-foreground">{slot.label}</h3>
           <Badge variant="secondary" className={cn("rounded-md border-0 font-semibold", overridden ? "bg-accent-tint text-primary" : "bg-neutral-bg text-neutral")}>
             {overridden ? "Custom artwork in this draft" : "Using original artwork"}
           </Badge>
@@ -64,19 +64,19 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
         <div className={cn("grid gap-5", responsive && "lg:grid-cols-2")} key={selected}>
           <div role="group" aria-label="Desktop artwork" className="grid min-w-0 content-start gap-3">
-            <p className="text-[12px] font-semibold tracking-[0.02em] text-muted-foreground uppercase">Desktop</p>
+            <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">Desktop</p>
             <Field label="Desktop image URL" value={artwork.image} maxLength={1000} onChange={image => update({ image })} />
             <MediaPicker label="Desktop image" value={artwork.image} onChange={image => update({ image })} session={session} onExpired={onExpired} />
           </div>
           {responsive && <div role="group" aria-label="Mobile artwork" className="grid min-w-0 content-start gap-3">
-            <p className="text-[12px] font-semibold tracking-[0.02em] text-muted-foreground uppercase">Mobile</p>
+            <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">Mobile</p>
             <Field label="Mobile image URL" value={artwork.mobileImage ?? ""} maxLength={1000} onChange={mobileImage => update({ mobileImage })} />
             <MediaPicker label="Mobile image" value={artwork.mobileImage ?? ""} onChange={mobileImage => update({ mobileImage })} session={session} onExpired={onExpired} />
           </div>}
         </div>
         <div className="grid gap-2 border-t border-line-soft pt-5">
           <Field label="Image description" value={artwork.alt} maxLength={200} onChange={alt => update({ alt })} />
-          <Prose className="text-[12.5px]">{decorative ? "Leave the description blank if this artwork is decorative. Otherwise describe what it communicates." : "Describe what the image communicates for visitors using a screen reader. A description is required."}</Prose>
+          <Prose className="text-xs">{decorative ? "Leave the description blank if this artwork is decorative. Otherwise describe what it communicates." : "Describe what the image communicates for visitors using a screen reader. A description is required."}</Prose>
         </div>
         <div>
           <Button type="button" variant="outline" size="sm" disabled={!overridden} onClick={() => {

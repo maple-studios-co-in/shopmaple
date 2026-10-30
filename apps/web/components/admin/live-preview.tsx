@@ -176,7 +176,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const onViewChange = useCallback((next: PreviewView) => setView(next), []);
 
   const full = fullscreen;
-  const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-semibold text-neutral outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
+  const segment = "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-neutral focus-visible:outline-none transition-[color,background-color,box-shadow] duration-150 ease-admin hover:bg-white/60 hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/60 [&_svg]:size-3.5";
   const segmentOn = "aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs has-[input:checked]:bg-card has-[input:checked]:text-foreground has-[input:checked]:shadow-xs has-[input:focus-visible]:ring-[3px] has-[input:focus-visible]:ring-ring/60";
   const dot = { ready: "bg-success", loading: "bg-info motion-safe:animate-pulse", saving: "bg-info motion-safe:animate-pulse", blocked: "bg-warning", error: "bg-danger", pending: "bg-faint" }[state];
   const deviceFrame = device === "desktop"
@@ -213,7 +213,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
             </label>
           ))}
         </fieldset>
-        <span data-preview-status data-state={state} role="status" title={statusLabel} className={cn("inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-[12.5px] font-medium text-ellipsis whitespace-nowrap text-muted-foreground", full && "max-md:basis-full")}>
+        <span data-preview-status data-state={state} role="status" title={statusLabel} className={cn("inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-xs font-medium text-ellipsis whitespace-nowrap text-muted-foreground", full && "max-md:basis-full")}>
           <span aria-hidden="true" className={cn("size-[7px] shrink-0 rounded-full", dot)} />
           <span className="truncate">{statusLabel}</span>
         </span>
@@ -245,7 +245,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
               <EmptyState title="Preview unavailable" action={<Button type="button" variant="outline" onClick={retry}>Retry preview</Button>}>{mintError.message}</EmptyState>
             </div>
           ) : unpublished ? (
-            <div className={placeholder}><p className="max-w-[36ch] text-[13.5px] text-muted-foreground">Nothing is published yet. Publish the draft to compare it with the live storefront.</p></div>
+            <div className={placeholder}><p className="max-w-[36ch] text-sm text-muted-foreground">Nothing is published yet. Publish the draft to compare it with the live storefront.</p></div>
           ) : src ? (
             <iframe ref={frame} data-live-preview-frame title={frameTitle} src={src} referrerPolicy="same-origin" className={cn("block min-h-full w-full flex-1 border-0 bg-white", device === "phone" ? "rounded-2xl" : "rounded-[10px]")} />
           ) : (

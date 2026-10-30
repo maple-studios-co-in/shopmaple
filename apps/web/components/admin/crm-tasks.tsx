@@ -25,13 +25,13 @@ function TaskRow({ task, today, staff, busy, onToggle, onOpenEnquiry, onOpenCont
   const assignee = task.assigneeId ? staff.get(task.assigneeId)?.email ?? `Staff ${task.assigneeId}` : "Unassigned";
   return <li><article className={cn(rowCard, "items-start data-[done=true]:bg-surface")} data-task={task.id} data-due={state} data-done={task.done ? "true" : "false"}>
     <button type="button" disabled={busy} aria-pressed={task.done} aria-label={task.done ? `Reopen ${task.title}` : `Mark ${task.title} done`} onClick={() => onToggle(task)}
-      className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border border-input bg-card text-transparent transition-[background-color,border-color,color] duration-150 ease-admin outline-none hover:border-primary hover:text-primary/60 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground">
+      className="mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-full border border-input bg-card text-transparent transition-[background-color,border-color,color] duration-150 ease-admin focus-visible:outline-none hover:border-primary hover:text-primary/60 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground">
       <Check className="size-3" strokeWidth={2.5} aria-hidden="true" />
     </button>
     <div className="grid min-w-0 flex-1 gap-1">
-      <p className={cn("text-[13.5px] leading-snug font-semibold text-foreground [overflow-wrap:anywhere]", task.done && "text-muted-foreground line-through decoration-line-soft")}>{task.title}</p>
-      {task.note && <p className="text-[12.5px] leading-relaxed whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">{task.note}</p>}
-      <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted-foreground">
+      <p className={cn("text-sm leading-snug font-semibold text-foreground [overflow-wrap:anywhere]", task.done && "text-muted-foreground line-through decoration-line-soft")}>{task.title}</p>
+      {task.note && <p className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">{task.note}</p>}
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {task.done && task.completedAt ? <span className="tabular-nums">Done {formatDate(task.completedAt)}</span> : <DueBadge state={state}>{state === "upcoming" ? `Due ${formatDate(task.dueOn)}` : `${state === "overdue" ? "Overdue" : "Due today"}, ${formatDate(task.dueOn)}`}</DueBadge>}
         <span className="[overflow-wrap:anywhere]">{assignee}</span>
       </div>
@@ -127,12 +127,12 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
     callbacks.current.onChanged?.();
   }
   return <section className="grid gap-3" aria-label="Follow-ups" aria-busy={busy || loading}>
-    <h4 className="text-[13.5px] font-semibold text-foreground">Follow-ups</h4>
+    <h4 className="text-sm font-semibold text-foreground">Follow-ups</h4>
     {loading && open.length === 0 && done.length === 0 && <Skeleton rows={2} />}
     {!loading && !error && open.length === 0 && done.length === 0 && <EmptyState title="No follow-ups yet.">Add the next step with a due date so it shows up in Overdue and Due today.</EmptyState>}
     {open.length > 0 && <ul className="grid gap-2">{open.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>}
     {done.length > 0 && <>
-      <p className="mt-2 text-[11.5px] font-semibold tracking-[0.04em] text-muted-foreground uppercase">Done</p>
+      <p className="mt-2 text-2xs font-semibold tracking-[0.04em] text-muted-foreground uppercase">Done</p>
       <ul className="grid gap-2">{done.map(task => <TaskRow key={task.id} task={task} today={today} staff={staff} busy={busy} onToggle={toggle} />)}</ul>
     </>}
     {error && <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{error}</Notice><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void load()}>Reload follow-ups</Button></div>}
@@ -140,7 +140,7 @@ export function TaskPanel({ session, onDenied, parent, today = localToday(), onC
     <form className="mt-1 grid gap-4 rounded-lg border border-line-soft bg-surface p-4" onSubmit={add} aria-label="Add a follow-up">
       <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0"><FieldGrid>
         <Field label="Follow-up title" value={title} maxLength={200} onChange={setTitle} />
-        <label className="grid min-w-0 gap-2"><span className="text-[12.5px] font-medium text-foreground">Due</span><Input aria-label="Due date" type="date" className="h-10 bg-card text-[13.5px]" value={dueOn} disabled={busy} onChange={event => setDueOn(event.currentTarget.value)} /></label>
+        <label className="grid min-w-0 gap-2"><span className="text-xs font-medium text-foreground">Due</span><Input aria-label="Due date" type="date" className="h-10 bg-card text-sm" value={dueOn} disabled={busy} onChange={event => setDueOn(event.currentTarget.value)} /></label>
         <SelectField label="Assign follow-up to" value={assigneeId} disabled={busy} onChange={event => setAssigneeId(event.currentTarget.value)}>
           <NativeSelectOption value="">Unassigned</NativeSelectOption>
           {[...staff.values()].map(item => <NativeSelectOption key={item.id} value={item.id}>{item.email}</NativeSelectOption>)}
@@ -206,7 +206,7 @@ export function TaskViews({ session, onDenied, onOpenEnquiry, onOpenContact, tod
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Tabs value={view} onValueChange={value => setView(value as View)}>
         <TabsList aria-label="Follow-up filters">
-          {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-[13px]" disabled={busy} onClick={() => setView(key)}>{label}</TabsTrigger>)}
+          {views.map(([key, label]) => <TabsTrigger key={key} value={key} className="px-3 text-sm" disabled={busy} onClick={() => setView(key)}>{label}</TabsTrigger>)}
         </TabsList>
       </Tabs>
       <CheckField label="Only mine" aria-label="Only mine" checked={mine} disabled={busy} onChange={event => setMine(event.currentTarget.checked)} className="w-auto" />

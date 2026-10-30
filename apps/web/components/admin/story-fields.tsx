@@ -30,7 +30,7 @@ export function StoryFields({ value, onChange }: {
           <Field label="Our Story belief body" value={page.beliefBody} multiline maxLength={8000} onChange={beliefBody => update({ beliefBody })} />
           <Field label="Our Story film heading" value={page.filmHeading.join("\n")} multiline maxLength={482} onChange={value => update({ filmHeading: value.split("\n") })} />
         </FieldGrid>
-        <Prose className="mt-3 text-[12.5px]">Use one line per heading line, up to three. Text displays as text, including any HTML.</Prose>
+        <Prose className="mt-3 text-xs">Use one line per heading line, up to three. Text displays as text, including any HTML.</Prose>
       </div>
       <div>
         <SectionHeading description="Drag sections into order or use the Move buttons. The page heading stays available to screen readers when the hero is hidden.">Sections</SectionHeading>

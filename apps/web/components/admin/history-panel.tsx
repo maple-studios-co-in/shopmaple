@@ -56,7 +56,7 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
   const columns = useMemo(() => [
     column.accessor("version", {
       header: "Version",
-      cell: (info) => <span className="text-[15px] font-semibold text-foreground tabular-nums">{info.getValue()}</span>,
+      cell: (info) => <span className="text-base font-semibold text-foreground tabular-nums">{info.getValue()}</span>,
       meta: { className: "w-20" },
     }),
     column.accessor("action", {
@@ -103,7 +103,7 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
       <Sheet open={open !== null} onOpenChange={(next) => { if (!next) setOpen(null); }}>
         <SheetContent className="w-full gap-0 sm:max-w-xl">
           <SheetHeader className="border-b border-line-soft px-6 py-5">
-            <SheetTitle className="text-[20px] font-semibold tracking-[-0.01em] tabular-nums">Version {open?.version}</SheetTitle>
+            <SheetTitle className="text-xl font-semibold tracking-[-0.01em] tabular-nums">Version {open?.version}</SheetTitle>
             <SheetDescription>
               {open ? `${titleCase(open.action)} by ${open.actorEmail}, ${new Date(open.createdAt).toLocaleString()}. Compared with the draft you are editing.` : ""}
             </SheetDescription>
@@ -119,25 +119,25 @@ export function HistoryPanel({ revisions, loading, canRestore, dirty, current, o
                 <EmptyState title="No differences" icon={<FileDiff strokeWidth={1.5} />}>This version is the same as the current draft.</EmptyState>
               ) : grouped.map(({ area, changes }) => (
                 <section key={area} className="grid gap-2" aria-label={area}>
-                  <h3 className="flex items-baseline justify-between text-[13.5px] font-semibold">{area}<span className="text-[12px] font-normal text-muted-foreground tabular-nums">{changes.length} {changes.length === 1 ? "change" : "changes"}</span></h3>
+                  <h3 className="flex items-baseline justify-between text-sm font-semibold">{area}<span className="text-xs font-normal text-muted-foreground tabular-nums">{changes.length} {changes.length === 1 ? "change" : "changes"}</span></h3>
                   <ul className="grid gap-2">
                     {changes.slice(0, 60).map((change) => (
-                      <li key={change.path} data-change={change.path} className="grid gap-1.5 rounded-lg border border-border bg-card p-3 text-[12.5px]">
-                        <code className="font-sans text-[11.5px] font-medium text-faint">{change.path}</code>
+                      <li key={change.path} data-change={change.path} className="grid gap-1.5 rounded-lg border border-border bg-card p-3 text-xs">
+                        <code className="font-sans text-2xs font-medium text-faint">{change.path}</code>
                         <div className="grid gap-1 sm:grid-cols-2 sm:gap-3">
-                          <p className="rounded-md bg-accent-tint px-2 py-1.5 break-words text-foreground"><span className="block text-[11px] font-semibold text-primary">In version {open?.version}</span>{change.revision}</p>
-                          <p className="rounded-md bg-sunken px-2 py-1.5 break-words text-foreground"><span className="block text-[11px] font-semibold text-muted-foreground">Current draft</span>{change.current}</p>
+                          <p className="rounded-md bg-accent-tint px-2 py-1.5 break-words text-foreground"><span className="block text-2xs font-semibold text-primary">In version {open?.version}</span>{change.revision}</p>
+                          <p className="rounded-md bg-sunken px-2 py-1.5 break-words text-foreground"><span className="block text-2xs font-semibold text-muted-foreground">Current draft</span>{change.current}</p>
                         </div>
                       </li>
                     ))}
                   </ul>
-                  {changes.length > 60 && <p className="text-[12px] text-muted-foreground">And {changes.length - 60} more in this area.</p>}
+                  {changes.length > 60 && <p className="text-xs text-muted-foreground">And {changes.length - 60} more in this area.</p>}
                 </section>
               ))}
           </div>
           {canRestore && open && (
             <SheetFooter className="border-t border-line-soft px-6 py-4">
-              {dirty && <p className="text-[12.5px] text-muted-foreground">Save local changes before restoring.</p>}
+              {dirty && <p className="text-xs text-muted-foreground">Save local changes before restoring.</p>}
               {restoreButton(open)}
             </SheetFooter>
           )}

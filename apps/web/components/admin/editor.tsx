@@ -609,7 +609,7 @@ export function ContentEditor({
                     type="button"
                     aria-pressed={mobilePane === pane}
                     onClick={() => setMobilePane(pane)}
-                    className="h-8 rounded-md px-3 text-[12.5px] font-semibold text-muted-foreground outline-none transition-colors duration-150 ease-admin focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs"
+                    className="h-8 rounded-md px-3 text-xs font-semibold text-muted-foreground focus-visible:outline-none transition-colors duration-150 ease-admin focus-visible:ring-[3px] focus-visible:ring-ring/60 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs"
                   >
                     {pane === "editor" ? "Editor" : "Preview"}
                   </button>
@@ -731,7 +731,7 @@ export function ContentEditor({
 /** A notice under the top bar: one tone each for errors, confirmations and information. */
 function bannerClass(tone: "error" | "status" | "info") {
   return cn(
-    "flex items-start gap-3 rounded-lg border px-3.5 py-2.5 text-[12.5px] leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2",
+    "flex items-start gap-3 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2",
     tone === "error" ? "border-danger/20 bg-danger-bg text-danger" : tone === "status" ? "border-success/20 bg-success-bg text-success" : "border-border bg-sunken text-foreground",
   );
 }

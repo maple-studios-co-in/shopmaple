@@ -16,7 +16,7 @@ import { CheckField, FieldGrid, SectionHeading, SelectField, rowCard } from "./k
 const blockTypeLabels: Record<AuthoredBlock["type"], string> = { paragraph: "Paragraph", heading: "Heading", quote: "Quotation", list: "List", link: "Link", image: "Image" };
 /** A short hint under a block's fields. */
 function Hint({ children }: { children: ReactNode }) {
-  return <p data-span="full" className="text-[12.5px] leading-relaxed text-muted-foreground">{children}</p>;
+  return <p data-span="full" className="text-xs leading-relaxed text-muted-foreground">{children}</p>;
 }
 
 export function newAuthoredBlock(type: Exclude<AuthoredBlock["type"], "image">): AuthoredBlock {
@@ -73,13 +73,13 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
   }}>
     <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
       <SectionHeading className="m-0" description="Keep at least one block. Drag blocks into order or use the Move buttons. HTML is displayed as text.">{blockLabel}s</SectionHeading>
-      <p className="text-[12px] text-muted-foreground tabular-nums">{value.length} of 60 blocks</p>
+      <p className="text-xs text-muted-foreground tabular-nums">{value.length} of 60 blocks</p>
     </div>
     <SortableList items={value} getId={block => block.id} getLabel={(_, index) => `Block ${index + 1}`} tag="div" rowTag="fieldset" onReorder={blocks => onChange(blocks)}
       rowClassName={cn(rowCard, "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 p-3 sm:p-4")}
       rowProps={block => ({ "aria-label": blockLabel, "data-block-id": block.id })}
       renderItem={(block, index, handle) => <>
-      <legend className="float-left col-start-1 row-start-1 flex min-h-8 items-center gap-2 text-[13px] font-semibold text-foreground">
+      <legend className="float-left col-start-1 row-start-1 flex min-h-8 items-center gap-2 text-sm font-semibold text-foreground">
         Block {index + 1}
         <Badge variant="secondary" className="rounded-md border-0 bg-neutral-bg font-medium text-neutral">{blockTypeLabels[block.type]}</Badge>
       </legend>
@@ -119,7 +119,7 @@ export function AuthoredBlockFields({ value, onChange, session, onExpired, block
       </div>
     </>} />
     <div className="mt-4 flex flex-wrap items-center gap-2">
-      <span className="mr-1 text-[12px] font-medium text-muted-foreground">Add a block</span>
+      <span className="mr-1 text-xs font-medium text-muted-foreground">Add a block</span>
       {(["paragraph", "heading", "quote", "list", "link"] as const).map(type => <Button key={type} type="button" variant="outline" size="sm" disabled={atLimit} onClick={() => addBlock(newAuthoredBlock(type))}><Plus aria-hidden="true" strokeWidth={1.5} />Add {type}</Button>)}
       <Button type="button" variant="outline" size="sm" disabled={atLimit || addingImage || !session || !onExpired} onClick={() => setAddingImage(true)}><ImagePlus aria-hidden="true" strokeWidth={1.5} />Add image</Button>
     </div>
