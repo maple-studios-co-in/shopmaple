@@ -33,7 +33,7 @@ export function DataTable<T>({ columns, data, label, empty, onRowOpen, rowLabel,
   const table = useReactTable({ data, columns, getRowId, state: { sorting }, onSortingChange: setSorting, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel() });
   const rows = table.getRowModel().rows;
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
       <Table aria-label={label}>
         <TableHeader className="bg-surface">
           {table.getHeaderGroups().map((group) => (

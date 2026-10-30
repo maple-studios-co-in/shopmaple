@@ -420,7 +420,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
           <SidebarTrigger className="-ml-1 hidden text-muted-foreground md:inline-flex" />
           <Separator orientation="vertical" className="hidden h-5 md:block" />
           <SectionPicker groups={visibleGroups} current={tab} disabled={navDisabled} onSelect={selectTab} />
-          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">
+          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2 max-md:order-last max-md:basis-full">
             <StatusChip tone={draftTone} data-draft-status="">
               {document ? `Draft version ${document.version}` : "Loading draft"}
               {conflict ? ", conflict" : busy || saving ? ", saving" : dirty ? ", unsaved changes" : ""}
@@ -429,7 +429,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
               {document?.publishedVersion ? `Published version ${document.publishedVersion}` : "Not published yet"}
             </StatusChip>
           </div>
-          <div className="flex-1" aria-hidden="true" />
+          <div className="flex-1 max-md:hidden" aria-hidden="true" />
           <CommandPalette
             groups={visibleGroups}
             icons={icons}

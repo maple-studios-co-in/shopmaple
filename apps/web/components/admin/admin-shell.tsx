@@ -101,9 +101,9 @@ export function StatusChip({ tone, children, ...props }: { tone: keyof typeof ch
 /** The phone-width section picker that mirrors the sidebar (the sidebar itself is a sheet there). */
 export function SectionPicker<T extends string>({ groups, current, disabled, onSelect }: { groups: NavGroup<T>[]; current: T; disabled: (name: T) => boolean; onSelect: (name: T) => void }) {
   return (
-    <label className="min-w-0 md:hidden">
+    <label className="min-w-0 flex-1 basis-24 md:hidden">
       <span className="sr-only">Admin section</span>
-      <NativeSelect aria-label="Admin section" size="sm" className="max-w-[46vw] bg-card font-medium" value={current} onChange={(event) => onSelect(event.target.value as T)}>
+      <NativeSelect aria-label="Admin section" size="sm" className="w-full max-w-[46vw] bg-card font-medium" value={current} onChange={(event) => onSelect(event.target.value as T)}>
         {groups.map((group) => group.label === null
           ? group.items.map((name) => <NativeSelectOption key={name} value={name} disabled={disabled(name)}>{name}</NativeSelectOption>)
           : (

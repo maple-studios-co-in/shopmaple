@@ -149,3 +149,26 @@ test("opening a row shows the enquiry in a sheet with its activity as a timeline
         globalThis.fetch = previous;
     }
 });
+
+test("on a phone the enquiry table scrolls inside its own container instead of widening the page", async () => {
+    const previous = globalThis.fetch;
+    globalThis.fetch = async (url) => String(url).includes("/assignees") ? Response.json({ items: [], nextCursor: null }) : Response.json({ items: [row], nextCursor: null });
+    const root = createRoot(container);
+    try {
+        await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => { throw Error("unexpected expiry"); }}/>));
+        const scroller = page.querySelector<HTMLElement>('[data-slot="table-container"]')!;
+        assert.ok(scroller.classList.contains("overflow-x-auto"), "The table has its own horizontal scroll container");
+        // Grid and flex items default to min-width: auto, so any ancestor without min-w-0 lets the
+        // table's content width stretch it past a 375 px screen.
+        const section = page.querySelector('section[aria-label="Customer enquiries"]')!;
+        const stretching: string[] = [];
+        for (let node = scroller.parentElement; node && node !== section; node = node.parentElement) {
+            if (!node.classList.contains("min-w-0")) stretching.push(`${node.tagName.toLowerCase()}.${[...node.classList].join(".")}`);
+        }
+        assert.deepEqual(stretching, [], "Every container between the inbox and the table can shrink below the table's width");
+    }
+    finally {
+        await act(async () => root.unmount());
+        globalThis.fetch = previous;
+    }
+});
