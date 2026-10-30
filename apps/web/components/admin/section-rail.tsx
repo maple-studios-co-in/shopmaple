@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeCheckbox } from "@/components/ui/native-checkbox";
 import { previewFrameUrl } from "@/lib/live-preview";
-import { sectionSignature, type HomeSectionKey } from "@/lib/section-thumbnails";
+import { sectionName, sectionSignature, type HomeSectionKey } from "@/lib/section-thumbnails";
 import { cn } from "@/lib/utils";
 import { MoveButtons, focusRing, rowCard } from "./kit";
 import { SortableList } from "./sortable-list";
@@ -25,7 +25,6 @@ const editTargets: Record<HomeSectionKey, EditTarget> = {
   bestsellers: { kind: "screen", screen: "Merchandising" }, chairs: { kind: "screen", screen: "Merchandising" },
   instagram: { kind: "screen", screen: "Instagram" },
 };
-export const sectionName = (key: string) => key.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 /** The width the storefront is drawn at inside a thumbnail, and how much of the section's top it shows. */
 const frameWidth = 1280;
@@ -110,6 +109,11 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
   const sections = content.homeSections;
   const hidden = sections.filter((section) => !section.enabled);
   const setSections = (homeSections: Section[]) => edit({ ...content, homeSections });
+  // A section selected from the live preview brings its card into view.
+  useEffect(() => {
+    if (!selected) return;
+    document.querySelector<HTMLElement>(`[data-section-card="${selected}"]`)?.scrollIntoView?.({ block: "nearest" });
+  }, [selected]);
 
   function openContent(section: Section) {
     onSelect(section.key);

@@ -565,7 +565,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
               <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
-                onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection} />
+                onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
+                onSelectSection={tab === "Homepage" ? setFocusedSection : undefined} />
             )}
           </div>
         )}

@@ -6,6 +6,8 @@
 import type { StorefrontContent } from "@shopmaple/contracts";
 
 export type HomeSectionKey = StorefrontContent["homeSections"][number]["key"];
+/** A section's display name, as the editor and the preview's Edit buttons show it. */
+export const sectionName = (key: string) => key.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 /**
  * The draft as one section's thumbnail renders it: only that section (shown even when the

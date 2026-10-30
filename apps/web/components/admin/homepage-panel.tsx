@@ -4,6 +4,7 @@ import { Field } from "./field";
 import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
 import { HomeDetailsFields } from "./home-details-fields";
 import { CheckField, FieldGrid, PanelHeader, SectionHeading } from "./kit";
+import { sectionName } from "@/lib/section-thumbnails";
 import { SectionRail, type SectionScreen, type ThumbnailSource } from "./section-rail";
 
 type Copy = StorefrontContent["homeCopy"];
@@ -17,8 +18,7 @@ const copyLabels: Record<keyof Copy, string> = {
   testimonialSubheading: "Testimonial subheading",
 };
 const copyLimit = (key: keyof Copy) => key === "ticker" ? 600 : key === "testimonialSubheading" ? 300 : 160;
-export const titleCase = (value: string) =>
-  value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+export const titleCase = sectionName;
 
 export function HomepagePanel({ content, edit, focusedSection, onSelectSection, onOpenScreen, thumbnails }: {
   content: StorefrontContent;

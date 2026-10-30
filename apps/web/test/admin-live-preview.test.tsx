@@ -136,6 +136,9 @@ test("messages are trusted only from the expected origin and window, and only wi
   assert.equal(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "ready", sections: "hero" } }, origin, parent), null, "Malformed payloads are ignored");
   assert.deepEqual(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "focus", section: "hero" } }, origin, parent), { type: "focus", section: "hero" });
   assert.equal(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "focus", section: "<script>" } }, origin, parent), null, "Section keys are validated");
+  assert.deepEqual(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "select", section: "nimbus" } }, origin, parent), { type: "select", section: "nimbus" });
+  assert.equal(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "select", section: null } }, origin, parent), null, "Selecting needs a section");
+  assert.equal(readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, type: "select", section: "../admin" } }, origin, parent), null);
 });
 
 test("opening the live preview mints a token for the loaded version and embeds the frame on the page being edited", async () => {
@@ -275,6 +278,46 @@ test("inside the frame: the bridge announces its sections to the parent and scro
     assert.equal(container.querySelector('[data-home-section="categories"]')?.getAttribute("data-preview-highlight"), "true");
     assert.equal(container.querySelector('[data-home-section="hero"]')?.getAttribute("data-preview-highlight"), null);
   } finally { await act(async () => root.unmount()); }
+});
+
+test("inside the frame: hovering a draft section offers Edit, which selects that section in the editor; the published view offers nothing", async () => {
+  const parentMessages: { data: any; origin: string }[] = [];
+  const parent = { postMessage: (data: unknown, origin: string) => { parentMessages.push({ data, origin }); } } as unknown as Window;
+  const root = createRoot(container);
+  const editButton = () => [...container.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.startsWith("Edit"));
+  try {
+    for (const selectable of [false, true]) {
+      await act(async () => root.render(
+        <div>
+          <div data-home-section="hero">Hero</div>
+          <div data-home-section="dining-banner"><a href="/collections/dining">Dining</a></div>
+          <PreviewFrameBridge path="/" version={7} parentWindow={parent} selectable={selectable} />
+        </div>,
+      ));
+      const banner = container.querySelector('[data-home-section="dining-banner"] a')!;
+      await act(async () => { banner.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })); });
+      if (!selectable) { assert.equal(editButton(), undefined, "the published view is not editable"); continue; }
+      assert.equal(editButton()?.textContent, "Edit Dining Banner");
+      assert.equal(container.querySelector('[data-home-section="dining-banner"]')?.getAttribute("data-preview-hover"), "true");
+      await act(async () => editButton()!.click());
+      assert.deepEqual(parentMessages.at(-1), { data: { source: previewMessageSource, type: "select", section: "dining-banner" }, origin: "http://localhost:3000" });
+    }
+  } finally { await act(async () => root.unmount()); }
+});
+
+test("pressing Edit on a section in the live preview selects its card; a message from elsewhere selects nothing", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    const frameWindow = frame().contentWindow!;
+    const select = { source: previewMessageSource, type: "select", section: "nimbus" };
+    const card = () => container.querySelector('[data-section-card="nimbus"]');
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: select, origin: "https://evil.example", source: frameWindow })); });
+    assert.equal(card()?.getAttribute("aria-current"), null);
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: select, origin: "http://localhost:3000", source: frameWindow })); });
+    assert.equal(card()?.getAttribute("aria-current"), "true");
+  } finally { await app.close(); }
 });
 
 test("a rejected mint is requested exactly once, shows a designed error with a manual retry, and never retries by itself", async () => {

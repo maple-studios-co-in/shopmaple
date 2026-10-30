@@ -34,7 +34,9 @@ export function previewTokenState(state: PreviewTokenState, version: number, now
 
 export type FrameToParentMessage =
   | { type: "ready"; path: string; version: number; sections: string[] }
-  | { type: "navigate"; path: string };
+  | { type: "navigate"; path: string }
+  /** The staff member pressed Edit on a section inside the preview. */
+  | { type: "select"; section: string };
 export type ParentToFrameMessage = { type: "focus"; section: string | null };
 export type PreviewMessage = FrameToParentMessage | ParentToFrameMessage;
 
@@ -63,6 +65,7 @@ export function readPreviewMessage(
     return { type: "ready", path: message.path, version: message.version as number, sections: message.sections };
   }
   if (message.type === "navigate") return isPath(message.path) ? { type: "navigate", path: message.path } : null;
+  if (message.type === "select") return isSection(message.section) ? { type: "select", section: message.section } : null;
   if (message.type === "focus") {
     if (message.section === null) return { type: "focus", section: null };
     return isSection(message.section) ? { type: "focus", section: message.section } : null;

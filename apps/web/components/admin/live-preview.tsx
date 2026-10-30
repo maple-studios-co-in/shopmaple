@@ -84,6 +84,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
       if (!message) return;
       if (message.type === "ready") { setFrameStatus("ready"); setFramePath(message.path); }
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }
+      else if (message.type === "select") selectRef.current?.(message.section);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
