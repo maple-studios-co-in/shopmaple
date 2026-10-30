@@ -35,9 +35,10 @@
   --color-espresso: #29251f;
   --color-taupe: #746c62;
   --color-sand: #e1d9d0;
+  --color-leaf: #428445;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
-  /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 42 px */
+  /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
   --text-label: 12px;
   --text-label--line-height: 1.45;
   --text-meta: 13px;
@@ -58,6 +59,8 @@
   --text-h3--line-height: 1.1;
   --text-h2: 29px;
   --text-h2--line-height: 1.1;
+  --text-title: 34px;
+  --text-title--line-height: 1.2;
   --text-h1: 42px;
   --text-h1--line-height: 1.1;
 }

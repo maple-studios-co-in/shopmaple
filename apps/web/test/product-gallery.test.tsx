@@ -35,7 +35,7 @@ async function mount(check: () => Promise<void>, images = product.images) {
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
 function button(label: string) { return document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!; }
-function selected() { return document.querySelector('.product-thumbnails button[aria-pressed="true"]')?.getAttribute("aria-label"); }
+function selected() { return document.querySelector('[data-thumbnails] button[aria-pressed="true"]')?.getAttribute("aria-label"); }
 async function key(target: Element, value: string) {
   const event = new dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true });
   await act(async () => { target.dispatchEvent(event); });
@@ -54,26 +54,26 @@ test("thumbnails, variant images and zoom retain their existing behavior", async
     assert.equal(selected(), "Show product image 3");
     await act(async () => button("Enlarge product image").click());
     assert.equal(document.querySelector("dialog")?.open, true);
-    assert.equal(document.querySelector(".pdp-zoom img")?.getAttribute("src"), "https://example.com/green.jpg");
+    assert.equal(document.querySelector("[data-zoom] img")?.getAttribute("src"), "https://example.com/green.jpg");
     await act(async () => button("Close Aero Chair").click());
     await act(async () => document.querySelector<HTMLInputElement>('input[value="red"]')!.click());
     assert.equal(selected(), "Show product image 2");
-    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/red.jpg");
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/red.jpg");
   });
 });
 test("empty and broken image sources retain a readable fallback", async () => {
   await mount(async () => {
-    assert.match(document.querySelector(".product-main-image")!.textContent!, /Image unavailable/);
+    assert.match(document.querySelector("[data-main-image]")!.textContent!, /Image unavailable/);
     assert.equal(document.querySelector('[aria-label="Enlarge product image"]'), null);
   }, []);
   await mount(async () => {
-    await act(async () => document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("error")));
-    assert.match(document.querySelector(".product-main-image")!.textContent!, /Image unavailable/);
+    await act(async () => document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("error")));
+    assert.match(document.querySelector("[data-main-image]")!.textContent!, /Image unavailable/);
   });
 });
 test("focused gallery arrows wrap images while control buttons keep their keyboard behavior", async () => {
   await mount(async () => {
-    const gallery = document.querySelector<HTMLElement>(".product-gallery")!;
+    const gallery = document.querySelector<HTMLElement>("[data-gallery]")!;
     gallery.focus();
     await key(gallery, "ArrowLeft");
     assert.equal(selected(), "Show product image 3");
@@ -112,9 +112,9 @@ test("horizontal swipes change images without consuming vertical scrolling or co
 });
 test("previous image stays visible until the chosen image loads, then yields to it", async () => {
   await mount(async () => {
-    await act(async () => { document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("load")); });
+    await act(async () => { document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("load")); });
     await act(async () => button("Next product image").click());
-    const images = [...document.querySelectorAll<HTMLImageElement>(".product-main-image img")];
+    const images = [...document.querySelectorAll<HTMLImageElement>("[data-main-image] img")];
     assert.equal(images.length, 2, "retain only the previous and requested full-size images");
     assert.equal(images[0]!.getAttribute("src"), "https://example.com/red.jpg");
     assert.equal(images[0]!.parentElement!.style.opacity, "0");
@@ -122,27 +122,27 @@ test("previous image stays visible until the chosen image loads, then yields to 
     await act(async () => { images[0]!.dispatchEvent(new dom.window.Event("load")); });
     assert.equal(images[0]!.parentElement!.style.opacity, "1");
     await act(async () => new Promise((resolve) => setTimeout(resolve, 220)));
-    assert.equal(document.querySelectorAll(".product-main-image img").length, 1);
+    assert.equal(document.querySelectorAll("[data-main-image] img").length, 1);
   });
 });
 test("failed replacement images reveal the fallback rather than hiding it behind the previous photo", async () => {
   await mount(async () => {
     await act(async () => button("Next product image").click());
-    await act(async () => { document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("error")); });
-    const fallback = document.querySelector('.product-main-image [role="img"]')!;
+    await act(async () => { document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("error")); });
+    const fallback = document.querySelector('[data-main-image] [role="img"]')!;
     assert.match(fallback.getAttribute("aria-label")!, /Aero Chair — view 2 — Image unavailable/);
     assert.equal((fallback.parentElement as HTMLElement).style.opacity, "1");
     await act(async () => new Promise((resolve) => setTimeout(resolve, 220)));
-    assert.equal(document.querySelectorAll(".product-main-image img").length, 0);
+    assert.equal(document.querySelectorAll("[data-main-image] img").length, 0);
   });
 });
 test("rapid selections keep the last loaded image while obsolete requests cannot become visible", async () => {
   await mount(async () => {
     await act(async () => button("Next product image").click());
-    const obsolete = document.querySelector(".product-main-image img")!;
+    const obsolete = document.querySelector("[data-main-image] img")!;
     await act(async () => button("Next product image").click());
     await act(async () => { obsolete.dispatchEvent(new dom.window.Event("load")); });
-    const images = [...document.querySelectorAll<HTMLImageElement>(".product-main-image img")];
+    const images = [...document.querySelectorAll<HTMLImageElement>("[data-main-image] img")];
     assert.equal(images.length, 2);
     assert.equal(images[0]!.getAttribute("src"), "https://example.com/green.jpg");
     assert.equal(images[0]!.parentElement!.style.opacity, "0");
@@ -153,20 +153,20 @@ test("rapid selections keep the last loaded image while obsolete requests cannot
 test("all photos in a large gallery remain selectable, zoomable and keyboard reachable", async () => {
   const images = Array.from({ length: 240 }, (_, i) => `https://example.com/gallery-${i}.jpg`);
   await mount(async () => {
-    assert.equal(document.querySelectorAll(".product-thumbnails button").length, 240);
+    assert.equal(document.querySelectorAll("[data-thumbnails] button").length, 240);
     await act(async () => button("Show product image 240").click());
     assert.equal(selected(), "Show product image 240");
-    assert.match(document.querySelector(".pdp-gallery-controls")!.textContent!, /240 \/ 240/);
-    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
+    assert.match(document.querySelector("[data-gallery-controls]")!.textContent!, /240 \/ 240/);
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
     await act(async () => button("Enlarge product image").click());
-    assert.equal(document.querySelector(".pdp-zoom img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
+    assert.equal(document.querySelector("[data-zoom] img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
     await act(async () => button("Close Aero Chair").click());
-    const gallery = document.querySelector<HTMLElement>(".product-gallery")!;
+    const gallery = document.querySelector<HTMLElement>("[data-gallery]")!;
     gallery.focus();
     await key(gallery, "ArrowRight");
     assert.equal(selected(), "Show product image 1");
     await key(gallery, "ArrowLeft");
     assert.equal(selected(), "Show product image 240");
-    assert.ok(document.querySelectorAll(".product-main-image img").length <= 2, "full-size stage stays bounded as galleries grow");
+    assert.ok(document.querySelectorAll("[data-main-image] img").length <= 2, "full-size stage stays bounded as galleries grow");
   }, images);
 });

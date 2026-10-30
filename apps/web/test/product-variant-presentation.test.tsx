@@ -50,8 +50,8 @@ const notice = () => [...document.querySelectorAll('[role="status"]')].find(elem
 test("explicit unpriced option remains selected and keeps its enquiry identity", async () => {
   await mount(async () => {
     assert.equal(selected(), "catalogue-nordic");
-    assert.equal(document.querySelector(".pdp-price-block strong")?.textContent, "Price on request");
-    const link = document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+    assert.equal(document.querySelector("[data-price-block] strong")?.textContent, "Price on request");
+    const link = document.querySelector<HTMLAnchorElement>("[data-purchase] a")!;
     assert.equal(new URL(link.href).searchParams.get("variant"), "Nordic Ivory");
     assert.equal(new URL(link.href).searchParams.get("sku"), "AERO-NI");
   }, { initialVariant: "catalogue-nordic" });
@@ -59,9 +59,9 @@ test("explicit unpriced option remains selected and keeps its enquiry identity",
 test("default chooses the mapped priced Deep Atlantic option for cart selection", async () => {
   await mount(async requests => {
     assert.equal(selected(), "preview-atlantic");
-    assert.match(document.querySelector(".pdp-price-block strong")!.textContent!, /23,600/);
+    assert.match(document.querySelector("[data-price-block] strong")!.textContent!, /23,600/);
     assert.equal(document.querySelectorAll('input[name="variant"]').length, 6);
-    assert.ok([...document.querySelectorAll(".pdp-purchase button")].some(e => e.textContent === "Add to cart"));
+    assert.ok([...document.querySelectorAll("[data-purchase] button")].some(e => e.textContent === "Add to cart"));
     assert.deepEqual(requests, ["GET /api/cart"]);
   });
 });
@@ -82,12 +82,12 @@ test("selecting an unmapped option keeps the product gallery and discloses the m
     assert.equal(notice(), undefined);
     await act(async () => tile("catalogue-nordic").querySelector("input")!.click());
     assert.ok(notice());
-    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/blue.webp");
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/blue.webp");
     assert.match(tile("catalogue-nordic").textContent!, /Photo unavailable/);
     assert.equal(tile("catalogue-nordic").querySelector("img"), null);
     assert.equal(new URL(window.location.href).searchParams.get("variant"), "catalogue-nordic");
     assert.deepEqual(replacements, [], "variant URL changes do not request a new server route");
-    assert.equal(document.querySelector(".pdp-price-block strong")?.textContent, "Price on request");
+    assert.equal(document.querySelector("[data-price-block] strong")?.textContent, "Price on request");
     await act(async () => tile("preview-atlantic").querySelector("input")!.click());
     assert.equal(notice(), undefined);
   });
@@ -95,9 +95,9 @@ test("selecting an unmapped option keeps the product gallery and discloses the m
 test("repeated option titles are distinguished by differing public item codes", async () => {
   await mount(async () => {
     for (const [id, code] of [["catalogue-taupe", "AERO-DT"], ["preview-taupe", "AERO-DT-02"], ["catalogue-slate", "AERO-SM"], ["preview-slate", "AERO-SM-03"]]) {
-      assert.equal(tile(id!).querySelector(".pdp-variant-code")?.textContent, `Item code: ${code}`);
+      assert.equal(tile(id!).querySelector("[data-variant-code]")?.textContent, `Item code: ${code}`);
     }
-    assert.doesNotMatch(document.querySelector(".pdp-info")!.textContent!, /catalogue-taupe|preview-taupe|shopify-preview/);
+    assert.doesNotMatch(document.querySelector("[data-product-info]")!.textContent!, /catalogue-taupe|preview-taupe|shopify-preview/);
   });
 });
 test("all six options stay selectable while only priced options offer cart selection", async () => {
@@ -106,12 +106,12 @@ test("all six options stay selectable while only priced options offer cart selec
       await act(async () => tile(v.id).querySelector("input")!.click());
       assert.equal(selected(), v.id);
       if (v.pricePaise === null) {
-        assert.equal(document.querySelector(".pdp-purchase button"), null);
-        const link = document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+        assert.equal(document.querySelector("[data-purchase] button"), null);
+        const link = document.querySelector<HTMLAnchorElement>("[data-purchase] a")!;
         assert.equal(new URL(link.href).searchParams.get("sku"), v.sku);
-        assert.equal(document.querySelector(".pdp-price-block strong")?.textContent, "Price on request");
+        assert.equal(document.querySelector("[data-price-block] strong")?.textContent, "Price on request");
       } else {
-        assert.ok([...document.querySelectorAll(".pdp-purchase button")].some(e => e.textContent === "Add to cart"));
+        assert.ok([...document.querySelectorAll("[data-purchase] button")].some(e => e.textContent === "Add to cart"));
       }
     }
     assert.deepEqual(requests, ["GET /api/cart"]);
@@ -131,7 +131,7 @@ test("an exact explicit option wins over an earlier legacy query alias", async (
 test("a single option without any product photos retains the unavailable notice", async () => {
   await mount(async () => {
     assert.ok(notice());
-    assert.equal(document.querySelector('.product-main-image [role="img"]')?.getAttribute("aria-label"),
+    assert.equal(document.querySelector('[data-main-image] [role="img"]')?.getAttribute("aria-label"),
       "Aero Dining Chair — Image unavailable");
     assert.equal(document.querySelector('[aria-label="Enlarge product image"]'), null);
   }, { value: { ...product, variants: [product.variants[0]!], images: [] }, images: {} });
@@ -140,21 +140,21 @@ test("a single option without any product photos retains the unavailable notice"
 test("a single option keeps a readable gallery fallback when its product photo fails", async () => {
   await mount(async () => {
     await act(async () => {
-      document.querySelector(".product-main-image img")!.dispatchEvent(new dom.window.Event("error"));
+      document.querySelector("[data-main-image] img")!.dispatchEvent(new dom.window.Event("error"));
     });
-    assert.equal(document.querySelector('.product-main-image [role="img"]')?.getAttribute("aria-label"),
+    assert.equal(document.querySelector('[data-main-image] [role="img"]')?.getAttribute("aria-label"),
       "Aero Dining Chair — view 1 — Image unavailable");
-    assert.equal(document.querySelector(".product-main-image img"), null);
+    assert.equal(document.querySelector("[data-main-image] img"), null);
   }, { value: { ...product, variants: [product.variants[0]!], images: ["https://example.com/broken.webp"] }, images: {} });
 });
 
 test("a single option uses its product gallery without a misleading missing-option-photo notice", async () => {
   await mount(async () => {
-    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/blue.webp");
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/blue.webp");
     assert.equal(document.querySelector('input[name="variant"]'), null);
     assert.equal(Boolean(notice()), false, "a product photo does not need a separate option mapping when there is only one option");
     await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Show product image 2"]')!.click());
-    assert.equal(document.querySelector('.product-thumbnails button[aria-pressed="true"]')?.getAttribute("aria-label"),
+    assert.equal(document.querySelector('[data-thumbnails] button[aria-pressed="true"]')?.getAttribute("aria-label"),
       "Show product image 2");
     assert.equal(notice(), undefined);
   }, { value: { ...product, variants: [product.variants[0]!] }, images: {} });
