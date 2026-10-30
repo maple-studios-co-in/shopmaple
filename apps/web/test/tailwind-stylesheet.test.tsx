@@ -58,6 +58,12 @@ test("the storefront base reaches redesigned markup only, without adding weight"
   assert.ok(selectors.indexOf(".font-body") > selectors.findLastIndex((selector) => selector.startsWith(":where([data-store])")), "Utilities follow the base");
 });
 
+test("dark: utilities stay off: admin and storefront are light only, whatever the OS setting", () => {
+  const dark: string[] = [];
+  shared.walkAtRules("media", (at) => { if (/prefers-color-scheme:\s*dark/.test(at.params)) dark.push(at.params); });
+  assert.deepEqual(dark.slice(0, 3), [], "shadcn's dark: classes must not follow the OS colour scheme");
+});
+
 test("storefront tokens resolve to the design's values", () => {
   const value = (name: string) => {
     let found: string | undefined;
