@@ -356,12 +356,12 @@ test("editorial Chairs exposes the full category catalogue, honest prices and wo
     assert.equal(listing.querySelector("h2")?.textContent, "Chairs");
     assert.ok(doc.querySelector('.legacy-chairs-hero a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
     assert.equal(listing.querySelectorAll("[data-product-card]").length, 24);
-    assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 items/);
+    assert.match(listing.querySelector("[data-item-count]")?.textContent ?? "", /^26 products/);
     assert.ok(!listing.textContent?.includes("Chair matching table"));
     const unpriced = [...listing.querySelectorAll("[data-product-card]")].find(card => card.querySelector("[data-card-name]")?.textContent === "Chair 23");
     assert.equal(unpriced?.querySelector("[data-card-price]")?.textContent, "Price on request");
-    assert.equal(listing.querySelector(".collection-filter-form")?.getAttribute("action"), "/collections/chairs");
-    const next = listing.querySelector<HTMLAnchorElement>(".collection-pagination a")!;
+    assert.equal(listing.querySelector("[data-filter-form]")?.getAttribute("action"), "/collections/chairs");
+    const next = listing.querySelector<HTMLAnchorElement>("[data-pagination] a")!;
     assert.equal(next.textContent, "Next");
     const url = new URL(next.href);
     assert.equal(url.pathname, "/collections/chairs");

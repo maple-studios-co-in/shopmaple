@@ -135,4 +135,18 @@
   --default-transition-timing-function: var(--admin-ease, cubic-bezier(0.32, 0.72, 0, 1));
 }
 
+/* Scoped base for redesigned storefront markup (anything inside [data-store]). The legacy
+   storefront's global element rules (serif h1 to h3 at 36 to 48 px, paragraph margins, underline
+   on hover, 44 px padded inputs) would otherwise reach it. :where() keeps each rule at the legacy
+   rule's weight, so this sheet wins by loading last, and any utility class still wins over both. */
+:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; }
+:where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
+:where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }
+:where([data-store]) fieldset { min-width: 0; padding: 0; border: 0; }
+:where([data-store]) legend { padding: 0; }
+:where([data-store]) a:hover { text-decoration: none; }
+:where([data-store]) :is(input, select, textarea) { min-height: 0; border: 0 solid var(--color-sand); border-radius: 0; background: transparent; padding: 0; color: inherit; }
+:where([data-store]) :is(input, textarea)::placeholder { color: var(--color-taupe); }
+:where([data-store]) button { font: inherit; color: inherit; }
+
 @tailwind utilities source(none);

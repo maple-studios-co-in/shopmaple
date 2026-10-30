@@ -112,9 +112,9 @@ test("unknown prices sort last in either direction and cannot satisfy a price bo
 
 test("unknown prices do not advertise a zero-price collection maximum", async () => {
   await mount(<CollectionListing handle="all" title="All Furniture" query={collectionQuery({})} products={[toProductCard(model)]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
-    assert.match(document.querySelector(".collection-price-caption")!.textContent!, /Prices available on request/);
+    assert.match(document.querySelector("[data-price-caption]")!.textContent!, /Prices available on request/);
     assert.equal(document.querySelector<HTMLInputElement>('input[name="max"]')!.placeholder, "Any price");
-    assert.match(document.querySelector(".collection-filter-form")!.textContent!, /Enquiry only/);
+    assert.match(document.querySelector("[data-filter-form]")!.textContent!, /Enquiry only/);
   });
 });
 test("new catalogue members use their known category without requiring dated preview membership", () => {
@@ -148,7 +148,7 @@ test("chair results do not send shoppers back to the same page as a complete col
   await mount(<CollectionListing handle="chairs" title="Chairs" query={collectionQuery({})} products={[toProductCard(model)]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
     const destinations = [...document.querySelectorAll<HTMLAnchorElement>('a')].map(a => a.getAttribute('href'));
     assert.ok(destinations.includes('/products/new-model'), 'The actual product remains discoverable');
-    const discovery = [...document.querySelectorAll<HTMLAnchorElement>('.collection-preview-note a')].map(a => a.getAttribute('href'));
+    const discovery = [...document.querySelectorAll<HTMLAnchorElement>('[data-preview-note] a')].map(a => a.getAttribute('href'));
     assert.equal(discovery.filter(href => href === '/collections/chairs').length, 0, 'A discovery link must not loop back to these same results');
   });
 });

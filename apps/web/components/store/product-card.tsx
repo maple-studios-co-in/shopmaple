@@ -19,7 +19,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
   const sale = product.compareAtPaise !== null;
   const href = "/products/" + product.handle;
   return (
-    <article data-product-card className={cn("group/card flex flex-col overflow-hidden rounded-lg border border-sand bg-white font-body text-espresso", className)}>
+    <article data-store data-product-card className={cn("group/card flex flex-col overflow-hidden rounded-lg border border-sand bg-white font-body text-espresso", className)}>
       <div data-card-image className="relative aspect-square overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:justify-items-center [&_[role=img]]:gap-2 [&_[role=img]]:text-meta [&_[role=img]]:text-taupe">
         <Link href={href} className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand">
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />
