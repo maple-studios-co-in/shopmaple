@@ -80,7 +80,10 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   useEffect(() => { setFrameStatus("loading"); setFramePath(null); }, [src]);
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      const message = readPreviewMessage(event, window.location.origin, frame.current?.contentWindow ?? undefined);
+      // Only the mounted frame may talk to the pane; with no frame there is no one to listen to.
+      const source = frame.current?.contentWindow;
+      if (!source) return;
+      const message = readPreviewMessage(event, window.location.origin, source);
       if (!message) return;
       if (message.type === "ready") { setFrameStatus("ready"); setFramePath(message.path); }
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }

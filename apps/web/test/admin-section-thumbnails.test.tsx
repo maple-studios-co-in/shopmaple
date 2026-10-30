@@ -31,7 +31,7 @@ test("an edit reloads only the thumbnails of the sections it changes", () => {
   assert.deepEqual(changed((c) => { c.homeCopy.testimonialHeading = "Kind words"; }), ["testimonial"]);
   assert.deepEqual(changed((c) => { c.homeCopy.socialHeading = "On Instagram"; }), ["instagram"]);
   assert.deepEqual(changed((c) => { c.instagramPosts = c.instagramPosts.slice(1); }), ["instagram"]);
-  assert.deepEqual(changed((c) => { c.motion.autoplayCities = false; }), ["cities"]);
+  assert.deepEqual(changed((c) => { c.homeCitiesLayout = []; }), ["cities"]);
   assert.deepEqual(changed((c) => { c.homeDetails!.project = { ...c.homeDetails!.project, heading: "Our projects" }; }), ["project"]);
   assert.deepEqual(changed((c) => { c.homeMerchandising = { ...c.homeMerchandising!, chairs: [] }; }), ["chairs"]);
 });
@@ -47,5 +47,6 @@ test("reordering, hiding and navigation edits reload no thumbnail", () => {
   assert.deepEqual(changed((c) => { c.homeSections = [...c.homeSections].reverse(); }), []);
   assert.deepEqual(changed((c) => { c.homeSections = c.homeSections.map((section) => ({ ...section, enabled: false })); }), []);
   assert.deepEqual(changed((c) => { c.motion.revealSections = !c.motion.revealSections; }), []);
+  assert.deepEqual(changed((c) => { c.motion.autoplayCities = false; c.motion.autoplaySocial = false; }), [], "thumbnails never move, so autoplay never changes them");
   assert.deepEqual(changed((c) => { c.pages = []; }), []);
 });

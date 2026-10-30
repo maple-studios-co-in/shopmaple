@@ -335,6 +335,17 @@ test("pressing Edit on a section in the live preview selects its card; a message
   } finally { await app.close(); }
 });
 
+test("pressing Edit in the preview from another screen that shows the homepage opens Homepage with that section selected", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Merchandising");
+    const frameWindow = frame().contentWindow!;
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, type: "select", section: "values" }, origin: "http://localhost:3000", source: frameWindow })); });
+    await until(() => container.querySelector('[data-section-card="values"]')?.getAttribute("aria-current") === "true", "Homepage with Values selected");
+  } finally { await app.close(); }
+});
+
 test("a rejected mint is requested exactly once, shows a designed error with a manual retry, and never retries by itself", async () => {
   const app = await setup({ previewStatus: 500 });
   try {

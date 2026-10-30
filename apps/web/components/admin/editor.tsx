@@ -384,7 +384,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     switch (tab) {
       case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
       case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
-        onOpenScreen={selectTab} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
+        onOpenScreen={(screen) => { selectTab(screen); focusPanelHeading(); }} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
         const next = { ...content };
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
@@ -566,7 +566,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
                 onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
-                onSelectSection={tab === "Homepage" ? setFocusedSection : undefined} />
+                onSelectSection={(section) => { if (tab !== "Homepage") selectTab("Homepage"); setFocusedSection(section); }} />
             )}
           </div>
         )}

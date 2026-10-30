@@ -38,6 +38,9 @@ export function usePreviewToken({ version, draftRequired, active, mint }: {
   const sent = useRef<string | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  /** The version on screen now; a mint that answers for an older one is dropped. */
+  const latest = useRef(version);
+  useEffect(() => { latest.current = version; }, [version]);
 
   useEffect(() => {
     if (!active || version === null || draftRequired || minting || error) return;
@@ -49,7 +52,7 @@ export function usePreviewToken({ version, draftRequired, active, mint }: {
     void mint(version).then((result) => {
       if (!alive.current) return;
       setMinting(false);
-      if (!result) return;
+      if (!result || latest.current !== version) return;
       if (!result.ok) { setError(result); return; }
       const expiresAt = Date.parse(result.expiresAt);
       setTokenState({ token: result.token, version, expiresAt: Number.isFinite(expiresAt) ? expiresAt : Date.now() + previewTokenLeadMs * 2 });
@@ -65,6 +68,8 @@ export function usePreviewToken({ version, draftRequired, active, mint }: {
   useEffect(() => { setError(null); }, [version]);
   const retry = useCallback(() => { setError(null); setAttempt((value) => value + 1); }, []);
 
-  const current = tokenState.token !== "" && tokenState.version === version;
+  // An expired token (a sleeping laptop, a long stay on another screen) is never handed out:
+  // a frame opened with it would show the preview's error page.
+  const current = tokenState.token !== "" && tokenState.version === version && (tokenState.expiresAt ?? 0) > Date.now();
   return { token: current ? tokenState.token : null, minting, error, retry };
 }

@@ -52,7 +52,8 @@ export function SectionThumbnail({ section, content, source, width }: {
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [frame, setFrame] = useState<{ src: string; signature: string } | null>(null);
+  /** What the frame was loaded with; `failed` when it drew the preview's error page instead of the section. */
+  const [frame, setFrame] = useState<{ src: string; signature: string; token: string; failed: boolean } | null>(null);
   const [ready, setReady] = useState(false);
   const signature = sectionSignature(content, section);
   const { token, dirty, unavailable, onWanted } = source;
@@ -70,8 +71,10 @@ export function SectionThumbnail({ section, content, source, width }: {
   }, []);
   useEffect(() => { if (visible) onWanted(); }, [visible, onWanted]);
   useEffect(() => {
-    if (!visible || !token || dirty || frame?.signature === signature) return;
-    setFrame({ src: `${previewFrameUrl({ path: "home", token, view: "draft" })}&section=${section}`, signature });
+    if (!visible || !token || dirty) return;
+    // Reload for a saved change to this section, or with a fresh token after a failed load.
+    if (frame && frame.signature === signature && !(frame.failed && frame.token !== token)) return;
+    setFrame({ src: `${previewFrameUrl({ path: "home", token, view: "draft" })}&section=${section}`, signature, token, failed: false });
     setReady(false);
   }, [visible, token, dirty, signature, frame, section]);
 
@@ -80,7 +83,12 @@ export function SectionThumbnail({ section, content, source, width }: {
     <div ref={box} className="relative shrink-0 overflow-hidden rounded-md bg-sunken ring-1 ring-line-soft" style={{ width, height }}>
       {frame && (
         <iframe data-section-thumbnail-frame src={frame.src} title={`${sectionName(section)} thumbnail`} aria-hidden="true"
-          tabIndex={-1} loading="lazy" scrolling="no" referrerPolicy="same-origin" onLoad={() => setReady(true)}
+          tabIndex={-1} loading="lazy" scrolling="no" referrerPolicy="same-origin" onLoad={(event) => {
+            // Same origin: a load without the section is the preview's error page (an expired link).
+            const drawn = event.currentTarget.contentDocument?.querySelector("[data-section-thumbnail]") !== null;
+            setReady(drawn);
+            if (!drawn) setFrame((current) => current && { ...current, failed: true });
+          }}
           className="pointer-events-none absolute top-0 left-0 origin-top-left border-0 bg-white"
           style={{ width: frameWidth, height: frameHeight, transform: `scale(${width / frameWidth})` }} />
       )}
@@ -107,6 +115,9 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
   source: ThumbnailSource;
 }) {
   const [picking, setPicking] = useState(false);
+  const addButton = useRef<HTMLButtonElement>(null);
+  /** Set when the picker closes by adding: focus then goes to the new card, not back to Add section. */
+  const added = useRef(false);
   const sections = content.homeSections;
   const hidden = sections.filter((section) => !section.enabled);
   const setSections = (homeSections: Section[]) => edit({ ...content, homeSections });
@@ -117,9 +128,9 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
   }, [selected]);
 
   function openContent(section: Section) {
-    onSelect(section.key);
     const target = editTargets[section.key];
     if (target.kind === "screen") { onOpenScreen(target.screen); return; }
+    onSelect(section.key);
     const panel = target.kind === "panel" ? document.querySelector<HTMLDetailsElement>(`details[data-preview-section="${section.key}"]`) : null;
     const node = panel ?? (target.kind === "field" ? document.querySelector<HTMLElement>(`[aria-label="${target.label}"]`) : null);
     if (!node) return;
@@ -129,10 +140,15 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
     (panel?.querySelector<HTMLElement>("summary") ?? node).focus({ preventScroll: true });
   }
   function add(key: HomeSectionKey) {
-    const rest = sections.filter((section) => section.key !== key);
-    const after = rest.findIndex((section) => section.key === selected);
-    const at = after < 0 ? rest.length : after + 1;
-    setSections([...rest.slice(0, at), { key, enabled: true }, ...rest.slice(at)]);
+    // The selected card is the hidden section itself: show it where it is.
+    if (selected === key) setSections(sections.map((section) => section.key === key ? { ...section, enabled: true } : section));
+    else {
+      const rest = sections.filter((section) => section.key !== key);
+      const after = rest.findIndex((section) => section.key === selected);
+      const at = after < 0 ? rest.length : after + 1;
+      setSections([...rest.slice(0, at), { key, enabled: true }, ...rest.slice(at)]);
+    }
+    added.current = true;
     setPicking(false);
     onSelect(key);
     requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-section-card="${key}"] [data-section-select]`)?.focus());
@@ -142,7 +158,7 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
     <>
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-xs text-muted-foreground tabular-nums">{sections.length - hidden.length} of {sections.length} visible</span>
-        <Button type="button" variant="outline" size="sm" disabled={hidden.length === 0} onClick={() => setPicking(true)}>
+        <Button ref={addButton} type="button" variant="outline" size="sm" disabled={hidden.length === 0} onClick={() => setPicking(true)}>
           <Plus aria-hidden="true" strokeWidth={1.5} />Add section
         </Button>
       </div>
@@ -169,10 +185,12 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
           return (
             <>
               {handle}
-              <button type="button" data-section-select aria-label={`Select ${name}`} onClick={() => onSelect(section.key)}
-                className={cn("shrink-0 rounded-md transition-opacity duration-200 ease-admin", focusRing, !section.enabled && "opacity-45 grayscale")}>
+              <div className={cn("relative shrink-0 rounded-md transition-opacity duration-200 ease-admin", !section.enabled && "opacity-45 grayscale")}>
                 <SectionThumbnail section={section.key} content={content} source={source} width={128} />
-              </button>
+                {/* A sibling over the picture, not its parent: a frame may not sit inside a button. */}
+                <button type="button" data-section-select aria-label={`Select ${name}`} onClick={() => onSelect(section.key)}
+                  className={cn("absolute inset-0 cursor-pointer rounded-md", focusRing)} />
+              </div>
               <div className="grid min-w-0 flex-1 gap-0.5">
                 <label className="flex min-w-0 cursor-pointer items-center gap-2">
                   <NativeCheckbox aria-label={`Show ${name}`} checked={section.enabled}
@@ -194,10 +212,15 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
         }}
       />
       <Dialog open={picking} onOpenChange={setPicking}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl" onCloseAutoFocus={(event) => {
+          // The picker is opened from code, not a Radix trigger, so focus is returned here.
+          event.preventDefault();
+          if (!added.current) addButton.current?.focus();
+          added.current = false;
+        }}>
           <DialogHeader>
             <DialogTitle>Add a section</DialogTitle>
-            <DialogDescription>Hidden sections, as they look in your draft. The one you choose is shown{selected ? ` after ${sectionName(selected)}` : " at the end of the page"}.</DialogDescription>
+            <DialogDescription>Hidden sections, as they look in your draft. The one you choose is shown{selected && sections.some((section) => section.key === selected && section.enabled) ? ` after ${sectionName(selected)}` : selected && hidden.some((section) => section.key === selected) ? ` in ${sectionName(selected)}'s place, or after it` : " at the end of the page"}.</DialogDescription>
           </DialogHeader>
           <ul className="grid max-h-[60dvh] grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-3 overflow-y-auto p-0.5">
             {hidden.map((section) => {

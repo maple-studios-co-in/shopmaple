@@ -162,3 +162,55 @@ test("a hidden section comes back from the Add section picker, after the selecte
     assert.equal(card("values").querySelector<HTMLInputElement>('input[aria-label="Show Values"]')?.checked, true);
   } finally { await app.close(); }
 });
+
+test("adding the selected hidden section shows it where it was", async () => {
+  const app = await setup();
+  try {
+    await act(async () => card("nimbus").querySelector<HTMLInputElement>('input[aria-label="Show Nimbus"]')!.click());
+    const before = order();
+    await click("Select Nimbus", card("nimbus"));
+    await click("Add section");
+    await click("Add Nimbus", document.querySelector<HTMLElement>('[role="dialog"]')!);
+    assert.deepEqual(order(), before, "it keeps its place");
+    assert.equal(card("nimbus").dataset.hidden, undefined);
+  } finally { await app.close(); }
+});
+
+test("closing the Add section picker without adding returns focus to Add section", async () => {
+  const app = await setup();
+  try {
+    await act(async () => card("values").querySelector<HTMLInputElement>('input[aria-label="Show Values"]')!.click());
+    await click("Add section");
+    await act(async () => { document.querySelector('[role="dialog"]')!.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    await until(() => document.querySelector('[role="dialog"]') === null, "the picker to close");
+    await until(() => document.activeElement === button("Add section"), "focus on Add section");
+  } finally { await app.close(); }
+});
+
+test("Edit for a section on another screen opens that screen with focus on its heading", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Bestsellers in Merchandising", card("bestsellers"));
+    await until(() => document.activeElement?.tagName === "H2", "focus on the screen heading");
+    assert.match(document.activeElement?.textContent ?? "", /merchandising/i);
+  } finally { await app.close(); }
+});
+
+test("a thumbnail's content is inert, so keyboard focus never enters it", async () => {
+  const { SectionThumbnailDocument } = await import("../components/admin/preview-shell");
+  const host = document.createElement("div");
+  const root = createRoot(host);
+  await act(async () => root.render(<SectionThumbnailDocument section="newsletter"><input aria-label="Email" /></SectionThumbnailDocument>));
+  assert.equal(host.querySelector("[data-section-thumbnail]")?.hasAttribute("inert"), true);
+  await act(async () => root.unmount());
+});
+
+test("thumbnail addresses are served with a policy that loads no script file", async () => {
+  const { default: config } = await import("../next.config");
+  const rules = await config.headers!();
+  const rule = rules.find((item) => item.source === "/admin/preview-frame/:path*" && item.has?.some((has) => has.type === "query" && has.key === "section"));
+  const policy = rule?.headers.find((header) => header.key === "Content-Security-Policy")?.value ?? "";
+  const scripts = policy.split(";").map((part) => part.trim()).find((part) => part.startsWith("script-src"));
+  assert.equal(scripts, "script-src 'unsafe-inline'", "inline streaming scripts only: no 'self', no host");
+  assert.match(policy, /object-src 'none'/);
+});

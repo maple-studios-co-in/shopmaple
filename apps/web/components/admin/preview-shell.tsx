@@ -187,8 +187,8 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
 /**
  * One homepage section on its own, for a section card's thumbnail. The address is served with a
  * policy that blocks the app bundles, so nothing here may depend on hydration: no ribbon, no link
- * capture, no bridge.
+ * capture, no bridge. It is inert: keyboard focus never enters a picture.
  */
 export function SectionThumbnailDocument({ section, children }: { section: string; children: ReactNode }) {
-  return <div data-section-thumbnail={section} className="pointer-events-none select-none">{children}</div>;
+  return <div data-section-thumbnail={section} inert className="pointer-events-none select-none">{children}</div>;
 }

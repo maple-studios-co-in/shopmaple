@@ -26,7 +26,7 @@ const campaign = (content: StorefrontContent, ...keys: string[]) => keys.map((ke
 
 /**
  * The parts of the draft each section draws from, mirroring HomePage (components/home-page.tsx).
- * Section order, visibility and reveal effects are left out: they never change a section's picture.
+ * Section order, visibility, reveal effects and autoplay are left out: they never change a section's picture.
  */
 const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = {
   hero: (c) => [c.homeDetails?.hero, c.templateMedia],
@@ -45,7 +45,7 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],
   newsletter: (c) => [c.homeDetails?.newsletter, c.templateMedia],
   values: (c) => [c.homeDetails?.values, c.templateMedia],
-  cities: (c) => [c.homeDetails?.cities, c.homeCitiesLayout, c.motion.autoplayCities, c.templateMedia],
+  cities: (c) => [c.homeDetails?.cities, c.homeCitiesLayout, c.templateMedia],
   project: (c) => [c.homeDetails?.project],
 };
 
