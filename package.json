@@ -30,7 +30,7 @@
     "security:check": "npm run security:dependencies && npm run security:secrets && npm run security:static"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.6",
     "typescript": "^5.9.3",
     "tsx": "^4.20.6",
     "@types/node": "^22.18.0"
