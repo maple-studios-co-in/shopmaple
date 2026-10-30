@@ -21,6 +21,10 @@
 @source "../app/admin";
 @source "../lib/preview-request.tsx";
 
+/* Light only. shadcn's components carry dark: classes; tie them to a .dark class nothing sets,
+   so they never follow the visitor's OS colour scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Storefront design tokens (the "Maple Website review" Figma file). Static, so every token is
    available to the storefront's own CSS as well as to utilities. */
 @theme static {
