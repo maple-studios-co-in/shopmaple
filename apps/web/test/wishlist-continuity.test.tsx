@@ -46,7 +46,7 @@ test("saved product, unavailable piece and empty wishlist preserve their origina
     await click(button("Unsave alpha Chair"));
     assert.equal(document.querySelector("h2")?.textContent, "Your wishlist is empty");
     assert.match(document.body.textContent!, /Saved furniture stays in this browser\./);
-    assert.equal(document.querySelector('.wishlist-empty a')?.getAttribute("href"), "/collections/all");
+    assert.equal(document.querySelector('[data-wishlist-empty] a')?.getAttribute("href"), "/collections/all");
     assert.equal(localStorage.getItem("maple-favourites"), "[]");
   });
 });
@@ -68,7 +68,7 @@ test("removal retains settled cards without refetching and moves focused control
     await click(charlie);
     assert.equal(document.activeElement, button("Unsave alpha Chair"), "last card falls back to the previous control");
     await click(button("Unsave alpha Chair"));
-    assert.equal(document.activeElement, document.querySelector('.wishlist-empty a'));
+    assert.equal(document.activeElement, document.querySelector('[data-wishlist-empty] a'));
   });
 });
 test("adding a pending piece keeps settled cards and removed pending responses cannot resurrect it", async () => {

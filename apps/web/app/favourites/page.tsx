@@ -1,10 +1,5 @@
-import { Favourites } from "@/components/favourites";
+import { FavouritesPage } from "@/components/store/favourites-page";
 export const dynamic = "force-dynamic";
-export default function FavouritesPage() {
-  return (
-    <section className="page-section">
-      <h1>Saved furniture</h1>
-      <Favourites />
-    </section>
-  );
+export default function Page() {
+  return <FavouritesPage />;
 }

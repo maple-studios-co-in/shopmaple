@@ -26,7 +26,7 @@ dom.window.HTMLDialogElement.prototype.showModal = function () {
 dom.window.HTMLDialogElement.prototype.close = function () {
   this.removeAttribute("open");
 };
-test("header wishlist opens a working drawer and account support never hands off to Shopify", async () => {
+test("header wishlist opens a working drawer and the account menu never hands off to Shopify", async () => {
   const previous = globalThis.fetch;
   globalThis.fetch = async () =>
     Response.json({
@@ -66,7 +66,13 @@ test("header wishlist opens a working drawer and account support never hands off
         .querySelector<HTMLButtonElement>('button[aria-label="Your account"]')!
         .click(),
     );
-    const account = document.querySelector("dialog[open]")!;
+    const account = document.querySelector("[data-account-menu]")!;
+    assert.equal(
+      document
+        .querySelector('button[aria-label="Your account"]')!
+        .getAttribute("aria-expanded"),
+      "true",
+    );
     assert.ok(account.querySelector('a[href="/account"]'));
     assert.equal(
       account.querySelector('a[href*="shop.maplefurnishers.com"]'),
