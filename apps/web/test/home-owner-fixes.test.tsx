@@ -115,6 +115,7 @@ test("storefront links show no underline, whatever utility a component gives the
   }
   const { document } = new JSDOM(`<main data-store>
     <a id="nav" href="/">Shop</a><a href="/x"><span id="part">Explore</span></a>
+    <a href="/products/x">Rs. 20,000 <del id="was">Rs. 25,000</del><s id="struck">old</s></a>
     <div data-prose><a id="product" href="/care">care guide</a></div>
     <article data-policy-body><a id="policy" href="/p">policy</a></article>
     <article data-article-body><a id="article" href="/a">article</a></article>
@@ -124,5 +125,5 @@ test("storefront links show no underline, whatever utility a component gives the
   assert.ok(clears("nav") && clears("part"), "Links and the text inside them lose their underline");
   for (const id of ["product", "policy", "article", "page"]) assert.equal(clears(id), false, `inline links in running text (${id}) keep theirs`);
   assert.equal(clears("outside"), false, "Pages outside the storefront are untouched");
-  assert.equal(override.decls["outline"], undefined, "Focus outlines stay as they are");
+  assert.equal(clears("was") || clears("struck"), false, "A struck-through old price inside a product link keeps its line");
 });

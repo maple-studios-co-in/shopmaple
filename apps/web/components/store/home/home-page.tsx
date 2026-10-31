@@ -179,7 +179,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
       />
     ),
     promos: (
-      <div data-campaign-promos className="my-9 grid w-full grid-cols-3 gap-6 px-16 max-[1024px]:px-8 max-[750px]:flex max-[750px]:snap-x max-[750px]:snap-mandatory max-[750px]:gap-3.5 max-[750px]:overflow-x-auto max-[750px]:px-4 max-[750px]:pb-3">
+      <div data-campaign-promos className="my-9 grid w-full grid-cols-3 gap-6 px-16 max-[1024px]:px-8 max-[750px]:px-5 max-[750px]:flex max-[750px]:snap-x max-[750px]:snap-mandatory max-[750px]:gap-3.5 max-[750px]:overflow-x-auto max-[750px]:pb-3">
         <CampaignBanner campaign="landing-dining" compact content={content} />
         <CampaignBanner campaign="landing-storage" compact content={content} />
         <CampaignBanner campaign="landing-consoles" compact content={content} />

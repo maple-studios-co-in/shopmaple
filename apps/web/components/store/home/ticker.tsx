@@ -41,7 +41,7 @@ export function HomeTicker({ text, autoplay = true }: { text: string; autoplay?:
   const running = animated && visible && pageVisible && !paused && !hovered && !focused;
 
   return (
-    <div data-store className="w-full px-16 py-6 max-[1024px]:px-8 max-[750px]:px-4">
+    <div data-store className="w-full px-16 py-6 max-[1024px]:px-8 max-[750px]:px-5">
       <div ref={element} data-home-ticker data-animated={animated || undefined}
         className="relative overflow-hidden rounded-[14px] bg-brand px-4 py-5 text-center font-serif text-[clamp(22px,2.6vw,36px)] leading-tight text-white shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] data-[animated]:px-0 md:py-6"
         onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}

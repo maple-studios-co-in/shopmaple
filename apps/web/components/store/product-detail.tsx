@@ -231,7 +231,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
                 <button type="submit" className="h-10 cursor-pointer rounded-full border-0 bg-white px-4 text-ui font-semibold text-brand hover:bg-cream focus-visible:outline-2 focus-visible:outline-brand">Add postcode</button>
               </div>
               {checkedPin && (
-                <p role="status" className="text-meta [&_a]:font-semibold [&_a]:text-brand [&_a]:underline">
+                <p data-prose role="status" className="text-meta [&_a]:font-semibold [&_a]:text-brand [&_a]:underline">
                   Please <Link href={enquiryHref}>ask our team to confirm delivery to {checkedPin}</Link>. Live delivery checking is being connected.
                 </p>
               )}

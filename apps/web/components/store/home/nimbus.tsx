@@ -16,7 +16,7 @@ export function HomeNimbus({
   return (
     <section data-store data-home-nimbus aria-labelledby={headingId} className={designSection}>
       <div data-feature-card className="grid grid-cols-[700fr_612fr] overflow-hidden rounded-2xl bg-cream max-[1024px]:grid-cols-1">
-        <picture data-nimbus-media className="relative block h-[clamp(380px,26.4vw,680px)] overflow-hidden rounded-xl max-[1024px]:h-auto max-[1024px]:aspect-[700/380]">
+        <picture data-nimbus-media className="relative block min-h-[clamp(380px,26.4vw,680px)] overflow-hidden rounded-xl max-[1024px]:min-h-0 max-[1024px]:aspect-[700/380]">
           <source media="(max-width: 767px)" srcSet={artwork.mobileImage} />
           <img src={artwork.image} alt={artwork.alt} loading="lazy" className="absolute inset-0 size-full object-cover" />
         </picture>

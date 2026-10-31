@@ -3,13 +3,17 @@ import { ContentImage as Image } from "@/components/content-image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { TemplateMediaItem } from "@shopmaple/contracts";
 
+/** The effect instance currently driving each film, so a start resolving after a remount (Strict Mode) leaves the newer one alone. */
+const owners = new WeakMap<HTMLVideoElement, object>();
+
 /** The film on shop.maplefurnishers.com's hero (1 November 2026). */
 const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
 
 /**
  * The hero photograph and its film, which plays muted and looping by itself while it is on screen
- * in a visible tab, unless the shopper prefers reduced motion. The control over the film pauses it
- * (and it then stays paused) or plays it (which also overrides reduced motion). The server draws only
+ * in a visible tab, unless the shopper prefers reduced motion. Nothing loads until the observer has
+ * seen the hero on screen. The round control in the corner pauses it (and it then stays paused) or
+ * plays it (which also overrides reduced motion). The server draws only
  * the poster, so script-free renders such as the section builder's thumbnails show the still; the
  * message is server markup passed as children.
  */
@@ -24,8 +28,11 @@ export function HeroFilm({ poster, children }: { poster: TemplateMediaItem; chil
     const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     // "auto" follows the motion preference; "play" and "pause" are the shopper's own choice.
     let intent: "auto" | "play" | "pause" = "auto";
-    let onscreen = true;
+    // Without an observer the film may assume it is visible; with one, it waits for the first report.
+    let onscreen = typeof window.IntersectionObserver !== "function";
     let disposed = false;
+    const owner = {};
+    owners.set(v, owner);
     let request = 0;
     let pending = false;
     const wanted = () => !disposed && document.visibilityState === "visible" && onscreen &&
@@ -41,13 +48,14 @@ export function HeroFilm({ poster, children }: { poster: TemplateMediaItem; chil
       }
       if (pending || !v.paused) return;
       v.muted = true;
-      if (!v.getAttribute("src")) v.src = film;
+      // A film that failed to load gets its source again, which makes the browser retry.
+      if (!v.getAttribute("src") || v.error) v.src = film;
       const current = ++request;
       pending = true;
       show();
       void v.play().then(() => {
         // A start that resolves after unmount must not leave the film running.
-        if (current !== request) { if (disposed) v.pause(); return; }
+        if (current !== request) { if (disposed && owners.get(v) === owner) v.pause(); return; }
         pending = false;
         if (!wanted()) v.pause();
         show();
@@ -96,19 +104,19 @@ export function HeroFilm({ poster, children }: { poster: TemplateMediaItem; chil
       v.removeEventListener("ended", onStop);
       v.removeEventListener("error", onError);
       request += 1;
-      v.pause();
+      if (owners.get(v) === owner) v.pause();
     };
   }, []);
   return (
     <div data-hero-film className="relative isolate h-full overflow-hidden rounded-xl bg-espresso max-[1024px]:h-auto max-[1024px]:aspect-[656/520] max-[750px]:aspect-[4/5]">
-      <Image src={poster.image} alt={poster.alt} fill sizes="(max-width: 1024px) 100vw, 46vw" preload className="object-cover" />
+      <Image src={poster.image} alt={poster.alt} fill sizes="(max-width: 1023px) 100vw, 46vw" preload className="object-cover" />
       <video ref={video} muted playsInline loop preload="none" aria-label="Maple at home, the shop film"
         className="absolute inset-0 size-full object-cover" />
       <div aria-hidden="true" className="absolute inset-0 bg-[rgb(0_0_0/0.32)]" />
       <button data-video-control type="button" onClick={() => toggle.current?.()}
         aria-label={active ? "Pause hero film" : "Play hero film"}
-        className="absolute inset-0 z-[1] cursor-pointer border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:-outline-offset-[6px] focus-visible:outline-white">
-        <span className="sr-only">Toggle motion</span>
+        className="absolute right-4 bottom-4 z-[3] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-[rgb(0_0_0/0.45)] p-0 text-ui leading-none text-white hover:bg-[rgb(0_0_0/0.65)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white max-[750px]:top-4 max-[750px]:bottom-auto">
+        <span aria-hidden="true">{active ? "❚❚" : "▶"}</span>
       </button>
       {children}
     </div>

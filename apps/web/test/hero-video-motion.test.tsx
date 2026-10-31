@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { Hero } from "../components/hero";
 
-type Options = { reduced?: boolean; visible?: boolean; intersecting?: boolean; observer?: boolean; matchMedia?: boolean; pendingPlay?: boolean; rejectPlay?: boolean };
+type Options = { reduced?: boolean; visible?: boolean; intersecting?: boolean | null; observer?: boolean; matchMedia?: boolean; pendingPlay?: boolean; rejectPlay?: boolean };
 async function withVideo(
   options: Options,
   check: (video: HTMLVideoElement, button: HTMLButtonElement, reduce: (value: boolean) => Promise<void>, browser: {
@@ -68,7 +68,8 @@ async function withVideo(
   const intersect = (value: boolean) => intersectBatch([value]);
   try {
     await act(async () => root.render(<Hero />));
-    await intersect(options.intersecting ?? true);
+    // null: the observer has not reported yet.
+    if (options.intersecting !== null) await intersect(options.intersecting ?? true);
     await check(document.querySelector("video")!, document.querySelector<HTMLButtonElement>("[data-video-control]")!, async (value) => {
       await act(async () => { reduced = value; motion.dispatchEvent(new dom.window.Event("change")); });
     }, {
@@ -148,6 +149,14 @@ test("the film waits until it is on screen and the tab is visible", async () => 
   await withVideo({ visible: false }, async (video, _button, _reduce, browser) => {
     assert.equal(browser.attempts.length, 0);
     await browser.visibility(true); assert.equal(video.paused, false);
+  });
+});
+
+test("the film does not load until the observer says the hero is on screen", async () => {
+  await withVideo({ intersecting: null }, async (video, _button, _reduce, browser) => {
+    assert.equal(video.getAttribute("src"), null, "A page opened scrolled away from the hero downloads nothing");
+    assert.equal(browser.attempts.length, 0);
+    await browser.intersect(true); assert.equal(video.paused, false);
   });
 });
 

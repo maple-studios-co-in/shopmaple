@@ -57,7 +57,7 @@ export function HomeSocial({
   autoplay?: boolean;
 }) {
   return (
-    <section data-store data-home-social aria-label="Maple on Instagram" className="grid w-full justify-items-center gap-3 px-16 py-16 font-body max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-4">
+    <section data-store data-home-social aria-label="Maple on Instagram" className="grid w-full justify-items-center gap-3 px-16 py-16 font-body max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-5">
       <h2 className="font-serif text-[30px] leading-tight font-medium text-espresso md:text-[40px]">
         {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
       </h2>
