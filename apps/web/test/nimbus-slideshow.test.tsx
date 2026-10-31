@@ -4,7 +4,7 @@ import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { NimbusLanding } from "../components/category-nimbus";
-import { CategorySlideshow } from "../components/category-controls";
+import { NimbusSlideshow } from "../components/store/nimbus-client";
 
 // Mount the actual client island emitted by the server component, retaining its
 // real imported content. The unrelated async product server component stays out
@@ -12,7 +12,7 @@ import { CategorySlideshow } from "../components/category-controls";
 function slideshow(node: ReactNode): React.ReactElement | undefined {
   for (const child of Children.toArray(node)) {
     if (!isValidElement<{ children?: ReactNode }>(child)) continue;
-    if (child.type === CategorySlideshow) return child;
+    if (child.type === NimbusSlideshow) return child;
     const nested = slideshow(child.props.children);
     if (nested) return nested;
   }

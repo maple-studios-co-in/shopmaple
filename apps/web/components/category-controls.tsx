@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export function CategoryIntroduction({
   title,
@@ -183,56 +182,5 @@ export function CategoryVideo({
         <span className="sr-only">Toggle motion</span>
       </button>
     </div>
-  );
-}
-
-export function CategorySlideshow({
-  slides,
-}: {
-  slides: { key?: string; desktop: string; mobile: string; alt: string }[];
-}) {
-  const [index, setIndex] = useState(0);
-  const slide = slides[index]!;
-  return (
-    <section
-      className="landing-slideshow"
-      aria-label="Nimbus rooms"
-      aria-roledescription="carousel"
-    >
-      <picture>
-        <source media="(max-width: 749px)" srcSet={slide.mobile} />
-        <img src={slide.desktop} alt={slide.alt} loading="lazy" />
-      </picture>
-      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {slide.alt} — {index + 1} / {slides.length}
-      </span>
-      <div className="landing-slideshow-controls">
-        <button
-          type="button"
-          onClick={() => setIndex((index + slides.length - 1) % slides.length)}
-          aria-label="Previous room"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        {slides.map((item, i) => (
-          <button
-            key={item.key ?? item.alt}
-            type="button"
-            onClick={() => setIndex(i)}
-            aria-label={`Show ${item.alt}`}
-            aria-pressed={i === index}
-          >
-            <span className="landing-slide-dot" />
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setIndex((index + 1) % slides.length)}
-          aria-label="Next room"
-        >
-          <ArrowRight size={18} />
-        </button>
-      </div>
-    </section>
   );
 }
