@@ -25,7 +25,7 @@ export function thumbnailContent<T extends StorefrontContent>(content: T, key: H
 const campaign = (content: StorefrontContent, ...keys: string[]) => keys.map((key) => content.campaigns.find((item) => item.key === key) ?? null);
 
 /**
- * The parts of the draft each section draws from, mirroring HomePage (components/home-page.tsx).
+ * The parts of the draft each section draws from, mirroring HomePage (components/store/home/home-page.tsx).
  * Section order, visibility, reveal effects and autoplay are left out: they never change a section's picture.
  */
 const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = {
@@ -38,9 +38,10 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   nimbus: (c) => [c.homeDetails?.nimbus, c.templateMedia],
   "dining-banner": (c) => campaign(c, "landing-dining-table"),
   instagram: (c) => [c.instagramPosts, c.homeCopy.socialHeading],
-  bestsellers: (c) => [c.homeMerchandising?.bestsellers, c.homeCopy.bestsellersHeading],
+  // Product cards draw their colour dots, rating and New badge from the product highlights.
+  bestsellers: (c) => [c.homeMerchandising?.bestsellers, c.homeCopy.bestsellersHeading, c.productHighlights],
   "seating-banner": (c) => campaign(c, "landing-sofa-accent-chair"),
-  chairs: (c) => [c.homeMerchandising?.chairs, c.homeCopy.chairsHeading],
+  chairs: (c) => [c.homeMerchandising?.chairs, c.homeCopy.chairsHeading, c.productHighlights],
   promos: (c) => campaign(c, "landing-dining", "landing-storage", "landing-consoles"),
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],
   newsletter: (c) => [c.homeDetails?.newsletter, c.templateMedia],
