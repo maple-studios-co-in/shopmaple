@@ -1,9 +1,8 @@
 /**
  * Readable product addresses: /products/<chair-name>?variant=<variant-name>. Old keeri-<id>
- * addresses reach the API's alias redirect, and old links that carried a variant id still work.
+ * addresses reach the API's alias redirect and move here to the readable address.
  */
 type AddressVariant = { id: string; slug?: string | null };
-type Addressable = { handle: string; variants: AddressVariant[] };
 
 export function productPath(handle: string, variant?: AddressVariant) {
   const base = `/products/${encodeURIComponent(handle)}`;
@@ -16,9 +15,13 @@ export function selectedVariant<V extends AddressVariant>(product: { variants: V
   return product.variants.find((v) => v.slug === value) ?? product.variants.find((v) => v.id === value);
 }
 
-/** Where a request should move permanently, or null when its address is already the readable one. */
-export function productRedirect(requested: string, product: Addressable, variant: string | undefined): string | null {
-  const chosen = selectedVariant(product, variant);
-  if (requested === product.handle && (!chosen || variant === (chosen.slug ?? chosen.id))) return null;
-  return productPath(product.handle, chosen);
+/**
+ * Where a request should move permanently, or null when its address is already the readable one.
+ * The chosen variant is carried over exactly as given: the current product page picks variants by
+ * id, and switches to slugs when the redesigned page is connected.
+ */
+export function productRedirect(requested: string, product: { handle: string }, variant: string | undefined): string | null {
+  if (requested === product.handle) return null;
+  const base = `/products/${encodeURIComponent(product.handle)}`;
+  return variant ? `${base}?variant=${encodeURIComponent(variant)}` : base;
 }

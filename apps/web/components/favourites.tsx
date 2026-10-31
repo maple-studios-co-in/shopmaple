@@ -16,7 +16,7 @@ export function Favourites({
   onNavigate?: () => void;
   compact?: boolean;
 }) {
-  const { favourites, toggleFavourite } = useShop();
+  const { favourites, toggleFavourite, renameFavourite } = useShop();
   const [resolved, setResolved] = useState<Map<string, Resolution>>(new Map());
   const [retryAttempt, setRetryAttempt] = useState(0);
   const cache = useRef(new Map<string, Resolution>());
@@ -46,6 +46,11 @@ export function Favourites({
           return;
         requests.current.delete(handle);
         cache.current.set(handle, result);
+        // The product's address was renamed: show it under the new one and keep it saved there.
+        if (result.product && result.product.handle !== handle) {
+          cache.current.set(result.product.handle, result);
+          renameFavourite(handle, result.product.handle);
+        }
         setResolved(new Map(cache.current));
       };
       requestSavedProduct(handle, controller.signal)

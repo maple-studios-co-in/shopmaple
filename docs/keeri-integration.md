@@ -62,9 +62,16 @@ For an exactly matched Keeri variant, the verified current Shopify public price 
 
 ## Variant photos, options and readable addresses (31 October 2026)
 
-- The live sync asks Keeri for `?taxonomy=1&content=1&attributes=1`. Each variant then carries its named options (`attributes`: axis and value, in sheet order, N/A axes left out). **Deploy order: Keeri first** (it only adds the opt-in), then the store. A store release that asks for attributes before Keeri supports them gets `400 query_not_supported`, and the sync keeps the previous catalogue until Keeri ships.
-- A variant is titled by its Keeri variant name, otherwise its option values ("Ivory Boucle / Dark Walnut"), otherwise its SKU. Its `options` feed option pickers on the product page.
-- Each variant keeps its own photos (`Variant.images`, approved hosts only, like product photos). `Product.images` still holds every photo, so product cards are unchanged.
-- Product addresses are readable. A Keeri product still on its fallback `keeri-<id>` address is renamed once to its name, then its name and type, then a number. The old address is kept in `ProductHandleAlias`, and `/api/products/<old>` answers `308` to the current address. Reviewed and already readable addresses never change, so published links stay stable.
-- Each variant has a readable `?variant=` value (`Variant.slug`, unique within its product). The product page accepts a slug or, for older links, a variant id, and moves either to `/products/<name>?variant=<slug>` permanently (`lib/product-address.ts`).
-- Migration `20261031010000_variant_media_addresses` only adds columns with defaults and a new table. To roll back, redeploy the previous release; the extra columns and table are ignored by it.
+- The live sync asks Keeri for `?taxonomy=1&content=1&attributes=1`. Each variant then carries its named options (`attributes`: axis and value, in sheet order). Keeri leaves out axes marked N/A or left blank, and the store drops any blank value it still receives. Ship Keeri first. If the store ships first, Keeri answers `400`, and the sync asks again without attributes (`ATTRIBUTES_UNSUPPORTED`), so the catalogue keeps syncing without variant options until Keeri ships.
+- A variant is titled by its Keeri variant name, otherwise its option values ("Ivory Boucle / Dark Walnut", at most 300 characters), otherwise its SKU. Its `options` feed option pickers on the product page.
+- Each variant keeps its own photos (`Variant.images`). Keeri-only products must use approved hosts, as product photos do. A product merged into a Shopify listing filters unapproved hosts out instead of failing. `Product.images` still holds every photo, so product cards are unchanged. `/api/products` lists leave variant options, photos and slugs out; the product detail response carries them.
+- Product addresses are readable. A Keeri product still on exactly `keeri-<model id>` is renamed once:
+  - to its name, then its name and type, then a number;
+  - a name with no letters becomes its type plus its Keeri id;
+  - the new address avoids every address in the run, every stored product (published or not) and every earlier alias.
+
+  The old address is kept in `ProductHandleAlias`. `/api/products/<old>` and `/api/catalogue/cards/<old>` answer `308` to the current address. The batch `/api/catalogue/cards?handles=` resolves old addresses and reports them in `moved`, so homepage merchandising picks keep showing. The wishlist re-saves a renamed product under its new address. Reviewed and already readable addresses never change.
+- Each variant has a readable `?variant=` value (`Variant.slug`, unique within its product). A variant keeps its slug when its title changes, and a new variant never reuses one. Until the redesigned product page is connected, the page still picks variants by id. An old product address keeps the given `?variant=` value as it is when it moves (`lib/product-address.ts`).
+- Migration `20261031010000_variant_media_addresses` only adds columns with constant defaults and a new table. It is safe on a live table, and older releases ignore it.
+- **Rollback caveat:** the rename is a data change. The previous release has no alias routes, so after a rollback the old `keeri-<id>` addresses return 404 while the readable ones keep working. Roll the code forward rather than back, or accept the broken old links until it is redeployed.
+- Known gap: the search dialog's "recently viewed" list drops a renamed product until it is viewed again.

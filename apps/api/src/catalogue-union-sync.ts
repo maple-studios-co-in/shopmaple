@@ -20,10 +20,11 @@ export async function syncCatalogueUnion(
       const previous = await tx.catalogueSyncState.findUnique({
         where: { source },
       });
-      const [rows, pBindings, vBindings] = await Promise.all([
+      const [rows, pBindings, vBindings, aliases] = await Promise.all([
         tx.product.findMany({ include: { variants: true } }),
         tx.productSourceIdentity.findMany(),
         tx.variantSourceIdentity.findMany(),
+        tx.productHandleAlias.findMany({ select: { handle: true, productId: true } }),
       ]);
       const plan = planCatalogueUnion(shopify, keeri, tenantId, {
         products: rows.map((p) =>
@@ -40,6 +41,7 @@ export async function syncCatalogueUnion(
           ...b,
           targetId: b.variantId,
         })),
+        handleAliases: aliases,
       });
       if (previous) {
         if (previous.capturedAt > capturedAt)

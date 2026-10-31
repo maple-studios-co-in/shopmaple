@@ -140,7 +140,10 @@ const eligibilitySchema = z
 /** A variant's named options as the product page shows them ("Fabric: Ivory Boucle"). */
 function variantOptions(v: object) {
   const attributes = "attributes" in v && Array.isArray(v.attributes) ? (v.attributes as { axis: string; value: string }[]) : [];
-  return attributes.map((a) => ({ name: a.axis.charAt(0).toUpperCase() + a.axis.slice(1), value: a.value }));
+  return attributes
+    .map((a) => ({ axis: a.axis.trim(), value: a.value.trim() }))
+    .filter((a) => a.axis && a.value)
+    .map((a) => ({ name: a.axis.charAt(0).toUpperCase() + a.axis.slice(1), value: a.value }));
 }
 export const keeriExportV2Schema = keeriExportSchema.extend({
   schemaVersion: z.literal(2),
@@ -156,7 +159,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
             variantSchema.extend({
               channelPublished: z.boolean(),
               // Named options (fabric, polish, size...), sent only when the store asks for attributes.
-              attributes: z.array(z.object({ axis: z.string().min(1).max(80), value: z.string().min(1).max(200) }).strict()).max(20).optional(),
+              // Blank values are tolerated here and dropped below, so one empty cell never fails the catalogue.
+              attributes: z.array(z.object({ axis: z.string().max(80), value: z.string().max(200) }).strict()).max(20).optional(),
               sku: z.string().trim().max(300).nullable(),
               stockPolicy: z.enum([
                 "stocked",
@@ -343,7 +347,7 @@ function adaptValidated(
         sourceUpdatedAt: data.capturedAt,
         variants: eligible.map((v) => ({
           id: identity(v.id),
-          title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ") || v.sku || "Details on request",
+          title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
           options: variantOptions(v),
           images: photos(v.media),
           sku: v.sku || null,

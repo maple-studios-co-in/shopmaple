@@ -106,3 +106,11 @@ test("a variant without a name is named by its options, and keeps them for optio
   const plain = adaptKeeriExportV2(v2Fixture(), "maple").products[0]!.variants[0]!;
   assert.deepEqual(plain.options, [], "exports without attributes still parse");
 });
+
+test("a blank option value is left out instead of failing the whole catalogue", () => {
+  const data = keeriExportV2Schema.parse({ ...v2Fixture(), models: v2Fixture().models.map((m) => ({ ...m, variants: m.variants.map((v) => ({ ...v, variantName: null,
+    attributes: [{ axis: "fabric", value: "  " }, { axis: "polish", value: "Walnut" }] })) })) });
+  const v = adaptKeeriExportV2(data, "maple").products[0]!.variants[0]!;
+  assert.deepEqual(v.options, [{ name: "Polish", value: "Walnut" }]);
+  assert.equal(v.title, "Walnut");
+});

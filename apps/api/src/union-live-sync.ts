@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { fetchKeeriExport } from "./keeri-fetch.js";
+import { fetchKeeriExport, KeeriFetchError } from "./keeri-fetch.js";
 import { planCatalogueUnion } from "./catalogue-union.js";
 import { syncCatalogueUnion } from "./catalogue-union-sync.js";
 export interface UnionSyncOptions {
@@ -35,7 +35,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     )
       throw new Error("ISOLATED_DATABASE_APPROVAL_REQUIRED");
   }
-  const snapshot = await fetchKeeriExport({
+  const request = (includeAttributes: boolean) => fetchKeeriExport({
     endpoint: `${options.origin}/api/storefront/catalogue/v2`,
     trustedOrigin: options.origin,
     token: options.token,
@@ -43,8 +43,13 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     schemaVersion: 2,
     includeTaxonomy: true,
     includeContent: true,
-    includeAttributes: true,
+    includeAttributes,
     fetch: options.fetch,
+  });
+  // Variant options need a Keeri release that offers them; until then the catalogue syncs without them.
+  const snapshot = await request(true).catch((error: unknown) => {
+    if (error instanceof KeeriFetchError && error.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
+    throw error;
   });
   const age =
     (options.now ?? new Date()).getTime() - Date.parse(snapshot.capturedAt);

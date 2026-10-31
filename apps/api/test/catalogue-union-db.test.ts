@@ -21,6 +21,7 @@ beforeEach(async () => {
   await db.variant.deleteMany();
   await db.product.deleteMany();
   await db.catalogueSyncState.deleteMany();
+  await db.productHandleAlias.deleteMany();
 });
 function fixtures() {
   const s = shopifyFixture(),
@@ -262,9 +263,29 @@ test("a renamed Keeri address redirects permanently, and each variant keeps its 
   assert.equal(current.status, 200);
   assert.deepEqual(current.body.variants[0], { ...current.body.variants[0], slug: "linen-walnut", options: [{ name: "Fabric", value: "Linen" }], images: ["https://store.maplefurnishers.com/media/keeri/photo2.webp"] });
   assert.equal((await request(app).get("/api/products/keeri-nothing")).status, 404, "an unknown address is still not found");
+  const listing = await request(app).get("/api/products?limit=50");
+  const listed = listing.body.products.find((p: { handle: string }) => p.handle === "zyro-lounge");
+  assert.deepEqual(Object.keys(listed.variants[0]).filter((key) => ["options", "images", "slug"].includes(key)), [], "lists stay lean; the detail response carries variant options, photos and slugs");
+  const card = await request(app).get("/api/catalogue/cards/keeri-model1");
+  assert.equal(card.status, 308);
+  assert.equal(card.headers.location, "/api/catalogue/cards/zyro-lounge");
+  const batch = await request(app).get("/api/catalogue/cards?handles=keeri-model1,missing");
+  assert.equal(batch.status, 200);
+  assert.deepEqual(batch.body.products.map((p: { handle: string }) => p.handle), ["zyro-lounge"]);
+  assert.deepEqual(batch.body.moved, { "zyro-lounge": "keeri-model1" }, "saved homepage picks still find a renamed product");
 
   k.capturedAt = "2026-10-25T11:00:00Z";
   await syncCatalogueUnion(db, s, k, "maple");
   assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge", "the readable address is stable");
   assert.equal(await db.productHandleAlias.count(), 1);
+});
+
+test("a rename steps around an unpublished product's address instead of failing every sync", async () => {
+  await db.product.create({ data: { id: "preview-retired", handle: "zyro-lounge", title: "Retired", description: "", images: [], published: false, source: "shopify-preview", sourceUpdatedAt: new Date("2026-10-01T00:00:00Z") } });
+  const k = v2Fixture();
+  k.publicMedia = [];
+  k.models[0]!.name = "Zyro Lounge";
+  k.publication[0]!.handle = "keeri-model1";
+  await syncCatalogueUnion(db, shopifyFixture(), k, "maple");
+  assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge-chair");
 });

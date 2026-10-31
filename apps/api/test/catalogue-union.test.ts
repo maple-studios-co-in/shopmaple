@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { planCatalogueUnion } from "../src/catalogue-union.js";
+import { keeriExportV2Schema } from "../src/keeri.js";
 import {
   shopifyFixture,
   shopifyPricedFixture,
@@ -269,4 +270,56 @@ test("a variant photo from an unapproved host is refused like a product photo", 
   assert.deepEqual(byKeeri(planCatalogueUnion(shopifyFixture(), k, "maple")).variants[0]!.images, ["https://store.maplefurnishers.com/media/keeri/photo2.webp"]);
   k.publicMedia = [{ assetId: "photo2", url: "https://elsewhere.example/photo2.webp" }];
   assert.throws(() => planCatalogueUnion(shopifyFixture(), k, "maple"), /UNSUPPORTED_PUBLIC_MEDIA/);
+});
+
+const existingOf = (products: ReturnType<typeof planCatalogueUnion>["products"], handleAliases: { handle: string; productId: string }[] = []) => ({
+  products, handleAliases,
+  productBindings: products.filter((p) => p.source.startsWith("keeri:")).map((p) => ({ source: p.source, externalId: p.id.split(":").at(-1)!, targetId: p.id })),
+  variantBindings: products.filter((p) => p.source.startsWith("keeri:")).flatMap((p) => p.variants.map((v) => ({ source: p.source, externalId: v.id.split(":").at(-1)!, targetId: v.id }))),
+});
+
+test("a rename never takes an address an unpublished product or an earlier alias still holds", () => {
+  const retired = { ...planCatalogueUnion(shopifyFixture(), keeriOnly("Other"), "maple").products.find((p) => !p.source.startsWith("keeri:"))!, id: "preview-999", handle: "alain", published: false };
+  const plan = planCatalogueUnion(shopifyFixture(), keeriOnly("Alain"), "maple", existingOf([retired]));
+  assert.equal(byKeeri(plan).handle, "alain-chair");
+  const aliased = planCatalogueUnion(shopifyFixture(), keeriOnly("Zyro"), "maple", existingOf([], [{ handle: "zyro", productId: "preview-101" }]));
+  assert.equal(byKeeri(aliased).handle, "zyro-chair");
+});
+
+test("a merged product drops variant photos from unapproved hosts instead of failing the sync", () => {
+  const { s, k } = fixtures();
+  const variant = k.models[0]!.variants[0]!;
+  variant.media = [{ id: "photo9", tenantId: "maple", modelId: null, variantId: variant.id, stage: "approved", storageKey: "public-media:photo9", supersededAt: null, position: 0 }];
+  k.publicMedia = [{ assetId: "photo9", url: "https://media.example.com/photo9.webp" }];
+  const plan = planCatalogueUnion(s, k, "maple");
+  assert.equal(plan.report.mergedModels, 1);
+  assert.deepEqual(plan.products[0]!.variants[0]!.images, []);
+});
+
+test("a variant keeps its ?variant= value when its title changes, and a new variant never reuses one", () => {
+  const k = keeriOnly();
+  const base = k.models[0]!.variants[0]!;
+  k.models[0]!.variants = [base, { ...base, id: "variant2", sku: "CH-ZYRO-2", variantName: "Teal / Oak" }];
+  const first = byKeeri(planCatalogueUnion(shopifyFixture(), k, "maple"));
+  assert.deepEqual(first.variants.map((v) => v.slug), ["linen-walnut", "teal-oak"]);
+  const later = keeriOnly();
+  later.models[0]!.variants = [{ ...base, variantName: "Teal / Oak" }, { ...base, id: "variant2", sku: "CH-ZYRO-2", variantName: "Sand / Ash" }, { ...base, id: "variant3", sku: "CH-ZYRO-3", variantName: "Linen / Walnut" }];
+  const again = byKeeri(planCatalogueUnion(shopifyFixture(), later, "maple", existingOf([first])));
+  assert.deepEqual(again.variants.map((v) => v.slug), ["linen-walnut", "teal-oak", "linen-walnut-2"]);
+});
+
+test("a name with no letters falls back to the type and Keeri id, and a name that merely starts with keeri stays put", () => {
+  assert.equal(byKeeri(planCatalogueUnion(shopifyFixture(), keeriOnly("!!!"), "maple")).handle, "chair-model1");
+  const first = planCatalogueUnion(shopifyFixture(), keeriOnly("Keeri Lounge"), "maple");
+  assert.equal(byKeeri(first).handle, "keeri-lounge");
+  const again = planCatalogueUnion(shopifyFixture(), keeriOnly("Keeri Lounge"), "maple", existingOf(first.products));
+  assert.equal(byKeeri(again).handle, "keeri-lounge");
+  assert.deepEqual(again.handleAliases, []);
+});
+
+test("a variant named by many long options keeps a title within the limit", () => {
+  const k = keeriExportV2Schema.parse({ ...keeriOnly(), models: keeriOnly().models.map((m) => ({ ...m, variants: m.variants.map((v) => ({ ...v, variantName: null,
+    attributes: Array.from({ length: 20 }, (_, i) => ({ axis: `axis${i}`, value: "x".repeat(200) })) })) })) });
+  const v = byKeeri(planCatalogueUnion(shopifyFixture(), k, "maple")).variants[0]!;
+  assert.ok(v.title.length <= 300);
 });

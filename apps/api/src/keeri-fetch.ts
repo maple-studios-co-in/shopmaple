@@ -79,6 +79,11 @@ export async function fetchKeeriExport(
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("EXPORT_TIMEOUT");
     }
+    // A Keeri release from before variant options refuses the opt-in with 400; the caller asks again without it.
+    if (response.status === 400 && options.includeContent && options.includeAttributes) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("ATTRIBUTES_UNSUPPORTED");
+    }
     if (response.status !== 200 || response.redirected)
       throw new KeeriFetchError("UPSTREAM_REJECTED");
     if (

@@ -1,4 +1,4 @@
-import { parseCatalogueCard } from "./catalogue-responses";
+import { cardHandle, parseCatalogueCard } from "./catalogue-responses";
 import { isProductHandle } from "./recent-products";
 
 /** Bound both headers and body, even when transport does not honor cancellation. */
@@ -24,7 +24,7 @@ export async function requestSavedProduct(handle: string, signal: AbortSignal) {
         });
         if (response.status === 404) return null;
         if (!response.ok) throw new Error("Saved furniture unavailable");
-        return parseCatalogueCard(await response.json(), handle);
+        return parseCatalogueCard(await response.json(), cardHandle(response, handle));
       })(),
       interrupted,
     ]);

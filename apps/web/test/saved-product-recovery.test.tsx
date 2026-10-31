@@ -205,3 +205,20 @@ test("a pre-aborted saved-product request rejects without dispatching transport"
     assert.deepEqual(dispatched, []);
   } finally { globalThis.fetch = previous; }
 });
+
+/** A response as fetch returns it after following a redirect to `url`. */
+function movedResponse(handle: string) {
+  const response = Response.json(product(handle));
+  Object.defineProperty(response, "redirected", { value: true });
+  Object.defineProperty(response, "url", { value: `http://localhost:3000/api/catalogue/cards/${handle}` });
+  return response;
+}
+
+test("a saved product whose address was renamed still shows, and the saved list keeps its new address", async () => {
+  await mount(["keeri-abc123"], async (requests) => {
+    assert.equal(requests[0]?.handle, "keeri-abc123");
+    await settle(requests[0]!, movedResponse("alain"));
+    assert.ok(document.querySelector('a[href="/products/alain"]'), "the renamed product is listed");
+    assert.deepEqual(JSON.parse(localStorage.getItem("maple-favourites") ?? "[]"), ["alain"]);
+  });
+});

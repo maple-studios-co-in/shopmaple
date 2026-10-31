@@ -79,16 +79,35 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
   });
   app.get("/api/catalogue/cards", async (req, res) => {
     const { handles } = batchInput.parse(req.query);
-    const products = await db.product.findMany({ where: { published: true, handle: { in: handles } }, select: cardSelect });
+    // Saved picks (homepage merchandising, wishlists) may still name a renamed keeri-<id> address.
+    const aliases = await db.productHandleAlias.findMany({ where: { handle: { in: handles } }, select: { handle: true, product: { select: { handle: true } } } });
+    const current = new Map(aliases.map(alias => [alias.handle, alias.product.handle]));
+    const wanted = handles.map(handle => current.get(handle) ?? handle);
+    const products = await db.product.findMany({ where: { published: true, handle: { in: wanted } }, select: cardSelect });
     const byHandle = new Map(products.map(product => [product.handle, toProductCard(product)]));
-    const ordered = handles.flatMap(handle => byHandle.has(handle) ? [byHandle.get(handle)!] : []);
-    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, published: true });
+    const seen = new Set<string>();
+    const moved: Record<string, string> = {};
+    const ordered = handles.flatMap((asked, index) => {
+      const handle = wanted[index]!;
+      if (!byHandle.has(handle) || seen.has(handle)) return [];
+      seen.add(handle);
+      if (handle !== asked) moved[handle] = asked;
+      return [byHandle.get(handle)!];
+    });
+    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, ...(Object.keys(moved).length ? { moved } : {}), published: true });
   });
   app.get("/api/catalogue/cards/:handle", async (req, res) => {
     const handle = catalogueHandleSchema.parse(req.params.handle);
     z.object({}).strict().parse(req.query);
     const product = await db.product.findFirst({ where: { handle, published: true }, select: cardSelect });
-    if (!product) throw new HttpError(404, "PRODUCT_NOT_FOUND", "We couldn't find that product.");
+    if (!product) {
+      const alias = await db.productHandleAlias.findUnique({ where: { handle }, select: { product: { select: { handle: true, published: true } } } });
+      if (alias?.product.published) {
+        res.set("Cache-Control", "public, max-age=300, s-maxage=3600").redirect(308, `/api/catalogue/cards/${encodeURIComponent(alias.product.handle)}`);
+        return;
+      }
+      throw new HttpError(404, "PRODUCT_NOT_FOUND", "We couldn't find that product.");
+    }
     sendCatalogue(res, catalogueCardResponseSchema, { product: toProductCard(product), published: true });
   });
 }

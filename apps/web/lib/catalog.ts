@@ -65,7 +65,8 @@ export async function getProductCards(handles: string[]) {
       const result = catalogueCardsResponseSchema.parse(await readCompact(url));
       let previous = -1;
       for (const product of result.products) {
-        const position = batch.indexOf(product.handle);
+        // A renamed product answers for the earlier address it was asked by.
+        const position = batch.indexOf(result.moved?.[product.handle] ?? product.handle);
         if (position <= previous) throw new Error("Invalid catalogue response");
         previous = position;
       }
