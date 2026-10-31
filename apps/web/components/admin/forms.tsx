@@ -32,9 +32,11 @@ const tally = (count: number, max: number, noun: string, button: ReactNode) => (
   <><span className="text-xs text-muted-foreground tabular-nums">{count} of {max} {noun}</span>{button}</>
 );
 
-export function CampaignFields(props: Props) {
-  const { content, onChange, onScheduleEditingChange } = props;
-  const [selected, setSelected] = useState(0);
+/** `only` narrows the editor to the campaigns one homepage section shows (the section inspector); `embedded` drops the screen header. */
+export function CampaignFields(props: Props & { only?: readonly string[]; embedded?: boolean }) {
+  const { content, onChange, onScheduleEditingChange, only, embedded = false } = props;
+  const choices = content.campaigns.flatMap((value, index) => !only || only.includes(value.key) ? [index] : []);
+  const [selected, setSelected] = useState(choices[0] ?? 0);
   const [scheduleEditing, setScheduleEditing] = useState(false);
   useEffect(() => {
     onScheduleEditingChange?.(scheduleEditing);
@@ -45,18 +47,18 @@ export function CampaignFields(props: Props) {
   const update = (patch: Partial<CampaignContent>) => onChange({ ...content, campaigns: patchAt(content.campaigns, selected, patch) });
   const artwork = (patch: Partial<NonNullable<CampaignContent["artwork"]>>) => campaign?.artwork && update({ artwork: { ...campaign.artwork, ...patch } });
   return <>
-    <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />
-    {!campaign ? (
+    {!embedded && <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />}
+    {!campaign || !choices.includes(selected) ? (
       <EmptyState title="No campaigns in this draft" icon={<Megaphone strokeWidth={1.5} />}>
         Campaigns come with the storefront theme. To bring them back, restore an earlier version from History.
       </EmptyState>
     ) : <>
-      <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
-        {content.campaigns.map((value, index) => (
-          <NativeSelectOption key={value.key} value={index} className="capitalize">{value.key.replace(/-/g, " ")}</NativeSelectOption>
+      {choices.length > 1 && <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
+        {choices.map((index) => (
+          <NativeSelectOption key={content.campaigns[index]!.key} value={index} className="capitalize">{content.campaigns[index]!.key.replace(/-/g, " ")}</NativeSelectOption>
         ))}
-      </SelectField>
-      <EditorWithPreview>
+      </SelectField>}
+      <EditorWithPreview data-campaign-key={campaign.key}>
         <div>
           <SectionHeading description="Use one line per headline or offer line, up to three. Destinations must be store links such as /collections/chairs.">Copy</SectionHeading>
           <FieldGrid>

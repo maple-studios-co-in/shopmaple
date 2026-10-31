@@ -22,9 +22,14 @@ function Count({ value }: { value: number }) {
   return <Badge variant="secondary" className="ml-2 rounded-md border-0 bg-neutral-bg align-middle font-semibold text-neutral tabular-nums">{value}/{limit}</Badge>;
 }
 
-export function HomeMerchandisingFields({ value, onChange, session, onExpired }: {
+export type MerchandisingPart = "bestsellers" | "chairs" | "categories" | "offers";
+/** `only` narrows the editor to one homepage section's products or tiles (the section inspector); `embedded` drops the screen header. */
+export function HomeMerchandisingFields({ value, onChange, session, onExpired, only, embedded = false }: {
   value?: HomeMerchandising; onChange: (value: HomeMerchandising) => void; session: StaffSession; onExpired: () => void;
+  only?: MerchandisingPart; embedded?: boolean;
 }) {
+  const shownRails = rails.filter(rail => !only || rail.key === only);
+  const shownTiles = tileGroups.filter(group => !only || group.key === only);
   const current = useMemo(() => resolveHomeMerchandising(value), [value]);
   const [results, setResults] = useState<ProductList | null>(null);
   const keyCounter = useRef(0);
@@ -37,14 +42,14 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
   }
 
   return <section aria-label="Homepage merchandising">
-    <PanelHeader title="Homepage merchandising"
-      description="Choose products and collection tiles, then drag them into order or use the Move buttons. Save a draft, then ask a publisher to publish it." />
-    <Notice tone="info" className="mb-8">
+    {!embedded && <PanelHeader title="Homepage merchandising"
+      description="Choose products and collection tiles, then drag them into order or use the Move buttons. Save a draft, then ask a publisher to publish it." />}
+    {shownRails.length > 0 && <Notice tone="info" className="mb-8">
       Product availability is not verified here. Missing or unpublished products are omitted from the storefront; a product absent from search results
       may simply not match your search. Prices and stock remain managed by the catalog.
-    </Notice>
-    <div className="grid gap-8 lg:grid-cols-2">
-      {rails.map(rail => <section key={rail.key} aria-label={`${rail.label} selection`} className="grid min-w-0 content-start gap-3">
+    </Notice>}
+    {shownRails.length > 0 && <div className={cn("grid gap-8", shownRails.length > 1 && "lg:grid-cols-2")}>
+      {shownRails.map(rail => <section key={rail.key} aria-label={`${rail.label} selection`} className="grid min-w-0 content-start gap-3">
         <SectionHeading className="mt-0 mb-0">{rail.label}<Count value={current[rail.key].length} /></SectionHeading>
         {current[rail.key].length === 0 && <EmptyState title="No products selected" action={
           <ActionButton icon={Search} aria-label={`Find products for ${rail.label}`} onClick={() => focus.focus("search")}>Find products</ActionButton>
@@ -70,15 +75,15 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired }:
           </>}
         />
       </section>)}
-    </div>
-    <ProductSearch className="mt-8" onResults={setResults} onExpired={onExpired} inputRef={remember("search")} actions={product => rails.map(rail => {
+    </div>}
+    {shownRails.length > 0 && <ProductSearch className="mt-8" onResults={setResults} onExpired={onExpired} inputRef={remember("search")} actions={product => shownRails.map(rail => {
       const selected = current[rail.key].includes(product.handle);
       const blocked = !product.published || selected || current[rail.key].length >= limit;
       const add = () => update({ ...current, [rail.key]: [...current[rail.key], product.handle] }, `${rail.key}:${product.handle}`);
       return <ActionButton key={rail.key} icon={selected ? Check : Plus} variant={selected ? "ghost" : "outline"} size="xs"
         aria-label={`Add ${product.handle} to ${rail.label}`} disabled={blocked} onClick={add}>{rail.label}</ActionButton>;
-    })} />
-    {tileGroups.map(group => <section key={group.key} aria-label={`${group.label} tiles`} className="mt-10 grid gap-3">
+    })} />}
+    {shownTiles.map(group => <section key={group.key} aria-label={`${group.label} tiles`} className={cn("grid gap-3", !only && "mt-10")}>
       <SectionHeading className="mt-0 mb-0"
         description="Use the collection handle from its store URL, such as chairs. Add an image and review the description before enabling a new tile.">
         {group.label} tiles<Count value={current[group.key].length} />

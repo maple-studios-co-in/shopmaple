@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import {
   previewTokenPattern,
+  homeSectionKeys,
   storefrontContentSchema,
   type StorefrontContent,
 } from "@shopmaple/contracts";
@@ -34,6 +35,7 @@ import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, Sid
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
 import { HomepagePanel } from "./homepage-panel";
+import type { HomeSectionKey } from "@/lib/section-thumbnails";
 import { OverviewPanel } from "./overview-panel";
 import { PanelHeader, SelectField } from "./kit";
 import type { StaffSession } from "./dashboard";
@@ -111,6 +113,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   /** Phone width shows either the editor or the preview; wider screens show both. */
   const [mobilePane, setMobilePane] = useState<"editor" | "preview">("editor");
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
+  /** The homepage section whose inspector fills the editor column, or null for the section list. */
+  const [inspecting, setInspecting] = useState<HomeSectionKey | null>(null);
   /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
   const [saving, setSaving] = useState(false);
   /** The last failed quiet save; auto-save pauses until a manual save succeeds. */
@@ -348,6 +352,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     if (name === tab) return;
     setSelectedPage(0);
     setFocusedSection(null);
+    setInspecting(null);
     setTab(name);
   }
   const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
@@ -386,7 +391,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     switch (tab) {
       case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
       case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
-        onOpenScreen={(screen) => { selectTab(screen); focusPanelHeading(); }} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
+        inspecting={inspecting} onInspect={setInspecting} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
         const next = { ...content };
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
@@ -569,7 +574,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
                 onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
-                onSelectSection={(section) => { if (tab !== "Homepage") selectTab("Homepage"); setFocusedSection(section); }} />
+                onSelectSection={(section) => {
+                  if (tab !== "Homepage") selectTab("Homepage");
+                  setFocusedSection(section);
+                  // Edit in the preview opens the same inspector as the section's card.
+                  if ((homeSectionKeys as readonly string[]).includes(section)) setInspecting(section as HomeSectionKey);
+                }} />
             )}
           </div>
         )}

@@ -124,18 +124,16 @@ test("saving an edit reloads only the edited section's thumbnail; reordering rel
   } finally { await app.close(); }
 });
 
-test("a card says where its content is edited: its panel on this screen, or another screen", async () => {
+test("every card's Edit opens that section's inspector, and Back returns to the list with the card selected", async () => {
   const app = await setup();
   try {
-    const panel = container.querySelector<HTMLDetailsElement>('details[data-preview-section="nimbus"]');
-    assert.ok(panel);
-    assert.equal(panel.open, false);
-    await click("Edit Nimbus content", card("nimbus"));
-    assert.equal(panel.open, true, "the section's own panel opens");
+    assert.match(card("dining-banner").textContent ?? "", /Shown on the homepage/);
+    await click("Edit Nimbus", card("nimbus"));
+    assert.equal(container.querySelector("[data-section-inspector]")?.getAttribute("data-section-inspector"), "nimbus");
+    await click("Back to sections");
     assert.equal(card("nimbus").getAttribute("aria-current"), "true", "and the card is the selected one");
-
-    await click("Edit Dining Banner in Campaigns", card("dining-banner"));
-    assert.ok(container.querySelector('[aria-label="Campaigns editor"]'), "campaign banners are edited on the Campaigns screen");
+    await click("Edit Dining Banner", card("dining-banner"));
+    assert.equal(container.querySelector("[data-section-inspector]")?.getAttribute("data-section-inspector"), "dining-banner", "banners too, without leaving Homepage");
   } finally { await app.close(); }
 });
 
@@ -147,7 +145,7 @@ test("a hidden section comes back from the Add section picker, after the selecte
     assert.ok(show);
     await act(async () => show.click());
     assert.equal(card("values").dataset.hidden, "true", "a hidden section keeps its place, dimmed");
-    await click("Edit Nimbus content", card("nimbus"));
+    await click("Select Nimbus", card("nimbus"));
     await click("Add section");
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     assert.ok(dialog, "the picker opens");
@@ -184,15 +182,6 @@ test("closing the Add section picker without adding returns focus to Add section
     await act(async () => { document.querySelector('[role="dialog"]')!.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     await until(() => document.querySelector('[role="dialog"]') === null, "the picker to close");
     await until(() => document.activeElement === button("Add section"), "focus on Add section");
-  } finally { await app.close(); }
-});
-
-test("Edit for a section on another screen opens that screen with focus on its heading", async () => {
-  const app = await setup();
-  try {
-    await click("Edit Bestsellers in Merchandising", card("bestsellers"));
-    await until(() => document.activeElement?.tagName === "H2", "focus on the screen heading");
-    assert.match(document.activeElement?.textContent ?? "", /merchandising/i);
   } finally { await app.close(); }
 });
 
