@@ -31,7 +31,7 @@ Radii: 6 px buttons (`rounded-sm`), 10 px cards (`rounded-lg`), 12 px images and
 
 ## How it is built
 
-- One Tailwind build for the admin and the storefront (`styles/tailwind.css`, loaded last by the root layout). No preflight; only `components/ui`, `components/admin`, `components/store`, `app/admin` and one admin helper are scanned, so legacy markup gets no utilities. `test/tailwind-stylesheet.test.tsx` fails if a generated utility shares a class name the legacy storefront still uses.
+- One Tailwind build for the admin and the storefront (`styles/tailwind.css`, loaded last by the root layout). No preflight. Since 31 October the whole storefront (`components`, `app`) is scanned, so pages can move onto utilities one by one; JavaScript negations that read as important utilities (`!visible`, `!paused`) are excluded. `test/tailwind-stylesheet.test.tsx` fails if a generated utility shares a class name the legacy storefront still uses.
 - Rebuilt components live in `components/store`; the old top-level path re-exports them. Their roots carry `data-store`, and a scoped base (`:where([data-store]) ...`) neutralises the legacy global rules (serif `h1`-`h3`, paragraph margins, underline on hover, 44 px padded inputs) at the same weight, so any utility still wins.
 - When a component moves, the legacy CSS that styled it is deleted (the old card, listing and menu panel rules went in this step).
 - Tests reach rebuilt markup through `data-*` hooks (`data-product-card`, `data-card-price`, `data-collection-products`, `data-mega` ...).

@@ -20,6 +20,12 @@
 @source "../components/store";
 @source "../app/admin";
 @source "../lib/preview-request.tsx";
+/* The whole storefront is scanned too, so pages can move onto utilities one by one; the stylesheet
+   test fails if a generated utility shares a class name that legacy markup still uses. */
+@source "../components";
+@source "../app";
+/* JavaScript negations such as `!visible` read as important utilities; nothing means them as classes. */
+@source not inline("!visible !paused");
 
 /* Light only. shadcn's components carry dark: classes; tie them to a .dark class nothing sets,
    so they never follow the visitor's OS colour scheme. */
