@@ -21,7 +21,7 @@ function render(siteChrome?: ReturnType<typeof customChrome>, path = "/") {
 test("absent published chrome retains approved contacts and original navigation", () => {
   const doc = render();
   assert.equal(
-    doc.querySelector("[data-announcement]")?.textContent,
+    doc.querySelector("[data-announcement] a")?.textContent,
     "LUXURY FURNITURE. FACTORY PRICES.",
   );
   assert.deepEqual(
@@ -50,10 +50,9 @@ test("published chrome overrides text, targets, ordering and visibility across p
     doc.querySelector("[data-announcement] a")?.getAttribute("href"),
     "/pages/our-story",
   );
-  assert.deepEqual(
-    [...doc.querySelectorAll("[data-utility-links] a")].map((e) => e.textContent),
-    ["Ask our team"],
-  );
+  // The "Maple / PDF Review" header has no utility links, so the published ones are not shown.
+  assert.equal(doc.querySelector("[data-utility-links]"), null);
+  assert.doesNotMatch(doc.querySelector("header")!.textContent!, /Ask our team/);
   assert.deepEqual(
     [...doc.querySelectorAll("[data-desktop-nav] > *")].map((e) => e.textContent),
     ["Lounge"],
@@ -64,12 +63,11 @@ test("published chrome overrides text, targets, ordering and visibility across p
     ),
     ["Talk to us", "Explore Maple"],
   );
-  assert.deepEqual(
-    [...doc.querySelectorAll("[data-footer-contact] h3")].map(
-      (e) => e.textContent,
-    ),
-    ["Customer enquiries", "Business enquiries"],
+  assert.equal(
+    doc.querySelector("[data-footer-contact] h2")?.textContent,
+    "Let us help",
   );
+  assert.ok(doc.querySelector('[data-footer-contact] a[href="tel:+919876543211"]'));
   assert.match(
     doc.querySelector("[data-footer-care]")!.textContent!,
     /New showroom.*Delhi/,

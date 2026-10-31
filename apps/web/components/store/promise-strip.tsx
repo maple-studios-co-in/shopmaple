@@ -1,4 +1,5 @@
 import { cx } from "@/lib/cx";
+import { SectionHeading } from "./section-heading";
 
 /** The design's four promises ("MF / The Maple promise"), shown under heroes and in the mega-menu. */
 export const promises = [
@@ -22,5 +23,15 @@ export function PromiseStrip({ className }: { className?: string }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The promises as a section with its heading ("MF / The Maple promise/1440": "OUR PROMISE / Every piece. Every time."). */
+export function PromiseSection({ id = "maple-promise-heading", className }: { id?: string; className?: string }) {
+  return (
+    <section data-store data-promise-section aria-labelledby={id} className={cx("flex flex-col gap-6 bg-linen p-16 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-5 max-[750px]:py-10", className)}>
+      <SectionHeading eyebrow="Our promise" title="Every piece. Every time." id={id} />
+      <PromiseStrip />
+    </section>
   );
 }

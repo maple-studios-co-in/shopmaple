@@ -86,22 +86,23 @@ async function mount(
 test("footer exposes callable customer-care and bulk-order contacts", async () => {
   await mount(<Footer />, () => {
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
-    assert.equal(links.length, 3);
+    assert.equal(links.length, 2);
     for (const link of links) assert.match(link.getAttribute("href")!, /^tel:\+91[0-9]{10}$/);
     assert.ok(document.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
   });
 });
 test("footer routes customer care and bulk collaboration to their respective business contacts", async () => {
   await mount(<Footer />, () => {
+    // Customer care (phone and email) sits in its column; the closing band carries the bulk-order line.
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
-    assert.equal(links.length, 3);
     assert.deepEqual(links.map((link) => [link.getAttribute("href"), link.textContent?.trim()]), [
       ["tel:+918796130252", "+91 87961 30252"],
       ["tel:+919262968727", "+91 92629 68727"],
-      ["tel:+918796130252", "+91 87961 30252"],
     ]);
-    const bulk = [...document.querySelectorAll("[data-footer-contact] > div")]
-      .find((section) => section.querySelector("h3")?.textContent === "For Bulk Order/Collaboration:");
+    assert.ok(document.querySelector('[data-footer-care] a[href="tel:+918796130252"]'));
+    const bulk = document.querySelector("[data-footer-contact]");
+    assert.match(bulk?.textContent ?? "", /Bulk enquiries/);
+    assert.ok(bulk?.querySelector('a[href="tel:+919262968727"]'));
     const email = bulk?.querySelector<HTMLAnchorElement>('a[href^="mailto:"]');
     assert.equal(email?.getAttribute("href"), "mailto:aditya@maplefurnishers.com");
     assert.equal(email?.textContent?.trim(), "aditya@maplefurnishers.com");
