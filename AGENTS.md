@@ -21,7 +21,7 @@ These rules apply across the monorepo. Read any more-specific `AGENTS.md` before
 ## Storefront UI
 
 - The storefront is moving to the "Maple Website review" Figma designs page by page ([docs/storefront-redesign.md](docs/storefront-redesign.md)). Rebuilt components live in `apps/web/components/store` and use Tailwind utilities with the storefront tokens (`bg-cream`, `text-espresso`, `text-taupe`, `border-sand`, `bg-brand`, `font-body`, `font-serif`, `text-label` ... `text-h1`); the old path re-exports them. Wrap rebuilt markup in `data-store` so the scoped base applies.
-- `apps/web/styles/tailwind.css` is the one Tailwind build for the admin and the storefront: no global preflight; the whole storefront is scanned, and a test fails if a utility collides with a legacy class name. Write no new hand-written storefront CSS; when a component moves to `components/store`, delete the legacy rules that styled it. Pages the designs do not cover keep their current look until they are rebuilt.
+- `apps/web/styles/tailwind.css` is the one stylesheet for the admin and the storefront (the root layout adds only the font faces in `shopify-fonts.css` and the frozen `checkout.css`): tokens, a small zero-weight global base, checkout's legacy rules, the `[data-store]` base and the utilities, with no global preflight. Write no hand-written storefront CSS and add no stylesheet; style with utilities in `components/store` (the top-level `components/*.tsx` paths only re-export). Pages the designs do not cover keep their current look, restated in utilities, until they are rebuilt.
 - Reach rebuilt markup in tests through `data-*` hooks, not class names.
 
 ## Security and delivery
