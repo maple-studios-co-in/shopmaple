@@ -76,12 +76,12 @@ test("category defaults preserve original copy, artwork, local collection links,
   );
   assert.equal(
     doc.querySelector(
-      '[data-category-tile][href="/collections/wooden-sofas"]',
+      '[data-category-tile][href="/collections/wooden-sofas"] [data-tile-label]',
     )?.textContent,
     "Wooden Sofas",
   );
   assert.match(
-    doc.querySelector("[data-value-card] p")?.textContent ?? "",
+    doc.querySelector("[data-value-card] [data-value-body]")?.textContent ?? "",
     /Where nature begins the story/,
   );
   assert.ok(
@@ -115,7 +115,7 @@ test("only published category overrides change the selected page while preservin
   );
   assert.equal(
     doc.querySelector(
-      '[data-category-tile][href="/collections/wooden-sofas"]',
+      '[data-category-tile][href="/collections/wooden-sofas"] [data-tile-label]',
     )?.textContent,
     "Solid wood seating",
   );
@@ -128,15 +128,15 @@ test("only published category overrides change the selected page while preservin
     "Make it yours",
   );
   assert.equal(
-    doc.querySelector("[data-category-values] [data-eyebrow]")?.textContent,
+    doc.querySelector("[data-category-values] [data-section-eyebrow]")?.textContent,
     "Made by Maple",
   );
   assert.equal(
-    doc.querySelector("[data-value-card] h3")?.textContent,
+    doc.querySelector("[data-value-card] strong")?.textContent,
     "Natural grain",
   );
   assert.equal(
-    doc.querySelector("[data-value-card] p")?.textContent,
+    doc.querySelector("[data-value-card] [data-value-body]")?.textContent,
     "Every grain tells its own story.",
   );
   assert.ok(

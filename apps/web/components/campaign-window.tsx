@@ -2,8 +2,8 @@
 import {useEffect,useState,type ReactNode} from "react";
 import {isCampaignActive,type CampaignSchedule} from "@shopmaple/contracts";
 
-/** Server clock owns initial markup; open pages recheck at boundaries and resume. */
-export function CampaignWindow({children,schedule,serverNow}:{children:ReactNode;schedule:CampaignSchedule;serverNow:number}) {
+/** Server clock owns initial markup; open pages recheck at boundaries and resume. `fallback` shows outside the window. */
+export function CampaignWindow({children,schedule,serverNow,fallback=null}:{children:ReactNode;schedule:CampaignSchedule;serverNow:number;fallback?:ReactNode}) {
  const [now,setNow]=useState(serverNow);
  useEffect(()=>{
   let timer:number|undefined;
@@ -24,5 +24,5 @@ export function CampaignWindow({children,schedule,serverNow}:{children:ReactNode
    document.removeEventListener('visibilitychange',onVisibility);
   };
  },[schedule.startsAt,schedule.endsAt,serverNow]);
- return isCampaignActive(schedule,now)?children:null;
+ return isCampaignActive(schedule,now)?children:fallback;
 }
