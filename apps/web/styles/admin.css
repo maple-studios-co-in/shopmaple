@@ -6,19 +6,8 @@
 /* onto the same tokens; components come from components/ui.          */
 /* ------------------------------------------------------------------ */
 
-/* Tailwind is loaded for the admin only and never touches the storefront:
-   - theme variables sit in a cascade layer; there is no preflight (the scoped base below
-     replaces it inside .shop-admin), and only admin sources are scanned;
-   - utilities are emitted last and unlayered, without !important, so inline styles (dnd-kit
-     transforms and transitions, animation delays) still win. One class beats the storefront's
-     global element rules (button, input, h2, p) that the root layout loads on every route. */
-@layer theme;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tw-animate-css";
-@source "../components/ui";
-@source "../components/admin";
-@source "../app/admin";
-@source "../lib/preview-request.tsx";
+/* Utilities come from styles/tailwind.css, the one Tailwind build the admin shares with the
+   redesigned storefront; this file holds the admin's tokens and its scoped base only. */
 
 /* Brand display face. Commercially licensed: the files are never committed and the
    folder is a symlink to a private share on the server, so these paths must not change. */
@@ -100,7 +89,7 @@
   --sidebar-ring: var(--admin-accent);
 }
 
-.shop-admin {
+:where(.shop-admin) {
   color: var(--admin-ink);
   background: var(--admin-canvas);
   font-family: var(--admin-font-text);
@@ -111,85 +100,13 @@
   text-rendering: optimizeLegibility;
 }
 
-/* Utilities read the tokens directly (inline), so nothing here depends on :root. */
-@theme inline {
-  --font-sans: var(--admin-font-text);
-  --font-display: var(--admin-font-display);
-  --text-2xs: 11px;
-  --text-2xs--line-height: 1.45;
-  --text-xs: 12.5px;
-  --text-xs--line-height: 1.5;
-  --text-sm: 13.5px;
-  --text-sm--line-height: 1.5;
-  --text-base: 15px;
-  --text-base--line-height: 1.5;
-  --text-lg: 18px;
-  --text-lg--line-height: 1.35;
-  --text-xl: 22px;
-  --text-xl--line-height: 1.25;
-  --text-2xl: 28px;
-  --text-2xl--line-height: 1.2;
-  --text-3xl: 36px;
-  --text-3xl--line-height: 1.15;
-  --text-4xl: 44px;
-  --text-4xl--line-height: 1.08;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-surface: var(--admin-surface);
-  --color-sunken: var(--admin-surface-sunken);
-  --color-faint: var(--admin-text-faint);
-  --color-line-soft: var(--admin-line-soft);
-  --color-accent-tint: var(--admin-accent-tint);
-  --color-success: var(--admin-success);
-  --color-success-bg: var(--admin-success-bg);
-  --color-warning: var(--admin-warning);
-  --color-warning-bg: var(--admin-warning-bg);
-  --color-info: var(--admin-info);
-  --color-info-bg: var(--admin-info-bg);
-  --color-danger: var(--admin-danger);
-  --color-danger-bg: var(--admin-danger-bg);
-  --color-neutral: var(--admin-neutral);
-  --color-neutral-bg: var(--admin-neutral-bg);
-  --radius-sm: var(--admin-radius-s);
-  --radius-md: calc(var(--admin-radius-m) - 2px);
-  --radius-lg: var(--admin-radius-m);
-  --radius-xl: var(--admin-radius-l);
-  --shadow-xs: var(--admin-shadow-s);
-  --shadow-sm: var(--admin-shadow-s);
-  --shadow-md: var(--admin-shadow-m);
-  --shadow-lg: var(--admin-shadow-lift);
-  --ease-admin: var(--admin-ease);
-  --default-transition-duration: var(--admin-duration-fast);
-  --default-transition-timing-function: var(--admin-ease);
-}
 
 /* Scoped base: the parts of Tailwind's preflight the primitives rely on, inside .shop-admin
    only (overlays portal into it). :where() keeps each rule at element specificity, so it ties
    the storefront's global element rules and wins by order (this file loads after them), while
-   any utility class wins over both. Focus is the one rule a class deep, to beat the
-   storefront's button:focus-visible; focus-visible utilities still win (they come later). */
+   any utility class wins over both, whichever sheet loads last. The focus ring on controls
+   weighs an element plus a pseudo-class, to tie the storefront's button:focus-visible; a
+   focus-visible utility (two classes' weight) still beats it. */
 :where(.shop-admin) *, :where(.shop-admin) ::before, :where(.shop-admin) ::after { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid var(--border); }
 :where(.shop-admin) :is(h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd) { margin: 0; }
 :where(.shop-admin) :is(h1, h2, h3, h4, h5, h6) { font: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; }
@@ -208,8 +125,8 @@
 :where(.shop-admin) summary { display: list-item; }
 :where(.shop-admin) [hidden]:where(:not([hidden="until-found"])) { display: none !important; }
 :where(.shop-admin) ::selection { background: var(--admin-accent); color: var(--admin-accent-contrast); }
-.shop-admin :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+:where(.shop-admin) :focus-visible,
+:where(.shop-admin) :is(a, button, input, select, summary, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 /* Headings that receive focus from code (tabindex=-1) to start screen readers there are not controls. */
-.shop-admin [tabindex="-1"]:focus-visible { outline: none; }
+:where(.shop-admin) [tabindex="-1"]:focus-visible { outline: none; }
 
-@tailwind utilities source(none);

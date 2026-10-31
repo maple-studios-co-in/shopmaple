@@ -34,55 +34,55 @@ async function mount(ui: React.ReactNode, check: () => void | Promise<void>, car
 }
 test("model-only cards remain browsable with an honest price and image placeholder", async () => {
   await mount(<ProductCard product={toProductCard(model)} />, () => {
-    assert.match(document.querySelector(".product-card-price")!.textContent!, /Price on request/);
+    assert.match(document.querySelector("[data-card-price]")!.textContent!, /Price on request/);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
     assert.ok(document.querySelector('a[href="/products/new-model"]'));
-    assert.equal(document.querySelector(".card-sale"), null);
+    assert.equal(document.querySelector("[data-card-sale]"), null);
   });
 });
 test("unknown option prices never become zero or a discount", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown] })} />, () => {
-    assert.equal(document.querySelector(".product-card-price")!.textContent?.trim(), "Price on request");
-    assert.equal(document.querySelector(".card-sale"), null);
+    assert.equal(document.querySelector("[data-card-price]")!.textContent?.trim(), "Price on request");
+    assert.equal(document.querySelector("[data-card-sale]"), null);
   });
 });
 test("mixed known and unknown options show the known starting price and disclose other prices on request", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, variants: [unknown, known] })} />, () => {
-    assert.match(document.querySelector(".product-card-price")!.textContent!, /From Rs. 250.00/);
-    assert.match(document.querySelector(".product-card")!.textContent!, /Other options on request/);
+    assert.match(document.querySelector("[data-card-price]")!.textContent!, /From Rs. 250.00/);
+    assert.match(document.querySelector("[data-product-card]")!.textContent!, /Other options on request/);
   });
 });
 test("a model-only detail page offers an enquiry without inventing a variant, SKU or category", async () => {
   await mount(<ProductDetail product={model} />, () => {
-    assert.match(document.querySelector(".pdp-price-block")!.textContent!, /Price on request/);
-    assert.ok(document.querySelector('.breadcrumb a[href="/collections/all"]'));
+    assert.match(document.querySelector("[data-price-block]")!.textContent!, /Price on request/);
+    assert.ok(document.querySelector('[data-breadcrumb] a[href="/collections/all"]'));
     assert.equal(document.querySelector('[aria-label="Enlarge product image"]'), null);
-    const enquiry = document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!;
+    const enquiry = document.querySelector<HTMLAnchorElement>("[data-purchase] a")!;
     const params = new URL(enquiry.href).searchParams;
     assert.equal(params.get("product"), "New Model");
     assert.equal(params.has("variant"), false);
     assert.equal(params.has("sku"), false);
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
+    assert.equal(document.querySelector("[data-purchase] button"), null);
     assert.equal(document.querySelector('a[href*="shop.maplefurnishers.com/products/new-model"]'), null);
   });
 });
 test("selecting an unpriced option replaces cart purchase with enquiry without a fabricated SKU", async () => {
   await mount(<ProductDetail product={{ ...model, variants: [known, unknown] }} />, async () => {
-    assert.equal(document.querySelector(".pdp-purchase button.button")?.textContent, "Add to cart");
+    assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
     await act(async () => document.querySelector<HTMLInputElement>('input[value="option"]')!.click());
-    assert.match(document.querySelector(".pdp-price-block")!.textContent!, /Price on request/);
-    assert.equal(document.querySelector(".pdp-discount"), null);
-    assert.equal(document.querySelector(".pdp-purchase button"), null);
-    const params = new URL(document.querySelector<HTMLAnchorElement>(".pdp-purchase a")!.href).searchParams;
+    assert.match(document.querySelector("[data-price-block]")!.textContent!, /Price on request/);
+    assert.equal(document.querySelector("[data-discount]"), null);
+    assert.equal(document.querySelector("[data-purchase] button"), null);
+    const params = new URL(document.querySelector<HTMLAnchorElement>("[data-purchase] a")!.href).searchParams;
     assert.equal(params.get("variant"), "Natural");
     assert.equal(params.has("sku"), false);
   });
 });
 test("failed product images retain a neutral accessible fallback", async () => {
   await mount(<ProductCard product={toProductCard({ ...model, images: ["https://example.com/unavailable.jpg"], variants: [known] })} />, async () => {
-    await act(async () => document.querySelector(".product-card-image img")!.dispatchEvent(new dom.window.Event("error")));
+    await act(async () => document.querySelector("[data-card-image] img")!.dispatchEvent(new dom.window.Event("error")));
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
-    assert.equal(document.querySelector(".product-card-image img"), null);
+    assert.equal(document.querySelector("[data-card-image] img"), null);
   });
 });
 test("an unpriced saved cart uses unknown totals and an enquiry instead of checkout", async () => {
@@ -123,9 +123,9 @@ test("new catalogue members use their known category without requiring dated pre
 });
 test("priced unverified options offer cart selection without claiming confirmed stock", async () => {
   await mount(<ProductDetail product={{ ...model, variants: [{ ...known, available: false, stockPolicy: "unverified" }] }} />, () => {
-    assert.equal(document.querySelector(".pdp-purchase button.button")?.textContent, "Add to cart");
-    assert.equal(document.querySelector(".pdp-purchase a"), null);
-    assert.doesNotMatch(document.querySelector(".pdp-info")!.textContent!, /In stock|Payment confirmed/);
+    assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
+    assert.equal(document.querySelector("[data-purchase] a"), null);
+    assert.doesNotMatch(document.querySelector("[data-product-info]")!.textContent!, /In stock|Payment confirmed/);
   });
 });
 

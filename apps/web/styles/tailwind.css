@@ -1,0 +1,164 @@
+/* ------------------------------------------------------------------ */
+/* The one Tailwind build for the app: the admin and the redesigned   */
+/* storefront share these utilities, so a class means the same thing  */
+/* on every route and inside the admin's preview frame.               */
+/* Documented in docs/storefront-redesign.md and docs/admin-redesign.md. */
+/* ------------------------------------------------------------------ */
+
+/* - No preflight: the legacy storefront keeps its own base, and the admin's scoped base lives
+     in admin.css (inside .shop-admin only).
+   - Only rebuilt sources are scanned, so legacy storefront markup gets no utilities; the
+     tailwind-stylesheet test fails if a generated utility shares a legacy class name.
+   - Utilities are emitted last and unlayered, without !important, so inline styles (dnd-kit
+     transforms and transitions, animation delays) still win, and one class beats the
+     storefront's global element rules (button, input, h2, p). */
+@layer theme;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tw-animate-css";
+@source "../components/ui";
+@source "../components/admin";
+@source "../components/store";
+@source "../app/admin";
+@source "../lib/preview-request.tsx";
+
+/* Light only. shadcn's components carry dark: classes; tie them to a .dark class nothing sets,
+   so they never follow the visitor's OS colour scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Storefront design tokens (the "Maple Website review" Figma file). Static, so every token is
+   available to the storefront's own CSS as well as to utilities. */
+@theme static {
+  --color-brand: #741a14;
+  --color-brand-deep: #5c140f;
+  --color-cream: #f0eae3;
+  --color-linen: #faf8f4;
+  --color-espresso: #29251f;
+  --color-taupe: #746c62;
+  --color-sand: #e1d9d0;
+  --color-leaf: #428445;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
+  /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
+  --text-label: 12px;
+  --text-label--line-height: 1.45;
+  --text-meta: 13px;
+  --text-meta--line-height: 1.45;
+  --text-ui: 14px;
+  --text-ui--line-height: 1.45;
+  --text-card: 15px;
+  --text-card--line-height: 1.45;
+  --text-price: 16px;
+  --text-price--line-height: 1.45;
+  --text-lead: 17px;
+  --text-lead--line-height: 1.45;
+  --text-subhead: 19px;
+  --text-subhead--line-height: 1.45;
+  --text-h4: 22px;
+  --text-h4--line-height: 1.1;
+  --text-h3: 25px;
+  --text-h3--line-height: 1.1;
+  --text-h2: 29px;
+  --text-h2--line-height: 1.1;
+  --text-title: 34px;
+  --text-title--line-height: 1.2;
+  --text-h1: 42px;
+  --text-h1--line-height: 1.1;
+}
+
+/* Admin tokens. The values live on .shop-admin (admin.css); utilities read them inline, so
+   nothing here depends on :root. Radius, shadow and motion fall back to the storefront's
+   values outside the admin. */
+@theme inline {
+  --font-sans: var(--admin-font-text);
+  --font-display: var(--admin-font-display);
+  --text-2xs: 11px;
+  --text-2xs--line-height: 1.45;
+  --text-xs: 12.5px;
+  --text-xs--line-height: 1.5;
+  --text-sm: 13.5px;
+  --text-sm--line-height: 1.5;
+  --text-base: 15px;
+  --text-base--line-height: 1.5;
+  --text-lg: 18px;
+  --text-lg--line-height: 1.35;
+  --text-xl: 22px;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 28px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 36px;
+  --text-3xl--line-height: 1.15;
+  --text-4xl: 44px;
+  --text-4xl--line-height: 1.08;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface: var(--admin-surface);
+  --color-sunken: var(--admin-surface-sunken);
+  --color-faint: var(--admin-text-faint);
+  --color-line-soft: var(--admin-line-soft);
+  --color-accent-tint: var(--admin-accent-tint);
+  --color-success: var(--admin-success);
+  --color-success-bg: var(--admin-success-bg);
+  --color-warning: var(--admin-warning);
+  --color-warning-bg: var(--admin-warning-bg);
+  --color-info: var(--admin-info);
+  --color-info-bg: var(--admin-info-bg);
+  --color-danger: var(--admin-danger);
+  --color-danger-bg: var(--admin-danger-bg);
+  --color-neutral: var(--admin-neutral);
+  --color-neutral-bg: var(--admin-neutral-bg);
+  --radius-sm: var(--admin-radius-s, 6px);
+  --radius-md: calc(var(--admin-radius-m, 10px) - 2px);
+  --radius-lg: var(--admin-radius-m, 10px);
+  --radius-xl: var(--admin-radius-l, 12px);
+  --radius-2xl: 14px;
+  --shadow-xs: var(--admin-shadow-s, 0 1px 2px rgba(41, 37, 31, 0.06));
+  --shadow-sm: var(--admin-shadow-s, 0 1px 2px rgba(41, 37, 31, 0.06), 0 1px 1px rgba(41, 37, 31, 0.04));
+  --shadow-md: var(--admin-shadow-m, 0 12px 32px -16px rgba(41, 37, 31, 0.28), 0 2px 6px -2px rgba(41, 37, 31, 0.08));
+  --shadow-lg: var(--admin-shadow-lift, 0 24px 48px -20px rgba(41, 37, 31, 0.32), 0 6px 14px -6px rgba(41, 37, 31, 0.12));
+  --ease-admin: var(--admin-ease, cubic-bezier(0.32, 0.72, 0, 1));
+  --default-transition-duration: var(--admin-duration-fast, 160ms);
+  --default-transition-timing-function: var(--admin-ease, cubic-bezier(0.32, 0.72, 0, 1));
+}
+
+/* Scoped base for redesigned storefront markup (anything inside [data-store]). The legacy
+   storefront's global element rules (serif h1 to h3 at 36 to 48 px, paragraph margins, underline
+   on hover, 44 px padded inputs) would otherwise reach it. :where() keeps each rule at the legacy
+   rule's weight, so this sheet wins by loading last, and any utility class still wins over both. */
+:where([data-store]) {
+  /* The admin's preview frame defines these; the storefront draws with its own radii and shadows. */
+  --admin-radius-s: initial; --admin-radius-m: initial; --admin-radius-l: initial;
+  --admin-shadow-s: initial; --admin-shadow-m: initial; --admin-shadow-lift: initial; --admin-ease: initial;
+}
+:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; }
+:where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
+:where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }
+:where([data-store]) fieldset { min-width: 0; padding: 0; border: 0; }
+:where([data-store]) legend { padding: 0; }
+:where([data-store]) a:hover { text-decoration: none; }
+:where([data-store]) :is(input, select, textarea) { min-height: 0; border: 0 solid var(--color-sand); border-radius: 0; background: transparent; padding: 0; color: inherit; }
+:where([data-store]) :is(input, textarea)::placeholder { color: var(--color-taupe); }
+:where([data-store]) button { font: inherit; color: inherit; }
+
+@tailwind utilities source(none);

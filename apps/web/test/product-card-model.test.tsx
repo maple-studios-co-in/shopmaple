@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -42,15 +43,15 @@ for (const scenario of [
     const product = { ...base, variants: scenario.variants };
     const original = structuredClone(product);
     await card(product, (doc) => {
-      assert.equal(doc.querySelector(".product-card-price span")?.textContent, scenario.price);
-      assert.equal(doc.querySelector(".product-card-price del")?.textContent ?? null, scenario.sale);
-      assert.equal(Boolean(doc.querySelector(".card-sale")), scenario.sale !== null);
-      assert.equal(doc.querySelector(".product-card p.product-card-options")?.textContent ?? null,
+      assert.equal(doc.querySelector("[data-card-price] span")?.textContent, scenario.price);
+      assert.equal(doc.querySelector("[data-card-price] del")?.textContent ?? null, scenario.sale);
+      assert.equal(Boolean(doc.querySelector("[data-card-sale]")), scenario.sale !== null);
+      assert.equal(doc.querySelector("[data-product-card] p[data-card-options]")?.textContent ?? null,
         scenario.request ? "Other options on request" : null);
-      assert.equal(doc.querySelector("a.product-card-options")?.textContent?.trim() ?? null,
+      assert.equal(doc.querySelector("a[data-card-options]")?.textContent?.trim() ?? null,
         scenario.variants.length > 1 ? `${scenario.variants.length} options` : null);
-      assert.equal(doc.querySelector(".product-card img")?.getAttribute("src"), "https://example.com/first.jpg");
-      assert.equal(doc.querySelector(".product-card-name")?.getAttribute("href"), "/products/display-chair");
+      assert.equal(doc.querySelector("[data-product-card] img")?.getAttribute("src"), "https://example.com/first.jpg");
+      assert.equal(doc.querySelector("[data-card-name]")?.getAttribute("href"), "/products/display-chair");
       assert.deepEqual(product, original, "pricing must not mutate source variant order");
     });
   });
@@ -66,4 +67,32 @@ test("card keeps save and unsave behaviour without requiring the detailed catalo
     assert.equal(button.getAttribute("aria-pressed"), "false");
     assert.deepEqual(JSON.parse(localStorage.getItem("maple-favourites")!), []);
   });
+});
+
+test("the save button draws only its own circle (no native border or padding) and the image fallback text meets 4.5:1", async () => {
+  await card({ ...base, images: [], variants: [variant("only", 1000)] }, (document) => {
+    const save = document.querySelector("[data-save-button]")!;
+    assert.match(save.className, /\bborder-0\b/);
+    assert.match(save.className, /\bp-0\b/);
+    assert.match(save.className, /after:-inset-\[7px\]/, "A 44 px tap target around the 30 px circle");
+    assert.doesNotMatch(document.querySelector("[data-card-image]")!.className, /text-taupe/);
+  });
+});
+
+test("the card stays light enough for the homepage: no class-merging library in its module graph", () => {
+  const source = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /@\/lib\/utils|tailwind-merge|clsx/, "cn pulls tailwind-merge (about 28 KB) into the homepage's first load");
+});
+
+test("only the save button runs in the browser: the card itself renders on the server", () => {
+  const card = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  const save = readFileSync(new URL("../components/store/save-button.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /^"use client"/m);
+  assert.match(save, /^"use client"/m);
+});
+
+test("the header loads the wishlist list on demand, so cards stay out of every page's first-load JavaScript", () => {
+  const header = readFileSync(new URL("../components/header.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(header, /import \{ Favourites \} from "\.\/favourites"/);
+  assert.match(header, /dynamic\(\(\) => import\("\.\/favourites"\)/);
 });

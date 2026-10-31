@@ -9,6 +9,7 @@ import { CategoryLanding, CategoryProducts } from "../components/category-landin
 import { NimbusLanding } from "../components/category-nimbus";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductCard } from "../components/product-card";
+import { RelatedProducts } from "../components/store/related-products";
 import { ProductDetail } from "../components/product-detail";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultCategoryPages } from "../lib/category-content-defaults";
@@ -66,7 +67,7 @@ function railContent() {
   content.homeMerchandising = { bestsellers: ["second", "first"], chairs: ["chair-two", "chair-one"], categories: [], offers: [] };
   return content;
 }
-const links = (doc: Document) => [...doc.querySelectorAll(".product-card-name")].map(n => n.getAttribute("href"));
+const links = (doc: Document) => [...doc.querySelectorAll("[data-card-name]")].map(n => n.getAttribute("href"));
 
 test("characterization: homepage retains rail order, prices and partial success", async () => {
   const content = railContent();
@@ -74,14 +75,14 @@ test("characterization: homepage retains rail order, prices and partial success"
   await fixture(async () => {
     const doc = await documentFor(<Home />);
     assert.deepEqual(links(doc), ["/products/second", "/products/first", "/products/chair-two", "/products/chair-one"]);
-    assert.match(doc.querySelector(".product-card-price")!.textContent!, /From Rs. 12,345.00/);
+    assert.match(doc.querySelector("[data-card-price]")!.textContent!, /From Rs. 12,345.00/);
   }, { content, missing: ["missing"], broken: ["broken"] });
 });
 
 test("homepage reads one compact batch per enabled rail and recovers only compact singletons after batch failure", async () => {
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
-    assert.equal(doc.querySelectorAll(".product-card").length, 4);
+    assert.equal(doc.querySelectorAll("[data-product-card]").length, 4);
     assert.deepEqual(requests.filter(u => u.pathname !== "/api/content/storefront").map(u => u.pathname + u.search), ["/api/catalogue/cards?handles=second%2Cfirst", "/api/catalogue/cards?handles=chair-two%2Cchair-one"]);
   }, { content: railContent() });
   const content = railContent();
@@ -123,7 +124,7 @@ test("category parent returns its hero before catalogue loading and all rendered
       const doc = await pendingDocument;
       assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
       assert.equal(doc.querySelectorAll(".landing-products").length, 5);
-      assert.ok(doc.querySelectorAll(".product-card").length > 0);
+      assert.ok(doc.querySelectorAll("[data-product-card]").length > 0);
     } finally {
       release();
       await pendingPage;
@@ -152,7 +153,7 @@ test("standalone category rail preserves source-only enquiry cards and skips unk
   await fixture(async requests => {
     const doc = await documentFor(<CategoryProducts handles={["live-chair", handle, "unknown-chair"]} />);
     assert.deepEqual(links(doc), ["/products/live-chair", `/pages/contact?product=${encodeURIComponent(original.title)}`]);
-    assert.equal(doc.querySelector(".landing-source-product .product-card-price")!.textContent, "Price on request");
+    assert.equal(doc.querySelector(".landing-source-product [data-card-price]")!.textContent, "Price on request");
     assert.equal(doc.querySelector(".landing-source-product img")!.getAttribute("alt"), original.title);
     assert.equal(requests.length, 1);
     assert.equal(requests[0]!.pathname, "/api/catalogue/cards");
@@ -198,7 +199,7 @@ test("PDP retains full main detail and requests five compact related cards befor
       const detail = propsOf(node, ProductDetail)[0]!;
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
-      assert.deepEqual(propsOf(node, ProductCard).map(p => p.product), ["first", "second", "third", "fourth"].map(card));
+      assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
       assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs"]);
     }, { related });
   }

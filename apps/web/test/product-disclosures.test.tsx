@@ -34,7 +34,7 @@ async function mount(value: Product, check: () => void) {
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
 function disclosure(label: string) {
-  const element = [...document.querySelectorAll(".product-accordions details")].find(item => item.querySelector("summary")?.textContent === label);
+  const element = [...document.querySelectorAll("[data-accordions] details")].find(item => item.querySelector("summary")?.textContent === label);
   assert.ok(element, `Disclosure ${label} is available`);
   return element;
 }
@@ -59,9 +59,9 @@ test("captured source disclosures replace generic copy without changing purchase
     assert.equal(disclosure("Materials + Care").querySelector("a"), null);
     assert.equal(disclosure("Shipping + Returns").querySelector("a"), null);
     assert.equal(document.querySelector("h1")?.textContent, "Source Chair");
-    assert.match(document.querySelector(".pdp-price-block strong")!.textContent!, /23,600/);
-    assert.equal(document.querySelector(".pdp-purchase button.button")?.textContent, "Add to cart");
-    assert.match(document.querySelector(".preview-disclosure")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
+    assert.match(document.querySelector("[data-price-block] strong")!.textContent!, /23,600/);
+    assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
+    assert.match(document.querySelector("[data-disclosure]")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
     assert.match(disclosure("Dimensions & specifications").textContent!, /SKU: CHAIR-NAT/);
   });
 });
@@ -133,7 +133,7 @@ test('Keeri product details show source materials, dimensions, care and warranty
   assert.match(disclosure('Materials + Care').textContent!,/Oak and linen/);
   assert.match(disclosure('Materials + Care').textContent!,/Dry cloth/);
   assert.match(disclosure('Dimensions & specifications').textContent!,/80 x 60 cm/);
-  assert.match(document.querySelector('.product-accordions')!.textContent!,/One year/);
+  assert.match(document.querySelector('[data-accordions]')!.textContent!,/One year/);
  });
 });
 
