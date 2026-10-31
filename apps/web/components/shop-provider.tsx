@@ -36,8 +36,6 @@ type ShopState = {
   recoverCart: () => Promise<void>;
   favourites: string[];
   toggleFavourite: (id: string) => void;
-  /** A saved product moved to a new address (a renamed keeri-<id> one): keep it saved under that address. */
-  renameFavourite: (from: string, to: string) => void;
 };
 const Context = createContext<ShopState | null>(null);
 const pendingStorageKey = "maple-cart-pending-v1";
@@ -244,9 +242,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     if (pending.current) await sendMutation(pending.current);
     else await loadCart();
   }, [sendMutation, loadCart]);
-  function storeFavourites(change: (previous: string[]) => string[]) {
+  function toggleFavourite(id: string) {
     setFavourites((previous) => {
-      const next = change(previous);
+      const next = previous.includes(id)
+        ? previous.filter((x) => x !== id)
+        : [...previous, id].slice(-100);
       try {
         localStorage.setItem("maple-favourites", JSON.stringify(next));
       } catch {
@@ -254,16 +254,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }
-  function toggleFavourite(id: string) {
-    storeFavourites((previous) => previous.includes(id)
-      ? previous.filter((x) => x !== id)
-      : [...previous, id].slice(-100));
-  }
-  function renameFavourite(from: string, to: string) {
-    storeFavourites((previous) => previous.includes(from)
-      ? [...new Set(previous.map((x) => x === from ? to : x))]
-      : previous);
   }
   return (
     <Context.Provider
@@ -280,7 +270,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         recoverCart,
         favourites,
         toggleFavourite,
-        renameFavourite,
       }}
     >
       {children}

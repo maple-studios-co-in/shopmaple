@@ -86,15 +86,15 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
     const products = await db.product.findMany({ where: { published: true, handle: { in: wanted } }, select: cardSelect });
     const byHandle = new Map(products.map(product => [product.handle, toProductCard(product)]));
     const seen = new Set<string>();
-    const moved: Record<string, string> = {};
+    const moved: { handle: string; from: string }[] = [];
     const ordered = handles.flatMap((asked, index) => {
       const handle = wanted[index]!;
       if (!byHandle.has(handle) || seen.has(handle)) return [];
       seen.add(handle);
-      if (handle !== asked) moved[handle] = asked;
+      if (handle !== asked) moved.push({ handle, from: asked });
       return [byHandle.get(handle)!];
     });
-    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, ...(Object.keys(moved).length ? { moved } : {}), published: true });
+    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, ...(moved.length ? { moved } : {}), published: true });
   });
   app.get("/api/catalogue/cards/:handle", async (req, res) => {
     const handle = catalogueHandleSchema.parse(req.params.handle);

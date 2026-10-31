@@ -272,7 +272,7 @@ test("a renamed Keeri address redirects permanently, and each variant keeps its 
   const batch = await request(app).get("/api/catalogue/cards?handles=keeri-model1,missing");
   assert.equal(batch.status, 200);
   assert.deepEqual(batch.body.products.map((p: { handle: string }) => p.handle), ["zyro-lounge"]);
-  assert.deepEqual(batch.body.moved, { "zyro-lounge": "keeri-model1" }, "saved homepage picks still find a renamed product");
+  assert.deepEqual(batch.body.moved, [{ handle: "zyro-lounge", from: "keeri-model1" }], "saved homepage picks still find a renamed product");
 
   k.capturedAt = "2026-10-25T11:00:00Z";
   await syncCatalogueUnion(db, s, k, "maple");

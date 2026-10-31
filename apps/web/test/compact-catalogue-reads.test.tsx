@@ -154,7 +154,7 @@ for (const phase of ["headers", "body"] as const) test(`compact collection ${pha
 
 test("curated cards keep a product whose address was renamed, in the place it was asked for", async () => {
   await isolated(async () => {
-    globalThis.fetch = async () => Response.json({ products: [cardFixture("alpha"), cardFixture("alain"), cardFixture("bravo")], moved: { alain: "keeri-abc123" }, published: true });
+    globalThis.fetch = async () => Response.json({ products: [cardFixture("alpha"), cardFixture("alain"), cardFixture("bravo")], moved: [{ handle: "alain", from: "keeri-abc123" }], published: true });
     const result = await getProductCards(["alpha", "keeri-abc123", "bravo"]);
     assert.deepEqual(result.map((product) => product.handle), ["alpha", "alain", "bravo"]);
   });
