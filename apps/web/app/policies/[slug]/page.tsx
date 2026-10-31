@@ -17,6 +17,7 @@ export async function generateMetadata({
     title: Object.hasOwn(source.policies, slug)
       ? policies[slug]?.title ?? "Policy"
       : "Policy",
+    ...(Object.hasOwn(source.policies, slug) ? { alternates: { canonical: `/policies/${slug}` } } : {}),
   };
 }
 export default async function PolicyPage({

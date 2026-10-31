@@ -43,14 +43,16 @@ const config: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
       {
-        // Staff pages and draft previews must never be stored by browsers or the CDN.
+        // Staff pages and draft previews must never be stored by browsers or the CDN, or indexed.
+        // The rest of the store is kept out of search by robots.txt and page metadata (lib/seo.ts),
+        // which read SEO_INDEXING at request time; headers here are fixed at build time.
         source: "/admin/:path*",
-        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+        headers: [{ key: "Cache-Control", value: "private, no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
+      { source: "/api/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         // The draft preview frame is embedded only by the same-origin preview shell.
         source: "/admin/preview-frame/:path*",

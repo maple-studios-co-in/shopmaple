@@ -84,7 +84,9 @@ test("published authored article renders all structured blocks safely and suppli
     assert.equal(doc.querySelector("article a")?.getAttribute("href"), "/collections/chairs");
     assert.equal(doc.querySelector("article img")?.getAttribute("src"), bodyImage);
     assert.equal(doc.querySelector("article img")?.getAttribute("alt"), 'Reading nook <img src=x onerror="bad()">');
-    assert.equal(doc.querySelectorAll("script, [onerror]").length, 0);
+    assert.equal(doc.querySelectorAll('script:not([type="application/ld+json"]), [onerror]').length, 0);
+    // The only scripts are inert structured data for search engines, with nothing that could end the tag.
+    for (const data of doc.querySelectorAll('script[type="application/ld+json"]')) { assert.ok(!/[<>]/.test(data.textContent ?? "")); JSON.parse(data.textContent ?? ""); }
     assert.equal((await generateMetadata(params())).title, "A room for reading");
   });
 });

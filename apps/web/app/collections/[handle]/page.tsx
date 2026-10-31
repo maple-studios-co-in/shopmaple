@@ -14,7 +14,9 @@ export async function generateMetadata({
   params: Promise<{ handle: string }>;
 }) {
   const { handle } = await params;
-  return { title: collectionTitles[handle] ?? "Furniture" };
+  const title = collectionTitles[handle] ?? "Furniture";
+  // Sorted and filtered views of a collection point search to the collection itself.
+  return { title, description: `${title} by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.`, alternates: { canonical: `/collections/${handle}` } };
 }
 type Query = Record<string, string | string[] | undefined>;
 export default async function Collection({

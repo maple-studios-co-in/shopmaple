@@ -41,12 +41,20 @@ test("collection metadata identifies the page without duplicating the brand", as
     await collectionPage.generateMetadata({
       params: Promise.resolve({ handle: "chairs" }),
     }),
-    { title: "Chairs" },
+    {
+      title: "Chairs",
+      description: "Chairs by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.",
+      alternates: { canonical: "/collections/chairs" },
+    },
   );
   assert.deepEqual(
     await collectionPage.generateMetadata({
       params: Promise.resolve({ handle: "tv-media-units" }),
     }),
-    { title: "TV & Media Units" },
+    {
+      title: "TV & Media Units",
+      description: "TV & Media Units by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.",
+      alternates: { canonical: "/collections/tv-media-units" },
+    },
   );
 });

@@ -5,7 +5,14 @@ import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import { HomeNewsletter, HomeValues } from "@/components/home-sections";
 import presentationData from "@/data/product-presentation.json";
+import { JsonLd } from "@/components/store/json-ld";
+import { breadcrumbStructuredData, productMetadata, productStructuredData, seoSettings } from "@/lib/seo";
+import { collectionTitles } from "@/lib/collections";
 export const dynamic = "force-dynamic";
+export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }) {
+  const product = await getProduct((await params).handle);
+  return product ? productMetadata(seoSettings(process.env), product) : { title: "Product not found" };
+}
 export default async function ProductPage({
   params,
   searchParams,
@@ -26,8 +33,13 @@ export default async function ProductPage({
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
       : undefined;
+  const seo = seoSettings(process.env);
+  const trail: [string, string][] = [["Home", "/"],
+    ...(product.category ? [[collectionTitles[product.category] ?? "Furniture", `/collections/${product.category}`] as [string, string]] : []),
+    [product.title, `/products/${product.handle}`]];
   return (
     <>
+      <JsonLd data={[productStructuredData(seo, product), breadcrumbStructuredData(seo, trail)]} />
       <ProductDetail
         key={product.id}
         product={product}

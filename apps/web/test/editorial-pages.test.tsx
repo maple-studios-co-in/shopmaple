@@ -147,7 +147,9 @@ test("published editorial text is escaped instead of interpreted as HTML", async
       const doc = await documentFor(element);
       assert.equal(doc.querySelector("h1")?.textContent, literal);
       assert.ok(doc.querySelector("article p")?.textContent?.includes(literal));
-      assert.equal(doc.querySelectorAll("script, [onerror], img[src=x]").length, 0);
+      assert.equal(doc.querySelectorAll('script:not([type="application/ld+json"]), [onerror], img[src=x]').length, 0);
+      // The only scripts are inert structured data for search engines, with nothing that could end the tag.
+      for (const data of doc.querySelectorAll('script[type="application/ld+json"]')) { assert.ok(!/[<>]/.test(data.textContent ?? "")); JSON.parse(data.textContent ?? ""); }
     }
   });
 });
