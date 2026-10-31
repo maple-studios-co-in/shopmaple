@@ -46,6 +46,12 @@ export function Favourites({
           return;
         requests.current.delete(handle);
         cache.current.set(handle, result);
+        // The product's address was renamed: show it under the new one and keep it saved there.
+        if (result.product && result.product.handle !== handle) {
+          cache.current.set(result.product.handle, result);
+          toggleFavourite(handle);
+          if (!favourites.includes(result.product.handle)) toggleFavourite(result.product.handle);
+        }
         setResolved(new Map(cache.current));
       };
       requestSavedProduct(handle, controller.signal)

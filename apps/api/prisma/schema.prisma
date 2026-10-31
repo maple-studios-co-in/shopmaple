@@ -21,6 +21,7 @@ model Product {
   sourceUpdatedAt DateTime
   variants Variant[]
   identities ProductSourceIdentity[]
+  handleAliases ProductHandleAlias[]
   updatedAt DateTime @updatedAt
 }
 model Variant {
@@ -34,10 +35,22 @@ model Variant {
   published Boolean @default(true)
   available Boolean @default(false)
   stockPolicy String @default("unverified")
+  /// This variant's own photos; Product.images keeps every photo for cards.
+  images String[] @default([])
+  /// The readable ?variant= value, unique within its product.
+  slug String?
   cartItems CartItem[]
   identities VariantSourceIdentity[]
 }
 
+/// A product's earlier address, kept so old links redirect permanently to the current one.
+model ProductHandleAlias {
+  handle String @id
+  productId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([productId])
+}
 model ProductSourceIdentity {
   source String
   externalId String

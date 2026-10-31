@@ -14,6 +14,7 @@ import { useShop } from "../shop-provider";
 import { Modal } from "../modal";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
+import { selectedVariant, variantGallery } from "@/lib/product-address";
 
 type Presentation = {
   variantImages: Record<string, string>;
@@ -38,16 +39,20 @@ export function ProductDetail({ product, initialVariant, presentation }: {
 }) {
   const searchParams = useSearchParams();
   const queryVariant = searchParams ? searchParams.get("variant") ?? undefined : initialVariant;
+  // An option's photo: the variant's own first photo, else the curated Shopify mapping.
   const variantImage = (id: string) => {
+    const own = product.variants.find((v) => v.id === id)?.images?.[0];
+    if (own) return own;
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
-  // Catalogues without any per-option photo mapping (every Keeri product today)
-  // present plain option tiles rather than a grid of "Photo unavailable" boxes.
-  const optionPhotos = Boolean(presentation && Object.keys(presentation.variantImages).length);
+  const galleryFor = (id: string) => variantGallery(product, product.variants.find((v) => v.id === id));
+  // Catalogues without any per-option photos present plain option tiles rather than a grid of
+  // "Photo unavailable" boxes.
+  const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
   const textOptions = !optionPhotos && product.images.length > 0;
   const initial =
-    product.variants.find((v) => v.id === queryVariant)?.id ??
+    selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
     product.variants.find((v) => v.pricePaise !== null)?.id ??
@@ -55,7 +60,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
     "";
   const [variantId, setVariantId] = useState(initial);
   const [urlVariant, setUrlVariant] = useState(initial);
-  const [image, setImage] = useState(() => Math.max(0, product.images.indexOf(variantImage(initial) ?? ""))),
+  const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [pin, setPin] = useState(""),
@@ -67,11 +72,14 @@ export function ProductDetail({ product, initialVariant, presentation }: {
     if (variantId !== initial) {
       setVariantId(initial);
       const src = variantImage(initial);
-      if (src) setImage(product.images.indexOf(src));
+      if (src) setImage(Math.max(0, galleryFor(initial).indexOf(src)));
     }
   }
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
+  const images = galleryFor(variantId);
+  // A shorter gallery after switching options never points past its last photo.
+  const shown = Math.min(image, Math.max(0, images.length - 1));
   const enquiry = !product.published || !canAddToCart(variant);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
@@ -90,13 +98,13 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   }
   function selectVariant(id: string) {
     setVariantId(id);
+    // The option's own photo leads its gallery; a shared gallery jumps to the option's photo.
+    // Without one, the shopper keeps the photo they were looking at.
     const src = variantImage(id);
-    if (src) {
-      const index = product.images.indexOf(src);
-      if (index >= 0) setImage(index);
-    }
+    if (src) setImage(Math.max(0, galleryFor(id).indexOf(src)));
+    const chosen = product.variants.find((v) => v.id === id);
     const url = new URL(window.location.href);
-    url.searchParams.set("variant", id);
+    url.searchParams.set("variant", chosen?.slug ?? id);
     window.history.replaceState(null, "", url);
   }
   useEffect(() => {
@@ -131,7 +139,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
           <Link href={"/collections/" + (product.category ?? "all")}>{categoryNames[product.category ?? "all"]}</Link>
         </nav>
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start xl:gap-10">
-          <ProductGallery images={product.images} title={product.title} selected={image} onSelect={setImage}
+          <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
           <div data-product-info className="grid gap-5 rounded-[20px] border border-solid border-brand/8 bg-white p-[22px] lg:sticky lg:top-6">
             <div className="grid gap-2">
@@ -302,7 +310,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
       )}
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div data-zoom className="[&_img]:h-auto [&_img]:w-full">
-          <ProductImage src={product.images[image]} alt={product.title} width={1200} height={1200} sizes="90vw" />
+          <ProductImage src={images[shown]} alt={product.title} width={1200} height={1200} sizes="90vw" />
         </div>
       </Modal>
     </div>

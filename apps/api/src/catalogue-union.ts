@@ -13,11 +13,14 @@ export interface ExistingCatalogue {
   products: Product[];
   productBindings: SourceBinding[];
   variantBindings: SourceBinding[];
+  /** Earlier addresses that redirect; a rename never takes one. */
+  handleAliases?: { handle: string; productId: string }[];
 }
 const empty: ExistingCatalogue = {
   products: [],
   productBindings: [],
   variantBindings: [],
+  handleAliases: [],
 };
 /** Exact identity evidence only. Ambiguities stay as separate enquiry listings. */
 export function planCatalogueUnion(
@@ -171,6 +174,8 @@ export function planCatalogueUnion(
         ...v,
         id: variantId,
         title: before?.title ?? v.title,
+        // A merged listing filters Keeri photos to approved hosts rather than failing, as its gallery does.
+        images: base ? (v.images ?? []).filter(approvedCatalogueImage) : v.images,
         // V2 MRP has no reliable tax/market basis. Keep it in Keeri, never label it a buyer price.
         pricePaise: before?.pricePaise ?? null,
         compareAtPaise: before?.compareAtPaise ?? null,
@@ -196,7 +201,9 @@ export function planCatalogueUnion(
     products.set(id, product);
     productBindings.push({ source, externalId: c.p.id, targetId: id });
   }
-  const result = [...products.values()];
+  const named = nameAddresses([...products.values()], raw.models, existing);
+  const handleAliases = named.flatMap((p) => p.alias ? [{ handle: p.alias, productId: p.product.id }] : []);
+  const result = named.map((p) => p.product);
   const handles = new Set<string>();
   const variantIds = new Set<string>();
   for (const p of result) {
@@ -206,12 +213,15 @@ export function planCatalogueUnion(
       if (!approvedCatalogueImage(image))
         throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
     for (const v of p.variants) {
+      if ((v.images ?? []).some((image) => !approvedCatalogueImage(image)))
+        throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
       if (variantIds.has(v.id)) throw new Error("VARIANT_IDENTITY_COLLISION");
       variantIds.add(v.id);
     }
   }
   return {
     products: result,
+    handleAliases,
     productBindings,
     variantBindings,
     source,
@@ -228,3 +238,55 @@ export function planCatalogueUnion(
     },
   };
 }
+
+/** A readable address segment: "Zyro Lounge" -> "zyro-lounge"; accents dropped, at most 80 characters. */
+export function slugify(value: string) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80).replace(/-+$/, "");
+}
+/** The first of the candidates (then the first with a number) that `taken` does not hold. */
+function unique(candidates: string[], taken: Set<string>) {
+  const options = candidates.filter(Boolean);
+  const free = options.find((c) => !taken.has(c));
+  if (free) return free;
+  const base = options[0] ?? "item";
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+/**
+ * Readable addresses. A Keeri product still on its fallback address (keeri-<model id>) is renamed
+ * once to its name, then its name and type, then a number (a name with no letters becomes its type
+ * and Keeri id), and the old address is kept as an alias for a permanent redirect. The new address
+ * avoids every address in this run, every stored product (published or not) and every alias.
+ * Every other address is already published and never changes. Each variant keeps the `?variant=`
+ * value it already has; a new variant gets one from its title that no variant of its product used.
+ */
+function nameAddresses(products: Product[], models: { id: string; productType: string }[], existing: ExistingCatalogue) {
+  const types = new Map(models.map((m) => [m.id, m.productType]));
+  const ids = new Set(products.map((p) => p.id));
+  const taken = new Set([
+    ...products.filter((p) => !isFallback(p)).map((p) => p.handle),
+    ...existing.products.filter((p) => !ids.has(p.id)).map((p) => p.handle),
+    ...(existing.handleAliases ?? []).map((a) => a.handle),
+  ]);
+  const before = new Map(existing.products.map((p) => [p.id, p]));
+  return [...products].sort((a, b) => a.id.localeCompare(b.id)).map((product) => {
+    const prior = new Map((before.get(product.id)?.variants ?? []).map((v) => [v.id, v.slug]));
+    const used = new Set([...prior.values()].filter((slug): slug is string => Boolean(slug)));
+    const variants = product.variants.map((v) => {
+      const kept = prior.get(v.id);
+      if (kept) return { ...v, slug: kept };
+      const slug = unique([slugify(v.title) || "variant"], used);
+      used.add(slug);
+      return { ...v, slug };
+    });
+    if (!isFallback(product)) return { product: { ...product, variants }, alias: null };
+    const modelId = product.id.split(":").at(-1) ?? "";
+    const type = types.get(modelId) ?? "";
+    const name = slugify(product.title);
+    const handle = unique(name ? [name, slugify(`${product.title} ${type}`)] : [`${slugify(type) || "product"}-${slugify(modelId)}`], taken);
+    taken.add(handle);
+    return { product: { ...product, handle, variants }, alias: product.handle };
+  });
+}
+/** Still on Keeri's fallback address: exactly keeri-<its model id>, not merely a name starting with "keeri". */
+const isFallback = (p: Product) => p.source.startsWith("keeri:") && p.handle === `keeri-${p.id.split(":").at(-1)}`;

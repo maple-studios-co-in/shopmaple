@@ -137,6 +137,14 @@ const eligibilitySchema = z
     reasons: z.array(z.string().max(64)).max(20),
   })
   .strict();
+/** A variant's named options ("Fabric: Ivory Boucle"), which name a variant Keeri left unnamed. */
+function variantOptions(v: object) {
+  const attributes = "attributes" in v && Array.isArray(v.attributes) ? (v.attributes as { axis: string; value: string }[]) : [];
+  return attributes
+    .map((a) => ({ axis: a.axis.trim(), value: a.value.trim() }))
+    .filter((a) => a.axis && a.value)
+    .map((a) => ({ name: a.axis.charAt(0).toUpperCase() + a.axis.slice(1), value: a.value }));
+}
 export const keeriExportV2Schema = keeriExportSchema.extend({
   schemaVersion: z.literal(2),
   models: z
@@ -150,6 +158,9 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
           .array(
             variantSchema.extend({
               channelPublished: z.boolean(),
+              // Named options (fabric, polish, size...), sent only when the store asks for attributes.
+              // Blank values are tolerated here and dropped below, so one empty cell never fails the catalogue.
+              attributes: z.array(z.object({ axis: z.string().max(80), value: z.string().max(200) }).strict()).max(20).optional(),
               sku: z.string().trim().max(300).nullable(),
               stockPolicy: z.enum([
                 "stocked",
@@ -299,9 +310,9 @@ function adaptValidated(
             v.prices.some((p) => p.kind === "mrp" && p.amount > 0)),
     );
     const eligibleIds = new Set(eligible.map((v) => v.id));
-    const images = [
+    const photos = (media: typeof model.media) => [
       ...new Set(
-        [...model.media, ...eligible.flatMap((v) => v.media)]
+        media
           .filter(
             (m) =>
               m.stage === "approved" &&
@@ -314,6 +325,8 @@ function adaptValidated(
           .filter((url): url is string => Boolean(url)),
       ),
     ];
+    // Every photo for cards and listings; each variant also keeps its own for the product page.
+    const images = photos([...model.media, ...eligible.flatMap((v) => v.media)]);
     if (data.schemaVersion === 1 && (!eligible.length || !images.length))
       continue;
     products.push(
@@ -334,7 +347,8 @@ function adaptValidated(
         sourceUpdatedAt: data.capturedAt,
         variants: eligible.map((v) => ({
           id: identity(v.id),
-          title: v.variantName?.trim() || v.sku || "Details on request",
+          title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
+          images: photos(v.media),
           sku: v.sku || null,
           pricePaise:
             v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ??
