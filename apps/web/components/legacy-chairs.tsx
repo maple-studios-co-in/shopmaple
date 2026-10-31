@@ -41,8 +41,8 @@ function LegacyProducts({
     if (!source) return null;
     const href = `/pages/contact?product=${encodeURIComponent(source.title)}`;
     return (
-      <article className="product-card landing-source-product" key={handle}>
-        <div className="product-card-image">
+      <article data-product-card className="product-card landing-source-product" key={handle}>
+        <div data-card-image className="product-card-image">
           <Link href={href}>
             <Image
               src={source.image}
@@ -56,10 +56,10 @@ function LegacyProducts({
             />
           </Link>
         </div>
-        <Link className="product-card-name" href={href}>
+        <Link data-card-name className="product-card-name" href={href}>
           {source.title}
         </Link>
-        <p className="product-card-price">Price on request</p>
+        <p data-card-price className="product-card-price">Price on request</p>
       </article>
     );
   });

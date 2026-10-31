@@ -362,9 +362,6 @@
   .collection-products.is-compact .product-card-price {
     font-size: 11px;
   }
-  .collection-products.is-compact .save-button {
-    display: none;
-  }
 }
 
 .collection-heading {
@@ -456,15 +453,6 @@
   }
   .collection-products.is-compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .collection-products.is-compact .save-button {
-    display: grid;
-  }
-  .collection-products .save-button {
-    width: 38px;
-    height: 38px;
-    top: 6px;
-    right: 6px;
   }
   .collection-density {
     display: none;

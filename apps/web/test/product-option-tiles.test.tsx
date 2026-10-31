@@ -34,26 +34,26 @@ async function mount(product: Product, presentation: { variantImages: Record<str
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
 const notice = () => [...document.querySelectorAll('[role="status"]')].find(element => element.textContent === "Photo for this option unavailable");
-const tiles = () => [...document.querySelectorAll<HTMLLabelElement>(".pdp-variants label")];
+const tiles = () => [...document.querySelectorAll<HTMLLabelElement>("[data-variants] label")];
 
 test("a catalogue without per-option photos shows plain option tiles instead of placeholder boxes", async () => {
   await mount(keeri, undefined, async () => {
     assert.equal(tiles().length, 3);
-    assert.equal(document.querySelectorAll(".pdp-variant-placeholder").length, 0, "no grey 'Photo unavailable' boxes");
-    assert.equal(document.querySelectorAll(".pdp-variant-image").length, 0, "no empty image frames");
+    assert.equal(document.querySelectorAll("[data-variant-placeholder]").length, 0, "no grey 'Photo unavailable' boxes");
+    assert.equal(document.querySelectorAll("[data-variant-image]").length, 0, "no empty image frames");
     assert.equal(notice(), undefined, "no missing-photo notice when the catalogue has no option photos at all");
-    assert.ok(document.querySelector(".pdp-variants.pdp-variants-text"), "the option group is marked as text-only for compact styling");
+    assert.ok(document.querySelector("[data-variants=text]"), "the option group is marked as text-only for compact styling");
     await act(async () => tiles()[1]!.querySelector("input")!.click());
     assert.equal(document.querySelector<HTMLInputElement>('input[name="variant"]:checked')?.value, "walnut");
-    assert.equal(document.querySelector(".product-main-image img")?.getAttribute("src"), "https://example.com/imperio-1.webp", "the gallery stays on the product photos");
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/imperio-1.webp", "the gallery stays on the product photos");
   });
 });
 
 test("a catalogue that maps a photo to some options keeps the placeholder for the unmapped ones", async () => {
   await mount(keeri, { variantImages: { oak: keeri.images[0]! }, reviewLabel: null }, async () => {
-    assert.equal(document.querySelectorAll(".pdp-variant-image img").length, 1);
-    assert.equal(document.querySelectorAll(".pdp-variant-placeholder").length, 2);
-    assert.equal(document.querySelector(".pdp-variants.pdp-variants-text"), null);
+    assert.equal(document.querySelectorAll("[data-variant-image] img").length, 1);
+    assert.equal(document.querySelectorAll("[data-variant-placeholder]").length, 2);
+    assert.equal(document.querySelector("[data-variants=text]"), null);
     await act(async () => tiles()[2]!.querySelector("input")!.click());
     assert.ok(notice(), "selecting an unmapped option discloses the missing photo");
   });

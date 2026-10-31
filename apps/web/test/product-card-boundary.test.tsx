@@ -8,6 +8,7 @@ import ProductPage from "../app/products/[handle]/page";
 import { CategoryProducts } from "../components/category-landing";
 import { LegacyChairs } from "../components/legacy-chairs";
 import { ProductCard } from "../components/product-card";
+import { RelatedProducts } from "../components/store/related-products";
 import { ProductDetail } from "../components/product-detail";
 import { CollectionListing } from "../components/collection-listing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
@@ -40,6 +41,7 @@ async function railCards(node: ReactNode): Promise<unknown[]> {
   for (const child of Children.toArray(node)) {
     if (!isValidElement<{ children?: ReactNode; product?: unknown }>(child)) continue;
     if (child.type === ProductCard) cards.push(child.props.product);
+    else if (child.type === RelatedProducts) cards.push(...(child.props as { products: unknown[] }).products);
     else if (typeof child.type === "function" && ["HomeProducts", "LegacyProducts"].includes(child.type.name)) {
       cards.push(...await railCards(await (child.type as (props: unknown) => Promise<ReactNode>)(child.props)));
     } else cards.push(...await railCards(child.props.children));

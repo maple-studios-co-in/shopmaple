@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import "@/styles/shopify-fonts.css";
+import "@fontsource/barlow/400.css";
+import "@fontsource/barlow/500.css";
+import "@fontsource/barlow/600.css";
+import "@fontsource/barlow/700.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
 import "@/styles/motion-rail.css";
@@ -19,6 +23,8 @@ import "@/styles/home-ticker.css";
 import "@/styles/home-rails.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
+// Last, so a utility beats the legacy storefront rules it replaces.
+import "@/styles/tailwind.css";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";

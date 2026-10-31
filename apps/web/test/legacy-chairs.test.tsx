@@ -104,7 +104,7 @@ async function render(
   }
 }
 const cards = (doc: Document) =>
-  [...doc.querySelectorAll(".product-card-name")].map(
+  [...doc.querySelectorAll("[data-card-name]")].map(
     (node) => node.textContent,
   );
 test("query-driven chairs retain category membership, filters, sort and pagination", async () => {
@@ -308,21 +308,21 @@ test("rooms retain their source product cards as honest enquiries when the owned
   const doc = await render();
   const rooms = [...doc.querySelectorAll(".legacy-chairs-room")];
   assert.deepEqual(
-    rooms.map((room) => room.querySelectorAll(".product-card").length),
+    rooms.map((room) => room.querySelectorAll("[data-product-card]").length),
     [1, 6],
   );
   assert.equal(
-    rooms[0]?.querySelector(".product-card-name")?.textContent,
+    rooms[0]?.querySelector("[data-card-name]")?.textContent,
     "Lira Barrel Accent Chair – Charcoal & Gold Finish",
   );
   for (const room of rooms)
-    for (const card of room.querySelectorAll(".product-card")) {
+    for (const card of room.querySelectorAll("[data-product-card]")) {
       assert.match(
-        card.querySelector(".product-card-name")?.getAttribute("href") ?? "",
+        card.querySelector("[data-card-name]")?.getAttribute("href") ?? "",
         /^\/pages\/contact\?product=/,
       );
       assert.equal(
-        card.querySelector(".product-card-price")?.textContent,
+        card.querySelector("[data-card-price]")?.textContent,
         "Price on request",
       );
     }
@@ -355,11 +355,11 @@ test("editorial Chairs exposes the full category catalogue, honest prices and wo
     assert.equal(doc.querySelector("h1")?.textContent, "Our Newest Arrivals");
     assert.equal(listing.querySelector("h2")?.textContent, "Chairs");
     assert.ok(doc.querySelector('.legacy-chairs-hero a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
-    assert.equal(listing.querySelectorAll(".product-card").length, 24);
+    assert.equal(listing.querySelectorAll("[data-product-card]").length, 24);
     assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 items/);
     assert.ok(!listing.textContent?.includes("Chair matching table"));
-    const unpriced = [...listing.querySelectorAll(".product-card")].find(card => card.querySelector(".product-card-name")?.textContent === "Chair 23");
-    assert.equal(unpriced?.querySelector(".product-card-price")?.textContent, "Price on request");
+    const unpriced = [...listing.querySelectorAll("[data-product-card]")].find(card => card.querySelector("[data-card-name]")?.textContent === "Chair 23");
+    assert.equal(unpriced?.querySelector("[data-card-price]")?.textContent, "Price on request");
     assert.equal(listing.querySelector(".collection-filter-form")?.getAttribute("action"), "/collections/chairs");
     const next = listing.querySelector<HTMLAnchorElement>(".collection-pagination a")!;
     assert.equal(next.textContent, "Next");

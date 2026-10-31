@@ -6,10 +6,13 @@ import { Search, UserRound, Heart, ShoppingBag, Menu } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { SearchDialog } from "./search-dialog";
-import { Favourites } from "./favourites";
+import dynamic from "next/dynamic";
 import { shopFile } from "@/lib/format";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
 import type { SiteChrome } from "@shopmaple/contracts";
+
+// The wishlist list (with its product cards) loads on demand, keeping cards out of every page's first-load JavaScript.
+const Favourites = dynamic(() => import("./favourites").then((module) => module.Favourites));
 import { defaultSiteChrome, chromeHref } from "@/lib/site-chrome-defaults";
 export function Header({
   siteChrome = defaultSiteChrome,

@@ -2,7 +2,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
 import { ProductDetail } from "@/components/product-detail";
-import { ProductCard } from "@/components/product-card";
+import { RelatedProducts } from "@/components/store/related-products";
 import { HomeNewsletter, HomeValues } from "@/components/home-sections";
 import presentationData from "@/data/product-presentation.json";
 export const dynamic = "force-dynamic";
@@ -36,19 +36,7 @@ export default async function ProductPage({
         }
         presentation={presentation}
       />
-      {related.some((p) => p.id !== product.id) && (
-        <section className="pdp-related">
-          <h2>You might also like...</h2>
-          <div className="product-grid">
-            {related
-              .filter((p) => p.id !== product.id)
-              .slice(0, 4)
-              .map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-          </div>
-        </section>
-      )}
+      <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} />
       <HomeNewsletter />
       <HomeValues />
     </>
