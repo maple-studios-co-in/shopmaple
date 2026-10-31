@@ -153,7 +153,7 @@ export function CollectionListing(props: Props) {
           </aside>
           <div id="collection-results" className="grid scroll-mt-28 gap-6">
             <div className="flex flex-wrap items-center gap-x-10 gap-y-3">
-              <h2 data-results-heading className="m-0 text-price font-bold">All {title.toLowerCase()}</h2>
+              <h2 data-results-heading className="m-0 text-price font-bold">{/^all\b/i.test(title) ? title : `All ${title.toLowerCase()}`}</h2>
               <p data-item-count className="m-0 text-price font-bold" aria-live="polite">{total} {total === 1 ? "product" : "products"}</p>
               <form action={`/collections/${handle}`} method="get" className="flex items-center gap-1.5 text-price font-bold">
                 {Object.entries(query).filter(([key, value]) => !["page", "sort"].includes(key) && value).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}

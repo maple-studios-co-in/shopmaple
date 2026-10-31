@@ -57,6 +57,12 @@ test("other collections get a generic introduction, and the editorial chair page
   });
 });
 
+test("the all-furniture results row does not repeat the word all", async () => {
+  await render("all", "All furniture", "h1", (doc) => {
+    assert.equal(doc.querySelector("[data-results-heading]")?.textContent, "All furniture");
+  });
+});
+
 test("the results row, filter card and custom order prompt follow the design", async () => {
   await render("chairs", "Chairs", "h1", (doc) => {
     const results = doc.querySelector("[data-results-heading]")!;

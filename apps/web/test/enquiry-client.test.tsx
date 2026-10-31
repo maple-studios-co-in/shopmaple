@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { HomeProjectForm, HomeNewsletterForm } from "../components/home-forms";
+import { HomeProjectForm, HomeNewsletterForm } from "../components/store/home/forms";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { useEnquiry } from "../components/use-enquiry";
@@ -58,9 +58,9 @@ test("saved receipt retains preview reference without claiming the asynchronous 
 test("project preview notice leaves asynchronous notification unconfirmed and preserves newsletter availability", () => {
  const dom = new JSDOM(renderToStaticMarkup(<><HomeProjectForm /><HomeNewsletterForm /></>));
  try {
-  const notice = dom.window.document.querySelector(".home-project-form .home-preview-detail")?.textContent ?? "";
+  const notice = dom.window.document.querySelector("[data-project-form] [data-preview-detail]")?.textContent ?? "";
   assert.equal(notice, "");
   assert.doesNotMatch(notice, /saved locally|notifications are not connected|has not been sent to our team/);
-  assert.equal(dom.window.document.querySelector(".home-newsletter-form .home-preview-detail")?.textContent, "Newsletter signup is not available yet.");
+  assert.equal(dom.window.document.querySelector("[data-newsletter-form] [data-preview-detail]")?.textContent, "Newsletter signup is not available yet.");
  } finally { dom.window.close(); }
 });

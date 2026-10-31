@@ -1,7 +1,7 @@
 .campaign-banner{container-type:inline-size;width:100%;margin:36px 0;background:#741a14;color:#fff3d3}
 /* The original homepage image sections use the theme's page-width gutters. */
-.managed-home-section > .campaign-banner{width:calc(100% - 80px);max-width:2400px;margin-inline:auto}
-@media(max-width:749px){.managed-home-section > .campaign-banner{width:calc(100% - 32px)}}
+[data-home-section] > .campaign-banner{width:calc(100% - 80px);max-width:2400px;margin-inline:auto}
+@media(max-width:749px){[data-home-section] > .campaign-banner{width:calc(100% - 32px)}}
 .campaign-scene{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:1900/350}
 .campaign-art-desktop,.campaign-art-mobile{position:absolute;inset:0;z-index:-2}
 .campaign-art-mobile{display:none}
@@ -39,12 +39,5 @@
  .campaign-cta{min-height:44px;padding:2cqw 3.6cqw;font-size:max(12px,2.4cqw);line-height:max(18px,3.6cqw);letter-spacing:.02cqw}
 }
 @media(max-width:749px){.campaign-banner{margin:24px 0}.campaign-promo-grid{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px}.campaign-promo-grid .campaign-banner{flex:0 0 88%;scroll-snap-align:start}}
-.home-instagram-posts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:24px}
-.home-social .home-instagram-posts>a{display:block;position:relative;aspect-ratio:4/5;padding:0;overflow:hidden;border-radius:4px}
-.home-instagram-posts img{object-fit:cover;transition:transform .25s ease}
-.home-instagram-posts a:hover img{transform:scale(1.025)}
-.home-instagram-posts svg{position:absolute;bottom:14px;right:14px;color:white;filter:drop-shadow(0 1px 3px #222)}
-@media(max-width:749px){.home-instagram-posts{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px}.home-social .home-instagram-posts>a{flex:0 0 75%;scroll-snap-align:start}}
-@media(prefers-reduced-motion:reduce){.home-instagram-posts img{transition:none}}
 
 .home-ticker{margin:36px 0;padding:22px 16px;text-align:center;background:#f0eee7;color:#28251e;font-family:Newsreader,serif;font-size:clamp(20px,2.4vw,34px)}

@@ -39,12 +39,12 @@ test("published homepage follows saved order and visibility and renders edited s
       </ShopProvider>,
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
-    assert.equal(doc.querySelector(".hero-grid"), null);
+    assert.equal(doc.querySelector("[data-hero]"), null);
     assert.deepEqual(
       [...doc.querySelectorAll("h2")].map((n) => n.textContent),
       ["Approved social heading", "Shop By Category", "Approved campaign"],
     );
-    assert.equal(doc.querySelectorAll(".home-instagram-posts a").length, 24);
+    assert.equal(doc.querySelectorAll('[aria-label="Instagram posts"] a').length, 24);
   });
 });
 test("published custom pages resolve without replacing functional contact routes", async () => {

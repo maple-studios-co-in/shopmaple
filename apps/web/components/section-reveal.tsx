@@ -41,5 +41,5 @@ export function SectionReveal({ children, enabled }: { children: ReactNode; enab
     node.addEventListener("focusin", onFocus);
     return () => { stop(); preference.removeEventListener("change", onPreference); node.removeEventListener("focusin", onFocus); };
   }, [enabled]);
-  return <div ref={host} className="home-parity home-refined">{children}</div>;
+  return <div ref={host}>{children}</div>;
 }

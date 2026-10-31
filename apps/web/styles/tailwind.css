@@ -51,6 +51,8 @@
   --color-forest: #294a34;
   --font-manrope: "Manrope", sans-serif;
   --font-redhat: "Red Hat Display", sans-serif;
+  --animate-ticker: ticker 32s linear infinite;
+  @keyframes ticker { to { transform: translateX(-50%); } }
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
   /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
@@ -161,7 +163,7 @@
    storefront's global element rules (serif h1 to h3 at 36 to 48 px, paragraph margins, underline
    on hover, 44 px padded inputs) would otherwise reach it. :where() keeps each rule at the legacy
    rule's weight, so this sheet wins by loading last, and any utility class still wins over both. */
-:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; }
+:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; text-transform: none; }
 :where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
 :where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }
 :where([data-store]) fieldset { min-width: 0; padding: 0; border: 0; }

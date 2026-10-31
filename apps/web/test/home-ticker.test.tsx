@@ -34,8 +34,8 @@ async function mount(props: { text?: string; autoplay?: boolean } = {}) {
   await act(async () => root.render(<HomeTicker text={text} {...props} />));
   return {
     host,
-    ticker: () => host.querySelector<HTMLElement>(".home-ticker")!,
-    track: () => host.querySelector<HTMLElement>(".home-ticker-track"),
+    ticker: () => host.querySelector<HTMLElement>("[data-home-ticker]")!,
+    track: () => host.querySelector<HTMLElement>("[data-ticker-track]"),
     button: () => host.querySelector<HTMLButtonElement>("button"),
     observe: async (entries = [observation(true)]) => act(async () => notify?.(entries, {} as IntersectionObserver)),
     render: async (next: { text?: string; autoplay?: boolean }) => act(async () => root.render(<HomeTicker text={text} {...next} />)),
