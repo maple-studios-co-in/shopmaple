@@ -1,15 +1,13 @@
 "use client";
-import Image from "next/image";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
-import { useEnquiry } from "@/components/use-enquiry";
-import { shopFile } from "@/lib/format";
-export type EnquiryContext = {
-  product: string;
-  variant: string;
-  sku: string;
-  pincode: string;
-};
+import { BulkEnquiryForm, useEnquiryForm, type EnquiryContext } from "@/components/store/enquiry-form";
+
+export type { EnquiryContext } from "@/components/store/enquiry-form";
+export { HelpTopics as ContactHelp } from "@/components/store/help-topics";
+
+/**
+ * The plain enquiry form the returns page still uses (legacy contact-parity rules). The Help
+ * Center and Bulk Enquiry forms are rebuilt in components/store/enquiry-form.
+ */
 export function ContactForm({
   bulk = false,
   context,
@@ -17,29 +15,18 @@ export function ContactForm({
   bulk?: boolean;
   context: EnquiryContext;
 }) {
-  const id = useId();
-  const enquiry = useEnquiry();
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    void enquiry.submit({
-      kind: bulk ? "bulk" : "contact",
-      name: String(form.get("name") ?? ""),
-      email: String(form.get("email") ?? ""),
-      phone: String(form.get("phone") ?? ""),
-      message: String(form.get("message") ?? ""),
-      context,
-    });
-  }
+  const { id, enquiry, submit } = useEnquiryForm(bulk ? "bulk" : "contact", context);
+  if (bulk) return <BulkEnquiryForm context={context} />;
   return (
     <form
-      className={`cp-form ${bulk ? "cp-form-bulk" : ""}`}
+      data-enquiry-form
+      className="cp-form"
       onSubmit={submit}
       onChange={enquiry.clear}
       aria-describedby={`${id}-email-note`}
     >
       {(context.product || context.pincode) && (
-        <div className="cp-enquiry-context">
+        <div data-enquiry-context className="cp-enquiry-context">
           <strong>{context.product}</strong>
           <span>
             {context.variant}
@@ -50,14 +37,11 @@ export function ContactForm({
       )}
       <div className="cp-form-pair">
         <label>
-          <span className="sr-only">
-            {bulk ? "Full Name (required)" : "Name"}
-          </span>
+          <span className="sr-only">Name</span>
           <input
             name="name"
             autoComplete="name"
-            placeholder={bulk ? "Full Name" : "Name"}
-            required={bulk}
+            placeholder="Name"
             maxLength={100}
           />
         </label>
@@ -69,38 +53,33 @@ export function ContactForm({
             autoComplete="email"
             autoCapitalize="off"
             spellCheck={false}
-            placeholder={bulk ? "Email Address" : "Email *"}
+            placeholder="Email *"
             required
             maxLength={254}
           />
         </label>
       </div>
       <label>
-        <span className="sr-only">
-          {bulk ? "Phone Number (required)" : "Phone"}
-        </span>
+        <span className="sr-only">Phone</span>
         <input
           name="phone"
           type="tel"
           autoComplete="tel"
-          placeholder={bulk ? "Phone Number" : "Phone"}
-          required={bulk}
+          placeholder="Phone"
           maxLength={30}
         />
       </label>
-      {!bulk && (
-        <label>
-          <span className="sr-only">Tell us about your project</span>
-          <textarea
-            name="message"
-            placeholder="Tell us about your project"
-            rows={10}
-            maxLength={5000}
-          />
-        </label>
-      )}
+      <label>
+        <span className="sr-only">Tell us about your project</span>
+        <textarea
+          name="message"
+          placeholder="Tell us about your project"
+          rows={10}
+          maxLength={5000}
+        />
+      </label>
       <button className="button" type="submit" disabled={enquiry.pending}>
-        {enquiry.pending ? "Saving…" : bulk ? "Request Proposal" : "Submit"}
+        {enquiry.pending ? "Saving…" : "Submit"}
       </button>
       {enquiry.message && (
         <p role={enquiry.failed ? "alert" : "status"} className="cp-email-note">
@@ -108,133 +87,5 @@ export function ContactForm({
         </p>
       )}
     </form>
-  );
-}
-type HelpCategory = {
-  key?: string;
-  title: string;
-  subtitle: string;
-  icon: string;
-  questions: {
-    key?: string;
-    question: string;
-    answer: string;
-  }[];
-};
-export function ContactHelp({ categories }: { categories: HelpCategory[] }) {
-  const [active, setActive] = useState<string | number>(categories[0]?.key ?? 0);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobile, setMobile] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") {
-      const update = () => setMobile(window.innerWidth <= 990);
-      update();
-      window.addEventListener("resize", update);
-      return () => window.removeEventListener("resize", update);
-    }
-    const viewport = window.matchMedia("(max-width: 990px)");
-    const update = () => setMobile(viewport.matches);
-    update();
-    viewport.addEventListener?.("change", update);
-    return () => viewport.removeEventListener?.("change", update);
-  }, []);
-  useEffect(() => {
-    if (!mobileOpen) return;
-    dialog.current?.showModal();
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [mobileOpen]);
-  const id = useId();
-  const activeIndex = typeof active === "string"
-    ? categories.findIndex(category => category.key === active)
-    : active;
-  const selectedIndex = activeIndex < 0 ? 0 : activeIndex;
-  const category = categories[selectedIndex];
-  if (!category) return null;
-  const answers = (
-    <>
-      <div key={category.key ?? category.title}>
-        {category.questions.map((item) => (
-          <details key={item.key ?? item.question} className="cp-faq">
-            <summary>
-              {item.question}
-              <Plus size={20} aria-hidden="true" />
-            </summary>
-            <p>{item.answer}</p>
-          </details>
-        ))}
-      </div>
-      <div className="cp-account-note">
-        <div>
-          <strong>Still need help?</strong>
-          <p>
-            Account sign-in and order tracking are not available on this
-            storefront yet. Contact support for help with an existing order.
-          </p>
-        </div>
-        <a
-          className="button button-outline"
-          href="mailto:contact@maplefurnishers.com"
-        >
-          Contact Support →
-        </a>
-      </div>
-    </>
-  );
-  return (
-    <div className="cp-help">
-      <div className="cp-help-categories" aria-label="Help categories">
-        {categories.map((item, index) => (
-          <button
-            key={item.key ?? item.title}
-            type="button"
-            aria-pressed={selectedIndex === index}
-            aria-controls={`${id}-${mobile || mobileOpen ? "dialog" : "answers"}`}
-            aria-haspopup={mobile || mobileOpen ? "dialog" : undefined}
-            aria-expanded={mobile || mobileOpen ? mobileOpen && selectedIndex === index : undefined}
-            className={selectedIndex === index ? "is-active" : ""}
-            onClick={() => {
-              setActive(item.key ?? index);
-              if (mobile) setMobileOpen(true);
-            }}
-          >
-            <Image src={shopFile(item.icon)} alt="" width={52} height={52} />
-            <span>
-              <strong>{item.title}</strong>
-              <span>{item.subtitle}</span>
-            </span>
-            <ArrowRight size={20} aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-      <div
-        id={`${id}-answers`}
-        className="cp-help-answers"
-        role="region"
-        aria-label={category.title}
-      >
-        {answers}
-      </div>
-      <dialog
-        id={`${id}-dialog`}
-        ref={dialog}
-        className="cp-help-dialog"
-        aria-label={category.title}
-        onClose={() => setMobileOpen(false)}
-      >
-        <button
-          className="cp-help-back"
-          type="button"
-          onClick={() => dialog.current?.close()}
-        >
-          <ArrowLeft size={20} /> Back to categories
-        </button>
-        {answers}
-      </dialog>
-    </div>
   );
 }

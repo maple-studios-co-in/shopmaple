@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { ContactHelp } from "../components/contact-form";
-import { CategorySlideshow } from "../components/category-controls";
+import { NimbusSlideshow } from "../components/store/nimbus-client";
 import { contactCategories } from "../app/pages/contact-content";
 import Home from "../app/page";
 import { ShopProvider } from "../components/shop-provider";
@@ -41,7 +41,7 @@ async function withClient(small: boolean | null, element: React.ReactNode, run: 
 
 test("mobile help controls describe the actual named dialog and its open state", async () => {
   await withClient(true, <ContactHelp categories={contactCategories} />, async doc => {
-    const triggers = doc.querySelectorAll<HTMLButtonElement>(".cp-help-categories button");
+    const triggers = doc.querySelectorAll<HTMLButtonElement>("[data-help-categories] button");
     const trigger = triggers[1]!;
     assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
@@ -51,7 +51,7 @@ test("mobile help controls describe the actual named dialog and its open state",
     assert.equal(target?.getAttribute("aria-label"), contactCategories[1]!.title);
     assert.equal(trigger.getAttribute("aria-expanded"), "true");
     assert.equal(triggers[0]!.getAttribute("aria-expanded"), "false");
-    await act(async () => doc.querySelector<HTMLButtonElement>(".cp-help-back")!.click());
+    await act(async () => doc.querySelector<HTMLButtonElement>("[data-help-back]")!.click());
     assert.equal(doc.querySelector<HTMLDialogElement>("dialog")!.open, false);
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
   });
@@ -59,7 +59,7 @@ test("mobile help controls describe the actual named dialog and its open state",
 
 test("help controls retain desktop region semantics and adapt to mobile viewport changes", async () => {
   await withClient(false, <ContactHelp categories={contactCategories} />, async (doc, viewport) => {
-    const trigger = doc.querySelector<HTMLButtonElement>(".cp-help-categories button")!;
+    const trigger = doc.querySelector<HTMLButtonElement>("[data-help-categories] button")!;
     assert.equal(doc.getElementById(trigger.getAttribute("aria-controls")!)?.getAttribute("role"), "region");
     assert.equal(trigger.hasAttribute("aria-haspopup"), false);
     await act(async () => viewport(true));
@@ -72,7 +72,7 @@ test("help controls retain desktop region semantics and adapt to mobile viewport
 
 test("help stays readable and switches categories when viewport media queries are unavailable", async () => {
   await assert.doesNotReject(() => withClient(null, <ContactHelp categories={contactCategories} />, async (doc, viewport) => {
-    const trigger = doc.querySelectorAll<HTMLButtonElement>(".cp-help-categories button")[1]!;
+    const trigger = doc.querySelectorAll<HTMLButtonElement>("[data-help-categories] button")[1]!;
     await act(async () => trigger.click());
     const region = doc.getElementById(trigger.getAttribute("aria-controls")!);
     assert.equal(region?.getAttribute("role"), "region");
@@ -93,7 +93,7 @@ test("manual room navigation announces room and position without moving keyboard
     { key: "bed", desktop: "/bed.png", mobile: "/bed-small.png", alt: "Bedroom" },
     { key: "dining", desktop: "/dining.png", mobile: "/dining-small.png", alt: "Dining room" },
   ];
-  await withClient(false, <CategorySlideshow slides={slides} />, async doc => {
+  await withClient(false, <NimbusSlideshow slides={slides} />, async doc => {
     const status = doc.querySelector('[role="status"]');
     assert.ok(status, "manual slideshow changes need an accessible status");
     assert.equal(status.getAttribute("aria-live"), "polite");
