@@ -36,7 +36,10 @@ const tally = (count: number, max: number, noun: string, button: ReactNode) => (
 export function CampaignFields(props: Props & { only?: readonly string[]; embedded?: boolean }) {
   const { content, onChange, onScheduleEditingChange, only, embedded = false } = props;
   const choices = content.campaigns.flatMap((value, index) => !only || only.includes(value.key) ? [index] : []);
-  const [selected, setSelected] = useState(choices[0] ?? 0);
+  // Chosen by key, so a reloaded draft with campaigns in another order keeps the same one.
+  const [chosenKey, setChosenKey] = useState(content.campaigns[choices[0] ?? 0]?.key);
+  const selected = choices.find((index) => content.campaigns[index]!.key === chosenKey) ?? choices[0] ?? -1;
+  const setSelected = (index: number) => setChosenKey(content.campaigns[index]?.key);
   const [scheduleEditing, setScheduleEditing] = useState(false);
   useEffect(() => {
     onScheduleEditingChange?.(scheduleEditing);
@@ -48,12 +51,12 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
   const artwork = (patch: Partial<NonNullable<CampaignContent["artwork"]>>) => campaign?.artwork && update({ artwork: { ...campaign.artwork, ...patch } });
   return <>
     {!embedded && <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />}
-    {!campaign || !choices.includes(selected) ? (
-      <EmptyState title="No campaigns in this draft" icon={<Megaphone strokeWidth={1.5} />}>
+    {!campaign ? (
+      <EmptyState title={only ? "This campaign is not in the draft" : "No campaigns in this draft"} icon={<Megaphone strokeWidth={1.5} />}>
         Campaigns come with the storefront theme. To bring them back, restore an earlier version from History.
       </EmptyState>
     ) : <>
-      {choices.length > 1 && <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
+      {(!only || choices.length > 1) && <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
         {choices.map((index) => (
           <NativeSelectOption key={content.campaigns[index]!.key} value={index} className="capitalize">{content.campaigns[index]!.key.replace(/-/g, " ")}</NativeSelectOption>
         ))}
@@ -102,8 +105,9 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
   </>;
 }
 
-export function InstagramFields(props: Props) {
-  const { content, onChange } = props;
+/** `embedded` (the section inspector) keeps the post count and Add button without the screen heading. */
+export function InstagramFields(props: Props & { embedded?: boolean }) {
+  const { content, onChange, embedded = false } = props;
   const posts = content.instagramPosts;
   const media = mediaProps(props);
   const setPosts = (instagramPosts: typeof posts) => onChange({ ...content, instagramPosts });
@@ -111,8 +115,8 @@ export function InstagramFields(props: Props) {
   const addPost = <ActionButton icon={Plus} variant="default" size="default" disabled={posts.length >= 30}
     onClick={() => setPosts([...posts, { href: "", src: "", alt: "" }])}>Add Instagram post</ActionButton>;
   return <>
-    <PanelHeader title="Instagram" actions={posts.length > 0 && tally(posts.length, 30, "posts", addPost)}
-      description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers." />
+    {embedded ? posts.length > 0 && <div className="mb-4 flex justify-end">{tally(posts.length, 30, "posts", addPost)}</div> : <PanelHeader title="Instagram" actions={posts.length > 0 && tally(posts.length, 30, "posts", addPost)}
+      description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers." />}
     {posts.length === 0 ? (
       <EmptyState title="No Instagram posts yet" icon={<Images strokeWidth={1.5} />} action={addPost}>
         The homepage needs at least one post. Add a post link and an approved image to fill the Instagram row.

@@ -54,13 +54,15 @@ type Tab = "Content" | "Media" | "Layout" | "Motion";
  * (Content), its artwork (Media), its arrangement (Layout) and its movement (Motion). It takes
  * the editor column, so the live preview beside it keeps showing the change.
  */
-export function SectionInspector({ section, content, edit, session, onExpired, onScheduleEditingChange, onBack }: {
+export function SectionInspector({ section, content, edit, session, onExpired, onScheduleEditingChange, locked, onBack }: {
   section: HomeSectionKey;
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
   session: StaffSession;
   onExpired: () => void;
   onScheduleEditingChange: (editing: boolean) => void;
+  /** A campaign schedule is open: leaving would drop it, so Back waits until it is applied or cancelled. */
+  locked: boolean;
   onBack: () => void;
 }) {
   const name = sectionName(section);
@@ -82,7 +84,7 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
         onChange={(homeMerchandising) => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />}
       {campaigns[section] && <CampaignFields only={campaigns[section]} embedded content={content} onChange={edit}
         session={session} onExpired={onExpired} onScheduleEditingChange={onScheduleEditingChange} />}
-      {section === "instagram" && <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />}
+      {section === "instagram" && <InstagramFields embedded content={content} onChange={edit} session={session} onExpired={onExpired} />}
     </>,
     ...(media.length ? { Media: <ArtworkSlots keys={media} value={content.templateMedia} onChange={(templateMedia) => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} /> } : {}),
     ...(section === "cities" ? { Layout: <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={(homeCitiesLayout) => edit({ ...content, homeCitiesLayout })} /> } : {}),
@@ -101,25 +103,31 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
     if (!node) return;
     node.tabIndex = -1;
     node.focus({ preventScroll: true });
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    node.scrollIntoView?.({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
   }, [section]);
 
   return (
     <section data-section-inspector={section} aria-label={`${name} section`}>
-      <Button type="button" variant="ghost" size="sm" className="-ml-2 mb-2 text-muted-foreground" onClick={onBack}>
+      <Button type="button" variant="ghost" size="sm" className="-ml-2 mb-2 text-muted-foreground" onClick={onBack} disabled={locked}
+        title={locked ? "Apply or cancel the schedule first" : undefined}>
         <ArrowLeft aria-hidden="true" strokeWidth={1.5} />Back to sections
       </Button>
       <div ref={heading}>
-        <PanelHeader title={name} description="Everything this section shows. Changes stay in your draft and appear in the live preview."
+        <PanelHeader title={name} description="This section's text, artwork, layout and motion. Changes stay in your draft and appear in the live preview."
           actions={<CheckField label="Show on the homepage" checked={shown}
             onChange={(event) => edit({ ...content, homeSections: content.homeSections.map((item) => item.key === section ? { ...item, enabled: event.target.checked } : item) })} />} />
       </div>
-      <Tabs value={active} onValueChange={(next) => setActive(next as Tab)} className="gap-5">
-        {tabs.length > 1 && <TabsList aria-label={`${name} settings`}>
-          {/* Radix activates tabs on mousedown and focus; a plain click selects too. */}
-          {tabs.map((tab) => <TabsTrigger key={tab} value={tab} className="px-3" onClick={() => setActive(tab)}>{tab}</TabsTrigger>)}
-        </TabsList>}
-        {tabs.map((tab) => <TabsContent key={tab} value={tab}>{panels[tab]}</TabsContent>)}
-      </Tabs>
+      {/* The editor column beside the live preview is narrow; its editors size to it, not to the window. */}
+      <div className="@container">
+        {tabs.length === 1 ? panels[tabs[0]!] : <Tabs value={active} onValueChange={(next) => setActive(next as Tab)} className="gap-5">
+          <TabsList aria-label={`${name} settings`}>
+            {/* Radix activates tabs on mousedown and focus; a plain click selects too. */}
+            {tabs.map((tab) => <TabsTrigger key={tab} value={tab} className="px-3" onClick={() => setActive(tab)}>{tab}</TabsTrigger>)}
+          </TabsList>
+          {tabs.map((tab) => <TabsContent key={tab} value={tab}>{panels[tab]}</TabsContent>)}
+        </Tabs>}
+      </div>
     </section>
   );
 }

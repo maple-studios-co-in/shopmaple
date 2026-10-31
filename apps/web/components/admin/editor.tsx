@@ -349,7 +349,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
     if (name === "History") { void history(); return; }
-    if (name === tab) return;
+    // Choosing Homepage again from an open inspector returns to the section list.
+    if (name === tab) { setInspecting(null); return; }
     setSelectedPage(0);
     setFocusedSection(null);
     setInspecting(null);
@@ -391,7 +392,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     switch (tab) {
       case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
       case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
-        inspecting={inspecting} onInspect={setInspecting} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
+        inspecting={inspecting} onInspect={setInspecting} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} scheduleEditing={scheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
         const next = { ...content };
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
@@ -575,10 +576,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
                 onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
                 onSelectSection={(section) => {
+                  // An open campaign schedule would be lost; the preview waits until it is applied or cancelled.
+                  if (scheduleEditing) return;
                   if (tab !== "Homepage") selectTab("Homepage");
                   setFocusedSection(section);
                   // Edit in the preview opens the same inspector as the section's card.
-                  if ((homeSectionKeys as readonly string[]).includes(section)) setInspecting(section as HomeSectionKey);
+                  setInspecting((homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : null);
                 }} />
             )}
           </div>

@@ -99,9 +99,11 @@ test("Edit on Cities opens one inspector with its text, artwork, layout and moti
     await until(() => app.puts.length === 1, "the save");
     const saved = app.puts[0].content;
     assert.equal(saved.homeDetails.cities.heading, "Delivering across India");
-    assert.equal(saved.templateMedia.find((m: { key: string }) => m.key === "home-workshop-poster"), undefined, "artwork other sections use is untouched");
-    assert.ok(saved.templateMedia.some((m: { key: string; image: string }) => m.key.startsWith("home-city-") && m.image.endsWith("delhi-new.webp")));
+    assert.deepEqual(saved.templateMedia.map((m: { key: string; image: string }) => [m.key, m.image]), [["home-city-delhi", "/media/uploads/delhi-new.webp"]], "only Delhi's artwork is replaced");
     assert.equal(saved.motion.autoplayCities, false);
+    const { homeDetails: _d, templateMedia: _t, motion: _m, ...rest } = saved;
+    const { homeDetails: _dd, templateMedia: _td, motion: _md, ...untouched } = defaultStorefrontContent as typeof saved;
+    assert.deepEqual(rest, JSON.parse(JSON.stringify(untouched)), "nothing else in the draft changes");
 
     await click("Back to sections");
     assert.equal(inspector(), null);
@@ -140,5 +142,55 @@ test("Edit in the live preview opens that section's inspector", async () => {
     await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, type: "select", section: "values" }, origin: "http://localhost:3000", source: frameWindow })); });
     assert.equal(inspector()?.getAttribute("data-section-inspector"), "values");
     assert.ok(field("Quiet luxury title", inspector()!));
+  } finally { await app.close(); }
+});
+
+test("the three promo banners share one inspector that edits the chosen campaign by name", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Promos", card("promos"));
+    const choice = field<HTMLSelectElement>("Campaign", inspector()!);
+    assert.deepEqual([...choice.options].map((o) => o.textContent), ["landing dining", "landing storage", "landing consoles"]);
+    const storage = [...choice.options].find((o) => o.textContent === "landing storage")!;
+    await act(async () => { choice.value = storage.value; choice.dispatchEvent(new dom.window.Event("change", { bubbles: true })); });
+    await type("Campaign label", "Storage week", inspector()!);
+    await click("Save draft");
+    await until(() => app.puts.length === 1, "the save");
+    assert.equal(app.puts[0].content.campaigns.find((c: { key: string }) => c.key === "landing-storage").label, "Storage week");
+    assert.equal(app.puts[0].content.campaigns.find((c: { key: string }) => c.key === "landing-dining").label, defaultStorefrontContent.campaigns.find((c) => c.key === "landing-dining")!.label);
+  } finally { await app.close(); }
+});
+
+test("while a campaign schedule is open, the inspector stays put: Back is disabled and Edit in the preview waits", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await until(() => Boolean(container.querySelector("iframe[data-live-preview-frame]")), "the preview frame");
+    await click("Edit Dining Banner", card("dining-banner"));
+    await click("Enable schedule", inspector()!);
+    assert.equal(button("Back to sections").disabled, true);
+    const frameWindow = container.querySelector<HTMLIFrameElement>("iframe[data-live-preview-frame]")!.contentWindow!;
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, type: "select", section: "values" }, origin: "http://localhost:3000", source: frameWindow })); });
+    assert.equal(inspector()?.getAttribute("data-section-inspector"), "dining-banner", "the open schedule is not thrown away");
+    await click("Cancel schedule edit", inspector()!);
+    assert.equal(button("Back to sections").disabled, false);
+  } finally { await app.close(); }
+});
+
+test("a one-panel section shows no tabs; Instagram has one heading; hiding from the inspector hides the section", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Project", card("project"));
+    assert.equal(inspector()!.querySelector('[role="tablist"]'), null);
+    assert.ok(field("Project heading", inspector()!));
+    const show = field("Show on the homepage", inspector()!);
+    await act(async () => show.click());
+    await click("Back to sections");
+    assert.equal(card("project").dataset.hidden, "true");
+
+    await click("Edit Instagram", card("instagram"));
+    assert.deepEqual([...inspector()!.querySelectorAll("h2")].map((h) => h.textContent), ["Instagram"]);
+    await click("Homepage");
+    assert.equal(inspector(), null, "the Homepage item returns to the section list");
   } finally { await app.close(); }
 });

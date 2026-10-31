@@ -174,7 +174,7 @@ export function SectionRail({ content, edit, selected, onSelect, onInspect, sour
                 <span className="truncate pl-6 text-xs text-muted-foreground @max-md:hidden">{section.enabled ? "Shown on the homepage" : "Hidden from visitors"}</span>
               </div>
               <Button type="button" variant="ghost" size="sm" className="shrink-0"
-                aria-label={`Edit ${name}`} onClick={() => { onSelect(section.key); onInspect(section.key); }}>Edit</Button>
+                data-section-edit aria-label={`Edit ${name}`} onClick={() => { onSelect(section.key); onInspect(section.key); }}>Edit</Button>
               <MoveButtons className="@max-md:hidden" name={name} index={index} length={sections.length} onMove={(direction) => {
                 const next = [...sections];
                 [next[index], next[index + direction]] = [next[index + direction]!, next[index]!];

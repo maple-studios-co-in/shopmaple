@@ -22,7 +22,7 @@ const copyLabels: Record<keyof Copy, string> = {
 const copyLimit = (key: keyof Copy) => key === "ticker" ? 600 : key === "testimonialSubheading" ? 300 : 160;
 export const titleCase = sectionName;
 
-export function HomepagePanel({ content, edit, focusedSection, onSelectSection, inspecting, onInspect, session, onExpired, onScheduleEditingChange, thumbnails }: {
+export function HomepagePanel({ content, edit, focusedSection, onSelectSection, inspecting, onInspect, session, onExpired, onScheduleEditingChange, scheduleEditing, thumbnails }: {
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
   focusedSection: string | null;
@@ -33,16 +33,17 @@ export function HomepagePanel({ content, edit, focusedSection, onSelectSection, 
   session: StaffSession;
   onExpired: () => void;
   onScheduleEditingChange: (editing: boolean) => void;
+  scheduleEditing: boolean;
   thumbnails: ThumbnailSource;
 }) {
   if (inspecting) {
     const back = () => {
       onInspect(null);
       // Back on the list, the section's own Edit button takes focus again.
-      requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-section-card="${inspecting}"] button[aria-label="Edit ${sectionName(inspecting)}"]`)?.focus());
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-section-card="${inspecting}"] [data-section-edit]`)?.focus());
     };
     return <SectionInspector key={inspecting} section={inspecting} content={content} edit={edit} session={session} onExpired={onExpired}
-      onScheduleEditingChange={onScheduleEditingChange} onBack={back} />;
+      onScheduleEditingChange={onScheduleEditingChange} locked={scheduleEditing} onBack={back} />;
   }
   const copyField = (key: keyof Copy) => (
     <Field

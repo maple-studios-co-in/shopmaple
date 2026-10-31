@@ -22,7 +22,7 @@ export function TemplateArtworkFields(props: Props) {
   return (
     <section aria-label="Template artwork">
       <PanelHeader title="Artwork" description="Choose a page and placement to replace its image. Save a draft, then publish when ready." />
-      <ArtworkSlots {...props} key={group} keys={templateMediaSlots.filter(item => item.group === group).map(item => item.key)}
+      <ArtworkSlots {...props} keys={templateMediaSlots.filter(item => item.group === group).map(item => item.key)}
         group={<SelectField label="Artwork group" value={group} onChange={event => setGroup(event.target.value as (typeof groups)[number])}>
           {groups.map(item => <NativeSelectOption key={item} value={item}>{item}</NativeSelectOption>)}
         </SelectField>} />
@@ -35,7 +35,9 @@ export function TemplateArtworkFields(props: Props) {
  * a homepage section's inspector only the placements that section draws.
  */
 export function ArtworkSlots({ value, onChange, session, onExpired, keys, group }: Props & { keys: readonly TemplateMediaKey[]; group?: ReactNode }) {
-  const [selected, setSelected] = useState<TemplateMediaKey>(keys[0]!);
+  const [chosen, setSelected] = useState<TemplateMediaKey>(keys[0]!);
+  // A new set of placements (another group) starts at its first; the group control keeps focus.
+  const selected = keys.includes(chosen) ? chosen : keys[0]!;
   const placement = useRef<HTMLSelectElement>(null);
   const slot = templateMediaSlots.find(item => item.key === selected)!;
   const artwork = resolveTemplateMedia(selected, value);
@@ -53,7 +55,7 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group 
           {keys.map(key => <NativeSelectOption key={key} value={key}>{templateMediaSlots.find(item => item.key === key)!.label}</NativeSelectOption>)}
         </SelectField>
       </FieldGrid>
-      <Card className="gap-5 px-5 py-5 shadow-xs sm:px-6">
+      <Card className="@container gap-5 px-5 py-5 shadow-xs sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectionHeading className="m-0">{slot.label}</SectionHeading>
           <Badge variant="secondary" className={cn("rounded-md border-0 font-semibold", overridden ? "bg-accent-tint text-primary" : "bg-neutral-bg text-neutral")}>
@@ -64,7 +66,7 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group 
           Changing this poster replaces the still image; the video stays unchanged.{selected !== "home-workshop-poster" && " The image description also labels the video."}
         </Notice>}
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
-        <div className={cn("grid gap-5", responsive && "lg:grid-cols-2")} key={selected}>
+        <div className={cn("grid gap-5", responsive && "@xl:grid-cols-2")} key={selected}>
           {(responsive ? (["Desktop", "Mobile"] as const) : (["Desktop"] as const)).map(kind => {
             const key = kind === "Desktop" ? "image" : "mobileImage", url = artwork[key] ?? "";
             return <div key={kind} role="group" aria-label={`${kind} artwork`} className="grid min-w-0 content-start gap-3">
