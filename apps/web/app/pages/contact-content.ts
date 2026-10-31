@@ -8,7 +8,7 @@ export const contactCategories = [
       {
         question: "How to Track my Order?",
         answer:
-          "Go to My Orders in your Maple Furnishers account to track your order.",
+          "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.",
       },
       {
         question:
@@ -69,9 +69,9 @@ export const contactCategories = [
     icon: "engaged_2.svg",
     questions: [
       {
-        question: "How to Create an Account with Maple Furnishers?",
+        question: "Do I need an account with Maple Furnishers?",
         answer:
-          "Click on the signup link, present at the top right corner of our maplefurnishers. This will show a pop-up menu where you can register from either of the following ways to get on board.\n\nManual form filling: You can manually fill up the form to register yourself by filling the general details.\n\nSign up through Gmail: You can also sign up through your Gmail account by clicking on “or continue with Gmail”, presented at the below side of the popup menu.\nYour maplefurnishers account is now ready.",
+          "Not yet. Customer accounts arrive with online checkout. Until then, the furniture you save stays in your browser and our team looks after your orders: contact us with any question about an order.",
       },
       {
         question: "How can I change my phone number or my shipping address?",

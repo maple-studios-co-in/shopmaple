@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PencilRuler } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 
 /**
  * What a variant tile needs. The product page builds these from the catalogue; `slug` is for the
@@ -29,7 +29,7 @@ export function VariantSelector({ variants, selectedId, onSelect, enquiryHref, l
   return (
     <div className="relative">
     {/* The customization link sits beside the group label, not inside it, so the group is named by its option alone. */}
-    <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1 text-label leading-[1.6] font-medium text-brand no-underline hover:underline">
+    <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1 text-label leading-[1.6] font-medium text-brand no-underline hover:underline hover:underline-offset-[5px]">
       <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
     </Link>
     <fieldset data-variants={layout} className="grid gap-3">

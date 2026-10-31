@@ -91,8 +91,8 @@ test("only the save button runs in the browser: the card itself renders on the s
   assert.match(save, /^"use client"/m);
 });
 
-test("the header loads the wishlist list on demand, so cards stay out of every page's first-load JavaScript", () => {
-  const header = readFileSync(new URL("../components/header.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(header, /import \{ Favourites \} from "\.\/favourites"/);
-  assert.match(header, /dynamic\(\(\) => import\("\.\/favourites"\)/);
+test("the header's wishlist drawer loads the list on demand, so cards stay out of every page's first-load JavaScript", () => {
+  const drawer = readFileSync(new URL("../components/store/wishlist-panel.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(drawer, /import \{[^}]*Favourites[^}]*\} from "\.\/favourites"/);
+  assert.match(drawer, /dynamic\(\(\) => import\("\.\/favourites"\)/);
 });

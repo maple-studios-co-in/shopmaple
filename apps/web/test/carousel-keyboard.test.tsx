@@ -26,7 +26,7 @@ async function mount(autoplay = true) {
     <a href="https://www.instagram.com/p/first/">First post</a>
     <a href="https://www.instagram.com/p/second/">Second post</a>
   </HomeCarousel>));
-  const rail = host.querySelector<HTMLElement>('.home-product-rail')!;
+  const rail = host.querySelector<HTMLElement>('[data-carousel-rail]')!;
   Object.defineProperties(rail, { clientWidth: { value: 600 }, scrollWidth: { value: 1800 } });
   rail.scrollBy = options => { rail.scrollLeft += (options as ScrollToOptions).left ?? 0; };
   rail.scrollTo = options => { rail.scrollLeft = (options as ScrollToOptions).left ?? 0; };

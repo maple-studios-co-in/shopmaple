@@ -14,7 +14,7 @@ test('footer policy popover dismisses outside and on Escape without dismissing a
  const root=createRoot(document.getElementById('root')!);
  try{
   await act(async()=>root.render(<Footer/>));
-  const details=document.querySelector<HTMLDetailsElement>('.maple-footer-policies')!;
+  const details=document.querySelector<HTMLDetailsElement>('[data-footer-bottom] details')!;
   await act(async()=>details.querySelector('summary')!.click());assert.equal(details.open,true);
   await act(async()=>details.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true})));assert.equal(details.open,true);
   await act(async()=>document.getElementById('outside')!.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true})));assert.equal(details.open,false);
@@ -31,6 +31,6 @@ test('route loading presents the Maple logo with an accessible status',()=>{
 test('automatic carousels expose keyboard playback without a visible play icon',()=>{
  const dom=new JSDOM(renderToStaticMarkup(<HomeCarousel autoplay label="Cities"><span>Delhi</span></HomeCarousel>));
  const control=dom.window.document.querySelector('button[aria-label="Play Cities"]');
- assert.ok(control);assert.ok(control.classList.contains('motion-playback-control'));
+ assert.ok(control);assert.ok(control.hasAttribute('data-carousel-play'));
  assert.equal(control.querySelector('svg'),null);
 });

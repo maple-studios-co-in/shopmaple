@@ -20,7 +20,7 @@ Object.assign(globalThis,{IntersectionObserver:Observer});
 async function mount(autoplay=false){
  reduced=false;visible=true;const host=document.getElementById('root')!,root=createRoot(host);
  try { await act(async()=>root.render(<HomeCarousel {...{label:'Instagram posts',autoplay}}><a href="https://www.instagram.com/p/first/">First post</a><a href="https://www.instagram.com/p/second/">Second post</a></HomeCarousel>)); } catch(error) { await act(async()=>root.unmount()); throw error; }
- const rail=host.querySelector<HTMLElement>('.home-product-rail')!;Object.defineProperties(rail,{clientWidth:{value:600},scrollWidth:{value:1800}});
+ const rail=host.querySelector<HTMLElement>('[data-carousel-rail]')!;Object.defineProperties(rail,{clientWidth:{value:600},scrollWidth:{value:1800}});
  const moves:ScrollToOptions[]=[];
  rail.scrollBy=options=>{const o=options as ScrollToOptions;moves.push(o);rail.scrollLeft+=o.left??0;};
  rail.scrollTo=options=>{const o=options as ScrollToOptions;moves.push(o);rail.scrollLeft=o.left??0;};
@@ -43,8 +43,8 @@ test('offscreen rows, hidden pages, pointer hover and reduced-motion changes sus
  await act(async()=>intersect?.([observation(false)]));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
  await act(async()=>intersect?.([observation(true)]));visible=false;await act(async()=>document.dispatchEvent(new dom.window.Event('visibilitychange')));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
  visible=true;await act(async()=>document.dispatchEvent(new dom.window.Event('visibilitychange')));
- await act(async()=>h.host.querySelector('.home-carousel')!.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
- await act(async()=>h.host.querySelector('.home-carousel')!.dispatchEvent(new dom.window.MouseEvent('mouseout',{bubbles:true,relatedTarget:document.body})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,600);
+ await act(async()=>h.host.querySelector('[data-carousel]')!.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,0);
+ await act(async()=>h.host.querySelector('[data-carousel]')!.dispatchEvent(new dom.window.MouseEvent('mouseout',{bubbles:true,relatedTarget:document.body})));await act(async()=>t.mock.timers.tick(4500));assert.equal(h.rail.scrollLeft,600);
  reduced=true;await act(async()=>listeners.forEach(f=>f()));await act(async()=>t.mock.timers.tick(9000));assert.equal(h.rail.scrollLeft,600);
  }finally{await h.unmount();}
 });

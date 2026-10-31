@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { DesktopNavigation, MobileNavigation } from "../components/navigation";
 import { cardEnvelope } from "./support/catalogue-fixtures";
 import { navigationHref } from "../lib/navigation";
+import { waitFor } from "./support/wait-for";
 const dom = new JSDOM(
   "<!doctype html><div id='root'></div><button id='outside'>Outside</button>",
   { url: "http://localhost:3000" },
@@ -61,14 +62,15 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
         (b) => b.textContent === label,
       )!;
     await act(async () => button("Living Room").click());
+    await waitFor(() => document.querySelector("[data-mega-column]"));
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "true");
-    assert.equal(document.querySelectorAll(".maple-mega-column").length, 4);
+    assert.equal(document.querySelectorAll("[data-mega-column]").length, 4);
     assert.ok(document.querySelector('a[href="/collections/dining-chair"]'));
     await act(async () => button("Bedroom").click());
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "false");
-    assert.equal(document.querySelectorAll(".maple-mega-column").length, 3);
+    assert.equal(document.querySelectorAll("[data-mega-column]").length, 3);
     await act(async () =>
-      document.querySelector(".maple-mega a")!.dispatchEvent(
+      document.querySelector("[data-mega] a")!.dispatchEvent(
         new dom.window.KeyboardEvent("keydown", {
           key: "Escape",
           bubbles: true,
@@ -78,6 +80,7 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
     assert.equal(button("Bedroom").getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, button("Bedroom"));
     await act(async () => button("Living Room").click());
+    await waitFor(() => document.querySelector("[data-mega-column]"));
     await act(async () =>
       document
         .getElementById("outside")!
@@ -109,13 +112,14 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
         (b) => b.textContent === text,
       )!;
     await act(async () => button("Living Room").click());
-    assert.equal(document.querySelectorAll(".maple-drawer-group").length, 4);
-    assert.equal(document.querySelectorAll(".maple-menu-product").length, 2);
+    await waitFor(() => document.querySelector("[data-mega-column]"));
+    assert.equal(document.querySelectorAll("[data-drawer-group]").length, 4);
+    assert.equal(document.querySelectorAll("[data-menu-product]").length, 2);
     await act(async () =>
-      document.querySelector<HTMLButtonElement>(".maple-drawer-back")!.click(),
+      document.querySelector<HTMLButtonElement>("[data-drawer-back]")!.click(),
     );
-    assert.equal(document.querySelectorAll(".maple-drawer-main > *").length, 5);
-    assert.equal(document.querySelectorAll(".maple-menu-product").length, 4);
+    assert.equal(document.querySelectorAll("[data-drawer-main] > *").length, 5);
+    assert.equal(document.querySelectorAll("[data-menu-product]").length, 4);
     assert.ok(
       document.querySelector('dialog a[href="/favourites"]'),
       "saved furniture must remain reachable on mobile",
@@ -144,7 +148,7 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
       (button) => button.textContent === "Living Room",
     )!;
     await act(async () => living.click());
-    const panel = document.querySelector(".maple-mega")!;
+    const panel = document.querySelector("[data-mega]")!;
     assert.ok(
       panel.querySelector("img"),
       "menu should include a real furniture discovery image",
@@ -223,7 +227,7 @@ test("desktop mouse-only departure and focus outside still dismiss the menu", as
     await leaveWithMouse(document.querySelector("nav")!);
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     await act(async () => trigger.click());
-    await act(async () => document.querySelector<HTMLAnchorElement>(".maple-mega a")!.focus());
+    await act(async () => document.querySelector<HTMLAnchorElement>("[data-mega] a")!.focus());
     await act(async () => document.getElementById("outside")!.focus());
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, document.getElementById("outside"));
@@ -237,7 +241,7 @@ for (const living of [false, true]) {
         const trigger = [...document.querySelectorAll("button")].find(button => button.textContent === "Living Room")!;
         await act(async () => trigger.click());
       }
-      const product = document.querySelector<HTMLAnchorElement>(".maple-menu-product")!;
+      const product = document.querySelector<HTMLAnchorElement>("[data-menu-product]")!;
       assert.equal(product.getAttribute("href"), living ? "/products/morik-media-unit" : "/products/veyra-chest-of-drawers");
       await activateLink(product);
       assert.equal(document.querySelector("dialog")!.open, false, "selected product must not remain covered by the drawer");
@@ -248,7 +252,7 @@ for (const living of [false, true]) {
 
 test("modified featured-product clicks preserve native link behavior while closing the drawer", async () => {
   await withControlledDrawer(async () => {
-    const product = document.querySelector<HTMLAnchorElement>(".maple-menu-product")!;
+    const product = document.querySelector<HTMLAnchorElement>("[data-menu-product]")!;
     await activateLink(product, true);
     assert.equal(document.querySelector("dialog")!.open, false);
     assert.equal(document.body.style.overflow, "scroll");
@@ -261,7 +265,7 @@ test("desktop mouse departure preserves the focused submenu until Escape", async
     await act(async () => root.render(<DesktopNavigation />));
     const trigger = [...document.querySelectorAll("button")].find(button => button.textContent === "Living Room")!;
     await act(async () => trigger.click());
-    const link = document.querySelector<HTMLAnchorElement>(".maple-mega a")!;
+    const link = document.querySelector<HTMLAnchorElement>("[data-mega] a")!;
     await act(async () => link.focus());
     await leaveWithMouse(document.querySelector("nav")!);
     assert.equal(trigger.getAttribute("aria-expanded"), "true", "mouse departure must preserve the focused panel");

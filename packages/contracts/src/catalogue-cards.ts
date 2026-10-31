@@ -13,6 +13,10 @@ export const productCardSchema = z.object({
   priceFrom: z.boolean(),
   otherOptionsOnRequest: z.boolean(),
   optionCount: z.number().int().min(0).max(500),
+  // Read from the catalogue for the card's category line and colour dots; absent from older payloads.
+  category: z.enum(categories).nullable().default(null),
+  // At most eight short names, which keeps a compact card small (the card shows six dots).
+  optionNames: z.array(z.string().min(1).max(80)).max(8).default([]),
 }).strict().superRefine((card, ctx) => {
   if ((card.compareAtPaise !== null && (card.pricePaise === null || card.compareAtPaise <= card.pricePaise)) ||
       (card.pricePaise === null && (card.priceFrom || card.otherOptionsOnRequest)) ||
@@ -34,9 +38,11 @@ export function lowestPrice(product: { variants: PriceOption[] }): number | null
 export function canOrder(variant?: { available: boolean; pricePaise: number | null; stockPolicy: string }) {
   return Boolean(variant && variant.available && variant.pricePaise !== null && variant.pricePaise > 0 && ["stocked", "dropship"].includes(variant.stockPolicy));
 }
+// Placeholder or colourless option names, never offered as colours.
+const placeholderOption = /^(default( title)?|standard)$/i;
 export function toProductCard(product: {
-  id: string; handle: string; title: string; images: string[];
-  variants: { pricePaise: number | null; compareAtPaise: number | null }[];
+  id: string; handle: string; title: string; images: string[]; category?: string | null;
+  variants: { pricePaise: number | null; compareAtPaise: number | null; title?: string }[];
 }): ProductCard {
   const priced = pricedVariants(product);
   // Stable sorting retains the first equal-price variant's compare-at amount.
@@ -50,6 +56,9 @@ export function toProductCard(product: {
     priceFrom: price !== null && (unknownPrices || new Set(priced.map(variant => variant.pricePaise)).size > 1),
     otherOptionsOnRequest: unknownPrices && price !== null,
     optionCount: product.variants.length,
+    category: categories.find(category => category === product.category) ?? null,
+    optionNames: [...new Set(product.variants.map(variant => variant.title?.trim() ?? "")
+      .filter(name => name && name.length <= 80 && !placeholderOption.test(name)))].slice(0, 8),
   };
 }
 export const catalogueCardResponseSchema = z.object({ product: productCardSchema, published: z.literal(true) }).strict();

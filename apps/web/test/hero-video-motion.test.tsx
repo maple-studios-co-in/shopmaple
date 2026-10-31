@@ -69,7 +69,7 @@ async function withVideo(
   try {
     await act(async () => root.render(<Hero />));
     await intersect(options.intersecting ?? true);
-    await check(document.querySelector("video")!, document.querySelector<HTMLButtonElement>(".video-control")!, async (value) => {
+    await check(document.querySelector("video")!, document.querySelector<HTMLButtonElement>("[data-video-control]")!, async (value) => {
       await act(async () => { reduced = value; motion.dispatchEvent(new dom.window.Event("change")); });
     }, {
       intersect, intersectBatch, unmount, attempts, listeners, observed,
@@ -99,7 +99,7 @@ async function withVideo(
 test("server rendering keeps the workshop poster and leaves the video unloaded", () => {
   const dom = new JSDOM(renderToStaticMarkup(<Hero />));
   assert.equal(dom.window.document.querySelector("video")!.getAttribute("src"), null);
-  assert.ok(dom.window.document.querySelector(".hero-film img")!.getAttribute("src"));
+  assert.ok(dom.window.document.querySelector("[data-hero-film] img")!.getAttribute("src"));
   dom.window.close();
 });
 

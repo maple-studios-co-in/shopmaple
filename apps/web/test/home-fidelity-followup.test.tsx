@@ -10,7 +10,7 @@ const render = (element: React.ReactNode) => new JSDOM(renderToStaticMarkup(elem
 
 test("footer preserves its policy destinations behind the original disclosure", () => {
   const doc = render(<Footer />);
-  const disclosure = doc.querySelector(".maple-footer-bottom details");
+  const disclosure = doc.querySelector("[data-footer-bottom] details");
   assert.ok(disclosure, "Footer policies should be a collapsed disclosure instead of an expanded link row");
   assert.equal(disclosure.hasAttribute("open"), false);
   assert.equal(disclosure.querySelector("summary")?.textContent, "Terms and Policies");
@@ -19,7 +19,7 @@ test("footer preserves its policy destinations behind the original disclosure", 
 
 test("city cards pair each editable image with its published destination label", () => {
   const doc = render(<HomeCities layout={[{key:"delhi",enabled:true},{key:"agra",enabled:false},{key:"mumbai",enabled:true}]} />);
-  const cards = [...doc.querySelectorAll(".home-city-track figure")];
+  const cards = [...doc.querySelectorAll("[data-city-track] figure")];
   assert.equal(cards.length, 2, "Enabled destinations should be distinct labeled city cards");
   assert.deepEqual(cards.map(card => card.querySelector("figcaption")?.textContent), ["Delhi", "Mumbai"]);
   assert.deepEqual(cards.map(card => card.querySelector("img")?.alt), ["Delhi", "Mumbai"]);

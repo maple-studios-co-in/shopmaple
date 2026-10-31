@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Tags, TriangleAlert, Upload, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
@@ -24,6 +24,7 @@ import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
 import { AuthoredArticleFields } from "./authored-article-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
+import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highlights-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
@@ -45,21 +46,21 @@ type Document = {
   updatedAt: string | null;
 };
 const tabs = [
-  "Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram",
+  "Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram",
   "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
 const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: null, items: ["Overview"] },
-  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram"] },
+  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram"] },
   { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
   { label: "Library", items: ["Media"] },
   { label: "Customers", items: ["Enquiries"] },
   { label: "Publishing", items: ["History"] },
 ];
 const icons: Record<Tab, typeof House> = {
-  Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, Artwork: ImageIcon,
+  Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, "Product highlights": Sparkles, Artwork: ImageIcon,
   Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
   Media: Images, Enquiries: Inbox, History,
 };
@@ -70,7 +71,7 @@ const existingPages = [
 ] as const;
 type ExistingPage = (typeof existingPages)[number][0];
 /** Sections whose edits show on a storefront page and can therefore use the live preview. */
-const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
+const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
 function parseDocument(value: unknown): Document {
   const document = value as Document;
   const validUpdatedAt = document?.updatedAt === null || (typeof document?.updatedAt === "string" && document.updatedAt.length <= 64 && Number.isFinite(Date.parse(document.updatedAt)));
@@ -265,7 +266,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       const validation = storefrontContentSchema.safeParse(content);
       if (!validation.success) {
         const issue = validation.error.issues[0];
-        const message = `Check ${issue?.path.join(" > ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`;
+        const message = issue?.path[0] === "productHighlights" ? highlightsSaveMessage
+          : `Check ${issue?.path.join(" > ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`;
         if (options.quiet) setLiveBlocked(message);
         else setError(message);
         return null;
@@ -391,6 +393,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         edit(next);
       }} />;
       case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
+      case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
       case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />;

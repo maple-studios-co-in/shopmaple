@@ -14,6 +14,7 @@ const { ProductDetail } = await import("../components/product-detail");
 const { ShopProvider } = await import("../components/shop-provider");
 const product = (handle: string): Product => ({ id: handle, handle, title: `${handle} Chair`, description: "Source description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-variant`, title: "Standard", sku: null, pricePaise: 123400, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
 import { cardEnvelope, pageFixture } from "./support/catalogue-fixtures";
+import { waitFor } from "./support/wait-for";
 const page = (handles: string[], total = handles.length, q = "") => Response.json(pageFixture(handles, total, q));
 type Request = { url: string; signal?: AbortSignal | null; resolve: (value: Response) => void };
 const storageKey = "maple-recent-products-v1";
@@ -34,14 +35,15 @@ async function setup(t: TestContext, history?: string) {
   return { requests, root, close: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; t.mock.timers.reset(); } };
 }
 async function settle(request: Request, response: Response) { await act(async () => request.resolve(response)); }
-const names = () => [...document.querySelectorAll('.search-discovery [data-card-name]')].map(e=>e.textContent);
+const names = () => [...document.querySelectorAll('[data-search-discovery] [data-card-name]')].map(e=>e.textContent);
 
 test("existing search opens from the header and provides a local full-results form", async t => {
-  const app = await setup(t); try { await click("Search furniture"); assert.equal(input().name, "q"); assert.equal(input().form?.getAttribute("action"), "/collections/all"); } finally { await app.close(); }
+  const app = await setup(t); try { await click("Search furniture"); await waitFor(() => document.querySelector('dialog[open][aria-label="Search"]')); assert.equal(input().name, "q"); assert.equal(input().form?.getAttribute("action"), "/collections/all"); } finally { await app.close(); }
 });
 test("opening search lazily loads four discoverable products and closing restores the trigger", async t => {
   const app = await setup(t); try {
     assert.equal(app.requests.length, 0); await click("Search furniture");
+    await waitFor(() => document.querySelector('dialog[open][aria-label="Search"]'));
     assert.ok(document.querySelector('dialog[open][aria-label="Search"]'), "Search should match the original dialog label");
     assert.equal(document.activeElement, input());
     const request = app.requests[0]; assert.ok(request, "opening search must request product suggestions");
@@ -60,7 +62,7 @@ test("typing debounces local search, rejects stale results and preserves the ful
     await fill("new"); assert.equal(old.signal?.aborted,true); await tick(t,250);
     await settle(app.requests[2]!,page(["new", "new-two", "new-three", "new-four"],7,"new")); await settle(old,page(["stale"],1,"oak & brass"));
     assert.deepEqual(names(),["new Chair", "new-two Chair", "new-three Chair", "new-four Chair"]); assert.match(document.querySelector('[role="status"]')?.textContent??"",/7 search results found for "new"/);
-    assert.equal(document.querySelector<HTMLAnchorElement>('.search-view-all')?.getAttribute("href"),"/collections/all?q=new");
+    assert.equal(document.querySelector<HTMLAnchorElement>('[data-search-view-all]')?.getAttribute("href"),"/collections/all?q=new");
     assert.equal(localStorage.getItem(storageKey),null,"queries are not stored as browsing history");
   } finally { await app.close(); }
 });
@@ -68,7 +70,7 @@ test("empty results keep the original message and reset restores input focus and
   const app = await setup(t); try {
     await click("Search furniture"); assert.ok(app.requests[0]); await settle(app.requests[0],page(["alpha"]));
     await fill("nothing"); await tick(t,250); await settle(app.requests[1]!,page([],0,"nothing"));
-    assert.match(document.querySelector('.search-discovery')?.textContent??"",/No results found for "nothing"\. Try another search\./);
+    assert.match(document.querySelector('[data-search-discovery]')?.textContent??"",/No results found for "nothing"\. Try another search\./);
     await click("Reset search"); assert.equal(input().value,""); assert.equal(document.activeElement,input());
     await settle(app.requests[2]!,page(["bravo"])); assert.deepEqual(names(),["bravo Chair"]);
   } finally { await app.close(); }
@@ -76,7 +78,7 @@ test("empty results keep the original message and reset restores input focus and
 test("a headers timeout offers retry and late completion cannot replace recovered results", async t => {
   const app=await setup(t); try {
     await click("Search furniture"); const old=app.requests[0]; assert.ok(old,"search must load suggestions");
-    await tick(t,6000); assert.ok(document.querySelector('.search-discovery [role="alert"]')); assert.equal(old.signal?.aborted,true);
+    await tick(t,6000); assert.ok(document.querySelector('[data-search-discovery] [role="alert"]')); assert.equal(old.signal?.aborted,true);
     await click("Retry search"); await settle(app.requests[1]!,page(["recovered"])); await settle(old,page(["late"]));
     assert.deepEqual(names(),["recovered Chair"]);
   } finally { await app.close(); }
@@ -85,8 +87,8 @@ test("a stalled response body also times out and close aborts outstanding result
   const app=await setup(t); try {
     await click("Search furniture"); const request=app.requests[0]; assert.ok(request);
     await settle(request, {ok:true,json:()=>new Promise(()=>{})} as Response); await tick(t,6000);
-    assert.ok(document.querySelector('.search-discovery [role="alert"]')); await click("Retry search"); const pending=app.requests[1]!;
-    await click("Close Search"); assert.equal(pending.signal?.aborted,true); await settle(pending,page(["late"])); assert.equal(document.querySelector('.search-discovery'),null);
+    assert.ok(document.querySelector('[data-search-discovery] [role="alert"]')); await click("Retry search"); const pending=app.requests[1]!;
+    await click("Close Search"); assert.equal(pending.signal?.aborted,true); await settle(pending,page(["late"])); assert.equal(document.querySelector('[data-search-discovery]'),null);
   } finally { await app.close(); }
 });
 test("recent handles resolve fresh public records, omit missing pieces and clear only their own history", async t => {
@@ -102,14 +104,14 @@ test("malformed stored handles never become requests, and invalid API products n
   const app=await setup(t,JSON.stringify(["https://evil.test/private","../admin","alpha"])); try {
     await click("Search furniture"); assert.ok(app.requests[0],"product suggestion lookup"); assert.equal(app.requests.filter(r=>!r.url.startsWith('/api/catalogue/collections/all?')).length,0);
     await settle(app.requests[0],Response.json(pageFixture(["../admin"])));
-    assert.ok(document.querySelector('.search-discovery [role="alert"]')); assert.equal(document.querySelector('.search-discovery a[href*="admin"]'),null);
+    assert.ok(document.querySelector('[data-search-discovery] [role="alert"]')); assert.equal(document.querySelector('[data-search-discovery] a[href*="admin"]'),null);
   } finally { await app.close(); }
 });
 test("recent lookups reject mismatched identities without hiding independently loaded suggestions", async t => {
   const app=await setup(t,JSON.stringify(["alpha"])); try {
     await click("Search furniture"); const recent=app.requests.find(r=>r.url==="/api/catalogue/cards/alpha"); assert.ok(recent);
     await settle(recent,Response.json(cardEnvelope("bravo"))); await settle(app.requests.find(r=>r.url.startsWith('/api/catalogue/collections/all?'))!,page(["suggestion"]));
-    assert.deepEqual(names(),["suggestion Chair"]); assert.ok(document.querySelector('.search-recent-error'));
+    assert.deepEqual(names(),["suggestion Chair"]); assert.ok(document.querySelector('[data-search-recent-error]'));
   } finally { await app.close(); }
 });
 test("canonical product visits record bounded newest-first handles, without product data or duplicates", async t => {
@@ -178,7 +180,7 @@ test("search cards offer one clear product destination without unrelated save or
 test("changing query removes old cards and announcements before debounce expires",async t=>{
   const app=await setup(t);try{
     await click("Search furniture");await settle(app.requests[0]!,page(["initial"]));await fill("oak");await tick(t,250);await settle(app.requests[1]!,page(["oak","oak-two","oak-three","oak-four"],4,"oak"));
-    await fill("brass");assert.deepEqual(names(),[]);assert.doesNotMatch(document.querySelector('.search-discovery')?.textContent??"",/4 search results found for "brass"/);
+    await fill("brass");assert.deepEqual(names(),[]);assert.doesNotMatch(document.querySelector('[data-search-discovery]')?.textContent??"",/4 search results found for "brass"/);
   }finally{await app.close();}
 });
 
@@ -201,7 +203,7 @@ test("Search wraps current loading, retry and reset result controls as they chan
     await settle(app.requests[0]!,new Response(null,{status:503}));await tabKey(input(),true);assert.ok(document.activeElement === button("Retry search"));
     await tabKey(button("Retry search"));assert.ok(document.activeElement === input());await click("Retry search");await settle(app.requests[1]!,page(["alpha"]));
     await fill("oak");await tick(t,250);await settle(app.requests[2]!,page(["oak"],1,"oak"));
-    const all=document.querySelector<HTMLAnchorElement>('.search-view-all')!;await tabKey(input(),true);assert.ok(document.activeElement === all);
+    const all=document.querySelector<HTMLAnchorElement>('[data-search-view-all]')!;await tabKey(input(),true);assert.ok(document.activeElement === all);
     const reset=button("Reset search");const native=await tabKey(reset);assert.equal(native.defaultPrevented,false,"Reset is an interior control");
     await tabKey(all);assert.ok(document.activeElement === input());
     const enter=new dom.window.KeyboardEvent("keydown",{key:"Enter",bubbles:true,cancelable:true});await act(async()=>input().dispatchEvent(enter));assert.equal(enter.defaultPrevented,false,"implicit form submission remains native");

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
 import { ChevronDown, ChevronUp, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 
 const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1432px) 724px, calc(100vw - 708px)";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.

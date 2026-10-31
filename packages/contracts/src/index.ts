@@ -14,6 +14,7 @@ export {
   contentLinkSchema,
   contentImageSchema,
   homeMerchandisingSchema,
+  productHighlightsSchema,
   homeCollectionTileSchema,
   templateMediaKeys,
   templateMediaResponsiveKeys,
@@ -25,6 +26,7 @@ export {
 export type {
   StorefrontContent,
   HomeMerchandising,
+  ProductHighlights,
   HomeCollectionTile,
   HomeCityKey,
   HomeCitiesLayout,

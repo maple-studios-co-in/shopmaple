@@ -73,7 +73,7 @@ test("homepage includes source Instagram posts and the original customer testimo
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     const posts = [
-      ...doc.querySelectorAll<HTMLAnchorElement>(".home-instagram-posts a"),
+      ...doc.querySelectorAll<HTMLAnchorElement>('[aria-label="Instagram posts"] a'),
     ];
     assert.equal(
       posts.length,
@@ -89,23 +89,23 @@ test("homepage includes source Instagram posts and the original customer testimo
     );
     assert.ok(
       doc
-        .querySelector(".home-testimonial")
+        .querySelector("[data-home-testimonial]")
         ?.textContent?.includes(
           "Getting our sofa made by Maple was a completely hassle-free experience.",
         ),
     );
     assert.ok(
-      doc.querySelector(".home-testimonial video source")?.getAttribute("src"),
+      doc.querySelector("[data-home-testimonial] video source")?.getAttribute("src"),
     );
     const poster = doc
-      .querySelector(".home-testimonial video")
+      .querySelector("[data-home-testimonial] video")
       ?.getAttribute("poster");
     assert.ok(
       poster && !poster.includes("_small.jpg") && poster.includes("width=960"),
       "Customer video needs the verified full-resolution poster",
     );
-    assert.ok(doc.querySelector(".home-values"));
-    assert.ok(doc.querySelector(".home-cities"));
+    assert.ok(doc.querySelector("[data-home-values]"));
+    assert.ok(doc.querySelector("[data-home-cities]"));
   } finally {
     globalThis.fetch = previousFetch;
   }
@@ -139,11 +139,11 @@ test("homepage preserves the original brand ticker and four offer collections", 
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     assert.equal(
-      doc.querySelector(".home-ticker-copy")?.textContent,
+      doc.querySelector("[data-ticker-copy]")?.textContent,
       "Elegance isn't found. At Maple, it is custom-built.",
     );
     assert.deepEqual(
-      [...doc.querySelectorAll(".home-offers a")].map((a) =>
+      [...doc.querySelectorAll("[data-home-offers] a")].map((a) =>
         a.getAttribute("href"),
       ),
       [

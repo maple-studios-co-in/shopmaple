@@ -28,13 +28,30 @@ async function mount(checkoutEnabled: boolean) {
 test("the cart stops disclaiming online payment once the API reports live checkout", async () => {
   let cleanup = await mount(true);
   try {
-    const summary = document.querySelector(".cart-summary")!.textContent!;
+    const summary = document.querySelector("[data-cart-summary]")!.textContent!;
     assert.doesNotMatch(summary, /Online payment is not available yet/);
     assert.match(summary, /Continue to checkout/);
     assert.equal(document.querySelector('a[href="/checkout"]')!.textContent, "Continue to checkout");
   } finally { await cleanup(); }
   cleanup = await mount(false);
   try {
-    assert.match(document.querySelector(".cart-summary")!.textContent!, /Online payment is not available yet/);
+    assert.match(document.querySelector("[data-cart-summary]")!.textContent!, /Online payment is not available yet/);
+  } finally { await cleanup(); }
+});
+
+test("cart lines and the summary are reached through data hooks, with no legacy cart classes left", async () => {
+  const cleanup = await mount(false);
+  try {
+    const cart = document.querySelector("[data-store][data-cart]")!;
+    assert.equal(cart.getAttribute("aria-label"), "Your saved cart");
+    const lines = [...cart.querySelectorAll("[data-cart-line]")];
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0]!.querySelector("[data-cart-image]")?.getAttribute("href"), "/products/chair");
+    assert.equal(lines[0]!.querySelector("[data-cart-quantity] span")?.textContent, "1");
+    assert.ok(lines[0]!.querySelector('[data-cart-remove][aria-label="Remove Chair"]'));
+    assert.match(cart.querySelector("[data-cart-summary] [data-cart-disclosure]")!.textContent!, /Online payment is not available yet/);
+    const legacy = new Set(["cart-lines", "cart-line", "cart-image", "muted", "error-text", "quantity-row", "quantity-control",
+      "icon-button", "cart-summary", "button", "full-width", "preview-disclosure", "empty-state"]);
+    assert.deepEqual([...document.querySelectorAll("[class]")].flatMap((element) => [...element.classList]).filter((name) => legacy.has(name)), []);
   } finally { await cleanup(); }
 });

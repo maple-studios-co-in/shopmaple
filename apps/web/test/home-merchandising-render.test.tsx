@@ -84,7 +84,7 @@ test("both homepage rails expose a visible heading and a context-labelled browse
       const browse = rail.querySelector("header a");
       assert.equal(browse?.getAttribute("href"), href, "browse action must reach the source collection, not a product or Shopify");
       assert.equal(browse?.getAttribute("aria-label"), `View all ${heading}`);
-      assert.equal(browse?.textContent, "View all →");
+      assert.equal(browse?.textContent, `View all ${heading?.toLowerCase()} →`);
     }
   }
 });
@@ -99,24 +99,24 @@ test("published rail headings are used for visible navigation without changing c
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
   const { doc } = await renderHome({ merchandising: customMerchandising() });
-  // Categories: two mobile columns, six desktop columns inside a 1440px container.
-  assert.deepEqual(attributes(doc, ".home-categories img", "sizes"), Array(2).fill(
-    "(max-width:749px) calc((100vw - 52px) / 2), (min-width:1440px) 210px, calc((100vw - 180px) / 6)",
+  // Categories: three mobile columns, six desktop circles of at most 170px inside the 1440px page.
+  assert.deepEqual(attributes(doc, "[data-home-categories] img", "sizes"), Array(2).fill(
+    "(max-width:767px) calc((100vw - 64px) / 3), (min-width:1440px) 170px, calc((100vw - 216px) / 6)",
   ));
-  // Offers: 70% mobile rail cards, four desktop columns, with existing gaps/padding.
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("sizes"),
-    "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)");
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"),
+  // Offers: 70% mobile rail cards, four desktop cards in the page's gutters.
+  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("sizes"),
+    "(max-width:767px) 70vw, (min-width:1440px) 328px, calc((100vw - 144px) / 4)");
+  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("src"),
     "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
 });
 
 test("legacy published homepage preserves original collection copy, media, links and both product orders", async () => {
   const { doc } = await renderHome();
-  assert.deepEqual(texts(doc, ".home-categories h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
-  assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
-  assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
+  assert.deepEqual(texts(doc, "[data-home-categories] h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
+  assert.deepEqual(attributes(doc, "[data-home-categories] > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
+  assert.deepEqual(attributes(doc, "[data-home-categories] img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
   // SVG-wrapped covers resolve to the CDN raster so next/image can resize them (lib/shopify-artwork.ts).
-  assert.deepEqual(attributes(doc, ".home-categories img", "src"), [
+  assert.deepEqual(attributes(doc, "[data-home-categories] img", "src"), [
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?width=600",
@@ -124,9 +124,9 @@ test("legacy published homepage preserves original collection copy, media, links
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?width=600",
   ]);
-  assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
-  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
-  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "src"), [
+  assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
+  assert.deepEqual(attributes(doc, "[data-home-offers] img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
+  assert.deepEqual(attributes(doc, "[data-home-offers] img", "src"), [
     "https://shop.maplefurnishers.com/cdn/shop/collections/Clearance_Sale.webp?v=1778257635",
     "https://shop.maplefurnishers.com/cdn/shop/collections/min_30_off_sale_banner.webp?v=1778255612",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771",
@@ -140,14 +140,14 @@ test("published tiles follow saved order, visibility, full image URLs and access
   const { doc } = await renderHome({ merchandising: customMerchandising(), sections: [
     { key: "offers", enabled: true }, { key: "bestsellers", enabled: false }, { key: "categories", enabled: true },
   ] });
-  assert.deepEqual(attributes(doc, ".managed-home-section", "data-home-section"), ["offers", "categories"]);
-  assert.deepEqual(texts(doc, ".home-categories h3"), ["Restful beds", "Everyday seats"]);
-  assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/beds", "/collections/dining-chair"]);
-  assert.deepEqual(attributes(doc, ".home-categories img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
-  assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
-  assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("alt"), "Discover our furniture offer");
+  assert.deepEqual(attributes(doc, "[data-home-section]", "data-home-section"), ["offers", "categories"]);
+  assert.deepEqual(texts(doc, "[data-home-categories] h3"), ["Restful beds", "Everyday seats"]);
+  assert.deepEqual(attributes(doc, "[data-home-categories] > a", "href"), ["/collections/beds", "/collections/dining-chair"]);
+  assert.deepEqual(attributes(doc, "[data-home-categories] img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
+  assert.deepEqual(attributes(doc, "[data-home-categories] img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
+  assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
+  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("alt"), "Discover our furniture offer");
   assert.equal(doc.querySelector("[data-product-card]"), null);
 });
 
@@ -169,9 +169,9 @@ test("published rails preserve product order, omit missing, unavailable and unpu
 
 test("explicitly empty merchandising keeps rails honestly empty without restoring legacy products or tiles", async () => {
   const { doc } = await renderHome({ merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } });
-  assert.equal(doc.querySelectorAll("[data-product-card], .home-categories > a, .home-offer-tiles > a").length, 0);
-  assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
-  assert.deepEqual(attributes(doc, ".home-catalogue-unavailable a", "href"), ["/collections/all", "/collections/all"]);
+  assert.equal(doc.querySelectorAll("[data-product-card], [data-home-categories] > a, [data-home-offers] > a").length, 0);
+  assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 2);
+  assert.deepEqual(attributes(doc, "[data-catalogue-unavailable] a", "href"), ["/collections/all", "/collections/all"]);
 });
 
 test("a rail with no published catalogue products shows the existing unavailable message", async () => {
@@ -180,5 +180,5 @@ test("a rail with no published catalogue products shows the existing unavailable
   merchandising.chairs = [];
   const { doc } = await renderHome({ merchandising, products: { "private-product": product("private-product", 90000, false) } });
   assert.equal(doc.querySelectorAll("[data-product-card]").length, 0);
-  assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
+  assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 2);
 });

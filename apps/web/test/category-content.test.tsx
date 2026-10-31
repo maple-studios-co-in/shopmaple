@@ -71,31 +71,31 @@ test("category defaults preserve original copy, artwork, local collection links,
   const doc = await render("sofas");
   assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
   assert.deepEqual(
-    [...doc.querySelectorAll(".landing-products h2")].map((n) => n.textContent),
+    [...doc.querySelectorAll("[data-category-rail] h2")].map((n) => n.textContent),
     ["Best Sellers", "Sofas", "Bedrooms", "Living", "Paired Together"],
   );
   assert.equal(
     doc.querySelector(
-      '.landing-categories a[href="/collections/wooden-sofas"] h2',
+      '[data-category-tile][href="/collections/wooden-sofas"]',
     )?.textContent,
     "Wooden Sofas",
   );
   assert.match(
-    doc.querySelector(".landing-values p")?.textContent ?? "",
+    doc.querySelector("[data-value-card] p")?.textContent ?? "",
     /Where nature begins the story/,
   );
   assert.ok(
-    [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      n.getAttribute("src")?.includes("2_-_Sofa_web_banner_Outddor"),
+    [...doc.querySelectorAll("[data-room-card] img")].some((n) =>
+      n.getAttribute("src")?.includes("2_-_Sofa_Mobile_banner_Outdoor"),
     ),
   );
   assert.ok(
     doc.querySelector(
-      '.landing-source-product a[href^="/pages/contact?product="]',
+      '[data-source-product] a[href^="/pages/contact?product="]',
     ),
   );
   assert.equal(
-    doc.querySelector('.landing-source-product a[href^="/products/"]'),
+    doc.querySelector('[data-source-product] a[href^="/products/"]'),
     null,
   );
 });
@@ -110,44 +110,44 @@ test("only published category overrides change the selected page while preservin
     "Sofas for everyday living",
   );
   assert.match(
-    doc.querySelector(".landing-intro p")?.textContent ?? "",
+    doc.querySelector("[data-category-intro] p")?.textContent ?? "",
     /Made for your family and your home/,
   );
   assert.equal(
     doc.querySelector(
-      '.landing-categories a[href="/collections/wooden-sofas"] h2',
+      '[data-category-tile][href="/collections/wooden-sofas"]',
     )?.textContent,
     "Solid wood seating",
   );
   assert.deepEqual(
-    [...doc.querySelectorAll(".landing-products h2")].map((n) => n.textContent),
+    [...doc.querySelectorAll("[data-category-rail] h2")].map((n) => n.textContent),
     ["Customer favourites", "Sofas", "Living", "Paired Together"],
   );
   assert.equal(
-    doc.querySelector(".landing-difference h2")?.textContent,
+    doc.querySelector("[data-category-values] h2")?.textContent,
     "Make it yours",
   );
   assert.equal(
-    doc.querySelector(".landing-difference p")?.textContent,
+    doc.querySelector("[data-category-values] [data-eyebrow]")?.textContent,
     "Made by Maple",
   );
   assert.equal(
-    doc.querySelector(".landing-values h3")?.textContent,
+    doc.querySelector("[data-value-card] h3")?.textContent,
     "Natural grain",
   );
   assert.equal(
-    doc.querySelector(".landing-values p")?.textContent,
+    doc.querySelector("[data-value-card] p")?.textContent,
     "Every grain tells its own story.",
   );
   assert.ok(
-    [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      n.getAttribute("src")?.includes("2_-_Sofa_web_banner_Outddor"),
+    [...doc.querySelectorAll("[data-room-card] img")].some((n) =>
+      n.getAttribute("src")?.includes("2_-_Sofa_Mobile_banner_Outdoor"),
     ),
   );
   const tables = await render("tables", content);
   assert.equal(tables.querySelector("h1")?.textContent, "Tables");
   assert.equal(
-    tables.querySelector(".landing-products h2")?.textContent,
+    tables.querySelector("[data-category-rail] h2")?.textContent,
     "Best Sellers",
   );
   const unpublished = await render("sofas");
