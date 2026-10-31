@@ -16,8 +16,13 @@ These rules apply across the monorepo. Read any more-specific `AGENTS.md` before
 ## Admin UI
 
 - The shop admin is built on shadcn/ui. Components come from `apps/web/components/ui` (owned code from `components.json`); compose them with Tailwind utilities in the admin components.
-- Write no new hand-written CSS for the admin. `apps/web/styles/admin.css` is the token file: `--admin-*` tokens, their `--crm-*` aliases, the shadcn variable mapping, the Tailwind imports and the scoped base. Change a token there instead of adding a rule.
-- Tailwind is scoped to the admin: no global preflight, and the storefront's stylesheets must not change because of admin work. Overlays render inside `.shop-admin` through `AdminRoot`.
+- Write no new hand-written CSS for the admin. `apps/web/styles/admin.css` is the token file: `--admin-*` tokens, the shadcn variable mapping and the scoped base. Change a token there instead of adding a rule. Overlays render inside `.shop-admin` through `AdminRoot`.
+
+## Storefront UI
+
+- The storefront is moving to the "Maple Website review" Figma designs page by page ([docs/storefront-redesign.md](docs/storefront-redesign.md)). Rebuilt components live in `apps/web/components/store` and use Tailwind utilities with the storefront tokens (`bg-cream`, `text-espresso`, `text-taupe`, `border-sand`, `bg-brand`, `font-body`, `font-serif`, `text-label` ... `text-h1`); the old path re-exports them. Wrap rebuilt markup in `data-store` so the scoped base applies.
+- `apps/web/styles/tailwind.css` is the one Tailwind build for the admin and the storefront: no global preflight, only rebuilt sources scanned. Write no new hand-written storefront CSS; when a component moves to `components/store`, delete the legacy rules that styled it. Pages the designs do not cover keep their current look until they are rebuilt.
+- Reach rebuilt markup in tests through `data-*` hooks, not class names.
 
 ## Security and delivery
 
