@@ -103,7 +103,7 @@ test("acknowledged removal removes only its line and preserves the remaining car
   try {
     await click(button("Remove Table"));
     await session.finish(onlyChair, "/api/cart/items/table");
-    assert.equal(document.querySelectorAll(".cart-line").length, 1);
+    assert.equal(document.querySelectorAll("[data-cart-line]").length, 1);
     assert.ok(button("Remove Chair"));
     assert.equal(sessionStorage.getItem("maple-cart-pending-v1"), null);
   } finally { await session.cleanup(); }
@@ -115,7 +115,7 @@ test("failed removal keeps the line and focused control available for recovery",
     const remove = button("Remove Chair");
     await click(remove);
     await session.finish(cart, "/api/cart/items/chair", 503);
-    assert.equal(document.querySelectorAll(".cart-line").length, 2);
+    assert.equal(document.querySelectorAll("[data-cart-line]").length, 2);
     assert.ok(document.activeElement === remove, "failed removal retains its focused control");
     assert.ok(button("Check cart update"));
   } finally { await session.cleanup(); }

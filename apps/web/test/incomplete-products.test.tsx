@@ -88,9 +88,9 @@ test("failed product images retain a neutral accessible fallback", async () => {
 test("an unpriced saved cart uses unknown totals and an enquiry instead of checkout", async () => {
   const cart: Cart = { ...empty, itemCount: 1, subtotalPaise: null, items: [{ variantId: "option", handle: model.handle, title: model.title, variantTitle: "Natural", image: "", pricePaise: null, lineTotalPaise: null, quantity: 1, available: true, cartable: false, stockPolicy: "stocked" }] };
   await mount(<CartContents />, () => {
-    assert.match(document.querySelector(".cart-summary strong")!.textContent!, /Price on request/);
+    assert.match(document.querySelector("[data-cart-summary] strong")!.textContent!, /Price on request/);
     assert.equal(document.querySelector('a[href="/checkout"]'), null);
-    assert.ok(document.querySelector('.cart-summary a[href="/pages/contact"]'));
+    assert.ok(document.querySelector('[data-cart-summary] a[href="/pages/contact"]'));
     assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Increase quantity of New Model"]')!.disabled, true);
     assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Decrease quantity of New Model"]')!.disabled, false);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
