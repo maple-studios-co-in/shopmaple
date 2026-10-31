@@ -10,7 +10,7 @@ const render = (element: React.ReactNode) => new JSDOM(renderToStaticMarkup(elem
 
 test("footer preserves its policy destinations behind the original disclosure", () => {
   const doc = render(<Footer />);
-  const disclosure = doc.querySelector(".maple-footer-bottom details");
+  const disclosure = doc.querySelector("[data-footer-bottom] details");
   assert.ok(disclosure, "Footer policies should be a collapsed disclosure instead of an expanded link row");
   assert.equal(disclosure.hasAttribute("open"), false);
   assert.equal(disclosure.querySelector("summary")?.textContent, "Terms and Policies");

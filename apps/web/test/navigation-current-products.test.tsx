@@ -24,7 +24,7 @@ function button(label: string) {
   assert.ok(element, `Missing ${label}`); return element;
 }
 async function click(label: string) { await act(async () => { const b = button(label); b.focus(); b.click(); }); }
-function cards() { return [...document.querySelectorAll<HTMLAnchorElement>(".maple-menu-product")]; }
+function cards() { return [...document.querySelectorAll<HTMLAnchorElement>("[data-menu-product]")]; }
 async function setup(t: TestContext, open = true) {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const original = globalThis.fetch, requests: Request[] = [];

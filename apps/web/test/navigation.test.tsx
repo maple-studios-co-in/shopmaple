@@ -109,13 +109,13 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
         (b) => b.textContent === text,
       )!;
     await act(async () => button("Living Room").click());
-    assert.equal(document.querySelectorAll(".maple-drawer-group").length, 4);
-    assert.equal(document.querySelectorAll(".maple-menu-product").length, 2);
+    assert.equal(document.querySelectorAll("[data-drawer-group]").length, 4);
+    assert.equal(document.querySelectorAll("[data-menu-product]").length, 2);
     await act(async () =>
-      document.querySelector<HTMLButtonElement>(".maple-drawer-back")!.click(),
+      document.querySelector<HTMLButtonElement>("[data-drawer-back]")!.click(),
     );
-    assert.equal(document.querySelectorAll(".maple-drawer-main > *").length, 5);
-    assert.equal(document.querySelectorAll(".maple-menu-product").length, 4);
+    assert.equal(document.querySelectorAll("[data-drawer-main] > *").length, 5);
+    assert.equal(document.querySelectorAll("[data-menu-product]").length, 4);
     assert.ok(
       document.querySelector('dialog a[href="/favourites"]'),
       "saved furniture must remain reachable on mobile",
@@ -237,7 +237,7 @@ for (const living of [false, true]) {
         const trigger = [...document.querySelectorAll("button")].find(button => button.textContent === "Living Room")!;
         await act(async () => trigger.click());
       }
-      const product = document.querySelector<HTMLAnchorElement>(".maple-menu-product")!;
+      const product = document.querySelector<HTMLAnchorElement>("[data-menu-product]")!;
       assert.equal(product.getAttribute("href"), living ? "/products/morik-media-unit" : "/products/veyra-chest-of-drawers");
       await activateLink(product);
       assert.equal(document.querySelector("dialog")!.open, false, "selected product must not remain covered by the drawer");
@@ -248,7 +248,7 @@ for (const living of [false, true]) {
 
 test("modified featured-product clicks preserve native link behavior while closing the drawer", async () => {
   await withControlledDrawer(async () => {
-    const product = document.querySelector<HTMLAnchorElement>(".maple-menu-product")!;
+    const product = document.querySelector<HTMLAnchorElement>("[data-menu-product]")!;
     await activateLink(product, true);
     assert.equal(document.querySelector("dialog")!.open, false);
     assert.equal(document.body.style.overflow, "scroll");

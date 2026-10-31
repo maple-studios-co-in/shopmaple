@@ -44,7 +44,7 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
       root.render(<DesktopNavigation {...{ siteChrome: value }} />),
     );
     const trigger = document.querySelector<HTMLButtonElement>(
-      ".maple-menu-trigger",
+      "[data-menu-trigger]",
     )!;
     assert.equal(trigger.textContent, "Lounge");
     await act(async () => trigger.click());
@@ -77,7 +77,7 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
     );
     assert.equal(
       document
-        .querySelector(".maple-menu-trigger")
+        .querySelector("[data-menu-trigger]")
         ?.getAttribute("aria-expanded"),
       "true",
     );
@@ -118,20 +118,20 @@ test("mobile preset keeps current featured selection after rename and Back resto
       ),
     );
     assert.deepEqual(
-      [...document.querySelectorAll(".maple-drawer-main > *")].map(
+      [...document.querySelectorAll("[data-drawer-main] > *")].map(
         (e) => e.textContent,
       ),
       ["Lounge"],
     );
     assert.deepEqual(
-      [...document.querySelectorAll(".maple-drawer-quick-links a")].map((e) =>
+      [...document.querySelectorAll("[data-drawer-quick-links] a")].map((e) =>
         e.textContent?.trim(),
       ),
       ["My picks"],
     );
     await act(async () =>
       document
-        .querySelector<HTMLButtonElement>(".maple-drawer-main button")!
+        .querySelector<HTMLButtonElement>("[data-drawer-main] button")!
         .click(),
     );
     await frame();
@@ -140,13 +140,13 @@ test("mobile preset keeps current featured selection after rename and Back resto
       "Back from Lounge",
     );
     assert.deepEqual(
-      [...document.querySelectorAll(".maple-menu-product")].map((e) =>
+      [...document.querySelectorAll("[data-menu-product]")].map((e) =>
         e.getAttribute("href"),
       ),
       ["/products/morik-media-unit", "/products/zylen-media-unit"],
     );
     assert.match(
-      document.querySelector(".maple-menu-product")!.textContent!,
+      document.querySelector("[data-menu-product]")!.textContent!,
       /4,321/,
     );
     value.navigation[0]!.label = "Relax";
@@ -161,12 +161,12 @@ test("mobile preset keeps current featured selection after rename and Back resto
     );
     assert.equal(
       document
-        .querySelector(".maple-drawer-submenu")
+        .querySelector("[data-drawer-submenu]")
         ?.getAttribute("aria-label"),
       "Relax",
     );
     await act(async () =>
-      document.querySelector<HTMLButtonElement>(".maple-drawer-back")!.click(),
+      document.querySelector<HTMLButtonElement>("[data-drawer-back]")!.click(),
     );
     await frame();
     assert.equal(document.activeElement?.textContent, "Relax");
@@ -201,14 +201,14 @@ for (const mode of ["desktop", "mobile"] as const) {
         document
           .querySelector<HTMLButtonElement>(
             mode === "desktop"
-              ? ".maple-menu-trigger"
-              : ".maple-drawer-main button",
+              ? "[data-menu-trigger]"
+              : "[data-drawer-main] button",
           )!
           .click(),
       );
       await frame();
       const target = document.querySelector<HTMLAnchorElement>(
-        mode === "desktop" ? "[data-mega] a" : ".maple-drawer-submenu a",
+        mode === "desktop" ? "[data-mega] a" : "[data-drawer-submenu] a",
       )!;
       await act(async () => target.focus());
       value.navigation[0]!.enabled = false;
@@ -216,7 +216,7 @@ for (const mode of ["desktop", "mobile"] as const) {
       await frame();
       assert.equal(
         !!document.querySelector(
-          "[data-mega],.maple-drawer-submenu,.maple-drawer-back",
+          "[data-mega],[data-drawer-submenu],[data-drawer-back]",
         ),
         false,
       );
@@ -241,7 +241,7 @@ for (const mode of ["desktop", "mobile"] as const) {
       await render();
       assert.equal(
         !!document.querySelector(
-          ".maple-menu-trigger,.maple-drawer-main button",
+          "[data-menu-trigger],[data-drawer-main] button",
         ),
         false,
         "no empty submenu trigger",
@@ -249,7 +249,7 @@ for (const mode of ["desktop", "mobile"] as const) {
       assert.equal(
         document
           .querySelector(
-            mode === "desktop" ? ".desktop-nav a" : ".maple-drawer-main a",
+            mode === "desktop" ? "[data-desktop-nav] a" : "[data-drawer-main] a",
           )
           ?.getAttribute("href"),
         "/collections/all",
@@ -269,7 +269,7 @@ test("renamed enquiry links expose the edited label instead of the old default a
       root.render(<DesktopNavigation siteChrome={value} />),
     );
     await act(async () =>
-      document.querySelector<HTMLButtonElement>(".maple-menu-trigger")!.click(),
+      document.querySelector<HTMLButtonElement>("[data-menu-trigger]")!.click(),
     );
     assert.equal(
       document

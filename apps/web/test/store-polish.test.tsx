@@ -14,7 +14,7 @@ test('footer policy popover dismisses outside and on Escape without dismissing a
  const root=createRoot(document.getElementById('root')!);
  try{
   await act(async()=>root.render(<Footer/>));
-  const details=document.querySelector<HTMLDetailsElement>('.maple-footer-policies')!;
+  const details=document.querySelector<HTMLDetailsElement>('[data-footer-bottom] details')!;
   await act(async()=>details.querySelector('summary')!.click());assert.equal(details.open,true);
   await act(async()=>details.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true})));assert.equal(details.open,true);
   await act(async()=>document.getElementById('outside')!.dispatchEvent(new dom.window.Event('pointerdown',{bubbles:true})));assert.equal(details.open,false);

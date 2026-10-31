@@ -100,7 +100,7 @@ test("footer routes customer care and bulk collaboration to their respective bus
       ["tel:+919262968727", "+91 92629 68727"],
       ["tel:+918796130252", "+91 87961 30252"],
     ]);
-    const bulk = [...document.querySelectorAll(".maple-footer-contact > div")]
+    const bulk = [...document.querySelectorAll("[data-footer-contact] > div")]
       .find((section) => section.querySelector("h3")?.textContent === "For Bulk Order/Collaboration:");
     const email = bulk?.querySelector<HTMLAnchorElement>('a[href^="mailto:"]');
     assert.equal(email?.getAttribute("href"), "mailto:aditya@maplefurnishers.com");
@@ -117,7 +117,7 @@ test("contact page phone action dials the current business number", async () => 
     globalThis.fetch = previousFetch;
   }
   await mount(page, () => {
-    const link = document.querySelector<HTMLAnchorElement>('.cp-contact-links a[href^="tel:"]');
+    const link = document.querySelector<HTMLAnchorElement>('[data-contact-links] a[href^="tel:"]');
     assert.equal(link?.getAttribute("href"), "tel:+918796130252");
     assert.equal(link?.textContent?.trim(), "+91 87961 30252");
   });
@@ -278,11 +278,11 @@ test("hero keeps product discovery clear and only downloads its film when reques
         "the film should not consume bandwidth before a shopper requests it",
       );
       assert.match(
-        document.querySelector(".hero-film")!.textContent!,
+        document.querySelector("[data-hero-film]")!.textContent!,
         /Explore Collection/,
       );
       assert.match(
-        document.querySelector(".hero-categories")!.textContent!,
+        document.querySelector("[data-hero-tiles]")!.textContent!,
         /Starting from ₹25,000/,
       );
       await act(async () =>
