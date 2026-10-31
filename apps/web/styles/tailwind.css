@@ -253,6 +253,11 @@ html:has([data-site-header]) *::-webkit-scrollbar { display: none !important; wi
 /* spacing, padded inputs). :where() keeps each rule at an element's   */
 /* weight, so any utility class wins.                                  */
 /* ------------------------------------------------------------------ */
+:where([data-store]) {
+  /* The admin's preview frame defines these; the storefront draws with its own radii and shadows. */
+  --admin-radius-s: initial; --admin-radius-m: initial; --admin-radius-l: initial;
+  --admin-shadow-s: initial; --admin-shadow-m: initial; --admin-shadow-lift: initial; --admin-ease: initial;
+}
 :where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; text-transform: none; }
 :where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
 :where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }

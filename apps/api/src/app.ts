@@ -107,12 +107,24 @@ export function createApp(
         variants: { where: { published: true }, orderBy: { id: "asc" } },
       },
     });
-    if (!p)
+    if (!p) {
+      // An earlier address (a renamed keeri-<id> one) moves permanently to the current one.
+      const alias = await db.productHandleAlias.findUnique({
+        where: { handle: req.params.handle },
+        select: { product: { select: { handle: true, published: true } } },
+      });
+      if (alias?.product.published) {
+        res
+          .set("Cache-Control", "public, max-age=300, s-maxage=3600")
+          .redirect(308, `/api/products/${encodeURIComponent(alias.product.handle)}`);
+        return;
+      }
       throw new HttpError(
         404,
         "PRODUCT_NOT_FOUND",
         "We couldn't find that product.",
       );
+    }
     res
       .set("Cache-Control", "public, max-age=30, s-maxage=60")
       .json(serializeProduct(p));

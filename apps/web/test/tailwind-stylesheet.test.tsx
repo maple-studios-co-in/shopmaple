@@ -73,7 +73,7 @@ test("the global base weighs nothing and the storefront base reaches redesigned 
   const base = sharedRules.slice(0, baseEnd + 1).filter((rule) => rule.parent?.type === "root" || (rule.parent?.type === "atrule" && (rule.parent as postcss.AtRule).name === "media"));
   const scoped = base.filter((rule) => rule.selector.includes("[data-store]"));
   assert.ok(scoped.length > 0);
-  for (const rule of scoped) assert.match(rule.selector, /^:where\(\[data-store\]\) /, `${rule.selector} is scoped to [data-store]`);
+  for (const rule of scoped) assert.match(rule.selector, /^:where\(\[data-store\]\)( |$)/, `${rule.selector} is scoped to [data-store]`);
   // Checkout's frozen markup keeps its legacy class rules at their old weights; its element rules
   // reach only the checkout roots.
   const checkout = new Set([".button", ".button:hover", ".button.secondary", ".button.secondary:hover", ".button-row", ".empty-state", ".empty-state h2", ".empty-state p", ".empty-state .button", ".muted", ".error-text", ".checkout-state", ".checkout-state h1"]);
@@ -142,4 +142,13 @@ test("no utility lands on a class name the frozen checkout still uses", () => {
     .map((rule) => /^\.([a-z][a-z0-9-]*)$/.exec(rule.selector)?.[1])
     .filter((name): name is string => Boolean(name) && legacy.has(name!) && name !== "sr-only");
   assert.deepEqual([...new Set(clashes)], [], "Utilities generated under legacy class names");
+});
+
+test("redesigned storefront markup ignores the admin's radius and shadow tokens, so the admin preview matches the live page", () => {
+  const reset = sharedRules.find((rule) => rule.selector === ":where([data-store])");
+  assert.ok(reset, "A rule on [data-store] itself resets the admin tokens");
+  const props = new Map<string, string>();
+  reset!.walkDecls((decl) => { props.set(decl.prop, decl.value); });
+  for (const token of ["--admin-radius-s", "--admin-radius-m", "--admin-radius-l", "--admin-shadow-s", "--admin-shadow-m", "--admin-shadow-lift", "--admin-ease"])
+    assert.equal(props.get(token), "initial", `${token} falls back to the storefront value`);
 });

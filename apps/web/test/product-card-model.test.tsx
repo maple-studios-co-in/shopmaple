@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -66,4 +67,32 @@ test("card keeps save and unsave behaviour without requiring the detailed catalo
     assert.equal(button.getAttribute("aria-pressed"), "false");
     assert.deepEqual(JSON.parse(localStorage.getItem("maple-favourites")!), []);
   });
+});
+
+test("the save button draws only its own circle (no native border or padding) and the image fallback text meets 4.5:1", async () => {
+  await card({ ...base, images: [], variants: [variant("only", 1000)] }, (document) => {
+    const save = document.querySelector("[data-save-button]")!;
+    assert.match(save.className, /\bborder-0\b/);
+    assert.match(save.className, /\bp-0\b/);
+    assert.match(save.className, /after:-inset-\[7px\]/, "A 44 px tap target around the 30 px circle");
+    assert.doesNotMatch(document.querySelector("[data-card-image]")!.className, /text-taupe/);
+  });
+});
+
+test("the card stays light enough for the homepage: no class-merging library in its module graph", () => {
+  const source = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /@\/lib\/utils|tailwind-merge|clsx/, "cn pulls tailwind-merge (about 28 KB) into the homepage's first load");
+});
+
+test("only the save button runs in the browser: the card itself renders on the server", () => {
+  const card = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  const save = readFileSync(new URL("../components/store/save-button.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /^"use client"/m);
+  assert.match(save, /^"use client"/m);
+});
+
+test("the header's wishlist drawer loads the list on demand, so cards stay out of every page's first-load JavaScript", () => {
+  const drawer = readFileSync(new URL("../components/store/wishlist-drawer.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(drawer, /import \{[^}]*Favourites[^}]*\} from "\.\/favourites"/);
+  assert.match(drawer, /dynamic\(\(\) => import\("\.\/favourites"\)/);
 });

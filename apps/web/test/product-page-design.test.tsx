@@ -19,14 +19,14 @@ const product: Product = {
   ],
 };
 const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
-async function mount(check: (doc: Document) => void) {
+async function mount(check: (doc: Document) => void | Promise<void>, value: Product = product) {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json(empty);
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
   try {
-    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={product} /></ShopProvider></AppRouterContext.Provider>));
-    check(document);
+    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} /></ShopProvider></AppRouterContext.Provider>));
+    await check(document);
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = previous;
@@ -42,7 +42,7 @@ test("the purchase card follows the design: title, price with discount chip, des
     assert.equal(card.querySelector("[data-price-block] del")?.textContent, "Rs. 35,400.00");
     assert.equal(card.querySelector("[data-description]")?.textContent, "A soft barrel-back accent chair.");
     assert.match(card.querySelector("[data-variants] legend")?.textContent ?? "", /^Option: Rust/);
-    const custom = card.querySelector<HTMLAnchorElement>("[data-variants] a[data-customization]")!;
+    const custom = card.querySelector<HTMLAnchorElement>("a[data-customization]")!;
     assert.equal(custom.textContent?.trim(), "Customization available");
     assert.match(custom.getAttribute("href") ?? "", /^\/pages\/contact\?product=Nola\+Accent\+Chair/);
   });
@@ -68,4 +68,57 @@ test("the details read as the design's 'Precision in every detail' section besid
     assert.deepEqual([...section.querySelectorAll("[data-accordions] summary")].map((summary) => summary.textContent), ["Details", "Materials + Care", "Shipping + Returns", "Dimensions & specifications"]);
     assert.equal(section.querySelector("img")?.getAttribute("src")?.includes("nola-2"), true, "The second photo pictures the details");
   });
+});
+
+const rich = (heading: string, ...paragraphs: string[]) => ({ type: "root" as const, children: [
+  { type: "heading" as const, level: 3, children: [{ type: "text" as const, value: heading }] },
+  ...paragraphs.map((value) => ({ type: "paragraph" as const, children: [{ type: "text" as const, value }] })),
+] });
+
+test("admin rich text keeps its headings and paragraph spacing, and plain source text keeps its line breaks", async () => {
+  const captured = { ...product, pdpContent: { source: "shopify-metafields" as const, sourceProductId: "gid://shopify/Product/1", capturedAt: "2026-10-26T00:00:00Z",
+    details: rich("Frame", "Solid oak.", "Hand finished."), materialsCare: rich("Care", "Dry cloth."), shippingReturns: rich("Delivery", "Ask us.") } };
+  await mount((doc) => {
+    const panels = [...doc.querySelectorAll("[data-accordions] [data-prose]")];
+    assert.equal(panels.length, 4, "Every accordion panel is styled as prose");
+    for (const panel of panels) {
+      assert.match(panel.className, /\[&_:is\(h2,h3,h4,h5,h6\)\]:font-serif/, "Headings keep a heading style");
+      assert.match(panel.className, /\[&_p\+p\]:mt-2\.5/, "Paragraphs keep their spacing");
+    }
+    assert.equal(panels[0]!.querySelector("h3")?.textContent, "Frame");
+  }, captured as Product);
+  await mount((doc) => {
+    const details = doc.querySelector("[data-accordions] [data-prose] p")!;
+    assert.match(details.className, /whitespace-pre-line/, "Line breaks in source text survive");
+  }, { ...product, sourceDetails: { details: "Line one\nLine two", materials: null, dimensions: null, careInstructions: null, warranty: null } } as Product);
+});
+
+test("the warranty promise follows the product's own warranty when it has one", async () => {
+  await mount((doc) => {
+    assert.deepEqual([...doc.querySelectorAll("[data-product-promises] li")].map((item) => item.textContent), ["Made to order in Delhi", "Warranty: One year", "Delivery across India"]);
+  }, { ...product, sourceDetails: { details: null, materials: null, dimensions: null, careInstructions: null, warranty: "One year" } } as Product);
+});
+
+test("the option group is named by its option alone, and the detail photo is decorative", async () => {
+  await mount((doc) => {
+    assert.equal(doc.querySelector("[data-variants] legend")?.textContent, "Option: Rust");
+    assert.equal(doc.querySelector("[data-variants] legend a"), null, "The customization link is outside the group label");
+    assert.ok(doc.querySelector("a[data-customization]"));
+    assert.equal(doc.querySelector("[data-product-details] img")?.getAttribute("alt"), "");
+    assert.match(doc.querySelector("[data-discount]")?.className ?? "", /text-\[#2f6b32\]/, "The discount chip text meets 4.5:1");
+  });
+});
+
+test("Share says so when the link cannot be copied", async () => {
+  const nav = window.navigator as Navigator & { clipboard?: unknown };
+  const saved = Object.getOwnPropertyDescriptor(nav, "clipboard");
+  Object.defineProperty(nav, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("denied"); } } });
+  try {
+    await mount(async (doc) => {
+      const status = doc.querySelector("[data-share-status]")!;
+      assert.equal(status.getAttribute("role"), "status", "The live region is always present");
+      await act(async () => doc.querySelector<HTMLButtonElement>("button[data-share]")!.click());
+      assert.equal(status.textContent, "Couldn’t copy the link");
+    });
+  } finally { if (saved) Object.defineProperty(nav, "clipboard", saved); else Reflect.deleteProperty(nav, "clipboard"); }
 });

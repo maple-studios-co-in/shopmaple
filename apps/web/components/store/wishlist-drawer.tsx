@@ -4,7 +4,11 @@ import Link from "next/link";
 import { Heart, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShop } from "../shop-provider";
-import { Favourites, primaryButton } from "./favourites";
+import dynamic from "next/dynamic";
+import { primaryButton } from "./wishlist-styles";
+
+// The saved-pieces list (with its product cards) loads on demand, keeping cards out of every page's first-load JavaScript.
+const Favourites = dynamic(() => import("./favourites").then((module) => module.Favourites));
 import { HeartIcon } from "./icons";
 import { headerIcon } from "./header-icon";
 import { useHydrated } from "./use-hydrated";

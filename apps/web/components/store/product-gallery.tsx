@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductImage } from "./product-image";
-import { HeartIcon } from "./icons";
 
 const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1432px) 724px, calc(100vw - 708px)";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
@@ -163,11 +162,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-square w-full place-content-center justify-items-center gap-2 text-meta text-taupe lg:aspect-[4/5]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-square w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f] lg:aspect-[4/5]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-          <HeartIcon filled={saved} className="size-5" />
+          <Heart aria-hidden="true" strokeWidth={1.6} className={saved ? "size-5 fill-current" : "size-5"} />
         </button>
         {images.length > 1 && (
           <div data-gallery-controls className="absolute top-1/2 right-[18px] z-[2] flex -translate-y-1/2 flex-col items-center gap-1.5 rounded-full border border-solid border-brand/8 bg-white px-1.5 py-1.5 text-label text-brand">

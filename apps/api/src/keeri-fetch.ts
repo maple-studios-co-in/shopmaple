@@ -4,6 +4,8 @@ export interface KeeriFetchOptions {
   schemaVersion?: 1 | 2;
   includeTaxonomy?: boolean;
   includeContent?: boolean;
+  /** Variant options for naming and option pickers; Keeri accepts it only together with content. */
+  includeAttributes?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -51,6 +53,8 @@ export async function fetchKeeriExport(
   }
   if (options.includeTaxonomy || options.includeContent) endpoint.searchParams.set("taxonomy", "1");
   if (options.includeContent) endpoint.searchParams.set("content", "1");
+  // Keeri accepts attributes only after taxonomy and content: each opt-in extends the one before.
+  if (options.includeContent && options.includeAttributes) endpoint.searchParams.set("attributes", "1");
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
@@ -74,6 +78,11 @@ export async function fetchKeeriExport(
     if (controller.signal.aborted) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("EXPORT_TIMEOUT");
+    }
+    // A Keeri release from before variant options refuses the opt-in with 400; the caller asks again without it.
+    if (response.status === 400 && options.includeContent && options.includeAttributes) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("ATTRIBUTES_UNSUPPORTED");
     }
     if (response.status !== 200 || response.redirected)
       throw new KeeriFetchError("UPSTREAM_REJECTED");

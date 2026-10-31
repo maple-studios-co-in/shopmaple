@@ -21,6 +21,7 @@ beforeEach(async () => {
   await db.variant.deleteMany();
   await db.product.deleteMany();
   await db.catalogueSyncState.deleteMany();
+  await db.productHandleAlias.deleteMany();
 });
 function fixtures() {
   const s = shopifyFixture(),
@@ -241,4 +242,50 @@ test("large galleries survive persistence, replay and detail responses while car
   await assert.rejects(syncCatalogueUnion(db, s, k, "maple"), /UNSUPPORTED_PUBLIC_MEDIA/);
   assert.deepEqual((await db.product.findUniqueOrThrow({ where: { id: "preview-101" } })).images, expected);
   assert.deepEqual(await db.catalogueSyncState.findMany(), cursor);
+});
+
+test("a renamed Keeri address redirects permanently, and each variant keeps its name, photos and ?variant= value", async () => {
+  const s = shopifyFixture();
+  const k = v2Fixture();
+  k.models[0]!.name = "Zyro Lounge";
+  k.publication[0]!.handle = "keeri-model1";
+  const variant = k.models[0]!.variants[0]!;
+  (variant as typeof variant & { attributes: unknown }).attributes = [{ axis: "fabric", value: "Linen" }];
+  variant.media = [{ id: "photo2", tenantId: "maple", modelId: null, variantId: variant.id, stage: "approved", storageKey: "public-media:photo2", supersededAt: null, position: 0 }];
+  k.publicMedia = [{ assetId: "photo2", url: "https://store.maplefurnishers.com/media/keeri/photo2.webp" }];
+  await syncCatalogueUnion(db, s, k, "maple");
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false });
+
+  const old = await request(app).get("/api/products/keeri-model1");
+  assert.equal(old.status, 308);
+  assert.equal(old.headers.location, "/api/products/zyro-lounge");
+  const current = await request(app).get("/api/products/zyro-lounge");
+  assert.equal(current.status, 200);
+  assert.deepEqual(current.body.variants[0], { ...current.body.variants[0], slug: "linen-walnut", images: ["https://store.maplefurnishers.com/media/keeri/photo2.webp"] });
+  assert.equal((await request(app).get("/api/products/keeri-nothing")).status, 404, "an unknown address is still not found");
+  const listing = await request(app).get("/api/products?limit=50");
+  const listed = listing.body.products.find((p: { handle: string }) => p.handle === "zyro-lounge");
+  assert.deepEqual(Object.keys(listed.variants[0]).filter((key) => ["images", "slug"].includes(key)), [], "lists stay lean; the detail response carries variant photos and slugs");
+  const card = await request(app).get("/api/catalogue/cards/keeri-model1");
+  assert.equal(card.status, 308);
+  assert.equal(card.headers.location, "/api/catalogue/cards/zyro-lounge");
+  const batch = await request(app).get("/api/catalogue/cards?handles=keeri-model1,missing");
+  assert.equal(batch.status, 200);
+  assert.deepEqual(batch.body.products.map((p: { handle: string }) => p.handle), ["zyro-lounge"]);
+  assert.deepEqual(batch.body.moved, [{ handle: "zyro-lounge", from: "keeri-model1" }], "saved homepage picks still find a renamed product");
+
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge", "the readable address is stable");
+  assert.equal(await db.productHandleAlias.count(), 1);
+});
+
+test("a rename steps around an unpublished product's address instead of failing every sync", async () => {
+  await db.product.create({ data: { id: "preview-retired", handle: "zyro-lounge", title: "Retired", description: "", images: [], published: false, source: "shopify-preview", sourceUpdatedAt: new Date("2026-10-01T00:00:00Z") } });
+  const k = v2Fixture();
+  k.publicMedia = [];
+  k.models[0]!.name = "Zyro Lounge";
+  k.publication[0]!.handle = "keeri-model1";
+  await syncCatalogueUnion(db, shopifyFixture(), k, "maple");
+  assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge-chair");
 });

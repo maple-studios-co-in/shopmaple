@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, PencilRuler, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney, categoryNames } from "@/lib/format";
@@ -13,6 +13,8 @@ import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "../modal";
 import { ProductGallery } from "./product-gallery";
+import { VariantSelector } from "./variant-selector";
+import { selectedVariant, variantGallery } from "@/lib/product-address";
 
 type Presentation = {
   variantImages: Record<string, string>;
@@ -23,9 +25,10 @@ const pill = "inline-flex h-[50px] items-center justify-center gap-2 rounded-ful
 const solidPill = cn(pill, "cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
 const outlinePill = cn(pill, "border-2 border-solid border-brand bg-white text-brand hover:bg-cream");
 const quiet = "inline-flex items-center gap-1.5 text-ui font-medium text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-const productPromises = [
+// The store's promises; a product's own warranty from the catalogue replaces the store-wide one.
+const productPromises = (warranty?: string | null) => [
   { icon: Hammer, label: "Made to order in Delhi" },
-  { icon: ShieldCheck, label: "36-month warranty" },
+  { icon: ShieldCheck, label: warranty?.trim() ? `Warranty: ${warranty.trim()}` : "36-month warranty" },
   { icon: Truck, label: "Delivery across India" },
 ];
 
@@ -36,16 +39,20 @@ export function ProductDetail({ product, initialVariant, presentation }: {
 }) {
   const searchParams = useSearchParams();
   const queryVariant = searchParams ? searchParams.get("variant") ?? undefined : initialVariant;
+  // An option's photo: the variant's own first photo, else the curated Shopify mapping.
   const variantImage = (id: string) => {
+    const own = product.variants.find((v) => v.id === id)?.images?.[0];
+    if (own) return own;
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
-  // Catalogues without any per-option photo mapping (every Keeri product today)
-  // present plain option tiles rather than a grid of "Photo unavailable" boxes.
-  const optionPhotos = Boolean(presentation && Object.keys(presentation.variantImages).length);
+  const galleryFor = (id: string) => variantGallery(product, product.variants.find((v) => v.id === id));
+  // Catalogues without any per-option photos present plain option tiles rather than a grid of
+  // "Photo unavailable" boxes.
+  const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
   const textOptions = !optionPhotos && product.images.length > 0;
   const initial =
-    product.variants.find((v) => v.id === queryVariant)?.id ??
+    selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
     product.variants.find((v) => v.pricePaise !== null)?.id ??
@@ -53,7 +60,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
     "";
   const [variantId, setVariantId] = useState(initial);
   const [urlVariant, setUrlVariant] = useState(initial);
-  const [image, setImage] = useState(() => Math.max(0, product.images.indexOf(variantImage(initial) ?? ""))),
+  const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [pin, setPin] = useState(""),
@@ -65,11 +72,14 @@ export function ProductDetail({ product, initialVariant, presentation }: {
     if (variantId !== initial) {
       setVariantId(initial);
       const src = variantImage(initial);
-      if (src) setImage(product.images.indexOf(src));
+      if (src) setImage(Math.max(0, galleryFor(initial).indexOf(src)));
     }
   }
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
+  const images = galleryFor(variantId);
+  // A shorter gallery after switching options never points past its last photo.
+  const shown = Math.min(image, Math.max(0, images.length - 1));
   const enquiry = !product.published || !canAddToCart(variant);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
@@ -88,29 +98,36 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   }
   function selectVariant(id: string) {
     setVariantId(id);
+    // The option's own photo leads its gallery; a shared gallery jumps to the option's photo.
+    // Without one, the shopper keeps the photo they were looking at.
     const src = variantImage(id);
-    if (src) {
-      const index = product.images.indexOf(src);
-      if (index >= 0) setImage(index);
-    }
+    if (src) setImage(Math.max(0, galleryFor(id).indexOf(src)));
+    const chosen = product.variants.find((v) => v.id === id);
     const url = new URL(window.location.href);
-    url.searchParams.set("variant", id);
+    url.searchParams.set("variant", chosen?.slug ?? id);
     window.history.replaceState(null, "", url);
   }
+  useEffect(() => {
+    if (!shared) return;
+    const timer = window.setTimeout(() => setShared(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [shared]);
   async function share() {
     const url = window.location.href;
     try {
       if (typeof navigator.share === "function") { await navigator.share({ title: product.title, url }); return; }
       await navigator.clipboard.writeText(url);
       setShared("Link copied");
-    } catch {
-      setShared("");
+    } catch (error) {
+      // A shopper closing the share sheet is not a failure; a denied or missing clipboard is.
+      setShared(error instanceof Error && error.name === "AbortError" ? "" : "Couldn’t copy the link");
     }
   }
   const detailImage = product.images[1] ?? product.images[0];
   const accordion = "group rounded-xl border border-solid border-sand bg-white open:shadow-xs";
   const summary = "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-card font-bold text-espresso marker:hidden [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand";
-  const panel = "grid gap-2 px-5 pb-5 text-ui leading-[1.6] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2";
+  // Panels hold admin rich text or plain catalogue text: headings, paragraph spacing, lists and line breaks are restated here.
+  const panel = "px-5 pb-5 text-ui leading-[1.6] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 [&_:is(h2,h3,h4,h5,h6)]:font-serif [&_:is(h2,h3,h4,h5,h6)]:text-card [&_:is(h2,h3,h4,h5,h6)]:font-semibold [&_:is(h2,h3,h4,h5,h6)]:text-espresso [&_:is(h2,h3,h4,h5,h6):not(:first-child)]:mt-4 [&_:is(h2,h3,h4,h5,h6)+*]:mt-1.5 [&_p+p]:mt-2.5 [&_p+a]:mt-2.5 [&_p+a]:inline-block [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_li+li]:mt-1";
   const chevron = <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-brand transition-transform group-open:rotate-180" />;
   return (
     <div data-store className="bg-white font-body text-espresso">
@@ -122,7 +139,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
           <Link href={"/collections/" + (product.category ?? "all")}>{categoryNames[product.category ?? "all"]}</Link>
         </nav>
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start xl:gap-10">
-          <ProductGallery images={product.images} title={product.title} selected={image} onSelect={setImage}
+          <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
           <div data-product-info className="grid gap-5 rounded-[20px] border border-solid border-brand/8 bg-white p-[22px] lg:sticky lg:top-6">
             <div className="grid gap-2">
@@ -145,7 +162,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               <div className="flex flex-wrap items-center gap-3">
                 <strong className="text-subhead font-semibold text-brand">{shopMoney(variant?.pricePaise ?? null)}</strong>
                 {discounted && (
-                  <span data-discount className="rounded-[5px] bg-leaf/10 px-2.5 py-1 text-label font-semibold text-leaf">
+                  <span data-discount className="rounded-[5px] bg-leaf/10 px-2.5 py-1 text-label font-semibold text-[#2f6b32]">
                     {Math.round((1 - variant!.pricePaise! / variant!.compareAtPaise!) * 100)}% off
                   </span>
                 )}
@@ -155,34 +172,11 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             </div>
             {product.description && <p data-description className="text-ui leading-[1.6]">{product.description}</p>}
             {product.variants.length > 1 && (
-              <fieldset data-variants={textOptions ? "text" : "photo"} className="grid gap-3">
-                <legend className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-ui">
-                  <span>Option: <strong className="font-semibold">{variant?.title}</strong></span>
-                  <Link data-customization href={enquiryHref} className="inline-flex items-center gap-1 text-label font-medium text-brand no-underline hover:underline hover:underline-offset-[5px]">
-                    <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
-                  </Link>
-                </legend>
-                <div className={cn("grid gap-3", textOptions ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
-                  {product.variants.map((v) => (
-                    <label key={v.id}
-                      className={cn("relative grid cursor-pointer content-start gap-1 rounded-[7px] p-2 text-label text-espresso shadow-[0_0_0_2px] transition-shadow has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
-                        v.id === variantId ? "shadow-espresso" : "shadow-espresso/12 hover:shadow-espresso/40")}>
-                      <input type="radio" name="variant" value={v.id} checked={v.id === variantId} onChange={() => selectVariant(v.id)} className="sr-only" />
-                      {!textOptions && (
-                        <span data-variant-image className="relative block aspect-[11/10] overflow-hidden rounded-[5px] bg-cream [&_img]:object-cover">
-                          {variantImage(v.id) ? <ProductImage src={variantImage(v.id)!} alt="" fill sizes="130px" />
-                            : <span data-variant-placeholder className="grid size-full place-items-center p-1 text-center text-label text-taupe">Photo unavailable</span>}
-                        </span>
-                      )}
-                      <span className="font-semibold">{v.title}</span>
-                      {v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) && (
-                        <small data-variant-code className="text-label text-taupe">Item code: {v.sku}</small>
-                      )}
-                      <small className="text-label text-taupe">{shopMoney(v.pricePaise)}</small>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <VariantSelector layout={textOptions ? "text" : "photo"} selectedId={variantId} onSelect={selectVariant} enquiryHref={enquiryHref}
+                variants={product.variants.map((v) => ({
+                  id: v.id, name: v.title, image: variantImage(v.id), priceLabel: shopMoney(v.pricePaise),
+                  code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
+                }))} />
             )}
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-meta [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2">
               <a href="#product-specifications">Dimensions &amp; specifications</a>
@@ -221,7 +215,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </div>
             </div>
             <ul data-product-promises aria-label="With every piece" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] bg-brand/6 px-4 py-3 text-ui font-medium text-brand">
-              {productPromises.map(({ icon: Icon, label }) => (
+              {productPromises(product.sourceDetails?.warranty).map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-1.5"><Icon aria-hidden="true" className="size-4" />{label}</li>
               ))}
             </ul>
@@ -247,7 +241,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               <button type="button" data-share onClick={() => void share()} className={cn(quiet, "cursor-pointer border-0 bg-transparent p-0")}>
                 <Share2 aria-hidden="true" className="size-4" /> Share
               </button>
-              {shared && <span role="status" className="text-meta text-leaf">{shared}</span>}
+              <span data-share-status role="status" className="text-meta text-espresso empty:hidden">{shared}</span>
               <a data-phone href="tel:+918796130252" className={cn(quiet, "ml-auto text-meta")}>Call +91 87961 30252</a>
             </div>
           </div>
@@ -263,18 +257,18 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             <div data-accordions className="grid gap-3">
               <details open className={accordion}>
                 <summary className={summary}>Details{chevron}</summary>
-                <div className={panel}>
-                  {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p>
+                <div data-prose className={panel}>
+                  {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p className="whitespace-pre-line">
                     {product.sourceDetails?.details || product.description || "Our team can help with materials, dimensions, finishes and customization for this piece."}
                   </p>}
                 </div>
               </details>
               <details className={accordion}>
                 <summary className={summary}>Materials + Care{chevron}</summary>
-                <div className={panel}>
+                <div data-prose className={panel}>
                   {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
-                    {product.sourceDetails.materials && <p>{product.sourceDetails.materials}</p>}
-                    {product.sourceDetails.careInstructions && <p>{product.sourceDetails.careInstructions}</p>}
+                    {product.sourceDetails.materials && <p className="whitespace-pre-line">{product.sourceDetails.materials}</p>}
+                    {product.sourceDetails.careInstructions && <p className="whitespace-pre-line">{product.sourceDetails.careInstructions}</p>}
                   </> : <>
                     <p>Contact our team for the materials and care guidance for your selected finish.</p>
                     <Link href={enquiryHref}>Request care guidance</Link>
@@ -283,7 +277,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </details>
               <details className={accordion}>
                 <summary className={summary}>Shipping + Returns{chevron}</summary>
-                <div className={panel}>
+                <div data-prose className={panel}>
                   {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
                     <p>Confirm delivery serviceability, charges, lead time and applicable return terms before ordering.</p>
                     <Link href={enquiryHref}>Ask about delivery</Link>
@@ -292,8 +286,8 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </details>
               <details id="product-specifications" open className={cn(accordion, "scroll-mt-6")}>
                 <summary className={summary}>Dimensions &amp; specifications{chevron}</summary>
-                <div className={panel}>
-                  {product.sourceDetails?.dimensions ? <p>{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
+                <div data-prose className={panel}>
+                  {product.sourceDetails?.dimensions ? <p className="whitespace-pre-line">{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
                   {variant?.sku && <p>SKU: {variant.sku}</p>}
                   {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
                 </div>
@@ -301,7 +295,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             </div>
             {detailImage && (
               <div className="relative aspect-[4/3] overflow-hidden rounded-[30px] bg-cream lg:sticky lg:top-6 [&_img]:object-cover">
-                <ProductImage src={detailImage} alt={product.title} fill sizes="(max-width:1023px) 100vw, 660px" />
+                <ProductImage src={detailImage} alt="" fill sizes="(max-width:1023px) 100vw, 660px" />
               </div>
             )}
           </div>
@@ -316,7 +310,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
       )}
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div data-zoom className="[&_img]:h-auto [&_img]:w-full">
-          <ProductImage src={product.images[image]} alt={product.title} width={1200} height={1200} sizes="90vw" />
+          <ProductImage src={images[shown]} alt={product.title} width={1200} height={1200} sizes="90vw" />
         </div>
       </Modal>
     </div>

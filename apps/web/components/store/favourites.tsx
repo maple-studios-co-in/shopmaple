@@ -1,4 +1,5 @@
 "use client";
+import { primaryButton } from "./wishlist-styles";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
@@ -13,8 +14,6 @@ import { HeartIcon } from "./icons";
 
 type Resolution = { product: ProductCardModel | null; failed: boolean };
 const removeSelector = '[data-save-button][aria-pressed="true"], [data-remove-saved], [data-remove-missing]';
-export const primaryButton =
-  "inline-flex items-center justify-center gap-2 rounded-sm bg-brand px-5 py-3.5 font-body text-ui font-bold text-white no-underline transition-colors hover:bg-brand-deep hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 const textButton =
   "cursor-pointer border-0 bg-transparent p-0 font-body font-bold text-brand underline underline-offset-2 hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 const imageSizes = "(max-width:767px) calc((100vw - 44px) / 2), (max-width:1279px) calc((100vw - 96px) / 3), (min-width:1440px) 312px, calc((100vw - 176px) / 4)";
@@ -60,6 +59,12 @@ export function Favourites({
           return;
         requests.current.delete(handle);
         cache.current.set(handle, result);
+        // The product's address was renamed: show it under the new one and keep it saved there.
+        if (result.product && result.product.handle !== handle) {
+          cache.current.set(result.product.handle, result);
+          toggleFavourite(handle);
+          if (!favourites.includes(result.product.handle)) toggleFavourite(result.product.handle);
+        }
         setResolved(new Map(cache.current));
       };
       requestSavedProduct(handle, controller.signal)
