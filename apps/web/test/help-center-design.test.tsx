@@ -81,7 +81,9 @@ test("help center and bulk enquiry carry no legacy page classes and leave the sh
     assert.equal(doc.querySelector('[class*="cp-"]'), null, `${slug} uses utilities, not contact-parity rules`);
     assert.ok(doc.querySelector("[data-store]"));
     assert.ok(doc.querySelector("[data-enquiry-context]")?.closest("[data-store]"));
-    assert.equal(doc.querySelector(".home-cities")?.closest("[data-store]"), null, `${slug} keeps the cities band outside the scoped base`);
+    const cities = doc.querySelector("[data-home-cities]");
+    assert.ok(cities, `${slug} shows the shared cities band`);
+    assert.equal(cities.parentElement?.closest("[data-store]"), null, `${slug} leaves the shared cities band out of its own scoped root`);
   }
   const bulk = await render("bulk-enquiry");
   assert.ok(bulk.querySelector('[data-service-section="hero"] form button[type="submit"]')?.textContent?.includes("Request Proposal"));

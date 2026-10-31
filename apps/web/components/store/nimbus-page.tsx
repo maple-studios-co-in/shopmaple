@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { NimbusPageContent, NimbusSectionKey, TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage } from "@/components/content-image";
 import { ProductCard } from "@/components/store/product-card";
-import { CategoryVideo } from "@/components/category-controls";
+import { CategoryVideo } from "@/components/store/category-video";
 import { NimbusProjectForm, NimbusSlideshow } from "@/components/store/nimbus-client";
 import nimbus from "@/data/landing-nimbus.json";
 import sourceCatalog from "@/data/landing-catalog.json";

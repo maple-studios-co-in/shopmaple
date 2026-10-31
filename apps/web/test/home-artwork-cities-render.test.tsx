@@ -62,14 +62,14 @@ function assertOriginal(doc: Document) {
   assert.deepEqual(attrs(doc, "[data-home-difference] img", "alt"), ["", "", "", ""]);
   assert.deepEqual(attrs(doc, "[data-home-values] img", "src"), values.map(([, file]) => files + file));
   assert.deepEqual(attrs(doc, "[data-home-values] img", "alt"), ["", "", "", ""]);
-  assert.deepEqual(attrs(doc, ".home-city-track img", "src"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([key]) => `/media/cities/${key}.webp`));
-  assert.deepEqual(attrs(doc, ".home-city-track img", "alt"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([, , alt]) => alt));
+  assert.deepEqual(attrs(doc, "[data-city-track] img", "src"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([key]) => `/media/cities/${key}.webp`));
+  assert.deepEqual(attrs(doc, "[data-city-track] img", "alt"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([, , alt]) => alt));
 }
 
 test("homepage preserves original value icons and copy while showing the suggested photographic city cards", async () => {
   const doc = await render(published());
   assertOriginal(doc);
-  for (const [selector, width, height] of [["[data-home-difference] img", "60", "60"], ["[data-home-values] img", "80", "80"], [".home-city-track img", "400", "600"]]) {
+  for (const [selector, width, height] of [["[data-home-difference] img", "60", "60"], ["[data-home-values] img", "80", "80"], ["[data-city-track] img", "400", "600"]]) {
     for (const node of doc.querySelectorAll(selector!)) {
       assert.equal(node.getAttribute("width"), width);
       assert.equal(node.getAttribute("height"), height);
@@ -77,7 +77,7 @@ test("homepage preserves original value icons and copy while showing the suggest
   }
   assert.equal(doc.querySelector("[data-home-difference] h2")?.textContent, "Every element is yours to reshape");
   assert.equal(doc.querySelector("[data-home-difference] a")?.getAttribute("href"), "/pages/contact");
-  assert.equal(doc.querySelector(".home-cities h2")?.textContent, "20+ Cities");
+  assert.equal(doc.querySelector("[data-home-cities] h2")?.textContent, "20+ Cities");
   assert.ok(doc.querySelector('button[aria-label="Previous Cities served"]'));
   assert.ok(doc.querySelector('button[aria-label="Next Cities served"]'));
 });
@@ -97,7 +97,7 @@ test("published custom artwork reaches every difference, value and city slot wit
   assert.deepEqual(attrs(doc, "[data-home-values] img", "src"), ["/media/value-quiet-luxury.webp", "/media/value-real-living.webp", "/media/value-ages-beautifully.webp", "/media/value-strength.webp"]);
   assert.deepEqual(attrs(doc, "[data-home-values] img", "alt"), ["Value quiet-luxury", "Value real-living", "Value ages-beautifully", "Value strength"]);
   for (const [index, [key]] of cities.entries()) {
-    const image = doc.querySelectorAll(".home-city-track img")[index];
+    const image = doc.querySelectorAll("[data-city-track] img")[index];
     assert.equal(image?.getAttribute("src"), `/media/city-${key}.webp`);
     assert.equal(image?.getAttribute("alt"), `Artwork ${key}`);
   }
@@ -112,10 +112,10 @@ test("published reordered values and cities retain keyed artwork and hide disabl
       ...(custom ? { templateMedia: artworkOverrides() } : {}),
       homeCitiesLayout: [...cities].reverse().map(([key]) => ({ key, enabled: key === "agra" || key === "artwork-8" || key === "delhi" })),
     }));
-    assert.deepEqual(attrs(doc, ".home-city-track img", "src"), custom
+    assert.deepEqual(attrs(doc, "[data-city-track] img", "src"), custom
       ? ["/media/city-agra.webp", "/media/city-artwork-8.webp", "/media/city-delhi.webp"]
       : ["/media/cities/agra.webp", files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", "/media/cities/delhi.webp"]);
-    assert.deepEqual(attrs(doc, ".home-city-track img", "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
+    assert.deepEqual(attrs(doc, "[data-city-track] img", "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
     assert.equal(doc.querySelector("[data-home-values] img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : files + "Cover_Image_Maple_5.svg");
     assert.equal(doc.querySelector("[data-home-values] h3")?.textContent, "Strength You Don’t See");
     assert.ok(doc.querySelector('button[aria-label="Next Cities served"]'));
@@ -124,7 +124,7 @@ test("published reordered values and cities retain keyed artwork and hide disabl
 
 test("hiding all cities omits the full section including its heading and carousel controls", async () => {
   const doc = await render(published({ homeCitiesLayout: cities.map(([key]) => ({ key, enabled: false })) }));
-  assert.equal(doc.querySelector(".home-cities"), null);
+  assert.equal(doc.querySelector("[data-home-cities]"), null);
   assert.equal(doc.querySelector('[aria-label="Cities served"]'), null);
   assert.equal(doc.querySelector('button[aria-label="Next Cities served"]'), null);
 });
@@ -139,7 +139,7 @@ test("blank decorative alt is preserved and custom descriptions remain literal t
   assert.equal(doc.querySelector("[data-home-difference] img")?.getAttribute("src"), "/media/difference-1.webp");
   assert.equal(doc.querySelector("[data-home-difference] img")?.getAttribute("alt"), "");
   assert.equal(doc.querySelector("[data-home-values] img")?.getAttribute("alt"), markup);
-  assert.equal(doc.querySelectorAll(".home-city-track img")[9]?.getAttribute("alt"), "");
+  assert.equal(doc.querySelectorAll("[data-city-track] img")[9]?.getAttribute("alt"), "");
   assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
 });
 
@@ -156,8 +156,8 @@ test("draft-only, invalid artwork, malformed city layouts and unavailable public
 
 test('default city strip uses photographic cards for the named locations',async()=>{
  const doc=await render(published());
- const images=[...doc.querySelectorAll('.home-city-track img')];
+ const images=[...doc.querySelectorAll('[data-city-track] img')];
  assert.equal(images.length,10);
  assert.deepEqual(images.map(i=>i.getAttribute('src')),['delhi','kolkata','hyderabad','varanasi','mumbai','jaipur','bengaluru','chennai','gujarat','agra'].map(k=>'/media/cities/'+k+'.webp'));
- assert.equal(doc.querySelector('.home-cities a[href="/media/cities/credits.html"]')?.textContent,'Image credits');
+ assert.equal(doc.querySelector('[data-home-cities] a[href="/media/cities/credits.html"]')?.textContent,'Image credits');
 });

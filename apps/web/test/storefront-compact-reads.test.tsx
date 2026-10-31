@@ -154,8 +154,8 @@ test("standalone category rail preserves source-only enquiry cards and skips unk
   await fixture(async requests => {
     const doc = await documentFor(<CategoryProducts handles={["live-chair", handle, "unknown-chair"]} />);
     assert.deepEqual(links(doc), ["/products/live-chair", `/pages/contact?product=${encodeURIComponent(original.title)}`]);
-    assert.equal(doc.querySelector(".landing-source-product [data-card-price]")!.textContent, "Price on request");
-    assert.equal(doc.querySelector(".landing-source-product img")!.getAttribute("alt"), original.title);
+    assert.equal(doc.querySelector("[data-source-product] [data-card-price]")!.textContent, "Price on request");
+    assert.equal(doc.querySelector("[data-source-product] img")!.getAttribute("alt"), original.title);
     assert.equal(requests.length, 1);
     assert.equal(requests[0]!.pathname, "/api/catalogue/cards");
   }, { missing: [handle, "unknown-chair"] });

@@ -2,10 +2,10 @@ import { ContentImage as Image } from "@/components/content-image";
 import type { ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
-import { CampaignBanner } from "@/components/campaign-banner";
+import { CampaignBanner } from "@/components/store/campaign-banner";
 import { Hero } from "@/components/hero";
 import { ProductCard } from "@/components/store/product-card";
-import { HomeCarousel } from "@/components/home-carousel";
+import { HomeCarousel } from "@/components/store/carousel";
 import { HomeTicker } from "@/components/home-ticker";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
@@ -162,7 +162,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
       />
     ),
     promos: (
-      <div className="campaign-promo-grid home-container">
+      <div data-campaign-promos className="mx-auto my-9 grid max-w-[1440px] grid-cols-3 gap-6 px-10 max-[750px]:flex max-[750px]:snap-x max-[750px]:snap-mandatory max-[750px]:gap-3.5 max-[750px]:overflow-x-auto max-[750px]:px-4 max-[750px]:pb-3">
         <CampaignBanner campaign="landing-dining" compact content={content} />
         <CampaignBanner campaign="landing-storage" compact content={content} />
         <CampaignBanner campaign="landing-consoles" compact content={content} />

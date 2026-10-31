@@ -25,15 +25,15 @@ test("empty campaign copy fields leave no blank rows and the heading names the r
     label: "", supporting: "", eligibility: "", offer: [], headline: ["Furniture for your home"],
   });
   const doc = await renderCampaign(content);
-  assert.equal(doc.querySelectorAll(".campaign-label, .campaign-supporting, .campaign-eligibility, .campaign-offer").length, 0);
+  assert.equal(doc.querySelectorAll("[data-campaign-label], [data-campaign-supporting], [data-campaign-eligibility], [data-campaign-offer]").length, 0);
   assert.equal(doc.querySelector("section")?.getAttribute("aria-label"), "Furniture for your home");
   assert.equal(doc.querySelector("a")?.getAttribute("href"), "/collections/all");
 });
 
 test("updated bundled campaign renders the visible Figma offer without superseded copy", async () => {
   const doc = await renderCampaign();
-  assert.equal(doc.querySelector(".campaign-offer")?.textContent, "Up to 40% off selected furniture");
-  assert.equal(doc.querySelectorAll(".campaign-label, .campaign-supporting, .campaign-eligibility").length, 0);
+  assert.equal(doc.querySelector("[data-campaign-offer]")?.textContent, "Up to 40% off selected furniture");
+  assert.equal(doc.querySelectorAll("[data-campaign-label], [data-campaign-supporting], [data-campaign-eligibility]").length, 0);
   assert.equal(doc.querySelector("section")?.getAttribute("aria-label"), "Decked for Diwali");
   assert.equal(doc.querySelectorAll("[data-artwork] img").length, 6);
 });
@@ -46,8 +46,8 @@ test("published copy overrides stay visible and escaped after the banner refresh
   });
   const doc = await renderCampaign(content);
   assert.equal(doc.querySelector("section")?.getAttribute("aria-label"), "Approved campaign");
-  assert.equal(doc.querySelector(".campaign-supporting")?.textContent, "Made for gatherings");
-  assert.equal(doc.querySelector(".campaign-eligibility")?.textContent, "Selected items only");
+  assert.equal(doc.querySelector("[data-campaign-supporting]")?.textContent, "Made for gatherings");
+  assert.equal(doc.querySelector("[data-campaign-eligibility]")?.textContent, "Selected items only");
   assert.equal(doc.querySelector("h2")?.textContent, "<img src=x onerror=alert(1)>");
   assert.equal(doc.querySelectorAll("h2 img, script").length, 0);
 });

@@ -1,13 +1,13 @@
 import { ContentImage as Image } from "@/components/content-image";
 import { Instagram } from "lucide-react";
-import { HomeCarousel } from "@/components/home-carousel";
+import { HomeCarousel } from "@/components/store/carousel";
 
 export function InstagramRail({ posts, autoplay = true }: {
   posts: readonly { href: string; src: string; alt?: string }[];
   autoplay?: boolean;
 }) {
   return (
-    <HomeCarousel label="Instagram posts" autoplay={autoplay} className="instagram-motion"
+    <HomeCarousel label="Instagram posts" autoplay={autoplay} controlsClassName="mt-3"
       railClassName="mt-6 flex snap-x snap-mandatory gap-3.5 overflow-x-auto pb-3 [scrollbar-width:none] md:gap-4">
       {posts.map(post => (
         <a key={post.href} href={post.href} target="_blank" rel="noopener noreferrer" aria-label={post.alt ?? "Maple on Instagram"}

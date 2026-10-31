@@ -71,7 +71,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
   assert.equal(doc.querySelector("[data-home-newsletter] h2")?.textContent, "Soft presence. Strong craftsmanship.");
   assert.deepEqual(texts(doc, "[data-home-values] h3"), ["Quiet Luxury", "Built for Real Living", "Ages Beautifully", "Strength You Don’t See"]);
-  assert.equal(doc.querySelector(".home-cities h2")?.textContent, "20+ Cities");
+  assert.equal(doc.querySelector("[data-home-cities] h2")?.textContent, "20+ Cities");
   assert.equal(doc.querySelector("[data-home-project] [data-project-intro]")?.textContent, "Describe your project to us and our team will come back within 24 hours with options, pricing, and a clear timeline.");
   assert.equal(doc.querySelector("[data-home-project] strong")?.textContent, "24 hours");
   assert.ok(doc.querySelector('[data-project-form] input[name="email"][required]'));
@@ -102,7 +102,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, "[data-home-values] h3"), ["Lasting frames", "Better with time", "Everyday comfort", "Quiet details"]);
   assert.deepEqual(texts(doc, "[data-home-values] p"), ["Built with care.", "Materials that mature.", "For every day.", "A calm room."]);
   assert.ok(doc.querySelector("[data-home-values] img")?.getAttribute("src")?.includes("Cover_Image_Maple_5.svg"));
-  assert.deepEqual(texts(doc, ".home-cities header p, .home-cities h2"), ["Find us near you", "Across India"]);
+  assert.deepEqual(texts(doc, "[data-home-cities] header p, [data-home-cities] h2"), ["Find us near you", "Across India"]);
   assert.equal(doc.querySelector("[data-home-project] h2")?.textContent, "Tell us your idea");
   assert.deepEqual(texts(doc, "[data-project-intro], [data-project-body]"), ["Our team replies in two working days with tailored ideas.", "Start with your room."]);
   assert.equal(doc.querySelector("[data-home-project] strong")?.textContent, "two working days");
@@ -123,6 +123,6 @@ test("published detail strings are escaped as text rather than interpreted as ma
   details.cities.heading = markup;
   details.project.responseTime = markup;
   const { doc } = await renderHome(details);
-  for (const selector of ["[data-hero-cta]", "[data-home-difference] h2", "[data-home-nimbus] p", "blockquote p", "[data-home-newsletter] h2 + p", "[data-home-values] p", ".home-cities h2", "[data-home-project] strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
+  for (const selector of ["[data-hero-cta]", "[data-home-difference] h2", "[data-home-nimbus] p", "blockquote p", "[data-home-newsletter] h2 + p", "[data-home-values] p", "[data-home-cities] h2", "[data-home-project] strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
   assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
 });

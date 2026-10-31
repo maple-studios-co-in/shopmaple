@@ -2,8 +2,8 @@ import { Fragment, type ReactNode } from "react";
 import { Building2, Globe, Hammer, House, PencilRuler, Sofa, Truck, type LucideIcon } from "lucide-react";
 import type { StoryPageContent, StorySectionKey, TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
-import { CategoryVideo } from "@/components/category-controls";
-import { HomeCities } from "@/components/home-sections";
+import { CategoryVideo } from "@/components/store/category-video";
+import { HomeCities } from "@/components/store/home/cities";
 import story from "@/data/landing-story.json";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
@@ -41,6 +41,9 @@ function Ornament({ className = "" }: { className?: string }) {
     </span>
   );
 }
+
+/** The thin rule above and below the cities band (legacy `.home-divider`). */
+const divider = "mx-auto my-8 border-t border-t-[#292d2826]";
 
 export function StoryLanding({ content, media }: { content?: StoryPageContent; media?: TemplateMedia } = {}) {
   const belief = resolveTemplateMedia("story-hero", media);
@@ -146,10 +149,10 @@ export function StoryLanding({ content, media }: { content?: StoryPageContent; m
       </section>
     ),
     cities: (
-      <div data-story-section="cities" className="home-parity">
-        <div className="home-divider" />
+      <div data-story-section="cities">
+        <div className={divider} />
         <HomeCities />
-        <div className="home-divider" />
+        <div className={divider} />
       </div>
     ),
   };

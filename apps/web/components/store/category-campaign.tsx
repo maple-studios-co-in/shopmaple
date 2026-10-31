@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ContentImage as Image } from "@/components/content-image";
 import { CampaignWindow } from "@/components/campaign-window";
-import type { CampaignKey } from "@/components/campaign-banner";
+import type { CampaignKey } from "@/components/store/campaign-banner";
 import campaigns from "@/data/diwali-campaigns.json";
 import type { StorefrontDocument } from "@/lib/content";
 import { defaultStorefrontContent } from "@/lib/content-defaults";

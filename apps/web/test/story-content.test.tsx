@@ -102,7 +102,7 @@ test("Our Story follows the redesign: scoped root, design regions, real copy and
     assert.equal(first.querySelector("p")?.textContent, defaultStorefrontContent.storyPage!.timeline[0]!.body);
     assert.match(first.querySelector("p")?.textContent ?? "", /Started by Pradeep Agrawal/);
     // Cities stays where the admin left it enabled.
-    assert.ok(doc.querySelector('[data-story-section="cities"] .home-cities'));
+    assert.ok(doc.querySelector('[data-story-section="cities"] [data-home-cities]'));
     // Headings never skip a level.
     const levels = [...doc.querySelectorAll("h1, h2, h3, h4")].map(n => Number(n.tagName[1]));
     levels.reduce((previous, level) => { assert.ok(level <= previous + 1, `h${level} follows h${previous}`); return level; }, 0);
@@ -118,7 +118,7 @@ test("published story edits render the selected order and safe text while preser
     assert.equal(doc.querySelector("[data-story-tagline]")?.textContent, "An independently edited introduction.");
     assert.deepEqual([...doc.querySelectorAll("[data-story-section]")].map(n => n.getAttribute("data-story-section")),
       ["journey", "hero", "belief-film"]);
-    assert.equal(doc.querySelector(".home-cities"), null);
+    assert.equal(doc.querySelector("[data-home-cities]"), null);
     assert.equal(doc.querySelector("[data-story-journey] h2")?.textContent, "Our milestones");
     assert.equal(doc.querySelector("[data-story-journey] h3")?.textContent, "Milestone 1");
     assert.equal(doc.querySelector("[data-story-journey] time")?.textContent, "2010");

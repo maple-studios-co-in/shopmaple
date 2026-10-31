@@ -105,7 +105,7 @@ test("homepage includes source Instagram posts and the original customer testimo
       "Customer video needs the verified full-resolution poster",
     );
     assert.ok(doc.querySelector("[data-home-values]"));
-    assert.ok(doc.querySelector(".home-cities"));
+    assert.ok(doc.querySelector("[data-home-cities]"));
   } finally {
     globalThis.fetch = previousFetch;
   }

@@ -45,7 +45,7 @@ test("source service routes retain forms, help, operational notices, media and a
     assert.match(contact.body.textContent ?? "", /Account sign-in and order tracking are not available/);
     assert.doesNotMatch(contact.body.textContent ?? "", /Development preview|Team notification is not confirmed/);
     assert.doesNotMatch(contact.body.textContent ?? "", /saved locally|notifications are not connected|has not been sent to our team/);
-    assert.equal(contact.querySelector(".home-cities h2")?.textContent, "20+ Cities");
+    assert.equal(contact.querySelector("[data-home-cities] h2")?.textContent, "20+ Cities");
     const bulk = await renderPage("bulk-enquiry");
     assert.equal(bulk.querySelector("h1")?.textContent, "Home Interior");
     assert.equal(bulk.querySelector("[data-bulk-eyebrow]")?.textContent, "Place Your Bulk Orders");
@@ -120,7 +120,7 @@ test("published service copy, order and metadata reach public routes with immuta
     assert.equal(contact.querySelector("[data-contact-eyebrow]")?.textContent, "LET’S TALK");
     assert.deepEqual([...contact.querySelectorAll("[data-service-section]")].map(n => n.getAttribute("data-service-section")), ["cities", "help", "intro"]);
     assert.deepEqual(texts(contact, "[data-section-title] p, [data-section-title] h2"), ["Support topics", "Find an answer"]);
-    assert.deepEqual(texts(contact, ".home-cities header p, .home-cities h2"), ["Near you", "Across the country"]);
+    assert.deepEqual(texts(contact, "[data-home-cities] header p, [data-home-cities] h2"), ["Near you", "Across the country"]);
     assert.equal(contact.querySelector("[data-help-categories] strong")?.textContent, "Topic 1");
     assert.equal(contact.querySelector("[data-help-answers] summary")?.textContent, "Question 1.1");
     assert.equal(contact.querySelector("[data-help-answers] details p")?.textContent, "Answer 1.1");
@@ -166,7 +166,7 @@ test("hidden service regions remove their content and dividers while preserving 
       const doc = await renderPage(slug);
       assert.equal(doc.querySelectorAll("h1").length, 1);
       assert.ok(doc.querySelector("h1.sr-only"));
-      assert.equal(doc.querySelectorAll("[data-service-section], [data-divider], form, .home-cities").length, 0);
+      assert.equal(doc.querySelectorAll("[data-service-section], [data-divider], form, [data-home-cities]").length, 0);
     }
   });
   content.contact.sections.find(s => s.key === "help")!.enabled = true;

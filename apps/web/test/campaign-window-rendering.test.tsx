@@ -17,7 +17,7 @@ async function banner(schedule?: {startsAt:string|null;endsAt:string|null}|null)
 test('legacy unscheduled published banners retain approved text and local destination',async()=>{
  const doc=await banner();
  assert.equal(doc.querySelector('h2')?.textContent,'Publisher-approved campaign');
- assert.equal(doc.querySelector('.campaign-cta')?.getAttribute('href'),'/collections/all');
+ assert.equal(doc.querySelector('[data-campaign-cta]')?.getAttribute('href'),'/collections/all');
 });
 test('future campaign is absent from server output instead of resurrecting bundled artwork',async(t)=>{
  t.mock.timers.enable({apis:['Date'],now:new Date('2026-11-01T00:00:00Z')});

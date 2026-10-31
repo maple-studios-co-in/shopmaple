@@ -31,6 +31,6 @@ test('route loading presents the Maple logo with an accessible status',()=>{
 test('automatic carousels expose keyboard playback without a visible play icon',()=>{
  const dom=new JSDOM(renderToStaticMarkup(<HomeCarousel autoplay label="Cities"><span>Delhi</span></HomeCarousel>));
  const control=dom.window.document.querySelector('button[aria-label="Play Cities"]');
- assert.ok(control);assert.ok(control.classList.contains('motion-playback-control'));
+ assert.ok(control);assert.ok(control.hasAttribute('data-carousel-play'));
  assert.equal(control.querySelector('svg'),null);
 });
