@@ -208,9 +208,6 @@ test("product variants update price, gallery and enquiry while delivery stays an
       />
     </AppRouterContext.Provider>,
     async () => {
-      const phone = document.querySelector<HTMLAnchorElement>("[data-phone]");
-      assert.equal(phone?.getAttribute("href"), "tel:+918796130252");
-      assert.match(phone?.textContent ?? "", /\+91 87961 30252/);
       assert.match(
         document.querySelector("[data-serviceability] label")!.textContent!,
         /Delivery enquiry/,
@@ -242,8 +239,8 @@ test("product variants update price, gallery and enquiry while delivery stays an
       assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");
       assert.equal(new URL(enquiry.href).searchParams.get("sku"), "RED");
       assert.ok(
-        document.querySelector('a[href="#product-specifications"]'),
-        "dimensions should be easy to find before enquiring",
+        document.querySelector("details#product-specifications"),
+        "dimensions stay addressable before enquiring",
       );
     },
   );

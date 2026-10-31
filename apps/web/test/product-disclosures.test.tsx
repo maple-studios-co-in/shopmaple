@@ -43,10 +43,10 @@ test("products without captured disclosures retain description, care and deliver
   for (const value of [product, { ...product, source: "keeri", pdpContent: null }]) {
     await mount(value, () => {
       assert.equal(disclosure("Details").querySelector("p")?.textContent, "Standard description must not replace captured Details.");
-      assert.match(disclosure("Materials + Care").textContent!, /Contact our team for the materials and care guidance/);
-      assert.equal(disclosure("Materials + Care").querySelector("a")?.textContent, "Request care guidance");
-      assert.match(disclosure("Shipping + Returns").textContent!, /Confirm delivery serviceability/);
-      assert.equal(disclosure("Shipping + Returns").querySelector("a")?.textContent, "Ask about delivery");
+      assert.match(disclosure("Materials & care").textContent!, /Contact our team for the materials and care guidance/);
+      assert.equal(disclosure("Materials & care").querySelector("a")?.textContent, "Request care guidance");
+      assert.match(disclosure("Shipping & returns").textContent!, /Confirm delivery serviceability/);
+      assert.equal(disclosure("Shipping & returns").querySelector("a")?.textContent, "Ask about delivery");
     });
   }
 });
@@ -54,22 +54,22 @@ test("products without captured disclosures retain description, care and deliver
 test("captured source disclosures replace generic copy without changing purchase or specification behavior", async () => {
   await mount(captured(text("Source Details for this chair."), text("Oak frame. Wipe with a dry cloth."), text("Source delivery and returns terms.")), () => {
     assert.equal(disclosure("Details").querySelector("p")?.textContent, "Source Details for this chair.");
-    assert.equal(disclosure("Materials + Care").querySelector("p")?.textContent, "Oak frame. Wipe with a dry cloth.");
-    assert.equal(disclosure("Shipping + Returns").querySelector("p")?.textContent, "Source delivery and returns terms.");
-    assert.equal(disclosure("Materials + Care").querySelector("a"), null);
-    assert.equal(disclosure("Shipping + Returns").querySelector("a"), null);
+    assert.equal(disclosure("Materials & care").querySelector("p")?.textContent, "Oak frame. Wipe with a dry cloth.");
+    assert.equal(disclosure("Shipping & returns").querySelector("p")?.textContent, "Source delivery and returns terms.");
+    assert.equal(disclosure("Materials & care").querySelector("a"), null);
+    assert.equal(disclosure("Shipping & returns").querySelector("a"), null);
     assert.equal(document.querySelector("h1")?.textContent, "Source Chair");
     assert.match(document.querySelector("[data-price-block] strong")!.textContent!, /23,600/);
     assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
     assert.match(document.querySelector("[data-disclosure]")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
-    assert.match(disclosure("Dimensions & specifications").textContent!, /SKU: CHAIR-NAT/);
+    assert.match(disclosure("Product specifications").textContent!, /SKU: CHAIR-NAT/);
   });
 });
 
 test("captured empty disclosure bodies stay empty and never invent fallback copy", async () => {
   for (const empty of [null, { type: "root", children: [] } as ProductRichText]) {
     await mount(captured(empty, empty, empty), () => {
-      for (const label of ["Details", "Materials + Care", "Shipping + Returns"]) {
+      for (const label of ["Details", "Materials & care", "Shipping & returns"]) {
         assert.equal(disclosure(label).textContent, label);
         assert.equal(disclosure(label).querySelector("p, a"), null);
       }
@@ -130,9 +130,9 @@ test('Keeri product details show source materials, dimensions, care and warranty
  await mount({...product,source:'keeri:maple',sourceDetails:{details:'Handcrafted <script>chair</script>',materials:'Oak and linen',dimensions:'80 x 60 cm',careInstructions:'Dry cloth',warranty:'One year'}},()=>{
   assert.match(disclosure('Details').textContent!,/Handcrafted <script>chair<\/script>/);
   assert.equal(disclosure('Details').querySelector('script'),null);
-  assert.match(disclosure('Materials + Care').textContent!,/Oak and linen/);
-  assert.match(disclosure('Materials + Care').textContent!,/Dry cloth/);
-  assert.match(disclosure('Dimensions & specifications').textContent!,/80 x 60 cm/);
+  assert.match(disclosure('Materials & care').textContent!,/Oak and linen/);
+  assert.match(disclosure('Materials & care').textContent!,/Dry cloth/);
+  assert.match(disclosure('Product specifications').textContent!,/80 x 60 cm/);
   assert.match(document.querySelector('[data-accordions]')!.textContent!,/One year/);
  });
 });
@@ -140,7 +140,7 @@ test('Keeri product details show source materials, dimensions, care and warranty
 test('missing Shopify fields use real Keeri details without replacing populated Shopify copy',async()=>{
  await mount({...captured(null,text('Original Shopify care')),sourceDetails:{details:'Keeri construction details',materials:'Keeri oak',dimensions:null,careInstructions:null,warranty:null}},()=>{
   assert.match(disclosure('Details').textContent!,/Keeri construction details/);
-  assert.match(disclosure('Materials + Care').textContent!,/Original Shopify care/);
-  assert.doesNotMatch(disclosure('Materials + Care').textContent!,/Keeri oak/);
+  assert.match(disclosure('Materials & care').textContent!,/Original Shopify care/);
+  assert.doesNotMatch(disclosure('Materials & care').textContent!,/Keeri oak/);
  });
 });

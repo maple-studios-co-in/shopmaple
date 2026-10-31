@@ -1,58 +1,63 @@
-import Link from "next/link";
-import { PencilRuler } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
 /**
  * What a variant tile needs. The product page builds these from the catalogue; `slug` is for the
- * variant's URL and `image` for its own photo, both optional so today's data and richer data fit.
+ * variant's URL, `image` for its own photo and `swatch` for a staff-entered colour, all optional so
+ * today's data and richer data fit.
  */
 export type SelectorVariant = {
   id: string;
   name: string;
   slug?: string;
   image?: string;
-  priceLabel: string;
+  swatch?: string;
   /** Shown only when two variants share a name, so shoppers can tell them apart. */
   code?: string;
 };
 
-/** The product page's option tiles: photo tiles, or plain text tiles when the product has no per-option photos. */
-export function VariantSelector({ variants, selectedId, onSelect, enquiryHref, layout = "photo" }: {
+/**
+ * The product page's finishes ("Personalise your finish" in "Maple / PDF Review / Product Detail"):
+ * a 34 px circle and the name per option. `photo` circles show the option's photo (or its colour);
+ * `swatch` circles show staff-entered colours; `text` options have neither and show the name alone.
+ */
+export function VariantSelector({ variants, selectedId, onSelect, layout = "photo" }: {
   variants: SelectorVariant[];
   selectedId: string;
   onSelect: (id: string) => void;
-  enquiryHref: string;
-  layout?: "photo" | "text";
+  layout?: "photo" | "swatch" | "text";
 }) {
-  const selected = variants.find((variant) => variant.id === selectedId);
   return (
-    <div className="relative">
-    {/* The customization link sits beside the group label, not inside it, so the group is named by its option alone. */}
-    <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1 text-label leading-[1.6] font-medium text-brand no-underline hover:underline hover:underline-offset-[5px]">
-      <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
-    </Link>
-    <fieldset data-variants={layout} className="grid gap-3">
-      <legend className="mb-3 pr-44 text-ui">Option: <strong className="font-semibold">{selected?.name}</strong></legend>
-      <div className={cn("grid gap-3", layout === "text" ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
-        {variants.map((variant) => (
-          <label key={variant.id}
-            className={cn("relative grid cursor-pointer content-start gap-1 rounded-[7px] p-2 text-label text-espresso shadow-[0_0_0_2px] transition-shadow has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
-              variant.id === selectedId ? "shadow-espresso" : "shadow-espresso/12 hover:shadow-espresso/40")}>
-            <input type="radio" name="variant" value={variant.id} checked={variant.id === selectedId} onChange={() => onSelect(variant.id)} className="sr-only" />
-            {layout === "photo" && (
-              <span data-variant-image className="relative block aspect-[11/10] overflow-hidden rounded-[5px] bg-cream [&_img]:object-cover">
-                {variant.image ? <ProductImage src={variant.image} alt="" fill sizes="130px" />
-                  : <span data-variant-placeholder className="grid size-full place-items-center p-1 text-center text-label text-[#5e574f]">Photo unavailable</span>}
+    <fieldset data-variants={layout} className="m-0 min-w-0 border-0 p-0">
+      <legend className="mb-5 p-0 text-[18px] leading-[1.45] font-bold text-espresso">Personalise your finish</legend>
+      <div className="flex flex-wrap gap-x-3 gap-y-4">
+        {variants.map((variant) => {
+          const selected = variant.id === selectedId;
+          return (
+            <label key={variant.id}
+              className={cx("group/option relative flex cursor-pointer flex-col items-start gap-2 text-meta text-espresso has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brand",
+                layout === "text" ? "rounded-[6px] border border-solid px-3.5 py-2.5" : "w-[100px] sm:w-[130px]",
+                layout === "text" && (selected ? "border-espresso" : "border-sand hover:border-taupe"))}>
+              <input type="radio" name="variant" value={variant.id} checked={selected} onChange={() => onSelect(variant.id)} className="sr-only" />
+              {layout !== "text" && (
+                <span aria-hidden="true"
+                  className={cx("relative block size-[34px] shrink-0 overflow-hidden rounded-full bg-cream shadow-[0_0_0_1px_rgb(41_37_31/0.12)] transition-shadow [&_img]:object-cover",
+                    selected ? "outline-2 outline-offset-2 outline-espresso outline-solid" : "group-hover/option:outline-1 group-hover/option:outline-offset-2 group-hover/option:outline-sand group-hover/option:outline-solid")}>
+                  {layout === "photo" && variant.image
+                    ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="34px" /></span>
+                    : variant.swatch
+                      ? <span data-variant-swatch className="absolute inset-0" style={{ backgroundColor: variant.swatch }} />
+                      : <span data-variant-placeholder className="absolute inset-0" />}
+                </span>
+              )}
+              <span className={cx("grid gap-0.5", selected && "font-semibold")}>
+                {variant.name}
+                {variant.code && <small data-variant-code className="text-label font-normal text-taupe">Item code: {variant.code}</small>}
               </span>
-            )}
-            <span className="font-semibold">{variant.name}</span>
-            {variant.code && <small data-variant-code className="text-label text-taupe">Item code: {variant.code}</small>}
-            <small className="text-label text-taupe">{variant.priceLabel}</small>
-          </label>
-        ))}
+            </label>
+          );
+        })}
       </div>
     </fieldset>
-    </div>
   );
 }

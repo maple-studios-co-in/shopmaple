@@ -187,3 +187,11 @@ test("variant URL updates preserve the current path, unrelated query and hash wi
     assert.deepEqual(replacements, []);
   });
 });
+
+test("the product page ends with its reviews and related pieces, not the homepage newsletter and values", async () => {
+  await withRoute(async () => {
+    assert.ok(document.querySelector("[data-product-details]"));
+    assert.equal(Boolean(document.querySelector("[data-newsletter-form]")), false, "No newsletter sign-up on the product page");
+    assert.equal(Boolean(document.querySelector("[data-home-values]")), false, "No homepage values section on the product page");
+  });
+});
