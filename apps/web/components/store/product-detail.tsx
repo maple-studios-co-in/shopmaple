@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, PencilRuler, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney, categoryNames } from "@/lib/format";
@@ -13,6 +13,7 @@ import { ProductRichText } from "../product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "../modal";
 import { ProductGallery } from "./product-gallery";
+import { VariantSelector } from "./variant-selector";
 
 type Presentation = {
   variantImages: Record<string, string>;
@@ -155,34 +156,11 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             </div>
             {product.description && <p data-description className="text-ui leading-[1.6]">{product.description}</p>}
             {product.variants.length > 1 && (
-              <fieldset data-variants={textOptions ? "text" : "photo"} className="grid gap-3">
-                <legend className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-ui">
-                  <span>Option: <strong className="font-semibold">{variant?.title}</strong></span>
-                  <Link data-customization href={enquiryHref} className="inline-flex items-center gap-1 text-label font-medium text-brand no-underline hover:underline">
-                    <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
-                  </Link>
-                </legend>
-                <div className={cn("grid gap-3", textOptions ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
-                  {product.variants.map((v) => (
-                    <label key={v.id}
-                      className={cn("relative grid cursor-pointer content-start gap-1 rounded-[7px] p-2 text-label text-espresso shadow-[0_0_0_2px] transition-shadow has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
-                        v.id === variantId ? "shadow-espresso" : "shadow-espresso/12 hover:shadow-espresso/40")}>
-                      <input type="radio" name="variant" value={v.id} checked={v.id === variantId} onChange={() => selectVariant(v.id)} className="sr-only" />
-                      {!textOptions && (
-                        <span data-variant-image className="relative block aspect-[11/10] overflow-hidden rounded-[5px] bg-cream [&_img]:object-cover">
-                          {variantImage(v.id) ? <ProductImage src={variantImage(v.id)!} alt="" fill sizes="130px" />
-                            : <span data-variant-placeholder className="grid size-full place-items-center p-1 text-center text-label text-taupe">Photo unavailable</span>}
-                        </span>
-                      )}
-                      <span className="font-semibold">{v.title}</span>
-                      {v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) && (
-                        <small data-variant-code className="text-label text-taupe">Item code: {v.sku}</small>
-                      )}
-                      <small className="text-label text-taupe">{shopMoney(v.pricePaise)}</small>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <VariantSelector layout={textOptions ? "text" : "photo"} selectedId={variantId} onSelect={selectVariant} enquiryHref={enquiryHref}
+                variants={product.variants.map((v) => ({
+                  id: v.id, name: v.title, image: variantImage(v.id), priceLabel: shopMoney(v.pricePaise),
+                  code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
+                }))} />
             )}
             <div className="flex flex-wrap gap-x-5 gap-y-1 text-meta [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2">
               <a href="#product-specifications">Dimensions &amp; specifications</a>
