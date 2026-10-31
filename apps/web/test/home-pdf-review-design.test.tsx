@@ -19,10 +19,12 @@ async function renderHome(edit?: (content: typeof defaultStorefrontContent) => v
   globalThis.fetch = async (input) => {
     const url = String(input);
     if (url.endsWith("/api/content/storefront")) return Response.json({ version: 7, content });
-    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ published: true, products: [{
-      id: "aera", handle: "aera-swivel-lounge-chair", title: "Aera lounge chair", image: null,
-      pricePaise: 2360000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1,
-    }] });
+    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ published: true,
+      products: new URL(url).searchParams.get("handles")!.split(",").map((handle) => ({
+        id: handle, handle, title: `Card ${handle}`, image: null,
+        pricePaise: 2360000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1,
+      })),
+    });
     return new Response(null, { status: 404 });
   };
   try {
@@ -33,7 +35,7 @@ async function renderHome(edit?: (content: typeof defaultStorefrontContent) => v
 const text = (node: Element | null | undefined) => node?.textContent?.replace(/\s+/g, " ").trim();
 const texts = (root: ParentNode, selector: string) => [...root.querySelectorAll(selector)].map(text);
 
-test("hero is the design's bento: a message over the living-room photograph, four labelled category tiles and the promise strip", async () => {
+test("hero is the design's bento: a message over the shop film's poster, four labelled category tiles and the promise strip", async () => {
   const doc = await renderHome();
   const hero = doc.querySelector("[data-hero]")!;
   const message = hero.querySelector("[data-hero-message]");
@@ -42,7 +44,7 @@ test("hero is the design's bento: a message over the living-room photograph, fou
   assert.equal(text(message.querySelector("h2")), "Timeless craftsmanship. A home that feels yours.");
   assert.equal(text(message.querySelector("[data-hero-lede]")), "Thoughtfully made furniture, shaped around you.");
   assert.equal(text(message.querySelector("[data-hero-cta]")), "Explore Collection", "The arrow is drawn, so the link reads as the published label");
-  assert.equal(hero.querySelector("[data-hero-film] img")?.getAttribute("src"), "/media/home-hero-living-room.webp", "The default still is the design's living room, without a logo under the headline");
+  assert.equal(hero.querySelector("[data-hero-film] img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "The default still is the shop film's own poster, so playback starts without a jump");
   assert.ok(hero.querySelector("[data-hero-film] [data-video-control]"), "The workshop film still plays on request");
   const labels = [...hero.querySelectorAll("[data-hero-tile] [data-tile-card]")];
   assert.deepEqual(labels.map((card) => text(card.querySelector("h3"))), ["Sofas", "Chairs", "Tables", "Beds"]);
@@ -77,19 +79,19 @@ test("Nimbus is a feature card: photograph beside a cream panel with an eyebrow,
   assert.equal(cta.getAttribute("href"), "/pages/nimbus-collection");
 });
 
-test("product rails use the shared section heading, outlined cards and a browse button under the bestsellers rail", async () => {
+test("product rails use the shared section heading and outlined cards, with a browse button under the chairs rail", async () => {
   const doc = await renderHome();
   const bestsellers = doc.querySelector('[data-home-section="bestsellers"] [data-home-products]')!;
   assert.equal(text(bestsellers.querySelector("[data-section-eyebrow]")), "Handpicked favourites");
   assert.equal(text(bestsellers.querySelector("h2")), "Bestsellers");
   assert.equal(bestsellers.querySelector("[data-product-card]")?.getAttribute("data-card-surface"), "outlined");
-  const browse = bestsellers.querySelector("a[data-rail-cta]")!;
-  assert.equal(text(browse), "View all bestsellers →");
-  assert.equal(browse.getAttribute("href"), "/collections/all");
-  assert.ok(browse.compareDocumentPosition(bestsellers.querySelector("[data-carousel]")!) & 2, "The button follows the rail");
   const chairs = doc.querySelector('[data-home-section="chairs"] [data-home-products]')!;
   assert.equal(text(chairs.querySelector("[data-section-eyebrow]")), "Comfort, your way");
   assert.equal(text(chairs.querySelector("h2")), "Chairs");
+  const browse = chairs.querySelector("a[data-rail-cta]")!;
+  assert.equal(text(browse), "View all chairs →");
+  assert.equal(browse.getAttribute("href"), "/collections/chairs");
+  assert.ok(browse.compareDocumentPosition(chairs.querySelector("[data-carousel]")!) & 2, "The button follows the rail");
 });
 
 test("testimonial is the design's customer story: heading block, film beside a white quote card, and no stars without review data", async () => {

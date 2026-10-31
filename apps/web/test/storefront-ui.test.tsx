@@ -249,7 +249,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
   );
 });
 
-test("hero keeps product discovery clear and only downloads its film when requested", async () => {
+test("hero keeps product discovery clear and plays the shop film, which the shopper can pause", async () => {
   const mediaPrototype = dom.window.HTMLMediaElement.prototype;
   const savedMedia = new Map(["play", "pause", "paused"].map(key => [key, Object.getOwnPropertyDescriptor(mediaPrototype, key)]));
   const savedMotion = Object.getOwnPropertyDescriptor(dom.window, "matchMedia");
@@ -275,8 +275,8 @@ test("hero keeps product discovery clear and only downloads its film when reques
       const video = document.querySelector("video")!;
       assert.equal(
         video.getAttribute("src"),
-        null,
-        "the film should not consume bandwidth before a shopper requests it",
+        "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0",
+        "the shop's hero film plays on its own, as on shop.maplefurnishers.com",
       );
       assert.match(
         document.querySelector("[data-hero-film]")!.textContent!,
@@ -289,13 +289,13 @@ test("hero keeps product discovery clear and only downloads its film when reques
       await act(async () =>
         document
           .querySelector<HTMLButtonElement>(
-            'button[aria-label="Play workshop video"]',
+            'button[aria-label="Pause hero film"]',
           )!
           .click(),
       );
-      assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
+      assert.equal(video.paused, true);
       assert.ok(
-        document.querySelector('button[aria-label="Pause workshop video"]'),
+        document.querySelector('button[aria-label="Play hero film"]'),
       );
     });
   } finally {

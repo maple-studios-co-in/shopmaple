@@ -75,10 +75,12 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
 const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(selector)].map(node => node.textContent?.trim());
 const attributes = (doc: Document, selector: string, attribute: string) => [...doc.querySelectorAll(selector)].map(node => node.getAttribute(attribute));
 
-test("both homepage rails expose a visible heading and a context-labelled browse destination even when empty", async () => {
+// The owner removed the Bestsellers row's own "View all" link (1 November 2026); it returns only when the row is empty.
+test("both homepage rails expose a visible heading and a context-labelled browse destination when they need one", async () => {
   for (const options of [{}, { merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } }]) {
     const { doc } = await renderHome(options);
-    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
+    const empty = "merchandising" in options;
+    for (const [key, heading, href] of [...(empty ? [["bestsellers", "Bestsellers", "/collections/all"]] : []), ["chairs", "Chairs", "/collections/chairs"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
       const browse = rail.querySelector("a[data-rail-cta]");
@@ -94,14 +96,14 @@ test("published rail headings are used for visible navigation without changing c
   assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="chairs"] a[data-rail-cta]')?.getAttribute("aria-label"), "View all Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
-  assert.equal(doc.querySelector('[data-home-section="bestsellers"] a[data-rail-cta]')?.getAttribute("href"), "/collections/all");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] a[data-rail-cta]'), null, "Bestsellers has no View all link");
 });
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
   const { doc } = await renderHome({ merchandising: customMerchandising() });
-  // Categories: three mobile columns, then the design's 164px circles.
+  // Categories: three mobile columns, then the design's 164px circles, growing on wider windows.
   assert.deepEqual(attributes(doc, "[data-home-categories] img", "sizes"), Array(2).fill(
-    "(max-width:750px) calc((100vw - 64px) / 3), 164px",
+    "(max-width:750px) calc((100vw - 64px) / 3), clamp(164px, 11.4vw, 260px)",
   ));
   // Offers are the design's text shortcut cards: they draw no artwork.
   assert.equal(doc.querySelector("[data-home-offers] img"), null);

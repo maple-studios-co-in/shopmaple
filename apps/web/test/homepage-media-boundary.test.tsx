@@ -20,8 +20,8 @@ const partial: TemplateMedia = [
 test("homepage islands retain exact default art and resolve partial overrides by slot", () => {
   for (const media of [undefined, partial]) {
     const doc = new JSDOM(renderToStaticMarkup(<><Hero media={media} /><HomeNimbus media={media} /></>)).window.document;
-    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("src"), "/media/home-hero-living-room.webp");
-    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("alt"), "A Maple sectional sofa in a bright living room");
+    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
+    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("alt"), "Arranging flowers on a Maple sideboard beside a floral armchair");
     assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("src"), null);
     assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("preload"), "none");
     assert.deepEqual([...doc.querySelectorAll("[data-hero-tile] img")].map(node => node.getAttribute("src")), [

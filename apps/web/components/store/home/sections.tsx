@@ -30,7 +30,7 @@ export function HomeDifference({
           {content.cta}
         </Link>
       </div>
-      <ul data-difference-promises className="m-0 grid max-w-[1280px] list-none grid-cols-4 gap-6 rounded-xl bg-cream p-6 max-[1024px]:grid-cols-2 max-[750px]:gap-x-4 max-[750px]:gap-y-5 max-[750px]:p-5">
+      <ul data-difference-promises className="m-0 grid list-none grid-cols-4 gap-6 rounded-xl bg-cream p-6 max-[1024px]:grid-cols-2 max-[750px]:gap-x-4 max-[750px]:gap-y-5 max-[750px]:p-5">
         {content.promises.map((text, index) => {
           const artwork = resolveTemplateMedia(icons[index]!, media);
           return (
@@ -57,13 +57,13 @@ export function HomeSocial({
   autoplay?: boolean;
 }) {
   return (
-    <section data-store data-home-social aria-label="Maple on Instagram" className={cn(homePage, "grid justify-items-center gap-3 py-12 font-body md:py-16")}>
+    <section data-store data-home-social aria-label="Maple on Instagram" className="grid w-full justify-items-center gap-3 px-16 py-16 font-body max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-4">
       <h2 className="font-serif text-[30px] leading-tight font-medium text-espresso md:text-[40px]">
         {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
       </h2>
-      <a href="https://www.instagram.com/the_maple_experience/" target="_blank" rel="noreferrer"
+      <a href="https://www.instagram.com/maplefurnishers/" target="_blank" rel="noreferrer"
         className="inline-flex items-center gap-2 text-ui text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-        <Instagram aria-hidden="true" className="size-5" /> @the_maple_experience <ArrowRight aria-hidden="true" className="size-4" />
+        <Instagram aria-hidden="true" className="size-5" /> @maplefurnishers <ArrowRight aria-hidden="true" className="size-4" />
       </a>
       <div className="w-full"><InstagramRail posts={posts} autoplay={autoplay} /></div>
     </section>
@@ -90,7 +90,7 @@ export function HomeTestimonial({
         <SectionLede>{subheading}</SectionLede>
         <div className="grid grid-cols-2 items-start gap-10 max-[1024px]:grid-cols-1 max-[750px]:gap-5">
           <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}
-            className="h-[460px] w-full rounded-xl bg-espresso object-cover max-[1024px]:h-auto max-[1024px]:aspect-video">
+            className="h-[clamp(460px,31.9vw,820px)] w-full rounded-xl bg-espresso object-cover max-[1024px]:h-auto max-[1024px]:aspect-video">
             <source src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0" type="video/mp4" />
           </video>
           <figure data-testimonial-card className="m-0 flex flex-col gap-6 rounded-2xl bg-white p-8 text-espresso max-[750px]:gap-4 max-[750px]:p-5">
@@ -142,7 +142,7 @@ export function HomeNewsletterBand({
   const headingId = useId();
   return (
     <section data-store data-home-newsletter id="newsletter" aria-labelledby={headingId} className="bg-brand text-white">
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-[640px_minmax(0,580px)] gap-20 p-16 font-body max-[1140px]:grid-cols-2 max-[1140px]:gap-10 max-[1024px]:grid-cols-1 max-[1024px]:gap-8 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-5 max-[750px]:py-10">
+      <div className="grid w-full grid-cols-[640fr_580fr] gap-20 p-16 font-body max-[1140px]:grid-cols-2 max-[1140px]:gap-10 max-[1024px]:grid-cols-1 max-[1024px]:gap-8 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-5 max-[750px]:py-10">
         <div className="flex flex-col gap-4">
           <h2 id={headingId} className="max-w-[600px] font-serif text-[44px] leading-[1.1] font-bold max-[750px]:text-h2">{content.heading}</h2>
           <p className="max-w-[600px] text-lead text-[#f0e3d9] max-[750px]:text-card">{content.body}</p>
@@ -192,7 +192,7 @@ export function HomeProject({
   const headingId = useId();
   return (
     <section data-store data-home-project aria-labelledby={headingId} className="bg-cream">
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-[600px_minmax(0,648px)] justify-between gap-16 p-16 font-body max-[1140px]:grid-cols-2 max-[1140px]:gap-10 max-[1024px]:grid-cols-1 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:gap-8 max-[750px]:px-5 max-[750px]:py-10">
+      <div className="grid w-full grid-cols-[600fr_648fr] gap-16 p-16 font-body max-[1140px]:grid-cols-2 max-[1140px]:gap-10 max-[1024px]:grid-cols-1 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:gap-8 max-[750px]:px-5 max-[750px]:py-10">
         <div className="flex flex-col gap-6 max-[750px]:gap-4">
           <p data-section-eyebrow className={eyebrow}>Let’s connect</p>
           <h2 id={headingId} className="font-serif text-[54px] leading-[1.1] font-bold text-espresso max-[750px]:text-[36px]">{content.heading}</h2>

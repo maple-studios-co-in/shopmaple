@@ -18,7 +18,7 @@ import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
 const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
-  ["home-workshop-poster", "home", "[data-hero-film] img", "/media/home-hero-living-room.webp", "A Maple sectional sofa in a bright living room"],
+  ["home-workshop-poster", "home", "[data-hero-film] img", files + "preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
   ["home-hero-sofas", "home", '[data-hero-tile][href="/pages/sofas"] img', files + "engaged_5.jpg?v=1767435623", ""],
   ["home-hero-chairs", "home", '[data-hero-tile][href="/pages/chairs"] img', files + "engaged_6_1.jpg?v=1767444019", ""],
   ["home-hero-tables", "home", '[data-hero-tile][href="/pages/tables"] img', files + "engaged_8_1.jpg?v=1767444598", ""],
@@ -121,8 +121,8 @@ async function checkArtwork(edited: boolean) {
     if (page === "home") {
       assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector("[data-hero-cta]")?.getAttribute("href"), "/pages/nimbus-collection");
-      assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("aria-label"), "Maple furniture craftsmanship");
-      assert.ok(doc.querySelector('button[aria-label="Play workshop video"]'));
+      assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("aria-label"), "Maple at home, the shop film");
+      assert.ok(doc.querySelector('button[aria-label="Play hero film"]'), "The server draws Play; the film starts only once the page has checked motion settings");
       assert.ok(doc.querySelector('[data-home-testimonial] video[controls] source[src$="84199271.mp4?v=0"]'));
       assert.equal(doc.querySelector("[data-home-newsletter] h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }

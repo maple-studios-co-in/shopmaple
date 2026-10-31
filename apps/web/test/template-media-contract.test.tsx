@@ -47,9 +47,9 @@ test("template media remains within the whole-document 128 KiB bound", () => {
 test("template fallback resolution preserves original assets and caller labels without sharing mutable items", async () => {
   const { resolveTemplateMedia, templateMediaSlots } = await import("../lib/template-media-defaults");
   const original = resolveTemplateMedia("home-workshop-poster");
-  assert.deepEqual(original, { key: "home-workshop-poster", image: "/media/home-hero-living-room.webp", alt: "A Maple sectional sofa in a bright living room" });
+  assert.deepEqual(original, { key: "home-workshop-poster", image: "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", alt: "Arranging flowers on a Maple sideboard beside a floral armchair" });
   original.image = "/media/mutated.webp";
-  assert.equal(resolveTemplateMedia("home-workshop-poster").image, "/media/home-hero-living-room.webp");
+  assert.equal(resolveTemplateMedia("home-workshop-poster").image, "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
   assert.equal(resolveTemplateMedia("nimbus-room-living", [], "Evening lounge").alt, "Evening lounge");
   assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "Living Room");
   const override = [{ key: "home-newsletter" as const, image: "/media/override.webp", alt: "Updated room" }];
