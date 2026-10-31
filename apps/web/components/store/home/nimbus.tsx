@@ -1,37 +1,33 @@
 import Link from "next/link";
+import { useId } from "react";
+import { eyebrow } from "../section-heading";
+import { designSection, solidButton } from "./layout";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-/** The Nimbus feature ("NIMBUS" over the cloud scene in the design): tagline, name, Explore, and the four features. */
+/** The Nimbus feature card ("Maple / PDF Review / Home"): the photograph beside a cream panel with name, tagline, features and Explore. */
 export function HomeNimbus({
   content = defaultHomeDetails.nimbus,
   media,
 }: { content?: HomeDetails["nimbus"]; media?: TemplateMedia } = {}) {
   const artwork = resolveHomeTemplateMedia("home-nimbus", media);
+  const headingId = useId();
   return (
-    <section data-store data-home-nimbus aria-label="The Nimbus Collection"
-      className="bg-[linear-gradient(180deg,#faf8f4,#ecebe8_18%,#ecebe8_82%,#faf8f4)] py-8 font-body md:py-14">
-      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8 xl:px-12">
-        <div className="relative isolate grid min-h-[520px] place-items-center overflow-hidden rounded-[18px] px-5 pt-12 pb-8 text-center text-white md:aspect-[1170/640] md:min-h-0 md:pb-12">
-          <picture data-nimbus-media className="absolute inset-0 -z-[2]">
-            <source media="(max-width: 767px)" srcSet={artwork.mobileImage} />
-            <img src={artwork.image} alt={artwork.alt} loading="lazy" className="size-full object-cover" />
-          </picture>
-          <div aria-hidden="true" className="absolute inset-0 -z-[1] bg-[linear-gradient(0deg,rgb(41_37_31/0.62),rgb(41_37_31/0.15)_45%,transparent_70%)]" />
-          <div className="grid justify-items-center gap-2 self-end md:gap-3">
-            <p className="text-price font-bold [text-shadow:0_1px_8px_rgb(0_0_0/0.35)] md:text-subhead">{content.tagline}</p>
-            <h2 className="font-serif text-[30px] leading-tight font-medium [text-shadow:0_2px_14px_rgb(0_0_0/0.35)] md:text-[40px]">{content.heading}</h2>
-            <ul aria-label="What makes Nimbus" className="flex flex-wrap justify-center gap-2">
-              {content.features.map((label) => (
-                <li key={label} className="rounded-full bg-white/85 px-3 py-1.5 text-label font-semibold text-espresso">{label}</li>
-              ))}
-            </ul>
-            <Link href="/pages/nimbus-collection"
-              className="mt-2 inline-flex min-w-[134px] items-center justify-center rounded-full bg-brand px-8 py-4 text-price font-bold text-white no-underline hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              {content.cta}
-            </Link>
-          </div>
+    <section data-store data-home-nimbus aria-labelledby={headingId} className={designSection}>
+      <div data-feature-card className="grid grid-cols-[700fr_612fr] overflow-hidden rounded-2xl bg-cream max-[1024px]:grid-cols-1">
+        <picture data-nimbus-media className="relative block h-[380px] overflow-hidden rounded-xl max-[1024px]:h-auto max-[1024px]:aspect-[700/380]">
+          <source media="(max-width: 767px)" srcSet={artwork.mobileImage} />
+          <img src={artwork.image} alt={artwork.alt} loading="lazy" className="absolute inset-0 size-full object-cover" />
+        </picture>
+        <div className="flex flex-col items-start gap-5 p-[42px] max-[750px]:gap-4 max-[750px]:p-6">
+          <p data-section-eyebrow className={eyebrow}>Introducing</p>
+          <h2 id={headingId} className="font-serif text-h1 font-bold text-espresso max-[750px]:text-h2">{content.heading}</h2>
+          <p data-feature-body className="max-w-[500px] text-lead text-taupe max-[750px]:text-card">{content.tagline}</p>
+          <ul aria-label="What makes Nimbus" className="m-0 flex list-none flex-wrap gap-x-3 gap-y-1 p-0 text-label font-bold text-espresso uppercase">
+            {content.features.map((label) => <li key={label}>{label}</li>)}
+          </ul>
+          <Link data-feature-cta href="/pages/nimbus-collection" className={`${solidButton} after:ml-1.5 after:content-['→']`}>{content.cta}</Link>
         </div>
       </div>
     </section>

@@ -38,39 +38,13 @@ test("every homepage section is rebuilt markup in a display:contents wrapper the
   }
 });
 
-test("hero, difference and categories follow the design", async () => {
-  const doc = await renderHome();
-  assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Explore Collection");
-  assert.deepEqual([...doc.querySelectorAll("[data-hero-tile] [data-tile-link]")].map((n) => n.textContent?.trim()), ["View collection", "View collection", "View collection", "View collection"]);
-  const difference = doc.querySelector("[data-home-difference]")!;
-  assert.equal(difference.querySelector("a")?.getAttribute("href"), "/pages/contact");
-  assert.ok(!difference.querySelector("a")?.className.includes("bg-brand"), "The call to action is a text link, as in the design");
-  const categories = doc.querySelector("[data-home-category-section]")!;
-  assert.ok(categories.querySelector("[data-ornament]"), "The heading has the design's ornament");
-  const tile = categories.querySelector("[data-home-categories] > a")!;
-  assert.equal(tile.lastElementChild?.tagName, "H3", "Labels sit under the circles");
-});
-
-test("ticker is a burgundy band, nimbus shows its copy and call to action without a toggle, rails carry the design's headings", async () => {
+// The "Maple / PDF Review / Home" layout itself is covered by home-pdf-review-design.test.tsx.
+test("sections the design does not draw keep their current look, and the enquiry form sits in its white card", async () => {
   const doc = await renderHome();
   assert.ok(doc.querySelector("[data-home-ticker]")?.className.includes("bg-brand"));
-  const nimbus = doc.querySelector("[data-home-nimbus]")!;
-  assert.equal(nimbus.querySelector("button[aria-expanded]"), null, "No hidden details panel");
-  assert.equal(nimbus.querySelector("a")?.getAttribute("href"), "/pages/nimbus-collection");
-  const rail = doc.querySelector('[data-home-section="bestsellers"] header')!;
-  assert.equal(rail.querySelector("p")?.textContent, "Handpicked favourites");
-  assert.equal(rail.querySelector("a")?.textContent?.trim(), "View all bestsellers →");
-});
-
-test("testimonial, enquiry and values follow the design", async () => {
-  const doc = await renderHome();
-  const quote = doc.querySelector("[data-home-testimonial] blockquote h3")!;
-  assert.match(quote.textContent ?? "", /hassle-free/);
-  const project = doc.querySelector("[data-home-project]")!;
-  assert.equal(project.querySelector("[data-eyebrow]")?.textContent, "Let’s connect");
-  assert.ok(project.querySelector("[data-project-form]")?.closest("[data-form-card]"), "The form sits in a white card");
-  assert.equal(project.querySelector('[data-project-form] button[type="submit"]')?.textContent?.trim(), "Send enquiry →");
+  assert.equal(doc.querySelector("[data-home-nimbus] button[aria-expanded]"), null, "No hidden details panel");
   const values = doc.querySelector("[data-home-values]")!;
   assert.equal(values.querySelector("[data-watermark]")?.textContent, "Maple Furnishers");
   assert.equal(values.querySelector("a")?.getAttribute("href"), "/pages/our-story");
+  assert.ok(doc.querySelector("[data-home-project] [data-project-form]")?.closest("[data-form-card]"), "The form sits in a white card");
 });

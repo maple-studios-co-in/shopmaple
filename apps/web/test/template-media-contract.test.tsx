@@ -47,9 +47,9 @@ test("template media remains within the whole-document 128 KiB bound", () => {
 test("template fallback resolution preserves original assets and caller labels without sharing mutable items", async () => {
   const { resolveTemplateMedia, templateMediaSlots } = await import("../lib/template-media-defaults");
   const original = resolveTemplateMedia("home-workshop-poster");
-  assert.deepEqual(original, { key: "home-workshop-poster", image: "/media/workshop-poster.webp", alt: "Furniture craftsmanship at Maple" });
+  assert.deepEqual(original, { key: "home-workshop-poster", image: "/media/home-hero-living-room.webp", alt: "A Maple sectional sofa in a bright living room" });
   original.image = "/media/mutated.webp";
-  assert.equal(resolveTemplateMedia("home-workshop-poster").image, "/media/workshop-poster.webp");
+  assert.equal(resolveTemplateMedia("home-workshop-poster").image, "/media/home-hero-living-room.webp");
   assert.equal(resolveTemplateMedia("nimbus-room-living", [], "Evening lounge").alt, "Evening lounge");
   assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "Living Room");
   const override = [{ key: "home-newsletter" as const, image: "/media/override.webp", alt: "Updated room" }];

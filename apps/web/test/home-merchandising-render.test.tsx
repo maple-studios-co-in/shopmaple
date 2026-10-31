@@ -81,7 +81,7 @@ test("both homepage rails expose a visible heading and a context-labelled browse
     for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
-      const browse = rail.querySelector("header a");
+      const browse = rail.querySelector("a[data-rail-cta]");
       assert.equal(browse?.getAttribute("href"), href, "browse action must reach the source collection, not a product or Shopify");
       assert.equal(browse?.getAttribute("aria-label"), `View all ${heading}`);
       assert.equal(browse?.textContent, `View all ${heading?.toLowerCase()} →`);
@@ -92,22 +92,19 @@ test("both homepage rails expose a visible heading and a context-labelled browse
 test("published rail headings are used for visible navigation without changing collection destinations", async () => {
   const { doc } = await renderHome({ copy: { chairsHeading: "Your reading nook", bestsellersHeading: "Selected favourites" } });
   assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
-  assert.equal(doc.querySelector('[data-home-section="chairs"] header a')?.getAttribute("aria-label"), "View all Your reading nook");
+  assert.equal(doc.querySelector('[data-home-section="chairs"] a[data-rail-cta]')?.getAttribute("aria-label"), "View all Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
-  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a')?.getAttribute("href"), "/collections/all");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] a[data-rail-cta]')?.getAttribute("href"), "/collections/all");
 });
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
   const { doc } = await renderHome({ merchandising: customMerchandising() });
-  // Categories: three mobile columns, six desktop circles of at most 170px inside the 1440px page.
+  // Categories: three mobile columns, then the design's 164px circles.
   assert.deepEqual(attributes(doc, "[data-home-categories] img", "sizes"), Array(2).fill(
-    "(max-width:767px) calc((100vw - 64px) / 3), (min-width:1440px) 170px, calc((100vw - 216px) / 6)",
+    "(max-width:750px) calc((100vw - 64px) / 3), 164px",
   ));
-  // Offers: 70% mobile rail cards, four desktop cards in the page's gutters.
-  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("sizes"),
-    "(max-width:767px) 70vw, (min-width:1440px) 328px, calc((100vw - 144px) / 4)");
-  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("src"),
-    "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+  // Offers are the design's text shortcut cards: they draw no artwork.
+  assert.equal(doc.querySelector("[data-home-offers] img"), null);
 });
 
 test("legacy published homepage preserves original collection copy, media, links and both product orders", async () => {
@@ -125,13 +122,7 @@ test("legacy published homepage preserves original collection copy, media, links
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?width=600",
   ]);
   assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
-  assert.deepEqual(attributes(doc, "[data-home-offers] img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
-  assert.deepEqual(attributes(doc, "[data-home-offers] img", "src"), [
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Clearance_Sale.webp?v=1778257635",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/min_30_off_sale_banner.webp?v=1778255612",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_2.webp?v=1778269923",
-  ]);
+  assert.deepEqual(texts(doc, "[data-home-offers] h3"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
   assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
 });
@@ -146,8 +137,7 @@ test("published tiles follow saved order, visibility, full image URLs and access
   assert.deepEqual(attributes(doc, "[data-home-categories] img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
   assert.deepEqual(attributes(doc, "[data-home-categories] img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
   assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
-  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
-  assert.equal(doc.querySelector("[data-home-offers] img")?.getAttribute("alt"), "Discover our furniture offer");
+  assert.equal(doc.querySelector("[data-home-offers] h3")?.textContent, "Furniture for your room");
   assert.equal(doc.querySelector("[data-product-card]"), null);
 });
 

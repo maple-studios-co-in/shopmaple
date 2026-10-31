@@ -44,7 +44,7 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   chairs: (c) => [c.homeMerchandising?.chairs, c.homeCopy.chairsHeading, c.productHighlights],
   promos: (c) => campaign(c, "landing-dining", "landing-storage", "landing-consoles"),
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],
-  newsletter: (c) => [c.homeDetails?.newsletter, c.templateMedia],
+  newsletter: (c) => [c.homeDetails?.newsletter],
   values: (c) => [c.homeDetails?.values, c.templateMedia],
   cities: (c) => [c.homeDetails?.cities, c.homeCitiesLayout, c.templateMedia],
   project: (c) => [c.homeDetails?.project],

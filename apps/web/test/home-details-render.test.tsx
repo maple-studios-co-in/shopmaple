@@ -60,7 +60,7 @@ const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(sele
 test("older published homepage retains original copy, assets, local links and forms", async () => {
   const { doc } = await renderHome();
   assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Explore Collection");
-  assert.deepEqual(texts(doc, "[data-hero-tile] h2"), ["Sofas", "Chairs", "Tables", "Beds"]);
+  assert.deepEqual(texts(doc, "[data-hero-tile] h3"), ["Sofas", "Chairs", "Tables", "Beds"]);
   assert.deepEqual(texts(doc, "[data-hero-tile] p"), ["Starting from ₹25,000", "Starting from ₹8,000", "Starting from ₹12,000", "Starting from ₹55,000"]);
   assert.deepEqual([...doc.querySelectorAll("[data-hero-tile]")].map((node) => node.getAttribute("href")), ["/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds"]);
   assert.equal(doc.querySelector("[data-home-difference] h2")?.textContent, "Every element is yours to reshape");
@@ -76,7 +76,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector("[data-home-project] strong")?.textContent, "24 hours");
   assert.ok(doc.querySelector('[data-project-form] input[name="email"][required]'));
   assert.ok(doc.querySelector('[data-newsletter-form] input[type="email"][required]'));
-  assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("src"), "/media/workshop-poster.webp");
+  assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("src"), "/media/home-hero-living-room.webp");
   assert.ok(doc.querySelector("[data-home-testimonial] video[controls] source"));
 });
 
@@ -84,15 +84,15 @@ test("published detail copy reaches every homepage section and stable keys keep 
   const { doc, requests } = await renderHome(editedDetails());
   assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Discover our collection");
   assert.equal(doc.querySelector("[data-hero-cta]")?.getAttribute("href"), "/pages/nimbus-collection");
-  assert.deepEqual(texts(doc, "[data-hero-tile] h2"), ["Restful beds", "Welcoming sofas", "Everyday chairs", "Gathering tables"]);
+  assert.deepEqual(texts(doc, "[data-hero-tile] h3"), ["Restful beds", "Welcoming sofas", "Everyday chairs", "Gathering tables"]);
   assert.deepEqual(texts(doc, "[data-hero-tile] p"), ["Made for your budget", "Starting from ₹99", "Ask for a quote", "From ₹18,000"]);
   assert.deepEqual([...doc.querySelectorAll("[data-hero-tile]")].map((node) => node.getAttribute("href")), ["/collections/beds", "/pages/sofas", "/pages/chairs", "/pages/tables"]);
   assert.ok(doc.querySelector("[data-hero-tile] img")?.getAttribute("src")?.includes("engaged_9_1.jpg"));
-  assert.deepEqual(texts(doc, "[data-home-difference] [data-eyebrow], [data-home-difference] h2, [data-home-difference] a"), ["Why Maple", "Crafted around you", "Plan your space"]);
+  assert.deepEqual(texts(doc, "[data-home-difference] [data-section-eyebrow], [data-home-difference] h2, [data-home-difference] a"), ["Why Maple", "Crafted around you", "Plan your space"]);
   assert.deepEqual(texts(doc, "[data-home-difference] li span"), ["Your fabric", "Your city", "Our workshop", "Our promise"]);
   assert.equal(doc.querySelector("[data-home-difference] a")?.getAttribute("href"), "/pages/contact");
   assert.deepEqual(texts(doc, "[data-home-nimbus] h2"), ["Meet Nimbus"]);
-  assert.deepEqual(texts(doc, "[data-home-nimbus] p"), ["A softer landing"]);
+  assert.deepEqual(texts(doc, "[data-home-nimbus] [data-feature-body]"), ["A softer landing"]);
   assert.deepEqual(texts(doc, "[data-home-nimbus] a"), ["View Nimbus"]);
   assert.deepEqual(texts(doc, "[data-home-nimbus] li"), ["Soft seats", "Gentle curves", "Light lines", "Room to relax"]);
   assert.equal(doc.querySelector("[data-home-testimonial] h3")?.textContent, "Our room feels complete");
@@ -102,7 +102,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, "[data-home-values] h3"), ["Lasting frames", "Better with time", "Everyday comfort", "Quiet details"]);
   assert.deepEqual(texts(doc, "[data-home-values] p"), ["Built with care.", "Materials that mature.", "For every day.", "A calm room."]);
   assert.ok(doc.querySelector("[data-home-values] img")?.getAttribute("src")?.includes("Cover_Image_Maple_5.svg"));
-  assert.deepEqual(texts(doc, "[data-home-cities] header p, [data-home-cities] h2"), ["Find us near you", "Across India"]);
+  assert.deepEqual(texts(doc, "[data-home-cities] [data-section-eyebrow], [data-home-cities] h2"), ["Find us near you", "Across India"]);
   assert.equal(doc.querySelector("[data-home-project] h2")?.textContent, "Tell us your idea");
   assert.deepEqual(texts(doc, "[data-project-intro], [data-project-body]"), ["Our team replies in two working days with tailored ideas.", "Start with your room."]);
   assert.equal(doc.querySelector("[data-home-project] strong")?.textContent, "two working days");
@@ -123,6 +123,6 @@ test("published detail strings are escaped as text rather than interpreted as ma
   details.cities.heading = markup;
   details.project.responseTime = markup;
   const { doc } = await renderHome(details);
-  for (const selector of ["[data-hero-cta]", "[data-home-difference] h2", "[data-home-nimbus] p", "blockquote p", "[data-home-newsletter] h2 + p", "[data-home-values] p", "[data-home-cities] h2", "[data-home-project] strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
+  for (const selector of ["[data-hero-cta]", "[data-home-difference] h2", "[data-home-nimbus] [data-feature-body]", "blockquote p", "[data-home-newsletter] h2 + p", "[data-home-values] p", "[data-home-cities] h2", "[data-home-project] strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
   assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
 });

@@ -3,7 +3,7 @@ import { shopFile } from "@/lib/format";
 
 /** Shared storefront defaults, without other page templates or staff labels. */
 export const homeTemplateMedia = {
-  "home-workshop-poster": { key: "home-workshop-poster", image: "/media/workshop-poster.webp", alt: "Furniture craftsmanship at Maple" },
+  "home-workshop-poster": { key: "home-workshop-poster", image: "/media/home-hero-living-room.webp", alt: "A Maple sectional sofa in a bright living room" },
   "home-hero-sofas": { key: "home-hero-sofas", image: shopFile("engaged_5.jpg?v=1767435623"), alt: "" },
   "home-hero-chairs": { key: "home-hero-chairs", image: shopFile("engaged_6_1.jpg?v=1767444019"), alt: "" },
   "home-hero-tables": { key: "home-hero-tables", image: shopFile("engaged_8_1.jpg?v=1767444598"), alt: "" },

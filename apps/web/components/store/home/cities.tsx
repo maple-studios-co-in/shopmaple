@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
+import { SectionHeading } from "../section-heading";
+import { designSection } from "./layout";
 import type { HomeDetails, HomeCitiesLayout, TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
 import { HomeCarousel } from "@/components/store/carousel";
@@ -74,6 +76,50 @@ export function HomeCities({
           );
         })}
       </MovingCities>
+    </section>
+  );
+}
+
+/**
+ * The homepage's cities ("ACROSS INDIA" in "Maple / PDF Review / Home"): the shared section heading over
+ * cream cards, each a round photograph and the city's name. The other pages keep `HomeCities`.
+ */
+export function HomeCityCards({
+  content = defaultHomeDetails.cities,
+  autoplay = true,
+  media,
+  layout = defaultHomeCitiesLayout,
+}: {
+  content?: HomeDetails["cities"];
+  autoplay?: boolean;
+  media?: TemplateMedia;
+  layout?: HomeCitiesLayout;
+} = {}) {
+  const cities = layout.filter(city => city.enabled);
+  const headingId = useId();
+  if (!cities.length) return null;
+  return (
+    <section data-store data-home-cities aria-labelledby={headingId} className={designSection}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <SectionHeading eyebrow={content.eyebrow} title={content.heading} id={headingId} />
+        <a className="text-label text-taupe underline-offset-3 hover:underline" href="/media/cities/credits.html">Image credits</a>
+      </div>
+      <HomeCarousel label="Cities served" autoplay={autoplay}
+        railClassName="grid grid-flow-col auto-cols-[calc((100%-80px)/6)] gap-4 overflow-x-auto overscroll-x-contain snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-[1024px]:auto-cols-[calc((100%-48px)/4)] max-[750px]:auto-cols-[calc((100%-16px)/2.3)] max-[750px]:gap-3"
+        controlsClassName="mt-4">
+        <div data-city-track className="contents">
+        {cities.map(({ key }) => {
+          const artwork = resolveTemplateMedia(`home-city-${key}`, media);
+          return (
+            <figure data-city-card key={key} className="m-0 flex snap-start flex-col items-center gap-3 rounded-[40px] bg-cream px-5 pt-5 pb-5 text-center">
+              <Image src={artwork.image} alt={artwork.alt} width={400} height={600}
+                className="size-[120px] rounded-full object-cover max-[750px]:size-24" />
+              {artwork.alt && <figcaption data-city-name className="text-ui font-bold text-espresso">{artwork.alt}</figcaption>}
+            </figure>
+          );
+        })}
+        </div>
+      </HomeCarousel>
     </section>
   );
 }
