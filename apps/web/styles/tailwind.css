@@ -83,6 +83,12 @@
   --text-title--line-height: 1.2;
   --text-h1: 42px;
   --text-h1--line-height: 1.1;
+  /* "Maple / PDF Review / UI Components": the footer band's closing line (26 px) and section
+     titles such as "Every piece. Every time." (40 px), both Newsreader bold. */
+  --text-band: 26px;
+  --text-band--line-height: 1.1;
+  --text-display: 40px;
+  --text-display--line-height: 1.1;
 }
 
 /* Admin tokens. The values live on .shop-admin (admin.css); utilities read them inline, so

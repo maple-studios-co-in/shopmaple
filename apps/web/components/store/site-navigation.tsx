@@ -15,13 +15,16 @@ import dynamic from "next/dynamic";
 const loadPanel = () => import("./mega-panel");
 const MegaPanel = dynamic(() => loadPanel().then((module) => module.MegaPanel));
 const preloadPanel = () => { void loadPanel(); };
-import { textLink } from "./current-look";
 
 /*
- * The desktop navigation bar and the mobile navigation drawer in the storefront's current look,
- * re-skinned onto utilities without visual change (the desktop panel is MegaPanel). Tailwind's
- * max-[N] means `width < N`: max-[750px] is the legacy `max-width: 749px`.
+ * The desktop menu ("Shop navigation" in "MF / Main navigation"): 14 px bold Barlow entries in the
+ * header row, wrapping onto their own row from 750 to 1023 px. It stretches to the row's edges so
+ * the pointer can travel from a trigger straight into its panel (MegaPanel), which spans the header
+ * row below it. The mobile drawer keeps the storefront's current look. Tailwind's max-[N] means
+ * `width < N`: max-[750px] is the legacy `max-width: 749px`.
  */
+/** A desktop menu entry's focus ring. */
+const focusBrand = "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand";
 /** The ink focus ring the navigation uses instead of the global burgundy one. */
 export const focusInk = "focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ink";
 /** The drawer's main entries: a category button or a plain link. */
@@ -63,7 +66,7 @@ export function DesktopNavigation({
     <nav
       ref={nav}
       data-desktop-nav
-      className="relative z-[35] flex h-[50px] items-center justify-center gap-8 border-b border-b-rule font-redhat text-[16px] leading-[1.5] font-bold max-[750px]:hidden"
+      className="flex min-w-0 flex-wrap items-stretch gap-x-[25px] self-stretch text-ui font-bold text-espresso lg:-my-8 lg:flex-[0_1_650px] max-[1140px]:gap-x-5 max-[1024px]:order-last max-[1024px]:-mb-5 max-[1024px]:h-12 max-[1024px]:basis-full max-[1024px]:justify-center max-[1024px]:border-t max-[1024px]:border-sand max-[750px]:hidden"
       aria-label="Main navigation"
       onPointerLeave={(event) => {
         if (
@@ -97,7 +100,7 @@ export function DesktopNavigation({
               }}
               id={`maple-trigger-${item.id}`}
               data-menu-trigger
-              className={`relative cursor-pointer border-none border-current bg-transparent p-0 wrap-anywhere hover:text-[#555] aria-expanded:text-brand aria-expanded:after:absolute aria-expanded:after:inset-x-0 aria-expanded:after:bottom-1.5 aria-expanded:after:h-0.5 aria-expanded:after:bg-brand aria-expanded:after:content-[''] ${focusInk}`}
+              className={`relative cursor-pointer border-none border-current bg-transparent p-0 wrap-anywhere hover:text-brand aria-expanded:text-brand aria-expanded:after:absolute aria-expanded:after:inset-x-0 aria-expanded:after:bottom-[calc(50%-16px)] aria-expanded:after:h-0.5 aria-expanded:after:bg-brand aria-expanded:after:content-[''] ${focusBrand}`}
               aria-expanded={active === item.id}
               aria-controls={`maple-panel-${item.id}`}
               onPointerEnter={(event) => {
@@ -134,7 +137,7 @@ export function DesktopNavigation({
           <Link
             key={item.id}
             href={item.href}
-            className={`flex h-full items-center hover:text-[#555] ${textLink} ${focusInk}`}
+            className={`flex items-center text-espresso no-underline hover:text-brand ${focusBrand}`}
             onPointerEnter={() => setActive(null)}
             onFocus={() => setActive(null)}
           >

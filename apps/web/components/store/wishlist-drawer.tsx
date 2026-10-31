@@ -1,10 +1,10 @@
 "use client";
 import { type Ref } from "react";
-import { Heart } from "lucide-react";
 import { useShop } from "../shop-provider";
 
 import { headerIcon } from "./header-icon";
 import { useHydrated } from "./use-hydrated";
+import { HeartIcon } from "./icons";
 
 export const drawerId = "wishlist-drawer";
 const heartClass = `${headerIcon} max-[701px]:hidden`;
@@ -23,7 +23,7 @@ export function WishlistTrigger({ open, onOpen, ref }: { open: boolean; onOpen: 
     <span
       data-wishlist-count
       aria-hidden="true"
-      className="absolute top-0 -right-[3px] h-4 min-w-4 rounded-full bg-brand px-[3px] text-center font-body text-[10px] leading-4 font-bold text-white"
+      className="absolute top-0.5 -right-0.5 h-4 min-w-4 rounded-full bg-brand px-[3px] text-center font-body text-[10px] leading-4 font-bold text-white"
     >
       {count}
     </span>
@@ -31,7 +31,7 @@ export function WishlistTrigger({ open, onOpen, ref }: { open: boolean; onOpen: 
   if (!hydrated)
     return (
       <a href="/favourites" data-wishlist-trigger className={heartClass} aria-label={label}>
-        <Heart />
+        <HeartIcon />
         {badge}
       </a>
     );
@@ -46,7 +46,7 @@ export function WishlistTrigger({ open, onOpen, ref }: { open: boolean; onOpen: 
       aria-controls={drawerId}
       onClick={onOpen}
     >
-      <Heart />
+      <HeartIcon />
       {badge}
     </button>
   );

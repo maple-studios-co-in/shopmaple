@@ -1,8 +1,6 @@
-import { iconButton } from "./current-look";
-
 /**
- * A header action icon (search, account, wishlist, cart): the 32 x 40 icon button, 40 x 44 under
- * 750 px, with an 18 px wide glyph under 701 px. `border: 0` as the legacy rule had it (style none,
- * colour current). Tailwind's max-[N] means `width < N`.
+ * A header action (account, saved, bag) in "MF / Main navigation": a 21 px burgundy line icon in a
+ * 40 x 40 target, 40 x 44 under 750 px. Tailwind's max-[750px] means `width < 750`.
  */
-export const headerIcon = `${iconButton} border-none border-current max-[750px]:h-11 max-[750px]:w-10 max-[701px]:[&_svg]:w-[18px]`;
+export const headerIcon =
+  "relative inline-flex size-10 items-center justify-center border-0 bg-transparent p-0 text-brand hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-[750px]:h-11 [&_svg]:size-[21px]";

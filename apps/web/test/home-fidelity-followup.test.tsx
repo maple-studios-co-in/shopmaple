@@ -8,13 +8,11 @@ import { HomeCities } from "../components/home-sections";
 
 const render = (element: React.ReactNode) => new JSDOM(renderToStaticMarkup(element)).window.document;
 
-test("footer preserves its policy destinations behind the original disclosure", () => {
+test("footer keeps every policy destination, now in the design's legal line", () => {
   const doc = render(<Footer />);
-  const disclosure = doc.querySelector("[data-footer-bottom] details");
-  assert.ok(disclosure, "Footer policies should be a collapsed disclosure instead of an expanded link row");
-  assert.equal(disclosure.hasAttribute("open"), false);
-  assert.equal(disclosure.querySelector("summary")?.textContent, "Terms and Policies");
-  assert.deepEqual([...disclosure.querySelectorAll("a")].map(a => a.getAttribute("href")), ["/policies/privacy-policy", "/policies/terms-of-service", "/policies/shipping-policy", "/policies/refund-policy"]);
+  const policies = doc.querySelector('[data-footer-bottom] nav[aria-label="Store policies"]');
+  assert.ok(policies, "Footer policies sit in the legal line beside the copyright");
+  assert.deepEqual([...policies.querySelectorAll("a")].map(a => a.getAttribute("href")), ["/policies/privacy-policy", "/policies/terms-of-service", "/policies/shipping-policy", "/policies/refund-policy"]);
 });
 
 test("city cards pair each editable image with its published destination label", () => {
