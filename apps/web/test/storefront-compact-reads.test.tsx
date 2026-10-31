@@ -6,6 +6,7 @@ import { JSDOM } from "jsdom";
 import Home from "../app/page";
 import ProductPage from "../app/products/[handle]/page";
 import { CategoryLanding, CategoryProducts } from "../components/category-landing";
+import { CategoryRail } from "../components/store/category-landing";
 import { NimbusLanding } from "../components/category-nimbus";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductCard } from "../components/product-card";
@@ -18,7 +19,7 @@ import categories from "../data/landing-categories.json";
 import nimbus from "../data/landing-nimbus.json";
 import source from "../data/landing-catalog.json";
 
-const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2 });
+const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[] });
 const product = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, description: "Full detail description", category: "chairs", images: ["https://example.com/chair.jpg", "https://example.com/gallery.jpg"], published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "one", title: "Oak", sku: "ONE", pricePaise: 1234500, compareAtPaise: 1500000, available: true, stockPolicy: "stocked" }, { id: "two", title: "Custom", sku: null, pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
 let fixtureId = 0;
 async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void> } = {}) {
@@ -101,7 +102,7 @@ test("hidden or empty homepage rails issue no product requests", async () => {
   content.homeMerchandising!.chairs = [];
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
-    assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 1);
+    assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 1);
     assert.deepEqual(requests.map(u => u.pathname), ["/api/content/storefront"]);
   }, { content });
 });
@@ -123,7 +124,7 @@ test("category parent returns its hero before catalogue loading and all rendered
       release();
       const doc = await pendingDocument;
       assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
-      assert.equal(doc.querySelectorAll(".landing-products").length, 5);
+      assert.equal(doc.querySelectorAll("[data-category-rail]").length, 5);
       assert.ok(doc.querySelectorAll("[data-product-card]").length > 0);
     } finally {
       release();
@@ -163,10 +164,10 @@ test("standalone category rail preserves source-only enquiry cards and skips unk
 test("deferred category errors are consumed by every rail without falling back to invented availability", async () => {
   await fixture(async requests => {
     const page = await CategoryLanding({ slug: "sofas" });
-    const rails = propsOf(page, CategoryProducts);
+    const rails = propsOf(page, CategoryRail);
     assert.equal(rails.length, 5);
     const results = await Promise.allSettled(rails.map(props =>
-      CategoryProducts(props as Parameters<typeof CategoryProducts>[0]),
+      CategoryRail(props as Parameters<typeof CategoryRail>[0]),
     ));
     assert.deepEqual(results.map(result => result.status), Array(5).fill("rejected"));
     assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 1);

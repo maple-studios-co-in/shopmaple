@@ -27,10 +27,13 @@ const product = (id: string, title = id, category = "chairs") => ({
 const variant = (id: string, pricePaise: number | null, compareAtPaise: number | null = null) => ({
   id, title: "Variant detail", sku: "PRIVATE-SKU", pricePaise, compareAtPaise, available: true, stockPolicy: "stocked",
 });
-const card = (id: string, title = id) => ({
+const card = (id: string, title = id, category = "chairs") => ({
   id, handle: id, title, image: "https://example.com/first.jpg", pricePaise: null,
   compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 0,
+  category, optionNames: [] as string[],
 });
+// Cards carry option names for colour dots, never SKUs or other variant fields.
+const named = { optionNames: ["Variant detail"] };
 
 // Catches slicing before publication/category filtering, lost DB title/ID ordering,
 // full-detail transfer, and unbounded product/variant materialization.
@@ -47,7 +50,7 @@ test("related catalogue returns only the first five published exact-category car
   assert.equal(result.status, 200, "compact related endpoint must serve five public category cards");
   assert.deepEqual(result.body, { category: "chairs", published: true, products: [
     ["first", "Alpha"], ["same-a", "Bravo"], ["same-z", "Bravo"], ["fourth", "Charlie"], ["fifth", "Delta"],
-  ].map(([id, title]) => ({ ...card(id!, title!), pricePaise: 1000, optionCount: 1 })) });
+  ].map(([id, title]) => ({ ...card(id!, title!), pricePaise: 1000, optionCount: 1, ...named })) });
   assert.equal(result.headers["cache-control"], "public, max-age=30, s-maxage=60");
   assert.ok(Buffer.byteLength(result.text) < 2000, "five summaries must stay compact despite full source descriptions");
   const productReads = queries.filter(q => q.query.includes('FROM "public"."Product"'));
@@ -77,10 +80,10 @@ test("related summaries preserve null, zero, tied and mixed option prices withou
   assert.equal(result.status, 200, "related cards must represent every pricing edge faithfully");
   assert.deepEqual(result.body.products, [
     card("empty"),
-    { ...card("mixed"), pricePaise: 1000, compareAtPaise: 1500, priceFrom: true, otherOptionsOnRequest: true, optionCount: 3 },
-    { ...card("tied"), pricePaise: 1200, compareAtPaise: 1800, optionCount: 2 },
-    { ...card("unknown"), optionCount: 1 },
-    { ...card("zero"), pricePaise: 0, optionCount: 1 },
+    { ...card("mixed"), pricePaise: 1000, compareAtPaise: 1500, priceFrom: true, otherOptionsOnRequest: true, optionCount: 3, ...named },
+    { ...card("tied"), pricePaise: 1200, compareAtPaise: 1800, optionCount: 2, ...named },
+    { ...card("unknown"), optionCount: 1, ...named },
+    { ...card("zero"), pricePaise: 0, optionCount: 1, ...named },
   ]);
 });
 
@@ -91,7 +94,7 @@ test("related catalogue returns empty and small categories without borrowing oth
   assert.deepEqual(empty.body, { category: "outdoors", products: [], published: true });
   const small = await request(app).get("/api/catalogue/related?category=tables");
   assert.equal(small.status, 200);
-  assert.deepEqual(small.body, { category: "tables", products: [card("only-table", "Only table")], published: true });
+  assert.deepEqual(small.body, { category: "tables", products: [card("only-table", "Only table", "tables")], published: true });
 });
 
 test("related catalogue rejects absent, invalid, duplicate and unexpected category queries", async () => {

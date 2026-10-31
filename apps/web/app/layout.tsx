@@ -28,6 +28,7 @@ import "@/styles/tailwind.css";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";
+import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 export const metadata: Metadata = {
   title: { default: "Maple Furnishers", template: "%s | Maple Furnishers" },
   description: "Explore Maple furniture for your home.",
@@ -38,12 +39,14 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const { siteChrome } = await getPublishedContent();
+  const { siteChrome, productHighlights } = await getPublishedContent();
   return (
     <html lang="en">
       <body>
         <ShopProvider>
-          <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
+          <ProductHighlightsProvider value={productHighlights}>
+            <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
+          </ProductHighlightsProvider>
         </ShopProvider>
       </body>
     </html>
