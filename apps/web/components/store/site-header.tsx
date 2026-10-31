@@ -53,7 +53,7 @@ export function Header({
         <div
           data-store
           data-announcement
-          className="flex items-start gap-x-[140px] bg-brand p-2.5 font-body text-label text-white wrap-anywhere max-[1024px]:justify-center max-[1024px]:text-center"
+          className="flex items-start gap-x-[140px] bg-brand p-2.5 font-body text-label leading-[17px] text-white wrap-anywhere max-[1024px]:justify-center max-[1024px]:text-center"
         >
           <Link href={siteChrome.announcement.href} className="font-bold no-underline hover:underline hover:underline-offset-4 lg:w-[490px] lg:shrink-0">
             {siteChrome.announcement.text}
