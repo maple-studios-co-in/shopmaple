@@ -7,7 +7,7 @@ import { collectionHref, sortOptions, type CollectionQuery } from "@shopmaple/co
 import { categoryNames, money } from "@/lib/format";
 import { collectionIntro } from "@/lib/collection-intros";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { ProductCard } from "./product-card";
 import { PromiseStrip } from "./promise-strip";
 

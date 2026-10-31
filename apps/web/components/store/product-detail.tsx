@@ -7,9 +7,9 @@ import type { Product } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney, categoryNames } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { ProductVisit } from "../product-visit";
-import { ProductRichText } from "../product-rich-text";
+import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "../modal";
 import { ProductGallery } from "./product-gallery";
@@ -226,7 +226,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               ))}
             </ul>
             <p data-disclosure className="text-label text-taupe">Delivery and payment options will be confirmed before ordering.</p>
-            <form data-serviceability id="delivery-enquiry" className="grid scroll-mt-24 gap-2 rounded-[10px] bg-brand/6 p-4"
+            <form data-serviceability id="delivery-enquiry" className="grid scroll-mt-6 gap-2 rounded-[10px] bg-brand/6 p-4"
               onSubmit={(e) => { e.preventDefault(); setCheckedPin(pin); }}>
               <label htmlFor="delivery-pincode" className="text-ui font-semibold">Delivery enquiry</label>
               <p className="text-meta text-taupe">Add your Indian postcode so our team can confirm charges and lead time.</p>
@@ -290,7 +290,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
                   </>}
                 </div>
               </details>
-              <details id="product-specifications" open className={cn(accordion, "scroll-mt-24")}>
+              <details id="product-specifications" open className={cn(accordion, "scroll-mt-6")}>
                 <summary className={summary}>Dimensions &amp; specifications{chevron}</summary>
                 <div className={panel}>
                   {product.sourceDetails?.dimensions ? <p>{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}

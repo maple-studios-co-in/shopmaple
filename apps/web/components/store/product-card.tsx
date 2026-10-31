@@ -4,7 +4,7 @@ import { ArrowRight, Star } from "lucide-react";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { categoryNames, shopMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { useShop } from "../shop-provider";
 import { HeartIcon } from "./icons";
 import { useProductHighlights } from "./product-highlights";

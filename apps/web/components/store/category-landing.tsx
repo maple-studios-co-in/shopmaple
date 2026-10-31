@@ -9,7 +9,7 @@ import { shopFile } from "@/lib/format";
 import { resolveCategoryPage, type LandingSection } from "@/lib/category-content-defaults";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import sourceCatalog from "@/data/landing-catalog.json";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { CategoryCampaign } from "./category-campaign";
 import { CategoryIntro } from "./category-intro";
 import { ProductCard } from "./product-card";

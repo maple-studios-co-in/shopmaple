@@ -6,7 +6,7 @@ import type { ProductCardModel } from "@/lib/product-card-model";
 import { requestSavedProduct } from "@/lib/saved-product-request";
 import { shopMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { useShop } from "../shop-provider";
 import { ProductCard } from "./product-card";
 import { HeartIcon } from "./icons";

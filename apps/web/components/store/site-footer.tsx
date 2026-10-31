@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Fragment, type CSSProperties } from "react";
 import { Instagram, Linkedin } from "lucide-react";
 import type { ChromeLink, SiteChrome } from "@shopmaple/contracts";
-import { DismissibleDetails } from "../dismissible-details";
+import { DismissibleDetails } from "./dismissible-details";
 import { textLink } from "./current-look";
 import { defaultSiteChrome, chromeHref } from "@/lib/site-chrome-defaults";
 

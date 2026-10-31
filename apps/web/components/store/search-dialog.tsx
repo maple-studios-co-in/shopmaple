@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Search, X } from "lucide-react";
-import { ProductImage } from "@/components/product-image";
+import { ProductImage } from "./product-image";
 import { shopMoney } from "@/lib/format";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { recentProducts, clearRecentProducts } from "@/lib/recent-products";

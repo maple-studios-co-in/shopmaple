@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReturnsPageContent } from "@shopmaple/contracts";
-import { ContactForm } from "@/components/contact-form";
+import { ContactForm } from "./returns-form";
 import { editorialPage, editorialTitle, textLink } from "./current-look";
 
 /** /pages/returns: the refund policy link, the fixed enquiry-only notice and the plain enquiry form. */

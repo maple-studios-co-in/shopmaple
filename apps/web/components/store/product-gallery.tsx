@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProductImage } from "../product-image";
+import { ProductImage } from "./product-image";
 import { HeartIcon } from "./icons";
 
 const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1432px) 724px, calc(100vw - 708px)";
