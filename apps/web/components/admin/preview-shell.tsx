@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Pencil } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
 import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { AdminRoot } from "./admin-root";
 import { previewDevices, previewMessageSource, readPreviewMessage, type PreviewDevice } from "@/lib/live-preview";
+import { sectionName } from "@/lib/section-thumbnails";
 
 export type PreviewPageOption = { label: string; segments: string[] };
 
@@ -48,6 +50,12 @@ export function PreviewShell({ token, segments, pages, version, publishedVersion
   );
 }
 
+/**
+ * The box a homepage section draws. HomePage wraps each section in a `display: contents`
+ * element that has no box of its own, so measuring, scrolling and outlining use its first child.
+ */
+const sectionBox = (node: HTMLElement) => (node.firstElementChild as HTMLElement | null) ?? node;
+
 /** The parent window when this document is embedded by the same-origin admin, else null. */
 function embeddingParent(): Window | null {
   if (typeof window === "undefined" || window.parent === window) return null;
@@ -81,12 +89,16 @@ export function PreviewNavigation({ token, children, navigate = (url) => window.
 
 /**
  * Inside the frame: announces the page and its sections to the embedding admin, and scrolls to
- * and highlights the section the admin asks for. Only same-origin messages from the parent window
- * are honoured; a top-level preview (no parent) stays silent.
+ * and highlights the section the admin asks for. When `selectable` (the draft view), hovering a
+ * section outlines it and offers an Edit button that selects it in the editor. Only same-origin
+ * messages from the parent window are honoured; a top-level preview (no parent) stays silent.
  */
-export function PreviewFrameBridge({ path, version, parentWindow }: { path: string; version: number; parentWindow?: Window | null }) {
+export function PreviewFrameBridge({ path, version, parentWindow, selectable = false }: {
+  path: string; version: number; parentWindow?: Window | null; selectable?: boolean;
+}) {
+  const [hover, setHover] = useState<{ section: string; top: number; left: number } | null>(null);
+  const parent = parentWindow === undefined ? embeddingParent() : parentWindow;
   useEffect(() => {
-    const parent = parentWindow === undefined ? embeddingParent() : parentWindow;
     if (!parent) return;
     const origin = window.location.origin;
     const sections = () => [...document.querySelectorAll<HTMLElement>("[data-home-section]")];
@@ -98,14 +110,48 @@ export function PreviewFrameBridge({ path, version, parentWindow }: { path: stri
         if (message.section !== null && node.dataset.homeSection === message.section) {
           node.setAttribute("data-preview-highlight", "true");
           const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-          node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+          sectionBox(node).scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
         } else node.removeAttribute("data-preview-highlight");
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [path, version, parentWindow]);
-  return null;
+  }, [path, version, parent]);
+  // Hover outlines a section and places its Edit button at the section's top left, inside the viewport.
+  useEffect(() => {
+    if (!parent || !selectable) return;
+    let current: HTMLElement | null = null;
+    const place = () => {
+      if (!current) return;
+      const rect = sectionBox(current).getBoundingClientRect();
+      setHover({ section: current.dataset.homeSection ?? "", top: Math.max(8, rect.top + 8), left: Math.max(8, rect.left + 8) });
+    };
+    function onOver(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("[data-preview-edit]")) return;
+      const section = target?.closest<HTMLElement>("[data-home-section]") ?? null;
+      if (section === current) return;
+      current?.removeAttribute("data-preview-hover");
+      current = section;
+      current?.setAttribute("data-preview-hover", "true");
+      if (current) place(); else setHover(null);
+    }
+    document.addEventListener("mouseover", onOver);
+    window.addEventListener("scroll", place, { passive: true });
+    return () => {
+      document.removeEventListener("mouseover", onOver);
+      window.removeEventListener("scroll", place);
+      current?.removeAttribute("data-preview-hover");
+    };
+  }, [parent, selectable]);
+  if (!parent || !selectable || !hover?.section) return null;
+  return (
+    <button type="button" data-preview-edit="" style={{ top: hover.top, left: hover.left }}
+      onClick={() => parent.postMessage({ source: previewMessageSource, type: "select", section: hover.section }, window.location.origin)}
+      className="fixed z-[1001] inline-flex h-7 items-center gap-1.5 rounded-full bg-primary px-3 font-sans text-xs font-semibold text-primary-foreground shadow-md focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60">
+      <Pencil aria-hidden="true" className="size-3.5" strokeWidth={1.75} />Edit {sectionName(hover.section)}
+    </button>
+  );
 }
 
 /** The draft page with the draft's own navigation and footer, a slim ribbon, and in-frame links kept on the draft. */
@@ -120,10 +166,11 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
 }) {
   return (
     // Storefront markup inside the frame is not the admin's to class, so the section highlight
-    // reaches it with an arbitrary variant; the ribbon sits in space reserved at the bottom.
+    // reaches it with an arbitrary variant, on the section's own box (its wrapper is
+    // display: contents); the ribbon sits in space reserved at the bottom.
     <div
       data-admin-tokens=""
-      className="relative pb-[26px] [&_[data-home-section][data-preview-highlight=true]]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]]:outline-2 [&_[data-home-section][data-preview-highlight=true]]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]]:outline-primary [&_[data-home-section][data-preview-highlight=true]]:outline-solid motion-safe:[&_[data-home-section]]:transition-shadow motion-safe:[&_[data-home-section]]:duration-500"
+      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500"
       data-preview-version={version}
       data-preview-path={path}
       data-preview-view={view}
@@ -132,7 +179,16 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
         <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
         <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
       </PreviewNavigation>
-      <PreviewFrameBridge path={path} version={version} />
+      <PreviewFrameBridge path={path} version={version} selectable={view === "draft"} />
     </div>
   );
+}
+
+/**
+ * One homepage section on its own, for a section card's thumbnail. The address is served with a
+ * policy that blocks the app bundles, so nothing here may depend on hydration: no ribbon, no link
+ * capture, no bridge. It is inert: keyboard focus never enters a picture.
+ */
+export function SectionThumbnailDocument({ section, children }: { section: string; children: ReactNode }) {
+  return <div data-section-thumbnail={section} inert className="pointer-events-none select-none">{children}</div>;
 }

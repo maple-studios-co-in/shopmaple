@@ -1,12 +1,11 @@
 "use client";
 import type { StorefrontContent } from "@shopmaple/contracts";
-import { NativeCheckbox } from "@/components/ui/native-checkbox";
-import { cn } from "@/lib/utils";
 import { Field } from "./field";
 import { HomeCitiesLayoutFields } from "./home-cities-layout-fields";
 import { HomeDetailsFields } from "./home-details-fields";
-import { CheckField, FieldGrid, MoveButtons, PanelHeader, SectionHeading, rowCard } from "./kit";
-import { SortableList } from "./sortable-list";
+import { CheckField, FieldGrid, PanelHeader, SectionHeading } from "./kit";
+import { sectionName } from "@/lib/section-thumbnails";
+import { SectionRail, type SectionScreen, type ThumbnailSource } from "./section-rail";
 
 type Copy = StorefrontContent["homeCopy"];
 const copyLabels: Record<keyof Copy, string> = {
@@ -19,13 +18,15 @@ const copyLabels: Record<keyof Copy, string> = {
   testimonialSubheading: "Testimonial subheading",
 };
 const copyLimit = (key: keyof Copy) => key === "ticker" ? 600 : key === "testimonialSubheading" ? 300 : 160;
-export const titleCase = (value: string) =>
-  value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+export const titleCase = sectionName;
 
-export function HomepagePanel({ content, edit, focusedSection }: {
+export function HomepagePanel({ content, edit, focusedSection, onSelectSection, onOpenScreen, thumbnails }: {
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
   focusedSection: string | null;
+  onSelectSection: (section: string) => void;
+  onOpenScreen: (screen: SectionScreen) => void;
+  thumbnails: ThumbnailSource;
 }) {
   const copyField = (key: keyof Copy) => (
     <Field
@@ -41,55 +42,14 @@ export function HomepagePanel({ content, edit, focusedSection }: {
     checked: content.motion[key] ?? fallback,
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => edit({ ...content, motion: { ...content.motion, [key]: event.target.checked } }),
   });
-  const visible = content.homeSections.filter((section) => section.enabled).length;
   return (
     <>
       <PanelHeader
         title="Homepage"
-        description="Drag sections into order, or use the Move buttons, and choose what visitors see. Focus a section to find it in the live preview."
+        description="Each card is the section as your draft draws it. Drag or use the Move buttons to reorder, untick to hide, and choose Edit to change its content. Select a section, here or with Edit in the live preview, to find it on the page."
       />
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <SectionHeading className="m-0">Sections</SectionHeading>
-        <span className="text-xs text-muted-foreground tabular-nums">{visible} of {content.homeSections.length} visible</span>
-      </div>
-      <SortableList
-        items={content.homeSections}
-        getId={(section) => section.key}
-        getLabel={(section) => titleCase(section.key)}
-        rowClassName={rowCard}
-        onReorder={(homeSections) => edit({ ...content, homeSections })}
-        rowProps={(section) => ({
-          "data-preview-section": section.key,
-          "data-preview-focused": focusedSection === section.key ? "true" : undefined,
-          className: cn(!section.enabled && "bg-surface"),
-        })}
-        renderItem={(section, index, handle) => (
-          <>
-            {handle}
-            <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-              <NativeCheckbox
-                aria-label={`Show ${titleCase(section.key)}`}
-                checked={section.enabled}
-                onChange={(event) => edit({
-                  ...content,
-                  homeSections: content.homeSections.map((item) => item.key === section.key ? { ...item, enabled: event.target.checked } : item),
-                })}
-              />
-              <span className={cn("truncate text-sm font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{titleCase(section.key)}</span>
-            </label>
-            <MoveButtons
-              name={titleCase(section.key)}
-              index={index}
-              length={content.homeSections.length}
-              onMove={(direction) => {
-                const sections = [...content.homeSections];
-                [sections[index], sections[index + direction]] = [sections[index + direction]!, sections[index]!];
-                edit({ ...content, homeSections: sections });
-              }}
-            />
-          </>
-        )}
-      />
+      <SectionHeading className="mb-2">Sections</SectionHeading>
+      <SectionRail content={content} edit={edit} selected={focusedSection} onSelect={onSelectSection} onOpenScreen={onOpenScreen} source={thumbnails} />
       <SectionHeading>Homepage copy</SectionHeading>
       <FieldGrid>{(Object.keys(copyLabels) as (keyof Copy)[]).map(copyField)}</FieldGrid>
       <HomeDetailsFields value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} />

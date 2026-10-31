@@ -27,7 +27,8 @@ import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
-import { LivePreview, type MintResult } from "./live-preview";
+import { LivePreview } from "./live-preview";
+import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
@@ -317,6 +318,15 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   }
   // Live preview: save quietly after a pause in editing so the frame can show the edit.
   const liveActive = liveOpen && previewable.has(tab);
+  /** Visible section thumbnails need the preview token too; the rail reports when one is on screen. */
+  const [thumbnailsWanted, setThumbnailsWanted] = useState(false);
+  const wantThumbnails = useCallback(() => setThumbnailsWanted(true), []);
+  const previewToken = usePreviewToken({
+    version: document?.version ?? null,
+    draftRequired: document?.draft === null,
+    active: liveActive || (tab === "Homepage" && thumbnailsWanted),
+    mint: mintPreviewToken,
+  });
   // After a failed quiet save, auto-save stays paused (one persistent notice with a retry)
   // until a manual save succeeds, so an outage never becomes a stream of retries.
   useEffect(() => {
@@ -373,7 +383,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     const set = <K extends keyof StorefrontContent>(key: K) => (value: StorefrontContent[K]) => edit({ ...content, [key]: value });
     switch (tab) {
       case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
-      case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} />;
+      case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
+        onOpenScreen={(screen) => { selectTab(screen); focusPanelHeading(); }} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
         const next = { ...content };
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
@@ -554,7 +565,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
               <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
-                onClose={() => setLiveOpen(false)} mint={mintPreviewToken} focusedSection={focusedSection} />
+                onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
+                onSelectSection={(section) => { if (tab !== "Homepage") selectTab("Homepage"); setFocusedSection(section); }} />
             )}
           </div>
         )}

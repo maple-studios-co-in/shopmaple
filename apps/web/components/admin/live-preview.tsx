@@ -6,21 +6,15 @@ import {
   previewDeviceWidths,
   previewFrameUrl,
   previewMessageSource,
-  previewTokenLeadMs,
-  previewTokenState,
   readPreviewMessage,
   type PreviewDevice,
-  type PreviewTokenState,
   type PreviewView,
 } from "@/lib/live-preview";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState, Skeleton } from "./crm-primitives";
-
-/** What minting a preview token came to; null means the session expired and the editor took over. */
-export type MintResult =
-  | { ok: true; token: string; expiresAt: string }
-  | { ok: false; code: "draft-required" | "rate-limited" | "conflict" | "unavailable"; message: string };
+import type { PreviewToken } from "./use-preview-token";
+export type { MintResult } from "./use-preview-token";
 
 export type LivePreviewProps = {
   /** Storefront address being edited, as the frame route expects it ("home", "pages/sofas"). */
@@ -42,11 +36,13 @@ export type LivePreviewProps = {
   onAutoChange: (next: boolean) => void;
   onUpdateNow: () => void;
   onClose: () => void;
-  mint: (version: number) => Promise<MintResult | null>;
+  /** The token shared with the section thumbnails (usePreviewToken in the editor). */
+  previewToken: PreviewToken;
   focusedSection: string | null;
+  /** The staff member pressed "Edit" on a section inside the preview. */
+  onSelectSection?: (section: string) => void;
 };
 
-const emptyToken: PreviewTokenState = { token: "", version: null, expiresAt: null };
 const draftRequiredMessage = "Save the draft once to start the live preview.";
 /**
  * Device frame outer widths (frame width plus the bezel padding). Every device renders at its
@@ -59,17 +55,11 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
 };
 
 /**
- * The builder-style preview pane. It owns the preview token lifecycle (one mint per draft
- * version and attempt, a manual retry after a failure, re-mint when the version changes or
- * expiry nears), the device and view switches (device frames scale down to fit the pane so a
- * tablet is a true 820 px layout), full-screen mode, and the origin-checked conversation
- * with the frame.
+ * The builder-style preview pane. It owns the device and view switches (device frames scale
+ * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
+ * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, mint, focusedSection }: LivePreviewProps) {
-  const [tokenState, setTokenState] = useState<PreviewTokenState>(emptyToken);
-  const [minting, setMinting] = useState(false);
-  const [mintError, setMintError] = useState<Extract<MintResult, { ok: false }> | null>(null);
-  const [attempt, setAttempt] = useState(0);
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
   const [fullscreen, setFullscreen] = useState(false);
@@ -78,51 +68,26 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const [scale, setScale] = useState(1);
   const frame = useRef<HTMLIFrameElement>(null);
   const stage = useRef<HTMLDivElement>(null);
-  /** The (version, attempt) pair already sent to the API; a failure never re-sends it. */
-  const sent = useRef<string | null>(null);
-  const alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-
-  // Mint when the draft version has no valid token: once per version and attempt. A failure
-  // leaves an error state with a manual retry; the expiry timer bumps the attempt in time.
-  useEffect(() => {
-    if (version === null || draftRequired || minting || mintError) return;
-    if (previewTokenState(tokenState, version, Date.now()) !== "mint") return;
-    const key = `${version}:${attempt}`;
-    if (sent.current === key) return;
-    sent.current = key;
-    setMinting(true);
-    void mint(version).then((result) => {
-      if (!alive.current) return;
-      setMinting(false);
-      if (!result) return;
-      if (!result.ok) { setMintError(result); return; }
-      const expiresAt = Date.parse(result.expiresAt);
-      setTokenState({ token: result.token, version, expiresAt: Number.isFinite(expiresAt) ? expiresAt : Date.now() + previewTokenLeadMs * 2 });
-    });
-  }, [version, draftRequired, tokenState, minting, mintError, attempt, mint]);
-  useEffect(() => {
-    if (tokenState.expiresAt === null) return;
-    const delay = Math.max(0, tokenState.expiresAt - previewTokenLeadMs - Date.now());
-    const timer = setTimeout(() => setAttempt((value) => value + 1), delay);
-    return () => clearTimeout(timer);
-  }, [tokenState]);
-  // A new version is a new attempt; an error from an older version no longer applies.
-  useEffect(() => { setMintError(null); }, [version]);
-  const retry = useCallback(() => { setMintError(null); setAttempt((value) => value + 1); }, []);
-
-  const hasToken = tokenState.token !== "" && tokenState.version === version;
-  const src = hasToken ? previewFrameUrl({ path, token: tokenState.token, view }) : null;
+  const { token, minting, error: mintError, retry } = previewToken;
+  const src = token ? previewFrameUrl({ path, token, view }) : null;
+  const hasToken = token !== null;
   const unpublished = view === "published" && publishedVersion === null;
+  // The message listener is registered once; it reads the latest callback from here.
+  const selectRef = useRef(onSelectSection);
+  useEffect(() => { selectRef.current = onSelectSection; }, [onSelectSection]);
 
   // Every new address starts a fresh load; the frame reports when it is ready.
   useEffect(() => { setFrameStatus("loading"); setFramePath(null); }, [src]);
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      const message = readPreviewMessage(event, window.location.origin, frame.current?.contentWindow ?? undefined);
+      // Only the mounted frame may talk to the pane; with no frame there is no one to listen to.
+      const source = frame.current?.contentWindow;
+      if (!source) return;
+      const message = readPreviewMessage(event, window.location.origin, source);
       if (!message) return;
       if (message.type === "ready") { setFrameStatus("ready"); setFramePath(message.path); }
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }
+      else if (message.type === "select") selectRef.current?.(message.section);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
