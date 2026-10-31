@@ -1,6 +1,12 @@
-import { cardHandle, parseCatalogueCard } from "./catalogue-responses";
+import { parseCatalogueCard } from "./catalogue-responses";
 import { isProductHandle } from "./recent-products";
 
+/** The address a card answers for: the requested one, or the current one after a renamed address redirected. */
+function cardHandle(response: Response, requested: string) {
+  if (!response.redirected) return requested;
+  const moved = decodeURIComponent(new URL(response.url).pathname.split("/").at(-1) ?? "");
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(moved) ? moved : requested;
+}
 /** Bound both headers and body, even when transport does not honor cancellation. */
 export async function requestSavedProduct(handle: string, signal: AbortSignal) {
   if (!isProductHandle(handle)) throw new Error("Saved furniture unavailable");

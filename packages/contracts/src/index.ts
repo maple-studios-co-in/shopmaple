@@ -34,6 +34,10 @@ export type {
   CampaignContent,
   ContentPage,
 } from "./content";
+/** A public https address; shared by product and variant photos. */
+const httpsUrl = z.url().refine((url) => new URL(url).protocol === "https:");
+/** A readable address segment ("dark-walnut"); shared by product handles and variant slugs. */
+const addressPart = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 export const variantSchema = z.object({
   id: z.string().min(1).max(160),
   title: z.string().min(1).max(300),
@@ -42,12 +46,10 @@ export const variantSchema = z.object({
   compareAtPaise: z.number().int().min(0).max(1_000_000_000).nullable(),
   available: z.boolean(),
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
-  /** Named options (Fabric: Ivory Boucle) for option pickers; empty when the source has none. */
-  options: z.array(z.object({ name: z.string().min(1).max(80), value: z.string().min(1).max(200) }).strict()).max(20).optional(),
   /** This variant's own photos; the product's `images` keeps every photo for cards. */
-  images: z.array(z.url().refine((url) => new URL(url).protocol === "https:")).optional(),
+  images: z.array(httpsUrl).optional(),
   /** The readable `?variant=` value on the product address, unique within its product. */
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120).nullable().optional(),
+  slug: addressPart.nullable().optional(),
 });
 export const sourceTaxonomySchema = z.object({
   productType: z.string().max(200),
@@ -59,15 +61,12 @@ export const sourceDetailsSchema = z.object({
 }).strict();
 export const productSchema = z.object({
   id: z.string().min(1).max(160),
-  handle: z
-    .string()
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .max(200),
+  handle: addressPart.max(200),
   title: z.string().min(1).max(500),
   description: z.string().max(50000),
   pdpContent: productPdpContentSchema.nullable().optional(),
   category: z.enum(categories).nullable(),
-  images: z.array(z.url().refine((url) => new URL(url).protocol === "https:")),
+  images: z.array(httpsUrl),
   published: z.boolean(),
   source: z.string().min(1).max(100),
   sourceStatus: z.string().max(80).nullable().optional(),

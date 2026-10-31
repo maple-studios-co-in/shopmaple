@@ -92,7 +92,7 @@ test("each variant keeps its own photos; the product keeps every photo for cards
   assert.deepEqual(p.images, ["https://media.example.com/zyro.webp", "https://media.example.com/zyro-walnut.webp"]);
 });
 
-test("a variant without a name is named by its options, and keeps them for option pickers", () => {
+test("a variant without a name is named by its options", () => {
   const data = keeriExportV2Schema.parse({
     ...v2Fixture(),
     models: v2Fixture().models.map((m) => ({ ...m, variants: m.variants.map((v) => ({ ...v, variantName: null,
@@ -100,17 +100,15 @@ test("a variant without a name is named by its options, and keeps them for optio
   });
   const v = adaptKeeriExportV2(data, "maple").products[0]!.variants[0]!;
   assert.equal(v.title, "Ivory Boucle / Dark Walnut");
-  assert.deepEqual(v.options, [{ name: "Fabric", value: "Ivory Boucle" }, { name: "Polish", value: "Dark Walnut" }]);
   data.models[0]!.variants[0]!.variantName = "Ivory on walnut";
   assert.equal(adaptKeeriExportV2(data, "maple").products[0]!.variants[0]!.title, "Ivory on walnut", "a real variant name wins");
   const plain = adaptKeeriExportV2(v2Fixture(), "maple").products[0]!.variants[0]!;
-  assert.deepEqual(plain.options, [], "exports without attributes still parse");
+  assert.equal(plain.title, "Linen / Walnut", "exports without attributes still parse");
 });
 
 test("a blank option value is left out instead of failing the whole catalogue", () => {
   const data = keeriExportV2Schema.parse({ ...v2Fixture(), models: v2Fixture().models.map((m) => ({ ...m, variants: m.variants.map((v) => ({ ...v, variantName: null,
     attributes: [{ axis: "fabric", value: "  " }, { axis: "polish", value: "Walnut" }] })) })) });
   const v = adaptKeeriExportV2(data, "maple").products[0]!.variants[0]!;
-  assert.deepEqual(v.options, [{ name: "Polish", value: "Walnut" }]);
   assert.equal(v.title, "Walnut");
 });

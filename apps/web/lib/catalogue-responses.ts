@@ -10,12 +10,6 @@ export function parseCataloguePage(raw: unknown, handle: string, query: Collecti
   return result;
 }
 
-/** The address a card answers for: the requested one, or the current one after a renamed address redirected. */
-export function cardHandle(response: Response, requested: string) {
-  if (!response.redirected) return requested;
-  const moved = decodeURIComponent(new URL(response.url).pathname.split("/").at(-1) ?? "");
-  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(moved) ? moved : requested;
-}
 export function parseCatalogueCard(raw: unknown, handle: string) {
   const result = catalogueCardResponseSchema.parse(raw);
   if (result.product.handle !== handle) throw new Error("Invalid catalogue response");

@@ -244,7 +244,7 @@ test("large galleries survive persistence, replay and detail responses while car
   assert.deepEqual(await db.catalogueSyncState.findMany(), cursor);
 });
 
-test("a renamed Keeri address redirects permanently, and each variant keeps its options, photos and ?variant= value", async () => {
+test("a renamed Keeri address redirects permanently, and each variant keeps its name, photos and ?variant= value", async () => {
   const s = shopifyFixture();
   const k = v2Fixture();
   k.models[0]!.name = "Zyro Lounge";
@@ -261,11 +261,11 @@ test("a renamed Keeri address redirects permanently, and each variant keeps its 
   assert.equal(old.headers.location, "/api/products/zyro-lounge");
   const current = await request(app).get("/api/products/zyro-lounge");
   assert.equal(current.status, 200);
-  assert.deepEqual(current.body.variants[0], { ...current.body.variants[0], slug: "linen-walnut", options: [{ name: "Fabric", value: "Linen" }], images: ["https://store.maplefurnishers.com/media/keeri/photo2.webp"] });
+  assert.deepEqual(current.body.variants[0], { ...current.body.variants[0], slug: "linen-walnut", images: ["https://store.maplefurnishers.com/media/keeri/photo2.webp"] });
   assert.equal((await request(app).get("/api/products/keeri-nothing")).status, 404, "an unknown address is still not found");
   const listing = await request(app).get("/api/products?limit=50");
   const listed = listing.body.products.find((p: { handle: string }) => p.handle === "zyro-lounge");
-  assert.deepEqual(Object.keys(listed.variants[0]).filter((key) => ["options", "images", "slug"].includes(key)), [], "lists stay lean; the detail response carries variant options, photos and slugs");
+  assert.deepEqual(Object.keys(listed.variants[0]).filter((key) => ["images", "slug"].includes(key)), [], "lists stay lean; the detail response carries variant photos and slugs");
   const card = await request(app).get("/api/catalogue/cards/keeri-model1");
   assert.equal(card.status, 308);
   assert.equal(card.headers.location, "/api/catalogue/cards/zyro-lounge");

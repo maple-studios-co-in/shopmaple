@@ -36,14 +36,14 @@ const collectionSelect = {
 } satisfies Prisma.ProductSelect;
 const cache = "public, max-age=30, s-maxage=60";
 
-function sendCatalogue<T>(res: Response, schema: z.ZodType<T>, value: unknown) {
+function sendCatalogue<T>(res: Response, schema: z.ZodType<T>, value: unknown, extra: Record<string, unknown> = {}) {
   const result = schema.safeParse(value);
   if (!result.success) {
     res.set("Cache-Control", "private, no-store");
     // Stored output failures are server errors, distinct from invalid request input.
     throw new HttpError(500, "SERVER_ERROR", "We couldn't complete that request. Please try again.");
   }
-  res.set("Cache-Control", cache).json(result.data);
+  res.set("Cache-Control", cache).json({ ...result.data, ...extra });
 }
 
 export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
@@ -94,7 +94,8 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
       if (handle !== asked) moved.push({ handle, from: asked });
       return [byHandle.get(handle)!];
     });
-    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, ...(moved.length ? { moved } : {}), published: true });
+    // `moved` stays out of the shared contract, which every page's script carries; only the server reads it.
+    sendCatalogue(res, catalogueCardsResponseSchema, { products: ordered, published: true }, moved.length ? { moved } : {});
   });
   app.get("/api/catalogue/cards/:handle", async (req, res) => {
     const handle = catalogueHandleSchema.parse(req.params.handle);

@@ -1,5 +1,4 @@
--- Variants keep their own options, photos and readable ?variant= value; products keep earlier addresses for redirects.
-ALTER TABLE "Variant" ADD COLUMN "options" JSONB NOT NULL DEFAULT '[]';
+-- Variants keep their own photos and readable ?variant= value; products keep earlier addresses for redirects.
 ALTER TABLE "Variant" ADD COLUMN "images" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
 ALTER TABLE "Variant" ADD COLUMN "slug" TEXT;
 

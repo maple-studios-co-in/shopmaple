@@ -15,13 +15,22 @@ export function selectedVariant<V extends AddressVariant>(product: { variants: V
   return product.variants.find((v) => v.slug === value) ?? product.variants.find((v) => v.id === value);
 }
 
-/**
- * Where a request should move permanently, or null when its address is already the readable one.
- * The chosen variant is carried over exactly as given: the current product page picks variants by
- * id, and switches to slugs when the redesigned page is connected.
- */
-export function productRedirect(requested: string, product: { handle: string }, variant: string | undefined): string | null {
-  if (requested === product.handle) return null;
+/** Where a request should move permanently, or null when its address is already the readable one. */
+export function productRedirect(requested: string, product: { handle: string; variants: AddressVariant[] }, variant: string | undefined): string | null {
+  const chosen = selectedVariant(product, variant);
+  const readable = chosen ? chosen.slug ?? chosen.id : variant;
+  if (requested === product.handle && readable === variant) return null;
   const base = `/products/${encodeURIComponent(product.handle)}`;
-  return variant ? `${base}?variant=${encodeURIComponent(variant)}` : base;
+  return readable ? `${base}?variant=${encodeURIComponent(readable)}` : base;
+}
+
+/**
+ * The photos the product page shows for one variant: its own photos first, then the photos no
+ * variant claims (room shots, details). A product without per-variant photos shows every photo.
+ */
+export function variantGallery(product: { images: string[]; variants: { images?: string[] }[] }, variant: { images?: string[] } | undefined) {
+  const claimed = new Set(product.variants.flatMap((v) => v.images ?? []));
+  if (!claimed.size) return product.images;
+  const gallery = [...(variant?.images ?? []), ...product.images.filter((image) => !claimed.has(image))];
+  return gallery.length ? gallery : product.images;
 }

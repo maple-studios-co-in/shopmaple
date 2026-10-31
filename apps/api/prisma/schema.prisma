@@ -35,8 +35,6 @@ model Variant {
   published Boolean @default(true)
   available Boolean @default(false)
   stockPolicy String @default("unverified")
-  /// Named options for option pickers, [{ name, value }].
-  options Json @default("[]")
   /// This variant's own photos; Product.images keeps every photo for cards.
   images String[] @default([])
   /// The readable ?variant= value, unique within its product.

@@ -1,5 +1,6 @@
 import "server-only";
 import { productListSchema, productSchema, catalogueCardsResponseSchema, relatedCatalogueCardsResponseSchema, categories, type CollectionQuery } from "@shopmaple/contracts";
+import { z } from "zod";
 import { createCatalogueCache } from "./catalogue-cache";
 import { parseCataloguePage } from "./catalogue-responses";
 import { isProductHandle } from "./recent-products";
@@ -55,6 +56,8 @@ export async function getCollectionPage(handle: string, query: CollectionQuery) 
   return readCatalogue(url, async () => parseCataloguePage(await readCompact(url), handle, query, 24));
 }
 
+/** Renamed products in a card batch: the current address and the earlier one that was asked for. */
+const movedSchema = z.array(z.object({ handle: z.string(), from: z.string() }).strict()).max(50);
 export async function getProductCards(handles: string[]) {
   if (!handles.every(isProductHandle)) throw new Error("Invalid catalogue handles");
   const unique = [...new Set(handles)];
@@ -62,11 +65,13 @@ export async function getProductCards(handles: string[]) {
   const results = await Promise.all(batches.map(async batch => {
     const url = api() + "/api/catalogue/cards?" + new URLSearchParams({ handles: batch.join(",") });
     return readCatalogue(url, async () => {
-      const result = catalogueCardsResponseSchema.parse(await readCompact(url));
+      const { moved: rawMoved, ...rest } = (await readCompact(url) ?? {}) as Record<string, unknown>;
+      const result = catalogueCardsResponseSchema.parse(rest);
+      const moved = movedSchema.parse(rawMoved ?? []);
       let previous = -1;
       for (const product of result.products) {
         // A renamed product answers for the earlier address it was asked by.
-        const position = batch.indexOf(result.moved?.find(entry => entry.handle === product.handle)?.from ?? product.handle);
+        const position = batch.indexOf(moved.find(entry => entry.handle === product.handle)?.from ?? product.handle);
         if (position <= previous) throw new Error("Invalid catalogue response");
         previous = position;
       }

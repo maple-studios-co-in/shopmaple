@@ -53,12 +53,7 @@ export function toProductCard(product: {
   };
 }
 export const catalogueCardResponseSchema = z.object({ product: productCardSchema, published: z.literal(true) }).strict();
-export const catalogueCardsResponseSchema = z.object({
-  products: z.array(productCardSchema).max(50),
-  /** Renamed products: the current address and the earlier one that was asked for. */
-  moved: z.array(z.object({ handle: z.string(), from: z.string() }).strict()).max(50).optional(),
-  published: z.literal(true),
-}).strict()
+export const catalogueCardsResponseSchema = z.object({ products: z.array(productCardSchema).max(50), published: z.literal(true) }).strict()
   .refine(value => new Set(value.products.map(product => product.handle)).size === value.products.length, "Duplicate product handles");
 export const relatedCatalogueCardsResponseSchema = z.object({
   category: z.enum(categories), products: z.array(productCardSchema).max(5), published: z.literal(true),

@@ -137,7 +137,7 @@ const eligibilitySchema = z
     reasons: z.array(z.string().max(64)).max(20),
   })
   .strict();
-/** A variant's named options as the product page shows them ("Fabric: Ivory Boucle"). */
+/** A variant's named options ("Fabric: Ivory Boucle"), which name a variant Keeri left unnamed. */
 function variantOptions(v: object) {
   const attributes = "attributes" in v && Array.isArray(v.attributes) ? (v.attributes as { axis: string; value: string }[]) : [];
   return attributes
@@ -348,7 +348,6 @@ function adaptValidated(
         variants: eligible.map((v) => ({
           id: identity(v.id),
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
-          options: variantOptions(v),
           images: photos(v.media),
           sku: v.sku || null,
           pricePaise:
