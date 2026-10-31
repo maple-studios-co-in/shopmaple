@@ -4,7 +4,7 @@ import type { Product } from "@shopmaple/contracts";
 import { defaultSiteChrome } from "../lib/site-chrome-defaults";
 import {
   breadcrumbStructuredData, collectProducts, jsonLdText, organizationStructuredData, pageDescription, productMetadata, productStructuredData,
-  robotsRules, robotsMeta, seoSettings, siteMetadata, sitemapEntries,
+  robotsHeader, robotsRules, robotsMeta, seoSettings, siteMetadata, sitemapEntries,
 } from "../lib/seo";
 
 const site = "https://store.maplefurnishers.com";
@@ -15,22 +15,36 @@ const product: Product = {
   id: "keeri:t:arix", handle: "arix", title: "Arix", description: "  The Arix Dining Chair features a softly sculpted\nwraparound back.  ", category: "chairs",
   images: [photo("teal"), photo("ivory")], published: true, source: "keeri:t", sourceUpdatedAt: "2026-10-31T00:00:00Z",
   variants: [
-    { id: "v1", title: "Teal Velvet", sku: "ARIX-TV", pricePaise: 2_950_000, compareAtPaise: null, available: false, stockPolicy: "made_to_order", slug: "teal-velvet" },
+    { id: "v1", title: "Teal Velvet", sku: "ARIX-TV", pricePaise: 2_950_000, compareAtPaise: null, available: true, stockPolicy: "made_to_order", slug: "teal-velvet" },
     { id: "v2", title: "Ivory Boucle", sku: "ARIX-IB", pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "stocked", slug: "ivory-boucle" },
   ],
 };
 
-test("search engines are kept out until the launch switch is on, then sent to the sitemap with private pages excluded", () => {
+const everyone = (rules: ReturnType<typeof robotsRules>) => (Array.isArray(rules.rules) ? rules.rules : [rules.rules]).find((rule) => rule.userAgent === "*")!;
+test("until launch every page may be crawled but says noindex, so pages already in search drop out", () => {
   assert.equal(off.siteUrl, site);
-  assert.deepEqual(robotsRules(off), { rules: [{ userAgent: "*", disallow: "/" }] });
+  const rules = everyone(robotsRules(off));
+  assert.equal(rules.allow, "/");
+  assert.ok(![rules.disallow].flat().includes("/"), "crawlers must be able to read the noindex");
   assert.deepEqual(robotsMeta(off), { index: false, follow: false });
+  for (const path of ["/", "/products/arix", "/media/keeri/a.webp", "/_next/image", "/admin"]) assert.equal(robotsHeader(off, path), "noindex, nofollow", path);
+  assert.equal(seoSettings({ SEO_INDEXING: "yes" }).indexing, false, "only the exact switch value turns indexing on");
+});
+
+test("after launch the public store is indexed, private pages say noindex, and crawlers are sent to the sitemap", () => {
   const rules = robotsRules(on);
   assert.equal(rules.sitemap, `${site}/sitemap.xml`);
-  const everyone = (Array.isArray(rules.rules) ? rules.rules : [rules.rules]).find((rule) => rule.userAgent === "*")!;
-  assert.equal(everyone.allow, "/");
-  for (const path of ["/admin", "/api/", "/cart", "/checkout", "/account", "/favourites"]) assert.ok([everyone.disallow].flat().includes(path), `${path} stays private`);
+  assert.equal(everyone(rules).allow, "/");
+  assert.deepEqual([everyone(rules).disallow].flat(), ["/api/"], "only the API is not crawled; private pages are crawled so their noindex is seen");
   assert.deepEqual(robotsMeta(on), { index: true, follow: true });
-  assert.equal(seoSettings({ SEO_INDEXING: "yes" }).indexing, false, "only the exact switch value turns indexing on");
+  for (const path of ["/", "/products/arix", "/collections/chairs", "/media/keeri/a.webp"]) assert.equal(robotsHeader(on, path), null, path);
+  for (const path of ["/admin", "/admin/content", "/api/products", "/cart", "/checkout/pay", "/account", "/favourites"]) assert.equal(robotsHeader(on, path), "noindex, nofollow", path);
+  assert.equal(robotsHeader(on, "/cartography"), null, "a prefix match is per path segment");
+});
+
+test("a missing or malformed site address falls back to the store instead of breaking every page", () => {
+  for (const value of ["", "  ", "store.maplefurnishers.com", "javascript:alert(1)", "ftp://x"]) assert.equal(seoSettings({ SITE_URL: value }).siteUrl, site, JSON.stringify(value));
+  assert.equal(seoSettings({ SITE_URL: "https://preview.maplefurnishers.com/" }).siteUrl, "https://preview.maplefurnishers.com");
 });
 
 test("the sitemap lists every public page once, with readable product addresses, their photos and when they changed", () => {
@@ -60,7 +74,18 @@ test("a product describes itself to search and answer engines: name, photos, bra
     "@type": "Offer", sku: "ARIX-TV", name: "Teal Velvet", url: `${site}/products/arix?variant=teal-velvet`,
     price: "29500.00", priceCurrency: "INR", availability: "https://schema.org/MadeToOrder", itemCondition: "https://schema.org/NewCondition",
   }], "the unpriced variant has no offer");
-  assert.equal((productStructuredData(on, { ...product, variants: [product.variants[1]!] }) as Record<string, any>).offers, undefined);
+});
+
+test("offers say what a buyer can do now, and a product with nothing to offer publishes no product data", () => {
+  const variant = product.variants[0]!;
+  const offer = (changes: Partial<typeof variant>) => (productStructuredData(on, { ...product, variants: [{ ...variant, ...changes }] }) as Record<string, any>).offers[0].availability;
+  assert.equal(offer({ available: true, stockPolicy: "made_to_order" }), "https://schema.org/MadeToOrder");
+  assert.equal(offer({ available: true, stockPolicy: "stocked" }), "https://schema.org/InStock");
+  assert.equal(offer({ available: true, stockPolicy: "dropship" }), "https://schema.org/InStock", "dropship ships now; PreOrder means not yet released");
+  assert.equal(offer({ available: false, stockPolicy: "stocked" }), "https://schema.org/OutOfStock", "a variant that cannot be bought now is not offered as in stock");
+  assert.equal(productStructuredData(on, { ...product, variants: [product.variants[1]!] }), null, "only unpriced variants: no Product block");
+  assert.equal(productStructuredData(on, { ...product, variants: [{ ...variant, pricePaise: 0 }] }), null, "a zero price is not an offer");
+  assert.equal("image" in (productStructuredData(on, { ...product, images: [] }) as object), false, "no empty image list");
 });
 
 test("the business is described once, from the footer staff edit", () => {

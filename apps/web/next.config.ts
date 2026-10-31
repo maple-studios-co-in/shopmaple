@@ -46,13 +46,11 @@ const config: NextConfig = {
         ],
       },
       {
-        // Staff pages and draft previews must never be stored by browsers or the CDN, or indexed.
-        // The rest of the store is kept out of search by robots.txt and page metadata (lib/seo.ts),
-        // which read SEO_INDEXING at request time; headers here are fixed at build time.
+        // Staff pages and draft previews must never be stored by browsers or the CDN. (Search
+        // engine headers are set per request in proxy.ts, because these are fixed at build time.)
         source: "/admin/:path*",
-        headers: [{ key: "Cache-Control", value: "private, no-store" }, { key: "X-Robots-Tag", value: "noindex, nofollow" }],
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
-      { source: "/api/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         // The draft preview frame is embedded only by the same-origin preview shell.
         source: "/admin/preview-frame/:path*",

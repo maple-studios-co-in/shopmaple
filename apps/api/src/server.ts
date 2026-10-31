@@ -41,6 +41,7 @@ const server = createApp(
     previewSecret: env.ADMIN_PREVIEW_SECRET,
     secureCookies: process.env.NODE_ENV === "production",
     trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
+    seoIndexing: process.env.SEO_INDEXING === "on",
     enquiryDelivery,
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,

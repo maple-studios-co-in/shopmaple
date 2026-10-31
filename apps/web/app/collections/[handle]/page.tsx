@@ -10,13 +10,17 @@ import {
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ handle: string }>;
+  searchParams?: Promise<Query>;
 }) {
   const { handle } = await params;
+  // Sorted and filtered views point search to the collection itself; later pages keep their own address.
+  const page = Number((await searchParams)?.page);
+  const path = `/collections/${handle}${Number.isInteger(page) && page > 1 ? `?page=${page}` : ""}`;
   const title = collectionTitles[handle] ?? "Furniture";
-  // Sorted and filtered views of a collection point search to the collection itself.
-  return { title, description: `${title} by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.`, alternates: { canonical: `/collections/${handle}` } };
+  return { title, description: `${title} by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.`, alternates: { canonical: path } };
 }
 type Query = Record<string, string | string[] | undefined>;
 export default async function Collection({

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import "@/styles/shopify-fonts.css";
 import "@fontsource/barlow/400.css";
 import "@fontsource/barlow/500.css";
@@ -15,8 +16,9 @@ import { ProductHighlightsProvider } from "@/components/store/product-highlights
 import { JsonLd } from "@/components/store/json-ld";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { organizationStructuredData, seoSettings, siteMetadata, websiteStructuredData } from "@/lib/seo";
-// Read at request time: the store stays out of search until SEO_INDEXING=on at launch.
-export function generateMetadata(): Metadata {
+// Read at request time (never baked in at build): the store stays out of search until SEO_INDEXING=on at launch.
+export async function generateMetadata(): Promise<Metadata> {
+  await connection();
   return siteMetadata(seoSettings(process.env));
 }
 export default async function Layout({
