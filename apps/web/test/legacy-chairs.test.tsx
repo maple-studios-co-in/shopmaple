@@ -142,9 +142,9 @@ test("query-driven chairs retain category membership, filters, sort and paginati
 test("separate Chairs page retains six categories and Best Sellers destination", async () => {
   const doc = await render({}, true);
   assert.equal(doc.querySelector("h1")?.textContent, "Chairs");
-  assert.equal(doc.querySelectorAll(".landing-categories a").length, 6);
+  assert.equal(doc.querySelectorAll("[data-category-tile]").length, 6);
   assert.equal(
-    doc.querySelector(".landing-products header a")?.getAttribute("href"),
+    doc.querySelector("[data-category-rail] a[data-view-all]")?.getAttribute("href"),
     "/collections/chair-collection",
   );
 });
