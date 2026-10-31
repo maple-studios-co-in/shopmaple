@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -76,4 +77,22 @@ test("the save button draws only its own circle (no native border or padding) an
     assert.match(save.className, /after:-inset-\[7px\]/, "A 44 px tap target around the 30 px circle");
     assert.doesNotMatch(document.querySelector("[data-card-image]")!.className, /text-taupe/);
   });
+});
+
+test("the card stays light enough for the homepage: no class-merging library in its module graph", () => {
+  const source = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /@\/lib\/utils|tailwind-merge|clsx/, "cn pulls tailwind-merge (about 28 KB) into the homepage's first load");
+});
+
+test("only the save button runs in the browser: the card itself renders on the server", () => {
+  const card = readFileSync(new URL("../components/store/product-card.tsx", import.meta.url), "utf8");
+  const save = readFileSync(new URL("../components/store/save-button.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(card, /^"use client"/m);
+  assert.match(save, /^"use client"/m);
+});
+
+test("the header loads the wishlist list on demand, so cards stay out of every page's first-load JavaScript", () => {
+  const header = readFileSync(new URL("../components/header.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(header, /import \{ Favourites \} from "\.\/favourites"/);
+  assert.match(header, /dynamic\(\(\) => import\("\.\/favourites"\)/);
 });

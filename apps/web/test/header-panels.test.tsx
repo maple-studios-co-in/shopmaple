@@ -53,6 +53,9 @@ test("header wishlist opens a working drawer and account support never hands off
     await act(async () => saved.click());
     const panel = document.querySelector("dialog[open]")!;
     assert.ok(panel);
+    // The wishlist list is loaded on demand; wait for it to arrive.
+    for (let tries = 0; tries < 40 && !panel.querySelector('a[href="/collections/all"]'); tries++)
+      await act(async () => new Promise((resolve) => setTimeout(resolve, 25)));
     assert.ok(panel.querySelector('a[href="/collections/all"]'));
     assert.match(panel.textContent!, /this browser/);
     await act(async () =>
