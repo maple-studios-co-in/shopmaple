@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 
 /** The design's four promises ("MF / The Maple promise"), shown under heroes and in the mega-menu. */
 export const promises = [
@@ -10,7 +10,7 @@ export const promises = [
 
 export function PromiseStrip({ className }: { className?: string }) {
   return (
-    <ul data-store data-promise-strip aria-label="The Maple promise" className={cn("m-0 grid list-none grid-cols-2 gap-x-4 gap-y-5 rounded-xl bg-cream p-5 font-body sm:p-6 lg:grid-cols-4 lg:gap-6", className)}>
+    <ul data-store data-promise-strip aria-label="The Maple promise" className={cx("m-0 grid list-none grid-cols-2 gap-x-4 gap-y-5 rounded-xl bg-cream p-5 font-body sm:p-6 lg:grid-cols-4 lg:gap-6", className)}>
       {promises.map((promise) => (
         <li key={promise.icon} className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size line icon from the design */}

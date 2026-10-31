@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { DesktopNavigation, MobileNavigation } from "../components/navigation";
 import { customChrome } from "./support/site-chrome-fixture";
+import { waitFor } from "./support/wait-for";
 const dom = new JSDOM('<div id="root"></div>', {
   url: "http://localhost:3000",
 });
@@ -48,6 +49,7 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
     )!;
     assert.equal(trigger.textContent, "Lounge");
     await act(async () => trigger.click());
+    await waitFor(() => document.querySelector("[data-mega]"));
     assert.match(
       document.querySelector("[data-mega-feature] img")!.getAttribute("src")!,
       /engaged_5/,

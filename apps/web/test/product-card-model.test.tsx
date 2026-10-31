@@ -92,7 +92,7 @@ test("only the save button runs in the browser: the card itself renders on the s
 });
 
 test("the header's wishlist drawer loads the list on demand, so cards stay out of every page's first-load JavaScript", () => {
-  const drawer = readFileSync(new URL("../components/store/wishlist-drawer.tsx", import.meta.url), "utf8");
+  const drawer = readFileSync(new URL("../components/store/wishlist-panel.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(drawer, /import \{[^}]*Favourites[^}]*\} from "\.\/favourites"/);
   assert.match(drawer, /dynamic\(\(\) => import\("\.\/favourites"\)/);
 });

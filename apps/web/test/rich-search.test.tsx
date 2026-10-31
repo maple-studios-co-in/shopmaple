@@ -14,6 +14,7 @@ const { ProductDetail } = await import("../components/product-detail");
 const { ShopProvider } = await import("../components/shop-provider");
 const product = (handle: string): Product => ({ id: handle, handle, title: `${handle} Chair`, description: "Source description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-variant`, title: "Standard", sku: null, pricePaise: 123400, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
 import { cardEnvelope, pageFixture } from "./support/catalogue-fixtures";
+import { waitFor } from "./support/wait-for";
 const page = (handles: string[], total = handles.length, q = "") => Response.json(pageFixture(handles, total, q));
 type Request = { url: string; signal?: AbortSignal | null; resolve: (value: Response) => void };
 const storageKey = "maple-recent-products-v1";
@@ -37,11 +38,12 @@ async function settle(request: Request, response: Response) { await act(async ()
 const names = () => [...document.querySelectorAll('[data-search-discovery] [data-card-name]')].map(e=>e.textContent);
 
 test("existing search opens from the header and provides a local full-results form", async t => {
-  const app = await setup(t); try { await click("Search furniture"); assert.equal(input().name, "q"); assert.equal(input().form?.getAttribute("action"), "/collections/all"); } finally { await app.close(); }
+  const app = await setup(t); try { await click("Search furniture"); await waitFor(() => document.querySelector('dialog[open][aria-label="Search"]')); assert.equal(input().name, "q"); assert.equal(input().form?.getAttribute("action"), "/collections/all"); } finally { await app.close(); }
 });
 test("opening search lazily loads four discoverable products and closing restores the trigger", async t => {
   const app = await setup(t); try {
     assert.equal(app.requests.length, 0); await click("Search furniture");
+    await waitFor(() => document.querySelector('dialog[open][aria-label="Search"]'));
     assert.ok(document.querySelector('dialog[open][aria-label="Search"]'), "Search should match the original dialog label");
     assert.equal(document.activeElement, input());
     const request = app.requests[0]; assert.ok(request, "opening search must request product suggestions");

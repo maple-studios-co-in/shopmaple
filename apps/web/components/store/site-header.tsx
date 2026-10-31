@@ -5,10 +5,15 @@ import { useRef, useState } from "react";
 import { Search, ShoppingBag, Menu } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
 import { useShop } from "../shop-provider";
-import { SearchDialog } from "../search-dialog";
+import dynamic from "next/dynamic";
 import { AccountMenu } from "./account-menu";
-import { WishlistDrawer, WishlistTrigger } from "./wishlist-drawer";
-import { DesktopNavigation, MobileNavigation } from "./site-navigation";
+import { WishlistTrigger } from "./wishlist-drawer";
+import { DesktopNavigation } from "./site-navigation";
+
+// Overlays load when first needed, keeping them out of every page's first-load JavaScript.
+const SearchDialog = dynamic(() => import("../search-dialog").then((module) => module.SearchDialog));
+const WishlistDrawer = dynamic(() => import("./wishlist-panel").then((module) => module.WishlistDrawer));
+const MobileNavigation = dynamic(() => import("./mobile-navigation").then((module) => module.MobileNavigation));
 import { headerIcon } from "./header-icon";
 import { textLink } from "./current-look";
 import { shopFile } from "@/lib/format";

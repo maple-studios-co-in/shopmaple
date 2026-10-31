@@ -4,6 +4,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { StoreChromeView } from "../components/admin/store-chrome";
+import { MobileNavigation } from "../components/store/mobile-navigation";
 import { ShopProvider } from "../components/shop-provider";
 import { customChrome } from "./support/site-chrome-fixture";
 function render(siteChrome?: ReturnType<typeof customChrome>, path = "/") {
@@ -134,7 +135,11 @@ test("the chrome is rebuilt on utilities: no legacy class names remain and every
   const doc = render();
   const found = [...doc.querySelectorAll("[class]")].flatMap((element) => [...element.classList]).filter((name) => legacy.has(name));
   assert.deepEqual(found, []);
-  for (const selector of ['a[href="#main"]', "[data-announcement]", "header", "footer", "[data-whatsapp]", "#maple-mobile-navigation"])
+  for (const selector of ['a[href="#main"]', "[data-announcement]", "header", "footer", "[data-whatsapp]"])
     assert.ok(doc.querySelector(selector)?.closest("[data-store]"), `${selector} sits inside [data-store]`);
+  // The mobile drawer loads on demand, so it is rendered on its own here.
+  const drawer = new JSDOM(renderToStaticMarkup(<ShopProvider><MobileNavigation open={false} onClose={() => {}} /></ShopProvider>)).window.document;
+  assert.ok(drawer.querySelector("#maple-mobile-navigation")?.closest("[data-store]"), "#maple-mobile-navigation sits inside [data-store]");
+  assert.deepEqual([...drawer.querySelectorAll("[class]")].flatMap((element) => [...element.classList]).filter((name) => legacy.has(name)), []);
   assert.ok(doc.querySelector("header[data-site-header]"));
 });

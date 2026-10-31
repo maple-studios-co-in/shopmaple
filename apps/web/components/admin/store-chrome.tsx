@@ -3,7 +3,10 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { CartDrawer } from "@/components/cart";
+import dynamic from "next/dynamic";
+
+// The cart drawer loads on demand, keeping it out of every page's first-load JavaScript.
+const CartDrawer = dynamic(() => import("@/components/cart").then((module) => module.CartDrawer));
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import type { SiteChrome } from "@shopmaple/contracts";
 export function StoreChromeView({

@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { DesktopNavigation, MobileNavigation } from "../components/navigation";
 import { cardEnvelope } from "./support/catalogue-fixtures";
 import { navigationHref } from "../lib/navigation";
+import { waitFor } from "./support/wait-for";
 const dom = new JSDOM(
   "<!doctype html><div id='root'></div><button id='outside'>Outside</button>",
   { url: "http://localhost:3000" },
@@ -61,6 +62,7 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
         (b) => b.textContent === label,
       )!;
     await act(async () => button("Living Room").click());
+    await waitFor(() => document.querySelector("[data-mega-column]"));
     assert.equal(button("Living Room").getAttribute("aria-expanded"), "true");
     assert.equal(document.querySelectorAll("[data-mega-column]").length, 4);
     assert.ok(document.querySelector('a[href="/collections/dining-chair"]'));
@@ -78,6 +80,7 @@ test("desktop menu switches full groups, closes on outside click and Escape, and
     assert.equal(button("Bedroom").getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, button("Bedroom"));
     await act(async () => button("Living Room").click());
+    await waitFor(() => document.querySelector("[data-mega-column]"));
     await act(async () =>
       document
         .getElementById("outside")!
@@ -109,6 +112,7 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
         (b) => b.textContent === text,
       )!;
     await act(async () => button("Living Room").click());
+    await waitFor(() => document.querySelector("[data-mega-column]"));
     assert.equal(document.querySelectorAll("[data-drawer-group]").length, 4);
     assert.equal(document.querySelectorAll("[data-menu-product]").length, 2);
     await act(async () =>

@@ -1,1 +1,2 @@
-export { DesktopNavigation, MobileNavigation } from "./store/site-navigation";
+export { DesktopNavigation } from "./store/site-navigation";
+export { MobileNavigation } from "./store/mobile-navigation";

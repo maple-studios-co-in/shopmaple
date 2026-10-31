@@ -9,6 +9,7 @@ import { Header } from "../components/header";
 import { ShopProvider } from "../components/shop-provider";
 import { FavouritesPage } from "../components/store/favourites-page";
 import { AccountOverview } from "../components/store/account-overview";
+import { waitFor } from "./support/wait-for";
 
 const dom = new JSDOM('<div id="root"></div><button id="outside">Outside</button>', { url: "http://localhost:3000" });
 Object.assign(globalThis, {
@@ -65,6 +66,7 @@ test("the heart shows a count badge and opens a left wishlist drawer that lists 
     assert.equal(heart().getAttribute("aria-haspopup"), "dialog");
     heart().focus();
     await act(async () => heart().click());
+    await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     assert.ok(drawer().hasAttribute("open"));
     assert.ok(drawer().hasAttribute("data-store"));
     assert.equal(drawer().querySelector("h2")?.textContent, "My Wishlist (1)");
@@ -86,6 +88,7 @@ test("the heart shows a count badge and opens a left wishlist drawer that lists 
 test("removing the last piece in the drawer shows the empty state and keeps focus on Explore Collections", async () => {
   await mount(["alpha"], <Header />, async () => {
     await act(async () => heart().click());
+    await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     const remove = drawer().querySelector<HTMLButtonElement>('button[aria-label="Remove alpha Chair from wishlist"]')!;
     assert.ok(remove, "each row has a remove control");
     remove.focus();
@@ -107,6 +110,7 @@ test("Escape and the close button close the drawer, restore scrolling and return
   await mount([], <Header />, async () => {
     heart().focus();
     await act(async () => heart().click());
+    await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     assert.equal(document.body.style.overflow, "hidden");
     assert.equal(heart().getAttribute("aria-expanded"), "true");
     await act(async () => { drawer().dispatchEvent(new dom.window.Event("cancel", { cancelable: true })); });
@@ -114,6 +118,7 @@ test("Escape and the close button close the drawer, restore scrolling and return
     assert.equal(document.body.style.overflow, "");
     assert.equal(document.activeElement, heart());
     await act(async () => heart().click());
+    await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     await act(async () => drawer().querySelector<HTMLButtonElement>('button[aria-label="Close wishlist"]')!.click());
     assert.equal(drawer().hasAttribute("open"), false);
     assert.equal(document.activeElement, heart());
@@ -123,6 +128,7 @@ test("Escape and the close button close the drawer, restore scrolling and return
 test("following a link in the drawer closes it", async () => {
   await mount(["alpha"], <Header />, async () => {
     await act(async () => heart().click());
+    await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     const view = drawer().querySelector<HTMLAnchorElement>("a[data-wishlist-view]")!;
     document.addEventListener("click", (event) => event.preventDefault(), { once: true });
     await act(async () => { view.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true, cancelable: true })); });
