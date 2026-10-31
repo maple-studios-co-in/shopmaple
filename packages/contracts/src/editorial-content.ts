@@ -59,7 +59,9 @@ function validDocument(value: unknown): value is EditorialNode[] {
   }
   return new TextEncoder().encode(JSON.stringify(value)).length <= 48 * 1024;
 }
-const documentSchema = z.custom<EditorialNode[]>(validDocument, { error: "Invalid or oversized editorial document", abort: true });
+/** One policy or article body: allowed tags and links, at most 2000 nodes, 20 levels deep and 48 KiB. */
+export const editorialDocumentSchema = z.custom<EditorialNode[]>(validDocument, { error: "Invalid or oversized editorial document", abort: true });
+const documentSchema = editorialDocumentSchema;
 const fitsDocument = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length <= 48 * 1024;
 const policySchema = z.object({ slug: z.enum(policySlugs), title: heading(160), content: documentSchema }).strict().refine(fitsDocument, "Editorial document exceeds 48 KiB");
 const blogSchema = z.object({ handle: z.enum(blogHandles), title: heading(160) }).strict();

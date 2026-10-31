@@ -24,7 +24,8 @@ test("every policy and article keeps its words, headings, lists, tables and imag
     assert.equal(visible(back), visible(content), `${title}: same text`);
     for (const tag of ["h2", "h5", "li", "ol", "ul", "table", "tr", "td", "img", "hr", "strong", "em"])
       assert.equal(count(back, tag) + (tag === "strong" ? count(back, "b") : 0), count(content, tag) + (tag === "strong" ? count(content, "b") : 0), `${title}: same number of ${tag}`);
-    assert.equal(count(back, "div") + count(back, "span"), 0, `${title}: layout wrappers are dropped`);
+    assert.equal(count(back, "span"), 0, `${title}: span wrappers, which carry no styling, are dropped`);
+    assert.equal(count(back, "div"), count(content, "div"), `${title}: div sections, which the storefront styles, are kept`);
     const parsed = editorialContentSchema.safeParse({ policies: [], blogs: [], articles: [{ blog: "recent-stories", handle: "how-to-measure-furniture-before-ordering-online", title: "T", excerpt: "", content: back }] });
     assert.ok(parsed.success, `${title}: the edited document is still a valid editorial document`);
   }
@@ -45,4 +46,31 @@ test("an unsafe link keeps its words but loses the link; unknown content becomes
     { type: "codeBlock", content: [{ type: "text", text: "plain words" }] },
   ] });
   assert.deepEqual(back, [{ tag: "p", children: ["Click here"] }, { tag: "p", children: ["plain words"] }]);
+});
+
+const tags = (nodes: EditorialNode[]): string[] => nodes.flatMap((node) => typeof node === "string" ? [] : [node.tag, ...tags(node.children)]);
+
+test("an untouched policy comes back with exactly its stored structure, so the storefront looks the same", () => {
+  for (const policy of Object.values(defaults.policies)) {
+    assert.deepEqual(tags(roundTrip(policy.content)), tags(policy.content), `${policy.title}: same divs, paragraphs, headings and lists, no added paragraphs`);
+  }
+});
+
+test("imported indentation reads as one space, as it does on the storefront", () => {
+  const back = roundTrip([{ tag: "div", children: ["\n        Maple   Furnishers\n      "] }]);
+  assert.deepEqual(back, [{ tag: "div", children: ["Maple Furnishers"] }]);
+});
+
+test("pasted content the store would refuse is cleaned: off-site images go, control characters go, words stay", () => {
+  const back = fromEditorDoc({ type: "doc", content: [
+    { type: "image", attrs: { src: "https://elsewhere.example/x.png", alt: "x" } },
+    { type: "paragraph", content: [{ type: "text", text: "Line\u000bbreak\u0008 here" }] },
+  ] });
+  assert.deepEqual(back, [{ tag: "p", children: ["Linebreak here"] }]);
+});
+
+test("an image inside a heading is kept, after the heading", () => {
+  const src = "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.png";
+  const back = roundTrip([{ tag: "h2", children: ["Care", { tag: "img", src, alt: "Care", children: [] }] }]);
+  assert.deepEqual(back, [{ tag: "h2", children: ["Care"] }, { tag: "img", src, alt: "Care", children: [] }]);
 });

@@ -1,14 +1,16 @@
 "use client";
 import { useState } from "react";
 import type { EditorialContent, EditorialNode, EditorialPolicy, EditorialBlog, EditorialArticle } from "@shopmaple/contracts";
-import { RichTextEditor } from "./rich-text-editor";
+import dynamic from "next/dynamic";
+// The editor (TipTap and ProseMirror) loads only when a policy or article is opened, not with the whole admin.
+const RichTextEditor = dynamic(() => import("./rich-text-editor").then((module) => module.RichTextEditor), { ssr: false });
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 import { StoreContent } from "@/components/store-content";
 import { NativeSelectOptGroup, NativeSelectOption } from "@/components/ui/native-select";
 import { Field } from "./field";
 import { EditorWithPreview, PreviewPanel, PreviewTitle, SectionHeading, SelectField } from "./kit";
 
-export function EditorialFields({ value, onChange }: { value?: EditorialContent; onChange: (value: EditorialContent) => void }) {
+export function EditorialFields({ value, onChange, disabled = false }: { value?: EditorialContent; onChange: (value: EditorialContent) => void; disabled?: boolean }) {
   const [selected, setSelected] = useState("policy:privacy-policy");
   const overrides = value ?? { policies: [], blogs: [], articles: [] };
   const resolved = resolveEditorialContent(value);
@@ -51,7 +53,7 @@ export function EditorialFields({ value, onChange }: { value?: EditorialContent;
         {article && <Field label="Article excerpt" value={article.excerpt} maxLength={2000} multiline onChange={excerpt => update({ excerpt })} />}
         {content && <>
           <SectionHeading as="h4" className="mt-4 mb-0" description="Write and format as in a document. Links can go to store pages, Maple Furnishers pages, email or phone.">Page text</SectionHeading>
-          <RichTextEditor label="Page text" value={content} onChange={content => update({ content })} />
+          <RichTextEditor label="Page text" value={content} disabled={disabled} onChange={content => update({ content })} />
         </>}
       </div>
       <PreviewPanel aria-label="Editorial preview" eyebrow="Text preview" footnote={<>Local preview · {url}</>}>

@@ -85,8 +85,8 @@ for (const conflict of [false, true]) test(`staff edit policies and articles as 
     const editor = await richText();
     assert.match(editor.view.dom.textContent ?? "", /Learn how Maple Furnishers collects, protects, and responsibly uses your information\./, "the page reads as a document");
     for (const name of ["Bold", "Italic", "Underline", "Bulleted list", "Numbered list", "Quote", "Divider", "Link", "Undo", "Redo"])
-      assert.ok(container.querySelector(`[role="toolbar"] [aria-label="${name}"]`), `${name} in the toolbar`);
-    assert.ok(container.querySelector('[role="toolbar"] select[aria-label="Text style"]'));
+      assert.ok(container.querySelector(`[aria-label="Page text formatting"] [aria-label="${name}"]`), `${name} in the toolbar`);
+    assert.ok(container.querySelector('[aria-label="Page text formatting"] select[aria-label="Text style"]'));
     await act(async () => { editor.chain().focus("end", { scrollIntoView: false }).insertContent({ type: "paragraph", content: [{ type: "text", text: "<script>literal copy</script> Our privacy information." }] }).run(); });
     assert.equal(container.querySelector("script"), null, "typed HTML stays text");
     await act(async () => button("Link").click());
@@ -129,5 +129,35 @@ for (const conflict of [false, true]) test(`staff edit policies and articles as 
     assert.match(container.textContent ?? "", /Published version 2/);
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Editorial page title"]')?.value, "Privacy at Maple");
     assert.equal([...container.querySelectorAll("button")].some(b => b.textContent === "Publish draft"), false);
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("clicking into a page does not change the draft, and Reload latest draft shows the server's text in the editor", async () => {
+  const previous = globalThis.fetch;
+  const root = createRoot(container);
+  let gets = 0;
+  globalThis.fetch = async (input, init) => {
+    if (init?.method === "PUT") return Response.json({ error: "Version conflict" }, { status: 409 });
+    gets++;
+    const draft = structuredClone(defaultStorefrontContent);
+    if (gets > 1) draft.editorialContent = { policies: [{ slug: "privacy-policy", title: "Privacy policy", content: [{ tag: "p", children: ["Newer text from another editor."] }] }], blogs: [], articles: [] };
+    return Response.json({ version: 4 + gets, draft, publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
+  };
+  try {
+    await act(async () => root.render(<ContentEditor session={{ user: { id: "editor", email: "editor@example.test", role: "editor" }, csrfToken: "c".repeat(64) }} initialContent={defaultStorefrontContent} onExpired={() => assert.fail("Unexpected expiry")} />));
+    await act(async () => button("Policies & blogs").click());
+    await select("policy:refund-policy");
+    const refund = await richText();
+    await act(async () => { refund.commands.focus("end", { scrollIntoView: false }); refund.commands.focus("start", { scrollIntoView: false }); });
+    assert.equal(button("Save draft").disabled, true, "moving the cursor is not an edit");
+
+    await select("policy:privacy-policy");
+    const privacy = await richText();
+    await act(async () => { privacy.chain().focus("end", { scrollIntoView: false }).insertContent("Local words.").run(); });
+    await act(async () => button("Save draft").click());
+    await act(async () => button("Reload latest draft").click());
+    for (let i = 0; i < 50 && !/Newer text/.test((await richText()).view.dom.textContent ?? ""); i++) await act(() => new Promise(r => setTimeout(r, 10)));
+    const reloaded = await richText();
+    assert.equal(reloaded.view.dom.textContent, "Newer text from another editor.", "the editor shows the reloaded draft, not the discarded local text");
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
