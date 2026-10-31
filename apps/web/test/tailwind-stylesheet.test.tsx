@@ -50,6 +50,14 @@ test("one utility sheet: the admin token file emits no utilities and its base st
   }
 });
 
+test("the storefront base reaches redesigned markup only, without adding weight", () => {
+  const base = rules(shared).filter((rule) => rule.parent?.type !== "atrule" && !rule.selector.includes(".") && !/^:root|^:host|^\*|^::/.test(rule.selector));
+  assert.ok(base.length > 0, "The scoped base is present");
+  for (const rule of base) assert.match(rule.selector, /^:where\(\[data-store\]\) /, `${rule.selector} is scoped to [data-store]`);
+  const selectors = rules(shared).map((rule) => rule.selector);
+  assert.ok(selectors.indexOf(".font-body") > selectors.findLastIndex((selector) => selector.startsWith(":where([data-store])")), "Utilities follow the base");
+});
+
 test("storefront tokens resolve to the design's values", () => {
   const value = (name: string) => {
     let found: string | undefined;
