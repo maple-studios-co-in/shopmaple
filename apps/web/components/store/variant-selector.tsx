@@ -27,13 +27,13 @@ export function VariantSelector({ variants, selectedId, onSelect, enquiryHref, l
 }) {
   const selected = variants.find((variant) => variant.id === selectedId);
   return (
+    <div className="relative">
+    {/* The customization link sits beside the group label, not inside it, so the group is named by its option alone. */}
+    <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1 text-label leading-[1.6] font-medium text-brand no-underline hover:underline">
+      <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
+    </Link>
     <fieldset data-variants={layout} className="grid gap-3">
-      <legend className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-ui">
-        <span>Option: <strong className="font-semibold">{selected?.name}</strong></span>
-        <Link data-customization href={enquiryHref} className="inline-flex items-center gap-1 text-label font-medium text-brand no-underline hover:underline">
-          <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
-        </Link>
-      </legend>
+      <legend className="mb-3 pr-44 text-ui">Option: <strong className="font-semibold">{selected?.name}</strong></legend>
       <div className={cn("grid gap-3", layout === "text" ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3")}>
         {variants.map((variant) => (
           <label key={variant.id}
@@ -43,7 +43,7 @@ export function VariantSelector({ variants, selectedId, onSelect, enquiryHref, l
             {layout === "photo" && (
               <span data-variant-image className="relative block aspect-[11/10] overflow-hidden rounded-[5px] bg-cream [&_img]:object-cover">
                 {variant.image ? <ProductImage src={variant.image} alt="" fill sizes="130px" />
-                  : <span data-variant-placeholder className="grid size-full place-items-center p-1 text-center text-label text-taupe">Photo unavailable</span>}
+                  : <span data-variant-placeholder className="grid size-full place-items-center p-1 text-center text-label text-[#5e574f]">Photo unavailable</span>}
               </span>
             )}
             <span className="font-semibold">{variant.name}</span>
@@ -53,5 +53,6 @@ export function VariantSelector({ variants, selectedId, onSelect, enquiryHref, l
         ))}
       </div>
     </fieldset>
+    </div>
   );
 }

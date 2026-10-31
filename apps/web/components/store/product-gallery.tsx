@@ -163,7 +163,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-square w-full place-content-center justify-items-center gap-2 text-meta text-taupe lg:aspect-[4/5]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-square w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f] lg:aspect-[4/5]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

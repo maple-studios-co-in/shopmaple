@@ -53,7 +53,7 @@ test("one utility sheet: the admin token file emits no utilities and its base st
 test("the storefront base reaches redesigned markup only, without adding weight", () => {
   const base = rules(shared).filter((rule) => rule.parent?.type !== "atrule" && !rule.selector.includes(".") && !/^:root|^:host|^\*|^::/.test(rule.selector));
   assert.ok(base.length > 0, "The scoped base is present");
-  for (const rule of base) assert.match(rule.selector, /^:where\(\[data-store\]\) /, `${rule.selector} is scoped to [data-store]`);
+  for (const rule of base) assert.match(rule.selector, /^:where\(\[data-store\]\)( |$)/, `${rule.selector} is scoped to [data-store]`);
   const selectors = rules(shared).map((rule) => rule.selector);
   assert.ok(selectors.indexOf(".font-body") > selectors.findLastIndex((selector) => selector.startsWith(":where([data-store])")), "Utilities follow the base");
 });
@@ -96,4 +96,13 @@ test("no utility lands on a class name the legacy storefront still uses", () => 
     .map((rule) => /^\.([a-z][a-z0-9-]*)$/.exec(rule.selector)?.[1])
     .filter((name): name is string => Boolean(name) && legacy.has(name!) && name !== "sr-only");
   assert.deepEqual([...new Set(clashes)], [], "Utilities generated under legacy storefront class names");
+});
+
+test("redesigned storefront markup ignores the admin's radius and shadow tokens, so the admin preview matches the live page", () => {
+  const reset = rules(shared).find((rule) => rule.selector === ":where([data-store])");
+  assert.ok(reset, "A rule on [data-store] itself resets the admin tokens");
+  const props = new Map<string, string>();
+  reset!.walkDecls((decl) => { props.set(decl.prop, decl.value); });
+  for (const token of ["--admin-radius-s", "--admin-radius-m", "--admin-radius-l", "--admin-shadow-s", "--admin-shadow-m", "--admin-shadow-lift", "--admin-ease"])
+    assert.equal(props.get(token), "initial", `${token} falls back to the storefront value`);
 });

@@ -20,7 +20,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
   const href = "/products/" + product.handle;
   return (
     <article data-store data-product-card className={cn("group/card flex flex-col overflow-hidden rounded-lg border border-sand bg-white font-body text-espresso", className)}>
-      <div data-card-image className="relative aspect-square overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:justify-items-center [&_[role=img]]:gap-2 [&_[role=img]]:text-meta [&_[role=img]]:text-taupe">
+      <div data-card-image className="relative aspect-square overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:justify-items-center [&_[role=img]]:gap-2 [&_[role=img]]:text-meta [&_[role=img]]:text-[#5e574f]">
         <Link href={href} className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand">
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />
         </Link>
@@ -28,7 +28,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
         <button
           type="button"
           data-save-button
-          className="absolute top-3 right-3 grid size-[30px] place-items-center rounded-full bg-white text-brand shadow-xs transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="absolute top-3 right-3 grid size-[30px] cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs transition-transform after:absolute after:-inset-[7px] after:rounded-full after:content-[''] hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           aria-label={(saved ? "Unsave " : "Save ") + product.title}
           aria-pressed={saved}
           onClick={() => toggleFavourite(product.handle)}

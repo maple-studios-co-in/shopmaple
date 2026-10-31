@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
@@ -24,9 +24,10 @@ const pill = "inline-flex h-[50px] items-center justify-center gap-2 rounded-ful
 const solidPill = cn(pill, "cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
 const outlinePill = cn(pill, "border-2 border-solid border-brand bg-white text-brand hover:bg-cream");
 const quiet = "inline-flex items-center gap-1.5 text-ui font-medium text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-const productPromises = [
+// The store's promises; a product's own warranty from the catalogue replaces the store-wide one.
+const productPromises = (warranty?: string | null) => [
   { icon: Hammer, label: "Made to order in Delhi" },
-  { icon: ShieldCheck, label: "36-month warranty" },
+  { icon: ShieldCheck, label: warranty?.trim() ? `Warranty: ${warranty.trim()}` : "36-month warranty" },
   { icon: Truck, label: "Delivery across India" },
 ];
 
@@ -98,20 +99,27 @@ export function ProductDetail({ product, initialVariant, presentation }: {
     url.searchParams.set("variant", id);
     window.history.replaceState(null, "", url);
   }
+  useEffect(() => {
+    if (!shared) return;
+    const timer = window.setTimeout(() => setShared(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [shared]);
   async function share() {
     const url = window.location.href;
     try {
       if (typeof navigator.share === "function") { await navigator.share({ title: product.title, url }); return; }
       await navigator.clipboard.writeText(url);
       setShared("Link copied");
-    } catch {
-      setShared("");
+    } catch (error) {
+      // A shopper closing the share sheet is not a failure; a denied or missing clipboard is.
+      setShared(error instanceof Error && error.name === "AbortError" ? "" : "Couldn’t copy the link");
     }
   }
   const detailImage = product.images[1] ?? product.images[0];
   const accordion = "group rounded-xl border border-solid border-sand bg-white open:shadow-xs";
   const summary = "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-card font-bold text-espresso marker:hidden [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand";
-  const panel = "grid gap-2 px-5 pb-5 text-ui leading-[1.6] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2";
+  // Panels hold admin rich text or plain catalogue text: headings, paragraph spacing, lists and line breaks are restated here.
+  const panel = "px-5 pb-5 text-ui leading-[1.6] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 [&_:is(h2,h3,h4,h5,h6)]:font-serif [&_:is(h2,h3,h4,h5,h6)]:text-card [&_:is(h2,h3,h4,h5,h6)]:font-semibold [&_:is(h2,h3,h4,h5,h6)]:text-espresso [&_:is(h2,h3,h4,h5,h6):not(:first-child)]:mt-4 [&_:is(h2,h3,h4,h5,h6)+*]:mt-1.5 [&_p+p]:mt-2.5 [&_p+a]:mt-2.5 [&_p+a]:inline-block [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_li+li]:mt-1";
   const chevron = <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-brand transition-transform group-open:rotate-180" />;
   return (
     <div data-store className="bg-white font-body text-espresso">
@@ -146,7 +154,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               <div className="flex flex-wrap items-center gap-3">
                 <strong className="text-subhead font-semibold text-brand">{shopMoney(variant?.pricePaise ?? null)}</strong>
                 {discounted && (
-                  <span data-discount className="rounded-[5px] bg-leaf/10 px-2.5 py-1 text-label font-semibold text-leaf">
+                  <span data-discount className="rounded-[5px] bg-leaf/10 px-2.5 py-1 text-label font-semibold text-[#2f6b32]">
                     {Math.round((1 - variant!.pricePaise! / variant!.compareAtPaise!) * 100)}% off
                   </span>
                 )}
@@ -199,7 +207,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </div>
             </div>
             <ul data-product-promises aria-label="With every piece" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] bg-brand/6 px-4 py-3 text-ui font-medium text-brand">
-              {productPromises.map(({ icon: Icon, label }) => (
+              {productPromises(product.sourceDetails?.warranty).map(({ icon: Icon, label }) => (
                 <li key={label} className="flex items-center gap-1.5"><Icon aria-hidden="true" className="size-4" />{label}</li>
               ))}
             </ul>
@@ -225,7 +233,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               <button type="button" data-share onClick={() => void share()} className={cn(quiet, "cursor-pointer border-0 bg-transparent p-0")}>
                 <Share2 aria-hidden="true" className="size-4" /> Share
               </button>
-              {shared && <span role="status" className="text-meta text-leaf">{shared}</span>}
+              <span data-share-status role="status" className="text-meta text-espresso empty:hidden">{shared}</span>
               <a data-phone href="tel:+918796130252" className={cn(quiet, "ml-auto text-meta")}>Call +91 87961 30252</a>
             </div>
           </div>
@@ -241,18 +249,18 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             <div data-accordions className="grid gap-3">
               <details open className={accordion}>
                 <summary className={summary}>Details{chevron}</summary>
-                <div className={panel}>
-                  {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p>
+                <div data-prose className={panel}>
+                  {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p className="whitespace-pre-line">
                     {product.sourceDetails?.details || product.description || "Our team can help with materials, dimensions, finishes and customization for this piece."}
                   </p>}
                 </div>
               </details>
               <details className={accordion}>
                 <summary className={summary}>Materials + Care{chevron}</summary>
-                <div className={panel}>
+                <div data-prose className={panel}>
                   {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
-                    {product.sourceDetails.materials && <p>{product.sourceDetails.materials}</p>}
-                    {product.sourceDetails.careInstructions && <p>{product.sourceDetails.careInstructions}</p>}
+                    {product.sourceDetails.materials && <p className="whitespace-pre-line">{product.sourceDetails.materials}</p>}
+                    {product.sourceDetails.careInstructions && <p className="whitespace-pre-line">{product.sourceDetails.careInstructions}</p>}
                   </> : <>
                     <p>Contact our team for the materials and care guidance for your selected finish.</p>
                     <Link href={enquiryHref}>Request care guidance</Link>
@@ -261,7 +269,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </details>
               <details className={accordion}>
                 <summary className={summary}>Shipping + Returns{chevron}</summary>
-                <div className={panel}>
+                <div data-prose className={panel}>
                   {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
                     <p>Confirm delivery serviceability, charges, lead time and applicable return terms before ordering.</p>
                     <Link href={enquiryHref}>Ask about delivery</Link>
@@ -270,8 +278,8 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               </details>
               <details id="product-specifications" open className={cn(accordion, "scroll-mt-24")}>
                 <summary className={summary}>Dimensions &amp; specifications{chevron}</summary>
-                <div className={panel}>
-                  {product.sourceDetails?.dimensions ? <p>{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
+                <div data-prose className={panel}>
+                  {product.sourceDetails?.dimensions ? <p className="whitespace-pre-line">{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
                   {variant?.sku && <p>SKU: {variant.sku}</p>}
                   {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
                 </div>
@@ -279,7 +287,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
             </div>
             {detailImage && (
               <div className="relative aspect-[4/3] overflow-hidden rounded-[30px] bg-cream lg:sticky lg:top-6 [&_img]:object-cover">
-                <ProductImage src={detailImage} alt={product.title} fill sizes="(max-width:1023px) 100vw, 660px" />
+                <ProductImage src={detailImage} alt="" fill sizes="(max-width:1023px) 100vw, 660px" />
               </div>
             )}
           </div>

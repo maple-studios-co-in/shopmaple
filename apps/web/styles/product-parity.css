@@ -12,18 +12,6 @@
 .pdp-rich-text ul { list-style: disc; }
 .pdp-rich-text ol { list-style: decimal; }
 /* Source theme badge: burgundy rectangle, uppercase Red Hat Display. */
-.product-card .card-sale {
-  position: absolute;
-  left: 8px;
-  top: 8px;
-  z-index: 1;
-  font: 700 13px/1.6 "Red Hat Display", Manrope, sans-serif;
-  padding: 4px 10px;
-  border-radius: 0;
-  background: var(--burgundy);
-  color: #f5f5f5;
-  text-transform: uppercase;
-}
 .product-card .product-card-price {
   display: flex;
   flex-wrap: wrap;
@@ -33,25 +21,11 @@
 .product-card .product-card-price del {
   opacity: 0.55;
 }
-.product-card .save-button {
-  top: auto;
-  bottom: 9px;
-  border: 1px solid var(--burgundy);
-  border-radius: 4px;
-  background: var(--paper);
-}
-.product-card .view-product {
-  right: 58px;
-}
 @media (max-width: 749px) {
   .product-card .product-card-price {
     font-size: 11px;
     gap: 4px;
   }
-}
-#product-specifications,
-#delivery-enquiry {
-  scroll-margin-top: 24px;
 }
 
 /* Large galleries: thumbnails outside the strip's viewport mount on intersection. */

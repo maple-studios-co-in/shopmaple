@@ -67,3 +67,13 @@ test("card keeps save and unsave behaviour without requiring the detailed catalo
     assert.deepEqual(JSON.parse(localStorage.getItem("maple-favourites")!), []);
   });
 });
+
+test("the save button draws only its own circle (no native border or padding) and the image fallback text meets 4.5:1", async () => {
+  await card({ ...base, images: [], variants: [variant("only", 1000)] }, (document) => {
+    const save = document.querySelector("[data-save-button]")!;
+    assert.match(save.className, /\bborder-0\b/);
+    assert.match(save.className, /\bp-0\b/);
+    assert.match(save.className, /after:-inset-\[7px\]/, "A 44 px tap target around the 30 px circle");
+    assert.doesNotMatch(document.querySelector("[data-card-image]")!.className, /text-taupe/);
+  });
+});
