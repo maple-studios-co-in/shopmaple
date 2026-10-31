@@ -1,26 +1,29 @@
 "use client";
-import { primaryButton } from "./wishlist-styles";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { requestSavedProduct } from "@/lib/saved-product-request";
 import { shopMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 import { useShop } from "../shop-provider";
 import { ProductCard } from "./product-card";
 import { HeartIcon } from "./icons";
+import { primaryButton } from "./wishlist-styles";
 
 type Resolution = { product: ProductCardModel | null; failed: boolean };
 const removeSelector = '[data-save-button][aria-pressed="true"], [data-remove-saved], [data-remove-missing]';
 const textButton =
   "cursor-pointer border-0 bg-transparent p-0 font-body font-bold text-brand underline underline-offset-2 hover:text-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+// The row's small taupe actions, underlined on hover.
+const rowAction =
+  "text-label text-taupe no-underline hover:text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 const imageSizes = "(max-width:767px) calc((100vw - 44px) / 2), (max-width:1279px) calc((100vw - 96px) / 3), (min-width:1440px) 312px, calc((100vw - 176px) / 4)";
 
 /**
  * Saved furniture, resolved from the handles kept in this browser. `page` shows the product
- * cards (the /favourites page); `drawer` shows compact rows for the header's wishlist drawer.
+ * cards (the /favourites page); `drawer` shows the "Wishlist with items" rows for the header's drawer.
+ * With nothing saved, both show the "Wishlist empty" guidance card.
  */
 export function Favourites({
   onNavigate,
@@ -111,7 +114,7 @@ export function Favourites({
       role="region"
       aria-label="Saved furniture"
       tabIndex={-1}
-      className="grid gap-4 font-body text-espresso outline-none"
+      className={cx("grid font-body text-espresso outline-none", drawer ? "gap-6" : "gap-4")}
       onClickCapture={(event) => {
         const button = (event.target as Element).closest<HTMLButtonElement>(removeSelector);
         if (!button || document.activeElement !== button) return;
@@ -145,7 +148,7 @@ export function Favourites({
       {favourites.length ? (
         <>
           {drawer ? (
-            <ul data-wishlist-items className="grid gap-3">
+            <ul data-wishlist-items className="grid gap-6">
               {products.map((product) => (
                 <WishlistRow key={product.id} product={product} onRemove={() => toggleFavourite(product.handle)} />
               ))}
@@ -170,49 +173,49 @@ export function Favourites({
           ))}
         </>
       ) : (
-        <div
-          data-wishlist-empty
-          className={cn("grid justify-items-center gap-3 text-center", drawer ? "px-2 py-10" : "rounded-xl bg-white px-6 py-14 md:py-20")}
-        >
-          <span aria-hidden="true" className="mb-2 grid size-24 place-items-center rounded-full bg-cream text-brand">
-            <HeartIcon className="size-11" />
-          </span>
-          <EmptyHeading className={cn("font-serif font-bold text-espresso", drawer ? "text-h4" : "text-h3")}>
-            Your wishlist is empty
-          </EmptyHeading>
-          <p className="max-w-[300px] text-ui text-taupe">Browse our collections and add your favourite pieces.</p>
-          <p className="max-w-[300px] text-label text-taupe">Saved furniture stays in this browser.</p>
-          <Link className={cn(primaryButton, "mt-2 min-w-[220px]")} href="/collections/all">
-            Explore Collections
+        // "Empty list guidance": a cream card (heart, 29 px serif line, 16 px note), then the button and a note.
+        // The frame's "Wishlist inspiration" photo is left out: it is a generated render, and the shop uses only its own photos.
+        <div data-wishlist-empty className={cx("grid gap-6", !drawer && "w-full max-w-[420px] justify-self-center")}>
+          <div className="flex flex-col items-start gap-4 bg-cream p-6">
+            <HeartIcon className="size-8 text-brand" />
+            <EmptyHeading className="font-serif text-h2 font-bold text-espresso">
+              Your next favourite <br />is waiting.
+            </EmptyHeading>
+            <p className="text-price text-taupe">Save the pieces you love and return to them whenever inspiration strikes.</p>
+          </div>
+          <Link className={cx(primaryButton, "w-full")} href="/collections/all">
+            Explore collections →
           </Link>
+          <p className="text-meta text-taupe">Saved furniture stays in this browser.</p>
         </div>
       )}
     </div>
   );
 }
 
+/** A "Wishlist with items" row: a 94 px photo, the name, the price, then "Check availability · Remove". */
 function WishlistRow({ product, onRemove }: { product: ProductCardModel; onRemove: () => void }) {
   const href = "/products/" + product.handle;
   return (
-    <li data-wishlist-item className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-sand bg-white p-2.5">
+    <li data-wishlist-item className="flex items-start gap-4">
       <Link
         href={href}
         tabIndex={-1}
         aria-hidden="true"
-        className="relative block size-[72px] overflow-hidden rounded-md bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:text-2xs [&_[role=img]]:text-taupe [&_[role=img]_span]:sr-only"
+        className="relative block size-[94px] shrink-0 overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:text-2xs [&_[role=img]]:text-taupe [&_[role=img]_span]:sr-only"
       >
-        <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes="72px" className="object-cover" />
+        <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes="94px" className="object-cover" />
       </Link>
-      <div className="grid min-w-0 gap-0.5">
+      <div className="grid min-w-0 flex-1 gap-1">
         <Link
           data-wishlist-item-name
           href={href}
-          className="line-clamp-2 text-ui font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="line-clamp-2 text-price font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {product.title}
         </Link>
-        <p data-wishlist-item-price className="flex flex-wrap items-baseline gap-x-1.5 text-ui font-bold text-brand">
-          <span>
+        <p className="flex flex-wrap items-baseline gap-x-1.5 text-card font-bold text-brand">
+          <span data-wishlist-item-price>
             {product.priceFrom ? "From " : ""}
             {shopMoney(product.pricePaise)}
           </span>
@@ -221,16 +224,26 @@ function WishlistRow({ product, onRemove }: { product: ProductCardModel; onRemov
           ) : null}
         </p>
         {product.otherOptionsOnRequest && <p className="text-label text-taupe">Other options on request</p>}
+        <p className="flex items-center gap-2 text-label text-taupe">
+          <Link
+            data-wishlist-availability
+            href={"/pages/contact?product=" + encodeURIComponent(product.title)}
+            className={rowAction}
+          >
+            Check availability
+          </Link>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            data-remove-saved
+            aria-label={`Remove ${product.title} from wishlist`}
+            onClick={onRemove}
+            className={cx(rowAction, "cursor-pointer border-0 bg-transparent p-0 font-body")}
+          >
+            Remove
+          </button>
+        </p>
       </div>
-      <button
-        type="button"
-        data-remove-saved
-        aria-label={`Remove ${product.title} from wishlist`}
-        onClick={onRemove}
-        className="grid size-9 cursor-pointer place-items-center self-start rounded-full border-0 bg-transparent p-0 text-taupe transition-colors hover:bg-cream hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
-      >
-        <X aria-hidden="true" className="size-4" />
-      </button>
     </li>
   );
 }

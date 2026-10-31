@@ -1,59 +1,70 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Heart, MessageCircle, UserRound } from "lucide-react";
 import { useShop } from "../shop-provider";
+import { AccountIcon, HeartIcon } from "./icons";
+import { eyebrow } from "./section-heading";
 import { useHydrated } from "./use-hydrated";
 
+/** An entry card in the "Account menu" dropdown's language: white, sand border, 12 px corners. */
 const card =
-  "group flex h-full flex-col gap-3 rounded-xl border border-sand bg-white p-5 text-espresso no-underline transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-const cardIcon = "grid size-11 place-items-center rounded-full bg-cream text-brand [&>svg]:size-5";
-const cardLink = "mt-auto inline-flex items-center gap-1.5 pt-1 text-ui font-bold text-brand";
+  "flex h-full items-start gap-3 rounded-xl border border-sand bg-white p-6 text-espresso no-underline transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand [&>svg]:size-5 [&>svg]:shrink-0 [&>svg]:text-brand";
+const cardName = "text-price font-bold";
+const cardNote = "text-ui text-taupe";
+const cardLink = "mt-2 text-meta font-bold text-brand";
 
-/** The /account page. There is no customer sign-in yet, so it says so and points to what works today. */
+/**
+ * The /account page, built from the "Account menu" frame. There is no customer sign-in yet, so it says
+ * so and lists what works today: the wishlist and two requests our team handles directly.
+ */
 export function AccountOverview() {
   const { favourites } = useShop();
   // The saved list lives in this browser, so the server has no count to show.
   const hydrated = useHydrated();
   return (
     <section data-store data-account-page aria-labelledby="account-title" className="bg-linen font-body text-espresso">
-      <div className="mx-auto w-full max-w-[1100px] px-4 py-10 md:px-8 md:py-16">
-        <p className="text-label font-bold tracking-[0.08em] text-brand uppercase">My account</p>
-        <h1 id="account-title" className="mt-2 font-serif text-title font-bold md:text-h1">Account</h1>
-        <div className="mt-5 flex max-w-[720px] gap-3 rounded-xl bg-cream p-5">
-          <UserRound aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-brand" />
-          <p className="text-card text-espresso">
-            Customer accounts arrive with online checkout. Until then there is no sign-in on this storefront: your saved
-            furniture stays in this browser, and our team looks after orders and delivery details directly.
-          </p>
+      <div className="mx-auto w-full max-w-[1100px] px-8 py-16 max-[750px]:px-4 max-[750px]:py-10">
+        <div className="flex flex-col gap-6 max-[750px]:gap-3">
+          <p className={eyebrow}>My account</p>
+          <h1 id="account-title" className="font-serif text-display font-bold max-[750px]:text-h2">Your account</h1>
         </div>
-        <ul className="mt-8 grid gap-4 md:grid-cols-3">
+        <p data-account-note className="mt-5 max-w-[640px] text-card text-taupe">
+          Sign-in arrives with online checkout. Until then there is no customer account on this storefront: your saved
+          furniture stays in this browser, and our team looks after orders and delivery details directly.
+        </p>
+        <ul className="mt-10 grid grid-cols-3 gap-4 max-[1024px]:grid-cols-1 max-[750px]:mt-8">
           <li>
-            <Link href="/favourites" className={card}>
-              <span className="flex items-center justify-between">
-                <span className={cardIcon}><Heart aria-hidden="true" /></span>
-                <span data-account-saved-count className="grid h-7 min-w-7 place-items-center rounded-full bg-cream px-2 text-meta font-bold text-brand">
-                  {hydrated ? favourites.length : null}
+            <Link href="/favourites" data-account-entry className={card}>
+              <HeartIcon />
+              <span className="grid flex-1 gap-1">
+                <span className="flex items-center justify-between gap-3">
+                  <span data-account-entry-title className={cardName}>Wishlist</span>
+                  <span data-account-saved-count className="grid h-6 min-w-6 place-items-center rounded-full bg-cream px-1.5 text-label font-bold text-brand empty:hidden">
+                    {hydrated ? favourites.length : null}
+                  </span>
                 </span>
+                <span className={cardNote}>Return to the pieces you saved on this device.</span>
+                <span className={cardLink}>View wishlist →</span>
               </span>
-              <span className="text-subhead font-bold">Saved furniture</span>
-              <span className="text-ui text-taupe">The pieces you saved on this device.</span>
-              <span className={cardLink}>View saved furniture <ArrowRight aria-hidden="true" className="size-4" /></span>
             </Link>
           </li>
           <li>
-            <Link href="/pages/contact?product=Order%20support" className={card}>
-              <span className={cardIcon}><MessageCircle aria-hidden="true" /></span>
-              <span className="text-subhead font-bold">Help with an order</span>
-              <span className="text-ui text-taupe">Ask about an order, its delivery or a return.</span>
-              <span className={cardLink}>Contact our team <ArrowRight aria-hidden="true" className="size-4" /></span>
+            <Link href="/pages/contact?product=Order%20support" data-account-entry className={card}>
+              <AccountIcon />
+              <span className="grid flex-1 gap-1">
+                <span data-account-entry-title className={cardName}>Help with an order</span>
+                <span className={cardNote}>Ask about an order, its delivery or a return.</span>
+                <span className={cardLink}>Contact our team →</span>
+              </span>
             </Link>
           </li>
           <li>
-            <Link href="/pages/contact?product=Account%20support" className={card}>
-              <span className={cardIcon}><UserRound aria-hidden="true" /></span>
-              <span className="text-subhead font-bold">Update your details</span>
-              <span className="text-ui text-taupe">Tell us about a new phone number, email or delivery address.</span>
-              <span className={cardLink}>Contact our team <ArrowRight aria-hidden="true" className="size-4" /></span>
+            <Link href="/pages/contact?product=Account%20support" data-account-entry className={card}>
+              <AccountIcon />
+              <span className="grid flex-1 gap-1">
+                <span data-account-entry-title className={cardName}>Update your details</span>
+                <span className={cardNote}>Tell us about a new phone number, email or delivery address.</span>
+                <span className={cardLink}>Contact our team →</span>
+              </span>
             </Link>
           </li>
         </ul>
