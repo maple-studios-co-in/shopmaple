@@ -1,12 +1,12 @@
 // Public help content from the current Maple contact-page template.
 export const contactCategories = [
   {
-    title: "Order Tracking And Delivery",
+    title: "Order tracking & delivery",
     subtitle: "Queries related to tracking and delivery",
     icon: "Del_mf.svg",
     questions: [
       {
-        question: "How to Track my Order?",
+        question: "How do I track my order?",
         answer:
           "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.",
       },
@@ -23,19 +23,19 @@ export const contactCategories = [
           "In case you missed the delivery, the logistic partner will try to deliver the product on the next business day and you will receive a call prior from our delivery team to schedule your delivery.",
       },
       {
-        question: "What is the estimated delivery time?",
+        question: "When will my order arrive?",
         answer:
           "The delivery time differs from product to product which is based on the in-stock availability or made-to-order and your delivery location. Moreover, please refer to the product details tab on individual product pages for estimated delivery timelines.",
       },
       {
-        question: "How can I change my delivery address?",
+        question: "Can I change my delivery address?",
         answer:
           "Raise a ticket for that order and easily change your delivery address with the help of our support team.Within 24 hours of placing of order.",
       },
     ],
   },
   {
-    title: "Payment & Invoice",
+    title: "Payment & invoice",
     subtitle: "Help related to payment related queries",
     icon: "engaged_3.svg",
     questions: [
@@ -64,7 +64,7 @@ export const contactCategories = [
     ],
   },
   {
-    title: "Manage Account",
+    title: "Manage account",
     subtitle: "Help related to account management queries",
     icon: "engaged_2.svg",
     questions: [
@@ -93,7 +93,7 @@ export const contactCategories = [
     ],
   },
   {
-    title: "Damaged Or Defective Item",
+    title: "Damaged or defective item",
     subtitle: "Track your customer care query/complaint",
     icon: "qc_mf.svg",
     questions: [

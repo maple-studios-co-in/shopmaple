@@ -1,6 +1,5 @@
 "use client";
 import { useId, type FormEvent } from "react";
-import { ArrowRight, Mail, MessageSquare, Phone, ShieldCheck, User } from "lucide-react";
 import type { EnquiryInput } from "@shopmaple/contracts";
 import { useEnquiry } from "../use-enquiry";
 
@@ -44,54 +43,43 @@ function ContextLines({ context, detail }: { context: EnquiryContext; detail: st
   );
 }
 
-const field = "block h-[52px] w-full rounded-lg border border-solid border-sand bg-white pr-4 pl-11 text-ui text-espresso transition-colors hover:border-taupe focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-const fieldIcon = "pointer-events-none absolute top-[18px] left-4 size-4 text-taupe";
+const field = "block h-[52px] w-full rounded-[6px] border border-solid border-sand bg-white px-[14px] font-body text-ui text-espresso transition-colors placeholder:text-taupe placeholder:opacity-100 hover:border-taupe focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
-/** The Help Center's enquiry card ("Maple Website review"): icon fields, privacy note, Send Enquiry. */
+/** The Help Center's enquiry card ("Maple / PDF Review / Help Center"): plain fields, privacy note, Send enquiry. */
 export function HelpEnquiryForm({ context }: { context: EnquiryContext }) {
   const { id, enquiry, submit } = useEnquiryForm("contact", context);
   return (
     <form data-enquiry-form className="grid min-w-0 gap-4" onSubmit={submit} onChange={enquiry.clear} aria-describedby={`${id}-email-note`}>
       {hasContext(context) && (
-        <div data-enquiry-context className="grid gap-1 rounded-lg bg-cream px-4 py-3 text-ui [overflow-wrap:anywhere]">
-          <ContextLines context={context} detail="text-meta text-[#5f584f]" />
+        <div data-enquiry-context className="grid gap-1 rounded-[6px] bg-cream px-[14px] py-3 text-ui [overflow-wrap:anywhere]">
+          <ContextLines context={context} detail="text-meta text-taupe" />
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="relative block min-w-0">
+      <div className="grid grid-cols-2 gap-4 max-[750px]:grid-cols-1">
+        <label className="block min-w-0">
           <span className="sr-only">Name</span>
-          <User aria-hidden="true" className={fieldIcon} />
-          <input name="name" autoComplete="name" placeholder="Your Name" maxLength={100} className={field} />
+          <input name="name" autoComplete="name" placeholder="Your name" maxLength={100} className={field} />
         </label>
-        <label className="relative block min-w-0">
+        <label className="block min-w-0">
           <span className="sr-only">Email (required)</span>
-          <Mail aria-hidden="true" className={fieldIcon} />
           <input name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false}
-            placeholder="Email Address *" required maxLength={254} className={field} />
+            placeholder="Email address" required maxLength={254} className={field} />
         </label>
       </div>
-      <label className="relative block min-w-0">
+      <label className="block min-w-0">
         <span className="sr-only">Phone</span>
-        <Phone aria-hidden="true" className={fieldIcon} />
-        <input name="phone" type="tel" autoComplete="tel" placeholder="Phone Number" maxLength={30} className={field} />
+        <input name="phone" type="tel" autoComplete="tel" placeholder="Phone number" maxLength={30} className={field} />
       </label>
-      <label className="relative block min-w-0">
+      <label className="block min-w-0">
         <span className="sr-only">Tell us about your project</span>
-        <MessageSquare aria-hidden="true" className={fieldIcon} />
-        <textarea name="message" placeholder="Tell us about your project" rows={8} maxLength={5000}
-          className={field + " h-auto min-h-[200px] resize-y pt-[15px] leading-[1.5]"} />
+        <textarea name="message" placeholder="Tell us about your project" rows={5} maxLength={5000}
+          className={field + " h-[140px] min-h-[140px] resize-y py-[14px] leading-[1.45]"} />
       </label>
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-        <p className="flex items-center gap-2 text-meta text-taupe">
-          <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-espresso" />
-          <span id={`${id}-email-note`} data-enquiry-note>Your information is safe with us</span>
-        </p>
-        <button type="submit" disabled={enquiry.pending}
-          className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-sm border-0 bg-brand px-6 text-ui font-semibold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60 max-sm:w-full">
-          {enquiry.pending ? "Saving…" : "Send Enquiry"}
-          {!enquiry.pending && <ArrowRight aria-hidden="true" className="size-4" />}
-        </button>
-      </div>
+      <p id={`${id}-email-note`} data-enquiry-note className="text-label text-taupe">Your information stays with us.</p>
+      <button type="submit" disabled={enquiry.pending}
+        className="inline-flex h-12 w-[190px] cursor-pointer items-center justify-center rounded-[6px] border-0 bg-brand px-[14px] font-body text-ui font-bold text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60 max-[750px]:w-full">
+        {enquiry.pending ? "Saving…" : <>Send enquiry <span aria-hidden="true" className="ml-1">→</span></>}
+      </button>
       {enquiry.message && (
         <p role={enquiry.failed ? "alert" : "status"} className={"text-meta " + (enquiry.failed ? "text-brand" : "text-espresso")}>
           {enquiry.message}

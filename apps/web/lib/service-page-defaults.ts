@@ -5,10 +5,10 @@ import { contactCategories } from "../app/pages/contact-content";
 export const defaultServicePages: ServicePagesContent = {
   contact: {
     title: "Contact Us",
-    eyebrow: "GET IN TOUCH",
-    heading: "Tell us what you need. We’ll help you shape it",
-    helpEyebrow: "Everything we do starts with why",
-    helpHeading: "Browse from category",
+    eyebrow: "LET’S CONNECT",
+    heading: "Tell us what you need. We’ll help you shape it.",
+    helpEyebrow: "Everything begins with a question",
+    helpHeading: "How can we help?",
     cities: { eyebrow: "We Are Serving", heading: "20+ Cities" },
     sections: contactSectionKeys.map(key => ({ key, enabled: true })),
     categories: contactCategories.map((category, index) => ({

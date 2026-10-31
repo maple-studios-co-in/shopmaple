@@ -118,7 +118,7 @@ test("contact page phone action dials the current business number", async () => 
     globalThis.fetch = previousFetch;
   }
   await mount(page, () => {
-    const link = document.querySelector<HTMLAnchorElement>('[data-contact-links] a[href^="tel:"]');
+    const link = document.querySelector<HTMLAnchorElement>('[data-help-support] a[href^="tel:"]');
     assert.equal(link?.getAttribute("href"), "tel:+918796130252");
     assert.equal(link?.textContent?.trim(), "+91 87961 30252");
   });

@@ -8,7 +8,7 @@ import { JSDOM } from "jsdom";
 import ServicePage from "../app/pages/[slug]/page";
 import { ContactForm } from "../components/contact-form";
 
-// The Help Center follows the "Maple Website review" design; Bulk Enquiry keeps its look on
+// The Help Center follows the "Maple / PDF Review / Help Center" frame; Bulk Enquiry keeps its look on
 // utilities. Both reach markup through data-* hooks only.
 async function element(slug: string, query: Record<string, string> = {}) {
   const previous = globalThis.fetch;
@@ -23,56 +23,75 @@ const render = async (slug: string, query: Record<string, string> = {}) =>
   new JSDOM(renderToStaticMarkup(await element(slug, query))).window.document;
 const address = "A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015";
 
-test("help center hero: eyebrow, accented headline, contact rows, map card and enquiry card", async () => {
+test("help center hero follows the PDF Review frame: eyebrow, plain headline, lead, three promises and the enquiry card", async () => {
   const doc = await render("contact");
   const intro = doc.querySelector('[data-service-section="intro"]')!;
   assert.ok(intro.closest("[data-store]"), "the rebuilt hero sits inside the scoped storefront base");
-  assert.equal(doc.querySelector("[data-contact-eyebrow]")?.textContent, "GET IN TOUCH");
+  assert.equal(doc.querySelector("[data-contact-eyebrow]")?.textContent, "LET’S CONNECT");
   const h1 = doc.querySelector("h1")!;
-  assert.equal(h1.textContent, "Tell us what you need. We’ll help you shape it");
-  assert.equal(h1.querySelector("[data-heading-accent]")?.textContent, "you shape it");
-  const rows = [...doc.querySelectorAll<HTMLAnchorElement>("[data-contact-links] a")];
-  assert.deepEqual(rows.map((row) => row.getAttribute("href")), [
-    "tel:+918796130252",
-    "mailto:contact@maplefurnishers.com",
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,
+  assert.equal(h1.textContent, "Tell us what you need. We’ll help you shape it.");
+  assert.equal(h1.querySelector("[data-heading-accent]"), null, "the frame sets the whole headline in one colour");
+  assert.equal(intro.querySelector("[data-contact-lead]")?.textContent,
+    "Share your ideas. Our team will come back within 24 hours with options, pricing, and a clear timeline.");
+  const promises = [...intro.querySelectorAll("[data-contact-promises] li")];
+  assert.deepEqual(promises.map((item) => [item.querySelector("strong")?.textContent, item.querySelector("span")?.textContent]), [
+    ["Quick response", "We respond within 24 hours."],
+    ["Transparent pricing", "Clear quotes, with no hidden costs."],
+    ["End-to-end support", "From the first conversation to final installation."],
   ]);
-  for (const row of rows) assert.ok(row.querySelector("svg[aria-hidden=true]"), "each contact row has a decorative icon");
-  const map = doc.querySelector("[data-map-card]")!;
-  const mapLink = map.querySelector<HTMLAnchorElement>("a")!;
-  assert.match(mapLink.textContent ?? "", /View on Google Maps/);
-  assert.equal(mapLink.getAttribute("href"), `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
-  assert.equal(mapLink.getAttribute("target"), "_blank");
-  assert.match(mapLink.getAttribute("rel") ?? "", /noreferrer/);
-  const form = doc.querySelector("[data-enquiry-form]")!;
+  for (const item of promises) assert.ok(item.querySelector("svg[aria-hidden=true]"), "each promise has a decorative tick");
+  assert.equal(intro.querySelector("[data-map-card], [data-contact-links]"), null, "the hero carries no map or contact rows");
+  const form = intro.querySelector("[data-enquiry-form]")!;
   assert.ok(form.closest("[data-enquiry-card]"));
   for (const field of form.querySelectorAll("input, textarea")) {
     const label = field.closest("label");
     assert.ok(label?.textContent?.trim(), `${field.getAttribute("name")} has a real label`);
   }
   assert.deepEqual([...form.querySelectorAll("input, textarea")].map((field) => field.getAttribute("name")), ["name", "email", "phone", "message"]);
+  assert.deepEqual([...form.querySelectorAll("input, textarea")].map((field) => field.getAttribute("placeholder")),
+    ["Your name", "Email address", "Phone number", "Tell us about your project"]);
+  assert.equal(form.querySelectorAll("label svg").length, 0, "the frame's fields have no icons");
   assert.ok(form.querySelector('input[name="email"][required][type="email"]'));
   assert.equal(form.querySelector('input[name="name"][required]'), null, "contact keeps its optional name");
-  assert.equal(form.querySelector("[data-enquiry-note]")?.textContent, "Your information is safe with us");
-  const submit = form.querySelector('button[type="submit"]')!;
-  assert.match(submit.textContent ?? "", /Send Enquiry/);
+  assert.equal(form.querySelector("[data-enquiry-note]")?.textContent, "Your information stays with us.");
+  assert.equal(form.querySelector('button[type="submit"]')?.textContent, "Send enquiry →");
 });
 
-test("help center topics: eyebrow, italic heading, category list, FAQ and support strip", async () => {
+test("help center topics follow the PDF Review frame: heading, topic buttons, open first answer, support line and showroom", async () => {
   const doc = await render("contact");
   const help = doc.querySelector('[data-service-section="help"]')!;
   assert.ok(help.closest("[data-store]"));
-  assert.deepEqual([...help.querySelectorAll("[data-section-title] p, [data-section-title] h2")].map((n) => n.textContent), ["Everything we do starts with why", "Browse from category"]);
+  assert.equal(help.querySelector("[data-section-eyebrow]")?.textContent, "Everything begins with a question");
+  assert.equal(help.querySelector("h2")?.textContent, "How can we help?");
   const buttons = [...help.querySelectorAll<HTMLButtonElement>("[data-help-categories] button")];
-  assert.deepEqual(buttons.map((b) => b.querySelector("strong")?.textContent), ["Order Tracking And Delivery", "Payment & Invoice", "Manage Account", "Warranty", "Damaged Or Defective Item"]);
+  assert.deepEqual(buttons.map((b) => b.textContent), ["Order tracking & delivery", "Payment & invoice", "Manage account", "Warranty", "Damaged or defective item"]);
+  assert.equal(help.querySelectorAll("[data-help-categories] img").length, 0, "the frame's topic buttons carry no icons");
   assert.deepEqual(buttons.map((b) => b.getAttribute("aria-pressed")), ["true", "false", "false", "false", "false"]);
-  assert.equal(buttons[0]!.getAttribute("data-active"), "true");
-  assert.equal(help.querySelectorAll("[data-help-answers] details").length, 5);
+  const answers = [...help.querySelectorAll<HTMLDetailsElement>("[data-help-answers] details")];
+  assert.deepEqual(answers.map((d) => d.querySelector("summary [data-help-question]")?.textContent), [
+    "How do I track my order?",
+    "My item has already reached the distribution center, what happens next?",
+    "What should I do if I missed the delivery of my order today?",
+    "When will my order arrive?",
+    "Can I change my delivery address?",
+  ]);
+  assert.deepEqual(answers.map((d) => d.hasAttribute("open")), [true, false, false, false, false], "the first answer starts open, as in the frame");
   const support = help.querySelector("[data-help-support]")!;
-  assert.match(support.textContent ?? "", /Still need help\?/);
-  assert.match(support.textContent ?? "", /Account sign-in and order tracking are not available/);
-  const contact = support.querySelector<HTMLAnchorElement>('a[href="mailto:contact@maplefurnishers.com"]')!;
-  assert.match(contact.textContent ?? "", /Contact Support/);
+  assert.match(support.textContent ?? "", /^Still need help\?/);
+  assert.equal(support.querySelector("[data-help-notice]")?.textContent?.replace(/\s+/g, " ").trim(),
+    "Account sign-in and order tracking are not available on this storefront yet. Contact support for help with an existing order.");
+  assert.deepEqual([...support.querySelectorAll("a")].map((a) => [a.getAttribute("href"), a.textContent]), [
+    ["tel:+918796130252", "+91 87961 30252"],
+    ["mailto:contact@maplefurnishers.com", "contact@maplefurnishers.com"],
+  ]);
+  const showroom = help.querySelector("[data-showroom]")!;
+  const place = showroom.querySelector<HTMLAnchorElement>("[data-contact-links] a")!;
+  assert.equal(place.getAttribute("href"), `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
+  assert.equal(place.getAttribute("target"), "_blank");
+  assert.match(place.getAttribute("rel") ?? "", /noreferrer/);
+  const map = showroom.querySelector("[data-map-card]")!;
+  assert.equal(map.querySelector("iframe")?.getAttribute("referrerpolicy"), "no-referrer");
+  assert.match(map.querySelector("a")?.textContent ?? "", /View on Google Maps/);
   assert.deepEqual([...doc.querySelectorAll("h1, h2, h3")].map((n) => n.tagName).slice(0, 2), ["H1", "H2"]);
 });
 

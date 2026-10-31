@@ -35,8 +35,8 @@ const fixedWarning = "This form saves an enquiry; it does not automatically appr
 test("source service routes retain forms, help, operational notices, media and approved destinations", async () => {
   await withResponse(null, async () => {
     const contact = await renderPage("contact");
-    assert.equal(contact.querySelector("h1")?.textContent, "Tell us what you need. We’ll help you shape it");
-    assert.equal(contact.querySelector("[data-contact-eyebrow]")?.textContent, "GET IN TOUCH");
+    assert.equal(contact.querySelector("h1")?.textContent, "Tell us what you need. We’ll help you shape it.");
+    assert.equal(contact.querySelector("[data-contact-eyebrow]")?.textContent, "LET’S CONNECT");
     assert.equal(contact.querySelectorAll("[data-help-categories] button").length, 5);
     assert.equal(contact.querySelectorAll("[data-help-answers] details").length, 5);
     assert.ok(contact.querySelector('a[href="tel:+918796130252"]'));
@@ -121,7 +121,7 @@ test("published service copy, order and metadata reach public routes with immuta
     assert.deepEqual([...contact.querySelectorAll("[data-service-section]")].map(n => n.getAttribute("data-service-section")), ["cities", "help", "intro"]);
     assert.deepEqual(texts(contact, "[data-section-title] p, [data-section-title] h2"), ["Support topics", "Find an answer"]);
     assert.deepEqual(texts(contact, "[data-home-cities] header p, [data-home-cities] h2"), ["Near you", "Across the country"]);
-    assert.equal(contact.querySelector("[data-help-categories] strong")?.textContent, "Topic 1");
+    assert.equal(contact.querySelector("[data-help-categories] button")?.textContent, "Topic 1");
     assert.equal(contact.querySelector("[data-help-answers] summary")?.textContent, "Question 1.1");
     assert.equal(contact.querySelector("[data-help-answers] details p")?.textContent, "Answer 1.1");
     assert.ok(contact.querySelector('a[href="tel:+918796130252"]'));
@@ -204,7 +204,7 @@ test("legacy, outage, malformed and draft responses retain original service defa
   delete legacy.servicePages;
   for (const body of [{ version: 1, content: legacy }, "offline", { version: 2, draft: published().content }, { version: 2, content: { ...legacy, servicePages: { contact: { title: "Invalid" } } } }]) {
     await withResponse(body, async () => {
-      assert.equal((await renderPage("contact")).querySelector("h1")?.textContent, "Tell us what you need. We’ll help you shape it");
+      assert.equal((await renderPage("contact")).querySelector("h1")?.textContent, "Tell us what you need. We’ll help you shape it.");
       assert.equal((await renderPage("bulk-enquiry")).querySelector("h1")?.textContent, "Home Interior");
       assert.equal((await renderPage("returns")).querySelector("h1")?.textContent, "Return & Exchange");
     });
@@ -252,13 +252,12 @@ test("stable help keys preserve active category, focus and open answers through 
 });
 
 
-test("reordered help categories retain their fixed source icons and FAQ identity", async () => {
+test("reordered help categories retain their FAQ identity", async () => {
   const content = serviceEdits();
   content.contact.categories.reverse();
   await withResponse(published(content), async () => {
     const doc = await renderPage("contact");
-    assert.equal(doc.querySelector("[data-help-categories] strong")?.textContent, "Topic 5");
-    assert.match(doc.querySelector("[data-help-categories] img")?.getAttribute("src") ?? "", /qc_mf.svg/);
+    assert.equal(doc.querySelector("[data-help-categories] button")?.textContent, "Topic 5");
     assert.equal(doc.querySelector("[data-help-answers] summary")?.textContent, "Question 5.1");
     assert.equal(doc.querySelector("[data-help-answers] details p")?.textContent, "Answer 5.1");
   });
@@ -277,12 +276,16 @@ test("legacy help callers without stable keys can still switch categories and op
     assert.equal(buttons[3]!.getAttribute("aria-pressed"), "true");
     assert.equal(document.querySelector("[data-help-answers]")?.getAttribute("aria-label"), "Warranty");
     const detail = document.querySelector<HTMLDetailsElement>("[data-help-answers] details")!;
-    await act(async () => detail.querySelector("summary")!.click());
-    assert.equal(detail.open, true);
+    assert.equal(detail.open, true, "a topic's first answer starts open");
     assert.match(detail.textContent ?? "", /The warranty we offer differs from product to product/);
+    await act(async () => detail.querySelector("summary")!.click());
+    assert.equal(detail.open, false);
     await act(async () => buttons[0]!.click());
-    assert.equal(document.querySelector("[data-help-answers]")?.getAttribute("aria-label"), "Order Tracking And Delivery");
-    assert.equal(document.querySelector<HTMLDetailsElement>("[data-help-answers] details")?.open, false);
+    assert.equal(document.querySelector("[data-help-answers]")?.getAttribute("aria-label"), "Order tracking & delivery");
+    const answers = document.querySelectorAll<HTMLDetailsElement>("[data-help-answers] details");
+    assert.deepEqual([...answers].map(answer => answer.open), [true, false, false, false, false]);
+    await act(async () => answers[1]!.querySelector("summary")!.click());
+    assert.equal(answers[1]!.open, true);
   } finally {
     await act(async () => root.unmount());
     Object.assign(globalThis, previous);
