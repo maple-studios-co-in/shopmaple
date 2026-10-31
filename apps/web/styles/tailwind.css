@@ -36,6 +36,15 @@
   --color-taupe: #746c62;
   --color-sand: #e1d9d0;
   --color-leaf: #428445;
+  /* The current storefront look, for pages re-skinned without visual change (paper, ink,
+     burgundy is brand, Manrope and Red Hat Display). */
+  --color-paper: #f4f2ec;
+  --color-ink: #292d28;
+  --color-ink-soft: #5d605a;
+  --color-rule: #dfded7;
+  --color-forest: #294a34;
+  --font-manrope: "Manrope", sans-serif;
+  --font-redhat: "Red Hat Display", sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
   /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
