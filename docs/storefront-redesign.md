@@ -12,6 +12,18 @@ Since 30 October 2026 the storefront follows the "Maple Website review" Figma fi
 | Homepage ("Maple / Impact Layout") | `1049:27656` | Later |
 | Our Story, Help Center, Bulk Enquiry, Wishlist and Account | review images in `251:455` | Later |
 
+### "Maple / PDF Review" (31 October 2026)
+
+A newer set of frames in the same file. The shared pieces come first; each page follows from them.
+
+| Design frame | Node | State |
+|---|---|---|
+| UI Components ("Maple / PDF Review / UI Components") | `1046:3` | Built: announcement and main navigation (`site-header.tsx`, `site-navigation.tsx`), footer (`site-footer.tsx`), `SectionHeading`, `PromiseSection`, the card's `outlined` (243 px) and `plain` (246 px) surfaces |
+| Home, Help Center, Our Story, Chairs, Product Listing, Wishlist and Account, Mega-menu | `1042:2`, `1044:2`, `1044:114`, `1044:236`, `1044:433`, `1045:85`/`1045:129`/`1045:185`, `1045:2` | Later, one page at a time |
+| Product Detail | `1044:638` | Later, after catalogue work |
+
+The header is one linen row (logo, menu, search field, account, saved, bag; the menu wraps onto its own row from 750 to 1023 px and the drawer takes over below 750 px). The design has no utility links, so the header no longer shows them; the admin's utility links stay saved but unused. The footer keeps the editors' columns and order; its burgundy band shows the closing line and, when the bulk contact column is on, the bulk phone and email. The customer-service and marketplace contact columns, the find-us heading and the bulk and service headings are not shown.
+
 ## Tokens
 
 From the design, in `apps/web/styles/tailwind.css` (`@theme static`, so plain CSS can read them too):
@@ -26,6 +38,7 @@ From the design, in `apps/web/styles/tailwind.css` (`@theme static`, so plain CS
 | `sand` | `#e1d9d0` | card and button borders |
 | `font-body` / `font-serif` | Barlow (self-hosted through `@fontsource/barlow`, 400 to 700) / Newsreader | UI text / headings |
 | `text-label` ... `text-h1` | 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 42 px | |
+| `text-band` / `text-display` | 26 px / 40 px, line height 1.1 | the footer band's closing line / section titles (Newsreader bold) |
 
 Radii: 6 px buttons (`rounded-sm`), 10 px cards (`rounded-lg`), 12 px images and panels (`rounded-xl`), 14 px the listing introduction (`rounded-2xl`).
 

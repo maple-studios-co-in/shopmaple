@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Heart, LifeBuoy, UserRound } from "lucide-react";
+import { ArrowRight, Heart, LifeBuoy } from "lucide-react";
 import { useShop } from "../shop-provider";
 import { useHydrated } from "./use-hydrated";
 import { headerIcon } from "./header-icon";
+import { AccountIcon } from "./icons";
 
 const menuId = "account-menu";
 /** Hidden under 750 px, where the mobile drawer links to the account page. */
@@ -51,7 +52,7 @@ export function AccountMenu() {
   if (!hydrated)
     return (
       <a href="/account" data-account-button className={accountClass} aria-label="Your account">
-        <UserRound />
+        <AccountIcon />
       </a>
     );
   return (
@@ -65,7 +66,7 @@ export function AccountMenu() {
         aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
       >
-        <UserRound />
+        <AccountIcon />
       </button>
       {open && (
         <div
@@ -75,7 +76,7 @@ export function AccountMenu() {
           data-account-menu
           role="region"
           aria-labelledby="account-menu-title"
-          className="absolute top-[calc(50%+28px)] right-6 z-40 w-[320px] rounded-xl border border-sand bg-white p-4 font-body text-espresso shadow-[0_12px_40px_rgb(41_37_31/0.16)] min-[1001px]:right-10"
+          className="absolute top-[calc(100%+12px)] right-0 z-40 w-[320px] rounded-xl border border-sand bg-white p-4 font-body text-espresso shadow-[0_12px_40px_rgb(41_37_31/0.16)]"
           onClick={(event) => {
             if ((event.target as Element).closest("a")) setOpen(false);
           }}
