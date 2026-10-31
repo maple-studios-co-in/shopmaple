@@ -42,7 +42,7 @@ export const legacyChairHandles = [...new Set([
 ])];
 
 /** The white outlined button (legacy `.legacy-chairs-button`). */
-const chairsButton = "inline-block border border-[#ddd] bg-white px-6 py-3 text-black";
+const chairsButton = "inline-block border border-[#ddd] bg-white px-6 py-3 text-black hover:underline-offset-[5px]";
 /** A serif section heading in burgundy (the global `h2` rule plus `.home-parity h2`). */
 const serifHeading = "font-serif font-medium";
 

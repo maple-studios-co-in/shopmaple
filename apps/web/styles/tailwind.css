@@ -1,17 +1,18 @@
 /* ------------------------------------------------------------------ */
-/* The one Tailwind build for the app: the admin and the redesigned   */
-/* storefront share these utilities, so a class means the same thing  */
-/* on every route and inside the admin's preview frame.               */
+/* The one stylesheet for the app: the admin and the storefront share  */
+/* these utilities, so a class means the same thing on every route and */
+/* inside the admin's preview frame. Beside it the root layout loads   */
+/* only the font faces (shopify-fonts.css) and the frozen checkout.css. */
 /* Documented in docs/storefront-redesign.md and docs/admin-redesign.md. */
 /* ------------------------------------------------------------------ */
 
-/* - No preflight: the legacy storefront keeps its own base, and the admin's scoped base lives
-     in admin.css (inside .shop-admin only).
-   - Only rebuilt sources are scanned, so legacy storefront markup gets no utilities; the
-     tailwind-stylesheet test fails if a generated utility shares a legacy class name.
+/* - No preflight: the storefront's small base and its [data-store] base are below; the admin's
+     scoped base lives in admin.css (inside .shop-admin only).
+   - The whole app is scanned; the tailwind-stylesheet test fails if a generated utility shares a
+     class name the frozen checkout still uses.
    - Utilities are emitted last and unlayered, without !important, so inline styles (dnd-kit
-     transforms and transitions, animation delays) still win, and one class beats the
-     storefront's global element rules (button, input, h2, p). */
+     transforms and transitions, animation delays) still win, and every base rule here (wrapped
+     in :where(), so it weighs nothing) gives way to a class. */
 @layer theme;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tw-animate-css";
@@ -20,8 +21,7 @@
 @source "../components/store";
 @source "../app/admin";
 @source "../lib/preview-request.tsx";
-/* The whole storefront is scanned too, so pages can move onto utilities one by one; the stylesheet
-   test fails if a generated utility shares a class name that legacy markup still uses. */
+/* The whole storefront is scanned too. */
 @source "../components";
 @source "../app";
 /* JavaScript negations such as `!visible` read as important utilities; nothing means them as classes. */
@@ -32,7 +32,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Storefront design tokens (the "Maple Website review" Figma file). Static, so every token is
-   available to the storefront's own CSS as well as to utilities. */
+   available to the base below as well as to utilities. */
 @theme static {
   --color-brand: #741a14;
   --color-brand-deep: #5c140f;
@@ -53,6 +53,9 @@
   --font-redhat: "Red Hat Display", sans-serif;
   --animate-ticker: ticker 32s linear infinite;
   @keyframes ticker { to { transform: translateX(-50%); } }
+  /* The loading shell's logo (app/loading.tsx). */
+  --animate-loading-pulse: loading-pulse 1.4s ease-in-out infinite;
+  @keyframes loading-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
   /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
@@ -159,10 +162,97 @@
   --default-transition-timing-function: var(--admin-ease, cubic-bezier(0.32, 0.72, 0, 1));
 }
 
-/* Scoped base for redesigned storefront markup (anything inside [data-store]). The legacy
-   storefront's global element rules (serif h1 to h3 at 36 to 48 px, paragraph margins, underline
-   on hover, 44 px padded inputs) would otherwise reach it. :where() keeps each rule at the legacy
-   rule's weight, so this sheet wins by loading last, and any utility class still wins over both. */
+/* ------------------------------------------------------------------ */
+/* Storefront base. What the retired storefront.css still gave every   */
+/* page: the document, element resets the rebuilt markup relies on     */
+/* (Tailwind's preflight is off), focus rings and motion preferences.  */
+/* Element rules are wrapped in :where(), so they weigh nothing: any   */
+/* utility, the [data-store] base below and the admin's own base       */
+/* (admin.css, inside .shop-admin) win. Only the hidden scrollbars of  */
+/* public routes and the reduced-motion stop insist, with !important.  */
+/* ------------------------------------------------------------------ */
+
+/* The current look's colours under their old names, for checkout.css (frozen) and the admin's
+   shadcn `muted` mapping outside .shop-admin. */
+:root {
+  --paper: var(--color-paper);
+  --ink: var(--color-ink);
+  --burgundy: var(--color-brand);
+  --muted: var(--color-ink-soft);
+  --line: var(--color-rule);
+}
+:where(*) { box-sizing: border-box; }
+:where(html) { scroll-behavior: smooth; scroll-padding-top: 24px; }
+:where(body) { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: Manrope, sans-serif; font-size: 14px; line-height: 1.6; }
+:where(button, input, select, textarea) { font: inherit; }
+:where(a) { color: inherit; text-decoration: none; }
+:where(button) { cursor: pointer; color: inherit; }
+:where(button:disabled) { cursor: not-allowed; opacity: 0.5; }
+:where(button, a, input, select) { -webkit-tap-highlight-color: transparent; }
+:where(img, video) { display: block; max-width: 100%; }
+:where(button, a, input, select, summary):where(:focus-visible) { outline: 2px solid var(--color-brand); outline-offset: 4px; }
+:where(input, textarea) { caret-color: var(--color-brand); }
+::selection { background: #ead9c8; color: var(--color-brand); }
+:where(*) { scrollbar-color: #bdb6ab var(--color-paper); scrollbar-width: thin; }
+/* Public routes (the storefront header is on the page, dialogs included) hide scrollbars but keep
+   native overflow; !important overrides the rails' own scrollbar settings. */
+html:has([data-site-header]),
+html:has([data-site-header]) * { scrollbar-width: none !important; }
+html:has([data-site-header])::-webkit-scrollbar,
+html:has([data-site-header]) *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+/* Reduced motion stops every transition and animation, whatever a class or inline style asks for. */
+@media (prefers-reduced-motion: reduce) {
+  :where(html) { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Checkout. app/checkout and checkout.css stay frozen until checkout  */
+/* is rebuilt; its markup still uses the legacy class names and the    */
+/* storefront's old global element rules, kept here for it alone at    */
+/* their original weights (element rules are scoped to the checkout    */
+/* roots through :where(), which adds nothing).                         */
+/* ------------------------------------------------------------------ */
+:where(.checkout-page, .checkout-state) :is(h1, h2, h3, p) { margin: 0; }
+:where(.checkout-page, .checkout-state) :is(h1, h2, h3) { font-family: Newsreader, Georgia, serif; font-weight: 500; line-height: 1.13; }
+:where(.checkout-page, .checkout-state) h1 { font-size: 48px; letter-spacing: -0.025em; }
+:where(.checkout-page, .checkout-state) h2 { font-size: 36px; }
+:where(.checkout-page, .checkout-state) p { margin-block: 10px; }
+:where(.checkout-page, .checkout-state) a:hover { text-decoration: underline; text-underline-offset: 5px; }
+:where(.checkout-page, .checkout-state) :is(input, select) { min-height: 44px; border: 1px solid #a9a99f; background: transparent; border-radius: 0; padding: 10px 14px; color: var(--color-ink); }
+:where(.checkout-page, .checkout-state) input::placeholder { color: var(--color-ink-soft); }
+/* Weighs nothing, so checkout.css's .checkout-page on the same element (loaded earlier) keeps its width. */
+:where(.page-section) { max-width: 1440px; margin: 0 auto; padding: 48px 40px; }
+.button { display: inline-flex; justify-content: center; align-items: center; gap: 12px; min-height: 48px; padding: 13px 24px; border: 1px solid var(--color-brand); background: var(--color-brand); color: white; font-weight: 500; text-decoration: none !important; transition: background 0.15s, color 0.15s; }
+.button:hover { background: #571710; }
+.button.secondary { background: transparent; color: var(--color-brand); }
+.button.secondary:hover { background: #e9dfd6; }
+.button-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 24px 0; }
+.empty-state { min-height: 340px; text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 60px 24px; gap: 12px; }
+.empty-state h2 { font-size: 30px; }
+.empty-state p { max-width: 520px; }
+.empty-state .button { margin-top: 12px; }
+.muted { color: var(--color-ink-soft); font-size: 13px; }
+.error-text { color: #a22b1f; font-size: 13px; }
+.checkout-state { min-height: 60vh; }
+.checkout-state h1 { font-size: 38px; max-width: 650px; }
+@media (max-width: 1000px) {
+  :where(.page-section) { padding: 36px 24px; }
+}
+@media (max-width: 700px) {
+  :where(.checkout-page, .checkout-state) h1 { font-size: 36px; }
+  :where(.page-section) { padding: 32px 16px; }
+  .checkout-state h1 { font-size: 32px; }
+  .empty-state { padding: 40px 16px; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Scoped base for storefront markup (anything inside [data-store]):   */
+/* the browser defaults the rebuilt components restate in utilities    */
+/* are reset here (heading sizes and margins, paragraph and list       */
+/* spacing, padded inputs). :where() keeps each rule at an element's   */
+/* weight, so any utility class wins.                                  */
+/* ------------------------------------------------------------------ */
 :where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; text-transform: none; }
 :where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
 :where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }

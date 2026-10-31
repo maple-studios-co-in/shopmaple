@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { test } from "node:test";
 import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import ServicePage from "../app/pages/[slug]/page";
+import { ContactForm } from "../components/contact-form";
 
 // The Help Center follows the "Maple Website review" design; Bulk Enquiry keeps its look on
 // utilities. Both reach markup through data-* hooks only.
@@ -91,11 +92,11 @@ test("help center and bulk enquiry carry no legacy page classes and leave the sh
   assert.equal(bulk.querySelectorAll("[data-divider]").length, 3);
 });
 
-test("contact-parity.css keeps only the rules the returns form still uses", () => {
-  const css = readFileSync(new URL("../styles/contact-parity.css", import.meta.url), "utf8");
-  const classes = new Set([...css.matchAll(/\.([a-z][a-z0-9-]*)/g)].map((match) => match[1]));
-  const allowed = new Set(["cp-form", "cp-form-pair", "cp-email-note", "cp-enquiry-context", "button"]);
-  assert.deepEqual([...classes].filter((name) => !allowed.has(name!)), []);
+test("the returns form is rebuilt on utilities: contact-parity.css is gone and no cp- class remains", () => {
+  assert.equal(existsSync(new URL("../styles/contact-parity.css", import.meta.url)), false);
+  const markup = renderToStaticMarkup(<ContactForm context={{ product: "Aera chair", variant: "Cream", sku: "AE-1", pincode: "110015" }} />);
+  assert.doesNotMatch(markup, /class="[^"]*\b(cp-[a-z-]+|button)\b/);
+  assert.match(markup, /data-store/);
 });
 
 async function mounted(slug: string, query: Record<string, string>, run: (doc: Document, posts: unknown[]) => Promise<void>) {

@@ -120,8 +120,8 @@ test("published overrides stay isolated from staff routes", () => {
 });
 test("the chrome is rebuilt on utilities: no legacy class names remain and every root opts into the scoped base", () => {
   // The announcement, header, navigation, footer and WhatsApp button moved off hand-written CSS
-  // with no visual change; the rules that styled these names were deleted. (`site-header` stays
-  // as the hook storefront-interactions.css uses to hide scrollbars on public routes.)
+  // with no visual change; the rules that styled these names were deleted. (`data-site-header` is
+  // the hook the stylesheet's base uses to hide scrollbars on public routes.)
   const legacy = new Set([
     "skip-link", "announcement", "header-main", "utility-links", "icon-button", "mobile-menu-button",
     "brand", "header-actions", "count", "desktop-nav", "maple-desktop-nav", "maple-menu-trigger-wrap",
@@ -129,12 +129,12 @@ test("the chrome is rebuilt on utilities: no legacy class names remain and every
     "maple-drawer-back", "maple-drawer-close", "maple-drawer-scroll", "maple-drawer-main", "maple-drawer-submenu",
     "maple-drawer-group", "maple-drawer-quick-links", "maple-menu-products", "maple-menu-product",
     "maple-footer", "maple-footer-main", "maple-footer-logo", "maple-footer-care", "maple-footer-contact",
-    "maple-footer-bottom", "maple-footer-policies", "whatsapp-support", "favourite-link", "account-button",
+    "maple-footer-bottom", "maple-footer-policies", "whatsapp-support", "favourite-link", "account-button", "site-header",
   ]);
   const doc = render();
   const found = [...doc.querySelectorAll("[class]")].flatMap((element) => [...element.classList]).filter((name) => legacy.has(name));
   assert.deepEqual(found, []);
   for (const selector of ['a[href="#main"]', "[data-announcement]", "header", "footer", "[data-whatsapp]", "#maple-mobile-navigation"])
     assert.ok(doc.querySelector(selector)?.closest("[data-store]"), `${selector} sits inside [data-store]`);
-  assert.ok(doc.querySelector("header.site-header[data-site-header]"));
+  assert.ok(doc.querySelector("header[data-site-header]"));
 });

@@ -86,7 +86,7 @@ export async function CategoryRail({ sectionKey, handles, heading, collection, v
     <section id={railId(sectionKey)} data-category-rail data-category-section="rail" aria-label={label} className={`${page} scroll-mt-6 py-8 md:py-12`}>
       <SectionHeader eyebrow="Shop by" title={heading}>
         {viewAll && collection && (
-          <Link data-view-all href={landingCollectionHref(`/collections/${collection}`)} className="mt-1 inline-flex items-center gap-1.5 text-ui font-bold text-brand no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <Link data-view-all href={landingCollectionHref(`/collections/${collection}`)} className="mt-1 inline-flex items-center gap-1.5 text-ui font-bold text-brand no-underline hover:underline hover:underline-offset-[5px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
             View all <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         )}

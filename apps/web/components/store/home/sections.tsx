@@ -34,7 +34,7 @@ export function HomeDifference({
     <section data-store data-home-difference className={cn(homePage, "grid justify-items-center gap-3 py-12 text-center font-body md:py-16")}>
       <p data-eyebrow className="text-ui font-semibold tracking-[0.04em] text-espresso uppercase md:text-price">{content.eyebrow}</p>
       <h2 className="font-serif text-[30px] leading-tight font-bold text-brand md:text-[40px]">{content.heading}</h2>
-      <Link href="/pages/contact" className="inline-flex items-center gap-2 text-price text-brand no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+      <Link href="/pages/contact" className="inline-flex items-center gap-2 text-price text-brand no-underline hover:underline hover:underline-offset-[5px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
         {content.cta} <ArrowRight aria-hidden="true" className="size-4" />
       </Link>
       <ul className="mt-6 grid w-full grid-cols-2 gap-y-6 md:mt-8 lg:grid-cols-4">

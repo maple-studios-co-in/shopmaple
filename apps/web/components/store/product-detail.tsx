@@ -158,7 +158,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
               <fieldset data-variants={textOptions ? "text" : "photo"} className="grid gap-3">
                 <legend className="mb-3 flex w-full flex-wrap items-center justify-between gap-2 text-ui">
                   <span>Option: <strong className="font-semibold">{variant?.title}</strong></span>
-                  <Link data-customization href={enquiryHref} className="inline-flex items-center gap-1 text-label font-medium text-brand no-underline hover:underline">
+                  <Link data-customization href={enquiryHref} className="inline-flex items-center gap-1 text-label font-medium text-brand no-underline hover:underline hover:underline-offset-[5px]">
                     <PencilRuler aria-hidden="true" className="size-3.5" /> Customization available
                   </Link>
                 </legend>
@@ -208,7 +208,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
                     Enquire about this piece <ArrowRight aria-hidden="true" className="size-4" />
                   </Link>
                 ) : (
-                  <button type="button" data-primary className={cn(solidPill, "flex-1")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add()}>
+                  <button type="button" data-primary className={cn(solidPill, "flex-1 disabled:cursor-not-allowed")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add()}>
                     {busy ? "Updating cart…" : "Add to cart"}
                   </button>
                 )}

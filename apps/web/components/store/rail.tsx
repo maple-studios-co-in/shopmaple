@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const arrow = "absolute z-10 grid size-10 cursor-pointer place-items-center rounded-full border border-sand bg-white text-espresso shadow-[0_4px_14px_rgba(41,37,31,0.12)] transition-colors hover:bg-cream hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:invisible";
+const arrow = "absolute z-10 grid size-10 cursor-pointer place-items-center rounded-full border border-sand bg-white text-espresso shadow-[0_4px_14px_rgba(41,37,31,0.12)] transition-colors hover:bg-cream hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:invisible disabled:cursor-not-allowed";
 
 /**
  * A row that scrolls sideways: the track is focusable (arrow keys scroll it) and two labelled

@@ -48,8 +48,8 @@ export function Header({
           </Link>
         </div>
       )}
-      {/* `site-header` is kept as the hook storefront-interactions.css hides public scrollbars by. */}
-      <header data-store data-site-header className="site-header bg-paper">
+      {/* `data-site-header` is the hook the stylesheet's base hides public scrollbars by. */}
+      <header data-store data-site-header className="bg-paper">
         <div
           data-header-main
           className="relative flex h-[108px] items-center justify-between border-b border-b-[#eae8e2] px-10 max-[1001px]:px-6 max-[750px]:h-[76px] max-[750px]:px-[14px]"
