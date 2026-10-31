@@ -43,6 +43,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     schemaVersion: 2,
     includeTaxonomy: true,
     includeContent: true,
+    includeAttributes: true,
     fetch: options.fetch,
   });
   const age =

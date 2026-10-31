@@ -4,6 +4,8 @@ export interface KeeriFetchOptions {
   schemaVersion?: 1 | 2;
   includeTaxonomy?: boolean;
   includeContent?: boolean;
+  /** Variant options for naming and option pickers; Keeri accepts it only together with content. */
+  includeAttributes?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -51,6 +53,8 @@ export async function fetchKeeriExport(
   }
   if (options.includeTaxonomy || options.includeContent) endpoint.searchParams.set("taxonomy", "1");
   if (options.includeContent) endpoint.searchParams.set("content", "1");
+  // Keeri accepts attributes only after taxonomy and content: each opt-in extends the one before.
+  if (options.includeContent && options.includeAttributes) endpoint.searchParams.set("attributes", "1");
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;

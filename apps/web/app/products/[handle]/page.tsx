@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getRelatedProductCards } from "@/lib/catalog";
+import { productRedirect } from "@/lib/product-address";
 import { ProductDetail } from "@/components/product-detail";
 import { ProductCard } from "@/components/product-card";
 import { HomeNewsletter, HomeValues } from "@/components/home-sections";
@@ -15,6 +16,9 @@ export default async function ProductPage({
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const product = await getProduct(handle);
   if (!product) notFound();
+  // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
+  const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
+  if (moved) permanentRedirect(moved);
   const related = product.category
     ? await getRelatedProductCards(product.category)
     : [];

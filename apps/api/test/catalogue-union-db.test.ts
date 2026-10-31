@@ -242,3 +242,29 @@ test("large galleries survive persistence, replay and detail responses while car
   assert.deepEqual((await db.product.findUniqueOrThrow({ where: { id: "preview-101" } })).images, expected);
   assert.deepEqual(await db.catalogueSyncState.findMany(), cursor);
 });
+
+test("a renamed Keeri address redirects permanently, and each variant keeps its options, photos and ?variant= value", async () => {
+  const s = shopifyFixture();
+  const k = v2Fixture();
+  k.models[0]!.name = "Zyro Lounge";
+  k.publication[0]!.handle = "keeri-model1";
+  const variant = k.models[0]!.variants[0]!;
+  (variant as typeof variant & { attributes: unknown }).attributes = [{ axis: "fabric", value: "Linen" }];
+  variant.media = [{ id: "photo2", tenantId: "maple", modelId: null, variantId: variant.id, stage: "approved", storageKey: "public-media:photo2", supersededAt: null, position: 0 }];
+  k.publicMedia = [{ assetId: "photo2", url: "https://store.maplefurnishers.com/media/keeri/photo2.webp" }];
+  await syncCatalogueUnion(db, s, k, "maple");
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false });
+
+  const old = await request(app).get("/api/products/keeri-model1");
+  assert.equal(old.status, 308);
+  assert.equal(old.headers.location, "/api/products/zyro-lounge");
+  const current = await request(app).get("/api/products/zyro-lounge");
+  assert.equal(current.status, 200);
+  assert.deepEqual(current.body.variants[0], { ...current.body.variants[0], slug: "linen-walnut", options: [{ name: "Fabric", value: "Linen" }], images: ["https://store.maplefurnishers.com/media/keeri/photo2.webp"] });
+  assert.equal((await request(app).get("/api/products/keeri-nothing")).status, 404, "an unknown address is still not found");
+
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge", "the readable address is stable");
+  assert.equal(await db.productHandleAlias.count(), 1);
+});

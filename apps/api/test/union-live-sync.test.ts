@@ -16,7 +16,7 @@ function options() {
     fetch: async (input: URL | RequestInfo) => {
       assert.equal(
         String(input),
-        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1",
+        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1&attributes=1",
       );
       return new Response(JSON.stringify(k), {
         headers: { "content-type": "application/json" },

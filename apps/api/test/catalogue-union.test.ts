@@ -213,3 +213,60 @@ test("Keeri-only products retain their current display copy and approved photos"
   assert.equal(p.variants[0]!.pricePaise, null);
   assert.equal(p.variants[0]!.available, false);
 });
+
+function keeriOnly(name = "Zyro") {
+  const k = v2Fixture();
+  k.publicMedia = [];
+  k.models[0]!.name = name;
+  k.publication[0]!.handle = "keeri-model1";
+  return k;
+}
+const byKeeri = (plan: ReturnType<typeof planCatalogueUnion>) => plan.products.find((p) => p.source.startsWith("keeri:"))!;
+
+test("a Keeri product's fallback address becomes its readable name, and the old address is kept for redirecting", () => {
+  const plan = planCatalogueUnion(shopifyFixture(), keeriOnly("Zyro Lounge"), "maple");
+  const p = byKeeri(plan);
+  assert.equal(p.handle, "zyro-lounge");
+  assert.deepEqual(plan.handleAliases, [{ handle: "keeri-model1", productId: p.id }]);
+});
+
+test("a readable name another product already uses gains the product type, then a number", () => {
+  const taken = planCatalogueUnion(shopifyFixture(), keeriOnly("Real Chair"), "maple");
+  assert.equal(byKeeri(taken).handle, "real-chair-chair", "Shopify already uses real-chair");
+  const s = shopifyFixture();
+  const k = keeriOnly("Real");
+  k.models[0]!.productType = "chair";
+  assert.equal(byKeeri(planCatalogueUnion(s, k, "maple")).handle, "real");
+});
+
+test("reviewed and already readable addresses never change, so links stay stable", () => {
+  const reviewed = v2Fixture();
+  reviewed.publicMedia = [];
+  const plan = planCatalogueUnion(shopifyFixture(), reviewed, "maple");
+  assert.equal(byKeeri(plan).handle, "zyro-chair");
+  assert.deepEqual(plan.handleAliases, []);
+  const first = byKeeri(planCatalogueUnion(shopifyFixture(), keeriOnly("Zyro"), "maple"));
+  const again = planCatalogueUnion(shopifyFixture(), keeriOnly("Zyro Renamed"), "maple", {
+    products: [first], productBindings: [{ source: first.source, externalId: "model1", targetId: first.id }], variantBindings: [],
+  });
+  assert.equal(byKeeri(again).handle, "zyro", "a later rename in Keeri keeps the published address");
+  assert.deepEqual(again.handleAliases, []);
+});
+
+test("every variant gets a readable ?variant= value that is unique within its product", () => {
+  const k = keeriOnly();
+  const base = k.models[0]!.variants[0]!;
+  k.models[0]!.variants = [base, { ...base, id: "variant2", sku: "CH-ZYRO-2" }, { ...base, id: "variant3", sku: "CH-ZYRO-3", variantName: "Teal / Oak" }];
+  const slugs = byKeeri(planCatalogueUnion(shopifyFixture(), k, "maple")).variants.map((v) => v.slug);
+  assert.deepEqual(slugs, ["linen-walnut", "linen-walnut-2", "teal-oak"]);
+});
+
+test("a variant photo from an unapproved host is refused like a product photo", () => {
+  const k = keeriOnly();
+  const variant = k.models[0]!.variants[0]!;
+  variant.media = [{ id: "photo2", tenantId: "maple", modelId: null, variantId: variant.id, stage: "approved", storageKey: "public-media:photo2", supersededAt: null, position: 0 }];
+  k.publicMedia = [{ assetId: "photo2", url: "https://store.maplefurnishers.com/media/keeri/photo2.webp" }];
+  assert.deepEqual(byKeeri(planCatalogueUnion(shopifyFixture(), k, "maple")).variants[0]!.images, ["https://store.maplefurnishers.com/media/keeri/photo2.webp"]);
+  k.publicMedia = [{ assetId: "photo2", url: "https://elsewhere.example/photo2.webp" }];
+  assert.throws(() => planCatalogueUnion(shopifyFixture(), k, "maple"), /UNSUPPORTED_PUBLIC_MEDIA/);
+});

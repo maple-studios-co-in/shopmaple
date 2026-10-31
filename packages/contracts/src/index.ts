@@ -42,6 +42,12 @@ export const variantSchema = z.object({
   compareAtPaise: z.number().int().min(0).max(1_000_000_000).nullable(),
   available: z.boolean(),
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
+  /** Named options (Fabric: Ivory Boucle) for option pickers; empty when the source has none. */
+  options: z.array(z.object({ name: z.string().min(1).max(80), value: z.string().min(1).max(200) }).strict()).max(20).optional(),
+  /** This variant's own photos; the product's `images` keeps every photo for cards. */
+  images: z.array(z.url().refine((url) => new URL(url).protocol === "https:")).optional(),
+  /** The readable `?variant=` value on the product address, unique within its product. */
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(120).nullable().optional(),
 });
 export const sourceTaxonomySchema = z.object({
   productType: z.string().max(200),

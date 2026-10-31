@@ -196,7 +196,9 @@ export function planCatalogueUnion(
     products.set(id, product);
     productBindings.push({ source, externalId: c.p.id, targetId: id });
   }
-  const result = [...products.values()];
+  const named = nameAddresses([...products.values()], raw.models);
+  const handleAliases = named.flatMap((p) => p.alias ? [{ handle: p.alias, productId: p.product.id }] : []);
+  const result = named.map((p) => p.product);
   const handles = new Set<string>();
   const variantIds = new Set<string>();
   for (const p of result) {
@@ -206,12 +208,15 @@ export function planCatalogueUnion(
       if (!approvedCatalogueImage(image))
         throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
     for (const v of p.variants) {
+      if ((v.images ?? []).some((image) => !approvedCatalogueImage(image)))
+        throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
       if (variantIds.has(v.id)) throw new Error("VARIANT_IDENTITY_COLLISION");
       variantIds.add(v.id);
     }
   }
   return {
     products: result,
+    handleAliases,
     productBindings,
     variantBindings,
     source,
@@ -228,3 +233,42 @@ export function planCatalogueUnion(
     },
   };
 }
+
+/** A readable address segment: "Zyro Lounge" -> "zyro-lounge"; accents dropped, at most 80 characters. */
+export function slugify(value: string) {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80).replace(/-+$/, "");
+}
+/** The first of the candidates (then the first with a number) that `taken` does not hold. */
+function unique(candidates: string[], taken: Set<string>) {
+  const options = candidates.filter(Boolean);
+  const free = options.find((c) => !taken.has(c));
+  if (free) return free;
+  const base = options[0] ?? "item";
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+/**
+ * Readable addresses. A Keeri product still on its fallback address (keeri-<id>) is renamed once to
+ * its name, then its name and type, then a number, and the old address is kept as an alias for a
+ * permanent redirect; every other address is already published and never changes. Each variant
+ * gets a `?variant=` value from its title, unique within its product.
+ */
+function nameAddresses(products: Product[], models: { id: string; productType: string }[]) {
+  const taken = new Set(products.filter((p) => !isFallback(p)).map((p) => p.handle));
+  const types = new Map(models.map((m) => [m.id, m.productType]));
+  return [...products].sort((a, b) => a.id.localeCompare(b.id)).map((product) => {
+    const slugs = new Set<string>();
+    const variants = product.variants.map((v) => {
+      const slug = unique([slugify(v.title) || "variant"], slugs);
+      slugs.add(slug);
+      return { ...v, slug };
+    });
+    if (!isFallback(product)) return { product: { ...product, variants }, alias: null };
+    const modelId = product.id.split(":").at(-1) ?? "";
+    const name = slugify(product.title);
+    const handle = unique([name, name && slugify(`${product.title} ${types.get(modelId) ?? ""}`)], taken);
+    taken.add(handle);
+    return { product: { ...product, handle, variants }, alias: product.handle };
+  });
+}
+const isFallback = (p: Product) => p.source.startsWith("keeri:") && /^keeri-[a-z0-9]+$/.test(p.handle);

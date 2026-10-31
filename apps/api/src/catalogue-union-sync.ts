@@ -91,6 +91,13 @@ export async function syncCatalogueUnion(
           data: { published: false, available: false },
         });
       }
+      // A renamed address keeps redirecting; a newer alias for the same old address wins.
+      for (const alias of plan.handleAliases)
+        await tx.productHandleAlias.upsert({
+          where: { handle: alias.handle },
+          create: alias,
+          update: { productId: alias.productId },
+        });
       for (const b of plan.productBindings) {
         const held = pBindings.find(
           (p) => p.source === b.source && p.externalId === b.externalId,

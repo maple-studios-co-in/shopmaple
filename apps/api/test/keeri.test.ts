@@ -15,6 +15,8 @@ test("Keeri MRP paise and stable source identities survive adaptation; stock rem
     compareAtPaise: null,
     available: false,
     stockPolicy: "stocked",
+    options: [],
+    images: [],
   });
   assert.deepEqual(result.products[0]?.images, [
     "https://media.example.com/zyro.webp",
