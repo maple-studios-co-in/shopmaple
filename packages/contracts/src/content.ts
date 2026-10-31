@@ -173,7 +173,7 @@ export const homeMerchandisingSchema = z.object({
 }).strict();
 /** Staff-entered card highlights: colours for option names, and per-product New flags and review ratings. */
 export const productHighlightsSchema = z.object({
-  swatches: z.array(z.object({ name: text(80).min(1), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }).strict()).max(200),
+  swatches: z.array(z.object({ name: text(80).refine(name => name.trim().length > 0, "A colour needs a name"), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }).strict()).max(200),
   products: z.array(z.object({
     handle: merchandisingSlug(200),
     isNew: z.boolean(),

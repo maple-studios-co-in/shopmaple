@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PreviewFrameDocument, SectionThumbnailDocument } from "@/components/admin/preview-shell";
 import { getPublishedContent } from "@/lib/content";
+import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 import { previewMediaContent } from "@/lib/draft-preview";
 import { readThumbnailSection } from "@/lib/live-preview";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
@@ -53,7 +54,7 @@ export default async function PreviewFrame({ params, searchParams }: {
   }
   return (
     <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} view={published ? "published" : "draft"}>
-      {route.node}
+      <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
     </PreviewFrameDocument>
   );
 }

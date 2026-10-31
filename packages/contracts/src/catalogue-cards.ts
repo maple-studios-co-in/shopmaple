@@ -38,7 +38,8 @@ export function lowestPrice(product: { variants: PriceOption[] }): number | null
 export function canOrder(variant?: { available: boolean; pricePaise: number | null; stockPolicy: string }) {
   return Boolean(variant && variant.available && variant.pricePaise !== null && variant.pricePaise > 0 && ["stocked", "dropship"].includes(variant.stockPolicy));
 }
-const placeholderOption = /^default( title)?$/i;
+// Placeholder or colourless option names, never offered as colours.
+const placeholderOption = /^(default( title)?|standard)$/i;
 export function toProductCard(product: {
   id: string; handle: string; title: string; images: string[]; category?: string | null;
   variants: { pricePaise: number | null; compareAtPaise: number | null; title?: string }[];

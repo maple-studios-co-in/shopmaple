@@ -17,7 +17,7 @@ export function PromiseStrip({ className }: { className?: string }) {
           <img src={`/icons/store/${promise.icon}.svg`} alt="" width={28} height={28} className="size-6 shrink-0 sm:size-7" />
           <span className="grid gap-1">
             <strong className="text-ui font-bold text-espresso sm:text-card">{promise.title}</strong>
-            <span className="text-label text-taupe sm:text-meta">{promise.detail}</span>
+            <span className="text-label text-[#5e574f] sm:text-meta">{promise.detail}</span>
           </span>
         </li>
       ))}

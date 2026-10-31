@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ArrowRight, Heart, MessageCircle, UserRound } from "lucide-react";
 import { useShop } from "../shop-provider";
+import { useHydrated } from "./use-hydrated";
 
 const card =
   "group flex h-full flex-col gap-3 rounded-xl border border-sand bg-white p-5 text-espresso no-underline transition-colors hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
@@ -11,6 +12,8 @@ const cardLink = "mt-auto inline-flex items-center gap-1.5 pt-1 text-ui font-bol
 /** The /account page. There is no customer sign-in yet, so it says so and points to what works today. */
 export function AccountOverview() {
   const { favourites } = useShop();
+  // The saved list lives in this browser, so the server has no count to show.
+  const hydrated = useHydrated();
   return (
     <section data-store data-account-page aria-labelledby="account-title" className="bg-linen font-body text-espresso">
       <div className="mx-auto w-full max-w-[1100px] px-4 py-10 md:px-8 md:py-16">
@@ -29,7 +32,7 @@ export function AccountOverview() {
               <span className="flex items-center justify-between">
                 <span className={cardIcon}><Heart aria-hidden="true" /></span>
                 <span data-account-saved-count className="grid h-7 min-w-7 place-items-center rounded-full bg-cream px-2 text-meta font-bold text-brand">
-                  {favourites.length}
+                  {hydrated ? favourites.length : null}
                 </span>
               </span>
               <span className="text-subhead font-bold">Saved furniture</span>

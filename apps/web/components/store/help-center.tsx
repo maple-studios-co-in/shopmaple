@@ -87,7 +87,7 @@ export function HelpCenter({ context, content }: { context: EnquiryContext; cont
                 title="Maple Furnishers showroom in Kirti Nagar"
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(mapAddress)}&z=14&output=embed`}
                 loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+                referrerPolicy="no-referrer"
                 className="block size-full border-0"
               />
               <a href={mapHref} target="_blank" rel="noreferrer"

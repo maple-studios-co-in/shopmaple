@@ -47,7 +47,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
               {product.priceFrom ? "From " : ""}
               {shopMoney(product.pricePaise)}
             </span>
-            {sale ? <span data-card-discount className="rounded-[4px] bg-leaf/10 px-1.5 py-0.5 text-2xs font-semibold text-[#2f6b32]">{discount}% off</span> : null}
+            {discount >= 1 ? <span data-card-discount className="rounded-[4px] bg-leaf/10 px-1.5 py-0.5 text-2xs font-semibold text-[#2f6b32]">{discount}% off</span> : null}
           </p>
           {sale ? <del className="text-label font-normal text-taupe">{shopMoney(product.compareAtPaise!)}</del> : null}
         </div>

@@ -30,7 +30,12 @@ export function Header({
   const { cart, setCartOpen } = useShop();
   const [search, setSearch] = useState(false),
     [wishlist, setWishlist] = useState(false),
-    [mobile, setMobile] = useState(false);
+    [mobile, setMobile] = useState(false),
+    // Drawers mount on first use only: a lazily loaded component that renders at all is fetched during hydration.
+    [wishlistOpened, setWishlistOpened] = useState(false),
+    [mobileOpened, setMobileOpened] = useState(false);
+  if (wishlist && !wishlistOpened) setWishlistOpened(true);
+  if (mobile && !mobileOpened) setMobileOpened(true);
   const heart = useRef<HTMLButtonElement>(null);
   return (
     <>
@@ -139,16 +144,20 @@ export function Header({
         <DesktopNavigation siteChrome={siteChrome} />
       </header>
       {search && <SearchDialog onClose={() => setSearch(false)} />}
-      <WishlistDrawer
-        open={wishlist}
-        onClose={() => setWishlist(false)}
-        returnFocus={heart}
-      />
-      <MobileNavigation
-        siteChrome={siteChrome}
-        open={mobile}
-        onClose={() => setMobile(false)}
-      />
+      {wishlistOpened && (
+        <WishlistDrawer
+          open={wishlist}
+          onClose={() => setWishlist(false)}
+          returnFocus={heart}
+        />
+      )}
+      {mobileOpened && (
+        <MobileNavigation
+          siteChrome={siteChrome}
+          open={mobile}
+          onClose={() => setMobile(false)}
+        />
+      )}
     </>
   );
 }

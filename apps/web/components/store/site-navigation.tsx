@@ -11,8 +11,10 @@ import { recentProduct } from "@/lib/search-products";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import dynamic from "next/dynamic";
 
-// The dropdown panel loads the first time a menu opens.
-const MegaPanel = dynamic(() => import("./mega-panel").then((module) => module.MegaPanel));
+// The dropdown panel loads the first time a menu opens (or a trigger gets focus).
+const loadPanel = () => import("./mega-panel");
+const MegaPanel = dynamic(() => loadPanel().then((module) => module.MegaPanel));
+const preloadPanel = () => { void loadPanel(); };
 import { textLink } from "./current-look";
 
 /*
@@ -101,6 +103,7 @@ export function DesktopNavigation({
               onPointerEnter={(event) => {
                 if (event.pointerType === "mouse") setActive(item.id);
               }}
+              onFocus={preloadPanel}
               onClick={(event) =>
                 setActive(
                   event.detail === 0 && active === item.id ? null : item.id,
@@ -110,11 +113,14 @@ export function DesktopNavigation({
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
                   setActive(item.id);
-                  requestAnimationFrame(() =>
-                    nav.current
-                      ?.querySelector<HTMLAnchorElement>("[data-mega] a")
-                      ?.focus(),
-                  );
+                  // The panel's code may still be loading on first use: keep looking for its first link for a moment.
+                  let frames = 0;
+                  const focusFirst = () => {
+                    const link = nav.current?.querySelector<HTMLAnchorElement>("[data-mega] a");
+                    if (link) link.focus();
+                    else if (++frames < 120) requestAnimationFrame(focusFirst);
+                  };
+                  requestAnimationFrame(focusFirst);
                 }
               }}
             >

@@ -12,7 +12,7 @@ const intros: Record<string, CollectionIntro> = {
 export function collectionIntro(handle: string, title: string): CollectionIntro {
   return intros[handle] ?? {
     headline: "Made in our workshop, made for your home.",
-    copy: "Every piece is made to order in Delhi, in the size, fabric and finish you choose.",
+    copy: "Pieces are made in Delhi, and many can be ordered in the size, fabric and finish you choose.",
     cta: `Browse ${title.toLowerCase()}`,
   };
 }

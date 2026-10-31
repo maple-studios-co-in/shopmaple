@@ -13,7 +13,7 @@ export function CardRating({ handle }: { handle: string }) {
   const rating = useProductHighlights().product(handle)?.rating;
   if (!rating) return null;
   return (
-    <span data-card-rating aria-label={`Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`}
+    <span data-card-rating role="img" aria-label={`Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`}
       className="inline-flex items-center gap-1 text-espresso">
       <span aria-hidden="true">{rating.value.toFixed(1)}</span>
       <Star aria-hidden="true" className="size-3.5 fill-[#f5a623] text-[#f5a623]" />
