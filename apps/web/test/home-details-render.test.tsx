@@ -88,7 +88,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"));
   assert.ok(!doc.body.textContent!.includes("Made for your budget"), "the admin's price lines are not on the Impact Layout tiles");
   assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/collections/beds", "/pages/sofas", "/pages/chairs", "/pages/tables"]);
-  assert.ok(doc.querySelector(".category-tile img")?.getAttribute("src")?.includes("engaged_9_1.jpg"));
+  assert.ok(doc.querySelector(".category-tile img")?.getAttribute("src")?.includes("hero-beds.webp"));
   assert.deepEqual(texts(doc, ".home-difference .home-eyebrow, .home-difference h2, .home-difference a"), ["Why Maple", "Crafted around you", "Plan your space"]);
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Your fabric", "Your city", "Our workshop", "Our promise"]);
   assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");

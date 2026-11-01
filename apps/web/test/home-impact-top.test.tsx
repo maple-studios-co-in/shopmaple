@@ -108,3 +108,15 @@ test("offers are four light cards with an arrow badge", async () => {
     assert.ok(tile.querySelector("[data-offer-arrow]"), "arrow badge");
   }
 });
+
+test("the hero tiles default to the frame's pale tile photos, served from this repo", async () => {
+  const { existsSync, statSync } = await import("node:fs");
+  const hero = section(await renderHome(), "hero");
+  for (const key of ["sofas", "chairs", "tables", "beds"]) {
+    const src = hero.querySelector(`[data-hero-tile="${key}"] img`)!.getAttribute("src")!;
+    const decoded = decodeURIComponent(new URL(src, "http://x").searchParams.get("url") ?? src);
+    assert.equal(decoded, `/media/home/hero-${key}.webp`);
+    const file = new URL(`../public${decoded}`, import.meta.url);
+    assert.ok(existsSync(file) && statSync(file).size > 5000 && statSync(file).size < 120000, `${key} photo is a compressed local file`);
+  }
+});

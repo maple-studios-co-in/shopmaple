@@ -85,6 +85,8 @@
 [data-home-section="hero"] .category-tile {
   border-radius: 14px;
   border: 1px solid rgb(255 255 255 / 0.5);
+  background: #eeebe6;
+  color: var(--impact-ink);
   box-shadow: 0 6px 18px rgb(41 37 31 / 0.08);
 }
 [data-home-section="hero"] .category-tile > div {
@@ -93,7 +95,7 @@
 }
 [data-home-section="hero"] .category-tile h2 {
   margin: 0;
-  color: #fff;
+  color: var(--impact-ink);
   font: 400 19px/1.2 var(--impact-serif);
 }
 [data-home-section="hero"] .category-tile p {
@@ -101,6 +103,7 @@
   align-items: center;
   gap: 5px;
   margin: 12px 0 0;
+  color: #5b2a22;
   font: 400 11px/1.2 var(--impact-body);
 }
 
@@ -516,9 +519,45 @@
   margin-top: 28px;
   font: 600 clamp(20px, 2vw, 26px) / 1.2 var(--impact-body);
 }
+/* Cities: the frame's panel runs edge to edge with the arches alone; the admin's eyebrow and heading
+   stay in the page for screen readers, and the photo credits stay visible below the arches. */
 [data-home-section="cities"] .home-cities.home-container {
+  position: relative;
+  display: block;
+  width: auto;
   max-width: none;
-  margin-block: 0;
+  margin: 0;
+  padding: 40px 48px 44px;
+  border: 0;
+  border-radius: 0;
+  background: #f3efea;
+}
+[data-home-section="cities"] .home-cities header {
+  display: contents;
+}
+[data-home-section="cities"] .home-cities header .home-eyebrow,
+[data-home-section="cities"] .home-cities header h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-home-section="cities"] .home-cities .city-photo-credits {
+  position: absolute;
+  right: 48px;
+  bottom: 14px;
+  margin: 0;
+}
+[data-home-section="cities"] .city-motion {
+  padding-inline: 56px;
+}
+[data-home-section="cities"] .home-city-track {
+  justify-content: center;
 }
 
 /* ---- Testimonial ----------------------------------------------------------------------- */
@@ -756,5 +795,7 @@
   .home-quote-mark { left: -6px; top: -26px; font-size: 110px; }
   [data-home-section="project"] .home-project { padding: 40px 16px 56px; gap: 28px; }
   [data-home-section="values"] .home-values { padding: 16px 16px 72px; }
+  [data-home-section="cities"] .home-cities.home-container { padding: 28px 12px 40px; }
+  [data-home-section="cities"] .city-motion { padding-inline: 0; }
   [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
 }
