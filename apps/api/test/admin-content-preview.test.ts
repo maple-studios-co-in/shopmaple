@@ -96,8 +96,10 @@ test("tokens are bound to the staff member, the version and the signing secret, 
   assert.equal(other.status, 403);
   assert.equal(other.body.code, "PREVIEW_TOKEN_INVALID");
   const [payload, signature] = token.split(".") as [string, string];
-  const flipped = signature.endsWith("A") ? "B" : "A";
-  assert.equal((await read(publisher.agent, `${payload}.${signature.slice(0, -1)}${flipped}`)).status, 403);
+  // Tamper with the signature's first character: all six of its bits count. The last of its 43 characters carries two
+  // padding bits, so changing only those decodes to the same MAC and the token stays valid (about 1 run in 16).
+  const tampered = `${signature.startsWith("A") ? "B" : "A"}${signature.slice(1)}`;
+  assert.equal((await read(publisher.agent, `${payload}.${tampered}`)).status, 403);
   assert.equal((await read(publisher.agent, `${Buffer.from(JSON.stringify({ s: publisherId, v: 3, e: Math.floor(Date.now() / 1000) + 600 })).toString("base64url")}.${signature}`)).status, 403, "Payload is covered by the signature");
   assert.equal((await read(publisher.agent, "")).status, 400);
   assert.equal((await read(publisher.agent, "a".repeat(600))).status, 400);

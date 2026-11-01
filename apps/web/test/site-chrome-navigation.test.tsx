@@ -59,14 +59,16 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
       "/collections/all",
     );
     assert.equal(
-      document.querySelector("[data-mega-grid] a")?.textContent,
+      document.querySelector("[data-mega-column] a")?.textContent,
       "New seating",
     );
-    assert.equal(document.querySelectorAll("[data-mega-grid] a").length, 1);
+    assert.equal(document.querySelectorAll("[data-mega-column] a").length, 1);
     const discovery = document.querySelector<HTMLAnchorElement>(
       "[data-mega-discovery] a",
     )!;
-    assert.equal(discovery.textContent?.trim(), "Made for youAsk us");
+    // The design shows discovery entries by label; an enquiry is the column's outlined action.
+    assert.equal(discovery.textContent?.trim(), "Made for you →");
+    assert.ok(discovery.hasAttribute("data-mega-action"));
     const url = new URL(discovery.href);
     assert.equal(url.searchParams.get("product"), "A & B? #é");
     assert.equal(url.searchParams.size, 1);
