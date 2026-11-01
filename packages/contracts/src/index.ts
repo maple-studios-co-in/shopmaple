@@ -232,3 +232,5 @@ export * from "./catalogue-collections";
 export * from "./enquiry-delivery";
 export * from "./crm";
 export * from "./instagram-feed";
+
+export * from "./reviews";
