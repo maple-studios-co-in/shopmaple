@@ -222,8 +222,8 @@
   padding: 0;
 }
 [data-home-section="difference"] .home-difference li {
-  gap: 14px;
-  padding: 0 18px;
+  gap: 12px;
+  padding: 0 14px;
   border-right: 1px solid #e3e0da;
 }
 [data-home-section="difference"] .home-difference li:last-child {
@@ -238,7 +238,7 @@
 }
 [data-home-section="difference"] .home-difference li span {
   color: #4b4640;
-  font: 700 19px/1.2 var(--impact-serif);
+  font: 700 clamp(15px, 1.5vw, 19px) / 1.2 var(--impact-serif);
   font-style: normal;
 }
 
@@ -731,7 +731,9 @@
   [data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) { top: auto; }
   [data-home-section="difference"] .home-difference { padding: 48px 16px 0; }
   [data-home-section="difference"] .home-difference ul { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
-  [data-home-section="difference"] .home-difference li { border: 0; padding: 0; }
+  [data-home-section="difference"] .home-difference li { border: 0; padding: 0; gap: 10px; }
+  [data-home-section="difference"] .home-difference li img { width: 44px; }
+  [data-home-section="difference"] .home-difference li span { font-size: 16px; overflow-wrap: normal; word-break: normal; hyphens: none; }
   [data-home-section="categories"] .home-category-section { padding: 56px 16px 0; }
   [data-home-section="categories"] .home-categories { gap: 22px 14px; }
   [data-home-section="ticker"] .home-statement { width: calc(100% - 32px); }
