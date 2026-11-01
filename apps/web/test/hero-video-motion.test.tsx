@@ -34,6 +34,8 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
   let mounted = true;
   try {
     await act(async () => root.render(<Hero />));
+    // The film's behaviour is a lazily loaded chunk now; wait for it to attach, as the browser does after hydration.
+    for (let i = 0; i < 400 && !document.querySelector("[data-slider-ready]"); i++) await act(async () => { await new Promise(resolve => setImmediate(resolve)); });
     await check(document.querySelector("video")!, {
       get plays() { return state.plays; },
       reduce: async (value) => act(async () => { reduced = value; motion.dispatchEvent(new dom.window.Event("change")); }),

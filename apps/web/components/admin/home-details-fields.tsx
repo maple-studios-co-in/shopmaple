@@ -3,7 +3,9 @@ import { Plus } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { Notice } from "./crm-primitives";
+import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
+import { HeroSlidesFields, NimbusSlidesFields } from "./home-slide-fields";
 import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, TextFields, listFields, usePendingFocus } from "./kit";
 
 const tileNames = { sofas: "Sofas", chairs: "Chairs", tables: "Tables", beds: "Beds" };
@@ -15,13 +17,13 @@ const detailTitles: Record<HomeDetailSection, string> = {
 };
 
 /** Every homepage section's text, as collapsible panels. */
-export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; onChange: (value: HomeDetails) => void }) {
+export function HomeDetailsFields({ value, onChange, session, onExpired }: { value?: HomeDetails; onChange: (value: HomeDetails) => void; session?: StaffSession; onExpired?: () => void }) {
   return (
     <section aria-label="Homepage section content">
       <ContentPanels description="Open a section to edit its text. Changes appear on the storefront only after publishing.">
         {(Object.keys(detailTitles) as HomeDetailSection[]).map(section => (
           <ContentPanel key={section} data-preview-section={section} title={detailTitles[section]}>
-            <HomeDetailFields section={section} value={value} onChange={onChange} />
+            <HomeDetailFields section={section} value={value} onChange={onChange} session={session} onExpired={onExpired} />
           </ContentPanel>
         ))}
       </ContentPanels>
@@ -30,7 +32,7 @@ export function HomeDetailsFields({ value, onChange }: { value?: HomeDetails; on
 }
 
 /** One homepage section's text fields; the section inspector and the panels above share them. */
-export function HomeDetailFields({ section, value, onChange }: { section: HomeDetailSection; value?: HomeDetails; onChange: (value: HomeDetails) => void }) {
+export function HomeDetailFields({ section, value, onChange, session, onExpired }: { section: HomeDetailSection; value?: HomeDetails; onChange: (value: HomeDetails) => void; session?: StaffSession; onExpired?: () => void }) {
   const page = resolveHomeDetails(value);
   const update = <K extends keyof HomeDetails>(key: K, next: HomeDetails[K]) => onChange({ ...page, [key]: next });
   const { hero, difference, nimbus } = page;
@@ -42,15 +44,19 @@ export function HomeDetailFields({ section, value, onChange }: { section: HomeDe
           fields={tile => [["label", `${tileNames[tile.key]} tile label`, 80], ["priceLabel", `${tileNames[tile.key]} starting-price label`, 80]]} />
       </div>
       <Notice tone="info">Starting-price labels are display text. Product prices and availability are managed in Keeri.</Notice>
+      <HeroSlidesFields hero={hero} onChange={next => update("hero", next)} session={session} onExpired={onExpired} />
     </>;
     case "difference": return <TextFields value={difference} onChange={next => update("difference", next)} fields={[
       ["eyebrow", "Difference eyebrow", 160], ["heading", "Difference heading", 160], ["cta", "Difference button", 80],
       ...listFields(difference.promises, index => `Difference promise ${index + 1}`, 160, promises => update("difference", { ...difference, promises })),
     ]} />;
-    case "nimbus": return <TextFields value={nimbus} onChange={next => update("nimbus", next)} fields={[
-      ["heading", "Nimbus heading", 160], ["tagline", "Nimbus tagline", 300], ["cta", "Nimbus button", 80],
-      ...listFields(nimbus.features, index => `Nimbus feature ${index + 1}`, 160, features => update("nimbus", { ...nimbus, features })),
-    ]} />;
+    case "nimbus": return <>
+      <TextFields value={nimbus} onChange={next => update("nimbus", next)} fields={[
+        ["heading", "Nimbus heading", 160], ["tagline", "Nimbus tagline", 300], ["cta", "Nimbus button", 80],
+        ...listFields(nimbus.features, index => `Nimbus feature ${index + 1}`, 160, features => update("nimbus", { ...nimbus, features })),
+      ]} />
+      <NimbusSlidesFields nimbus={nimbus} onChange={next => update("nimbus", next)} session={session} onExpired={onExpired} />
+    </>;
     case "testimonial": return <TestimonialFields value={page.testimonial} onChange={next => update("testimonial", next)} />;
     case "newsletter": return <TextFields value={page.newsletter} onChange={next => update("newsletter", next)} fields={[
       ["heading", "Newsletter heading", 160], ["signupHeading", "Newsletter signup heading", 160], ["body", "Newsletter body", 2000, true],
