@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import React, { act } from "react";
 import { JSDOM } from "jsdom";
+import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
 // The section inspector: Edit on a homepage section opens everything that section draws from
@@ -59,6 +60,7 @@ async function setup() {
     if (path === "/api/admin/content" && method === "PUT") { puts.push(body); return Response.json({ version: body.expectedVersion + 1, draft: body.content, publishedVersion: 2, updatedAt: "2026-11-01T09:00:00Z" }); }
     if (path === "/api/admin/content/preview" && method === "POST") return Response.json({ token, version: body.expectedVersion, expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() });
     if (path === "/api/admin/content") return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
+    if (path.startsWith("/api/products?")) return Response.json({ products: ["loom", "pebble"].map((handle) => ({ id: handle, handle, title: `Product ${handle}`, description: "", category: "chairs", images: [], published: true, source: "fixture", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [] })), total: 2, page: 1, limit: 20, mode: "preview", checkoutEnabled: false });
     return Response.json({ products: [], total: 0, page: 1, limit: 24, items: [], mode: "preview", checkoutEnabled: false });
   };
   await act(async () => root.render(
@@ -192,5 +194,57 @@ test("a one-panel section shows no tabs; Instagram has one heading; hiding from 
     assert.deepEqual([...inspector()!.querySelectorAll("h2")].map((h) => h.textContent), ["Instagram"]);
     await click("Homepage");
     assert.equal(inspector(), null, "the Homepage item returns to the section list");
+  } finally { await app.close(); }
+});
+
+test("Pull Up A Chair opens its words, link, photos and descriptions, and saving keeps them valid", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Pull Up A Chair", card("editorial"));
+    assert.equal(inspector()?.getAttribute("data-section-inspector"), "editorial");
+    assert.deepEqual(tabs(), [], "one panel: no tabs");
+    assert.equal(field("Editorial title", inspector()!).value, "Pull up a chair");
+    assert.equal(field("Editorial text", inspector()!).value, "There's always something worth staying for.");
+    assert.equal(field("Editorial button", inspector()!).value, "Shop Dining");
+    assert.equal(field("Editorial link", inspector()!).value, "/collections/dinings");
+    assert.match(field("Left image description", inspector()!).value, /marble dining table/);
+    assert.match(field("Right image description", inspector()!).value, /pouring coffee/);
+    for (const name of ["Left image", "Right image"]) assert.ok(inspector()!.querySelector(`[role="group"] [alt="${name} preview"]`), `${name} is chosen from the media library`);
+    await type("Editorial title", "Stay a while", inspector()!);
+    await type("Editorial link", "/collections/chairs", inspector()!);
+    await type("Right image description", "Friends at a set table", inspector()!);
+    await click("Save draft");
+    await until(() => app.puts.length === 1, "the save");
+    const saved = app.puts[0].content;
+    assert.deepEqual(saved.homeDetails.editorial, { ...defaultStorefrontContent.homeDetails!.editorial, title: "Stay a while", href: "/collections/chairs", rightAlt: "Friends at a set table" });
+    assert.equal(storefrontContentSchema.safeParse(saved).success, true);
+  } finally { await app.close(); }
+});
+
+test("Find Your Feel edits its header and labels, and swaps either product through the catalogue search", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Find Your Feel", card("compare"));
+    assert.equal(inspector()?.getAttribute("data-section-inspector"), "compare");
+    assert.equal(field("Compare eyebrow", inspector()!).value, "Find your feel");
+    assert.equal(field("Compare heading", inspector()!).value, "Two ways to unwind");
+    assert.match(field("Compare lede", inspector()!).value, /^Explore distinct silhouettes/);
+    assert.equal(field("Left product label", inspector()!).value, "Aera");
+    assert.equal(field("Right product label", inspector()!).value, "Caro");
+    assert.match(inspector()!.querySelector("[data-compare-side='left']")!.textContent!, /aera-swivel-lounge-chair/);
+    assert.match(inspector()!.querySelector("[data-compare-side='right']")!.textContent!, /caro/);
+    assert.equal(inspector()!.querySelector('[aria-label="Product catalog"]'), null, "the search opens on request");
+    await type("Compare heading", "Two ways to rest", inspector()!);
+    await type("Right product label", "Loom", inspector()!);
+    await click("Change right product", inspector()!);
+    await until(() => Boolean(inspector()!.querySelector('button[aria-label="Use Product loom as right product"]')), "the catalogue results");
+    await click("Use Product loom as right product", inspector()!);
+    assert.equal(inspector()!.querySelector('[aria-label="Product catalog"]'), null, "choosing closes the search");
+    assert.match(inspector()!.querySelector("[data-compare-side='right']")!.textContent!, /loom/);
+    await click("Save draft");
+    await until(() => app.puts.length === 1, "the save");
+    const saved = app.puts[0].content;
+    assert.deepEqual(saved.homeDetails.compare, { ...defaultStorefrontContent.homeDetails!.compare, heading: "Two ways to rest", right: { handle: "loom", label: "Loom" } });
+    assert.equal(storefrontContentSchema.safeParse(saved).success, true);
   } finally { await app.close(); }
 });

@@ -1,0 +1,196 @@
+/* "Pull up a chair" and "Find your feel" from the "Maple / Impact Layout" frame (Figma 1049:27656).
+   Scoped to their [data-home-section] wrappers. Widths follow the frame at 1265px. */
+
+/* ---- Pull up a chair: a square photo with its caption, beside one large photo ------------------ */
+[data-home-section="editorial"] [data-editorial] {
+  display: grid;
+  grid-template-columns: minmax(0, 386fr) minmax(0, 720fr);
+  gap: 40px;
+  align-items: start;
+  max-width: 1226px;
+  padding-block: 40px;
+}
+[data-home-section="editorial"] [data-editorial-left] {
+  padding-top: 28px;
+}
+[data-home-section="editorial"] [data-editorial-photo] {
+  position: relative;
+  overflow: hidden;
+  background: #f1ece6;
+}
+[data-home-section="editorial"] [data-editorial-photo="square"] {
+  aspect-ratio: 1;
+  border-radius: 8px;
+}
+[data-home-section="editorial"] [data-editorial-photo="wide"] {
+  aspect-ratio: 882 / 653;
+  border-radius: 6px;
+}
+[data-home-section="editorial"] [data-editorial-photo] img {
+  object-fit: cover;
+}
+[data-home-section="editorial"] [data-editorial-caption] {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  text-align: center;
+  color: #555;
+}
+[data-home-section="editorial"] [data-editorial-title] {
+  margin: 0;
+  font: 500 16px/1.3 var(--impact-sans, "Red Hat Display", Manrope, system-ui, sans-serif);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #555;
+}
+[data-home-section="editorial"] [data-editorial-text] {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #555;
+}
+[data-home-section="editorial"] [data-editorial-cta] {
+  margin-top: 4px;
+  font: 500 11px/1.4 var(--impact-sans, "Red Hat Display", Manrope, system-ui, sans-serif);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--impact-ink, #29251f);
+}
+@media (max-width: 749px) {
+  [data-home-section="editorial"] [data-editorial] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding-block: 24px;
+  }
+  [data-home-section="editorial"] [data-editorial-left] {
+    padding-top: 0;
+  }
+}
+
+/* ---- Find your feel: two catalogue photos either side of a divider ----------------------------- */
+[data-home-section="compare"] [data-compare] {
+  display: grid;
+  justify-items: center;
+  gap: 28px;
+  padding-block: 48px;
+}
+[data-home-section="compare"] [data-compare-header] {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 640px;
+  text-align: center;
+  color: #1b1a18;
+}
+[data-home-section="compare"] [data-compare-eyebrow] {
+  margin: 0;
+  font: 600 14px/1.3 var(--impact-body, "Barlow", system-ui, sans-serif);
+  color: #1b1a18;
+}
+[data-home-section="compare"] h2 {
+  margin: 0;
+  font: 700 38px/1.15 var(--impact-body, "Barlow", system-ui, sans-serif);
+  color: #1b1a18;
+}
+[data-home-section="compare"] [data-compare-lede] {
+  margin: 0;
+  font: 400 16px/1.5 var(--impact-body, "Barlow", system-ui, sans-serif);
+  color: #4a4540;
+}
+/* The divider sits at --compare-pos: the middle until the drag script moves it. */
+[data-home-section="compare"] [data-compare-card] {
+  --compare-pos: 50%;
+  position: relative;
+  width: min(100%, 779px);
+  aspect-ratio: 779 / 296;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f1ece6;
+  box-shadow: 0 10px 32px rgb(41 37 31 / 0.14);
+}
+[data-home-section="compare"] [data-compare-card][data-compare-live] {
+  cursor: ew-resize;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+[data-home-section="compare"] [data-compare-pane] {
+  position: absolute;
+  inset: 0;
+}
+[data-home-section="compare"] [data-compare-pane="left"] {
+  clip-path: inset(0 calc(100% - var(--compare-pos)) 0 0);
+}
+[data-home-section="compare"] [data-compare-pane="right"] {
+  clip-path: inset(0 0 0 var(--compare-pos));
+}
+[data-home-section="compare"] [data-compare-pane] img {
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+[data-home-section="compare"] [data-compare-label] {
+  position: absolute;
+  bottom: 14px;
+  font: 600 18px/1.2 var(--impact-body, "Barlow", system-ui, sans-serif);
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+[data-home-section="compare"] [data-compare-pane="left"] [data-compare-label] {
+  left: 18px;
+}
+[data-home-section="compare"] [data-compare-pane="right"] [data-compare-label] {
+  right: 18px;
+}
+[data-home-section="compare"] [data-compare-divider] {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--compare-pos);
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  pointer-events: none;
+}
+[data-home-section="compare"] [data-compare-grip] {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.28);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  touch-action: none;
+}
+[data-home-section="compare"] [data-compare-grip]:focus-visible {
+  outline: 2px solid var(--impact-burgundy, #741a14);
+  outline-offset: 3px;
+}
+[data-home-section="compare"] [data-compare-bar] {
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: #8a8279;
+}
+@media (max-width: 749px) {
+  [data-home-section="compare"] [data-compare] {
+    gap: 20px;
+    padding-block: 32px;
+  }
+  [data-home-section="compare"] h2 {
+    font-size: 30px;
+  }
+  [data-home-section="compare"] [data-compare-card] {
+    aspect-ratio: 4 / 3;
+  }
+}

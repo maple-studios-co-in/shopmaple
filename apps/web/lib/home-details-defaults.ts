@@ -1,5 +1,8 @@
 import type { HomeDetails } from "@shopmaple/contracts";
 
+/** Details with the parts added after the first published documents filled in. */
+export type ResolvedHomeDetails = HomeDetails & Required<Pick<HomeDetails, "editorial" | "compare">>;
+
 /** Original rendered homepage copy, including spaces around the emphasized response time. */
 export const defaultHomeDetails: HomeDetails = {
   hero: {
@@ -48,8 +51,19 @@ export const defaultHomeDetails: HomeDetails = {
     introAfter: " with options, pricing, and a clear timeline.",
     body: "Whether the brief is a single statement chair or a complete room, the process starts the same way: with a conversation.",
   },
+  editorial: {
+    title: "Pull up a chair", text: "There's always something worth staying for.", cta: "Shop Dining", href: "/collections/dinings",
+    leftImage: "/media/home/editorial-left.webp", leftAlt: "A marble dining table on a fluted pedestal beside a tall window",
+    rightImage: "/media/home/editorial-right.webp", rightAlt: "A woman pouring coffee at a dining table with sunflowers, cream upholstered chairs and a pug",
+  },
+  compare: {
+    eyebrow: "Find your feel", heading: "Two ways to unwind",
+    lede: "Explore distinct silhouettes and choose the one that feels at home in your space.",
+    left: { handle: "aera-swivel-lounge-chair", label: "Aera" }, right: { handle: "caro", label: "Caro" },
+  },
 };
 
-export function resolveHomeDetails(value?: HomeDetails): HomeDetails {
-  return structuredClone(value ?? defaultHomeDetails);
+export function resolveHomeDetails(value?: HomeDetails): ResolvedHomeDetails {
+  // Documents published before the editorial and compare sections carry neither: they start from the defaults.
+  return structuredClone({ ...defaultHomeDetails, ...value } as ResolvedHomeDetails);
 }

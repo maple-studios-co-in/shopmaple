@@ -26,6 +26,7 @@ import "@/styles/home-ticker.css";
 import "@/styles/home-rails.css";
 import "@/styles/home-impact.css";
 import "@/styles/home-slides.css";
+import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
 // Last, so a utility beats the legacy storefront rules it replaces.

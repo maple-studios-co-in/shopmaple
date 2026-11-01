@@ -26,7 +26,7 @@ const copyFields: Partial<Record<HomeSectionKey, [keyof Copy, string, number][]>
   ticker: [["ticker", "Brand ticker", 600]],
   testimonial: [["testimonialHeading", "Testimonial heading", 160], ["testimonialSubheading", "Testimonial subheading", 300]],
 };
-const detailSections: readonly HomeSectionKey[] = ["hero", "difference", "nimbus", "testimonial", "newsletter", "values", "cities", "project"];
+const detailSections: readonly HomeSectionKey[] = ["hero", "difference", "nimbus", "testimonial", "newsletter", "values", "cities", "project", "editorial", "compare"];
 const merchandising: Partial<Record<HomeSectionKey, MerchandisingPart>> = { categories: "categories", offers: "offers", bestsellers: "bestsellers", chairs: "chairs" };
 const campaigns: Partial<Record<HomeSectionKey, string[]>> = {
   announcement: ["landing-announcement"], "dining-banner": ["landing-dining-table"],
