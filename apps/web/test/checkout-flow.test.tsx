@@ -325,3 +325,140 @@ test("a rejected quote and a cart already being paid are explained in the API's 
     assert.match(text(), /already in progress/);
   } finally { await cleanup(); }
 });
+
+const shiprocketQuote = {
+  ...quote,
+  items: [{ ...quote.items[0]!, fulfilment: { kind: "made_to_order", leadTimeDays: 28 } }],
+  delivery: { courierName: "Delhivery Surface", estimatedDays: 6 },
+};
+
+test("the checkout is rebuilt storefront markup inside data-store", async () => {
+  const { cleanup } = await mount(() => new Response(null, { status: 404 }));
+  try {
+    assert.ok(document.querySelector("[data-store][data-checkout] form"), "the form sits in the storefront scope");
+    assert.equal(document.querySelector(".checkout-layout, .checkout-form, .checkout-field"), null, "no legacy checkout classes remain");
+  } finally { await cleanup(); }
+});
+
+test("review shows the Shiprocket courier and estimate and each made-to-order making time", async () => {
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt({ quote: shiprocketQuote })) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    const review = document.querySelector("[data-checkout-review]")!.textContent!;
+    assert.match(review, /Delhivery Surface/);
+    assert.match(review, /about 6 days/);
+    assert.match(review, /Made to order: allow 28 days for making/);
+  } finally { await cleanup(); }
+});
+
+test("the payment window closes before the stock hold and the signed callback is handed to the store", async () => {
+  const payBy = new Date(Date.now() + 5 * 60_000).toISOString();
+  const { calls, cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow3", payBy }));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow3" }), { status: 202 });
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow3" }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    assert.ok(razorpay!.options.timeout > 280 && razorpay!.options.timeout <= 300, `timeout ${razorpay!.options.timeout}`);
+    const signed = { razorpay_payment_id: "pay_flow3", razorpay_order_id: "order_flow3", razorpay_signature: "a".repeat(64) };
+    await act(async () => { razorpay!.options.handler(signed); });
+    await settle(3);
+    const posted = calls.find((c) => c.path === `/api/checkout/${attemptId}/payment-callback`)!;
+    assert.equal(posted.method, "POST");
+    assert.deepEqual(posted.body, signed);
+  } finally { await cleanup(); }
+});
+
+test("a hold too close to lapsing asks for a new quote instead of opening payment", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow4", payBy: new Date(Date.now() + 10_000).toISOString() }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    assert.equal(razorpay, null, "no payment window that would outlive the hold");
+    assert.match(text(), /new quote/i);
+  } finally { await cleanup(); }
+});
+
+test("a delivery Shiprocket cannot price offers an enquiry instead of payment", async () => {
+  const message = "We can't price delivery to this pincode online right now. Send us an enquiry and our team will quote delivery for you. No payment has been taken.";
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json({ code: "DELIVERY_UNPRICED", message }, { status: 422 }) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    assert.match(text(), /can't price delivery to this pincode/);
+    const enquiry = document.querySelector<HTMLAnchorElement>("[data-checkout-enquiry]")!;
+    assert.match(enquiry.href, /\/pages\/contact\?/);
+    assert.match(decodeURIComponent(enquiry.href), /400001/);
+    assert.ok(!button("Pay ₹3,835"));
+  } finally { await cleanup(); }
+});
+
+test("a payment received after the hold lapsed is acknowledged with the refund promise, never a request to pay again", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow5" }));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow5" }), { status: 202 });
+    return Response.json(attempt({ state: "paid_hold_lapsed", paid: true, providerOrderId: "order_flow5", fulfillmentStatus: "review_required" }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow5", razorpay_order_id: "order_flow5", razorpay_signature: "b".repeat(64) }); });
+    await settle(12);
+    assert.match(text(), /payment has been received/i);
+    assert.match(text(), /refund in full/i);
+    assert.match(text(), /don't need to pay again/i);
+    assert.ok(document.querySelector(`a[href="/orders/${attemptId}"]`), "the buyer can follow the order");
+  } finally { await cleanup(); }
+});
+
+test("a confirmed order links to its status page", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow6" }));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow6" }), { status: 202 });
+    return Response.json(attempt({ state: "captured", paid: true, providerOrderId: "order_flow6", fulfillmentStatus: "confirmed", orderReference: "SO-2002" }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow6", razorpay_order_id: "order_flow6", razorpay_signature: "c".repeat(64) }); });
+    await settle(12);
+    assert.match(text(), /SO-2002/);
+    assert.ok(document.querySelector(`a[href="/orders/${attemptId}"]`));
+  } finally { await cleanup(); }
+});
+
+test("the payment window length comes from the server, not the buyer's clock", async () => {
+  // A buyer clock an hour slow would read this payBy as 65 minutes away; the server says 200 seconds.
+  const payBy = new Date(Date.now() + 65 * 60_000).toISOString();
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow7", payBy, payWithinSeconds: 200 }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    assert.equal(razorpay!.options.timeout, 200);
+  } finally { await cleanup(); }
+});
+
+test("each new checkout step brings the buyer back to the top of the checkout", async () => {
+  const scrolled: Element[] = [];
+  const original = (window.HTMLElement.prototype as any).scrollIntoView;
+  (window.HTMLElement.prototype as any).scrollIntoView = function (this: Element) { scrolled.push(this); };
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }));
+  try {
+    assert.equal(scrolled.length, 0, "the first view does not jump");
+    await submitDetails();
+    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the review starts at the top, not where the button was");
+  } finally {
+    (window.HTMLElement.prototype as any).scrollIntoView = original;
+    await cleanup();
+  }
+});

@@ -100,6 +100,28 @@ export async function sendEnquiryReply(
   return postEmail(checked, `reply/${input.replyId}`, { from: checked.from, to: [input.to], reply_to: checked.to, subject: input.subject, text: input.text }, fetchImpl);
 }
 
+const transactionalSchema = z.object({
+  /** Stable per message across retries, e.g. `order/<notification id>`. */
+  key: z.string().regex(/^[A-Za-z0-9_/-]{1,200}$/),
+  to: z.email().max(254),
+  subject: z.string().min(1).max(200),
+  text: z.string().min(1).max(20_000),
+});
+/** A plain-text email from the configured sender, with the staff inbox as reply-to. */
+export async function sendTransactionalEmail(
+  config: EnquiryDeliveryConfig,
+  key: string,
+  message: { to: string; subject: string; text: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<EnquiryDeliveryOutcome> {
+  const checked = recheckConfig(config);
+  if (!checked) return { status: "failed", code: "configuration_error" };
+  const parsed = transactionalSchema.safeParse({ key, ...message });
+  if (!parsed.success) return { status: "failed", code: "provider_rejected" };
+  const input = parsed.data;
+  return postEmail(checked, input.key, { from: checked.from, to: [input.to], reply_to: checked.to, subject: input.subject, text: input.text }, fetchImpl);
+}
+
 function recheckConfig(config: EnquiryDeliveryConfig): EnquiryDeliveryConfig | null {
   try {
     // Recheck internal callers and reject a routing change without its corresponding fingerprint.

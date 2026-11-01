@@ -48,6 +48,8 @@ export const variantSchema = z.object({
   compareAtPaise: z.number().int().min(0).max(1_000_000_000).nullable(),
   available: z.boolean(),
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
+  /** Days Keeri approved to make a made-to-order piece; null when stocked or not sellable. */
+  leadTimeDays: z.number().int().min(1).max(365).nullable().optional(),
   /** This variant's own photos; the product's `images` keeps every photo for cards. */
   images: z.array(httpsUrl).optional(),
   /** The readable `?variant=` value on the product address, unique within its product. */
@@ -100,6 +102,7 @@ export const cartItemSchema = z.object({
   available: z.boolean(),
   cartable: z.boolean().default(false),
   stockPolicy: z.string(),
+  leadTimeDays: z.number().int().min(1).max(365).nullable().optional(),
 });
 export const cartMutationContextSchema = z.object({
   cartIdentity: z.string().regex(/^[a-f0-9]{64}$/),

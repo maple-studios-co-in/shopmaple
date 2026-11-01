@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Truck } from "lucide-react";
 import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
+import { LeadTimeNote } from "./lead-time-note";
 import { shopMoney } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
@@ -94,7 +95,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const images = galleryFor(variantId);
   // A shorter gallery after switching options never points past its last photo.
   const shown = Math.min(image, Math.max(0, images.length - 1));
-  const enquiry = !product.published || !canAddToCart(variant);
+  const enquiry = !product.published || !canAddToCart(variant, cart.checkoutEnabled);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
   const enquiryHref = enquiryLink(product, variant);
@@ -220,6 +221,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             ) : (
               <Link data-enquire href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
             )}
+            <LeadTimeNote variant={variant} className="m-0 text-[12px] leading-[1.5] text-[#5e574f]" />
             {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
             {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
           </div>
