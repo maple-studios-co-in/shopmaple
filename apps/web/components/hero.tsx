@@ -6,8 +6,6 @@ import { HeroFilm } from "@/components/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-export { heroFilm } from "@/components/hero-film";
-
 /** Fixed copy from the Impact Layout frame; the admin's hero fields cover the button and the tiles. */
 const headline = "Timeless Craftsmanship for Modern Living";
 const intro = "Handcrafted furniture that brings elegance to every corner of your home.";

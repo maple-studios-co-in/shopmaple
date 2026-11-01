@@ -35,7 +35,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgb(60 40 28 / 0.82) 0%, rgb(60 40 28 / 0.5) 42%, rgb(60 40 28 / 0) 78%);
+  background: linear-gradient(90deg, rgb(60 40 28 / 0.82) 0%, rgb(60 40 28 / 0.62) 50%, rgb(60 40 28 / 0) 85%);
   pointer-events: none;
 }
 [data-home-section="hero"] .hero-introduction {
@@ -122,7 +122,11 @@
   background: linear-gradient(90deg, #e9dcd2 0%, #efe6df 60%, #f3ede8 100%);
   border: 1px solid rgb(41 37 31 / 0.06);
 }
+[data-campaign-layout="strip"] .campaign-art-mobile {
+  display: none;
+}
 [data-campaign-layout="strip"] .campaign-art-desktop {
+  display: block;
   right: auto;
   width: 56%;
   z-index: 0;
@@ -209,6 +213,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 24px;
   padding: 0;
   border: 0;
   background: none;
@@ -382,17 +387,15 @@
   font: 600 16px/1.2 var(--impact-body);
   transition: opacity 0.3s;
 }
-[data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead,
-[data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-explore,
-[data-home-section="nimbus"] .home-nimbus:focus-within .home-nimbus-lead,
+/* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-lead,
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore {
-  opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
 }
-[data-home-section="nimbus"] .home-nimbus:focus-within .home-nimbus-explore:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
+@media (hover: hover) {
+  [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead {
+    opacity: 0;
+  }
 }
 
 /* ---- Campaign banners and cards -------------------------------------------------------- */
@@ -402,12 +405,12 @@
   border-radius: 2px;
   background: #fff3dc;
   color: var(--impact-burgundy);
-  font-size: max(11px, 0.8cqw);
+  font-size: max(12px, 0.8cqw);
 }
-[data-campaign-layout="band"] .campaign-copy .campaign-label,
-[data-campaign-layout="card"] .campaign-copy .campaign-label {
+[data-home-section] [data-campaign-layout="band"] .campaign-copy .campaign-label,
+[data-home-section] [data-campaign-layout="card"] .campaign-copy .campaign-label {
   color: #e9c9a4;
-  font-size: max(9px, 0.62cqw);
+  font-size: max(10px, 0.62cqw);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -579,18 +582,17 @@
 }
 [data-home-section="testimonial"] .home-quote blockquote h3 { order: 1; }
 [data-home-section="testimonial"] .home-quote figcaption { order: 2; }
-[data-home-section="testimonial"] .home-quote video {
-  order: 3;
+[data-home-section="testimonial"] .home-testimonial > video {
   display: block;
   width: 100%;
   max-width: 720px;
   max-height: 460px;
-  margin: 64px auto 0;
+  margin: 56px auto 0;
   border-radius: 14px;
   background: #e9e4e0;
 }
 [data-home-section="testimonial"] .home-quote blockquote p {
-  order: 4;
+  order: 3;
   max-width: 720px;
   margin: 24px 0 0;
   color: #4b4640;
@@ -689,7 +691,8 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font: 700 clamp(60px, 10.2vw, 170px) / 1.05 var(--impact-body);
+  font: 700 clamp(40px, 10.2vw, 170px) / 1.05 var(--impact-body);
+  overflow-wrap: anywhere;
   letter-spacing: -0.03em;
   text-align: center;
   user-select: none;
@@ -722,6 +725,7 @@
 @media (max-width: 749px) {
   [data-home-section="hero"] .hero-grid { padding: 12px 16px 8px; grid-template-columns: 1fr; }
   [data-home-section="hero"] .hero-film { min-height: 420px; }
+  [data-home-section="hero"] .hero-film::after { background: linear-gradient(180deg, rgb(60 40 28 / 0.35) 0%, rgb(60 40 28 / 0.6) 100%); }
   [data-home-section="hero"] .hero-categories { grid-template-rows: none; grid-auto-rows: 170px; }
   [data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] { padding-inline: 16px; }
   [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; min-height: 280px; }

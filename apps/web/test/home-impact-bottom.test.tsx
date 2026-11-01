@@ -61,7 +61,7 @@ test("the testimonial leads with one large quote and its author; the film and fu
   const testimonial = section(await renderHome(), "testimonial");
   assert.equal(text(testimonial.querySelector("[data-quote-text]")), "Getting our sofa made by Maple was a completely hassle-free experience.");
   assert.equal(text(testimonial.querySelector("[data-quote-author]")), "Anjali Gupta — Verified Customer");
-  assert.ok(testimonial.querySelector("figure video"), "the customer film stays, below the quote");
+  assert.ok(testimonial.querySelector("video"), "the customer film stays, below the quote");
   assert.equal(testimonial.querySelectorAll("blockquote p").length, 4, "and so does the full review");
   assert.equal(testimonial.querySelector(".home-review-stars"), null, "no star rating: the admin has no rating to show");
   assert.equal(text(testimonial.querySelector("h2")), "Why They Love Us", "the admin's heading stays for screen readers");
@@ -92,4 +92,22 @@ test("a fresh draft follows the frame's order, with the newsletter band last", (
     "hero", "announcement", "difference", "categories", "ticker", "offers", "nimbus", "dining-banner", "instagram", "bestsellers",
     "seating-banner", "chairs", "promos", "cities", "testimonial", "project", "values", "newsletter",
   ]);
+});
+
+test("the enquiry form keeps its tall message box and Submit button wherever the card look is not asked for", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { HomeProjectForm } = await import("../components/home-forms");
+  const plain = new JSDOM(renderToStaticMarkup(<HomeProjectForm />)).window.document;
+  assert.equal(text(plain.querySelector("button")), "Submit");
+  assert.equal(plain.querySelector("textarea")!.getAttribute("rows"), "6");
+  assert.equal(plain.querySelector("[data-project-card]"), null);
+  const card = new JSDOM(renderToStaticMarkup(<HomeProjectForm card />)).window.document;
+  assert.match(text(card.querySelector("button")), /^Send enquiry/);
+  assert.ok(card.querySelector("[data-project-card]"));
+});
+
+test("the testimonial's film follows the figure, so the caption stays the figure's last child", async () => {
+  const testimonial = section(await renderHome(), "testimonial");
+  assert.equal(testimonial.querySelector("figure")!.lastElementChild!.tagName, "FIGCAPTION");
+  assert.ok(testimonial.querySelector("figure + video, figure ~ video"));
 });

@@ -156,13 +156,13 @@ export function HomeTestimonial({
           <strong>{content.name}</strong>
           <span>{content.attribution}</span>
         </figcaption>
-        <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}>
-          <source
-            src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
-            type="video/mp4"
-          />
-        </video>
       </figure>
+      <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}>
+        <source
+          src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
+          type="video/mp4"
+        />
+      </video>
     </section>
   );
 }
@@ -307,7 +307,7 @@ export function HomeProject({
           <span><strong>Quick response</strong> <span>We respond within {content.responseTime}.</span></span>
         </div>
       </div>
-      <HomeProjectForm />
+      <HomeProjectForm card />
     </section>
   );
 }
