@@ -100,17 +100,20 @@ async function graphGet(config: InstagramFeedConfig, path: string, params: Recor
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const tokenKey = (appSecret: string) => Buffer.from(hkdfSync("sha256", appSecret, "shopmaple-instagram-feed", "token-v1", 32));
+// A fixed tag length: without it GCM also accepts a truncated tag, which is far easier to forge.
+const authTagLength = 16;
 function encryptToken(token: string, appSecret: string) {
-  const iv = randomBytes(12), cipher = createCipheriv("aes-256-gcm", tokenKey(appSecret), iv);
+  const iv = randomBytes(12), cipher = createCipheriv("aes-256-gcm", tokenKey(appSecret), iv, { authTagLength });
   const data = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
   return ["v1", ...[iv, cipher.getAuthTag(), data].map((part) => part.toString("base64url"))].join(".");
 }
 function decryptToken(value: string, appSecret: string) {
   const [version, iv, tag, data] = value.split(".");
-  if (version !== "v1" || !iv || !tag || !data) return null;
+  const authTag = Buffer.from(tag ?? "", "base64url");
+  if (version !== "v1" || !iv || authTag.length !== authTagLength || !data) return null;
   try {
-    const decipher = createDecipheriv("aes-256-gcm", tokenKey(appSecret), Buffer.from(iv, "base64url"));
-    decipher.setAuthTag(Buffer.from(tag, "base64url"));
+    const decipher = createDecipheriv("aes-256-gcm", tokenKey(appSecret), Buffer.from(iv, "base64url"), { authTagLength });
+    decipher.setAuthTag(authTag);
     return Buffer.concat([decipher.update(Buffer.from(data, "base64url")), decipher.final()]).toString("utf8");
   } catch { return null; }
 }

@@ -225,6 +225,20 @@ test("a token that expires soon is renewed before it lapses and kept encrypted",
   assert.equal((await db.instagramFeedState.findUniqueOrThrow({ where: { id: 1 } })).lastSuccessAt! > state.lastSuccessAt!, true);
 });
 
+test("a stored token whose authentication tag was shortened is not trusted", async () => {
+  const soon = Math.floor(Date.now() / 1000) + 5 * 86400;
+  await refreshInstagramFeed(db, config(meta({ debug: { data: { is_valid: true, expires_at: soon, scopes: [] } } }).transport));
+  const { tokenCiphertext } = await db.instagramFeedState.findUniqueOrThrow({ where: { id: 1 } });
+  const [version, iv, tag = "", data] = tokenCiphertext!.split(".");
+  assert.equal(Buffer.from(tag, "base64url").length, 16, "Tokens are sealed with a full 16-byte tag");
+  // A prefix of the genuine tag: AES-GCM without a fixed tag length would still accept it.
+  const shortened = [version, iv, Buffer.from(tag, "base64url").subarray(0, 12).toString("base64url"), data].join(".");
+  await db.instagramFeedState.update({ where: { id: 1 }, data: { tokenCiphertext: shortened } });
+  const next = meta({ debug: { data: { is_valid: true, expires_at: Math.floor(Date.now() / 1000) + 59 * 86400, scopes: [] } } });
+  await refreshInstagramFeed(db, config(next.transport), { force: true });
+  assert.equal(next.calls.find((call) => call.pathname.endsWith("/media"))!.searchParams.get("access_token"), envToken, "The environment token is used instead");
+});
+
 test("the schedule refreshes only when due, and two workers never refresh at once", async () => {
   const { transport, calls } = meta();
   const settings = config(transport, { refreshEveryMs: 3 * 3600_000 });
