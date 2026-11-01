@@ -14,6 +14,7 @@ import { registerContentRoutes } from "./admin/content.js";
 import { listProducts, serializeProduct } from "./catalog.js";
 import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-media.js";
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
+import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagram-feed.js";
 import { saveEnquiry } from "./enquiries.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
@@ -43,6 +44,8 @@ export type AppConfig = {
   replyRateLimit?: { limit: number; windowMs: number };
   /** Public checkout options; only meaningful together with an injected commerce service. */
   checkout?: CheckoutOptions;
+  /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
+  instagramFeed?: InstagramFeedConfig | null;
 };
 export function createApp(
   db: PrismaClient,
@@ -95,6 +98,7 @@ export function createApp(
   registerCrmRoutes(app, db, config.secureCookies);
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
+  registerInstagramFeedRoutes(app, db, config.instagramFeed ?? null, config.secureCookies);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({

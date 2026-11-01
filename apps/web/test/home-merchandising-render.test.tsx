@@ -166,7 +166,7 @@ test("published rails preserve product order, omit missing, unavailable and unpu
   assert.deepEqual(texts(doc, '[data-home-section="bestsellers"] [data-card-price]'), ["Rs. 47,890.00", "Rs. 12,345.00"]);
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/custom-chair-two", "/products/custom-chair-one"]);
   assert.deepEqual(texts(doc, '[data-home-section="chairs"] [data-card-price]'), ["Rs. 9,000.00", "Rs. 8,500.00"]);
-  assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|catalogue\/cards)$/.test(url)), "Rendering only reads published content and catalogue data");
+  assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|instagram\/feed|catalogue\/cards)$/.test(url)), "Rendering only reads published content and catalogue data");
   assert.equal(doc.querySelector('[href="/checkout"], button[name="checkout"]'), null);
 });
 

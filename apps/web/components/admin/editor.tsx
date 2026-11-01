@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { CampaignFields, InstagramFields, PageFields } from "./forms";
+import { InstagramFeedPanel } from "./instagram-feed-panel";
 import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
@@ -402,7 +403,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
       case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
-      case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} />;
+      case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
       case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />;
       case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
