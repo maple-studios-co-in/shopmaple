@@ -15,6 +15,11 @@ export const articleHandles = [
   "what-should-be-finalised-first-furniture-flooring-or-lighting",
   "how-to-measure-furniture-before-ordering-online",
 ] as const;
+/** A picture uploaded to the media library. */
+export const managedUpload = /^\/media\/uploads\/[a-f0-9]{64}\.webp$/;
+/** A picture the store serves itself under /media (media library uploads, Keeri photos, campaign art). */
+export const storeMedia = (src: string) => src.startsWith("/media/uploads/") ? managedUpload.test(src)
+  : src.startsWith("/media/") && !src.includes("..") && contentImageSchema.safeParse(src).success;
 export type EditorialNode = string | { tag: string; children: EditorialNode[]; href?: string; src?: string; alt?: string };
 const controls = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 const text = (max: number) => z.string().max(max).refine(value => !controls.test(value), "Control characters are not content");
@@ -52,7 +57,7 @@ function validDocument(value: unknown): value is EditorialNode[] {
     const allowed = node.tag === "a" ? ["tag", "children", "href"] : node.tag === "img" ? ["tag", "children", "src", "alt"] : ["tag", "children"];
     if (Object.keys(node).some(key => !allowed.includes(key))) return false;
     if (node.tag === "a" && !safeLink(node.href)) return false;
-    if (node.tag === "img" && (typeof node.src !== "string" || !node.src.startsWith("https://") || !contentImageSchema.safeParse(node.src).success || (node.alt !== undefined && (typeof node.alt !== "string" || node.alt.length > 200 || controls.test(node.alt))))) return false;
+    if (node.tag === "img" && (typeof node.src !== "string" || !(node.src.startsWith("https://") || storeMedia(node.src)) || !contentImageSchema.safeParse(node.src).success || (node.alt !== undefined && (typeof node.alt !== "string" || node.alt.length > 200 || controls.test(node.alt))))) return false;
     if (["img", "br", "hr"].includes(node.tag) && node.children.length) return false;
     if (count + stack.length + node.children.length > 2000) return false;
     for (const child of node.children) stack.push({ node: child, depth: depth + 1 });

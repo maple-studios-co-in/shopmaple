@@ -1,19 +1,21 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { FileText, ImagePlus, Images, Megaphone, Plus, RotateCcw, Trash2 } from "lucide-react";
-import type { StorefrontContent, CampaignContent, ContentPage } from "@shopmaple/contracts";
+import type { StorefrontContent, CampaignContent, ContentPage, EditorialNode } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
-import { AuthoredArticleBody } from "@/components/authored-article-body";
+import { StoreContent } from "@/components/store-content";
+import { pageDocument } from "@/lib/page-document";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
 import { Field } from "./field";
-import { EmptyState, Notice } from "./crm-primitives";
+import { EmptyState } from "./crm-primitives";
 import {
-  ActionButton, ConfirmPanel, DangerZone, EditorWithPreview, FieldGrid, Hint, PanelHeader, PreviewPanel, PreviewTitle, SectionHeading, SelectField, dangerButton,
+  ActionButton, DangerZone, EditorWithPreview, FieldGrid, Hint, PanelHeader, PreviewPanel, PreviewTitle, SectionHeading, SelectField, dangerButton,
 } from "./kit";
-import { AuthoredBlockFields, newAuthoredBlock } from "./authored-block-fields";
+const RichTextEditor = dynamic(() => import("./rich-text-editor").then((module) => module.RichTextEditor), { ssr: false });
 
 type Props = {
   content: StorefrontContent; onChange: (content: StorefrontContent) => void; session?: StaffSession; onExpired?: () => void;
@@ -150,8 +152,6 @@ export function PageFields(props: Props) {
   const { content, onChange, session, onExpired, onSelectedPageChange } = props;
   const [selected, setSelected] = useState(0);
   const [selectionRevision, setSelectionRevision] = useState(0);
-  const [conversionError, setConversionError] = useState("");
-  const [restoring, setRestoring] = useState(false);
   const pages = content.pages;
   const page = pages[selected];
   const media = mediaProps(props);
@@ -160,26 +160,17 @@ export function PageFields(props: Props) {
     onSelectedPageChange?.(index);
     // A removed page can be replaced at the same index; reset only on selection actions.
     setSelectionRevision((value) => value + 1);
-    setConversionError("");
-    setRestoring(false);
   }
   const setPages = (next: ContentPage[]) => onChange({ ...content, pages: next });
   const update = (patch: Partial<ContentPage>) => setPages(patchAt(pages, selected, patch));
   const banner = (patch: Partial<NonNullable<ContentPage["banner"]>>) => page?.banner && update({ banner: { ...page.banner, ...patch } });
-  function convert() {
-    if (!page) return;
-    const paragraphs = page.body.split(/\n\s*\n/).filter((text) => text.trim());
-    if (paragraphs.length > 60) {
-      setConversionError("Use at most 60 paragraphs before converting to structured blocks. Your plain text has not changed.");
-      return;
-    }
-    setConversionError("");
-    update({ blocks: paragraphs.length ? paragraphs.map((text) => ({ ...newAuthoredBlock("paragraph"), text })) : [newAuthoredBlock("paragraph")] });
-  }
-  function restorePlainText() {
-    const { blocks: discarded, ...plainPage } = page!;
-    setPages(pages.map((value, index) => (index === selected ? plainPage : value)));
-    setRestoring(false);
+  /** An edited body is saved as rich text in place of any blocks; the original plain text stays for recovery. */
+  function writeBody(content: EditorialNode[]) {
+    setPages(pages.map((value, index) => {
+      if (index !== selected) return value;
+      const { blocks: _replaced, ...rest } = value;
+      return { ...rest, content };
+    }));
   }
   function addPage() {
     selectPage(pages.length);
@@ -205,25 +196,13 @@ export function PageFields(props: Props) {
             <Field label="Page title" value={page.title} maxLength={160} onChange={(title) => update({ title })} />
             <Field label="Page slug" value={page.slug} maxLength={80} onChange={(slug) => update({ slug })} />
             <Field label="Page description" value={page.description} maxLength={300} multiline onChange={(description) => update({ description })} />
-            {page.blocks === undefined && <Field label="Page body" value={page.body} maxLength={8000} multiline onChange={(body) => update({ body })} />}
           </FieldGrid>
-          {page.blocks === undefined ? (
-            <div className="mt-4 grid justify-items-start gap-3">
-              <Hint>Use plain text, with blank lines between paragraphs. HTML and scripts display as text.</Hint>
-              <Button type="button" variant="outline" size="sm" onClick={convert}>Use structured blocks</Button>
-              {conversionError && <Notice tone="error">{conversionError}</Notice>}
-            </div>
-          ) : <>
-            <AuthoredBlockFields blockLabel="Page block" value={page.blocks} onChange={(blocks) => update({ blocks })} session={session} onExpired={onExpired} />
-            <div className="mt-4 grid justify-items-start gap-3">
-              <ActionButton icon={RotateCcw} variant="ghost" onClick={() => setRestoring(true)}>Return to plain text</ActionButton>
-              {restoring && (
-                <ConfirmPanel confirm="Confirm return to plain text" cancel="Keep structured blocks" onConfirm={restorePlainText} onCancel={() => setRestoring(false)}>
-                  Return to the original plain-text body? This will discard all structured block edits. Save draft and Publish draft still apply to the whole storefront.
-                </ConfirmPanel>
-              )}
-            </div>
-          </>}
+          <div className="mt-4 grid gap-2">
+            <p className="text-xs font-medium text-foreground">Page body</p>
+            <RichTextEditor label="Page body" value={pageDocument(page)} onChange={writeBody}
+              media={session && onExpired ? { session, onExpired } : undefined} />
+            <Hint>Write the page as you would a document: headings, lists, quotes, tables, links and pictures from the media library. Links can go to store pages, Maple sites, email or phone.</Hint>
+          </div>
           {page.banner ? <>
             <SectionHeading description="A wide image with a link, shown above the page copy.">Page banner</SectionHeading>
             <FieldGrid>
@@ -248,13 +227,11 @@ export function PageFields(props: Props) {
               onClick={() => { setPages(pages.filter((_, index) => index !== selected)); selectPage(0); }}>Remove page</ActionButton>
           </DangerZone>
         </div>
-        <PreviewPanel aria-label="Page preview" eyebrow={page.blocks === undefined ? "Text preview" : "Local page preview"}
+        <PreviewPanel aria-label="Page preview" eyebrow="Local page preview"
           footnote={<>Local preview · /pages/{page.slug || "your-slug"}</>}>
           <PreviewTitle>{page.title || "Untitled page"}</PreviewTitle>
           {page.description && <p className="text-muted-foreground">{page.description}</p>}
-          {page.blocks === undefined
-            ? <div data-plain-copy className="whitespace-pre-wrap [overflow-wrap:anywhere]">{page.body}</div>
-            : <div className="store-prose"><AuthoredArticleBody blocks={page.blocks} preview /></div>}
+          <div className="store-prose [overflow-wrap:anywhere]"><StoreContent nodes={pageDocument(page)} previewUploads /></div>
           {page.banner && (
             <p className="rounded-md bg-sunken px-3 py-2 text-xs text-foreground">Banner: {page.banner.alt || "Add an image description"} · {page.banner.label}</p>
           )}

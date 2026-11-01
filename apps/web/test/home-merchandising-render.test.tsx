@@ -87,7 +87,7 @@ test("both homepage rails expose a visible heading, and Chairs a context-labelle
       const browse = rail.querySelector("header a");
       assert.equal(browse?.getAttribute("href"), href, "browse action must reach the source collection, not a product or Shopify");
       assert.equal(browse?.getAttribute("aria-label"), `View all ${heading}`);
-      assert.equal(browse?.textContent, "View all →");
+      assert.equal(browse?.textContent, `View all ${heading!.toLowerCase()} →`, "the frame sets the heading in lower case inside the button");
     }
   }
 });

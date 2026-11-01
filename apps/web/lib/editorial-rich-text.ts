@@ -8,7 +8,7 @@
  * characters from pasted documents are removed.
  */
 import type { JSONContent } from "@tiptap/react";
-import { contentImageSchema, safeLink, type EditorialNode } from "@shopmaple/contracts";
+import { contentImageSchema, safeLink, storeMedia, type EditorialNode } from "@shopmaple/contracts";
 
 type Mark = NonNullable<JSONContent["marks"]>[number];
 type Element = Exclude<EditorialNode, string>;
@@ -150,8 +150,8 @@ function fromBlock(node: JSONContent): EditorialNode[] {
     case "horizontalRule": return [{ tag: "hr", children: [] }];
     case "image": {
       const src = node.attrs?.src, alt = typeof node.attrs?.alt === "string" ? node.attrs.alt.replace(controls, "").slice(0, 200) : "";
-      // Only images the store may show; a pasted image from another site is dropped.
-      return typeof src === "string" && src.startsWith("https://") && contentImageSchema.safeParse(src).success ? [{ tag: "img", src, ...(alt ? { alt } : {}), children: [] }] : [];
+      // Only images the store may show (approved hosts or the store's own /media pictures); a pasted image from another site is dropped.
+      return typeof src === "string" && (src.startsWith("https://") || storeMedia(src)) && contentImageSchema.safeParse(src).success ? [{ tag: "img", src, ...(alt ? { alt } : {}), children: [] }] : [];
     }
     case "table": return [{ tag: "table", children: [{ tag: "tbody", children: (node.content ?? []).flatMap(fromBlock) }] }];
     case "tableRow": return [{ tag: "tr", children: (node.content ?? []).flatMap(fromBlock) }];

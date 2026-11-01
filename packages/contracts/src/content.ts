@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { siteChromeSchema } from "./site-chrome";
 import { authoredArticlesSchema, authoredBlocksSchema } from "./authored-articles";
-import { editorialContentSchema } from "./editorial-content";
+import { editorialContentSchema, editorialDocumentSchema } from "./editorial-content";
 import { servicePagesContentSchema } from "./service-pages";
 import { categoryPageContentSchema } from "./category-content";
 import { campaignScheduleSchema } from "./campaign-schedule";
@@ -243,6 +243,8 @@ export const contentPageSchema = z
     description: text(300),
     body: text(8000),
     blocks: authoredBlocksSchema.optional(),
+    /** The page body as rich text; once set, it is shown instead of blocks or body. */
+    content: editorialDocumentSchema.optional(),
     banner: z
       .object({
         desktopImage: contentImageSchema,
@@ -256,7 +258,7 @@ export const contentPageSchema = z
   })
   .strict()
   .superRefine((page, ctx) => {
-    if (page.blocks !== undefined && new TextEncoder().encode(JSON.stringify(page)).length > 48 * 1024)
+    if ((page.blocks !== undefined || page.content !== undefined) && new TextEncoder().encode(JSON.stringify(page)).length > 48 * 1024)
       ctx.addIssue({ code: "custom", message: "Page exceeds 48 KiB" });
   });
 export const storefrontContentSchema = z

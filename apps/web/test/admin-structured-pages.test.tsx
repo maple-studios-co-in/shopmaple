@@ -6,6 +6,12 @@ import type { StorefrontContent } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
+// jsdom has no layout; ProseMirror asks for rectangles when it scrolls a selection into view.
+const noRects = () => Object.assign([], { item: () => null });
+const zeroRect = () => ({ x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON() {} });
+Object.assign(dom.window.Range.prototype, { getClientRects: noRects, getBoundingClientRect: zeroRect });
+Object.assign(dom.window.Text.prototype, { getClientRects: noRects, getBoundingClientRect: zeroRect });
+Object.assign(dom.window.HTMLElement.prototype, { scrollIntoView() {} });
 const { createRoot } = await import("react-dom/client");
 const { ContentEditor } = await import("../components/admin/editor");
 const container = document.getElementById("root")!;
@@ -49,119 +55,103 @@ async function mount(initial = contentWithPages("First paragraph\n\nSecond parag
   return { saved, cleanup: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
 
-// Catches implicit migration and changes to legacy body serialization when saving unrelated edits.
-test("legacy page opening and saving preserve plain text and absent blocks", async () => {
+/** The page body's rich-text editor; TipTap keeps its instance on the editable element. */
+async function richText() {
+  for (let i = 0; i < 50 && !container.querySelector('[role="textbox"][aria-label="Page body"]'); i++) await act(() => new Promise(r => setTimeout(r, 10)));
+  const node = container.querySelector<HTMLElement & { editor?: any }>('[role="textbox"][aria-label="Page body"]');
+  assert.ok(node?.editor, "The page body is a rich-text editor");
+  return node.editor;
+}
+const preview = () => container.querySelector('[aria-label="Page preview"]')!;
+async function type(text: string) {
+  const editor = await richText();
+  await act(async () => { editor.chain().focus("end", { scrollIntoView: false }).insertContent({ type: "paragraph", content: [{ type: "text", text }] }).run(); });
+}
+
+// Catches implicit migration: opening a page and saving another field must not rewrite its body.
+test("an older plain-text page opens with its words in the rich-text editor and saving another field leaves it alone", async () => {
   const original = "  First paragraph  \n\nSecond paragraph\nwith a line break.  ";
   const state = await mount(contentWithPages(original));
   try {
-    assert.equal(field("Page body").value, original);
-    assert.equal(container.querySelector('[aria-label="Page preview"] [data-plain-copy]')?.textContent, original);
+    const editor = await richText();
+    assert.match(editor.getText(), /First paragraph/);
+    assert.match(editor.getText(), /with a line break\./);
+    assert.equal(container.querySelector('textarea[aria-label="Page body"]'), null, "no plain text box");
     await fill("Page title", "Revised title"); await click("Save draft");
-    assert.equal(state.saved[0].content.pages[0].body, original);
-    assert.equal(Object.hasOwn(state.saved[0].content.pages[0], "blocks"), false);
+    const saved = state.saved[0].content.pages[0];
+    assert.equal(saved.title, "Revised title");
+    assert.equal(saved.body, original);
+    assert.equal(Object.hasOwn(saved, "content"), false);
+    assert.equal(Object.hasOwn(saved, "blocks"), false);
   } finally { await state.cleanup(); }
 });
-// Catches trimming source copy or discarding its recovery value during explicit conversion.
-test("explicit conversion preserves paragraph strings and original body until confirmed restoration", async () => {
-  const original = "  First paragraph  \n\n  \n\nSecond paragraph\nwith a line break.  ";
-  const state = await mount(contentWithPages(original));
-  try {
-    await click("Use structured blocks");
-    assert.equal(container.querySelector('[aria-label="Page body"]'), null);
-    assert.equal(field("Block 1 text").value, "  First paragraph  ");
-    assert.equal(field("Block 2 text").value, "Second paragraph\nwith a line break.  ");
-    await fill("Block 1 text", "Updated block copy"); await click("Save draft");
-    assert.equal(state.saved[0].content.pages[0].body, original);
-    assert.deepEqual(state.saved[0].content.pages[0].blocks.map(({ id, ...block }: any) => block), [
-      { type: "paragraph", text: "Updated block copy" }, { type: "paragraph", text: "Second paragraph\nwith a line break.  " },
-    ]);
-    await click("Return to plain text");
-    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /discard/i);
-    await click("Keep structured blocks"); assert.equal(field("Block 1 text").value, "Updated block copy");
-    await click("Return to plain text"); await click("Confirm return to plain text");
-    assert.equal(field("Page body").value, original);
-    await click("Save draft"); assert.equal(Object.hasOwn(state.saved[1].content.pages[0], "blocks"), false);
-  } finally { await state.cleanup(); }
-});
-// Catches invalid empty drafts being saved, manufactured copy, or conversion silently truncating long bodies.
-test("empty conversion requires real copy and more than 60 paragraphs is rejected without changes", async () => {
-  const tooMany = Array.from({ length: 61 }, (_, index) => `Paragraph ${index}`).join("\n\n");
-  const state = await mount(contentWithPages("", tooMany));
-  try {
-    await click("Use structured blocks"); assert.equal(field("Block 1 text").value, "");
-    await click("Save draft"); assert.equal(state.saved.length, 0);
-    await fill("Block 1 text", "Staff-written copy");
-    await select("Page", "1"); await click("Use structured blocks");
-    assert.equal(field("Page body").value, tooMany);
-    assert.match(container.textContent ?? "", /60 paragraphs/);
-    await click("Save draft");
-    assert.equal(state.saved[0].content.pages[1].body, tooMany);
-    assert.equal(Object.hasOwn(state.saved[0].content.pages[1], "blocks"), false);
-  } finally { await state.cleanup(); }
-});
-// Catches lost focus/data while reordering, slug-key remounts, stale picker state and empty required blocks.
-test("page blocks support editing, boundaries and switching without data or focus loss", async () => {
-  const state = await mount(contentWithPages("First", "Other"));
-  try {
-    await click("Use structured blocks");
-    for (const [kind, label, copy] of [["heading", "text", "Heading"], ["quote", "text", "Quotation"], ["list", "list items", "Chair\nLamp"], ["link", "link label", "Browse"]]) {
-      await click(`Add ${kind}`);
-      const count = container.querySelectorAll('[aria-label="Page block"]').length;
-      assert.equal(field(`Block ${count} ${label}`).value, "");
-      await click("Save draft"); assert.equal(state.saved.length, 0);
-      await fill(`Block ${count} ${label}`, copy!);
-    }
-    await fill("Block 5 link destination", "javascript:alert(1)");
-    assert.equal(container.querySelector('[aria-label="Page preview"] a'), null);
-    await click("Save draft"); assert.equal(state.saved.length, 0);
-    await fill("Block 5 link destination", "/collections/all");
-    const move = button("Move up", container.querySelectorAll('[aria-label="Page block"]')[1]);
-    move.focus(); await act(async () => move.click());
-    assert.equal(document.activeElement, field("Block 1 text")); assert.equal(field("Block 1 text").value, "Heading");
-    await fill("Page slug", "revised-slug"); assert.equal(document.activeElement, field("Page slug"));
-    await click("Add image"); assert.ok(container.querySelector('[aria-label="New image block"]'));
-    await click("Return to plain text");
-    await select("Page", "1"); await click("Use structured blocks");
-    assert.ok(container.querySelector('[aria-label="New image block"]') === null, "The new page must not inherit an open image composer");
-    assert.equal([...container.querySelectorAll("button")].some(b => b.textContent === "Confirm return to plain text"), false);
-    await select("Page", "0"); assert.equal(field("Block 1 text").value, "Heading");
-    assert.ok(container.querySelector('[aria-label="New image block"]') === null, "The new page must not inherit an open image composer");
-    await click("Remove block", container.querySelectorAll('[aria-label="Page block"]')[0]);
-    assert.equal(document.activeElement, field("Block 1 text")); assert.equal(field("Block 1 text").value, "First");
-    await click("Save draft"); assert.equal(state.saved[0].content.pages[0].blocks.length, 4);
-    await select("Page", "1"); assert.equal(button("Remove block", container.querySelector('[aria-label="Page block"]')!).disabled, true);
-  } finally { await state.cleanup(); }
-});
-// Catches loading structured pages in legacy mode and editor additions exceeding contract limits.
-test("existing structured pages open without conversion and block limits preserve editing", async () => {
+
+test("an older block page opens as rich text and keeps its blocks until the body is edited", async () => {
   const initial = contentWithPages("Retained recovery body");
-  Object.assign(initial.pages[0]!, { blocks: Array.from({ length: 60 }, (_, index) => ({ id: `block-${index}`, type: "paragraph", text: `Paragraph ${index}` })) });
+  Object.assign(initial.pages[0]!, { blocks: [{ id: "h", type: "heading", level: 2, text: "Materials" }, { id: "p", type: "paragraph", text: "Solid teak." }] });
   const state = await mount(initial);
   try {
-    assert.equal(container.querySelectorAll('[aria-label="Page block"]').length, 60);
-    assert.equal(button("Add paragraph").disabled, true); assert.equal(button("Add image").disabled, true);
-    assert.doesNotMatch(container.querySelector('[aria-label="Page preview"]')?.textContent ?? "", /Retained recovery body/);
-    await fill("Block 1 text", "Updated at limit"); await click("Save draft");
-    assert.equal(state.saved[0].content.pages[0].blocks[0].text, "Updated at limit");
+    const editor = await richText();
+    assert.equal(editor.getJSON().content[0].type, "heading");
+    assert.match(editor.getText(), /Solid teak\./);
+    assert.doesNotMatch(preview().textContent ?? "", /Retained recovery body/);
+    await fill("Page title", "Revised"); await click("Save draft");
+    const saved = state.saved[0].content.pages[0];
+    assert.equal(saved.blocks.length, 2, "blocks stay until the body is edited");
+    assert.equal(Object.hasOwn(saved, "content"), false);
   } finally { await state.cleanup(); }
 });
-// Catches public URL leaks and accepting image blocks without staff descriptions.
-test("page image library previews privately and saves canonical media only with a description", async () => {
+
+test("editing the body saves rich text in place of blocks and keeps the original text for recovery", async () => {
+  const initial = contentWithPages("Retained recovery body");
+  Object.assign(initial.pages[0]!, { blocks: [{ id: "p", type: "paragraph", text: "Solid teak." }] });
+  const state = await mount(initial);
+  try {
+    await type("<b>Literal</b> care notes.");
+    assert.match(preview().textContent ?? "", /<b>Literal<\/b> care notes\./, "the preview shows the edit, as text");
+    await click("Save draft");
+    const saved = state.saved[0].content.pages[0];
+    assert.deepEqual(saved.content, [{ tag: "p", children: ["Solid teak."] }, { tag: "p", children: ["<b>Literal</b> care notes."] }]);
+    assert.equal(Object.hasOwn(saved, "blocks"), false, "the rich text replaces the blocks");
+    assert.equal(saved.body, "Retained recovery body");
+  } finally { await state.cleanup(); }
+});
+
+// Catches public URL leaks and accepting pictures without staff descriptions.
+test("a picture from the media library goes into the page with its description and previews privately", async () => {
   const state = await mount(); const transport = globalThis.fetch;
   const hash = "a".repeat(64); const url = `/media/uploads/${hash}.webp`; const previewUrl = `/api/admin/media/${hash}/preview`;
   globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Reading room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl }], nextCursor: null }) : transport(input, init);
   try {
-    await click("Use structured blocks"); await click("Add image");
+    await richText();
+    await click("Image");
     await click("Choose image"); await click("Use image: Reading room");
-    assert.equal(field("Block 3 image description").value, "");
-    await click("Save draft"); assert.equal(state.saved.length, 0);
-    await fill("Block 3 image description", "Room with a chair");
-    assert.equal(container.querySelector('[aria-label="Page preview"] img')?.getAttribute("src"), previewUrl);
-    await click("Save draft"); assert.equal(state.saved[0].content.pages[0].blocks[2].src, url);
+    assert.equal(button("Insert image").disabled, true, "a description is required");
+    await fill("Image description", "Room with a chair");
+    await click("Insert image");
+    assert.equal(preview().querySelector("img")?.getAttribute("src"), previewUrl, "unpublished uploads preview privately");
+    await click("Save draft");
+    const content = state.saved[0].content.pages[0].content;
+    assert.deepEqual(content.at(-1), { tag: "img", src: url, alt: "Room with a chair", children: [] });
   } finally { await state.cleanup(); }
 });
-// Catches accidentally making all text authoring depend on an authenticated media picker.
-test("session-less page fields keep text editing available and media selection disabled", async () => {
+
+test("opening and cancelling the picture panel does not move where the next picture goes", async () => {
+  const state = await mount(); const transport = globalThis.fetch;
+  const hash = "c".repeat(64); const url = `/media/uploads/${hash}.webp`;
+  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Hall", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl: `/api/admin/media/${hash}/preview` }], nextCursor: null }) : transport(input, init);
+  try {
+    await richText();
+    await click("Image"); await click("Cancel");
+    await click("Image"); await click("Choose image"); await click("Use image: Hall");
+    await fill("Image description", "Hall"); await click("Insert image");
+    await click("Save draft");
+    assert.equal(state.saved[0].content.pages[0].content.at(-1).src, url, "still at the end");
+  } finally { await state.cleanup(); }
+});
+
+// Catches making all text authoring depend on an authenticated media picker.
+test("without a staff session the body stays editable and pictures cannot be added", async () => {
   const { PageFields } = await import("../components/admin/forms");
   const root = createRoot(container); let current = contentWithPages("Original paragraph");
   function Harness() {
@@ -169,41 +159,26 @@ test("session-less page fields keep text editing available and media selection d
     return <PageFields content={value} onChange={next => { current = next; setValue(next); }} />;
   }
   try {
-    await act(async () => root.render(<Harness />)); await click("Use structured blocks");
-    await fill("Block 1 text", "Edited without media session");
-    assert.equal((current.pages[0]!.blocks![0] as { text: string }).text, "Edited without media session");
-    assert.equal(button("Add image").disabled, true);
-    await click("Add quote"); assert.equal(field("Block 2 text").value, "");
+    await act(async () => root.render(<Harness />));
+    await type("Edited without media session");
+    assert.deepEqual(current.pages[0]!.content, [{ tag: "p", children: ["Original paragraph"] }, { tag: "p", children: ["Edited without media session"] }]);
+    assert.equal([...container.querySelectorAll("button")].some(b => b.textContent === "Image"), false);
   } finally { await act(async () => root.unmount()); }
 });
-// Catches index reuse keeping a removed page's open image composer attached to the next page.
-test("removing the first page resets picker state when the next page takes its index", async () => {
+
+// Catches index reuse keeping a removed page's open picture panel or text attached to the next page.
+test("removing the first page shows the next page's words and closes the picture panel", async () => {
   const state = await mount(contentWithPages("First page", "Second page"));
   try {
-    await click("Use structured blocks"); await select("Page", "1"); await click("Use structured blocks");
-    await select("Page", "0"); await click("Add image");
-    assert.ok(container.querySelector('[aria-label="New image block"]'));
+    await richText(); await click("Image");
+    assert.ok(container.querySelector('[aria-label="Insert a picture"]'));
     await click("Remove page");
-    assert.equal(field("Block 1 text").value, "Second page");
-    assert.ok(container.querySelector('[aria-label="New image block"]') === null, "The new page must not inherit an open image composer");
+    const editor = await richText();
+    assert.match(editor.getText(), /Second page/);
+    assert.equal(container.querySelector('[aria-label="Insert a picture"]'), null);
     await click("Save draft"); assert.equal(state.saved[0].content.pages.length, 1);
   } finally { await state.cleanup(); }
 });
-// Catches blank-line runs becoming stray newlines in converted copy or legacy paragraph whitespace being trimmed.
-test("conversion treats consecutive blank lines as separators while retaining paragraph indentation", async () => {
-  const state = await mount(contentWithPages("  First  \r\n\r\n\r\n  Second\r\ncontinued  "));
-  try {
-    await click("Use structured blocks");
-    assert.equal(field("Block 1 text").value, "  First  \n");
-    // Match legacy paragraph strings exactly, including CR left before its LF separator.
-    // Textareas normalize line endings for display; serialization preserves the raw strings.
-    assert.equal(field("Block 2 text").value, "  Second\ncontinued  ");
-    await click("Save draft");
-    assert.equal(state.saved[0].content.pages[0].blocks[0].text, "  First  \r");
-    assert.equal(state.saved[0].content.pages[0].blocks[1].text, "  Second\r\ncontinued  ");
-  } finally { await state.cleanup(); }
-});
-// Catches an empty list rendering as a bare sentence with no way to fill it.
 test("empty page and Instagram lists show an empty state whose one action fills them", async () => {
   const { PageFields, InstagramFields } = await import("../components/admin/forms");
   const root = createRoot(container); let current: StorefrontContent = { ...contentWithPages(), instagramPosts: [] };

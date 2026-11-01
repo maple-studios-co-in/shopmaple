@@ -18,10 +18,10 @@ const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
   ["home-workshop-poster", "home", ".hero-film img", "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
-  ["home-hero-sofas", "home", '.category-tile[href="/pages/sofas"] img', files + "engaged_5.jpg?v=1767435623", ""],
-  ["home-hero-chairs", "home", '.category-tile[href="/pages/chairs"] img', files + "engaged_6_1.jpg?v=1767444019", ""],
-  ["home-hero-tables", "home", '.category-tile[href="/pages/tables"] img', files + "engaged_8_1.jpg?v=1767444598", ""],
-  ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', files + "engaged_9_1.jpg?v=1767448207", ""],
+  ["home-hero-sofas", "home", '.category-tile[href="/pages/sofas"] img', "/media/home/hero-sofas.webp", ""],
+  ["home-hero-chairs", "home", '.category-tile[href="/pages/chairs"] img', "/media/home/hero-chairs.webp", ""],
+  ["home-hero-tables", "home", '.category-tile[href="/pages/tables"] img', "/media/home/hero-tables.webp", ""],
+  ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', "/media/home/hero-beds.webp", ""],
   ["home-nimbus", "home", ".home-nimbus-media img", files + "Chairs_9.svg", "The Nimbus Collection — cloud-like upholstered furniture", files + "Chairs_300_x_600_px.webp?width=900"],
   ["home-newsletter", "home", ".home-newsletter img", files + "Cover_Image_Maple_1.png", "Maple Furnishers"],
   ["home-testimonial-poster", "home", ".home-testimonial video", files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960", "Maple customer testimonial"],

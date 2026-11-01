@@ -167,12 +167,3 @@ test("navigation items and footer columns drag and save", async () => {
   } finally { await app.close(); }
 });
 
-test("authored page blocks drag and save", async () => {
-  const app = await setup(content => { content.pages = [{ slug: "guide", title: "Guide", description: "", body: "First paragraph\n\nSecond paragraph\n\nThird paragraph", banner: null }]; });
-  try {
-    await click("Pages"); await click("Use structured blocks");
-    await drag("Block 3", "ArrowUp", 2);
-    const content = await app.save();
-    assert.deepEqual(content.pages[0]!.blocks!.map(block => (block as { text: string }).text), ["Third paragraph", "First paragraph", "Second paragraph"]);
-  } finally { await app.close(); }
-});
