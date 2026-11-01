@@ -1,0 +1,47 @@
+.search-dialog {
+  width: min(672px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 112px);
+  margin: 94px auto 18px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.search-dialog::backdrop { background: #17171175; }
+.search-discovery-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--paper);
+}
+.search-discovery-form > svg { flex: none; }
+.search-discovery-form input { min-width: 0; flex: 1; border: 0; padding-inline: 0; background: transparent; }
+.search-discovery-form button { flex: none; min-height: 44px; }
+.search-discovery { padding: 20px; }
+.search-discovery h2 { font-size: 18px; line-height: 1.4; margin: 0 0 16px; }
+.search-discovery p { margin: 0 0 16px; }
+.search-section-heading { display: flex; gap: 16px; justify-content: space-between; align-items: baseline; }
+.search-section-heading button { min-height: 44px; }
+.search-recent-section { margin-bottom: 28px; }
+.search-product-list { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; padding: 0; margin: 0; }
+.search-product-list > li { min-width: 0; }
+.search-product-card { display: block; color: inherit; text-decoration: none; }
+.search-product-image { display: block; position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #eeede9; }
+.search-product-list .product-card-name { font-size: 14px; overflow-wrap: anywhere; }
+.search-product-list .product-card-price { flex-wrap: wrap; font-size: 12px; gap: 4px 8px; margin: 8px 0; }
+.search-product-list .product-card-options { font-size: 12px; }
+.search-discovery .search-view-all { display: flex; width: 100%; margin-top: 24px; }
+@media (max-width: 749px) {
+  .search-dialog { width: calc(100vw - 24px); margin-top: 12px; max-height: calc(100dvh - 24px); }
+  .search-discovery-form { padding: 8px 12px; gap: 8px; }
+  .search-discovery { padding: 16px 12px; }
+  .search-product-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+}

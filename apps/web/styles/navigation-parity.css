@@ -1,0 +1,448 @@
+/* Shopify main-menu snapshot, 25 Oct 2026: full-width panels and nested mobile drawer. */
+.utility-links a {
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+}
+.maple-desktop-nav {
+  position: relative;
+  z-index: 35;
+  height: 38px;
+  gap: 24px;
+  font:
+    700 16px/1.5 "Red Hat Display",
+    sans-serif;
+}
+.maple-menu-trigger-wrap {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+.maple-menu-trigger {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.maple-desktop-nav > a {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.maple-menu-trigger:hover,
+.maple-menu-trigger[aria-expanded="true"],
+.maple-desktop-nav > a:hover {
+  color: #555;
+}
+.maple-mega {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: var(--paper);
+  border-bottom: 1px solid #e2e2e2;
+}
+.maple-mega-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 20px;
+  padding: 28px 40px 28px;
+}
+.maple-mega-column {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-right: 20px;
+}
+.maple-mega-column:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #e2e2e2;
+}
+.maple-mega-column:not(:first-child) {
+  padding-left: 34px;
+}
+.maple-menu-link,
+.maple-menu-parent {
+  display: block;
+  padding: 4px 0;
+  font:
+    700 14px/23.4px "Red Hat Display",
+    sans-serif;
+  color: #555;
+}
+.maple-menu-parent {
+  font-size: 16px;
+  line-height: 25.6px;
+  color: #000;
+}
+.maple-menu-link:hover,
+.maple-menu-parent:hover {
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+.maple-desktop-nav :focus-visible,
+.maple-mobile-drawer :focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+.maple-mobile-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: calc(100% - 20px);
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Red Hat Display", sans-serif;
+  overflow: hidden;
+}
+.maple-mobile-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+.maple-mobile-drawer::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.maple-drawer-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.maple-drawer-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.maple-drawer-back {
+  gap: 10px;
+  padding: 0 14px;
+  font:
+    400 14px/1.4 "Red Hat Display",
+    sans-serif;
+}
+.maple-drawer-back + .maple-drawer-close {
+  margin-left: auto;
+  margin-right: 16px;
+}
+.maple-drawer-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b8b1a5 var(--paper);
+}
+.maple-drawer-main {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px 0;
+}
+.maple-drawer-main > a,
+.maple-drawer-main > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: #555;
+  text-align: left;
+  font:
+    700 28px/1.2 "Red Hat Display",
+    sans-serif;
+  cursor: pointer;
+}
+.maple-drawer-submenu {
+  padding: 4px 18px 0;
+}
+.maple-drawer-group + .maple-drawer-group {
+  margin-top: 10px;
+}
+.maple-menu-products {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 0 20px 10px;
+  margin-top: 50px;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b8b1a5 var(--paper);
+}
+.maple-menu-product {
+  flex: 0 0 130px;
+  font:
+    400 16px/1.25 "Red Hat Display",
+    sans-serif;
+}
+.maple-menu-product img {
+  width: 130px;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 8px;
+}
+.maple-menu-product span,
+.maple-menu-product del {
+  display: block;
+}
+.maple-menu-product > span:first-of-type {
+  margin-bottom: 4px;
+}
+.maple-menu-product del {
+  color: #666;
+}
+@media (min-width: 750px) and (max-width: 1000px) {
+  .maple-mega-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .maple-mega-column:not(:first-child) {
+    padding-left: 8px;
+  }
+}
+@media (max-width: 749px) {
+  .maple-desktop-nav,
+  .utility-links,
+  .account-button {
+    display: none;
+  }
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+  .header-main {
+    height: 76px;
+    padding: 0 14px;
+  }
+  .brand,
+  .brand img {
+    width: 128px;
+    height: 64px;
+  }
+  .header-actions {
+    gap: 2px;
+  }
+  .header-actions .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.maple-drawer-main + .maple-menu-products {
+  margin-top: auto;
+  padding-top: 50px;
+  padding-bottom: 30px;
+}
+.maple-drawer-submenu .maple-menu-parent {
+  color: #555;
+  line-height: 23.4px;
+}
+
+/* Suggested design: one shared header, visual room discovery and clear category groups. */
+.maple-desktop-nav {
+  height: 50px;
+  font-size: 16px;
+  gap: 32px;
+}
+.maple-menu-trigger {
+  position: relative;
+}
+.maple-menu-trigger[aria-expanded="true"] {
+  color: var(--burgundy);
+}
+.maple-menu-trigger[aria-expanded="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  height: 2px;
+  background: var(--burgundy);
+  left: 0;
+  right: 0;
+}
+.maple-mega {
+  left: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr) 190px;
+  gap: 24px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 18px 30px #292d2814;
+  max-height: calc(100dvh - 190px);
+  overflow-y: auto;
+}
+.maple-mega-grid {
+  display: flex;
+  gap: 18px;
+  padding: 4px 0;
+}
+.maple-mega-column {
+  flex: 1;
+  padding: 0;
+  min-width: 0;
+}
+.maple-mega-column:not(:first-child) {
+  padding-left: 12px;
+}
+.maple-mega-column:not(:last-child)::after {
+  right: -8px;
+  background: #eeece7;
+}
+.maple-menu-link {
+  font-size: 14px;
+  line-height: 23.4px;
+  font-weight: 700;
+  padding-block: 5px;
+}
+.maple-menu-parent {
+  font-size: 16px;
+  padding-bottom: 10px;
+  font-weight: 700;
+}
+.maple-mega-feature {
+  background: #f6f3ef;
+  padding: 12px;
+  border-radius: 8px;
+}
+.maple-mega-feature img {
+  width: 100%;
+  height: 146px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.maple-mega-feature > span {
+  display: block;
+  color: var(--burgundy);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 16px;
+}
+.maple-mega-feature h2 {
+  font-size: 25px;
+  margin: 8px 0 16px;
+}
+.maple-mega-feature a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--burgundy);
+  font-size: 11px;
+}
+.maple-mega-discovery {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #faf8f5;
+  padding: 10px 16px;
+  border-radius: 8px;
+}
+.maple-mega-discovery a {
+  padding: 16px 0;
+  font-size: 13px;
+}
+.maple-mega-discovery strong {
+  font-weight: 600;
+}
+.maple-mega-discovery span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.maple-mega-discovery a:last-child {
+  margin-top: auto;
+  color: var(--burgundy);
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 750px) and (max-width: 1100px) {
+  .maple-mega {
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 18px;
+    padding: 18px;
+    left: 0;
+    width: 100%;
+  }
+  .maple-mega-discovery {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .maple-mega-discovery a:last-child {
+    margin: 0;
+    border: 0;
+  }
+  .maple-mega-feature img {
+    height: 120px;
+  }
+  .maple-mega-feature h2 {
+    font-size: 22px;
+  }
+}
+@media (max-width: 749px) {
+  .header-actions .icon-button,
+  .mobile-menu-button {
+    width: 40px;
+    height: 44px;
+  }
+  .header-actions {
+    gap: 0;
+  }
+  .brand,
+  .brand img {
+    width: 112px;
+  }
+  .brand {
+    left: 43%;
+  }
+}
+.maple-drawer-quick-links {
+  display: flex;
+  flex-direction: column;
+  margin: 24px 18px 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+}
+.maple-drawer-quick-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--burgundy);
+}
+.maple-drawer-quick-links + .maple-menu-products {
+  margin-top: 24px;
+}

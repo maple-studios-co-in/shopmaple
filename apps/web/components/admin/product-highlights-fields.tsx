@@ -166,7 +166,7 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
   ];
 
   return <section aria-label="Product highlights" className="grid gap-10">
-    <PanelHeader className="mb-0" title="Product highlights" description="Colours, New badges and review ratings shown on product cards. Cards show only what you set here." />
+    <PanelHeader className="mb-0" title="Product highlights" description="Colours, New badges and review ratings shown on the product page and its &quot;More …&quot; row. Only what you set here is shown." />
 
     <section aria-label="Colours" className="grid min-w-0 content-start gap-3">
       <SectionHeading className="mt-0 mb-0" description="Give an option name a colour, exactly as the product's option is called, such as Deep Atlantic. A card shows a dot for each of its options that has a colour.">

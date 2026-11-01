@@ -101,7 +101,7 @@ test("published destinations control every collection campaign placement", async
           searchParams: Promise.resolve({}),
         }),
       );
-      const links = [...doc.querySelectorAll("[data-campaign] [data-campaign-cta]")];
+      const links = [...doc.querySelectorAll("[data-campaign] .campaign-cta")];
       assert.ok(links.length > 0);
       for (const link of links)
         assert.equal(

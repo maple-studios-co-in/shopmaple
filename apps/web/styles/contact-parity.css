@@ -1,0 +1,712 @@
+/* Contact and bulk-enquiry page composition from the current public storefront. */
+.cp-page {
+  color: #292d28;
+  padding-bottom: 24px;
+}
+.cp-container {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: 40px;
+}
+.cp-divider {
+  border-top: 1px solid #d8d5cd;
+  margin-block: 32px;
+}
+.cp-divider-top {
+  margin-block: 16px;
+}
+.cp-divider-inset {
+  width: 90%;
+  margin: 16px auto;
+}
+.cp-contact-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  padding-block: 32px;
+  min-height: 55svh;
+  align-items: start;
+}
+.cp-contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cp-contact-eyebrow {
+  color: #741a14;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+.cp-contact-details h1 {
+  color: #741a14;
+  font-size: 40px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.cp-contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 16px;
+}
+.cp-contact-links a {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.cp-contact-links a:last-child {
+  align-items: flex-start;
+}
+.cp-contact-links img {
+  flex: 0 0 40px;
+}
+.cp-contact-links span {
+  overflow-wrap: anywhere;
+}
+.cp-location-map {
+  width: 90%;
+  height: 200px;
+  border: 0;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+.cp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.cp-form-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.cp-form label {
+  display: block;
+  min-width: 0;
+}
+.cp-form input,
+.cp-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #292d2866;
+  border-radius: 0;
+  background: transparent;
+  color: #292d28;
+  font-size: 16px;
+}
+.cp-form textarea {
+  display: block;
+  resize: vertical;
+  min-height: 230px;
+}
+.cp-form input::placeholder,
+.cp-form textarea::placeholder {
+  color: #52554f;
+  opacity: 1;
+}
+.cp-form input:focus-visible,
+.cp-form textarea:focus-visible {
+  outline: 2px solid #741a14;
+  outline-offset: 3px;
+}
+.cp-form > .button {
+  align-self: flex-start;
+  min-height: 48px;
+  padding-inline: 28px;
+}
+.cp-email-note {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  color: #686a63;
+}
+.cp-enquiry-context {
+  padding: 14px;
+  border: 1px solid #d8d5cd;
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.cp-enquiry-context span {
+  font-size: 13px;
+}
+.cp-section-title {
+  padding-top: 48px;
+}
+.cp-section-title > p {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+.cp-section-title h2 {
+  color: #741a14;
+  font-size: 48px;
+  font-weight: 700;
+  font-style: italic;
+  margin: 0;
+}
+.cp-help {
+  max-width: 1920px;
+  margin: 20px auto 60px;
+  padding-inline: 60px;
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+}
+.cp-help-categories {
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+}
+.cp-help-categories button {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  border: 0;
+  border-right: 4px solid transparent;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: left;
+  color: #1d1d1d;
+  background: transparent;
+}
+.cp-help-categories button.is-active {
+  background: white;
+  border-right-color: #741a14;
+}
+.cp-help-categories button > img {
+  flex: 0 0 52px;
+}
+.cp-help-categories button > span {
+  flex: 1;
+}
+.cp-help-categories strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.cp-help-categories button span span {
+  display: block;
+  font-size: 15px;
+  color: #6f6f6f;
+  margin-top: 8px;
+}
+.cp-help-categories button > svg {
+  flex: 0 0 20px;
+}
+.cp-help-answers {
+  background: white;
+  padding: 0;
+  min-width: 0;
+  border: 1px solid #e5e5e5;
+  border-left: 0;
+}
+.cp-faq {
+  background: white;
+  margin: 0;
+  padding: 24px;
+  border-bottom: 1px solid #e5e5e5;
+}
+.cp-faq summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.45;
+  list-style: none;
+}
+.cp-faq summary::-webkit-details-marker {
+  display: none;
+}
+.cp-faq summary svg {
+  flex-shrink: 0;
+  color: #8f8f8f;
+  transition: transform 0.15s ease;
+}
+.cp-faq[open] summary svg {
+  transform: rotate(45deg);
+}
+.cp-faq p {
+  color: #6f6f6f;
+  font-size: 15px;
+  white-space: pre-line;
+  margin: 16px 0 0;
+}
+.cp-account-note {
+  color: #6f6f6f;
+  font-size: 12px;
+  margin: 20px 24px;
+}
+.cp-account-note a {
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+.cp-bulk-hero {
+  padding: 40px 20px;
+  font-family: "Red Hat Display", Manrope, sans-serif;
+}
+.cp-bulk-scene {
+  max-width: 1800px;
+  margin-inline: auto;
+  min-height: 720px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 24px;
+  overflow: hidden;
+}
+.cp-bulk-image,
+.cp-bulk-shade {
+  position: absolute;
+  inset: 0;
+}
+.cp-bulk-image img {
+  object-fit: fill;
+  object-position: bottom center;
+}
+.cp-bulk-shade {
+  background: linear-gradient(90deg, #00000059, #00000014);
+}
+.cp-bulk-content {
+  position: relative;
+  width: 100%;
+  padding: 32px 70px;
+}
+.cp-bulk-card {
+  width: 460px;
+  max-width: 100%;
+  background: #f4f2ec;
+  padding: 36px 32px;
+  border-radius: 20px;
+}
+.cp-bulk-eyebrow {
+  font-size: 18px;
+  margin: 0 0 8px;
+  color: #000;
+}
+.cp-bulk-card h1 {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #741a14;
+  margin: 0 0 12px;
+}
+.cp-bulk-subtitle {
+  font-size: 18px;
+  color: #1a1a1acc;
+  margin: 0 0 24px;
+}
+.cp-bulk-rule {
+  height: 1px;
+  width: 100px;
+  background: #0000001a;
+  margin-bottom: 24px;
+}
+.cp-form-bulk,
+.cp-form-bulk .cp-form-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cp-form-bulk input {
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 14px;
+  padding: 16px 18px;
+  color: #111;
+}
+.cp-form-bulk > .button {
+  width: 100%;
+  background: #741a14;
+  border: none;
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.cp-bulk-trust {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.cp-bulk-trust > h2 {
+  text-align: center;
+  color: #741a14;
+  font-size: 32px;
+  font-weight: 700;
+}
+.cp-bulk-proof {
+  padding-top: 48px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 24px;
+  text-align: center;
+}
+.cp-bulk-proof > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cp-bulk-proof strong {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 64px;
+  font-weight: 500;
+  color: #741a14;
+  line-height: 80px;
+}
+.cp-bulk-proof img {
+  height: 80px;
+  width: 90px;
+  object-fit: contain;
+}
+.cp-bulk-proof p {
+  margin: 0;
+  font-size: 16px;
+}
+.cp-bulk-process .cp-section-title {
+  padding-top: 24px;
+  margin-bottom: 28px;
+}
+.cp-process-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.cp-process-grid article {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cp-process-image {
+  height: 300px;
+  position: relative;
+}
+.cp-process-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cp-process-image span {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  width: 52px;
+  height: 52px;
+  background: white;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #741a14;
+  font-size: 20px;
+  font-weight: 600;
+}
+.cp-process-text {
+  padding: 24px;
+}
+.cp-process-text h3 {
+  font-size: 28px;
+  color: #111;
+}
+.cp-process-text p {
+  margin: 12px 0 0;
+  color: #555;
+  font-size: 16px;
+}
+.cp-indiamart {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 40px 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 60px;
+}
+.cp-business-badge {
+  display: inline-block;
+  color: #741a14;
+  background: white;
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 22px;
+}
+.cp-indiamart h2 {
+  font-size: 48px;
+  font-weight: 700;
+  font-style: italic;
+  color: #741a14;
+}
+.cp-indiamart-copy > p:not(.cp-business-badge) {
+  color: #5b5b5b;
+  font-size: 16px;
+  line-height: 1.8;
+}
+.cp-indiamart ul {
+  padding: 0;
+  list-style: none;
+  margin: 26px 0;
+  display: grid;
+  gap: 14px;
+}
+.cp-indiamart li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+}
+.cp-indiamart li > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: #f5ede5;
+  color: #741a14;
+  border-radius: 50%;
+}
+.cp-indiamart-cta {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.cp-indiamart-cta > img {
+  width: 100px;
+  height: auto;
+}
+.cp-indiamart-copy > .cp-business-trust {
+  font-size: 12px !important;
+}
+.cp-indiamart-image img {
+  width: 100%;
+  height: auto;
+  max-height: 650px;
+  object-fit: contain;
+}
+@media (min-width: 1024px) {
+  .cp-contact-intro {
+    min-height: 65svh;
+  }
+}
+@media (max-width: 1100px) {
+  .cp-help {
+    grid-template-columns: 340px minmax(0, 1fr);
+    padding-inline: 40px;
+  }
+  .cp-help-categories button {
+    padding: 22px 16px;
+    gap: 12px;
+  }
+  .cp-contact-details h1 {
+    font-size: 34px;
+  }
+  .cp-indiamart {
+    padding-inline: 40px;
+    gap: 32px;
+  }
+}
+@media (max-width: 990px) {
+  .cp-bulk-hero {
+    padding: 14px;
+  }
+  .cp-bulk-scene {
+    min-height: 520px;
+    align-items: flex-end;
+  }
+  .cp-bulk-image img {
+    object-fit: contain;
+    object-position: bottom center;
+  }
+  .cp-bulk-shade {
+    background: linear-gradient(0deg, #0009, #00000014);
+  }
+  .cp-bulk-content {
+    padding: 28px 16px 20px;
+  }
+  .cp-bulk-card {
+    width: 100%;
+    background: transparent;
+    padding: 0;
+  }
+  .cp-bulk-eyebrow {
+    color: var(--burgundy);
+    font-size: 16px;
+  }
+  .cp-bulk-card h1 {
+    color: var(--burgundy);
+    font-size: 32px;
+  }
+  .cp-bulk-subtitle,
+  .cp-bulk-rule {
+    display: none;
+  }
+  .cp-bulk-form-wrap {
+    padding: 20px;
+    margin-top: 18px;
+    background: #f4f2ec;
+    border-radius: 20px;
+  }
+  .cp-help {
+    grid-template-columns: 1fr;
+  }
+  .cp-help-categories {
+    display: flex;
+  }
+  .cp-help-answers {
+    display: none;
+  }
+}
+@media (max-width: 749px) {
+  .cp-container {
+    padding-inline: 16px;
+  }
+  .cp-contact-intro {
+    grid-template-columns: 1fr;
+    padding-block: 20px;
+    gap: 32px;
+    min-height: auto;
+  }
+  .cp-contact-details h1 {
+    font-size: 32px;
+  }
+  .cp-contact-eyebrow {
+    font-size: 22px;
+  }
+  .cp-location-map {
+    width: 90%;
+  }
+  .cp-contact-links a {
+    font-size: 14px;
+  }
+  .cp-form-pair {
+    grid-template-columns: 1fr;
+  }
+  .cp-section-title {
+    padding-top: 24px;
+  }
+  .cp-section-title h2 {
+    font-size: 36px;
+  }
+  .cp-help {
+    padding-inline: 16px;
+    margin-bottom: 40px;
+  }
+  .cp-help-categories {
+    grid-template-columns: 1fr;
+  }
+  .cp-help-categories button {
+    padding: 20px;
+  }
+  .cp-help-categories strong {
+    font-size: 17px;
+  }
+  .cp-help-categories button span span {
+    font-size: 14px;
+  }
+  .cp-faq {
+    padding: 18px;
+  }
+  .cp-faq summary {
+    font-size: 16px;
+  }
+  .cp-bulk-trust > h2 {
+    font-size: 26px;
+  }
+  .cp-bulk-proof {
+    grid-template-columns: 1fr;
+    row-gap: 28px;
+    padding-top: 32px;
+  }
+  .cp-bulk-proof > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .cp-bulk-proof p {
+    font-size: 14px;
+  }
+  .cp-process-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 12px;
+    gap: 16px;
+  }
+  .cp-process-grid article {
+    flex: 0 0 86%;
+    scroll-snap-align: start;
+  }
+  .cp-process-image {
+    height: 250px;
+  }
+  .cp-process-text {
+    padding: 20px;
+  }
+  .cp-process-text h3 {
+    font-size: 25px;
+  }
+  .cp-process-text p {
+    font-size: 15px;
+  }
+  .cp-indiamart {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+    gap: 24px;
+  }
+  .cp-indiamart h2 {
+    font-size: 36px;
+  }
+  .cp-indiamart-cta {
+    gap: 16px;
+  }
+  .cp-indiamart-cta > img {
+    width: 60px;
+  }
+  .cp-indiamart-cta .button {
+    padding-inline: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-faq summary svg {
+    transition: none;
+  }
+}
+
+.cp-help-dialog {
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  padding: 0;
+  background: white;
+  color: #1d1d1d;
+}
+.cp-help-back {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  background: white;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 1px solid #e5e5e5;
+  font-size: 16px;
+  font-weight: 500;
+}
