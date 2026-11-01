@@ -77,6 +77,12 @@
   --text-band--line-height: 1.1;
   --text-display: 40px;
   --text-display--line-height: 1.1;
+  /* Frame 999:3 ("1440w light"): its burgundy is a shade lighter than the brand's, and its ticker scrolls. */
+  --color-maple: #80241c;
+  --animate-pdp-ticker: pdp-ticker 48s linear infinite;
+  @keyframes pdp-ticker {
+    to { transform: translateX(-50%); }
+  }
 }
 
 /* Admin tokens. The values live on .shop-admin (admin.css); utilities read them inline, so

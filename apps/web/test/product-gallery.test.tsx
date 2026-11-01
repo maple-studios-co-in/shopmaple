@@ -156,7 +156,7 @@ test("all photos in a large gallery remain selectable, zoomable and keyboard rea
     assert.equal(document.querySelectorAll("[data-thumbnails] button").length, 240);
     await act(async () => button("Show product image 240").click());
     assert.equal(selected(), "Show product image 240");
-    assert.match(document.querySelector("[data-gallery-controls]")!.textContent!, /240 \/ 240/);
+    assert.equal(document.querySelector("[data-gallery-status]")!.textContent, "Photo 240 of 240");
     assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");
     await act(async () => button("Enlarge product image").click());
     assert.equal(document.querySelector("[data-zoom] img")?.getAttribute("src"), "https://example.com/gallery-239.jpg");

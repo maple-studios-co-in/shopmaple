@@ -17,9 +17,10 @@ export type SelectorVariant = {
 };
 
 /**
- * The product page's finishes ("Personalise your finish" in "Maple / PDF Review / Product Detail"):
- * a 34 px circle and the name per option. `photo` circles show the option's photo (or its colour);
- * `swatch` circles show staff-entered colours; `text` options have neither and show the name alone.
+ * The product page's finishes (frame 999:3's "Fabric Color: Black"): a label naming the chosen finish above a
+ * row of photo tiles. `photo` options show the option's own photo (a tile without one shows its name);
+ * `swatch` options show a staff-entered colour as a circle with the name below; `text` options have
+ * neither and show the name alone.
  */
 export function VariantSelector({ variants, selectedId, onSelect, layout = "photo" }: {
   variants: SelectorVariant[];
@@ -27,33 +28,42 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
   onSelect: (id: string) => void;
   layout?: "photo" | "swatch" | "text";
 }) {
+  const chosen = variants.find((variant) => variant.id === selectedId);
   return (
     <fieldset data-variants={layout} className="m-0 min-w-0 border-0 p-0">
-      <legend className="mb-5 p-0 text-[18px] leading-[1.45] font-bold text-espresso">Personalise your finish</legend>
-      <div className="flex flex-wrap gap-x-3 gap-y-4">
+      <legend className="mb-4 p-0 text-[14px] leading-[1.6] text-black">Finish: <span className="font-semibold">{chosen?.name}</span></legend>
+      <div className={cx("flex flex-wrap", layout === "photo" ? "gap-3" : "gap-x-3 gap-y-4")}>
         {variants.map((variant) => {
           const selected = variant.id === selectedId;
           return (
             <label key={variant.id}
-              className={cx("group/option relative flex cursor-pointer flex-col items-start gap-2 text-meta text-espresso has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-brand",
-                layout === "text" ? "rounded-[6px] border border-solid px-3.5 py-2.5" : "w-[100px] sm:w-[130px]",
-                layout === "text" && (selected ? "border-espresso" : "border-sand hover:border-taupe"))}>
+              className={cx("group/option relative flex cursor-pointer text-meta text-espresso has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-maple",
+                layout === "photo" && "w-[calc((100%-24px)/3)] max-w-[122px] flex-col items-start gap-1.5",
+                layout === "swatch" && "w-[100px] flex-col items-start gap-2 sm:w-[130px]",
+                layout === "text" && cx("flex-col items-start gap-2 rounded-[6px] border border-solid px-3.5 py-2.5", selected ? "border-espresso" : "border-sand hover:border-taupe"))}>
               <input type="radio" name="variant" value={variant.id} checked={selected} onChange={() => onSelect(variant.id)} className="sr-only" />
-              {layout !== "text" && (
+              {layout === "photo" && (
                 <span aria-hidden="true"
-                  className={cx("relative block size-[34px] shrink-0 overflow-hidden rounded-full bg-cream shadow-[0_0_0_1px_rgb(41_37_31/0.12)] transition-shadow [&_img]:object-cover",
-                    selected ? "outline-2 outline-offset-2 outline-espresso outline-solid" : "group-hover/option:outline-1 group-hover/option:outline-offset-2 group-hover/option:outline-sand group-hover/option:outline-solid")}>
-                  {layout === "photo" && variant.image
-                    ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="34px" /></span>
+                  className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] bg-cream shadow-[0_0_0_2px_rgb(86_60_73/0.12)] transition-shadow motion-reduce:transition-none [&_img]:object-cover",
+                    selected && "shadow-[0_0_0_2px_#563c49]")}>
+                  {variant.image
+                    ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="122px" /></span>
                     : variant.swatch
                       ? <span data-variant-swatch className="absolute inset-0" style={{ backgroundColor: variant.swatch }} />
-                      : <span data-variant-placeholder className="absolute inset-0" />}
+                      : <span data-variant-placeholder className="absolute inset-0 grid place-items-center p-1 text-center text-label">{variant.name}</span>}
                 </span>
               )}
-              <span className={cx("grid gap-0.5", selected && "font-semibold")}>
-                {variant.name}
-                {variant.code && <small data-variant-code className="text-label font-normal text-taupe">Item code: {variant.code}</small>}
-              </span>
+              {layout === "swatch" && (
+                <span aria-hidden="true"
+                  className={cx("relative block size-[34px] shrink-0 overflow-hidden rounded-full bg-cream shadow-[0_0_0_1px_rgb(41_37_31/0.12)] transition-shadow",
+                    selected ? "outline-2 outline-offset-2 outline-[#563c49] outline-solid" : "group-hover/option:outline-1 group-hover/option:outline-offset-2 group-hover/option:outline-sand group-hover/option:outline-solid")}>
+                  {variant.swatch
+                    ? <span data-variant-swatch className="absolute inset-0" style={{ backgroundColor: variant.swatch }} />
+                    : <span data-variant-placeholder className="absolute inset-0" />}
+                </span>
+              )}
+              <span className={cx(layout === "photo" ? "sr-only" : "grid gap-0.5", selected && "font-semibold")}>{variant.name}</span>
+              {variant.code && <small data-variant-code className="text-label font-normal text-taupe">Item code: {variant.code}</small>}
             </label>
           );
         })}

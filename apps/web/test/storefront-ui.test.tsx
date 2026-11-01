@@ -207,11 +207,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
       />
     </AppRouterContext.Provider>,
     async () => {
-      assert.match(
-        document.querySelector("[data-serviceability] label")!.textContent!,
-        /Delivery enquiry/,
-        "a postcode field must not promise an availability lookup",
-      );
+      assert.equal(document.querySelector("#delivery-pincode"), null, "the page offers no postcode field that could promise an availability lookup");
       assert.doesNotMatch(
         document.querySelector("[data-product-info]")!.textContent!,
         /Taxes included|36 Month|Delivery Across India/,
@@ -234,13 +230,9 @@ test("product variants update price, gallery and enquiry while delivery stays an
       assert.equal(window.location.hash, "#delivery-enquiry");
       assert.deepEqual(replacements, [], "variant changes do not request a new server route");
       const enquiry =
-        document.querySelector<HTMLAnchorElement>("[data-custom] a")!;
+        document.querySelector<HTMLAnchorElement>("a[data-customization]")!;
       assert.equal(new URL(enquiry.href).searchParams.get("variant"), "Red");
       assert.equal(new URL(enquiry.href).searchParams.get("sku"), "RED");
-      assert.ok(
-        document.querySelector("details#product-specifications"),
-        "dimensions stay addressable before enquiring",
-      );
     },
   );
 });

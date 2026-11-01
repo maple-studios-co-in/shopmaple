@@ -32,20 +32,19 @@ const mapped: Product = {
   variants: [{ ...chair.variants[0]!, id: "preview-46728293843133" }, chair.variants[1]!],
 };
 const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
-const input = () => document.querySelector<HTMLInputElement>("#delivery-pincode")!;
+// The page keeps no delivery form; the project enquiry's phone field stands in for state the shopper typed on the page.
+const input = () => document.querySelector<HTMLInputElement>('[data-enquiry] input[name="phone"]')!;
 const option = (id: string) => document.querySelector<HTMLInputElement>(`input[name="variant"][value="${id}"]`)!;
 const button = (label: string) => document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
 const selected = () => document.querySelector<HTMLInputElement>('input[name="variant"]:checked')?.value;
 const selectedImage = () => document.querySelector('[data-thumbnails] [aria-pressed="true"]')?.getAttribute("aria-label");
-async function fillPin(value = "110015") {
+async function fillPin(value = "9811000000") {
   await act(async () => {
-    // React's legacy input-event path in JSDOM observes keyup on the focused input.
     input().focus();
     Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, "value")!.set!.call(input(), value);
-    input().dispatchEvent(new dom.window.KeyboardEvent("keyup", { key: "5", bubbles: true }));
+    input().dispatchEvent(new dom.window.Event("input", { bubbles: true }));
   });
-  await act(async () => input().form!.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })));
-  assert.match(document.querySelector("[data-serviceability] [role=status]")!.textContent!, /110015/);
+  assert.equal(input().value, value);
 }
 async function withRoute(run: (render: (variant?: string, handle?: string, retainUrl?: boolean) => Promise<void>, replacements: string[]) => Promise<void>, initial?: string) {
   const root = createRoot(document.getElementById("root")!);
@@ -77,13 +76,13 @@ test("the real product route honors explicit options, legacy aliases and safe fa
     await render("third");
     assert.equal(selected(), "preview-third");
     assert.equal(document.querySelector("[data-purchase] button"), null);
-    assert.match(document.querySelector("[data-disclosure]")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
+    assert.equal(document.querySelector("a[data-primary]")?.textContent, "Enquire about this piece");
     await render("unknown");
     assert.equal(selected(), "first");
   }, "second");
 });
 
-test("changing products deliberately resets delivery, quantity and gallery state", async () => {
+test("changing products deliberately resets the typed enquiry, quantity and gallery state", async () => {
   await withRoute(async render => {
     await fillPin();
     await act(async () => button("Increase quantity").click());
@@ -96,7 +95,7 @@ test("changing products deliberately resets delivery, quantity and gallery state
   });
 });
 
-test("same-product variant navigation retains postcode, quantity, gallery and keyboard focus", async () => {
+test("same-product variant navigation retains the typed enquiry, quantity, gallery and keyboard focus", async () => {
   await withRoute(async (render, replacements) => {
     await fillPin();
     await act(async () => button("Increase quantity").click());
@@ -107,15 +106,14 @@ test("same-product variant navigation retains postcode, quantity, gallery and ke
     assert.deepEqual(replacements, [], "option changes need no asynchronous route request");
     assert.equal(new URL(window.location.href).searchParams.get("variant"), "second");
     await render("second");
-    assert.equal(input().value, "110015", "completed query navigation must retain the entered postcode");
+    assert.equal(input().value, "9811000000", "completed query navigation must retain what the shopper typed");
     assert.ok(input() === pin, "the same-product input must retain its DOM identity");
     assert.ok(document.activeElement === second, "the selected option must retain keyboard focus");
     assert.equal(document.querySelector('output[aria-label="Quantity"]')?.textContent, "2");
     assert.equal(selectedImage(), "Show product image 2");
     assert.equal(selected(), "second");
-    const enquiry = document.querySelector<HTMLAnchorElement>("[data-custom] a")!;
-    assert.equal(new URL(enquiry.href).searchParams.get("pincode"), "110015");
-    assert.equal(new URL(enquiry.href).searchParams.get("sku"), "SECOND");
+    const enquiry = document.querySelector<HTMLAnchorElement>("a[data-customization]")!;
+    assert.equal(new URL(enquiry.href, "http://localhost:3000").searchParams.get("sku"), "SECOND");
   });
 });
 
@@ -127,7 +125,7 @@ test("server query changes update the option while preserving the current enquir
       await render(query);
       assert.equal(selected(), expected, "external query navigation must update the selected variant");
       assert.ok(input() === pin, "external query navigation must preserve the enquiry input");
-      assert.equal(input().value, "110015");
+      assert.equal(input().value, "9811000000");
     }
   });
 });
@@ -141,7 +139,7 @@ test("an intermediate query acknowledgement cannot replace a newer local option"
     assert.equal(selected(), "preview-third", "the current URL must win over an older server prop");
     await render("preview-third");
     assert.equal(selected(), "preview-third");
-    assert.equal(input().value, "110015");
+    assert.equal(input().value, "9811000000");
     await render("second");
     assert.equal(selected(), "second", "after acknowledgement, external navigation remains authoritative");
   });
@@ -165,7 +163,7 @@ test("external mapped options update their image and acknowledgements preserve a
     await act(async () => button("Show product image 2").click());
     await render("preview-46728293843133", mapped.handle);
     assert.equal(selectedImage(), "Show product image 1", "external option uses its validated mapped image");
-    assert.equal(input().value, "110015");
+    assert.equal(input().value, "9811000000");
     await render("second", mapped.handle);
     await act(async () => option("preview-46728293843133").click());
     await act(async () => button("Show product image 2").click());
@@ -188,9 +186,9 @@ test("variant URL updates preserve the current path, unrelated query and hash wi
   });
 });
 
-test("the product page ends with its reviews and related pieces, not the homepage newsletter and values", async () => {
+test("the product page has its reviews band and project enquiry, not the homepage newsletter and values", async () => {
   await withRoute(async () => {
-    assert.ok(document.querySelector("[data-product-details]"));
+    assert.ok(document.querySelector("[data-reviews]") && document.querySelector("[data-enquiry]"), "the reviews band and the project enquiry are on the page");
     assert.equal(Boolean(document.querySelector("[data-newsletter-form]")), false, "No newsletter sign-up on the product page");
     assert.equal(Boolean(document.querySelector("[data-home-values]")), false, "No homepage values section on the product page");
   });

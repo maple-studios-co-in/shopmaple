@@ -49,8 +49,9 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
-      />
-      <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} category={product.category} />
+      >
+        <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} />
+      </ProductDetail>
     </>
   );
 }
