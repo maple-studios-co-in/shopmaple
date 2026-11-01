@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { productPdpContentSchema } from "./product-pdp-content";
 import { categories } from "./catalogue-cards";
+import { enquiryKindSchema, singleLineText } from "./enquiry-admin";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
@@ -164,11 +165,19 @@ const enquiryContextSchema = z
     pincode: z
       .union([z.literal(""), z.string().regex(/^[1-9][0-9]{5}$/)])
       .default(""),
+    // A custom request also names the product page and what the shopper wants changed. Optional, so the
+    // other kinds' payloads (and their idempotency hashes) are unchanged.
+    handle: z.union([z.literal(""), z.string().max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]).optional(),
+    fabric: singleLineText(200).optional(),
+    finish: singleLineText(200).optional(),
+    size: singleLineText(200).optional(),
+    quantity: z.number().int().min(1).max(999).optional(),
   })
   .strict();
+const customOptions = ["handle", "fabric", "finish", "size", "quantity"] as const;
 export const enquiryInputSchema = z
   .object({
-    kind: z.enum(["contact", "project", "bulk"]),
+    kind: enquiryKindSchema,
     name: z.string().trim().max(100).default(""),
     email: z
       .email()
@@ -190,6 +199,19 @@ export const enquiryInputSchema = z
         code: "custom",
         message: "Name and phone are required for bulk enquiries",
       });
+    const context = value.context;
+    if (value.kind !== "custom") {
+      if (customOptions.some((key) => context[key] !== undefined))
+        ctx.addIssue({ code: "custom", message: "Only custom requests carry custom options" });
+      return;
+    }
+    // Staff call back to price the request, so they need someone to call and the piece it is about.
+    if (!value.name || !value.phone)
+      ctx.addIssue({ code: "custom", message: "Name and phone are required for custom requests" });
+    if (!context.product || !context.handle)
+      ctx.addIssue({ code: "custom", message: "A custom request names its product" });
+    if (!context.fabric && !context.finish && !context.size && !value.message)
+      ctx.addIssue({ code: "custom", message: "Tell us what you would like changed" });
   });
 export type EnquiryInput = z.infer<typeof enquiryInputSchema>;
 export const enquiryReceiptSchema = z.object({

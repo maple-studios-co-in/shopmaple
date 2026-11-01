@@ -15,7 +15,7 @@ import { EmptyState, Notice, Skeleton, StageChip, ageLabel, formatDate, formatDa
 import { useAdminRequest } from "./use-admin-request";
 
 const detailSchema = z.object({ contact: contactSchema, enquiries: z.array(enquiryAdminSummarySchema).max(50) }).strict();
-export const kindLabels: Record<string, string> = { contact: "Contact", project: "Project", bulk: "Bulk" };
+export const kindLabels: Record<string, string> = { contact: "Contact", project: "Project", bulk: "Bulk", custom: "Custom" };
 export const ago = (createdAt: string, today: string) => { const age = ageLabel(createdAt, today); return age === "Today" ? "Today" : `${age} ago`; };
 const tagList = (tags: string[], className = "", mark = false) => <span className={cn("flex flex-wrap gap-1.5", className)}>
   {tags.map(tag => <Badge key={tag} variant="secondary" className="rounded-md" data-tag={mark ? "" : undefined}>{tag}</Badge>)}</span>;
