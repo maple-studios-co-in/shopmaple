@@ -59,3 +59,11 @@ test("reordering, hiding and navigation edits reload no thumbnail", () => {
   assert.deepEqual(changed((c) => { c.motion.autoplayCities = false; c.motion.autoplaySocial = false; }), [], "thumbnails never move, so autoplay never changes them");
   assert.deepEqual(changed((c) => { c.pages = []; }), []);
 });
+
+test("editing hero slides or extra Nimbus collections reloads exactly that section's thumbnail", () => {
+  const slide = { kind: "image" as const, src: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "A sofa", headline: "Made by hand", intro: "In Delhi." };
+  assert.deepEqual(changed((c) => { c.homeDetails!.hero.slides = [slide]; }), ["hero"]);
+  assert.deepEqual(changed((c) => { c.homeDetails!.hero.slides = [slide, { ...slide, headline: "Second" }]; }), ["hero"]);
+  const collection = { heading: "Terra", tagline: "Warm", features: ["a", "b", "c", "d"], cta: "Shop", href: "/collections/terra", image: slide.src, alt: "Terra" };
+  assert.deepEqual(changed((c) => { c.homeDetails!.nimbus.slides = [collection]; }), ["nimbus"]);
+});
