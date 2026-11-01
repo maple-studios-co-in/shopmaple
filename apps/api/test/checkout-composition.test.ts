@@ -16,6 +16,7 @@ const token = "f".repeat(64);
 const cookie = `maple_cart=${token}`;
 const webhookSecret = "composition-webhook-secret";
 const keeriToken = "k".repeat(40);
+const resendTestKey = "re_test_test";
 const fullEnv = {
   CHECKOUT_ENABLED: "true",
   KEERI_ORIGIN: "https://keeri.example.test",
@@ -27,7 +28,7 @@ const fullEnv = {
   RAZORPAY_WEBHOOK_SECRET: webhookSecret,
   CHECKOUT_DELIVERY_METHODS: JSON.stringify([{ id: "standard", label: "Standard delivery" }]),
   // Order emails reuse the enquiry sender unless ORDER_* overrides are set.
-  ENQUIRY_RESEND_API_KEY: "re_test_test",
+  ENQUIRY_RESEND_API_KEY: resendTestKey,
   ENQUIRY_MAIL_FROM: "orders@maple.example.com",
   ENQUIRY_MAIL_TO: "staff@maple.example.com",
   WEB_ORIGIN: origin,
@@ -117,7 +118,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
       amount_refunded: 0, refund_status: null });
   }
   if (u.host === "api.resend.com") {
-    assert.equal(new Headers(init.headers).get("authorization"), "Bearer re_test_test");
+    assert.equal(new Headers(init.headers).get("authorization"), `Bearer ${resendTestKey}`);
     if (fake.emailStatus === 409) return Response.json({ name: "invalid_idempotent_request" }, { status: 409 });
     if (fake.emailStatus !== 200) return new Response("provider detail", { status: fake.emailStatus });
     const body = JSON.parse(String(init.body));
