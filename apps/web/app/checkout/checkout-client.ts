@@ -49,6 +49,8 @@ export const checkoutAttemptSchema = z.object({
   orderReference: z.string().nullable().optional(),
   /** When the payment window must close: two minutes before Keeri's stock hold lapses. */
   payBy: z.iso.datetime({ offset: true }).nullable().optional(),
+  /** The same window in seconds from now on the server's clock; preferred over `payBy`. */
+  payWithinSeconds: z.number().int().min(0).nullable().optional(),
 });
 export type CheckoutAttempt = z.infer<typeof checkoutAttemptSchema>;
 
@@ -68,6 +70,7 @@ const safeMessages: Record<string, CheckoutClientError["kind"]> = {
   CHECKOUT_IN_PROGRESS: "blocked",
   QUOTE_REJECTED: "invalid",
   DELIVERY_UNPRICED: "unpriced",
+  PRICE_CHANGED: "invalid",
   QUOTE_UNAVAILABLE: "unavailable",
   PAYMENT_UNAVAILABLE: "unavailable",
   CHECKOUT_NOT_FOUND: "lost",

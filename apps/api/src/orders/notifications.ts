@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { quoteSnapshotSchema, type QuoteSnapshot } from "@shopmaple/contracts";
-import type { CheckoutAttempt, OrderNotification, PrismaClient } from "@prisma/client";
+import { Prisma, type CheckoutAttempt, type OrderNotification, type PrismaClient } from "@prisma/client";
 import {
   sendTransactionalEmail,
   type EnquiryDeliveryConfig,
@@ -14,7 +14,7 @@ import {
  * answer can never send twice. Bodies are rendered at send time from the attempt
  * and are plain text: no customer data is copied into the notification row.
  */
-export type NotificationKind = "customer_confirmed" | "customer_received" | "staff_order" | "staff_attention";
+export type NotificationKind = "customer_confirmed" | "customer_received" | "staff_order" | "staff_payment" | "staff_attention";
 interface Options {
   merchantScope: string;
   email: EnquiryDeliveryConfig;
@@ -41,40 +41,42 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       skipDuplicates: true,
     });
   }
-  /** Record the emails each attempt now deserves. Idempotent: an attempt that already
-   * has its staff email is not looked at again, so the scan stays small. */
+  /** Record the emails each attempt and payment now deserves. Idempotent: each query
+   * skips subjects that already have the email of its kind, so the scan stays small.
+   * Three staff kinds keep the cases apart: `staff_order` (confirmed), `staff_payment`
+   * (money was taken and needs a person) and `staff_attention` (no money, a leftover hold). */
   async function sweep() {
-    const attempts = await db.$queryRaw<Array<Pick<CheckoutAttempt, "id" | "state" | "snapshot">>>`
-      SELECT a."id", a."state", a."snapshot" FROM "CheckoutAttempt" a
+    const unsent = (kind: NotificationKind) => Prisma.sql`NOT EXISTS (SELECT 1 FROM "OrderNotification" n
+      WHERE n."merchantScope" = a."merchantScope" AND n."subjectId" = a."id" AND n."kind" = ${kind})`;
+    const isV2 = (snapshot: unknown) => quoteSnapshotSchema.safeParse(snapshot).success;
+    const confirmed = await db.$queryRaw<Array<{ id: string; snapshot: unknown }>>`
+      SELECT a."id", a."snapshot" FROM "CheckoutAttempt" a
+      JOIN "OrderOutbox" o ON o."attemptId" = a."id" AND o."kind" = 'keeri.order.captured.v2'
+      WHERE a."merchantScope" = ${merchantScope} AND a."state" = 'captured' AND o."state" = 'delivered'
+        AND o."externalOrderId" IS NOT NULL AND ${unsent("staff_order")} LIMIT 200`;
+    for (const a of confirmed) await want(a.id, isV2(a.snapshot) ? ["customer_confirmed", "staff_order"] : ["staff_order"]);
+    const paidProblems = await db.$queryRaw<Array<{ id: string; snapshot: unknown }>>`
+      SELECT a."id", a."snapshot" FROM "CheckoutAttempt" a
+      LEFT JOIN "OrderOutbox" o ON o."attemptId" = a."id" AND o."kind" LIKE 'keeri.order.captured.%'
       WHERE a."merchantScope" = ${merchantScope}
-        AND a."state" IN ('captured', 'paid_hold_lapsed', 'reconciliation_required')
-        AND NOT EXISTS (SELECT 1 FROM "OrderNotification" n WHERE n."merchantScope" = a."merchantScope"
-          AND n."subjectId" = a."id" AND n."kind" IN ('staff_order', 'staff_attention'))
-      ORDER BY a."updatedAt" DESC LIMIT 200`;
-    const outboxes = await db.orderOutbox.findMany({
-      where: { attemptId: { in: attempts.map((a) => a.id) }, kind: "keeri.order.captured.v2" },
-      select: { attemptId: true, state: true, externalOrderId: true },
-    });
-    for (const attempt of attempts) {
-      const outbox = outboxes.find((o) => o.attemptId === attempt.id);
-      const customer = quoteSnapshotSchema.safeParse(attempt.snapshot).success;
-      if (attempt.state === "captured" && outbox?.state === "delivered" && outbox.externalOrderId)
-        await want(attempt.id, customer ? ["customer_confirmed", "staff_order"] : ["staff_order"]);
-      else if (attempt.state === "paid_hold_lapsed" || (attempt.state === "captured" && outbox?.state === "failed"))
-        await want(attempt.id, customer ? ["customer_received", "staff_attention"] : ["staff_attention"]);
-      else if (attempt.state === "reconciliation_required") await want(attempt.id, ["staff_attention"]);
-    }
-    // A payment that matched no payable attempt (unknown order, a second payment, a
-    // closed attempt) or that the worker gave up on is money staff must look at.
-    const payments = await db.$queryRaw<Array<{ id: string; attemptId: string | null }>>`
-      SELECT p."id", a."id" AS "attemptId" FROM "PaymentWebhookInbox" p
-      LEFT JOIN "CheckoutAttempt" a ON a."merchantScope" = p."merchantScope" AND a."providerOrderId" = p."providerOrderId"
+        AND (a."state" = 'paid_hold_lapsed' OR (a."state" = 'captured' AND o."state" = 'failed'))
+        AND ${unsent("staff_payment")} LIMIT 200`;
+    for (const a of paidProblems) await want(a.id, isV2(a.snapshot) ? ["customer_received", "staff_payment"] : ["staff_payment"]);
+    const unpaid = await db.$queryRaw<Array<{ id: string }>>`
+      SELECT a."id" FROM "CheckoutAttempt" a
+      WHERE a."merchantScope" = ${merchantScope} AND a."state" = 'reconciliation_required' AND ${unsent("staff_attention")} LIMIT 200`;
+    for (const a of unpaid) await want(a.id, ["staff_attention"]);
+    // A payment that matched no payable attempt (unknown order, a second payment) or
+    // that the worker gave up on: keyed to the payment event, so every one is told
+    // apart and its own payment id reaches staff. A lapsed hold is told per attempt above.
+    const payments = await db.$queryRaw<Array<{ id: string }>>`
+      SELECT p."id" FROM "PaymentWebhookInbox" p
       WHERE p."merchantScope" = ${merchantScope}
         AND ((p."state" = 'reconciliation_required' AND p."failureCode" IS DISTINCT FROM 'PAID_HOLD_LAPSED') OR p."workerState" = 'failed')
         AND NOT EXISTS (SELECT 1 FROM "OrderNotification" n WHERE n."merchantScope" = p."merchantScope"
-          AND n."kind" = 'staff_attention' AND n."subjectId" IN (COALESCE(a."id", ''), 'inbox:' || p."id"))
-      ORDER BY p."receivedAt" DESC LIMIT 200`;
-    for (const payment of payments) await want(payment.attemptId ?? `inbox:${payment.id}`, ["staff_attention"]);
+          AND n."kind" = 'staff_payment' AND n."subjectId" = 'inbox:' || p."id")
+      LIMIT 200`;
+    for (const payment of payments) await want(`inbox:${payment.id}`, ["staff_payment"]);
   }
 
   async function claim(): Promise<OrderNotification | undefined> {
@@ -108,6 +110,12 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     const inbox = !attemptId
       ? await db.paymentWebhookInbox.findFirst({ where: { id: row.subjectId.slice(6), merchantScope } })
       : null;
+    // A payment event still names its checkout when it has one, for the order's context.
+    const related = inbox?.providerOrderId
+      ? await db.checkoutAttempt.findFirst({ where: { merchantScope, providerOrderId: inbox.providerOrderId } })
+      : null;
+    if (inbox)
+      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null });
     const parsed = attempt ? quoteSnapshotSchema.safeParse(attempt.snapshot) : null;
     const quote = parsed?.success ? parsed.data : null;
     const outbox = attempt
@@ -120,7 +128,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     { attempt, quote, inbox, reference, staffOutcome }: {
       attempt: CheckoutAttempt | null;
       quote: QuoteSnapshot | null;
-      inbox: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null } | null;
+      inbox: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null; workerState: string } | null;
       reference: string | null;
       staffOutcome: string | null;
     },
@@ -194,25 +202,58 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
           ...(quote ? [`Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`, `Deliver to: ${address}`] : []),
         ].join("\n"),
       };
-    if (kind === "staff_attention")
+    const footer = [
+      "",
+      "Follow the refund and reconciliation procedure in docs/checkout-recovery.md. Never refund from this email alone: check the payment in the Razorpay dashboard first.",
+    ];
+    const customerLines = quote ? ["", ...lines, "", `Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`] : [];
+    const attemptLines = attempt
+      ? [`Checkout: ${attempt.id}`, `State: ${attempt.state}${attempt.failureCode ? ` (${attempt.failureCode})` : ""}`, `Amount: ${total}`,
+         `Payment recorded on the checkout: ${attempt.paymentId ?? "none"}`, `Razorpay order: ${attempt.providerOrderId ?? "none"}`]
+      : [];
+    if (kind === "staff_payment" && inbox) {
+      const reason = inbox.failureCode ?? "WORKER_GAVE_UP";
       return {
         to: email.to,
-        subject: `Online order needs attention: ${attempt?.id ?? `payment ${inbox?.paymentId ?? inbox?.id}`}`,
+        subject: `Online order needs attention: payment ${inbox.paymentId ?? inbox.id}`,
         text: [
-          attempt?.state === "paid_hold_lapsed"
-            ? "The customer PAID, but the Keeri stock hold had lapsed, so no Keeri order was placed. Confirm stock and raise the order by hand, or refund in full."
-            : attempt?.state === "captured"
-              ? `The customer PAID, but Keeri did not accept the order (${staffOutcome ?? "unknown"}). Raise it by hand or refund in full.`
-              : "A checkout or payment needs a manual check before anything else happens.",
+          reason === "PAYMENT_ID_CONFLICT"
+            ? `The customer PAID TWICE for one order. Keep the payment recorded on the checkout and refund payment ${inbox.paymentId} in full.`
+            : `A payment (${inbox.paymentId}) needs a person: ${reason}. Check it in Razorpay; if it is captured and not fulfilled, refund it in full.`,
           "",
-          ...(attempt
-            ? [`Checkout: ${attempt.id}`, `State: ${attempt.state}${attempt.failureCode ? ` (${attempt.failureCode})` : ""}`, `Amount: ${total}`,
-               `Payment: ${attempt.paymentId ?? "none recorded"}`, `Razorpay order: ${attempt.providerOrderId ?? "none"}`]
-            : []),
-          ...(inbox ? [`Payment event: ${inbox.id}`, `Payment: ${inbox.paymentId}`, `Razorpay order: ${inbox.providerOrderId}`, `Reason: ${inbox.failureCode}`] : []),
-          ...(quote ? ["", ...lines, "", `Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`] : []),
+          `Payment: ${inbox.paymentId}`,
+          `Razorpay order: ${inbox.providerOrderId ?? "unknown"}`,
+          `Reason: ${reason}`,
+          `Payment event: ${inbox.id}`,
+          ...(attempt ? ["", ...attemptLines] : ["No checkout matches this Razorpay order."]),
+          ...footer,
+        ].join("\n"),
+      };
+    }
+    if (kind === "staff_payment" && attempt)
+      return {
+        to: email.to,
+        subject: `Online order needs attention: ${attempt.id}`,
+        text: [
+          attempt.state === "paid_hold_lapsed"
+            ? `The customer PAID (${attempt.paymentId}), but the Keeri stock hold had lapsed or been released, so no Keeri order was placed. Confirm stock and raise the order by hand, or refund in full.`
+            : `The customer PAID (${attempt.paymentId}), but Keeri did not accept the order (${staffOutcome ?? "unknown"}). Raise it by hand or refund in full.`,
           "",
-          "Follow the refund and reconciliation procedure in docs/checkout-recovery.md. Never refund from this email alone: check the payment in the Razorpay dashboard first.",
+          ...attemptLines,
+          ...customerLines,
+          ...footer,
+        ].join("\n"),
+      };
+    if (kind === "staff_attention" && attempt)
+      return {
+        to: email.to,
+        subject: `Online order needs attention: ${attempt.id}`,
+        text: [
+          "No payment is recorded for this checkout, but a Keeri stock hold or a Razorpay order may be left over and needs a manual check.",
+          "",
+          ...attemptLines,
+          ...customerLines,
+          ...footer,
         ].join("\n"),
       };
     return null;
@@ -241,6 +282,10 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       );
       if (outcome.status === "accepted") {
         await finish(row, { state: "sent", sentAt: now(), providerId: outcome.providerId, failureCode: null });
+        stats.sent++;
+      } else if (outcome.code === "idempotency_conflict") {
+        // Resend already accepted a message under this key (a retry re-rendered it differently).
+        await finish(row, { state: "sent", sentAt: now(), failureCode: "IDEMPOTENT_REPLAY" });
         stats.sent++;
       } else if (outcome.status === "failed" || row.deliveryAttempts >= maxAttempts) {
         await finish(row, { state: "failed", failureCode: outcome.code });

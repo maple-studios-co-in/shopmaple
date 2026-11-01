@@ -433,3 +433,17 @@ test("a confirmed order links to its status page", async () => {
     assert.ok(document.querySelector(`a[href="/orders/${attemptId}"]`));
   } finally { await cleanup(); }
 });
+
+test("the payment window length comes from the server, not the buyer's clock", async () => {
+  // A buyer clock an hour slow would read this payBy as 65 minutes away; the server says 200 seconds.
+  const payBy = new Date(Date.now() + 65 * 60_000).toISOString();
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow7", payBy, payWithinSeconds: 200 }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => button("Pay ₹3,835")!.click());
+    assert.equal(razorpay!.options.timeout, 200);
+  } finally { await cleanup(); }
+});

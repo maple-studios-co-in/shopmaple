@@ -35,7 +35,7 @@ export async function resolveCatalogueBindings(
   if (!variantIds.length || variants.length !== variantIds.length)
     throw new OrderFlowError("CATALOGUE_BINDING_REQUIRED");
   const items = variants.map((v) => {
-    if (!v.published || !v.product.published || !sellablePolicy(v.stockPolicy))
+    if (!v.published || !v.product.published || !v.available || !sellablePolicy(v.stockPolicy))
       throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
     const sourceVariantId = v.identities[0]?.externalId;
     const sourceProductId = v.product.identities[0]?.externalId;

@@ -260,7 +260,13 @@ function CheckoutStages({ options, pollIntervalMs = 2500, confirmationWindowMs =
       const ready = await client.paymentOrder(attempt.id);
       if (!ready.providerOrderId)
         throw new CheckoutClientError("blocked", "This checkout requires review. Check your order status before trying another payment.");
-      const holdLeftMs = ready.payBy ? Date.parse(ready.payBy) - Date.now() : null;
+      // The server's own count wins: a buyer's clock may be minutes off.
+      const holdLeftMs =
+        typeof ready.payWithinSeconds === "number"
+          ? ready.payWithinSeconds * 1000
+          : ready.payBy
+            ? Date.parse(ready.payBy) - Date.now()
+            : null;
       if (holdLeftMs !== null && holdLeftMs < minimumPayWindowMs) {
         // A payment window that outlived the stock hold could take money for goods no longer held.
         setStage({ kind: "quote", attempt: ready });

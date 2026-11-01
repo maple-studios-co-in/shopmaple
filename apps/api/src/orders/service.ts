@@ -380,9 +380,17 @@ export function createOrderService(db: PrismaClient, options: Options) {
       s.items.some((i) => !consistentFulfilment(i.fulfilment))
     )
       throw new OrderFlowError("QUOTE_INVALID");
+    // The buyer pays the price the store showed: a quoted unit price that moved
+    // since the catalogue sync is refused rather than silently charged.
+    if (s.items.some((i) => {
+      const local = initial.bindings.items.find((b) => b.sourceVariantId === i.variantId)?.localVariantId;
+      return initial.rows.find((r) => r.variantId === local)?.variant.pricePaise !== i.unitPricePaise;
+    }))
+      throw new OrderFlowError("PRICE_CHANGED");
     // The owner's rule: only a delivery charge Shiprocket priced may be paid. A
     // policy amount (fallback or otherwise) is refused, never charged.
-    if (s.delivery?.source !== "carrier" || !s.delivery.carrier)
+    const d = s.delivery;
+    if (d?.source !== "carrier" || !d.carrier || d.carrierPriced !== true || d.fallbackReason !== null)
       throw new OrderFlowError("DELIVERY_UNPRICED");
     for (let retry = 0; ; retry++) {
       try {
@@ -568,14 +576,15 @@ export function createOrderService(db: PrismaClient, options: Options) {
     } catch {
       released = false;
     }
-    const updated = await db.checkoutAttempt.update({
-      where: { id: attempt.id },
+    // Only from `releasing`: a payment the worker recorded meanwhile is never overwritten.
+    await db.checkoutAttempt.updateMany({
+      where: { id: attempt.id, merchantScope, state: "releasing" },
       data: released
         ? { state: "abandoned", failureCode: null }
         : { state: "reconciliation_required", failureCode: "RELEASE_UNCERTAIN" },
     });
     if (!released) throw new OrderFlowError("RELEASE_UNCERTAIN");
-    return updated;
+    return db.checkoutAttempt.findUniqueOrThrow({ where: { id: attempt.id } });
   }
   async function ingestWebhook(
     rawBody: Buffer,
@@ -723,13 +732,18 @@ export function createOrderService(db: PrismaClient, options: Options) {
       return reconcile(inboxId, "PAYMENT_ID_CONFLICT", claim);
     if (attempt.state === "paid_hold_lapsed")
       return reconcile(inboxId, "PAID_HOLD_LAPSED", claim);
-    if (!["awaiting_payment", "captured"].includes(attempt.state))
+    // A release in flight settles first; the payment is retried right after.
+    if (attempt.state === "releasing") throw new OrderFlowError("ATTEMPT_RELEASING");
+    // The buyer walked away (or the release was uncertain) but paid after all, e.g. a
+    // slow UPI approval. The payment is still verified and kept, never dropped.
+    const late = ["abandoned", "reconciliation_required"].includes(attempt.state);
+    if (!["awaiting_payment", "captured"].includes(attempt.state) && !late)
       return reconcile(inboxId, "ORDER_STATE_REQUIRES_RECONCILIATION", claim);
     // Whether Keeri still holds the goods. A lapsed or lost hold no longer drops an
     // actual payment into silence: once Razorpay confirms the capture it is kept as
     // `paid_hold_lapsed` for staff to fulfil by hand or refund (docs/checkout-recovery.md).
     let holdLive = attempt.state === "captured";
-    if (attempt.state !== "captured") {
+    if (attempt.state === "awaiting_payment") {
       if (!reservations) return reconcile(inboxId, "RESERVATION_EXPIRED_OR_UNAVAILABLE", claim);
       holdLive =
         Boolean(attempt.reservationId) &&
@@ -802,7 +816,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
             ? finish("processed")
             : finish("reconciliation_required", "PAYMENT_ID_CONFLICT");
         }
-        if (current.state !== "awaiting_payment")
+        if (current.state === "releasing") throw new OrderFlowError("ATTEMPT_RELEASING");
+        const lateNow = ["abandoned", "reconciliation_required"].includes(current.state);
+        if (current.state !== "awaiting_payment" && !lateNow)
           return finish(
             "reconciliation_required",
             "ORDER_STATE_REQUIRES_RECONCILIATION",
@@ -818,6 +834,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
         };
         if (
           !holdLive ||
+          lateNow ||
           !current.reservationExpiresAt ||
           current.reservationExpiresAt <= now() ||
           current.reservationId !== attempt.reservationId

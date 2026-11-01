@@ -5,7 +5,7 @@ const text = (max: number) =>
     .trim()
     .min(1)
     .max(max)
-    .refine((v) => !/[\u0000-\u001f\u007f]/.test(v));
+    .refine((v) => !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(v));
 export const checkoutAddressSchema = z
   .object({
     line1: text(200),
@@ -13,7 +13,7 @@ export const checkoutAddressSchema = z
       .string()
       .trim()
       .max(200)
-      .refine((v) => !/[\u0000-\u001f\u007f]/.test(v))
+      .refine((v) => !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(v))
       .default(""),
     city: text(100),
     stateCode: z.string().regex(/^(0[1-9]|1[0-9]|2[0-46-9]|3[0-8])$/),

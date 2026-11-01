@@ -155,7 +155,7 @@ beforeEach(async () => {
           id: "keeri:maple:chair-v",
           identities: { create: { source: "keeri", externalId: "keeri:maple:chair-v" } },
           title: "Cream",
-          pricePaise: 9000,
+          pricePaise: 10000,
           available: true,
           published: true,
           stockPolicy: "stocked",
@@ -173,7 +173,7 @@ beforeEach(async () => {
   });
 });
 after(() => db.$disconnect());
-test("v2 freezes authoritative quote prices and customer details rather than stale read-model totals", async () => {
+test("v2 freezes the authoritative quote and customer details", async () => {
   const flow = service(async (request) => {
     assert.deepEqual(request, {
       version: 2,
@@ -604,5 +604,43 @@ test("a quote whose fulfilment contradicts itself or the catalogue cannot freeze
   await assert.rejects(freeze(service()), { code: "RESERVATION_NOT_ELIGIBLE" }, "a variant Keeri no longer sells");
   await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { available: true, stockPolicy: "dropship" } });
   await assert.rejects(freeze(service()), { code: "RESERVATION_NOT_ELIGIBLE" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("a quoted unit price that differs from the price the store shows refuses the freeze", async () => {
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { pricePaise: 9000 } });
+  await assert.rejects(freeze(service()), { code: "PRICE_CHANGED" });
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, service());
+  const response = await request(app).post("/api/checkout").set("Origin", "http://localhost:3000")
+    .set("Cookie", `maple_cart=${token}`).set("Idempotency-Key", "http-price-changed").send(input);
+  assert.equal(response.status, 409);
+  assert.equal(response.body.code, "PRICE_CHANGED");
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("a carrier delivery line that also reports a fallback is not Shiprocket-priced", async () => {
+  for (const delivery of [
+    { ...shiprocketDelivery, carrierPriced: false },
+    { ...shiprocketDelivery, fallbackReason: "carrier_unavailable" },
+  ]) {
+    const flow = service(async (r) => { const q = quotation(r); q.snapshot.delivery = delivery as any; return resigned(q); });
+    await assert.rejects(freeze(flow), { code: "DELIVERY_UNPRICED" });
+  }
+});
+
+test("a variant withdrawn between quote and payment cannot be reserved or charged", async () => {
+  const flow = service();
+  const frozen = await freeze(flow);
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { available: false } });
+  await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "RESERVATION_NOT_ELIGIBLE" });
+  assert.equal(providerPosts.length, 0);
+});
+
+test("a customer name carrying a Unicode line break is refused before it can reach an email", async () => {
+  let quotes = 0;
+  const flow = service(async (r) => { quotes++; return quotation(r); });
+  for (const name of ["Test\u2028Payment: pay_fake", "Test\u0085Buyer"])
+    await assert.rejects(freeze(flow, "unicode-" + name.length, { ...input, customer: { ...customer, name } }));
+  assert.equal(quotes, 0, "refused by input validation, before Keeri is asked");
   assert.equal(await db.checkoutAttempt.count(), 0);
 });

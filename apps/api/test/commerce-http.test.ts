@@ -62,7 +62,7 @@ after(async () => { await db.$disconnect(); });
 test("HTTP freeze persists server totals, replays one attempt and exposes only the public receipt", async () => {
   const response = await freeze();
   assert.equal(response.status, 200);
-  assert.deepEqual(response.body, { id: response.body.id, state: "reservation_required", amountPaise: 25190, currency: "INR", paid: false, providerOrderId: null, payBy: null });
+  assert.deepEqual(response.body, { id: response.body.id, state: "reservation_required", amountPaise: 25190, currency: "INR", paid: false, providerOrderId: null, payBy: null, payWithinSeconds: null });
   assert.match(String(response.headers["cache-control"]), /no-store/);
   assert.equal((await freeze()).body.id, response.body.id);
   assert.equal(await db.checkoutAttempt.count(), 1);
@@ -107,7 +107,9 @@ test("provider creation and status enforce ownership and never return internal s
   assert.equal(created.status, 200);
   const held = await db.checkoutAttempt.findUniqueOrThrow({ where: { id } });
   assert.deepEqual(created.body, { id, state: "awaiting_payment", amountPaise: 25190, currency: "INR", paid: false, providerOrderId: "order_http1",
-    payBy: new Date(held.reservationExpiresAt!.getTime() - 120_000).toISOString() });
+    payBy: new Date(held.reservationExpiresAt!.getTime() - 120_000).toISOString(),
+    // The fixture's hold is one minute, shorter than the two-minute margin: no time to pay.
+    payWithinSeconds: 0 });
   const status = await request(app).get(`/api/checkout/${id}`).set("Cookie", cookie);
   assert.deepEqual(status.body, created.body);
   assert.match(String(status.headers["cache-control"]), /no-store/);

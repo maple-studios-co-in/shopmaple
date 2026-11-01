@@ -118,6 +118,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
   }
   if (u.host === "api.resend.com") {
     assert.equal(new Headers(init.headers).get("authorization"), "Bearer re_test_test");
+    if (fake.emailStatus === 409) return Response.json({ name: "invalid_idempotent_request" }, { status: 409 });
     if (fake.emailStatus !== 200) return new Response("provider detail", { status: fake.emailStatus });
     const body = JSON.parse(String(init.body));
     fake.emails.push({ key: new Headers(init.headers).get("idempotency-key")!, to: body.to, subject: body.subject, text: body.text });
@@ -171,7 +172,7 @@ beforeEach(async () => {
     id: "keeri:maple:comp-chair", handle: "composition-chair", title: "Composition Chair", description: "", category: "chairs",
     images: [], published: true, source: "keeri:maple", sourceUpdatedAt: clock,
     identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair" } },
-    variants: { create: { id: "keeri:maple:comp-chair-v", title: "Oak", pricePaise: 140000, published: true, available: true, stockPolicy: "stocked",
+    variants: { create: { id: "keeri:maple:comp-chair-v", title: "Oak", pricePaise: 150000, published: true, available: true, stockPolicy: "stocked",
       identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair-v" } } } },
   } });
   await db.cart.create({ data: { id: "composition-cart", tokenHash: createHash("sha256").update(token).digest("hex"),
@@ -499,4 +500,68 @@ test("an email provider outage is retried with the same idempotency key and neve
   const rows = await db.orderNotification.findMany();
   assert.equal(rows.every((r) => r.state === "sent" && r.providerId), true);
   assert.equal(new Set(fake.emails.map((e) => e.key)).size, 2);
+});
+
+test("a payment that lands after the buyer walked away from the attempt is verified, kept as paid and sent to staff", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  assert.equal((await release(app, frozen.body.id)).body.state, "abandoned");
+  assert.equal((await webhook(app)).status, 202);
+  await settle(runWorkers);
+  const current = await status(app, frozen.body.id);
+  assert.equal(current.body.paid, true, "a released attempt that was paid after all is never shown as unpaid");
+  assert.equal(current.body.state, "paid_hold_lapsed");
+  assert.ok(fake.razorpayCalls.includes("GET /v1/payments/pay_comp1"), "the capture is verified with Razorpay first");
+  const staff = fake.emails.filter((e) => e.to.includes("staff@maple.example.com"));
+  assert.equal(staff.length, 1);
+  assert.match(staff[0]!.text, /PAID/);
+  assert.match(staff[0]!.text, /pay_comp1/);
+  assert.ok(fake.emails.some((e) => e.to.includes("buyer@example.test") && /received your payment/i.test(e.subject)));
+});
+
+test("a payment after a release-uncertain alert still raises a paid alert naming the payment", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  fake.releaseStatus = 503;
+  assert.equal((await release(app, frozen.body.id)).status, 409);
+  await settle(runWorkers);
+  assert.equal(fake.emails.length, 1, "staff hear about the uncertain release");
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.paid, true);
+  const paidAlert = fake.emails.slice(1).find((e) => e.to.includes("staff@maple.example.com"))!;
+  assert.match(paidAlert.text, /pay_comp1/);
+  assert.match(paidAlert.text, /PAID/);
+  assert.ok(fake.emails.some((e) => e.to.includes("buyer@example.test")));
+});
+
+test("a second payment for a confirmed order tells staff exactly which payment to refund", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.orderReference, "SO-1001");
+  await webhook(app, webhookSecret, "pay_comp2");
+  await settle(runWorkers);
+  const alert = fake.emails.find((e) => /needs attention/i.test(e.subject))!;
+  assert.match(alert.text, /pay_comp2/);
+  assert.match(alert.text, /PAYMENT_ID_CONFLICT/);
+  assert.match(alert.text, /refund/i);
+  assert.doesNotMatch(alert.text, /Keeri did not accept/);
+  assert.equal((await status(app, frozen.body.id)).body.orderReference, "SO-1001", "the confirmed order is untouched");
+});
+
+test("an email Resend already accepted under its key is recorded as sent, not failed", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  fake.emailStatus = 409;
+  await settle(runWorkers);
+  const rows = await db.orderNotification.findMany();
+  assert.equal(rows.length, 2);
+  assert.equal(rows.every((r) => r.state === "sent"), true);
 });

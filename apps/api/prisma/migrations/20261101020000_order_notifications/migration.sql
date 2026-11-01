@@ -15,7 +15,7 @@ CREATE TABLE "OrderNotification" (
     "sentAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "OrderNotification_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "OrderNotification_kind_check" CHECK ("kind" IN ('customer_confirmed', 'customer_received', 'staff_order', 'staff_attention')),
+    CONSTRAINT "OrderNotification_kind_check" CHECK ("kind" IN ('customer_confirmed', 'customer_received', 'staff_order', 'staff_payment', 'staff_attention')),
     CONSTRAINT "OrderNotification_state_check" CHECK ("state" IN ('pending', 'processing', 'sent', 'failed'))
 );
 CREATE UNIQUE INDEX "OrderNotification_merchantScope_subjectId_kind_key" ON "OrderNotification"("merchantScope", "subjectId", "kind");

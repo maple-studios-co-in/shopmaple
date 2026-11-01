@@ -85,6 +85,11 @@ function publicAttempt(
       attempt.state === "awaiting_payment" && attempt.reservationExpiresAt
         ? new Date(attempt.reservationExpiresAt.getTime() - payWindowMarginMs).toISOString()
         : null,
+    // Relative to the server clock, so a buyer's wrong clock cannot stretch the window.
+    payWithinSeconds:
+      attempt.state === "awaiting_payment" && attempt.reservationExpiresAt
+        ? Math.max(0, Math.floor((attempt.reservationExpiresAt.getTime() - payWindowMarginMs - Date.now()) / 1000))
+        : null,
   };
 }
 
@@ -211,6 +216,12 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
         409,
         "WEBHOOK_CONFLICT",
         "The webhook could not be accepted.",
+      );
+    if (error.code === "PRICE_CHANGED")
+      return new HttpError(
+        409,
+        "PRICE_CHANGED",
+        "The price of an item in your cart has changed. Review your cart and try again. No payment has been taken.",
       );
     if (error.code === "DELIVERY_UNPRICED")
       return new HttpError(
