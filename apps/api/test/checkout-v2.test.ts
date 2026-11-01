@@ -600,7 +600,9 @@ test("a quote whose fulfilment contradicts itself or the catalogue cannot freeze
     const flow = service(async (r) => { const q = quotation(r); q.snapshot.items[0]!.fulfilment = fulfilment as any; return resigned(q); });
     await assert.rejects(freeze(flow), { code: "QUOTE_INVALID" });
   }
-  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { stockPolicy: "dropship" } });
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { available: false } });
+  await assert.rejects(freeze(service()), { code: "RESERVATION_NOT_ELIGIBLE" }, "a variant Keeri no longer sells");
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { available: true, stockPolicy: "dropship" } });
   await assert.rejects(freeze(service()), { code: "RESERVATION_NOT_ELIGIBLE" });
   assert.equal(await db.checkoutAttempt.count(), 0);
 });

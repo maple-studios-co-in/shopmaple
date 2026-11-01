@@ -130,7 +130,7 @@ export function CartContents({ drawer = false }: { drawer?: boolean }) {
               </Link>
               <p className={`my-[5px] ${muted}`}>{item.variantTitle}</p>
               <p className="my-[5px]">{money(item.pricePaise)}</p>
-              {item.stockPolicy === "made_to_order" && <p className={`my-[5px] ${muted}`}>Made to order</p>}
+              {item.stockPolicy === "made_to_order" && <p data-lead-time className={`my-[5px] ${muted}`}>Made to order{item.leadTimeDays ? `: allow ${item.leadTimeDays} days for making` : ""}</p>}
               {!item.cartable && (
                 <p className={`my-[5px] ${errorText}`}>
                   Please contact us to confirm price and availability.

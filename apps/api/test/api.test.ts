@@ -169,11 +169,12 @@ test("cross-origin and missing-origin cart writes are refused", async () => {
   assert.equal(await db.cart.count(), 0);
 });
 test("priced unavailable and made-to-order items can be saved while unpublished or missing products are rejected", async () => {
-  for (const id of ["chair-blue", "chair-custom"]) {
+  // A made-to-order piece Keeri sells is as purchasable as a stocked one (owner decision 2026-11-01).
+  for (const [id, available] of [["chair-blue", false], ["chair-custom", true]] as const) {
     const result = await cartWrite(request.agent(app), id, 1);
     assert.equal(result.status, 200);
     assert.equal(result.body.items[0].cartable, true);
-    assert.equal(result.body.items[0].available, false);
+    assert.equal(result.body.items[0].available, available);
     assert.equal(result.body.checkoutEnabled, false);
   }
   for (const id of ["hidden-v", "missing"]) {

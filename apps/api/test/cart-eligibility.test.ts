@@ -133,12 +133,37 @@ test("cart eligibility uses bounded known prices and publication without widenin
     assert.equal(canAddToCart({ pricePaise, published: true }), true);
     assert.equal(canAddToCart({ pricePaise, published: false }), false);
   }
-  for (const stockPolicy of ["unverified", "made_to_order"]) {
+  for (const stockPolicy of ["unverified", "dropship"]) {
     const variant = { pricePaise: 1000, available: false, stockPolicy };
     assert.equal(canAddToCart(variant), true);
     assert.equal(canOrder(variant), false);
     assert.equal(canOrder({ ...variant, available: true }), false);
   }
+  // Owner decision 2026-11-01: approved made-to-order pieces are sold online, like stocked ones.
+  assert.equal(canOrder({ pricePaise: 1000, available: false, stockPolicy: "made_to_order" }), false);
+  assert.equal(canOrder({ pricePaise: 1000, available: true, stockPolicy: "made_to_order" }), true);
   assert.equal(canOrder({ pricePaise: 1000, available: true, stockPolicy: "stocked" }), true);
   assert.equal(canOrder({ pricePaise: 0, available: true, stockPolicy: "stocked" }), false);
+});
+
+test("with checkout on, the cart takes only purchasable variants and shows a made-to-order lead time", async () => {
+  const commerce = { freezeCart: async () => { throw new Error("unused"); } } as never;
+  const live = createApp(db, { webOrigin: origin, catalogMode: "preview", secureCookies: false }, commerce);
+  const client = request.agent(live);
+  const initial = (await client.get("/api/cart")).body;
+  assert.equal(initial.checkoutEnabled, true);
+  const refused = await client.put("/api/cart/items/cartable-v").set("Origin", origin).send(payload(initial, 1));
+  assert.equal(refused.status, 409);
+  assert.equal(refused.body.code, "ENQUIRY_REQUIRED");
+  await db.variant.update({ where: { id: "cartable-v" }, data: { available: true, stockPolicy: "made_to_order", leadTimeDays: 28 } });
+  const fresh = (await client.get("/api/cart")).body;
+  const added = await client.put("/api/cart/items/cartable-v").set("Origin", origin).send(payload(fresh, 1));
+  assert.equal(added.status, 200);
+  assert.equal(added.body.items[0].available, true);
+  assert.equal(added.body.items[0].cartable, true);
+  assert.equal(added.body.items[0].leadTimeDays, 28);
+  // Keeri withdrawing the piece leaves it in the cart, flagged, rather than silently payable.
+  await db.variant.update({ where: { id: "cartable-v" }, data: { available: false } });
+  const after = (await client.get("/api/cart")).body;
+  assert.equal(after.items[0].cartable, false);
 });

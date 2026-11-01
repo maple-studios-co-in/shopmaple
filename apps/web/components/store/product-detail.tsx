@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, Minus, Plus, Share2 } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
+import { LeadTimeNote } from "./lead-time-note";
 import { shopMoney, categoryNames } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
@@ -81,7 +82,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   const images = galleryFor(variantId);
   // A shorter gallery after switching options never points past its last photo.
   const shown = Math.min(image, Math.max(0, images.length - 1));
-  const enquiry = !product.published || !canAddToCart(variant);
+  const enquiry = !product.published || !canAddToCart(variant, cart.checkoutEnabled);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
   const enquiryHref =
@@ -190,6 +191,7 @@ export function ProductDetail({ product, initialVariant, presentation }: {
                   </button>
                 )}
               </div>
+              <LeadTimeNote variant={variant} />
               {selectedQuantity + quantity > 20 && <p className="text-meta text-brand">You can add up to 20 of this item. Contact our team for larger orders.</p>}
               {error && <p role="alert" className="text-meta text-brand">{error}</p>}
             </div>

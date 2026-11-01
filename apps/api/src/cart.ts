@@ -46,10 +46,10 @@ export async function readCart(
     pricePaise: v.pricePaise,
     quantity,
     lineTotalPaise: v.pricePaise === null ? null : v.pricePaise * quantity,
-    available:
-      v.pricePaise !== null && v.available && v.published && v.product.published && v.stockPolicy !== "made_to_order",
-    cartable: v.product.published && canAddToCart(v),
+    available: v.pricePaise !== null && v.available && v.published && v.product.published,
+    cartable: v.product.published && canAddToCart(v, checkoutEnabled),
     stockPolicy: v.stockPolicy,
+    leadTimeDays: v.stockPolicy === "made_to_order" ? v.leadTimeDays : null,
   }));
   return {
     items,
@@ -132,7 +132,7 @@ export async function setCartQuantity(
             const variant = await tx.variant.findUnique({ where: { id }, include: { product: true } });
             if (!variant || !variant.product.published)
               return recordRejection(404, "PRODUCT_NOT_FOUND", "This item is no longer available.");
-            if (!canAddToCart(variant))
+            if (!canAddToCart(variant, checkoutEnabled))
               return recordRejection(409, "ENQUIRY_REQUIRED", "Please enquire about this item before adding it to your cart.");
           }
           if (!line && await tx.cartItem.count({ where: { cartId: cart.id } }) >= 50)

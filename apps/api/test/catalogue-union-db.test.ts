@@ -289,3 +289,24 @@ test("a rename steps around an unpublished product's address instead of failing 
   await syncCatalogueUnion(db, shopifyFixture(), k, "maple");
   assert.equal((await db.product.findFirstOrThrow({ where: { source: { startsWith: "keeri:" } } })).handle, "zyro-lounge-chair");
 });
+
+test("a sync stores Keeri's purchasable verdict and lead time, and a later refusal withdraws it", async () => {
+  const { k } = fixtures();
+  const s = shopifyPricedFixture();
+  Object.assign(k.models[0]!.variants[0]!, {
+    stockPolicy: "made_to_order",
+    prices: [{ kind: "mrp", amount: 12345, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" }],
+    fulfilment: { kind: "made_to_order", leadTimeDays: 28 },
+    eligibility: { sellable: true, reasons: [] },
+  });
+  await syncCatalogueUnion(db, s, k, "maple");
+  const sold = await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } });
+  assert.equal(sold.available, true);
+  assert.equal(sold.stockPolicy, "made_to_order");
+  assert.equal(sold.leadTimeDays, 28);
+  Object.assign(k.models[0]!.variants[0]!, { eligibility: { sellable: false, reasons: ["approval_missing"] } });
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  const withdrawn = await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } });
+  assert.equal(withdrawn.available, false);
+});

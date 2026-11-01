@@ -294,6 +294,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
           ({ quantity, variant: v }) =>
             !v.published ||
             !v.product.published ||
+            !v.available ||
             !sellablePolicy(v.stockPolicy) ||
             !Number.isInteger(quantity) ||
             quantity < 1 ||
