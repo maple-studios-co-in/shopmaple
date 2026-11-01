@@ -75,18 +75,19 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
 const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(selector)].map(node => node.textContent?.trim());
 const attributes = (doc: Document, selector: string, attribute: string) => [...doc.querySelectorAll(selector)].map(node => node.getAttribute(attribute));
 
-// The owner removed the Bestsellers row's own "View all" link (1 November 2026); it returns only when the row is empty.
-test("both homepage rails expose a visible heading and a context-labelled browse destination when they need one", async () => {
+test("both homepage rails expose a visible heading, and Chairs a context-labelled browse destination, even when empty", async () => {
   for (const options of [{}, { merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } }]) {
     const { doc } = await renderHome(options);
-    const empty = "merchandising" in options;
-    for (const [key, heading, href] of [...(empty ? [["bestsellers", "Bestsellers", "/collections/all"]] : []), ["chairs", "Chairs", "/collections/chairs"]]) {
+    // Bestsellers has no "View all" link (owner, 2026-11-01); Chairs keeps its browse action.
+    assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Bestsellers");
+    assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null);
+    for (const [key, heading, href] of [["chairs", "Chairs", "/collections/chairs"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
-      const browse = rail.querySelector("a[data-rail-cta]");
+      const browse = rail.querySelector("header a");
       assert.equal(browse?.getAttribute("href"), href, "browse action must reach the source collection, not a product or Shopify");
       assert.equal(browse?.getAttribute("aria-label"), `View all ${heading}`);
-      assert.equal(browse?.textContent, `View all ${heading?.toLowerCase()} →`);
+      assert.equal(browse?.textContent, "View all →");
     }
   }
 });
@@ -94,28 +95,31 @@ test("both homepage rails expose a visible heading and a context-labelled browse
 test("published rail headings are used for visible navigation without changing collection destinations", async () => {
   const { doc } = await renderHome({ copy: { chairsHeading: "Your reading nook", bestsellersHeading: "Selected favourites" } });
   assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
-  assert.equal(doc.querySelector('[data-home-section="chairs"] a[data-rail-cta]')?.getAttribute("aria-label"), "View all Your reading nook");
+  assert.equal(doc.querySelector('[data-home-section="chairs"] header a')?.getAttribute("aria-label"), "View all Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
-  assert.equal(doc.querySelector('[data-home-section="bestsellers"] a[data-rail-cta]'), null, "Bestsellers has no View all link");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null, "Bestsellers has no View all link");
 });
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
   const { doc } = await renderHome({ merchandising: customMerchandising() });
-  // Categories: three mobile columns, then the design's 164px circles, growing on wider windows.
-  assert.deepEqual(attributes(doc, "[data-home-categories] img", "sizes"), Array(2).fill(
-    "(max-width:750px) calc((100vw - 64px) / 3), clamp(164px, 11.4vw, 260px)",
+  // Categories: two mobile columns, six desktop columns inside a 1440px container.
+  assert.deepEqual(attributes(doc, ".home-categories img", "sizes"), Array(2).fill(
+    "(max-width:749px) calc((100vw - 52px) / 2), (min-width:1440px) 210px, calc((100vw - 180px) / 6)",
   ));
-  // Offers are the design's text shortcut cards: they draw no artwork.
-  assert.equal(doc.querySelector("[data-home-offers] img"), null);
+  // Offers: 70% mobile rail cards, four desktop columns, with existing gaps/padding.
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("sizes"),
+    "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)");
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"),
+    "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
 });
 
 test("legacy published homepage preserves original collection copy, media, links and both product orders", async () => {
   const { doc } = await renderHome();
-  assert.deepEqual(texts(doc, "[data-home-categories] h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
-  assert.deepEqual(attributes(doc, "[data-home-categories] > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
-  assert.deepEqual(attributes(doc, "[data-home-categories] img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
+  assert.deepEqual(texts(doc, ".home-categories h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
+  assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
+  assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
   // SVG-wrapped covers resolve to the CDN raster so next/image can resize them (lib/shopify-artwork.ts).
-  assert.deepEqual(attributes(doc, "[data-home-categories] img", "src"), [
+  assert.deepEqual(attributes(doc, ".home-categories img", "src"), [
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?width=600",
@@ -123,8 +127,14 @@ test("legacy published homepage preserves original collection copy, media, links
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?width=600",
     "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?width=600",
   ]);
-  assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
-  assert.deepEqual(texts(doc, "[data-home-offers] h3"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
+  assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
+  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
+  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "src"), [
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Clearance_Sale.webp?v=1778257635",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/min_30_off_sale_banner.webp?v=1778255612",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771",
+    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_2.webp?v=1778269923",
+  ]);
   assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
 });
@@ -133,13 +143,14 @@ test("published tiles follow saved order, visibility, full image URLs and access
   const { doc } = await renderHome({ merchandising: customMerchandising(), sections: [
     { key: "offers", enabled: true }, { key: "bestsellers", enabled: false }, { key: "categories", enabled: true },
   ] });
-  assert.deepEqual(attributes(doc, "[data-home-section]", "data-home-section"), ["offers", "categories"]);
-  assert.deepEqual(texts(doc, "[data-home-categories] h3"), ["Restful beds", "Everyday seats"]);
-  assert.deepEqual(attributes(doc, "[data-home-categories] > a", "href"), ["/collections/beds", "/collections/dining-chair"]);
-  assert.deepEqual(attributes(doc, "[data-home-categories] img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
-  assert.deepEqual(attributes(doc, "[data-home-categories] img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
-  assert.deepEqual(attributes(doc, "[data-home-offers] > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
-  assert.equal(doc.querySelector("[data-home-offers] h3")?.textContent, "Furniture for your room");
+  assert.deepEqual(attributes(doc, ".managed-home-section", "data-home-section"), ["offers", "categories"]);
+  assert.deepEqual(texts(doc, ".home-categories h3"), ["Restful beds", "Everyday seats"]);
+  assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/beds", "/collections/dining-chair"]);
+  assert.deepEqual(attributes(doc, ".home-categories img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
+  assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
+  assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("alt"), "Discover our furniture offer");
   assert.equal(doc.querySelector("[data-product-card]"), null);
 });
 
@@ -161,9 +172,9 @@ test("published rails preserve product order, omit missing, unavailable and unpu
 
 test("explicitly empty merchandising keeps rails honestly empty without restoring legacy products or tiles", async () => {
   const { doc } = await renderHome({ merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } });
-  assert.equal(doc.querySelectorAll("[data-product-card], [data-home-categories] > a, [data-home-offers] > a").length, 0);
-  assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 2);
-  assert.deepEqual(attributes(doc, "[data-catalogue-unavailable] a", "href"), ["/collections/all", "/collections/all"]);
+  assert.equal(doc.querySelectorAll("[data-product-card], .home-categories > a, .home-offer-tiles > a").length, 0);
+  assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
+  assert.deepEqual(attributes(doc, ".home-catalogue-unavailable a", "href"), ["/collections/all", "/collections/all"]);
 });
 
 test("a rail with no published catalogue products shows the existing unavailable message", async () => {
@@ -172,5 +183,5 @@ test("a rail with no published catalogue products shows the existing unavailable
   merchandising.chairs = [];
   const { doc } = await renderHome({ merchandising, products: { "private-product": product("private-product", 90000, false) } });
   assert.equal(doc.querySelectorAll("[data-product-card]").length, 0);
-  assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 2);
+  assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 2);
 });

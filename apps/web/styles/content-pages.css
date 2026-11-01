@@ -1,0 +1,60 @@
+.managed-home-section {
+  display: contents;
+}
+.content-page {
+  padding-block: 64px;
+  min-height: 55vh;
+}
+.content-page header {
+  max-width: 800px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+.content-page h1 {
+  font-family: var(--font-heading, Georgia, serif);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1.1;
+}
+.content-page header p {
+  margin-top: 20px;
+}
+.content-page-copy {
+  max-width: 760px;
+  margin: 40px auto;
+}
+.content-page-copy p {
+  line-height: 1.8;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  margin: 24px 0;
+}
+.content-page-banner {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+}
+.content-page-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+  object-fit: cover;
+}
+.content-page-banner span {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  padding: 12px 20px;
+  background: #fff;
+  color: #3d1914;
+  border-radius: 4px;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .content-page-banner img {
+    transition: transform 0.35s ease;
+  }
+  .content-page-banner:hover img {
+    transform: scale(1.025);
+  }
+}

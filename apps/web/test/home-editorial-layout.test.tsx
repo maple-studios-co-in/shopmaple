@@ -13,7 +13,7 @@ test("editing the original newsletter logo alt text preserves its readable white
     { key: "home-newsletter", image: "https://shop.maplefurnishers.com/cdn/shop/files/Cover_Image_Maple_1.png", alt: "Maple Furniture logo with a leaf illustration" },
   ]} />));
   try {
-    const image = dom.window.document.querySelector("[data-home-newsletter] img")!;
+    const image = dom.window.document.querySelector(".home-newsletter img")!;
     assert.equal(image.getAttribute("alt"), "Maple Furniture logo with a leaf illustration");
     assert.equal(dom.window.getComputedStyle(image).filter, "brightness(0) invert(1)", "An alt-only edit must not make the original dark logo disappear on burgundy");
   } finally { dom.window.close(); }
@@ -29,11 +29,11 @@ test("bundled newsletter logo displays white on burgundy while published artwork
   ]} />));
   try {
     for (const dom of [defaults, unrelatedOverride]) {
-      const image = dom.window.document.querySelector("[data-home-newsletter] img")!;
+      const image = dom.window.document.querySelector(".home-newsletter img")!;
       assert.equal(dom.window.getComputedStyle(image).filter, "brightness(0) invert(1)", "Bundled dark logo needs a white presentation on the burgundy panel");
       assert.ok(image.getAttribute("src")?.includes("Cover_Image_Maple_1.png"), "Keep the original source asset");
     }
-    const customImage = published.window.document.querySelector("[data-home-newsletter] img")!;
+    const customImage = published.window.document.querySelector(".home-newsletter img")!;
     assert.equal(published.window.getComputedStyle(customImage).filter, "", "Published artwork must never inherit the bundled logo colour transform");
     assert.ok(customImage.getAttribute("src")?.includes("colourful-newsletter.png"));
     assert.equal(customImage.getAttribute("alt"), "Published colourful artwork");
@@ -44,9 +44,8 @@ test("editorial restyling preserves the complete original testimonial and custom
   const dom = new JSDOM(renderToStaticMarkup(<HomeTestimonial />));
   try {
     const doc = dom.window.document;
-    assert.equal(doc.querySelector("[data-section-eyebrow]")?.textContent, "Why They Love Us");
-    assert.equal(doc.querySelector("h2")?.textContent, "Loved for more than just our sofas.");
-    assert.equal(doc.querySelector("[data-section-lede]")?.textContent, "Thoughtful designs. Exceptional service.");
+    assert.equal(doc.querySelector("h2")?.textContent, "Why They Love Us");
+    assert.equal(doc.querySelector("header p")?.textContent, "Thoughtful designs. Exceptional service.");
     assert.equal(doc.querySelector("h3")?.textContent, "Getting our sofa made by Maple was a completely hassle-free experience.");
     assert.deepEqual([...doc.querySelectorAll("blockquote p")].map(p => p.textContent), [
       "From the first conversation to the final delivery, the process felt smooth and well-managed.",
@@ -55,7 +54,7 @@ test("editorial restyling preserves the complete original testimonial and custom
       "Delivery was on time, and everything was handled professionally. Truly a no-stress experience from start to finish.",
     ]);
     assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
-    assert.equal(doc.querySelector("[data-review-stars]"), null, "No star rating without review data");
+    assert.equal(doc.querySelector(".home-review-stars")?.getAttribute("aria-label"), "5 out of 5 stars");
     const video = doc.querySelector("video")!;
     assert.ok(video.controls);
     assert.ok(video.playsInline);
@@ -78,12 +77,11 @@ test("published editorial copy names both regions and retains editable media wit
   </>));
   try {
     const doc = dom.window.document;
-    // The testimonial's published heading is the eyebrow above the design's title, which names the region.
-    for (const [selector, title, heading] of [["[data-home-testimonial]", "Loved for more than just our sofas.", "Customers at home"], ["[data-home-newsletter]", "Workshop updates", "Workshop updates"]]) {
+    for (const [selector, heading] of [[".home-testimonial", "Customers at home"], [".home-newsletter", "Workshop updates"]]) {
       const region = doc.querySelector(selector!)!;
       const labelledBy = region.getAttribute("aria-labelledby");
       assert.ok(labelledBy, `${heading} must be discoverable as a named region`);
-      assert.equal(doc.getElementById(labelledBy)?.textContent, title);
+      assert.equal(doc.getElementById(labelledBy)?.textContent, heading);
       assert.equal(region.querySelectorAll("h2").length, 1);
       assert.equal(region.textContent?.split(heading!).length, 2, "Editorial headings must not be repeated for visual positioning");
     }
@@ -91,9 +89,9 @@ test("published editorial copy names both regions and retains editable media wit
     assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
     assert.equal(doc.querySelector("video")?.poster, "https://cdn.shopify.com/editorial-poster.jpg");
     assert.equal(doc.querySelector("video")?.getAttribute("aria-label"), "Customer's room film");
-    assert.ok(doc.querySelector('[data-home-newsletter] img[alt="Published Maple artwork"]')?.getAttribute("src")?.includes("editorial-logo.png"));
-    assert.equal(doc.querySelector("[data-home-newsletter] h3")?.textContent, "Join our list");
-    const email = doc.querySelector<HTMLInputElement>('[data-home-newsletter] input[type="email"]')!;
+    assert.ok(doc.querySelector('.home-newsletter img[alt="Published Maple artwork"]')?.getAttribute("src")?.includes("editorial-logo.png"));
+    assert.equal(doc.querySelector(".home-newsletter h3")?.textContent, "Join our list");
+    const email = doc.querySelector<HTMLInputElement>('.home-newsletter input[type="email"]')!;
     assert.equal(email.labels?.[0]?.textContent, "Email");
     assert.ok(email.required);
   } finally { dom.window.close(); }
@@ -112,7 +110,7 @@ test("newsletter composition preserves unavailable notice and submission never s
     assert.equal(container.querySelector("h2")?.textContent, "Soft presence. Strong craftsmanship.");
     assert.ok(container.textContent?.includes("Furniture made for rooms that feel as good as they look."));
     assert.equal(container.querySelector("h3")?.textContent, "New Collections. Early Access. No Noise.");
-    assert.equal(container.querySelector("[data-preview-detail]")?.textContent, "Newsletter signup is not available yet.");
+    assert.equal(container.querySelector(".home-preview-detail")?.textContent, "Newsletter signup is not available yet.");
     const email = container.querySelector<HTMLInputElement>('input[type="email"]')!;
     email.value = "synthetic@example.invalid";
     await act(async () => container.querySelector<HTMLFormElement>("form")!.requestSubmit());

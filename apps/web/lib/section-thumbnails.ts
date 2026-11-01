@@ -25,7 +25,7 @@ export function thumbnailContent<T extends StorefrontContent>(content: T, key: H
 const campaign = (content: StorefrontContent, ...keys: string[]) => keys.map((key) => content.campaigns.find((item) => item.key === key) ?? null);
 
 /**
- * The parts of the draft each section draws from, mirroring HomePage (components/store/home/home-page.tsx).
+ * The parts of the draft each section draws from, mirroring HomePage (components/home-page.tsx).
  * Section order, visibility, reveal effects and autoplay are left out: they never change a section's picture.
  */
 const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = {

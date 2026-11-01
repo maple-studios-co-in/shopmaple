@@ -1,6 +1,6 @@
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { categoryNames } from "@/lib/format";
-import { ProductCard } from "./product-card";
+import { ProductCard } from "./product-card-figma";
 import { SectionHeading } from "./section-heading";
 
 /** Up to four cards from the same category under the product page ("More chairs to explore"). */

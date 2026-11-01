@@ -59,9 +59,9 @@ test("priced made-to-order items add to the saved cart without claiming stock or
     assert.deepEqual(Object.keys(writes[0]!.body).sort(), ["mutation", "quantity"]);
     assert.equal(writes[0]!.body.quantity, 1);
     assert.equal(document.querySelector("[data-drawer]")!.textContent, "true");
-    assert.match(document.querySelector("[data-cart-line]")!.textContent!, /Made to order chair/);
-    assert.doesNotMatch(document.querySelector("[data-cart-line]")!.textContent!, /Please contact us to confirm price/);
-    assert.match(document.querySelector("[data-cart-summary]")!.textContent!, /Online payment is not available yet/);
+    assert.match(document.querySelector(".cart-line")!.textContent!, /Made to order chair/);
+    assert.doesNotMatch(document.querySelector(".cart-line")!.textContent!, /Please contact us to confirm price/);
+    assert.match(document.querySelector(".cart-summary")!.textContent!, /Online payment is not available yet/);
   } finally { await cleanup(); }
 });
 
@@ -88,7 +88,7 @@ test("cartable made-to-order quantity updates use the current guarded cart", asy
     assert.equal(increase.disabled, false, "Cart eligibility is distinct from stocked checkout eligibility");
     await act(async () => increase.click());
     assert.deepEqual(writes, [2]);
-    assert.match(document.querySelector("[data-cart-summary]")!.textContent!, /46,000/);
+    assert.match(document.querySelector(".cart-summary")!.textContent!, /46,000/);
   } finally { await cleanup(); }
 });
 

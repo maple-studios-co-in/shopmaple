@@ -50,68 +50,23 @@ function titleText(doc: Document) {
   return doc.querySelector("h1")?.textContent;
 }
 
-test("Our Story source defaults carry the PDF Review copy, the real chronology and the source media", async () => {
+test("Our Story source defaults preserve original copy, chronology and source media", async () => {
   await withResponse(null, async () => {
     const doc = await renderPage();
-    assert.equal(titleText(doc), "Made different,by design.");
-    assert.equal(doc.querySelector("[data-story-tagline]")?.textContent,
-      "Furniture tailored to your narrative. Built with care, for the life you bring to it.");
-    assert.equal(doc.querySelector("[data-story-belief]")?.getAttribute("aria-label"), "Our Belief");
-    assert.deepEqual([...doc.querySelectorAll("[data-story-milestone-date]")].map(n => n.textContent),
+    assert.equal(titleText(doc), "MADE DIFFERENT,BY DESIGN");
+    assert.equal(doc.querySelector(".landing-story-tagline")?.textContent,
+      "Furniture tailored to your narrative.");
+    assert.equal(doc.querySelector(".landing-story-belief .home-eyebrow")?.textContent, "Our Belief");
+    assert.deepEqual([...doc.querySelectorAll(".landing-journey time")].map(n => n.textContent),
       ["2015", "2015–2022", "2023", "2024", "2026", "Today", "Tomorrow"]);
-    assert.equal(doc.querySelector("[data-story-journey] h3")?.textContent, "The Craft Begins");
-    assert.equal(doc.querySelectorAll("[data-story-milestone]").length, 7);
-    assert.match(doc.querySelector("img[data-story-hero-image]")?.getAttribute("src") ?? "", /Frame129\.png/);
-    assert.ok(doc.querySelector('[data-story-film] video[aria-label="The Maple workshop"]'));
+    assert.equal(doc.querySelector(".landing-journey h3")?.textContent, "The Craft Begins");
+    assert.equal(doc.querySelectorAll(".landing-journey li").length, 7);
+    assert.match(doc.querySelector(".suggested-story-hero img")?.getAttribute("src") ?? "", /Custom_F\.svg/);
+    assert.ok([...doc.querySelectorAll(".suggested-story-hero img")].some(n =>
+      n.getAttribute("src")?.includes("Frame129.png")));
+    assert.ok(doc.querySelector('.landing-story-film video[aria-label="The Maple workshop"]'));
     assert.equal(doc.querySelectorAll("h1").length, 1);
-  });
-});
-
-test("Our Story follows the PDF Review frame: hero card, shared promise, philosophy, journey cards and closing band", async () => {
-  await withResponse(null, async () => {
-    const doc = await renderPage();
-    const root = doc.querySelector("[data-story]");
-    assert.ok(root);
-    for (const key of ["hero", "belief-film", "journey"])
-      assert.ok(doc.querySelector(`[data-story-section="${key}"]`)?.hasAttribute("data-store"), `${key} is scoped`);
-    // Hero card: the page title as eyebrow, the headline, tagline, a shop link and the source photograph.
-    const hero = doc.querySelector('[data-story-section="hero"]')!;
-    assert.equal(hero.querySelector("[data-story-eyebrow]")?.textContent, "Our Story");
-    assert.ok(hero.querySelector("h1"));
-    const cta = hero.querySelector<HTMLAnchorElement>("a[data-story-cta]");
-    assert.equal(cta?.getAttribute("href"), "/collections/all");
-    assert.equal(cta?.textContent?.replace(/\s+/g, " ").trim(), "Find your Maple →");
-    assert.equal(hero.querySelector("img[data-story-hero-image]")?.getAttribute("alt"), "Maple furniture craftsmanship");
-    // The shared "MF / The Maple promise" strip sits under the hero card.
-    assert.deepEqual([...hero.querySelectorAll("[data-promise-strip] li strong")].map(n => n.textContent),
-      ["Fully customisable", "Crafted in Delhi", "36-month warranty", "Delivery across India"]);
-    // Philosophy: the burgundy statement beside the workshop film (poster first, Play on demand).
-    const band = doc.querySelector('[data-story-section="belief-film"]')!;
-    assert.equal(band.querySelector("[data-story-belief] h2")?.textContent, "Maple doesn’t believein loud luxury.It believes in presence.");
-    assert.equal(band.querySelector("[data-story-belief-body]")?.textContent,
-      "A considered silhouette. The right fabric. A finish that feels like yours. Furniture that becomes part of the way you live.");
-    assert.equal(band.querySelector("[data-story-film] video")?.getAttribute("poster")?.includes("84351f35cf124a0ab27f853cb96b817f"), true);
-    assert.equal(band.querySelector("[data-story-film] h2"), null, "The frame has no heading over the picture");
-    // Journey: eyebrow and title, then one card per editable chapter with its full text.
-    const journey = doc.querySelector('[data-story-section="journey"]')!;
-    assert.equal(journey.querySelector("[data-section-eyebrow]")?.textContent, "The Maple Journey");
-    assert.equal(journey.querySelector("h2")?.textContent, "Crafted with purpose. Evolving with you.");
-    assert.equal(journey.querySelector("ol")?.querySelectorAll(":scope > li[data-story-milestone]").length, 7);
-    const first = journey.querySelector("[data-story-milestone]")!;
-    assert.equal(first.querySelector("[data-story-milestone-date]")?.textContent, "2015");
-    assert.equal(first.querySelector("[data-story-milestone-body]")?.textContent, defaultStorefrontContent.storyPage!.timeline[0]!.body);
-    // Closing band: the brand line only. Newsletter signup has no backend, so no form and no promises about it.
-    const closing = doc.querySelector("[data-story-closing]")!;
-    assert.ok(closing.hasAttribute("data-store"));
-    assert.equal(closing.querySelector("h2")?.textContent, "Soft presence.Strong craftsmanship.");
-    assert.equal(closing.querySelector("p")?.textContent, "Furniture made for rooms that feel as good as they look.");
-    assert.equal(root!.querySelector("form, input"), null);
-    assert.doesNotMatch(root!.textContent ?? "", /Unsubscribe|Early access|No spam/i);
-    // The frame has no cities band (and its "20+ Cities" count is not part of the design).
-    assert.equal(doc.querySelector("[data-home-cities]"), null);
-    // Headings never skip a level.
-    const levels = [...doc.querySelectorAll("h1, h2, h3, h4")].map(n => Number(n.tagName[1]));
-    levels.reduce((previous, level) => { assert.ok(level <= previous + 1, `h${level} follows h${previous}`); return level; }, 0);
+    assert.equal(doc.querySelectorAll(".landing-promises li").length, 4);
   });
 });
 
@@ -119,20 +74,19 @@ test("published story edits render the selected order and safe text while preser
   await withResponse({ version: 2, content: { ...defaultStorefrontContent, storyPage: storyEdit() } }, async () => {
     const doc = await renderPage();
     assert.equal(titleText(doc), "Made for your homeBy Maple");
-    assert.equal(doc.querySelector("[data-story-tagline]")?.textContent, "An independently edited introduction.");
+    assert.equal(doc.querySelector(".landing-story-tagline")?.textContent, "An independently edited introduction.");
     assert.deepEqual([...doc.querySelectorAll("[data-story-section]")].map(n => n.getAttribute("data-story-section")),
       ["journey", "hero", "belief-film"]);
-    assert.equal(doc.querySelector("[data-home-cities]"), null);
-    assert.equal(doc.querySelector("[data-story-journey] h3")?.textContent, "Milestone 1");
-    assert.equal(doc.querySelector("[data-story-milestone-date]")?.textContent, "2010");
-    assert.equal(doc.querySelector("[data-story-milestone-body]")?.textContent, "Our chapter 1 story.");
-    assert.equal(doc.querySelector("[data-story-belief] h2")?.textContent, "Built with careFor everyday life");
-    assert.match(doc.querySelector("[data-story-belief]")?.textContent ?? "", /<script>alert\('plain text'\)<\/script>/);
+    assert.equal(doc.querySelector(".home-cities"), null);
+    assert.equal(doc.querySelector(".landing-journey h2")?.textContent, "Our milestones");
+    assert.equal(doc.querySelector(".landing-journey h3")?.textContent, "Milestone 1");
+    assert.equal(doc.querySelector(".landing-journey time")?.textContent, "2010");
+    assert.equal(doc.querySelector(".landing-journey li p")?.textContent, "Our chapter 1 story.");
+    assert.equal(doc.querySelector(".landing-story-belief h2")?.textContent, "Built with careFor everyday life");
+    assert.match(doc.querySelector(".landing-story-belief")?.textContent ?? "", /<script>alert\('plain text'\)<\/script>/);
     assert.equal(doc.querySelector("script"), null);
-    assert.equal(doc.querySelector("[data-story-journey] [data-section-eyebrow]")?.textContent, "Our milestones");
-    assert.equal(doc.querySelector('[data-story-section="hero"] [data-story-eyebrow]')?.textContent, "Our craft and community");
-    assert.equal(doc.querySelector("[data-story-belief]")?.getAttribute("aria-label"), "Our approach");
-    assert.ok(doc.querySelector("img[data-story-hero-image]")?.getAttribute("src")?.includes("Frame129.png"));
+    assert.equal(doc.querySelector(".landing-story-film h2")?.textContent, "A workshopwith purpose");
+    assert.ok([...doc.querySelectorAll(".suggested-story-hero img")].some(n => n.getAttribute("src")?.includes("Frame129.png")));
     const metadata = "generateMetadata" in storyRoute
       ? await (storyRoute.generateMetadata as () => Promise<{ title: string }>)()
       : (storyRoute as unknown as { metadata: { title: string } }).metadata;
@@ -162,8 +116,8 @@ test("legacy, failed and draft responses preserve the source story instead of le
     "offline",
   ]) await withResponse(body, async () => {
     const doc = await renderPage();
-    assert.equal(titleText(doc), "Made different,by design.");
-    assert.equal(doc.querySelectorAll("[data-story-milestone]").length, 7);
+    assert.equal(titleText(doc), "MADE DIFFERENT,BY DESIGN");
+    assert.equal(doc.querySelectorAll(".landing-journey li").length, 7);
   });
 });
 

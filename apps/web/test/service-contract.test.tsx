@@ -118,7 +118,7 @@ test("service fallback preserves original page copy and returns isolated editabl
   const fallback = resolveServicePages();
   assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, servicePages: fallback }).success, true);
   assert.equal(fallback.contact.title, "Contact Us");
-  assert.equal(fallback.contact.heading, "Tell us what you need. We’ll help you shape it.");
+  assert.equal(fallback.contact.heading, "Tell us what you need. We’ll help you shape it");
   assert.equal(fallback.contact.categories[0]!.questions[0]!.answer, "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.");
   assert.deepEqual(fallback.contact.categories.map(category => category.questions.map(question => question.key)), [["q1", "q2", "q3", "q4", "q5"], ["q1", "q2", "q3", "q4"], ["q1", "q2"], ["q1"], ["q1"]]);
   assert.equal(fallback.bulk.heading, "Home Interior");

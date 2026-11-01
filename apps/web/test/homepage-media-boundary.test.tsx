@@ -20,21 +20,22 @@ const partial: TemplateMedia = [
 test("homepage islands retain exact default art and resolve partial overrides by slot", () => {
   for (const media of [undefined, partial]) {
     const doc = new JSDOM(renderToStaticMarkup(<><Hero media={media} /><HomeNimbus media={media} /></>)).window.document;
-    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
-    assert.equal(doc.querySelector("[data-hero-film] img")?.getAttribute("alt"), "Arranging flowers on a Maple sideboard beside a floral armchair");
-    assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("src"), null);
-    assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("preload"), "none");
-    assert.deepEqual([...doc.querySelectorAll("[data-hero-tile] img")].map(node => node.getAttribute("src")), [
+    assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
+    assert.equal(doc.querySelector(".hero-film img")?.getAttribute("alt"), "Arranging flowers on a Maple sideboard beside a floral armchair");
+    // The latest shop film plays on its own; only its metadata loads before playback (owner, 2026-11-01).
+    assert.equal(doc.querySelector(".hero-film video")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
+    assert.equal(doc.querySelector(".hero-film video")?.getAttribute("preload"), "metadata");
+    assert.deepEqual([...doc.querySelectorAll(".category-tile img")].map(node => node.getAttribute("src")), [
       files + "engaged_5.jpg?v=1767435623", media ? "/media/custom-chair.webp" : files + "engaged_6_1.jpg?v=1767444019",
       files + "engaged_8_1.jpg?v=1767444598", files + "engaged_9_1.jpg?v=1767448207",
     ]);
-    assert.equal(doc.querySelector('[data-hero-tile][href="/pages/chairs"] img')?.getAttribute("alt"), media ? "Custom chair" : "");
-    assert.equal(doc.querySelector("[data-nimbus-media] img")?.getAttribute("src"), media ? "/media/nimbus-wide.webp" : files + "Chairs_9.svg");
-    assert.equal(doc.querySelector("[data-nimbus-media] source")?.getAttribute("srcset"), media ? "/media/nimbus-small.webp" : files + "Chairs_300_x_600_px.webp?width=900");
-    assert.equal(doc.querySelector("[data-nimbus-media] img")?.getAttribute("alt"), media ? "Custom Nimbus" : "The Nimbus Collection — cloud-like upholstered furniture");
-    assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Explore Collection");
-    assert.equal(doc.querySelector("[data-home-nimbus] h2")?.textContent, "The Nimbus Collection");
-    assert.equal(doc.querySelector("[data-home-nimbus] a")?.getAttribute("href"), "/pages/nimbus-collection");
+    assert.equal(doc.querySelector('.category-tile[href="/pages/chairs"] img')?.getAttribute("alt"), media ? "Custom chair" : "");
+    assert.equal(doc.querySelector(".home-nimbus-media img")?.getAttribute("src"), media ? "/media/nimbus-wide.webp" : files + "Chairs_9.svg");
+    assert.equal(doc.querySelector(".home-nimbus-media source")?.getAttribute("srcset"), media ? "/media/nimbus-small.webp" : files + "Chairs_300_x_600_px.webp?width=900");
+    assert.equal(doc.querySelector(".home-nimbus-media img")?.getAttribute("alt"), media ? "Custom Nimbus" : "The Nimbus Collection — cloud-like upholstered furniture");
+    assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
+    assert.equal(doc.querySelector(".home-nimbus h2")?.textContent, "The Nimbus Collection");
+    assert.equal(doc.querySelector(".home-nimbus-content a")?.getAttribute("href"), "/pages/nimbus-collection");
   }
 });
 

@@ -15,7 +15,7 @@ import { useProductHighlights } from "./product-highlights";
 import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
-import { Modal } from "../modal";
+import { Modal } from "./modal";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
