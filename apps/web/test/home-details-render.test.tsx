@@ -61,7 +61,7 @@ test("older published homepage retains original copy, assets, local links and fo
   const { doc } = await renderHome();
   assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
   assert.deepEqual(texts(doc, ".category-tile h2"), ["Sofas", "Chairs", "Tables", "Beds"]);
-  assert.deepEqual(texts(doc, ".category-tile p"), ["Starting from ₹25,000", "Starting from ₹8,000", "Starting from ₹12,000", "Starting from ₹55,000"]);
+  assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"), "the frame shows a visit prompt, not the price line");
   assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds"]);
   assert.equal(doc.querySelector(".home-difference h2")?.textContent, "Every element is yours to reshape");
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
@@ -85,9 +85,10 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Discover our collection");
   assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
   assert.deepEqual(texts(doc, ".category-tile h2"), ["Restful beds", "Welcoming sofas", "Everyday chairs", "Gathering tables"]);
-  assert.deepEqual(texts(doc, ".category-tile p"), ["Made for your budget", "Starting from ₹99", "Ask for a quote", "From ₹18,000"]);
+  assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"));
+  assert.ok(!doc.body.textContent!.includes("Made for your budget"), "the admin's price lines are not on the Impact Layout tiles");
   assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/collections/beds", "/pages/sofas", "/pages/chairs", "/pages/tables"]);
-  assert.ok(doc.querySelector(".category-tile img")?.getAttribute("src")?.includes("engaged_9_1.jpg"));
+  assert.ok(doc.querySelector(".category-tile img")?.getAttribute("src")?.includes("hero-beds.webp"));
   assert.deepEqual(texts(doc, ".home-difference .home-eyebrow, .home-difference h2, .home-difference a"), ["Why Maple", "Crafted around you", "Plan your space"]);
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Your fabric", "Your city", "Our workshop", "Our promise"]);
   assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");

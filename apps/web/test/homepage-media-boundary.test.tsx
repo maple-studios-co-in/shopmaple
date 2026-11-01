@@ -26,8 +26,8 @@ test("homepage islands retain exact default art and resolve partial overrides by
     assert.equal(doc.querySelector(".hero-film video")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
     assert.equal(doc.querySelector(".hero-film video")?.getAttribute("preload"), "metadata");
     assert.deepEqual([...doc.querySelectorAll(".category-tile img")].map(node => node.getAttribute("src")), [
-      files + "engaged_5.jpg?v=1767435623", media ? "/media/custom-chair.webp" : files + "engaged_6_1.jpg?v=1767444019",
-      files + "engaged_8_1.jpg?v=1767444598", files + "engaged_9_1.jpg?v=1767448207",
+      "/media/home/hero-sofas.webp", media ? "/media/custom-chair.webp" : "/media/home/hero-chairs.webp",
+      "/media/home/hero-tables.webp", "/media/home/hero-beds.webp",
     ]);
     assert.equal(doc.querySelector('.category-tile[href="/pages/chairs"] img')?.getAttribute("alt"), media ? "Custom chair" : "");
     assert.equal(doc.querySelector(".home-nimbus-media img")?.getAttribute("src"), media ? "/media/nimbus-wide.webp" : files + "Chairs_9.svg");

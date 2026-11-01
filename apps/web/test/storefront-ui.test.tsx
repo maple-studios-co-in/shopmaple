@@ -281,7 +281,7 @@ test("hero keeps product discovery clear and plays the latest shop film on its o
       );
       assert.match(
         document.querySelector(".hero-categories")!.textContent!,
-        /Starting from ₹25,000/,
+        /View Collection/,
       );
       assert.equal(document.querySelector(".hero-film button"), null, "no play or pause control");
     });

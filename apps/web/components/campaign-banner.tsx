@@ -47,10 +47,13 @@ function ArtworkLayer({
 export async function CampaignBanner({
   campaign,
   compact = false,
+  layout,
   content: supplied,
 }: {
   campaign: CampaignKey;
   compact?: boolean;
+  /** "strip": the homepage's split announcement (copy beside the photo); otherwise a full banner, or a card when compact. */
+  layout?: "strip";
   /** A specific content document (for example a staff draft); defaults to the published snapshot. */
   content?: StorefrontDocument;
 }) {
@@ -79,6 +82,7 @@ export async function CampaignBanner({
     <section
       className={`campaign-banner${compact ? " campaign-compact" : ""}`}
       data-campaign={campaign}
+      data-campaign-layout={layout ?? (compact ? "card" : "band")}
       aria-label={data.label || data.headline.join(" ")}
       style={vars}
     >
@@ -115,6 +119,7 @@ export async function CampaignBanner({
           <div className="campaign-bottom-shade" aria-hidden="true" />
         )}
         <div className="campaign-copy">
+          {layout === "strip" && <span className="campaign-ornament" data-campaign-ornament aria-hidden="true" />}
           {data.label && <p className="campaign-label">{data.label}</p>}
           <h2>
             {data.headline.map((line) => (
