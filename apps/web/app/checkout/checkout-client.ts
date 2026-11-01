@@ -29,8 +29,13 @@ export const checkoutAttemptSchema = z.object({
           quantity: z.number().int().min(1),
           unitPricePaise: money,
           lineTotalPaise: money,
+          fulfilment: z
+            .object({ kind: z.enum(["stocked", "made_to_order"]), leadTimeDays: z.number().int().min(1).nullable() })
+            .optional(),
         }),
       ),
+      /** The Shiprocket courier Keeri chose and its transit estimate. */
+      delivery: z.object({ courierName: z.string().min(1).max(200), estimatedDays: z.number().int().min(0).nullable() }).nullable().optional(),
       currency: z.literal("INR"),
       subtotalPaise: money,
       shippingPaise: money,
@@ -42,13 +47,15 @@ export const checkoutAttemptSchema = z.object({
     .optional(),
   fulfillmentStatus: z.enum(["pending", "confirmed", "review_required"]).optional(),
   orderReference: z.string().nullable().optional(),
+  /** When the payment window must close: two minutes before Keeri's stock hold lapses. */
+  payBy: z.iso.datetime({ offset: true }).nullable().optional(),
 });
 export type CheckoutAttempt = z.infer<typeof checkoutAttemptSchema>;
 
 /** A failure the buyer can act on. `closed` means the API no longer offers checkout at all. */
 export class CheckoutClientError extends Error {
   constructor(
-    public readonly kind: "closed" | "blocked" | "unavailable" | "lost" | "invalid" | "network",
+    public readonly kind: "closed" | "blocked" | "unavailable" | "lost" | "invalid" | "network" | "unpriced",
     message: string,
   ) {
     super(message);
@@ -60,6 +67,7 @@ const safeMessages: Record<string, CheckoutClientError["kind"]> = {
   CHECKOUT_BLOCKED: "blocked",
   CHECKOUT_IN_PROGRESS: "blocked",
   QUOTE_REJECTED: "invalid",
+  DELIVERY_UNPRICED: "unpriced",
   QUOTE_UNAVAILABLE: "unavailable",
   PAYMENT_UNAVAILABLE: "unavailable",
   CHECKOUT_NOT_FOUND: "lost",
@@ -72,6 +80,7 @@ const fallback: Record<CheckoutClientError["kind"], string> = {
   lost: "We couldn't find your cart. Please return to your cart and try again.",
   invalid: "Check the supplied values and try again.",
   network: "We couldn't confirm that request. Please check your connection and try again.",
+  unpriced: "We can't price delivery to this pincode online right now. Send us an enquiry and our team will quote delivery for you. No payment has been taken.",
 };
 async function translate(response: Response): Promise<CheckoutClientError> {
   let code = "";
@@ -138,6 +147,18 @@ export function createCheckoutClient(transport: typeof fetch = (...args) => fetc
     },
     status(attemptId: string) {
       return call(`/api/checkout/${encodeURIComponent(attemptId)}`, { method: "GET" });
+    },
+    /** Hand Razorpay's signed success callback to the store, which verifies it and the capture. */
+    paymentCallback(attemptId: string, signed: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
+      return call(`/api/checkout/${encodeURIComponent(attemptId)}/payment-callback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpay_order_id: signed.razorpay_order_id,
+          razorpay_payment_id: signed.razorpay_payment_id,
+          razorpay_signature: signed.razorpay_signature,
+        }),
+      });
     },
     /** Free the stock hold of an attempt the buyer is walking away from. */
     release(attemptId: string) {

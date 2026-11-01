@@ -1,5 +1,5 @@
 /** Hosted Razorpay Checkout hand-off. The browser only ever sees the public key
- * id and the server-created order; capture is proven by the signed webhook. */
+ * id and the server-created order; the store verifies every capture with Razorpay. */
 export interface HostedPaymentOptions {
   key: string;
   order_id: string;
@@ -10,6 +10,8 @@ export interface HostedPaymentOptions {
   prefill: { name: string; email: string; contact: string };
   notes?: Record<string, string>;
   theme?: { color: string };
+  /** Seconds before the window closes itself; set so it never outlives the stock hold. */
+  timeout?: number;
   handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
   modal: { ondismiss: () => void };
 }
