@@ -187,8 +187,8 @@ test("the banner uses Maple's own static photo and the store's promises instead 
   await mount((doc) => {
     const banner = hook(doc, "data-banner")!;
     assert.match(banner.querySelector("img")!.getAttribute("src")!, /^\/product-page\/banner\.jpg/);
-    assert.equal(text(banner.querySelector("h2")), "Crafted in Delhi. Made to order.");
-    assert.equal(text(banner.querySelector("p")), "In our own workshop, and backed by our warranty.");
+    assert.equal(text(banner.querySelector("h2")), "Made for your space.");
+    assert.equal(text(banner.querySelector("p")), "Every Maple piece is made to order in our Delhi workshop, in the finish you choose.");
     assert.equal(banner.querySelector("button, video"), null, "The frame's play button has no video behind it");
   });
 });
