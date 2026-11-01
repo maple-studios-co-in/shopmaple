@@ -2,19 +2,20 @@ import type { ProductCard as ProductCardModel, CategoryPageSlug } from "@shopmap
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
 import { shopFile } from "@/lib/format";
 import { resolveCategoryPage, type LandingSection } from "@/lib/category-content-defaults";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import sourceCatalog from "@/data/landing-catalog.json";
+import { CampaignWindow } from "@/components/campaign-window";
 import { ProductImage } from "./product-image";
-import { CategoryCampaign } from "./category-campaign";
+import { CategoryCampaign, CategoryHero, resolveCampaign } from "./category-campaign";
 import { CategoryIntro } from "./category-intro";
 import { ProductCard } from "./product-card";
-import { PromiseStrip } from "./promise-strip";
 import { Rail } from "./rail";
+import { SectionHeading } from "./section-heading";
 
 type SourceProduct = { handle: string; title: string; image: string; price: string; compareAt: string };
 const sourceProducts: Record<string, SourceProduct> = sourceCatalog;
@@ -29,21 +30,13 @@ export function landingCollectionHref(path: string) {
 }
 
 const page = "mx-auto w-full max-w-[1440px] px-4 md:px-8 xl:px-16";
+/** A section of the "Maple / PDF Review / Chairs" frame: 64 px around the content at 1440. */
+const band = "mx-auto w-full max-w-[1440px] p-16 max-[1024px]:px-8 max-[1024px]:py-12 max-[750px]:px-5 max-[750px]:py-10";
 const railId = (key: string) => `category-${key}`;
-// One card per 72% of a phone, two on small tablets, three on tablets, four from 1024 px.
-const railItem = "w-[72%] shrink-0 snap-start sm:w-[calc((100%-16px)/2)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)]";
-const cardSizes = "(max-width:639px) 72vw, (max-width:767px) 48vw, (max-width:1023px) 31vw, (min-width:1440px) 316px, 23vw";
-
-function SectionHeader({ eyebrow, title, id, children }: { eyebrow?: string; title?: string; id?: string; children?: ReactNode }) {
-  return (
-    <header className="mb-6 grid justify-items-center gap-2 text-center md:mb-8">
-      {eyebrow && <p data-eyebrow className="m-0 text-label font-bold tracking-[0.14em] text-espresso uppercase">{eyebrow}</p>}
-      {title && <h2 id={id} className="m-0 font-serif text-[28px] leading-[1.15] font-medium text-brand italic md:text-[36px]">{title}</h2>}
-      <span aria-hidden="true" className="mt-1 h-px w-12 bg-brand/40" />
-      {children}
-    </header>
-  );
-}
+// Five 246 px cards across 1312 px as in the frame; four under 1140, three under 1024, and a
+// card and a half on phones.
+const railItem = "w-[calc((100%-80px)/5)] shrink-0 snap-start max-[1140px]:w-[calc((100%-60px)/4)] max-[1024px]:w-[calc((100%-40px)/3)] max-[750px]:w-[62%]";
+const cardSizes = "(max-width:750px) 62vw, (max-width:1024px) 31vw, (max-width:1140px) 23vw, 246px";
 
 /** A product from the original editorial page that the live catalogue lacks: an honest enquiry. */
 function SourceProductCard({ product }: { product: SourceProduct }) {
@@ -83,30 +76,33 @@ export async function CategoryRail({ sectionKey, handles, heading, collection, v
     return source ? [<div key={handle} className={railItem}><SourceProductCard product={source} /></div>] : [];
   });
   return (
-    <section id={railId(sectionKey)} data-category-rail data-category-section="rail" aria-label={label} className={`${page} scroll-mt-6 py-8 md:py-12`}>
-      <SectionHeader eyebrow="Shop by" title={heading}>
+    <section id={railId(sectionKey)} data-category-rail data-category-section="rail" aria-label={label} className={`${band} scroll-mt-6`}>
+      <div className="mb-6 flex items-end justify-between gap-4">
+        {heading && <SectionHeading eyebrow="Shop by" title={heading} />}
         {viewAll && collection && (
-          <Link data-view-all href={landingCollectionHref(`/collections/${collection}`)} className="mt-1 inline-flex items-center gap-1.5 text-ui font-bold text-brand no-underline hover:underline hover:underline-offset-[5px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <Link data-view-all href={landingCollectionHref(`/collections/${collection}`)} className="mb-1 inline-flex shrink-0 items-center gap-1.5 text-ui font-bold text-brand no-underline hover:underline hover:underline-offset-[5px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
             View all <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         )}
-      </SectionHeader>
-      <Rail label={label} trackClassName="pb-1" controlsClassName="top-[calc((100%-96px)/2)] -translate-y-1/2">{cards}</Rail>
+      </div>
+      <Rail label={label} trackClassName="gap-5 pb-1 max-[750px]:gap-3" controlsClassName="top-[calc((100%-150px)/2)] -translate-y-1/2">{cards}</Rail>
     </section>
   );
 }
 
 function CategoryTiles({ title, items }: { title: string; items: NonNullable<LandingSection["items"]> }) {
   return (
-    <nav data-category-tiles data-category-section="categories" aria-labelledby="category-tiles-title" className={`${page} py-8 md:py-12`}>
-      <SectionHeader eyebrow="Explore by category" title="Find what fits your space" id="category-tiles-title" />
-      <Rail label={`${title} categories`} trackClassName="gap-3 px-1 pt-1 pb-2 md:gap-6 lg:justify-center-safe" controlsClassName="top-[52px] -translate-y-1/2 md:top-[70px] lg:top-[82px]">
+    <nav data-category-tiles data-category-section="categories" aria-labelledby="category-tiles-title" className={band}>
+      <SectionHeading eyebrow="Explore by category" title="Find what fits your space." id="category-tiles-title" className="mb-6" />
+      <Rail label={`${title} categories`} trackClassName="gap-7 p-1 -m-1 max-[750px]:gap-4" controlsClassName="top-[82px] -translate-y-1/2 max-[750px]:top-[60px]">
         {items.map((item) => (
-          <Link key={item.key} data-category-tile href={landingCollectionHref(item.href!)} className="group flex w-[108px] shrink-0 snap-start flex-col items-center gap-3 rounded-lg text-center no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand md:w-[148px] lg:w-[172px]">
-            <span className="relative block size-[104px] overflow-hidden rounded-full border-[5px] border-white bg-cream shadow-[0_0_0_1px_#e1d9d0] md:size-[140px] lg:size-[164px]">
-              <Image src={item.image} alt="" fill sizes="(max-width:767px) 104px, 164px" className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />
+          <Link key={item.key} data-category-tile href={landingCollectionHref(item.href!)} className="group flex w-[195px] shrink-0 snap-start flex-col items-start gap-4 rounded-lg no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand max-[1024px]:w-[164px] max-[750px]:w-[120px] max-[750px]:gap-3">
+            <span className="relative block size-[164px] overflow-hidden rounded-full bg-cream max-[750px]:size-[120px]">
+              <Image src={item.image} alt="" fill sizes="(max-width:750px) 120px, 164px" className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />
             </span>
-            <span className="text-ui font-medium text-espresso group-hover:text-brand md:text-card">{item.title}</span>
+            <span className="w-[180px] text-center text-price font-bold text-espresso group-hover:text-brand max-[1024px]:w-[164px] max-[750px]:w-[120px] max-[750px]:text-ui">
+              <span data-tile-label>{item.title}</span>&nbsp;&nbsp;<span aria-hidden="true">→</span>
+            </span>
           </Link>
         ))}
       </Rail>
@@ -115,22 +111,24 @@ function CategoryTiles({ title, items }: { title: string; items: NonNullable<Lan
 }
 
 type Room = { section: LandingSection; target?: LandingSection };
+const roomColumns: Record<number, string> = { 1: "min-[751px]:grid-cols-1", 2: "min-[751px]:grid-cols-2", 3: "min-[751px]:grid-cols-3" };
+/** "Shop by room": each picture is labelled with, and opens, the product row that followed it. */
 function RoomCards({ title, rooms }: { title: string; rooms: Room[] }) {
-  const columns = rooms.length >= 4 ? "md:grid-cols-2 lg:grid-cols-4" : rooms.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2";
   const image = (section: LandingSection, alt: string) => (
-    <Image src={shopFile(section.mobile!)} alt={alt} fill sizes="(max-width:767px) 78vw, 420px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+    <span className="relative block aspect-[313/270] overflow-hidden rounded-[12px] bg-cream">
+      <Image src={shopFile(section.mobile!)} alt={alt} fill sizes="(max-width:750px) 78vw, 420px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none" />
+    </span>
   );
-  const cardClass = "group relative block aspect-square w-[78%] shrink-0 snap-start overflow-hidden rounded-xl bg-cream md:w-auto";
+  const cardClass = "group flex w-[78%] shrink-0 snap-start flex-col gap-[14px] min-[751px]:w-auto";
   return (
-    <section data-category-rooms data-category-section="rooms" aria-labelledby="category-rooms-title" className={`${page} py-8 md:py-12`}>
-      <SectionHeader eyebrow="Shop by room" title="Curated for every corner of your home" id="category-rooms-title" />
-      <Rail label={`${title} rooms`} trackClassName={`md:grid md:overflow-visible ${columns}`} controlsClassName="top-1/2 -translate-y-1/2 md:hidden">
+    <section data-category-rooms data-category-section="rooms" aria-labelledby="category-rooms-title" className={band}>
+      <SectionHeading eyebrow="Shop by room" title="Curated for every corner of your home." id="category-rooms-title" className="mb-7 max-[750px]:mb-6" />
+      <Rail label={`${title} rooms`} trackClassName={`gap-5 max-[750px]:gap-3 min-[751px]:grid min-[751px]:overflow-visible ${roomColumns[rooms.length] ?? "min-[751px]:grid-cols-4"}`} controlsClassName="top-[calc((100%-44px)/2)] -translate-y-1/2 min-[751px]:hidden">
         {rooms.map(({ section, target }) => target ? (
-          <Link key={section.key} data-room-card href={`#${railId(target.key)}`} className={`${cardClass} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}>
+          <Link key={section.key} data-room-card href={`#${railId(target.key)}`} className={`${cardClass} rounded-[12px] no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand`}>
             {image(section, "")}
-            <span className="sr-only">See {target.heading}</span>
-            <span aria-hidden="true" className="absolute right-4 bottom-4 grid size-10 place-items-center rounded-full bg-white text-brand shadow-[0_4px_14px_rgba(41,37,31,0.18)] transition-transform group-hover:translate-x-0.5">
-              <ArrowRight className="size-5" />
+            <span className="font-serif text-band font-bold text-espresso group-hover:text-brand max-[1024px]:text-h4">
+              <span data-room-label>{target.heading}</span>&nbsp;&nbsp;<span aria-hidden="true">→</span>
             </span>
           </Link>
         ) : (
@@ -141,27 +139,32 @@ function RoomCards({ title, rooms }: { title: string; rooms: Room[] }) {
   );
 }
 
+/** The frame's promise band ("OUR PROMISE / Every piece. Every time.") drawn from the page's own difference heading and values. */
 function ValueCards({ items, heading }: { items: NonNullable<LandingSection["items"]>; heading?: LandingSection }) {
   return (
-    <section data-category-values data-category-section="values" aria-label={heading?.heading || "Our promise"} className={`${page} py-8 md:py-12`}>
-      {heading && <SectionHeader eyebrow={heading.eyebrow} title={heading.heading} />}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+    <section data-category-values data-category-section="values" aria-label={heading?.heading || "Our promise"} className={band}>
+      {heading?.heading && <SectionHeading eyebrow={heading.eyebrow || "Our promise"} title={heading.heading} className="mb-6" />}
+      <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-5 rounded-xl bg-cream p-5 sm:p-6 lg:grid-cols-4 lg:gap-6">
         {items.map((item) => (
-          <div key={item.key} data-value-card className="flex flex-col items-center gap-2 rounded-xl bg-cream px-3 py-5 text-center md:gap-3 md:px-5 md:py-7">
-            <Image src={item.image.startsWith("https:") ? item.image : shopFile(item.image)} alt="" width={56} height={56} className="size-11 md:size-14" />
-            <h3 className="m-0 font-serif text-[19px] leading-[1.15] font-medium text-espresso md:text-h4">{item.title}</h3>
-            {item.body && <p className="m-0 max-w-[260px] text-meta text-[#5e574f] md:text-ui">{item.body}</p>}
-          </div>
+          <li key={item.key} data-value-card className="flex items-start gap-3">
+            <Image src={item.image.startsWith("https:") ? item.image : shopFile(item.image)} alt="" width={28} height={28} className="size-6 shrink-0 sm:size-7" />
+            <span className="grid gap-1">
+              <strong className="text-ui font-bold text-espresso sm:text-card">{item.title}</strong>
+              {item.body && <span data-value-body className="text-label text-[#5e574f] sm:text-meta">{item.body}</span>}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
 
 /**
- * A category page (sofas, tables, chairs) on the chair-category design: hero card, introduction,
- * category circles, sale banner, product rows, room pictures, promise cards. Everything comes from
- * the page's own published content; the admin's section order and visibility still apply.
+ * A category page (sofas, tables, chairs) on the "Maple / PDF Review / Chairs" frame: hero card,
+ * category circles, sale banner, product rows, room pictures, the promise band and the paired row.
+ * Everything comes from the page's own published content; the admin's section order and
+ * visibility still apply. While the hero campaign shows, its eyebrow is the page's h1 and the
+ * introduction's text follows the rows; otherwise the introduction, with the h1, opens the page.
  */
 export async function CategoryLanding({ slug, content: supplied }: { slug: CategoryPageSlug; content?: StorefrontDocument }) {
   const content = supplied ?? await getPublishedContent();
@@ -188,19 +191,24 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
       if (sections[i]!.type !== "divider") return sections[i];
     return undefined;
   };
-  const introduction = <CategoryIntro key="intro" title={data.title} description={data.description} />;
-  const heroVisible = sections.some((section) => section.key === "hero");
+  const heroKey = `${slug}-hero` as const;
+  const hero = sections.some((section) => section.key === "hero") ? resolveCampaign(heroKey, content) : null;
+  const serverNow = Date.now();
+  // The same schedule decides both places, so the h1 and the introduction show exactly once.
+  const whileHero = (shown: ReactNode, otherwise: ReactNode) => !hero ? otherwise
+    : hero.schedule ? <CampaignWindow schedule={hero.schedule} serverNow={serverNow} fallback={otherwise}>{shown}</CampaignWindow>
+      : shown;
+  const opening = <CategoryIntro title={data.title} description={data.description} />;
 
   return (
-    <div data-store data-category-landing={slug} className="bg-linen pb-12 font-body text-espresso">
-      {!heroVisible && introduction}
+    <div data-store data-category-landing={slug} className="bg-linen font-body text-espresso">
+      {!hero && opening}
       {sections.map((section, index) => {
         if (section.type === "banner") {
-          if (isCampaign(section))
-            return [
-              <CategoryCampaign key={section.key} campaign={`${slug}-${section.key as "hero" | "sale"}`} content={content} variant={section.key === "hero" ? "hero" : "banner"} />,
-              section.key === "hero" ? introduction : null,
-            ];
+          if (section.key === "hero")
+            return hero ? <Fragment key="hero">{whileHero(<CategoryHero campaign={heroKey} data={hero} title={data.title} />, opening)}</Fragment> : null;
+          if (section.key === "sale")
+            return <CategoryCampaign key={section.key} campaign={`${slug}-sale`} content={content} />;
           return section === firstRoom ? <RoomCards key="rooms" title={data.title} rooms={rooms} /> : null;
         }
         if (section.type === "categories")
@@ -220,10 +228,10 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
         if (section.type === "divider")
           return <div key={section.key} data-category-divider aria-hidden="true" className={page}><hr className="m-0 h-px border-0 bg-sand" /></div>;
         if (section.type === "heading") {
-          if (neighbour(index, 1)?.type === "values") return null;
+          if (neighbour(index, 1)?.type === "values" || !section.heading) return null;
           return (
-            <section key={section.key} data-category-section="heading" aria-label={section.heading} className={`${page} pt-8 md:pt-12`}>
-              <SectionHeader eyebrow={section.eyebrow} title={section.heading} />
+            <section key={section.key} data-category-section="heading" aria-label={section.heading} className="mx-auto w-full max-w-[1440px] px-16 pt-16 max-[1024px]:px-8 max-[1024px]:pt-12 max-[750px]:px-5 max-[750px]:pt-10">
+              <SectionHeading eyebrow={section.eyebrow || data.title} title={section.heading} />
             </section>
           );
         }
@@ -233,7 +241,7 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
         }
         return null;
       })}
-      <div className={`${page} pt-4`}><PromiseStrip /></div>
+      {hero && whileHero(<CategoryIntro title={data.title} description={data.description} heading={false} />, null)}
     </div>
   );
 }
