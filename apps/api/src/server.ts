@@ -7,6 +7,7 @@ import { loadEnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
 import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 import { installShutdown } from "./server-lifecycle.js";
+import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -30,6 +31,8 @@ if (
 const enquiryDelivery = loadEnquiryDeliveryConfig(process.env);
 // Checkout is off unless CHECKOUT_ENABLED=true and every commerce value is valid.
 const commerceConfig = loadCommerceConfig(process.env);
+// The homepage Instagram feed is off (staff-edited posts) until every private Meta setting is present.
+const instagramFeed = loadInstagramFeedConfig(process.env);
 const db = new PrismaClient();
 const commerce = commerceConfig ? composeCommerce(db, commerceConfig) : null;
 const server = createApp(
@@ -45,6 +48,7 @@ const server = createApp(
     enquiryDelivery,
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
+    instagramFeed,
   },
   commerce?.commerce,
 ).listen(env.API_PORT, env.API_HOST, () =>
@@ -69,9 +73,17 @@ const orderRunner = commerce
       5_000,
     )
   : null;
+// Checks every 15 minutes; a refresh runs only when three hours have passed, on one worker at a time.
+const instagramRunner = instagramFeed
+  ? startEnquiryDeliveryRunner(
+      () => refreshInstagramFeed(db, instagramFeed),
+      () => console.error("Instagram feed cycle failed; the last good posts remain on the homepage."),
+      15 * 60_000,
+    )
+  : null;
 installShutdown({
   server,
   db,
-  runners: [deliveryRunner, orderRunner],
+  runners: [deliveryRunner, orderRunner, instagramRunner],
   exit: (code) => process.exit(code),
 });

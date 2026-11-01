@@ -105,9 +105,9 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
   </>;
 }
 
-/** `embedded` (the section inspector) keeps the post count and Add button without the screen heading. */
-export function InstagramFields(props: Props & { embedded?: boolean }) {
-  const { content, onChange, embedded = false } = props;
+/** `embedded` (the section inspector) keeps the post count and Add button without the screen heading; `feed` shows the automatic feed's status under it. */
+export function InstagramFields(props: Props & { embedded?: boolean; feed?: ReactNode }) {
+  const { content, onChange, embedded = false, feed } = props;
   const posts = content.instagramPosts;
   const media = mediaProps(props);
   const setPosts = (instagramPosts: typeof posts) => onChange({ ...content, instagramPosts });
@@ -117,6 +117,7 @@ export function InstagramFields(props: Props & { embedded?: boolean }) {
   return <>
     {embedded ? posts.length > 0 && <div className="mb-4 flex justify-end">{tally(posts.length, 30, "posts", addPost)}</div> : <PanelHeader title="Instagram" actions={posts.length > 0 && tally(posts.length, 30, "posts", addPost)}
       description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers." />}
+    {feed}
     {posts.length === 0 ? (
       <EmptyState title="No Instagram posts yet" icon={<Images strokeWidth={1.5} />} action={addPost}>
         The homepage needs at least one post. Add a post link and an approved image to fill the Instagram row.

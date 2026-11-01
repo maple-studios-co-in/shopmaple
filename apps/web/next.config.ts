@@ -22,6 +22,7 @@ const config: NextConfig = {
   async rewrites() {
     return [
       { source: "/media/keeri/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri/:filename" },
+      { source: "/media/instagram-feed/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/instagram-feed/:filename" },
       {
         source: "/media/uploads/:filename",
         destination:
