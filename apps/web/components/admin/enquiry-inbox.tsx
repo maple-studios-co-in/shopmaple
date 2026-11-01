@@ -41,6 +41,19 @@ function FilterFields({ value, onChange, staff, disabled }: { value: Filters; on
     <DateField label="To" className="min-w-36" value={value.to} disabled={disabled} onChange={set("to")} />
   </>;
 }
+/** A product page's custom request: what the shopper asked for, beside the piece and finish listed above. */
+function CustomOptions({ context }: { context: EnquiryAdminDetail["context"] }) {
+  return <Subsection title="Requested changes" data-custom-options
+    description="No deposit was taken. Price the request, then reply with the quote; payment follows once the customer agrees.">
+    <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-xl border border-border bg-card p-4 text-sm shadow-xs
+      [&_dd]:text-foreground [&_dd]:[overflow-wrap:anywhere] [&_dt]:text-muted-foreground">
+      {([["Fabric", context.fabric], ["Finish", context.finish], ["Size or dimensions", context.size], ["Quantity", context.quantity?.toString()]] as const).map(([term, value]) =>
+        <Fragment key={term}><dt>{term}</dt><dd className="tabular-nums">{value || "Not provided"}</dd></Fragment>)}</dl>
+    {context.handle && <a href={`/products/${encodeURIComponent(context.handle)}`} target="_blank" rel="noreferrer"
+      className="inline-flex w-fit items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline">
+      View the product page<ArrowUpRight aria-hidden="true" className="size-3.5" strokeWidth={1.5} /></a>}
+  </Subsection>;
+}
 export function EnquiryInbox(props: { session: StaffSession; onExpired: () => void }) {
   return <EnquiryInboxSession key={`${props.session.user.id}:${props.session.csrfToken}:${props.session.user.canManageEnquiries}`} {...props} />;
 }
@@ -121,7 +134,7 @@ function EnquiryInboxSession({ session, onExpired }: { session: StaffSession; on
   const rowOpener = () => { const active = document.activeElement; return active instanceof HTMLElement && listRegion.current?.contains(active) ? active : null; };
   const viewProps = { session, today, onDenied: denied, onOpenEnquiry: openEnquiry, onOpenContact: openContact };
   return <section className="grid min-w-0" aria-label="Customer enquiries" aria-busy={busy}>
-    <PanelHeader title="Customer enquiries" description="Every contact, project and bulk enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal." />
+    <PanelHeader title="Customer enquiries" description="Every contact, project, bulk and custom enquiry, with its pipeline stage, follow-ups and contact. Replies go out by email from here; everything else stays internal." />
     <TabBar label="CRM views" tabs={views} value={contactId === null ? view : ""} onSelect={selectView} disabled={workflowBusy || deliveryBusy} className="min-w-0 gap-5">
       {contactId !== null && <ContactPage {...viewProps} contactId={contactId} onBack={() => setContactId(null)} backLabel={view === "list" ? "Back to enquiries" : "Back"} />}
       <TabsContent value="board"><CrmBoard {...viewProps} /></TabsContent>
@@ -170,7 +183,8 @@ function EnquiryInboxSession({ session, onExpired }: { session: StaffSession; on
             {([["Reference", detail.id], ["Name", detail.name], ["Email", detail.email], ["Phone", detail.phone], ["Product", detail.context.product],
               ["Variant", detail.context.variant], ["SKU", detail.context.sku], ["Pincode", detail.context.pincode]] as const).map(([term, value]) =>
               <Fragment key={term}><dt>{term}</dt><dd className="tabular-nums">{value || "Not provided"}</dd></Fragment>)}</dl>
-          <Subsection title="Message">
+          {detail.kind === "custom" && <CustomOptions context={detail.context} />}
+          <Subsection title={detail.kind === "custom" ? "Notes" : "Message"}>
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground [overflow-wrap:anywhere]">{detail.message || "No message supplied."}</p>
             {detail.reviews.map(review => <p key={review.id} className="text-xs text-muted-foreground">Reviewed by staff {review.actorId} at <time dateTime={review.createdAt}>
               {new Date(review.createdAt).toLocaleString()}</time> (before the pipeline existed).</p>)}</Subsection>
