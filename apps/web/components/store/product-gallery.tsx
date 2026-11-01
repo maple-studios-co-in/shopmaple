@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { getImageProps } from "next/image";
-import { Heart } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
+import type { Hotspot } from "@/lib/product-hotspots";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
@@ -11,7 +12,7 @@ const STAGE_SIZES = "(max-width:1023px) 100vw, calc(100vw - 257px - max(455px, (
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
 
-export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave }: {
+export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave, hotspotImage, hotspots = [] }: {
   images: string[];
   title: string;
   selected: number;
@@ -19,8 +20,23 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   onZoom: () => void;
   saved: boolean;
   onSave: () => void;
+  /** A white-background photo among `images`; while it is shown, `hotspots` mark its details. */
+  hotspotImage?: string;
+  hotspots?: Hotspot[];
 }) {
   const src = images[selected];
+  const cutout = Boolean(hotspotImage) && src === hotspotImage;
+  const [openSpot, setOpenSpot] = useState<number | null>(null);
+  const spotLayer = useRef<HTMLDivElement>(null);
+  const noteId = useId();
+  // A note belongs to the photo and finish it was opened on.
+  useEffect(() => setOpenSpot(null), [src]);
+  useEffect(() => {
+    if (openSpot === null) return;
+    const close = (event: PointerEvent) => { if (!spotLayer.current?.contains(event.target as Node)) setOpenSpot(null); };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [openSpot]);
   const initialSrc = useRef(src);
   const [settledSrc, setSettledSrc] = useState(src);
   const [readySrc, setReadySrc] = useState<string>();
@@ -98,11 +114,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className={cx("relative overflow-hidden rounded-[20px] bg-cream lg:rounded-[30px]", images.length > 1 && "lg:col-start-2")}>
+      <div className={cx("relative overflow-hidden rounded-[20px] lg:rounded-[30px]", cutout ? "border border-solid border-maple/8 bg-white" : "bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className="relative block aspect-[4/5] w-full cursor-zoom-in 2xl:aspect-square overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
+            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square", cutout ? "bg-white [&_img]:object-contain" : "bg-cream [&_img]:object-cover")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -154,6 +170,43 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
           </button>
         ) : (
           <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+        )}
+        {cutout && hotspots.length > 0 && (
+          // Markers sit over the white-background photo, which is drawn 4:5 and centred in the stage.
+          <div ref={spotLayer} data-hotspots className="pointer-events-none absolute inset-0 z-[3] grid place-items-center"
+            onKeyDown={(event) => {
+              if (event.key !== "Escape" || openSpot === null) return;
+              event.stopPropagation();
+              const opened = openSpot;
+              setOpenSpot(null);
+              spotLayer.current?.querySelectorAll<HTMLElement>("button[data-hotspot]")[opened]?.focus();
+            }}>
+            <div className="relative aspect-[4/5] h-full max-w-full">
+              {hotspots.map((spot, i) => {
+                const open = openSpot === i;
+                const left = `${Math.round(spot.x * 1000) / 10}%`;
+                const top = `${Math.round(spot.y * 1000) / 10}%`;
+                return (
+                  <div key={spot.label}>
+                    <button type="button" data-hotspot aria-label={spot.label} aria-expanded={open} aria-controls={open ? noteId : undefined}
+                      onClick={() => setOpenSpot(open ? null : i)} style={{ left, top }}
+                      className="pointer-events-auto absolute grid size-8 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-solid border-maple bg-white p-0 text-maple shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                      <span aria-hidden="true" className="absolute inset-0 rounded-full bg-maple/30 motion-safe:animate-ping" />
+                      <Plus aria-hidden="true" strokeWidth={2.4} className={cx("relative size-4 transition-transform motion-reduce:transition-none", open && "rotate-45")} />
+                    </button>
+                    {open && (
+                      <div id={noteId} data-hotspot-note role="group" aria-label={spot.label}
+                        style={{ [spot.y > 0.5 ? "bottom" : "top"]: spot.y > 0.5 ? `calc(${100 - Math.round(spot.y * 1000) / 10}% + 22px)` : `calc(${top} + 22px)`, ...(spot.x < 0.35 ? { left: `calc(${left} - 16px)` } : spot.x > 0.65 ? { right: `calc(${100 - Math.round(spot.x * 1000) / 10}% - 16px)` } : { left, transform: "translateX(-50%)" }) }}
+                        className="pointer-events-auto absolute z-[4] w-[min(240px,70%)] rounded-[10px] border border-solid border-maple/10 bg-white p-3 text-left text-[13px] leading-[1.45] text-black shadow-md">
+                        <strong className="block text-[12px] font-semibold text-maple">{spot.label}</strong>{" "}
+                        <span>{spot.note}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

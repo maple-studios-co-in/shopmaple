@@ -24,10 +24,13 @@ import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
+import { resolveHotspots, type Cutout } from "@/lib/product-hotspots";
 
 type Presentation = {
   variantImages: Record<string, string>;
   reviewLabel: string | null;
+  /** White-background photos by finish address (`variant.slug`), with hotspot positions; the notes come from the product's own text. */
+  cutouts?: Record<string, Cutout>;
 };
 
 // Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall.
@@ -58,7 +61,22 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
-  const galleryFor = (id: string) => variantGallery(product, product.variants.find((v) => v.id === id));
+  // A finish with a white-background photo opens on it, and it leads that finish's gallery.
+  const cutoutFor = (id: string) => {
+    const slug = product.variants.find((v) => v.id === id)?.slug;
+    return slug ? presentation?.cutouts?.[slug] : undefined;
+  };
+  const galleryFor = (id: string) => {
+    const gallery = variantGallery(product, product.variants.find((v) => v.id === id));
+    const cutout = cutoutFor(id);
+    return cutout ? [cutout.image, ...gallery.filter((src) => src !== cutout.image)] : gallery;
+  };
+  // The photo to show when a finish is chosen: its white-background photo, else its own first photo.
+  const startAt = (id: string) => {
+    if (cutoutFor(id)) return 0;
+    const src = variantImage(id);
+    return src ? Math.max(0, galleryFor(id).indexOf(src)) : undefined;
+  };
   // Catalogues without any per-option photos present plain option tiles rather than a grid of
   // "Photo unavailable" boxes.
   const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
@@ -78,7 +96,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     "";
   const [variantId, setVariantId] = useState(initial);
   const [urlVariant, setUrlVariant] = useState(initial);
-  const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
+  const [image, setImage] = useState(() => startAt(initial) ?? 0),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [shared, setShared] = useState("");
@@ -87,8 +105,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     // History navigation changes the option without remounting the enquiry.
     if (variantId !== initial) {
       setVariantId(initial);
-      const src = variantImage(initial);
-      if (src) setImage(Math.max(0, galleryFor(initial).indexOf(src)));
+      const start = startAt(initial);
+      if (start !== undefined) setImage(start);
     }
   }
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
@@ -114,8 +132,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     setVariantId(id);
     // The option's own photo leads its gallery; a shared gallery jumps to the option's photo.
     // Without one, the shopper keeps the photo they were looking at.
-    const src = variantImage(id);
-    if (src) setImage(Math.max(0, galleryFor(id).indexOf(src)));
+    const start = startAt(id);
+    if (start !== undefined) setImage(start);
     const chosen = product.variants.find((v) => v.id === id);
     const url = new URL(window.location.href);
     url.searchParams.set("variant", chosen?.slug ?? id);
@@ -156,6 +174,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
       <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
         <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
+            hotspotImage={cutoutFor(variantId)?.image} hotspots={resolveHotspots(cutoutFor(variantId), product.sourceDetails)}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">

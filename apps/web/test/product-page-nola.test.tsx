@@ -310,13 +310,10 @@ test("the warranty label reads well for short, self-describing and long catalogu
   assert.equal(warrantyLabel({ sourceDetails: null }), "36-month warranty");
 });
 
-test("the ticker can be paused, a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
-  await mount(async (doc) => {
-    const pause = doc.querySelector<HTMLButtonElement>("button[data-ticker-pause]")!;
-    assert.equal(pause.getAttribute("aria-pressed"), "false");
-    await act(async () => pause.click());
-    assert.equal(pause.getAttribute("aria-pressed"), "true");
-    assert.equal(hook(doc, "data-ticker-track")!.getAttribute("style")?.includes("paused"), true);
+test("the ticker shows no pause button (owner), a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
+  await mount((doc) => {
+    assert.equal(doc.querySelector("button[data-ticker-pause]"), null);
+    assert.doesNotMatch(hook(doc, "data-ticker")!.textContent!, /scrolling text/i);
   });
   await mount((doc) => assert.equal(hook(doc, "data-features"), null), { ...product, description: "", sourceDetails: null });
   await mount(async (doc) => {
