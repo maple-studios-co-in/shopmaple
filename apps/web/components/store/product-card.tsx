@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { ProductCardModel } from "@/lib/product-card-model";
+import { discountPercent, type ProductCardModel } from "@/lib/product-card-model";
 import { shopMoney } from "@/lib/format";
 import { ProductImage } from "../product-image";
+import { CardOptionThumbs, hasOptionPhotos } from "./card-option-thumbs";
 import { SaveButton } from "./save-button";
 
 /**
@@ -17,8 +18,9 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
 }) {
   const sale = product.compareAtPaise !== null;
   const href = "/products/" + product.handle;
+  const percent = discountPercent(product);
   return (
-    <article data-store data-product-card className={["group/card flex flex-col overflow-hidden rounded-lg border border-sand bg-white font-body text-espresso", className].filter(Boolean).join(" ")}>
+    <article data-store data-product-card className={["group/card flex flex-col overflow-hidden rounded-lg border border-sand bg-white shadow-[0_1px_3px_rgb(41_37_31/0.08)] font-body text-espresso", className].filter(Boolean).join(" ")}>
       <div data-card-image className="relative aspect-square overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:justify-items-center [&_[role=img]]:gap-2 [&_[role=img]]:text-meta [&_[role=img]]:text-[#5e574f]">
         <Link href={href} className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand">
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />
@@ -36,9 +38,11 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
             {shopMoney(product.pricePaise)}
           </span>
           {sale ? <del className="text-label font-normal text-taupe">{shopMoney(product.compareAtPaise!)}</del> : null}
+          {sale && percent !== null ? <span data-card-discount className="rounded-[4px] bg-[#e6f2e3] px-1.5 py-1 text-[10px] leading-none font-bold text-[#2f6b3a]">{percent}% OFF</span> : null}
         </p>
         {product.otherOptionsOnRequest && <p data-card-options className="m-0 text-meta text-taupe">Other options on request</p>}
-        {product.optionCount > 1 && (
+        {product.optionCount > 1 && hasOptionPhotos(product) && <CardOptionThumbs product={product} />}
+        {product.optionCount > 1 && !hasOptionPhotos(product) && (
           <Link data-card-options href={href} className="mt-auto inline-flex items-center gap-1 pt-1 text-meta font-semibold text-taupe no-underline hover:text-brand" aria-label={`View ${product.optionCount} options for ${product.title}`}>
             {product.optionCount} options <ArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
