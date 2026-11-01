@@ -7,6 +7,7 @@ import { SliderIsland } from "@/components/slider-island";
 import { heroFilm, heroHeadline, heroIntro } from "@/lib/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
 /** How long a slide stays before the next one, unless the shopper hovers or focuses the tile. */
 const autoplayMs = 6000;
@@ -15,7 +16,7 @@ type Slide = { kind: "image" | "video"; video?: string; image: string; alt: stri
 
 /**
  * The slides to show: the staff's, skipping any draft that is not finished (a blank address would break the
- * image), or the shop film alone when there are none.
+ * image), or, when there are none, the shop film followed by three room photos.
  */
 function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia): Slide[] {
   const authored = (content.slides ?? []).flatMap((slide): Slide[] => {
@@ -24,8 +25,13 @@ function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia): Sli
     return [{ kind: slide.kind, video: slide.kind === "video" ? slide.src : undefined, image, alt: slide.alt, headline: slide.headline, intro: slide.intro }];
   });
   if (authored.length) return authored;
+  // No slides authored yet: the shop film, then three of Maple's own room photos (the Nimbus slideshow's), as the frame's four dots show.
   const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
-  return [{ kind: "video", video: heroFilm, image: poster.image, alt: poster.alt, headline: heroHeadline, intro: heroIntro }];
+  const rooms = (["nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining"] as const).map((key): Slide => {
+    const room = resolveTemplateMedia(key, media);
+    return { kind: "image", image: room.image, alt: room.alt, headline: heroHeadline, intro: heroIntro };
+  });
+  return [{ kind: "video", video: heroFilm, image: poster.image, alt: poster.alt, headline: heroHeadline, intro: heroIntro }, ...rooms];
 }
 
 /**

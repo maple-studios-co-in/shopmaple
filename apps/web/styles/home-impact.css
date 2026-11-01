@@ -158,8 +158,8 @@
 }
 [data-campaign-layout="strip"] .campaign-copy {
   top: 50%;
-  left: 59.5%;
-  width: 36%;
+  left: 57.2%;
+  width: 38%;
   transform: translateY(-50%);
   gap: 8px;
   color: var(--impact-ink);
@@ -172,18 +172,23 @@
 [data-campaign-layout="strip"] .campaign-ornament {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--impact-burgundy);
+  gap: 8px;
+  color: #62201a;
 }
 [data-campaign-layout="strip"] .campaign-ornament i {
   display: block;
-  width: 36px;
+  width: 44px;
   height: 1px;
-  background: #cdb4ad;
+  background: linear-gradient(90deg, rgb(98 32 26 / 0), #62201a);
+}
+[data-campaign-layout="strip"] .campaign-ornament i:last-child {
+  background: linear-gradient(270deg, rgb(98 32 26 / 0), #62201a);
 }
 [data-campaign-layout="strip"] .campaign-copy h2 {
   color: var(--impact-ink);
-  font: 400 clamp(28px, 3.5cqw, 46px) / 1.1 var(--impact-serif);
+  font: 400 clamp(28px, 3.3cqw, 60px) / 1.1 var(--impact-serif);
+  letter-spacing: -0.012em;
+  color: #2a2420;
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-label {
   color: var(--impact-burgundy);
@@ -193,8 +198,7 @@
 [data-campaign-layout="strip"] .campaign-copy .campaign-supporting,
 [data-campaign-layout="strip"] .campaign-copy .campaign-offer {
   color: #4a443c;
-  font-size: 13px;
-  line-height: 1.4;
+  font: 400 clamp(13px, 1.11cqw, 19px) / 1.4 var(--impact-sans);
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-eligibility {
   color: #6a6258;
@@ -203,12 +207,26 @@
 }
 [data-campaign-layout="strip"] .campaign-cta {
   margin-top: 6px;
-  padding: 11px 16px;
+  padding: 0.77em 1.23em;
   border: 0;
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 13px/1.2 var(--impact-body);
+  font: 500 clamp(13px, 1.11cqw, 19px) / 1.2 var(--impact-sans);
+}
+[data-campaign-layout="strip"] .campaign-cta span {
+  margin-left: 6px;
+}
+/* The line-art flowers that finish the frame's strip on the right. */
+[data-campaign-layout="strip"] .campaign-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 17%;
+  background: url("/media/home/strip-flowers.webp") right center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 35%);
+  mask-image: linear-gradient(90deg, transparent, #000 35%);
+  pointer-events: none;
 }
 
 /* ---- The Maple Difference -------------------------------------------------------------- */
@@ -496,8 +514,8 @@
   padding: 64px 64px 72px;
 }
 [data-home-section="bestsellers"] .home-products {
-  background: #f5f1ea;
-  box-shadow: 0 0 0 100vmax #f5f1ea;
+  background: var(--impact-linen);
+  box-shadow: 0 0 0 100vmax var(--impact-linen);
   clip-path: inset(0 -100vmax);
 }
 [data-home-section] .home-products header {
@@ -535,6 +553,36 @@
   grid-auto-columns: 246px;
   gap: 20px;
 }
+
+/* ---- Product cards on the homepage rails, as the frame draws them: the photo (rounded, with its badges)
+   stands on the band itself, with the name, the price and the saving beneath, and no box around it. ---- */
+[data-home-section] .home-products [data-product-card] {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+[data-home-section] .home-products [data-card-image] {
+  border-radius: 16px;
+}
+[data-home-section] .home-products [data-product-card] > div:last-child {
+  padding: 14px 14px 0;
+  gap: 6px;
+}
+[data-home-section] .home-products [data-card-name] {
+  min-height: 0;
+  font: 600 14px/1.35 var(--impact-body);
+  color: var(--impact-ink);
+}
+[data-home-section] .home-products [data-card-price] {
+  align-items: center;
+  gap: 4px 8px;
+  font: 700 15px/1.3 var(--impact-body);
+}
+[data-home-section] .home-products [data-card-price] > span:first-child { order: 1; }
+[data-home-section] .home-products [data-card-discount] { order: 2; }
+[data-home-section] .home-products [data-card-price] > del { order: 3; flex-basis: 100%; }
 
 /* ---- Social proof ---------------------------------------------------------------------- */
 [data-home-section="instagram"] .home-social {
@@ -810,6 +858,8 @@
 }
 
 @media (max-width: 1000px) {
+  /* A fixed ratio with a minimum height would widen the strip past the window; use a height instead. */
+  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; height: clamp(150px, 22vw, 200px); }
   [data-home-section="hero"] .hero-film { height: clamp(430px, 54vw, 500px); }
   [data-home-section="difference"] .home-difference { padding-inline: 30px; }
 }
@@ -819,8 +869,8 @@
   [data-home-section="hero"] .hero-film::after { background: linear-gradient(180deg, rgb(60 40 28 / 0.35) 0%, rgb(60 40 28 / 0.6) 100%); }
   [data-home-section="hero"] .hero-categories { grid-template-rows: none; grid-auto-rows: 170px; }
   [data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] { padding-inline: 16px; }
-  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; min-height: 280px; }
-  [data-campaign-layout="strip"] .campaign-art-desktop { display: block; width: 100%; height: 55%; inset: 0 0 auto 0; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; height: auto; min-height: 330px; }
+  [data-campaign-layout="strip"] .campaign-art-desktop { display: block; width: 100%; height: 48%; inset: 0 0 auto 0; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
   [data-campaign-layout="strip"] .campaign-art-mobile { display: none; }
   [data-campaign-layout="strip"] .campaign-copy { top: auto; bottom: 18px; left: 18px; width: calc(100% - 36px); transform: none; }
   [data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) { top: auto; }

@@ -137,13 +137,16 @@ test("on a collection page the thumbnails and discount chip render and the old t
 });
 
 // ---- White card body ------------------------------------------------------------------------
-test("no stylesheet repaints the product card: no rule that targets the card sets a background", () => {
+test("no stylesheet repaints the product card, except the homepage rails, which draw it without a box as the Impact Layout frame does", () => {
   const dir = new URL("../styles/", import.meta.url);
   const offenders: string[] = [];
   for (const file of readdirSync(dir).filter(name => name.endsWith(".css"))) {
     const css = readFileSync(new URL(file, dir), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
     for (const [, selector, body] of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
-      if (/\[data-product-card\]|\[data-card-[a-z-]+\]/.test(selector!) && /background/.test(body!)) offenders.push(`${file}: ${selector!.trim()}`);
+      if (!/\[data-product-card\]|\[data-card-[a-z-]+\]/.test(selector!) || !/background/.test(body!)) continue;
+      // The one allowed rule: the homepage rails (under a homepage section) make the card transparent.
+      const homepageRail = /^\s*\[data-home-section\] \.home-products \[data-product-card\]\s*$/.test(selector!) && /background:\s*transparent/.test(body!);
+      if (!homepageRail) offenders.push(`${file}: ${selector!.trim()}`);
     }
   }
   assert.deepEqual(offenders, []);

@@ -21,16 +21,23 @@ const content = (next?: HomeDetails["hero"]["slides"]): HomeDetails["hero"] => (
 const doc = (node: React.ReactElement) => new JSDOM(renderToStaticMarkup(node)).window.document;
 const all = (root: ParentNode, selector: string) => [...root.querySelectorAll<HTMLElement>(selector)];
 
-test("without slides the hero is the one shop film, with today's words and no dots", () => {
+test("without slides the hero is the shop film followed by three room photos, with a dot for each", () => {
   const page = doc(<Hero />);
   const rendered = all(page, "[data-hero-slide]");
-  assert.equal(rendered.length, 1);
-  assert.equal(rendered[0]!.getAttribute("data-hero-slide-kind"), "video");
+  assert.deepEqual(rendered.map(slide => slide.getAttribute("data-hero-slide-kind")), ["video", "image", "image", "image"]);
   assert.equal(rendered[0]!.querySelector("video")?.getAttribute("src"), film);
-  assert.equal(rendered[0]!.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
-  assert.equal(rendered[0]!.querySelector("[data-hero-intro]")?.textContent, "Handcrafted furniture that brings elegance to every corner of your home.");
+  for (const slide of rendered) {
+    assert.equal(slide.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
+    assert.equal(slide.querySelector("[data-hero-intro]")?.textContent, "Handcrafted furniture that brings elegance to every corner of your home.");
+  }
+  assert.equal(all(page, "[data-slider-dot]").length, 4);
+  assert.equal(page.querySelector(".hero-film button:not([data-slider-dot])"), null, "no play or pause control");
+});
+
+test("a single authored film slide is the one shop film with no dots", () => {
+  const page = doc(<Hero content={content([slides[0]!])} />);
+  assert.equal(all(page, "[data-hero-slide]").length, 1);
   assert.equal(all(page, "[data-slider-dot]").length, 0, "one slide needs no dots");
-  assert.equal(page.querySelector(".hero-film button"), null);
 });
 
 test("authored slides render as server markup: media, words and the button in every slide", () => {
@@ -184,7 +191,7 @@ test("reduced motion: nothing advances, no video plays, and turning it off start
 test("one slide never advances; leaving the page removes the listener and the timer", async () => {
   mock.timers.enable({ apis: ["setTimeout"] });
   try {
-    await inBrowser(<Hero />, { island: "hero" }, async (browser, document) => {
+    await inBrowser(<Hero content={content([slides[0]!])} />, { island: "hero" }, async (browser, document) => {
       assert.equal(browser.motionListeners(), 1);
       mock.timers.tick(60000);
       assert.equal(document.querySelectorAll("[data-hero-slide]").length, 1);

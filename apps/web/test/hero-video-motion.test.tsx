@@ -59,7 +59,7 @@ test("server rendering shows the poster and the latest film, muted and looping, 
   for (const attribute of ["muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), attribute);
   assert.equal(video.hasAttribute("autoplay"), false, "started by script, so reduced motion never sees it move");
   assert.equal(video.getAttribute("aria-hidden"), "true", "the film is decoration");
-  assert.equal(doc.querySelectorAll("button").length, 0, "no play or pause control");
+  assert.equal([...doc.querySelectorAll("button")].filter(button => !button.hasAttribute("data-slider-dot")).length, 0, "no play or pause control (the dots are slide buttons)");
 });
 
 test("the film starts muted as soon as the hero appears", async () => {

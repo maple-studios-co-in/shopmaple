@@ -113,7 +113,7 @@ async function checkArtwork(edited: boolean) {
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
       // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
       assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
-      assert.equal(doc.querySelector(".hero-film button"), null);
+      assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
       assert.ok(doc.querySelector('.home-testimonial video[controls] source[src$="84199271.mp4?v=0"]'));
       assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }

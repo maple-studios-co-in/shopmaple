@@ -102,3 +102,21 @@ test("Nimbus with the staff's own artwork keeps the word in the artwork, with no
   assert.equal(doc.querySelector("[data-nimbus-title]"), null);
   assert.match(doc.querySelector("picture img")!.getAttribute("src")!, /custom-nimbus\.webp/);
 });
+
+test("the hero ships with four slides, as the frame has four dots: the shop film, then three Maple room photos", async () => {
+  const hero = section(await renderHome(), "hero");
+  const slides = [...hero.querySelectorAll("[data-hero-slide]")];
+  assert.equal(slides.length, 4);
+  assert.equal(hero.querySelectorAll("[data-slider-dots] button, .slider-dots button").length, 4, "one dot per slide");
+  assert.ok(slides[0]!.querySelector("video"), "slide 1 is the film");
+  assert.deepEqual(slides.slice(1).map((slide) => slide.querySelector("video")), [null, null, null]);
+  assert.deepEqual(slides.slice(1).map((slide) => slide.querySelector("img")!.getAttribute("alt")), ["Living room", "Bedroom", "Dining room"]);
+  for (const slide of slides) assert.equal(text(slide.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
+});
+
+test("the strip's ornament is the frame's outlined rosette between two fading lines", async () => {
+  const ornament = section(await renderHome(), "announcement").querySelector("[data-campaign-ornament]")!;
+  assert.ok(ornament.querySelector("svg[data-strip-rosette]"), "an outlined rosette, drawn as SVG");
+  assert.equal(ornament.querySelectorAll("i").length, 2);
+  assert.ok(existsSync(local("/media/home/strip-flowers.webp")), "the line-art flowers on the strip's right");
+});
