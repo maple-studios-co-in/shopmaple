@@ -6,6 +6,7 @@ export interface KeeriFetchOptions {
   includeContent?: boolean;
   /** Variant options for naming and option pickers; Keeri accepts it only together with content. */
   includeAttributes?: boolean;
+  includeCompareAt?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -55,6 +56,8 @@ export async function fetchKeeriExport(
   if (options.includeContent) endpoint.searchParams.set("content", "1");
   // Keeri accepts attributes only after taxonomy and content: each opt-in extends the one before.
   if (options.includeContent && options.includeAttributes) endpoint.searchParams.set("attributes", "1");
+  const compareAt = Boolean(options.includeContent && options.includeAttributes && options.includeCompareAt);
+  if (compareAt) endpoint.searchParams.set("compareAt", "1");
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
@@ -79,7 +82,12 @@ export async function fetchKeeriExport(
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("EXPORT_TIMEOUT");
     }
-    // A Keeri release from before variant options refuses the opt-in with 400; the caller asks again without it.
+    // A Keeri release from before compare-at prices, or before variant options, refuses the
+    // newest opt-in with 400; the caller asks again one level down.
+    if (response.status === 400 && compareAt) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("COMPARE_AT_UNSUPPORTED");
+    }
     if (response.status === 400 && options.includeContent && options.includeAttributes) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("ATTRIBUTES_UNSUPPORTED");

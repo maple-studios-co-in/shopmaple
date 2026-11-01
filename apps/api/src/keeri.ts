@@ -130,6 +130,15 @@ const fulfilmentSchema = z
   })
   .strict()
   .nullable();
+const mrpOf = (v: { prices: { kind: string; amount: number }[] }) =>
+  v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ?? null;
+/** Keeri's struck-through store price, only where it is above the MRP it is struck against. */
+const compareAtOf = (v: { prices: { kind: string; amount: number }[] }) => {
+  const mrp = mrpOf(v);
+  const compareAt = v.prices.find((p) => p.kind === "compare_at")?.amount ?? null;
+  return mrp !== null && compareAt !== null && compareAt > mrp ? compareAt : null;
+};
+
 /** Keeri's own verdict on whether the variant can be quoted and held today, with reason codes. */
 const eligibilitySchema = z
   .object({
@@ -369,10 +378,8 @@ function adaptValidated(
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
           images: photos(v.media),
           sku: v.sku || null,
-          pricePaise:
-            v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ??
-            null,
-          compareAtPaise: null,
+          pricePaise: mrpOf(v),
+          compareAtPaise: compareAtOf(v),
           available: data.schemaVersion === 2 && keeriSellable(v),
           stockPolicy: v.stockPolicy,
           leadTimeDays: "fulfilment" in v && v.fulfilment?.kind === "made_to_order" ? v.fulfilment.leadTimeDays : null,
