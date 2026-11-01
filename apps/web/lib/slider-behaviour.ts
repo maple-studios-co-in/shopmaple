@@ -7,7 +7,7 @@
  *   [data-slider]              the root; `data-slider-autoplay="ms"` turns autoplay on, `data-slider-ready` is set once attached
  *   [data-slider-track]        the scroll-snap row;  [data-slider-slide] one slide, `data-active` on the current one
  *   [data-slider-dot]          a button per slide, `aria-current="true"` on the current one
- *   [data-slider-toggle]       a button that opens and closes its slide's detail panel (`.is-open` on the slide)
+ *   [data-slider-toggle]       a button that opens and closes its slide's detail panel (`data-open` and `.is-open` on the slide)
  *   [data-slider-focus-opens]  opens its slide's panel when focused
  *
  * Videos play only while their slide is current, muted and looping, and never under reduced motion.
@@ -56,9 +56,12 @@ export function mountSlider(root: HTMLElement): () => void {
     if (target !== null) { if (seen !== target) return; target = null; }
     if (seen !== index && slides[seen]) { index = seen; show(); schedule(); }
   };
+  // A shopper who grabs the row mid-scroll is steering now, not following a dot.
+  const release = () => { target = null; };
   const open = (card: Element | null, value: boolean) => {
     if (!card) return;
     card.classList.toggle("is-open", value);
+    card.toggleAttribute("data-open", value);
     const toggle = card.querySelector<HTMLElement>("[data-slider-toggle]");
     toggle?.setAttribute("aria-expanded", String(value));
     const label = value ? toggle?.dataset.labelOpen : toggle?.dataset.labelClosed;
@@ -89,6 +92,7 @@ export function mountSlider(root: HTMLElement): () => void {
   const onMotion = () => { show(); schedule(); };
 
   track?.addEventListener("scroll", onScroll, { passive: true });
+  for (const type of ["pointerdown", "wheel", "touchstart"]) track?.addEventListener(type, release, { passive: true });
   root.addEventListener("click", onClick);
   root.addEventListener("pointerenter", onEnter);
   root.addEventListener("pointerleave", onLeave);
@@ -102,6 +106,7 @@ export function mountSlider(root: HTMLElement): () => void {
     clearTimeout(timer);
     clearTimeout(settle);
     track?.removeEventListener("scroll", onScroll);
+    for (const type of ["pointerdown", "wheel", "touchstart"]) track?.removeEventListener(type, release);
     root.removeEventListener("click", onClick);
     root.removeEventListener("pointerenter", onEnter);
     root.removeEventListener("pointerleave", onLeave);
