@@ -129,3 +129,8 @@
 @media (prefers-reduced-motion: reduce) {
   [data-home-section="nimbus"] .home-nimbus-toggle svg { transition: none; }
 }
+
+/* The dots only make sense once the slider's behaviour has attached; until then (or if it never does) the row is a plain swipe row. */
+[data-slider]:not([data-slider-ready]) .slider-dots {
+  display: none;
+}

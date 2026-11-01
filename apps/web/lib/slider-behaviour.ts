@@ -81,12 +81,15 @@ export function mountSlider(root: HTMLElement): () => void {
     held = true;
     clearTimeout(timer);
     const slide = from?.closest<HTMLElement>("[data-slider-slide]");
-    if (from?.closest("[data-slider-focus-opens]")) open(slide ?? null, true);
+    if (from?.closest("[data-slider-focus-opens]")) { open(slide ?? null, true); slide?.setAttribute("data-opened-by-focus", ""); }
     const at = slide ? slides.indexOf(slide) : -1;
     if (at >= 0 && at !== index) go(at);
   };
   const onFocusOut = (event: Event) => {
     const next = (event as FocusEvent).relatedTarget;
+    const from = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-slider-slide]") : null;
+    // A panel that focus opened closes when focus moves off its card (a mouse or touch toggle is left alone).
+    if (from?.hasAttribute("data-opened-by-focus") && !(next instanceof Node && from.contains(next))) { from.removeAttribute("data-opened-by-focus"); open(from, false); }
     if (!(next instanceof Node) || !root.contains(next)) onLeave();
   };
   const onMotion = () => { show(); schedule(); };

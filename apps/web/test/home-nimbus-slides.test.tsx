@@ -133,3 +133,15 @@ test("Nimbus never advances by itself, and the single card still opens its panel
     });
   } finally { mock.timers.reset(); }
 });
+
+test("a panel that keyboard focus opened closes again when focus leaves the card, so it cannot stay stuck open", async () => {
+  await mountNimbus(async (browser, document) => {
+    const button = all(document, ".home-nimbus-content a")[1]!;
+    await browser.focus(button);
+    const card = button.closest("[data-nimbus-slide]")!;
+    assert.equal(card.classList.contains("is-open"), true);
+    await browser.fire(button, "focusout", { bubbles: true });
+    assert.equal(card.classList.contains("is-open"), false);
+    assert.equal(card.querySelector("[data-slider-toggle]")?.getAttribute("aria-expanded"), "false");
+  });
+});

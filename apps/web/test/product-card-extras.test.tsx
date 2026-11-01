@@ -148,3 +148,12 @@ test("no stylesheet repaints the product card: no rule that targets the card set
   }
   assert.deepEqual(offenders, []);
 });
+
+test("'+N' counts every option the thumbnails do not show, not just those beyond the capped list", async () => {
+  const card = product(coloured(["A1", "B2", "C3", "D4", "E5", "F6", "G7", "H8", "I9", "J10", "K11", "L12"]));
+  assert.equal(card.optionCount, 12);
+  await render(() => <ProductCard product={card} />, document => {
+    assert.equal(q(document, "[data-card-option-thumb]").length, 5);
+    assert.equal(document.querySelector("[data-card-options-more]")?.textContent?.trim(), "+7");
+  });
+});

@@ -23,6 +23,8 @@ export function attachCompare(card: HTMLElement): () => void {
   };
   const down = (event: PointerEvent) => {
     if (event.button !== 0) return;
+    // A thumb that lands on the picture is most likely scrolling the page; only the grip starts a touch drag.
+    if (event.pointerType === "touch" && !(event.target instanceof Node && grip.contains(event.target))) return;
     pressed = true;
     try { card.setPointerCapture(event.pointerId); } catch { /* a pointer that cannot be captured still drags while over the card */ }
     follow(event.clientX);

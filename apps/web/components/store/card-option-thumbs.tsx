@@ -12,7 +12,8 @@ export const hasOptionPhotos = (product: ProductCardModel) => (product.optionThu
 export function CardOptionThumbs({ product }: { product: ProductCardModel }) {
   const base = "/products/" + product.handle;
   const thumbs = product.optionThumbs ?? [];
-  const more = thumbs.length - shown;
+  // Every option beyond the five circles, counted from the product, not from the capped list.
+  const more = product.optionCount - Math.min(shown, thumbs.length);
   return (
     <ul data-card-option-thumbs aria-label={`Options for ${product.title}`} className="mt-auto flex flex-wrap items-center gap-1.5 pt-1">
       {thumbs.slice(0, shown).map((thumb) => {

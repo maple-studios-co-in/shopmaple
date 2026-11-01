@@ -416,6 +416,7 @@
   transition: opacity 0.3s;
 }
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-title,
+[data-home-section="nimbus"] .home-nimbus:focus-within .home-nimbus-title,
 [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-title { opacity: 0; }
 [data-home-section="nimbus"] .home-nimbus-explore {
   position: absolute;
@@ -432,9 +433,19 @@
 }
 /* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-lead,
-[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore {
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore,
+[data-home-section="nimbus"] .home-nimbus:focus-within:not(:has(.home-nimbus-explore:focus)) .home-nimbus-lead {
   visibility: hidden;
 }
+/* A soft grey wash keeps the white lettering readable over the pale cloud photo. */
+[data-home-section="nimbus"] .home-nimbus-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(70 72 80 / 0.38) 0%, rgb(70 72 80 / 0.16) 45%, transparent 70%);
+  pointer-events: none;
+}
+[data-home-section="nimbus"] .home-nimbus-media { position: relative; }
 @media (hover: hover) {
   [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead {
     opacity: 0;
@@ -799,12 +810,12 @@
 }
 
 @media (max-width: 1000px) {
-  [data-home-section="hero"] .hero-film { height: clamp(380px, 46vw, 460px); }
+  [data-home-section="hero"] .hero-film { height: clamp(430px, 54vw, 500px); }
   [data-home-section="difference"] .home-difference { padding-inline: 30px; }
 }
 @media (max-width: 749px) {
   [data-home-section="hero"] .hero-grid { padding: 12px 16px 8px; grid-template-columns: 1fr; }
-  [data-home-section="hero"] .hero-film { height: max(480px, 124vw); }
+  [data-home-section="hero"] .hero-film { height: clamp(480px, 124vw, 640px); }
   [data-home-section="hero"] .hero-film::after { background: linear-gradient(180deg, rgb(60 40 28 / 0.35) 0%, rgb(60 40 28 / 0.6) 100%); }
   [data-home-section="hero"] .hero-categories { grid-template-rows: none; grid-auto-rows: 170px; }
   [data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] { padding-inline: 16px; }

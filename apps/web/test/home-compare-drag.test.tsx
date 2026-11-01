@@ -106,3 +106,20 @@ test("the lazy island arrives after the page and makes a server-drawn card dragg
   await act(async () => root.unmount());
   assert.equal(grip.hasAttribute("tabindex"), false, "and leaves the card as it found it");
 });
+
+test("a touch that starts on the picture, to scroll the page, does not move the divider; a touch on the grip does", () => {
+  const { card, grip } = drawCard();
+  const detach = attachCompare(card);
+  const touch = (target: Element, type: string, clientX: number) => {
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX, button: 0 });
+    Object.defineProperty(event, "pointerType", { value: "touch" });
+    target.dispatchEvent(event);
+  };
+  touch(card, "pointerdown", 400);
+  assert.equal(position(card), "50%", "the divider stays put while the page scrolls");
+  touch(card, "pointerup", 400);
+  touch(grip, "pointerdown", 300);
+  touch(card, "pointermove", 200);
+  assert.equal(position(card), "25%");
+  detach();
+});

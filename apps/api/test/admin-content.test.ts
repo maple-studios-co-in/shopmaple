@@ -298,7 +298,8 @@ test("hero slides and extra Nimbus collections save and publish; unapproved medi
         cities: { eyebrow: "Delivery", heading: "Across India" },
         project: { heading: "Your project", introBefore: "Reply within ", responseTime: "two days", introAfter: " with ideas.", body: "Tell us more." },
     };
-    const upload = "/media/uploads/" + "a".repeat(64) + ".webp";
+    // An approved shop picture: library uploads are covered by home-details-media.test.ts, which publishes real assets.
+    const upload = "https://shop.maplefurnishers.com/cdn/shop/files/slide.webp?v=1";
     const heroSlides = [
         { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4?v=0", poster: upload, alt: "Workshop", headline: "Made by hand", intro: "In Delhi." },
         { kind: "image", src: upload, alt: "A sofa", headline: "Sofas", intro: "Built to last." },

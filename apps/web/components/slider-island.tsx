@@ -13,7 +13,7 @@ export function SliderIsland({ name }: { name: string }) {
     void import("@/lib/slider-behaviour").then(({ mountSlider }) => {
       const root = document.querySelector<HTMLElement>(`[data-slider="${name}"]`);
       if (!gone && root) stop = mountSlider(root);
-    });
+    }).catch(() => { /* the slider stays a plain scroll-snap row */ });
     return () => { gone = true; stop?.(); };
   }, [name]);
   return null;
