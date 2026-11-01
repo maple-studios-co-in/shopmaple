@@ -4,13 +4,10 @@ import { ArrowRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { SliderDots } from "@/components/slider-dots";
 import { SliderIsland } from "@/components/slider-island";
-import { heroFilm } from "@/lib/hero-film";
+import { heroFilm, heroHeadline, heroIntro } from "@/lib/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-/** Copy of the one default slide, from the Impact Layout frame; staff slides carry their own words. */
-const headline = "Timeless Craftsmanship for Modern Living";
-const intro = "Handcrafted furniture that brings elegance to every corner of your home.";
 /** How long a slide stays before the next one, unless the shopper hovers or focuses the tile. */
 const autoplayMs = 6000;
 
@@ -28,7 +25,7 @@ function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia): Sli
   });
   if (authored.length) return authored;
   const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
-  return [{ kind: "video", video: heroFilm, image: poster.image, alt: poster.alt, headline, intro }];
+  return [{ kind: "video", video: heroFilm, image: poster.image, alt: poster.alt, headline: heroHeadline, intro: heroIntro }];
 }
 
 /**
