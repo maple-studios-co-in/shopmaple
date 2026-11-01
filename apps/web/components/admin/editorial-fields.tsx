@@ -59,7 +59,7 @@ export function EditorialFields({ value, onChange, disabled = false }: { value?:
       <PreviewPanel aria-label="Editorial preview" eyebrow="Text preview" footnote={<>Local preview · {url}</>}>
         <PreviewTitle>{document.title}</PreviewTitle>
         {article && <p className="text-muted-foreground">{article.excerpt}</p>}
-        {content && <div className="store-prose"><StoreContent nodes={content} /></div>}
+        {content && <div className="store-prose"><StoreContent nodes={content} previewUploads /></div>}
       </PreviewPanel>
     </EditorWithPreview>}
   </section>;

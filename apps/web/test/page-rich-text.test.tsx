@@ -5,7 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { contentPageSchema, type AuthoredBlock, type ContentPage as Page, type EditorialNode } from "@shopmaple/contracts";
 import { ContentPage } from "../components/content-page";
 import { pageDocument } from "../lib/page-document";
-import { fromEditorDoc } from "../lib/editorial-rich-text";
+import { fromEditorDoc, toEditorDoc } from "../lib/editorial-rich-text";
+import { StoreContent } from "../components/store-content";
 
 // Custom pages are written as rich text (the policy editor's safe tag tree). Older pages keep
 // their plain text or blocks until someone edits the body; nothing changes on its own.
@@ -79,4 +80,20 @@ test("edited images keep media library uploads and drop pictures from other site
     { type: "image", attrs: { src: "/media/uploads/not-a-hash.webp", alt: "Bad" } },
   ] });
   assert.deepEqual(back, [{ tag: "img", src: upload, alt: "Ours", children: [] }]);
+});
+
+test("older block pictures stored under the store's own /media addresses survive the move to rich text", () => {
+  const local = "/media/diwali/973-441.png";
+  const converted = pageDocument(page({ blocks: [{ id: "p", type: "paragraph", text: "Hi" }, { id: "i", type: "image", src: local, alt: "Diwali" }] }));
+  assert.ok(contentPageSchema.safeParse(page({ content: converted })).success, "the converted page is valid");
+  assert.deepEqual(fromEditorDoc(toEditorDoc(converted)), [{ tag: "p", children: ["Hi"] }, { tag: "img", src: local, alt: "Diwali", children: [] }], "an edit keeps it");
+  assert.equal(doc(<ContentPage page={page({ content: converted })} />).querySelector(".content-page-copy img")?.getAttribute("alt"), "Diwali", "the storefront shows it");
+  assert.equal(contentPageSchema.safeParse(page({ content: [{ tag: "img", src: "/media/../secret.png", children: [] }] })).success, false);
+});
+
+test("the staff draft preview frame shows pictures it has moved to their private preview address", () => {
+  const preview = `/api/admin/media/${"a".repeat(64)}/preview`;
+  const img = doc(<StoreContent nodes={[{ tag: "img", src: preview, alt: "Draft picture", children: [] }]} />).querySelector("img");
+  assert.equal(img?.getAttribute("src"), preview);
+  assert.equal(doc(<StoreContent nodes={[{ tag: "img", src: "/api/admin/media/xyz/preview", children: [] }]} />).querySelector("img"), null, "only real preview addresses");
 });

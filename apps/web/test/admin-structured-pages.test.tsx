@@ -136,6 +136,20 @@ test("a picture from the media library goes into the page with its description a
   } finally { await state.cleanup(); }
 });
 
+test("opening and cancelling the picture panel does not move where the next picture goes", async () => {
+  const state = await mount(); const transport = globalThis.fetch;
+  const hash = "c".repeat(64); const url = `/media/uploads/${hash}.webp`;
+  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Hall", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl: `/api/admin/media/${hash}/preview` }], nextCursor: null }) : transport(input, init);
+  try {
+    await richText();
+    await click("Image"); await click("Cancel");
+    await click("Image"); await click("Choose image"); await click("Use image: Hall");
+    await fill("Image description", "Hall"); await click("Insert image");
+    await click("Save draft");
+    assert.equal(state.saved[0].content.pages[0].content.at(-1).src, url, "still at the end");
+  } finally { await state.cleanup(); }
+});
+
 // Catches making all text authoring depend on an authenticated media picker.
 test("without a staff session the body stays editable and pictures cannot be added", async () => {
   const { PageFields } = await import("../components/admin/forms");

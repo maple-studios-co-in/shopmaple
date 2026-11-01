@@ -1,5 +1,5 @@
 import { createElement, Fragment } from "react";
-import { managedUpload } from "@shopmaple/contracts";
+import { managedUpload, storeMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
 export type ContentNode =
   | string
@@ -89,9 +89,13 @@ export function StoreContent({ nodes, previewUploads = false }: { nodes: Content
         if (typeof node === "string")
           return <Fragment key={index}>{node}</Fragment>;
         if (node.tag === "img") {
-          // A picture from the media library (pages only) is served by the store itself.
-          if (node.src && managedUpload.test(node.src))
-            return previewUploads ? (
+          // The staff draft preview frame has already moved uploads to their private preview address.
+          if (node.src && /^\/api\/admin\/media\/[a-f0-9]{64}\/preview$/.test(node.src))
+            // eslint-disable-next-line @next/next/no-img-element -- a private, signed-in preview address
+            return <img key={index} src={node.src} alt={node.alt || ""} width={1200} height={800} style={{ width: "100%", height: "auto" }} />;
+          // A picture the store serves itself (media library uploads, Keeri photos, campaign art).
+          if (node.src && storeMedia(node.src))
+            return previewUploads && managedUpload.test(node.src) ? (
               // eslint-disable-next-line @next/next/no-img-element -- a private, signed-in preview address
               <img key={index} src={`/api/admin/media/${node.src.slice(15, 79)}/preview`} alt={node.alt || ""} width={1200} height={800} style={{ width: "100%", height: "auto" }} />
             ) : (

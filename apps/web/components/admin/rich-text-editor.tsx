@@ -7,7 +7,7 @@ import Paragraph from "@tiptap/extension-paragraph";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { Bold, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Quote, Redo2, Underline, Undo2 } from "lucide-react";
-import { contentImageSchema, editorialDocumentSchema, managedUpload, safeLink, type EditorialNode } from "@shopmaple/contracts";
+import { contentImageSchema, editorialDocumentSchema, safeLink, storeMedia, type EditorialNode } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -43,7 +43,8 @@ const StoreImage = Image.extend({
         default: null,
         parseHTML: (element) => {
           const src = element.getAttribute("src") ?? "";
-          const preview = /^\/api\/admin\/media\/([a-f0-9]{64})\/preview$/.exec(src);
+          // Browsers often copy the preview address with its origin.
+          const preview = /^(?:https?:\/\/[^/]+)?\/api\/admin\/media\/([a-f0-9]{64})\/preview$/.exec(src);
           return preview ? `/media/uploads/${preview[1]}.webp` : src;
         },
         renderHTML: (attributes) => ({ src: typeof attributes.src === "string" ? mediaPreviewUrl(attributes.src) : null }),
@@ -118,9 +119,12 @@ function Toolbar({ editor, label, disabled, media }: { editor: Editor; label: st
   /** Whether the writer has put the cursor somewhere; until then a picture goes at the end. */
   const placed = useRef(false);
   useEffect(() => {
+    // Only the writer's own click or key press places the cursor; the toolbar also focuses the editor.
     const mark = () => { placed.current = true; };
-    editor.on("focus", mark);
-    return () => { editor.off("focus", mark); };
+    const text = editor.view.dom;
+    text.addEventListener("pointerdown", mark);
+    text.addEventListener("keydown", mark);
+    return () => { text.removeEventListener("pointerdown", mark); text.removeEventListener("keydown", mark); };
   }, [editor]);
   const run = () => editor.chain().focus();
   const toggle = (name: string, pressed: boolean, icon: React.ReactNode, action: () => void) => (
@@ -171,7 +175,7 @@ function Toolbar({ editor, label, disabled, media }: { editor: Editor; label: st
 function PictureForm({ media, onInsert, onCancel }: { media: Media; onInsert: (src: string, alt: string) => void; onCancel: () => void }) {
   const [src, setSrc] = useState("");
   const [alt, setAlt] = useState("");
-  const ready = (managedUpload.test(src) || (src.startsWith("https://") && contentImageSchema.safeParse(src).success)) && alt.trim().length > 0;
+  const ready = (storeMedia(src) || (src.startsWith("https://") && contentImageSchema.safeParse(src).success)) && alt.trim().length > 0;
   return <div role="group" aria-label="Insert a picture" className="grid gap-3 border-b border-line-soft bg-surface px-3 py-3">
     <MediaPicker label="Picture" value={src} onChange={setSrc} session={media.session} onExpired={media.onExpired} />
     <Field label="Image description" value={alt} maxLength={200} onChange={setAlt} />
