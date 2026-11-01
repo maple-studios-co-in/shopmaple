@@ -38,18 +38,17 @@ test("the hero plays the latest shop film on its own, looping, with no play or p
   assert.equal([...hero.querySelectorAll("button")].filter((button) => /play|pause|video|motion/i.test(button.getAttribute("aria-label") ?? button.textContent ?? "")).length, 0, "no video controls");
 });
 
-test("the Instagram section links to @maplefurnishers", async () => {
+test("the Instagram section no longer shows the old account anywhere on the homepage (the frame has no handle under the heading)", async () => {
   const doc = await renderHome();
-  const link = section(doc, "instagram").querySelector<HTMLAnchorElement>('a[href^="https://www.instagram.com/"]:not([href*="/p/"]):not([href*="/reel/"])')!;
-  assert.equal(link.getAttribute("href"), "https://www.instagram.com/maplefurnishers/");
-  assert.match(link.textContent ?? "", /@maplefurnishers/);
   assert.ok(!doc.body.innerHTML.includes("the_maple_experience"), "the old account is gone from the homepage");
+  assert.equal(section(doc, "instagram").querySelector('a[href="https://www.instagram.com/maplefurnishers/"]'), null);
 });
 
-test("Bestsellers scrolls on its own scrollbar, without arrows or a View all link", async () => {
+test("Bestsellers scrolls and drags without arrows or a drawn scrollbar, with the frame's View all bestsellers button", async () => {
   const bestsellers = section(await renderHome(), "bestsellers");
   assert.equal(bestsellers.querySelectorAll('[data-product-card], .product-card, article').length > 0, true, "products are listed");
-  assert.equal(bestsellers.querySelector('a[aria-label^="View all"]'), null);
   assert.equal(bestsellers.querySelectorAll('button[aria-label^="Previous"], button[aria-label^="Next"]').length, 0);
-  assert.ok(bestsellers.querySelector("[data-scroll-rail]"), "the rail shows a scrollbar");
+  assert.equal(bestsellers.querySelector(".home-scroll-track"), null);
+  assert.ok(bestsellers.querySelector("[data-scroll-rail]"));
+  assert.ok(bestsellers.querySelector('a[aria-label^="View all"]'));
 });

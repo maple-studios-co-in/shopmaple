@@ -2,7 +2,7 @@ import { InstagramRail, MovingCities } from "@/components/motion-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
-import { ArrowRight, Check, Instagram } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
 import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
@@ -113,13 +113,6 @@ export function HomeSocial({
       <h2>
         {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
       </h2>
-      <a
-        href="https://www.instagram.com/maplefurnishers/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <Instagram size={20} /> @maplefurnishers <ArrowRight size={18} />
-      </a>
       <InstagramRail posts={posts} autoplay={autoplay} />
     </section>
   );

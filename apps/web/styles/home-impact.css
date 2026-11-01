@@ -9,6 +9,8 @@
   --impact-bento: #f9f7f5;
   --impact-serif: Newsreader, Georgia, serif;
   --impact-body: "Barlow", system-ui, sans-serif;
+  --impact-sans: "Red Hat Display", Manrope, system-ui, sans-serif;
+  --impact-script: "Pinyon Script", "Newsreader", Georgia, serif;
 }
 
 /* The homepage sits on white, as in the frame; the bento, bestsellers and enquiry bands are cream. */
@@ -47,21 +49,21 @@
   left: 38px;
   top: 50%;
   transform: translateY(-46%);
-  width: min(300px, calc(100% - 76px));
+  width: min(250px, calc(100% - 76px));
   color: #fff;
 }
 [data-home-section="hero"] .hero-introduction h2 {
   margin: 0 0 22px;
   color: #fff;
-  font: 300 38px/1.08 var(--impact-serif);
-  letter-spacing: -0.005em;
+  font: 300 38px/1.07 var(--impact-serif);
+  letter-spacing: 0;
 }
 [data-home-section="hero"] .hero-introduction > p {
   margin: 0 0 28px;
   text-transform: none;
   letter-spacing: normal;
   max-width: 170px;
-  font: 400 13px/1.45 var(--impact-body);
+  font: 400 13px/1.45 var(--impact-sans);
 }
 [data-home-section="hero"] .hero-cta {
   position: static;
@@ -72,7 +74,7 @@
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 13px/1.2 var(--impact-body);
+  font: 500 13px/1.2 var(--impact-sans);
 }
 [data-home-section="hero"] .hero-cta:hover {
   background: #5c140f;
@@ -113,7 +115,7 @@
   gap: 5px;
   margin: 12px 0 0;
   color: #5b2a22;
-  font: 400 11px/1.2 var(--impact-body);
+  font: 400 11px/1.2 var(--impact-sans);
 }
 
 /* ---- Announcement strip ("Always Together") -------------------------------------------- */
@@ -272,14 +274,21 @@
   text-align: center;
 }
 .home-heading-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px auto 28px;
+  color: var(--impact-burgundy);
+}
+.home-heading-ornament [data-ornament-line] {
   display: block;
-  width: 100px;
-  height: 14px;
-  margin: 8px auto 26px;
-  background:
-    linear-gradient(#a99a90, #a99a90) left center / 34px 1px no-repeat,
-    linear-gradient(#a99a90, #a99a90) right center / 34px 1px no-repeat,
-    radial-gradient(circle at center, var(--impact-burgundy) 0 3px, transparent 3.5px) center / 14px 14px no-repeat;
+  width: 36px;
+  height: 1px;
+  background: #cdb4ad;
+}
+.home-heading-ornament svg {
+  flex: none;
 }
 [data-home-section="categories"] .home-categories {
   gap: 30px;
@@ -298,7 +307,7 @@
 [data-home-section="categories"] .home-categories h3 {
   margin: 14px 0 0;
   color: #2c2a26;
-  font: 500 13px/1.3 "DM Sans", var(--impact-body);
+  font: 500 14px/1.3 var(--impact-sans);
 }
 [data-category-arrow] {
   position: absolute;
@@ -316,55 +325,55 @@
 
 /* ---- Statement band -------------------------------------------------------------------- */
 [data-home-section="ticker"] .home-statement {
-  width: calc(100% - 80px);
-  margin: 30px auto 20px;
-  padding: 22px 24px;
+  width: calc(100% - 96px);
+  margin: 28px auto 24px;
+  padding: 22px 24px 20px;
   border-radius: 12px;
-  background: linear-gradient(100deg, #7a1b15 0%, #741a14 55%, #6b1711 100%);
-  color: #fff;
-  font: 400 clamp(24px, 2.7vw, 36px) / 1.2 var(--impact-serif);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='96' viewBox='0 0 600 96' fill='none' stroke='%23ffffff' stroke-opacity='.07'%3E%3Cpath d='M-20 70C80 20 160 90 260 48S440 10 620 52'/%3E%3Cpath d='M-20 82C90 36 170 100 270 62S450 26 620 66'/%3E%3C/svg%3E") center / cover no-repeat,
+    linear-gradient(100deg, #7a1c16 0%, #701913 55%, #6a1711 100%);
+  color: #f7e5da;
+  font: 300 clamp(26px, 2.9vw, 38px) / 1.25 var(--impact-serif);
   text-align: center;
 }
 [data-home-section="ticker"] .home-statement em {
-  font-style: italic;
-  font-weight: 400;
+  font: 400 1.22em / 1 var(--impact-script);
+  font-style: normal;
   letter-spacing: 0.01em;
 }
 
 /* ---- Offer tiles ----------------------------------------------------------------------- */
 [data-home-section="offers"] > section {
   max-width: none;
-  padding-inline: 40px;
+  padding: 20px 48px;
 }
 [data-home-section="offers"] .home-offers {
   gap: 16px;
+  padding: 0;
 }
 [data-home-section="offers"] .home-offer-tiles a {
-  position: relative;
   display: block;
+  padding: 0;
+  border: 0;
   border-radius: 12px;
-  background: var(--impact-linen);
-  border: 1px solid rgb(41 37 31 / 0.05);
+  background: none;
+  overflow: hidden;
 }
 [data-home-section="offers"] .home-offer-tiles a > div {
-  aspect-ratio: 288 / 154;
+  aspect-ratio: 320 / 168;
   border-radius: 12px;
 }
-[data-offer-arrow] {
-  position: absolute;
-  left: 22px;
-  bottom: 16px;
-  width: 20px;
-  height: 20px;
-  padding: 4px;
-  border: 1px solid var(--impact-burgundy);
-  border-radius: 50%;
-  color: var(--impact-burgundy);
+[data-home-section="offers"] .home-offer-tiles img {
+  object-fit: cover;
 }
 
 /* ---- Nimbus ---------------------------------------------------------------------------- */
 [data-home-section="nimbus"] .home-nimbus-wrap {
-  padding: 56px 48px;
+  padding: 64px 48px;
+  background:
+    radial-gradient(60% 55% at 12% 20%, rgb(255 255 255 / 0.75), transparent 70%),
+    radial-gradient(55% 60% at 88% 78%, rgb(255 255 255 / 0.6), transparent 70%),
+    linear-gradient(180deg, #fff 0%, #cfcbcd 18%, #bfbbbf 50%, #cfcbcd 82%, #fff 100%);
 }
 [data-home-section="nimbus"] .home-nimbus {
   height: auto;
@@ -460,7 +469,7 @@
 }
 [data-home-section] .home-products header {
   margin-bottom: 26px;
-  align-items: flex-start;
+  align-items: center;
 }
 [data-home-section] .home-products .home-eyebrow {
   margin: 0 0 14px;

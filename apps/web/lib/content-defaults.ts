@@ -23,6 +23,23 @@ const collectionCampaignDestinations: Partial<
   "tv-units-hero": "/collections/tv-media-units#collection-products",
 };
 
+/** The "Always Together" strip under the hero, as the Impact Layout frame has it (photo cropped from the frame's own raster). */
+const alwaysTogether: StorefrontContent["campaigns"][number] = {
+  key: "landing-announcement",
+  label: "",
+  headline: ["Always Together"],
+  supporting: "For every laugh, fight, and memory.",
+  offer: [],
+  eligibility: "",
+  cta: "Celebrate Together",
+  href: "/collections/all",
+  artwork: {
+    desktopImage: "/media/home/strip-always-together.webp",
+    mobileImage: "/media/home/strip-always-together.webp",
+    alt: "A brass thali of flowers and lit lamps on a wooden table, with a wrapped gift beside it",
+  },
+};
+
 /** Original bundled copy is the explicit starting draft, never auto-published. */
 export const defaultStorefrontContent: StorefrontContent = {
   schemaVersion: 1,
@@ -37,11 +54,11 @@ export const defaultStorefrontContent: StorefrontContent = {
     bestsellersHeading: "Bestsellers",
     chairsHeading: "Chairs",
     socialHeading: "Our Social Proof",
-    ticker: "Elegance isn't found. At Maple, it is custom-built.",
+    ticker: "Elegance isn’t found. At Maple, it is crafted.",
     testimonialHeading: "Why They Love Us",
     testimonialSubheading: "Thoughtful designs. Exceptional service.",
   },
-  campaigns: Object.entries(campaigns).map(([key, c]) => ({
+  campaigns: Object.entries(campaigns).map(([key, c]) => (key === "landing-announcement" ? alwaysTogether : {
     key: key as StorefrontContent["campaigns"][number]["key"],
     label: c.label,
     artwork: null,

@@ -5,6 +5,8 @@ import "@fontsource/barlow/400.css";
 import "@fontsource/barlow/500.css";
 import "@fontsource/barlow/600.css";
 import "@fontsource/barlow/700.css";
+import "@fontsource/newsreader/300.css";
+import "@fontsource/pinyon-script/400.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
 import "@/styles/motion-rail.css";

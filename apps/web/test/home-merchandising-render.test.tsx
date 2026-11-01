@@ -78,10 +78,9 @@ const attributes = (doc: Document, selector: string, attribute: string) => [...d
 test("both homepage rails expose a visible heading, and Chairs a context-labelled browse destination, even when empty", async () => {
   for (const options of [{}, { merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } }]) {
     const { doc } = await renderHome(options);
-    // Bestsellers has no "View all" link (owner, 2026-11-01); Chairs keeps its browse action.
+    // The Impact Layout frame gives both rails a "View all" button (the owner's earlier no-"View all" fix is reversed).
     assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Bestsellers");
-    assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null);
-    for (const [key, heading, href] of [["chairs", "Chairs", "/collections/chairs"]]) {
+    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
       const browse = rail.querySelector("header a");
@@ -97,7 +96,7 @@ test("published rail headings are used for visible navigation without changing c
   assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="chairs"] header a')?.getAttribute("aria-label"), "View all Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
-  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null, "Bestsellers has no View all link");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a')?.getAttribute("aria-label"), "View all Selected favourites");
 });
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
@@ -118,23 +117,11 @@ test("legacy published homepage preserves original collection copy, media, links
   assert.deepEqual(texts(doc, ".home-categories h3"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
   assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/sofas", "/collections/dining-chair", "/collections/center-tables", "/collections/accent-chair", "/collections/beds", "/collections/dinings"]);
   assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["Sofas", "Dining Chair", "Coffee Tables", "Accent Chair", "Beds", "Dinings"]);
-  // SVG-wrapped covers resolve to the CDN raster so next/image can resize them (lib/shopify-artwork.ts).
-  assert.deepEqual(attributes(doc, ".home-categories img", "src"), [
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?width=600",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?width=600",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM.png?v=1776235338",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?width=600",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?width=600",
-  ]);
+  // The default covers are the frame's circle photos, served from this repo.
+  assert.deepEqual(attributes(doc, ".home-categories img", "src").map((src) => decodeURIComponent(new URL(src!, "http://x").searchParams.get("url") ?? src!)), ["sofas", "dining-chair", "center-tables", "accent-chair", "beds", "dinings"].map((key) => `/media/home/category-${key}.webp`));
   assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
-  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "src"), [
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Clearance_Sale.webp?v=1778257635",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/min_30_off_sale_banner.webp?v=1778255612",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_1.webp?v=1778268771",
-    "https://shop.maplefurnishers.com/cdn/shop/collections/Maple_Banner_2.webp?v=1778269923",
-  ]);
+  assert.deepEqual(attributes(doc, ".home-offer-tiles img", "src").map((src) => decodeURIComponent(new URL(src!, "http://x").searchParams.get("url") ?? src!)), ["clearance-sale", "minimum-30", "best-buy-50k", "furniture-25k"].map((key) => `/media/home/offer-${key}.webp`));
   assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
 });
