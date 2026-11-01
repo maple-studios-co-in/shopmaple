@@ -90,7 +90,7 @@ test("values end the page with the brand name as a watermark and an Experience M
 test("a fresh draft follows the frame's order, with the newsletter band last", () => {
   assert.deepEqual(defaultStorefrontContent.homeSections.map((section) => section.key), [
     "hero", "announcement", "difference", "categories", "ticker", "offers", "nimbus", "dining-banner", "instagram", "bestsellers",
-    "seating-banner", "chairs", "promos", "cities", "testimonial", "project", "values", "newsletter",
+    "seating-banner", "chairs", "promos", "editorial", "cities", "compare", "testimonial", "project", "values", "newsletter",
   ]);
 });
 

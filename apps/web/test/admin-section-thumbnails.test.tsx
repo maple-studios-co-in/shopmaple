@@ -21,7 +21,7 @@ test("a thumbnail renders only its own section, even a hidden one, with motion a
   assert.deepEqual(thumb.homeSections, [{ key: "nimbus", enabled: true }]);
   assert.deepEqual(thumb.motion, { autoplaySocial: false, autoplayCities: false, autoplayTicker: false, revealSections: false });
   assert.equal(thumb.homeCopy, content.homeCopy, "everything else is the draft as it is");
-  assert.equal(content.homeSections.length, 18, "the draft itself is untouched");
+  assert.equal(content.homeSections.length, 20, "the draft itself is untouched");
   assert.equal(content.motion.revealSections, true);
 });
 
@@ -34,6 +34,14 @@ test("an edit reloads only the thumbnails of the sections it changes", () => {
   assert.deepEqual(changed((c) => { c.homeCitiesLayout = []; }), ["cities"]);
   assert.deepEqual(changed((c) => { c.homeDetails!.project = { ...c.homeDetails!.project, heading: "Our projects" }; }), ["project"]);
   assert.deepEqual(changed((c) => { c.homeMerchandising = { ...c.homeMerchandising!, chairs: [] }; }), ["chairs"]);
+});
+
+test("the editorial and compare thumbnails reload only for their own content", () => {
+  assert.deepEqual(changed((c) => { c.homeDetails!.editorial = { ...c.homeDetails!.editorial!, title: "Pull up two chairs" }; }), ["editorial"]);
+  assert.deepEqual(changed((c) => { c.homeDetails!.editorial = { ...c.homeDetails!.editorial!, rightImage: "/media/home/editorial-left.webp" }; }), ["editorial"]);
+  assert.deepEqual(changed((c) => { c.homeDetails!.compare = { ...c.homeDetails!.compare!, heading: "Two ways to rest" }; }), ["compare"]);
+  assert.deepEqual(changed((c) => { c.homeDetails!.compare = { ...c.homeDetails!.compare!, right: { handle: "aera-swivel-lounge-chair", label: "Aera" } }; }), ["compare"]);
+  assert.deepEqual(changed((c) => { c.homeDetails!.cities.heading = "30+ Cities"; }), ["cities"], "neighbouring copy does not touch them");
 });
 
 test("product highlights reload the thumbnails of the sections that show product cards", () => {
