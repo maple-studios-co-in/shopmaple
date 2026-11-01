@@ -9,6 +9,8 @@
   --impact-bento: #f9f7f5;
   --impact-serif: Newsreader, Georgia, serif;
   --impact-body: "Barlow", system-ui, sans-serif;
+  --impact-sans: "Red Hat Display", Manrope, system-ui, sans-serif;
+  --impact-script: "Pinyon Script", "Newsreader", Georgia, serif;
 }
 
 /* The homepage sits on white, as in the frame; the bento, bestsellers and enquiry bands are cream. */
@@ -27,8 +29,10 @@
   box-shadow: 0 0 0 100vmax var(--impact-bento);
   clip-path: inset(0 -100vmax);
 }
+/* The frame's film tile is 619 x 429 at 1265 px wide, so it grows with the window (about 495 px at 1440,
+   about 660 px at 1920) and stops growing at 720 px. */
 [data-home-section="hero"] .hero-film {
-  min-height: 429px;
+  height: clamp(429px, 34.4vw, 720px);
   border-radius: 14px;
 }
 [data-home-section="hero"] .hero-film::after {
@@ -47,21 +51,21 @@
   left: 38px;
   top: 50%;
   transform: translateY(-46%);
-  width: min(300px, calc(100% - 76px));
+  width: min(250px, calc(100% - 76px));
   color: #fff;
 }
 [data-home-section="hero"] .hero-introduction h2 {
   margin: 0 0 22px;
   color: #fff;
-  font: 300 38px/1.08 var(--impact-serif);
-  letter-spacing: -0.005em;
+  font: 300 38px/1.07 var(--impact-serif);
+  letter-spacing: 0;
 }
 [data-home-section="hero"] .hero-introduction > p {
   margin: 0 0 28px;
   text-transform: none;
   letter-spacing: normal;
   max-width: 170px;
-  font: 400 13px/1.45 var(--impact-body);
+  font: 400 13px/1.45 var(--impact-sans);
 }
 [data-home-section="hero"] .hero-cta {
   position: static;
@@ -72,7 +76,7 @@
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 13px/1.2 var(--impact-body);
+  font: 500 13px/1.2 var(--impact-sans);
 }
 [data-home-section="hero"] .hero-cta:hover {
   background: #5c140f;
@@ -113,7 +117,7 @@
   gap: 5px;
   margin: 12px 0 0;
   color: #5b2a22;
-  font: 400 11px/1.2 var(--impact-body);
+  font: 400 11px/1.2 var(--impact-sans);
 }
 
 /* ---- Announcement strip ("Always Together") -------------------------------------------- */
@@ -154,8 +158,8 @@
 }
 [data-campaign-layout="strip"] .campaign-copy {
   top: 50%;
-  left: 59.5%;
-  width: 36%;
+  left: 57.2%;
+  width: 38%;
   transform: translateY(-50%);
   gap: 8px;
   color: var(--impact-ink);
@@ -166,18 +170,25 @@
   gap: 8px;
 }
 [data-campaign-layout="strip"] .campaign-ornament {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #62201a;
+}
+[data-campaign-layout="strip"] .campaign-ornament i {
   display: block;
-  width: 106px;
-  height: 14px;
-  background:
-    linear-gradient(var(--impact-burgundy), var(--impact-burgundy)) left center / 38px 1px no-repeat,
-    linear-gradient(var(--impact-burgundy), var(--impact-burgundy)) right center / 38px 1px no-repeat,
-    radial-gradient(circle at center, transparent 3px, var(--impact-burgundy) 3.5px, var(--impact-burgundy) 5px, transparent 5.5px) center / 14px 14px no-repeat;
-  opacity: 0.8;
+  width: 44px;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(98 32 26 / 0), #62201a);
+}
+[data-campaign-layout="strip"] .campaign-ornament i:last-child {
+  background: linear-gradient(270deg, rgb(98 32 26 / 0), #62201a);
 }
 [data-campaign-layout="strip"] .campaign-copy h2 {
   color: var(--impact-ink);
-  font: 400 clamp(26px, 3.6cqw, 40px) / 1.1 var(--impact-serif);
+  font: 400 clamp(28px, 3.3cqw, 60px) / 1.1 var(--impact-serif);
+  letter-spacing: -0.012em;
+  color: #2a2420;
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-label {
   color: var(--impact-burgundy);
@@ -187,8 +198,7 @@
 [data-campaign-layout="strip"] .campaign-copy .campaign-supporting,
 [data-campaign-layout="strip"] .campaign-copy .campaign-offer {
   color: #4a443c;
-  font-size: 13px;
-  line-height: 1.4;
+  font: 400 clamp(13px, 1.11cqw, 19px) / 1.4 var(--impact-sans);
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-eligibility {
   color: #6a6258;
@@ -197,12 +207,26 @@
 }
 [data-campaign-layout="strip"] .campaign-cta {
   margin-top: 6px;
-  padding: 11px 16px;
+  padding: 0.77em 1.23em;
   border: 0;
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 13px/1.2 var(--impact-body);
+  font: 500 clamp(13px, 1.11cqw, 19px) / 1.2 var(--impact-sans);
+}
+[data-campaign-layout="strip"] .campaign-cta span {
+  margin-left: 6px;
+}
+/* The line-art flowers that finish the frame's strip on the right. */
+[data-campaign-layout="strip"] .campaign-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 17%;
+  background: url("/media/home/strip-flowers.webp") right center / auto 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 35%);
+  mask-image: linear-gradient(90deg, transparent, #000 35%);
+  pointer-events: none;
 }
 
 /* ---- The Maple Difference -------------------------------------------------------------- */
@@ -239,8 +263,8 @@
   padding: 0;
 }
 [data-home-section="difference"] .home-difference li {
-  gap: 12px;
-  padding: 0 14px;
+  gap: 10px;
+  padding: 0 12px;
   border-right: 1px solid #e3e0da;
 }
 [data-home-section="difference"] .home-difference li:last-child {
@@ -250,12 +274,12 @@
   padding-left: 0;
 }
 [data-home-section="difference"] .home-difference li img {
-  width: 64px;
+  width: clamp(48px, 4.6vw, 64px);
   height: auto;
 }
 [data-home-section="difference"] .home-difference li span {
   color: #4b4640;
-  font: 700 clamp(15px, 1.5vw, 19px) / 1.2 var(--impact-serif);
+  font: 700 clamp(14px, 1.38vw, 19px) / 1.2 var(--impact-serif);
   font-style: normal;
 }
 
@@ -272,14 +296,21 @@
   text-align: center;
 }
 .home-heading-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px auto 28px;
+  color: var(--impact-burgundy);
+}
+.home-heading-ornament [data-ornament-line] {
   display: block;
-  width: 100px;
-  height: 14px;
-  margin: 8px auto 26px;
-  background:
-    linear-gradient(#a99a90, #a99a90) left center / 34px 1px no-repeat,
-    linear-gradient(#a99a90, #a99a90) right center / 34px 1px no-repeat,
-    radial-gradient(circle at center, var(--impact-burgundy) 0 3px, transparent 3.5px) center / 14px 14px no-repeat;
+  width: 36px;
+  height: 1px;
+  background: #cdb4ad;
+}
+.home-heading-ornament svg {
+  flex: none;
 }
 [data-home-section="categories"] .home-categories {
   gap: 30px;
@@ -298,7 +329,7 @@
 [data-home-section="categories"] .home-categories h3 {
   margin: 14px 0 0;
   color: #2c2a26;
-  font: 500 13px/1.3 "DM Sans", var(--impact-body);
+  font: 500 14px/1.3 var(--impact-sans);
 }
 [data-category-arrow] {
   position: absolute;
@@ -316,55 +347,55 @@
 
 /* ---- Statement band -------------------------------------------------------------------- */
 [data-home-section="ticker"] .home-statement {
-  width: calc(100% - 80px);
-  margin: 30px auto 20px;
-  padding: 22px 24px;
+  width: calc(100% - 96px);
+  margin: 28px auto 24px;
+  padding: 17px 24px 15px;
   border-radius: 12px;
-  background: linear-gradient(100deg, #7a1b15 0%, #741a14 55%, #6b1711 100%);
-  color: #fff;
-  font: 400 clamp(24px, 2.7vw, 36px) / 1.2 var(--impact-serif);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='96' viewBox='0 0 600 96' fill='none' stroke='%23ffffff' stroke-opacity='.07'%3E%3Cpath d='M-20 70C80 20 160 90 260 48S440 10 620 52'/%3E%3Cpath d='M-20 82C90 36 170 100 270 62S450 26 620 66'/%3E%3C/svg%3E") center / cover no-repeat,
+    linear-gradient(100deg, #7a1c16 0%, #701913 55%, #6a1711 100%);
+  color: #f7e5da;
+  font: 300 clamp(24px, 2.7vw, 34px) / 1.25 var(--impact-serif);
   text-align: center;
 }
 [data-home-section="ticker"] .home-statement em {
-  font-style: italic;
-  font-weight: 400;
+  font: 400 1.12em / 1 var(--impact-script);
+  font-style: normal;
   letter-spacing: 0.01em;
 }
 
 /* ---- Offer tiles ----------------------------------------------------------------------- */
 [data-home-section="offers"] > section {
   max-width: none;
-  padding-inline: 40px;
+  padding: 20px 48px;
 }
 [data-home-section="offers"] .home-offers {
   gap: 16px;
+  padding: 0;
 }
 [data-home-section="offers"] .home-offer-tiles a {
-  position: relative;
   display: block;
+  padding: 0;
+  border: 0;
   border-radius: 12px;
-  background: var(--impact-linen);
-  border: 1px solid rgb(41 37 31 / 0.05);
+  background: none;
+  overflow: hidden;
 }
 [data-home-section="offers"] .home-offer-tiles a > div {
-  aspect-ratio: 288 / 154;
+  aspect-ratio: 320 / 168;
   border-radius: 12px;
 }
-[data-offer-arrow] {
-  position: absolute;
-  left: 22px;
-  bottom: 16px;
-  width: 20px;
-  height: 20px;
-  padding: 4px;
-  border: 1px solid var(--impact-burgundy);
-  border-radius: 50%;
-  color: var(--impact-burgundy);
+[data-home-section="offers"] .home-offer-tiles img {
+  object-fit: cover;
 }
 
 /* ---- Nimbus ---------------------------------------------------------------------------- */
 [data-home-section="nimbus"] .home-nimbus-wrap {
-  padding: 56px 48px;
+  padding: 64px 48px;
+  background:
+    radial-gradient(60% 55% at 12% 20%, rgb(255 255 255 / 0.75), transparent 70%),
+    radial-gradient(55% 60% at 88% 78%, rgb(255 255 255 / 0.6), transparent 70%),
+    linear-gradient(180deg, #fff 0%, #cfcbcd 18%, #bfbbbf 50%, #cfcbcd 82%, #fff 100%);
 }
 [data-home-section="nimbus"] .home-nimbus {
   height: auto;
@@ -386,6 +417,25 @@
   text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
   transition: opacity 0.3s;
 }
+[data-home-section="nimbus"] .home-nimbus-title {
+  position: absolute;
+  z-index: 1;
+  top: 27%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: #fff;
+  font: 700 clamp(56px, 8.2vw, 100px) / 1 var(--impact-body);
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.18);
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-title,
+[data-home-section="nimbus"] .home-nimbus:focus-within .home-nimbus-title,
+[data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-title { opacity: 0; }
 [data-home-section="nimbus"] .home-nimbus-explore {
   position: absolute;
   z-index: 1;
@@ -401,9 +451,19 @@
 }
 /* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-lead,
-[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore {
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore,
+[data-home-section="nimbus"] .home-nimbus:focus-within:not(:has(.home-nimbus-explore:focus)) .home-nimbus-lead {
   visibility: hidden;
 }
+/* A soft grey wash keeps the white lettering readable over the pale cloud photo. */
+[data-home-section="nimbus"] .home-nimbus-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(70 72 80 / 0.38) 0%, rgb(70 72 80 / 0.16) 45%, transparent 70%);
+  pointer-events: none;
+}
+[data-home-section="nimbus"] .home-nimbus-media { position: relative; }
 @media (hover: hover) {
   [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead {
     opacity: 0;
@@ -460,7 +520,7 @@
 }
 [data-home-section] .home-products header {
   margin-bottom: 26px;
-  align-items: flex-start;
+  align-items: center;
 }
 [data-home-section] .home-products .home-eyebrow {
   margin: 0 0 14px;
@@ -493,6 +553,36 @@
   grid-auto-columns: 246px;
   gap: 20px;
 }
+
+/* ---- Product cards on the homepage rails, as the frame draws them: the photo (rounded, with its badges)
+   stands on the band itself, with the name, the price and the saving beneath, and no box around it. ---- */
+[data-home-section] .home-products [data-product-card] {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+[data-home-section] .home-products [data-card-image] {
+  border-radius: 16px;
+}
+[data-home-section] .home-products [data-product-card] > div:last-child {
+  padding: 14px 14px 0;
+  gap: 6px;
+}
+[data-home-section] .home-products [data-card-name] {
+  min-height: 0;
+  font: 600 14px/1.35 var(--impact-body);
+  color: var(--impact-ink);
+}
+[data-home-section] .home-products [data-card-price] {
+  align-items: center;
+  gap: 4px 8px;
+  font: 700 15px/1.3 var(--impact-body);
+}
+[data-home-section] .home-products [data-card-price] > span:first-child { order: 1; }
+[data-home-section] .home-products [data-card-discount] { order: 2; }
+[data-home-section] .home-products [data-card-price] > del { order: 3; flex-basis: 100%; }
 
 /* ---- Social proof ---------------------------------------------------------------------- */
 [data-home-section="instagram"] .home-social {
@@ -593,7 +683,7 @@
   position: absolute;
   height: auto;
   top: -22px;
-  left: -34px;
+  left: -78px;
   color: #e7e5e2;
   font: italic 700 190px/1 var(--impact-serif);
   pointer-events: none;
@@ -768,17 +858,19 @@
 }
 
 @media (max-width: 1000px) {
-  [data-home-section="hero"] .hero-film { min-height: 380px; }
+  /* A fixed ratio with a minimum height would widen the strip past the window; use a height instead. */
+  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; height: clamp(150px, 22vw, 200px); }
+  [data-home-section="hero"] .hero-film { height: clamp(430px, 54vw, 500px); }
   [data-home-section="difference"] .home-difference { padding-inline: 30px; }
 }
 @media (max-width: 749px) {
   [data-home-section="hero"] .hero-grid { padding: 12px 16px 8px; grid-template-columns: 1fr; }
-  [data-home-section="hero"] .hero-film { min-height: 420px; }
+  [data-home-section="hero"] .hero-film { height: clamp(480px, 124vw, 640px); }
   [data-home-section="hero"] .hero-film::after { background: linear-gradient(180deg, rgb(60 40 28 / 0.35) 0%, rgb(60 40 28 / 0.6) 100%); }
   [data-home-section="hero"] .hero-categories { grid-template-rows: none; grid-auto-rows: 170px; }
   [data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] { padding-inline: 16px; }
-  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; min-height: 280px; }
-  [data-campaign-layout="strip"] .campaign-art-desktop { display: block; width: 100%; height: 55%; inset: 0 0 auto 0; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; height: auto; min-height: 330px; }
+  [data-campaign-layout="strip"] .campaign-art-desktop { display: block; width: 100%; height: 48%; inset: 0 0 auto 0; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
   [data-campaign-layout="strip"] .campaign-art-mobile { display: none; }
   [data-campaign-layout="strip"] .campaign-copy { top: auto; bottom: 18px; left: 18px; width: calc(100% - 36px); transform: none; }
   [data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) { top: auto; }

@@ -32,10 +32,11 @@ test("empty campaign copy fields leave no blank rows and the heading names the r
 
 test("updated bundled campaign renders the visible Figma offer without superseded copy", async () => {
   const doc = await renderCampaign();
-  assert.equal(doc.querySelector(".campaign-offer")?.textContent, "Up to 40% off selected furniture");
-  assert.equal(doc.querySelectorAll(".campaign-label, .campaign-supporting, .campaign-eligibility").length, 0);
-  assert.equal(doc.querySelector("section")?.getAttribute("aria-label"), "Decked for Diwali");
-  assert.equal(doc.querySelectorAll("[data-artwork] img").length, 6);
+  // The bundled announcement is the Impact Layout frame's "Always Together" strip: one photo, no layered Diwali art.
+  assert.equal(doc.querySelector(".campaign-supporting")?.textContent, "For every laugh, fight, and memory.");
+  assert.equal(doc.querySelectorAll(".campaign-label, .campaign-eligibility, .campaign-offer").length, 0);
+  assert.equal(doc.querySelector("section")?.getAttribute("aria-label"), "Always Together");
+  assert.equal(doc.querySelectorAll("[data-artwork] img").length, 2);
 });
 
 test("published copy overrides stay visible and escaped after the banner refresh", async () => {

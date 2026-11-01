@@ -34,6 +34,8 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
   let mounted = true;
   try {
     await act(async () => root.render(<Hero />));
+    // The film's behaviour is a lazily loaded chunk now; wait for it to attach, as the browser does after hydration.
+    for (let i = 0; i < 400 && !document.querySelector("[data-slider-ready]"); i++) await act(async () => { await new Promise(resolve => setImmediate(resolve)); });
     await check(document.querySelector("video")!, {
       get plays() { return state.plays; },
       reduce: async (value) => act(async () => { reduced = value; motion.dispatchEvent(new dom.window.Event("change")); }),
@@ -57,7 +59,7 @@ test("server rendering shows the poster and the latest film, muted and looping, 
   for (const attribute of ["muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), attribute);
   assert.equal(video.hasAttribute("autoplay"), false, "started by script, so reduced motion never sees it move");
   assert.equal(video.getAttribute("aria-hidden"), "true", "the film is decoration");
-  assert.equal(doc.querySelectorAll("button").length, 0, "no play or pause control");
+  assert.equal([...doc.querySelectorAll("button")].filter(button => !button.hasAttribute("data-slider-dot")).length, 0, "no play or pause control (the dots are slide buttons)");
 });
 
 test("the film starts muted as soon as the hero appears", async () => {

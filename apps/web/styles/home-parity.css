@@ -1176,26 +1176,6 @@
   scroll-snap-type: none;
   cursor: grabbing;
 }
-.home-scroll-track {
-  position: relative;
-  height: 4px;
-  margin-top: 16px;
-  border-radius: 2px;
-  background: #e9e4e0;
-  cursor: pointer;
-  touch-action: none;
-}
-.home-scroll-track[hidden] {
-  display: none;
-}
-.home-scroll-track span {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 2px;
-  background: #741a14;
-}
-
 /* Homepage sections use the full window width on large screens, with the same 40px gutters
    (owner, 2026-11-01). Other pages that share these classes keep their caps. */
 [data-home-section] > .home-container,

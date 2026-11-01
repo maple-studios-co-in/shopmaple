@@ -131,7 +131,8 @@ test("single and ordered batch cards omit full records while preserving display 
   await db.product.create({ data: { ...product("hidden"), published: false } });
   const one = await request(app).get("/api/catalogue/cards/full");
   assert.equal(one.status, 200, "compact card endpoint must serve the public summary");
-  const { optionNames, ...summary } = one.body.product;
+  const { optionNames, optionThumbs, ...summary } = one.body.product;
+  assert.deepEqual(optionThumbs, [], "variants without their own photo or slug add no thumbnails");
   assert.deepEqual({ ...one.body, product: summary }, { published: true, product: { id: "full", handle: "full", title: "full", image: "https://example.com/0.jpg", pricePaise: 1000, compareAtPaise: 1500, priceFrom: true, otherOptionsOnRequest: true, optionCount: 500, category: "chairs" } });
   // Option names only (for colour dots), capped at eight even with 500 variants.
   assert.equal(optionNames.length, 8);
@@ -140,7 +141,7 @@ test("single and ordered batch cards omit full records while preserving display 
   const batch = await request(app).get("/api/catalogue/cards?handles=model,hidden,missing,full");
   assert.equal(batch.status, 200);
   assert.deepEqual(handles(batch), ["model", "full"]);
-  assert.deepEqual(batch.body.products[0], { id: "model", handle: "model", title: "model", image: null, pricePaise: null, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 0, category: "chairs", optionNames: [] });
+  assert.deepEqual(batch.body.products[0], { id: "model", handle: "model", title: "model", image: null, pricePaise: null, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 0, category: "chairs", optionNames: [], optionThumbs: [] });
   assert.equal(batch.body.published, true);
   assert.equal((await request(app).get("/api/catalogue/cards/hidden")).status, 404);
   assert.equal((await request(app).get("/api/catalogue/cards/missing")).status, 404);

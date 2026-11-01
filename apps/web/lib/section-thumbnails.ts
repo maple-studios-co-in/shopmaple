@@ -7,7 +7,9 @@ import type { StorefrontContent } from "@shopmaple/contracts";
 
 export type HomeSectionKey = StorefrontContent["homeSections"][number]["key"];
 /** A section's display name, as the editor and the preview's Edit buttons show it. */
-export const sectionName = (key: string) => key.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+export const sectionName = (key: string) => Object.hasOwn(sectionTitles, key) ? sectionTitles[key]! : key.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+/** Names that say what a section is, where the key alone would not. */
+const sectionTitles: Record<string, string> = { editorial: "Pull Up A Chair", compare: "Find Your Feel" };
 
 /**
  * The draft as one section's thumbnail renders it: only that section (shown even when the
@@ -43,6 +45,9 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   "seating-banner": (c) => campaign(c, "landing-sofa-accent-chair"),
   chairs: (c) => [c.homeMerchandising?.chairs, c.homeCopy.chairsHeading, c.productHighlights],
   promos: (c) => campaign(c, "landing-dining", "landing-storage", "landing-consoles"),
+  editorial: (c) => [c.homeDetails?.editorial],
+  // The two products' photos come from the catalogue, which a thumbnail cannot see change.
+  compare: (c) => [c.homeDetails?.compare],
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],
   newsletter: (c) => [c.homeDetails?.newsletter],
   values: (c) => [c.homeDetails?.values, c.templateMedia],

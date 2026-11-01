@@ -285,6 +285,46 @@ test("homepage details retain draft isolation, publisher authority, stale protec
     assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
 });
 
+test("hero slides and extra Nimbus collections save and publish; unapproved media, bad links and malformed slides are rejected", async () => {
+    const publisher = await login();
+    const initial = (await publisher.agent.get("/api/admin/content")).body;
+    const base = {
+        hero: { cta: "Discover Maple", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: `Our ${key}`, priceLabel: "Ask for a quote" })) },
+        difference: { eyebrow: "Maple craft", heading: "Made for you", cta: "Plan your room", promises: ["Custom", "Comfort", "Care", "Craft"] },
+        nimbus: { heading: "Nimbus furniture", tagline: "Cloud comfort", features: ["Soft", "Airy", "Modern", "Relaxed"], cta: "Discover Nimbus" },
+        testimonial: { title: "A happy home", paragraphs: ["Thoughtful service."], name: "A customer", attribution: " — Homeowner" },
+        newsletter: { heading: "Fresh ideas", body: "Keep in touch.", signupHeading: "Join us" },
+        values: ["quiet-luxury", "real-living", "ages-beautifully", "strength"].map(key => ({ key, title: "Careful craft", body: "Made with care." })),
+        cities: { eyebrow: "Delivery", heading: "Across India" },
+        project: { heading: "Your project", introBefore: "Reply within ", responseTime: "two days", introAfter: " with ideas.", body: "Tell us more." },
+    };
+    // An approved shop picture: library uploads are covered by home-details-media.test.ts, which publishes real assets.
+    const upload = "https://shop.maplefurnishers.com/cdn/shop/files/slide.webp?v=1";
+    const heroSlides = [
+        { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4?v=0", poster: upload, alt: "Workshop", headline: "Made by hand", intro: "In Delhi." },
+        { kind: "image", src: upload, alt: "A sofa", headline: "Sofas", intro: "Built to last." },
+    ];
+    const nimbusSlides = [{ heading: "Terra", tagline: "Warm", features: ["a", "b", "c", "d"], cta: "Shop Terra", href: "/collections/terra", image: upload, alt: "Terra" }];
+    const withSlides = { ...base, hero: { ...base.hero, slides: heroSlides }, nimbus: { ...base.nimbus, slides: nimbusSlides } };
+    const saved = await save(publisher.agent, publisher.csrf, initial.version, { ...content, homeDetails: withSlides });
+    assert.equal(saved.status, 200, "slides are valid content");
+    assert.deepEqual(saved.body.draft.homeDetails.hero.slides, heroSlides);
+    assert.deepEqual(saved.body.draft.homeDetails.nimbus.slides, nimbusSlides);
+    const published = await publisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisher.csrf).send({ expectedVersion: saved.body.version });
+    assert.equal(published.status, 200);
+    assert.deepEqual((await request(createApp(db, config)).get("/api/content/storefront")).body.content.homeDetails.hero.slides, heroSlides);
+    const version = (await publisher.agent.get("/api/admin/content")).body.version;
+    for (const invalid of [
+        { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[1], src: "https://example.com/a.jpg" }] } },
+        { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[0], poster: undefined }] } },
+        { ...withSlides, hero: { ...withSlides.hero, slides: [] } },
+        { ...withSlides, hero: { ...withSlides.hero, slides: Array(7).fill(heroSlides[1]) } },
+        { ...withSlides, nimbus: { ...withSlides.nimbus, slides: [{ ...nimbusSlides[0], href: "https://example.com/" }] } },
+        { ...withSlides, nimbus: { ...withSlides.nimbus, slides: [{ ...nimbusSlides[0], features: ["a"] }] } },
+        { ...withSlides, nimbus: { ...withSlides.nimbus, slides: Array(6).fill(nimbusSlides[0]) } },
+    ]) assert.equal((await save(publisher.agent, publisher.csrf, version, { ...content, homeDetails: invalid })).status, 400);
+});
+
 test("Nimbus drafts retain public isolation, publisher authority, stale protection and draft-only restoration", async () => {
     const publisher = await login();
     const editor = await login(createApp(db, config), "editor@example.invalid");

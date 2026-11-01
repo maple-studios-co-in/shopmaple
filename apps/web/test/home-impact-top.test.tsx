@@ -99,14 +99,11 @@ test("the statement band is static burgundy text with the last word set apart", 
   assert.equal(band.querySelector("button"), null, "no scrolling, so no pause control");
 });
 
-test("offers are four light cards with an arrow badge", async () => {
+test("offers are four cards of artwork", async () => {
   const offers = section(await renderHome(), "offers");
   const tiles = [...offers.querySelectorAll<HTMLAnchorElement>("[data-offer-tile]")];
   assert.equal(tiles.length, 4);
-  for (const tile of tiles) {
-    assert.ok(tile.querySelector("img"), "artwork");
-    assert.ok(tile.querySelector("[data-offer-arrow]"), "arrow badge");
-  }
+  for (const tile of tiles) assert.ok(tile.querySelector("img"), "artwork");
 });
 
 test("the hero tiles default to the frame's pale tile photos, served from this repo", async () => {

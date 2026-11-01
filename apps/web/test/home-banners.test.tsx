@@ -43,7 +43,7 @@ test("homepage places six linked Diwali campaigns in the corresponding Shopify s
     for (const banner of banners) {
       assert.ok(banner.querySelector('[data-artwork="desktop"] img'));
       assert.ok(banner.querySelector('[data-artwork="mobile"] img'));
-      assert.ok(banner.querySelector("a")?.textContent?.includes("Shop"));
+      assert.ok(/Shop|Celebrate/.test(banner.querySelector("a")?.textContent ?? ""));
     }
     assert.ok(doc.body.textContent?.includes("Shop By Category"));
     assert.ok(doc.body.textContent?.includes("Bestsellers"));
@@ -140,7 +140,7 @@ test("homepage preserves the original brand ticker and four offer collections", 
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     assert.equal(
       doc.querySelector("[data-statement-band]")?.textContent,
-      "Elegance isn't found. At Maple, it is custom-built.",
+      "Elegance isn’t found. At Maple, it is crafted.",
     );
     assert.deepEqual(
       [...doc.querySelectorAll(".home-offers a")].map((a) =>

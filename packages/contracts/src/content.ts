@@ -22,6 +22,8 @@ export const homeSectionKeys = [
   "seating-banner",
   "chairs",
   "promos",
+  "editorial",
+  "compare",
   "testimonial",
   "newsletter",
   "values",
@@ -275,7 +277,7 @@ export const storefrontContentSchema = z
           .strict(),
       )
       .min(1)
-      .max(18),
+      .max(20),
     homeCopy: z
       .object({
         categoryHeading: text(160),

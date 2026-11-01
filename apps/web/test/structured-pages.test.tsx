@@ -135,7 +135,7 @@ test("draft, malformed and unavailable structured pages cannot create routes or 
       const content = await readPublishedContent();
       assert.deepEqual(content.pages, []);
       assert.equal(content.homeCopy.socialHeading, "Our Social Proof");
-      assert.equal(content.homeCopy.ticker, "Elegance isn't found. At Maple, it is custom-built.");
+      assert.equal(content.homeCopy.ticker, "Elegance isn’t found. At Maple, it is crafted.");
       await assert.rejects(() => ShopPage(routeProps()), /NEXT_HTTP_ERROR_FALLBACK;404/);
       assert.deepEqual(await generateMetadata(routeProps()), { title: "Page not found", description: undefined });
       assert.equal((await generateMetadata(routeProps("contact"))).title, "Contact Us");
