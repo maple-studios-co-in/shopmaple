@@ -6,13 +6,16 @@ import StarterKit from "@tiptap/starter-kit";
 import Paragraph from "@tiptap/extension-paragraph";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
-import { Bold, Italic, Link2, List, ListOrdered, Minus, Quote, Redo2, Underline, Undo2 } from "lucide-react";
-import { editorialDocumentSchema, safeLink, type EditorialNode } from "@shopmaple/contracts";
+import { Bold, ImagePlus, Italic, Link2, List, ListOrdered, Minus, Quote, Redo2, Underline, Undo2 } from "lucide-react";
+import { contentImageSchema, editorialDocumentSchema, managedUpload, safeLink, type EditorialNode } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { fromEditorDoc, toEditorDoc } from "@/lib/editorial-rich-text";
 import { cn } from "@/lib/utils";
+import type { StaffSession } from "./dashboard";
+import { Field } from "./field";
+import { MediaPicker, mediaPreviewUrl } from "./media-picker";
 
 type Style = "p" | "h2" | "h3" | "h4" | "other";
 const styles: [Exclude<Style, "other">, string][] = [["p", "Paragraph"], ["h2", "Heading"], ["h3", "Subheading"], ["h4", "Small heading"]];
@@ -29,13 +32,36 @@ const StoredParagraph = Paragraph.extend({
 });
 
 /**
- * Rich text for policies and articles: write and format as in a document, and the editor keeps
+ * Pictures: a media library upload is shown through the private preview address (it may not be
+ * public yet) but keeps its canonical address in the document, including when copied and pasted.
+ */
+const StoreImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      src: {
+        default: null,
+        parseHTML: (element) => {
+          const src = element.getAttribute("src") ?? "";
+          const preview = /^\/api\/admin\/media\/([a-f0-9]{64})\/preview$/.exec(src);
+          return preview ? `/media/uploads/${preview[1]}.webp` : src;
+        },
+        renderHTML: (attributes) => ({ src: typeof attributes.src === "string" ? mediaPreviewUrl(attributes.src) : null }),
+      },
+    };
+  },
+});
+/** The media library, when the editor may add pictures from it. */
+type Media = { session: StaffSession; onExpired: () => void };
+
+/**
+ * Rich text for policies, articles and pages: write and format as in a document, and the editor keeps
  * to what the storefront renders safely (headings, paragraphs, lists, quotes, links, tables,
  * images, rules). Links are limited to store pages, Maple sites, email and phone. An untouched
  * page is never rewritten: only real edits are reported, and a reloaded draft replaces the text.
  */
-export function RichTextEditor({ label, value, onChange, disabled = false }: {
-  label: string; value: EditorialNode[]; onChange: (value: EditorialNode[]) => void; disabled?: boolean;
+export function RichTextEditor({ label, value, onChange, disabled = false, media }: {
+  label: string; value: EditorialNode[]; onChange: (value: EditorialNode[]) => void; disabled?: boolean; media?: Media;
 }) {
   /** The stored form the editor last showed or reported; anything else arriving is a reload. */
   const shown = useRef(JSON.stringify(value));
@@ -48,7 +74,7 @@ export function RichTextEditor({ label, value, onChange, disabled = false }: {
         link: { openOnClick: false, autolink: false, isAllowedUri: (url) => safeLink(url) } }),
       StoredParagraph, Section,
       TableKit.configure({ table: { resizable: false } }),
-      Image,
+      StoreImage,
     ],
     content: initial,
     editorProps: { attributes: { "aria-label": label, "aria-multiline": "true", role: "textbox", class: editorClass } },
@@ -72,14 +98,14 @@ export function RichTextEditor({ label, value, onChange, disabled = false }: {
     : "This page has more text or formatting than one page can hold. Split it into two pages, or remove some formatting.";
   return <div className="grid gap-2">
     <div className="min-w-0 overflow-hidden rounded-lg border border-input bg-card shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40">
-      {editor && <Toolbar editor={editor} label={label} disabled={disabled} />}
+      {editor && <Toolbar editor={editor} label={label} disabled={disabled} media={media} />}
       <EditorContent editor={editor} />
     </div>
     {problem && <p role="alert" className="text-xs text-danger">{problem}</p>}
   </div>;
 }
 
-function Toolbar({ editor, label, disabled }: { editor: Editor; label: string; disabled: boolean }) {
+function Toolbar({ editor, label, disabled, media }: { editor: Editor; label: string; disabled: boolean; media?: Media }) {
   const state = useEditorState({ editor, selector: ({ editor: e }) => ({
     style: ((["h2", "h3", "h4"] as const).find((tag) => e.isActive("heading", { level: Number(tag[1]) }))
       ?? (e.isActive("heading") ? "other" : "p")) as Style,
@@ -88,6 +114,14 @@ function Toolbar({ editor, label, disabled }: { editor: Editor; label: string; d
     href: String(e.getAttributes("link").href ?? ""), undo: e.can().undo(), redo: e.can().redo(),
   }) });
   const [linking, setLinking] = useState(false);
+  const [picturing, setPicturing] = useState(false);
+  /** Whether the writer has put the cursor somewhere; until then a picture goes at the end. */
+  const placed = useRef(false);
+  useEffect(() => {
+    const mark = () => { placed.current = true; };
+    editor.on("focus", mark);
+    return () => { editor.off("focus", mark); };
+  }, [editor]);
   const run = () => editor.chain().focus();
   const toggle = (name: string, pressed: boolean, icon: React.ReactNode, action: () => void) => (
     <Button key={name} type="button" variant="ghost" size="icon-sm" aria-label={name} title={name} aria-pressed={pressed} disabled={disabled} onClick={action}
@@ -116,6 +150,8 @@ function Toolbar({ editor, label, disabled }: { editor: Editor; label: string; d
       {action("Divider", <Minus aria-hidden="true" />, () => run().setHorizontalRule().run())}
       <Button type="button" variant="ghost" size="icon-sm" aria-label="Link" title="Link" aria-expanded={linking} disabled={disabled}
         onClick={() => setLinking((open) => !open)} className={cn((state.link || linking) && "bg-accent text-foreground")}><Link2 aria-hidden="true" /></Button>
+      {media && <Button type="button" variant="ghost" size="sm" aria-expanded={picturing} disabled={disabled}
+        onClick={() => setPicturing((open) => !open)} className={cn("gap-1.5 px-2", picturing && "bg-accent text-foreground")}><ImagePlus aria-hidden="true" />Image</Button>}
       <span aria-hidden="true" className="mx-1 h-5 w-px bg-line-soft" />
       {action("Undo", <Undo2 aria-hidden="true" />, () => run().undo().run(), !state.undo)}
       {action("Redo", <Redo2 aria-hidden="true" />, () => run().redo().run(), !state.redo)}
@@ -124,7 +160,27 @@ function Toolbar({ editor, label, disabled }: { editor: Editor; label: string; d
       if (href) editor.chain().focus().extendMarkRange("link").setLink({ href }).run(); else editor.chain().focus().extendMarkRange("link").unsetLink().run();
       setLinking(false);
     }} />}
+    {picturing && media && <PictureForm media={media} onCancel={() => { setPicturing(false); editor.commands.focus(); }} onInsert={(src, alt) => {
+      editor.chain().focus(placed.current ? null : "end", { scrollIntoView: false }).setImage({ src, alt }).run();
+      setPicturing(false);
+    }} />}
   </>;
+}
+
+/** A picture from the media library, with the description shoppers' screen readers announce. */
+function PictureForm({ media, onInsert, onCancel }: { media: Media; onInsert: (src: string, alt: string) => void; onCancel: () => void }) {
+  const [src, setSrc] = useState("");
+  const [alt, setAlt] = useState("");
+  const ready = (managedUpload.test(src) || (src.startsWith("https://") && contentImageSchema.safeParse(src).success)) && alt.trim().length > 0;
+  return <div role="group" aria-label="Insert a picture" className="grid gap-3 border-b border-line-soft bg-surface px-3 py-3">
+    <MediaPicker label="Picture" value={src} onChange={setSrc} session={media.session} onExpired={media.onExpired} />
+    <Field label="Image description" value={alt} maxLength={200} onChange={setAlt} />
+    <p className="text-xs text-muted-foreground">Describe what the picture shows; it is read out to shoppers who cannot see it.</p>
+    <div className="flex flex-wrap gap-2">
+      <Button type="button" size="sm" disabled={!ready} onClick={() => onInsert(src, alt.trim())}>Insert image</Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+    </div>
+  </div>;
 }
 
 /** The link address for the selected words; only addresses the storefront will publish are accepted. */
