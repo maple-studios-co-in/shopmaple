@@ -46,7 +46,8 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],
   newsletter: (c) => [c.homeDetails?.newsletter],
   values: (c) => [c.homeDetails?.values, c.templateMedia],
-  cities: (c) => [c.homeDetails?.cities, c.homeCitiesLayout, c.templateMedia],
+  // The numbers band reads its warranty figure from the Difference promises.
+  cities: (c) => [c.homeDetails?.cities, c.homeDetails?.difference.promises, c.homeCitiesLayout, c.templateMedia],
   project: (c) => [c.homeDetails?.project],
 };
 

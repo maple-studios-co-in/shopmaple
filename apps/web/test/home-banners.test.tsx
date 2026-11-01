@@ -47,7 +47,7 @@ test("homepage places six linked Diwali campaigns in the corresponding Shopify s
     }
     assert.ok(doc.body.textContent?.includes("Shop By Category"));
     assert.ok(doc.body.textContent?.includes("Bestsellers"));
-    assert.ok(doc.body.textContent?.includes("Starting from ₹25,000"));
+    assert.equal(doc.querySelectorAll("[data-hero-tile-cta]").length, 4, "the frame invites a visit to each hero category");
     assert.ok(!doc.body.textContent?.includes("Made for the way you live."));
     assert.ok(
       [...doc.querySelectorAll("a")].every(
@@ -139,7 +139,7 @@ test("homepage preserves the original brand ticker and four offer collections", 
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     assert.equal(
-      doc.querySelector(".home-ticker-copy")?.textContent,
+      doc.querySelector("[data-statement-band]")?.textContent,
       "Elegance isn't found. At Maple, it is custom-built.",
     );
     assert.deepEqual(

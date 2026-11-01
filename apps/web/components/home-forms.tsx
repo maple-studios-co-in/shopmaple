@@ -12,7 +12,7 @@ export function HomeProjectForm() {
     void enquiry.submit({kind: "project", name: String(data.get("name") ?? ""), email: String(data.get("email") ?? ""), phone: String(data.get("phone") ?? ""), message: String(data.get("message") ?? ""), context: {product:"",variant:"",sku:"",pincode:""}});
   }
   return (
-    <form className="home-project-form" onSubmit={submit} onChange={enquiry.clear}>
+    <form className="home-project-form" data-project-card onSubmit={submit} onChange={enquiry.clear}>
       <div className="home-form-pair">
         <label>
           <span className="sr-only">Name</span>
@@ -50,12 +50,12 @@ export function HomeProjectForm() {
         <textarea
           name="message"
           placeholder="Tell us about your project"
-          rows={6}
+          rows={1}
           maxLength={5000}
         />
       </label>
       <button className="button" type="submit" disabled={enquiry.pending}>
-        {enquiry.pending ? "Saving…" : "Submit"}
+        {enquiry.pending ? "Saving…" : <>Send enquiry <ArrowRight size={14} aria-hidden /></>}
       </button>
       {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="home-preview-detail">{enquiry.message}</p>}
     </form>

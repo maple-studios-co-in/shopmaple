@@ -2,15 +2,16 @@ import { ContentImage as Image } from "@/components/content-image";
 import type { ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { CampaignBanner } from "@/components/campaign-banner";
 import { Hero } from "@/components/hero";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
 import { HomeScrollRail } from "@/components/home-scroll-rail";
-import { HomeTicker } from "@/components/home-ticker";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
 import {
+  HomeStatementBand,
   HomeDifference,
   HomeSocial,
   HomeValues,
@@ -20,6 +21,7 @@ import {
   HomeProject,
 } from "@/components/home-sections";
 import { getProductCards } from "@/lib/catalog";
+import { homeStats } from "@/lib/home-stats";
 import type { StorefrontDocument } from "@/lib/content";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
@@ -32,10 +34,11 @@ function CollectionTiles({
   items: HomeCollectionTile[];
   className: string;
 }) {
+  const categories = className.includes("categories");
   return (
     <div className={className}>
       {items.filter((item) => item.enabled).map((item) => (
-        <Link href={`/collections/${item.collectionHandle}`} key={item.key}>
+        <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })}>
           <div>
             <Image
               src={rasterShopifyArtwork(item.image)}
@@ -46,7 +49,8 @@ function CollectionTiles({
                 : "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)"}
             />
           </div>
-          {className.includes("categories") && <h3>{item.title}</h3>}
+          {categories ? <h3 data-category-title>{item.title}</h3> : null}
+          <ArrowRight aria-hidden size={14} {...(categories ? { "data-category-arrow": "" } : { "data-offer-arrow": "" })} />
         </Link>
       ))}
     </div>
@@ -58,12 +62,15 @@ async function HomeProducts({
   heading,
   label,
   browseHref,
+  lede,
   scrollbar = false,
 }: {
   handles: string[];
   heading?: string;
   label: string;
   browseHref: string;
+  /** A sentence under the heading. */
+  lede?: string;
   /** A plain row with a visible scrollbar: no arrows and no "View all" link (Bestsellers). */
   scrollbar?: boolean;
 }) {
@@ -79,10 +86,11 @@ async function HomeProducts({
       {heading && (
         <header className="home-rail-heading">
           <div>
-            <p className="home-eyebrow">Shop By</p>
+            <p className="home-eyebrow" data-rail-eyebrow>Handpicked favourites</p>
             <h2>{heading}</h2>
+            {lede && <p className="home-rail-lede" data-rail-lede>{lede}</p>}
           </div>
-          {!scrollbar && <Link href={browseHref} aria-label={`View all ${heading}`}>View all →</Link>}
+          {!scrollbar && <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall>View all {heading.toLowerCase()} →</Link>}
         </header>
       )}
       {products.length ? (
@@ -118,15 +126,16 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     hero: <Hero content={details.hero} media={content.templateMedia?.filter(item =>
       item.key === "home-workshop-poster" || item.key.startsWith("home-hero-")
     )} />,
-    announcement: <CampaignBanner campaign="landing-announcement" content={content} />,
+    announcement: <CampaignBanner campaign="landing-announcement" layout="strip" content={content} />,
     difference: <HomeDifference content={details.difference} media={content.templateMedia} />,
     categories: (
       <section className="home-category-section home-container">
         <h2>{copy.categoryHeading}</h2>
+        <span className="home-heading-ornament" data-heading-ornament aria-hidden="true" />
         <CollectionTiles items={merchandising.categories} className="home-categories" />
       </section>
     ),
-    ticker: <HomeTicker text={copy.ticker} autoplay={content.motion.autoplayTicker ?? true} />,
+    ticker: <HomeStatementBand text={copy.ticker} />,
     offers: (
       <section className="home-container" aria-label="Offer collections">
         <CollectionTiles
@@ -150,6 +159,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         heading={copy.bestsellersHeading}
         label="Bestsellers"
         browseHref="/collections/all"
+        lede="Discover the pieces that make a room feel complete."
         scrollbar
       />
     ),
@@ -178,9 +188,9 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
       />
     ),
     newsletter: <HomeNewsletter content={details.newsletter} media={content.templateMedia} />,
-    values: <HomeValues content={details.values} media={content.templateMedia} />,
+    values: <HomeValues content={details.values} media={content.templateMedia} watermark />,
     cities: (
-      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} media={content.templateMedia} layout={content.homeCitiesLayout} />
+      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} media={content.templateMedia} layout={content.homeCitiesLayout} stats={homeStats(details.difference.promises, details.cities.heading)} />
     ),
     project: <HomeProject content={details.project} />,
   };

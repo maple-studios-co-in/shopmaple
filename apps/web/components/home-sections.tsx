@@ -2,13 +2,14 @@ import { InstagramRail, MovingCities } from "@/components/motion-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
-import { ArrowRight, Instagram } from "lucide-react";
+import { ArrowRight, Check, Instagram } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
 import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
+import type { HomeStat } from "@/lib/home-stats";
 import { useId } from "react";
 
 export function HomeBanner({
@@ -56,6 +57,16 @@ export function HomeBanner({
   );
 }
 
+/** The burgundy statement band: the admin's line, centred, with its last word set in italic script. */
+export function HomeStatementBand({ text }: { text: string }) {
+  const match = /^(.*?)([^\s.]+)(\.?)\s*$/s.exec(text);
+  return (
+    <p className="home-statement" data-statement-band>
+      {match ? <>{match[1]}<em data-statement-accent>{match[2]}</em>{match[3]}</> : text}
+    </p>
+  );
+}
+
 export function HomeDifference({
   content = defaultHomeDetails.difference,
   media,
@@ -63,16 +74,16 @@ export function HomeDifference({
   const icons: TemplateMediaKey[] = ["home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4"];
   return (
     <section className="home-difference home-container">
-      <p className="home-eyebrow">{content.eyebrow}</p>
+      <p className="home-eyebrow" data-difference-eyebrow>{content.eyebrow}</p>
       <h2>{content.heading}</h2>
-      <Link className="button" href="/pages/contact">
-        {content.cta} <ArrowRight size={18} />
+      <Link href="/pages/contact" data-difference-link>
+        {content.cta} <ArrowRight size={16} aria-hidden />
       </Link>
       <ul>
         {content.promises.map((text, index) => {
           const artwork = resolveTemplateMedia(icons[index]!, media);
           return (
-            <li key={icons[index]}>
+            <li key={icons[index]} data-difference-promise>
               <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />
               <span>{text}</span>
             </li>
@@ -129,42 +140,29 @@ export function HomeTestimonial({
   const headingId = useId();
   return (
     <section className="home-testimonial" aria-labelledby={headingId}>
-      <div className="home-testimonial-grid">
-        <div className="home-testimonial-story">
-          <header>
-            <h2 id={headingId}>{heading}</h2>
-            <p>{subheading}</p>
-          </header>
-          <video
-            controls
-            playsInline
-            preload="none"
-            poster={poster.image}
-            aria-label={poster.alt}
-          >
-            <source
-              src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
-              type="video/mp4"
-            />
-          </video>
-        </div>
-        <figure>
-          <span className="home-testimonial-quote" aria-hidden="true">“</span>
-          <blockquote>
-            <h3>{content.title}</h3>
-            {content.paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
-          </blockquote>
-          <figcaption>
-            <strong>{content.name}</strong>
-            <span>{content.attribution}</span>
-          </figcaption>
-          <div className="home-review-stars" aria-label="5 out of 5 stars">
-            ★ ★ ★ ★ ★
-          </div>
-        </figure>
-      </div>
+      <header className="sr-only">
+        <h2 id={headingId}>{heading}</h2>
+        <p>{subheading}</p>
+      </header>
+      <figure className="home-quote">
+        <span className="home-quote-mark home-testimonial-quote" aria-hidden="true">“</span>
+        <blockquote>
+          <h3 data-quote-text>{content.title}</h3>
+          {content.paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
+        </blockquote>
+        <figcaption data-quote-author>
+          <strong>{content.name}</strong>
+          <span>{content.attribution}</span>
+        </figcaption>
+        <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}>
+          <source
+            src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
+            type="video/mp4"
+          />
+        </video>
+      </figure>
     </section>
   );
 }
@@ -205,12 +203,19 @@ export function HomeNewsletter({
 export function HomeValues({
   content = defaultHomeDetails.values,
   media,
-}: { content?: HomeDetails["values"]; media?: TemplateMedia } = {}) {
+  watermark = false,
+}: {
+  content?: HomeDetails["values"];
+  media?: TemplateMedia;
+  /** The homepage closes with the brand name behind the row and an invitation to the story; other pages show the row alone. */
+  watermark?: boolean;
+} = {}) {
   return (
     <section
       className="home-values home-container"
       aria-label="Made for real living"
     >
+      {watermark && <div className="home-values-watermark" data-values-watermark aria-hidden="true">Maple Furnishers</div>}
       {content.map(({ key, title, body }) => {
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
@@ -221,6 +226,7 @@ export function HomeValues({
           </div>
         );
       })}
+      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta>Experience Maple</Link>}
     </section>
   );
 }
@@ -230,7 +236,10 @@ export function HomeCities({
   autoplay = true,
   media,
   layout = defaultHomeCitiesLayout,
+  stats = [],
 }: {
+  /** Figures for the numbers band above the rail; the homepage reads them from the admin's own words. */
+  stats?: HomeStat[];
   content?: HomeDetails["cities"];
   autoplay?: boolean;
   media?: TemplateMedia;
@@ -239,6 +248,17 @@ export function HomeCities({
   const cities = layout.filter(city => city.enabled);
   if (!cities.length) return null;
   return (
+    <>
+    {stats.length > 0 && (
+      <div className="home-stat-band" data-stat-band>
+        {stats.map(({ value, label }) => (
+          <div key={label} data-stat>
+            <p className="home-stat-value" data-stat-value>{value}</p>
+            <p className="home-stat-label" data-stat-label>{label}</p>
+          </div>
+        ))}
+      </div>
+    )}
     <section className="home-cities home-container">
       <header>
         <p className="home-eyebrow">{content.eyebrow}</p>
@@ -264,6 +284,7 @@ export function HomeCities({
         })}
       </MovingCities>
     </section>
+    </>
   );
 }
 
@@ -273,6 +294,7 @@ export function HomeProject({
   return (
     <section className="home-project home-container">
       <div>
+        <span className="home-project-eyebrow" data-project-eyebrow>Let’s connect</span>
         <h2>{content.heading}</h2>
         <p>
           {content.introBefore.trimEnd()}{" "}
@@ -280,6 +302,10 @@ export function HomeProject({
           {content.introAfter.trimStart()}
         </p>
         <p>{content.body}</p>
+        <div className="home-project-promise" data-project-promise>
+          <Check size={18} aria-hidden />
+          <span><strong>Quick response</strong> <span>We respond within {content.responseTime}.</span></span>
+        </div>
       </div>
       <HomeProjectForm />
     </section>

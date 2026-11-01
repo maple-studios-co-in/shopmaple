@@ -1,84 +1,48 @@
-"use client";
 import { ContentImage as Image } from "@/components/content-image";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
+import { HeroFilm } from "@/components/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
-/** The shop's latest hero film, as published on shop.maplefurnishers.com. */
-export const heroFilm = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
+export { heroFilm } from "@/components/hero-film";
 
-/**
- * The film plays on its own, muted and looping, with no controls (the owner's choice). It is
- * started by script rather than the autoplay attribute, so a shopper whose device asks for
- * reduced motion never sees it move and keeps the still poster.
- */
+/** Fixed copy from the Impact Layout frame; the admin's hero fields cover the button and the tiles. */
+const headline = "Timeless Craftsmanship for Modern Living";
+const intro = "Handcrafted furniture that brings elegance to every corner of your home.";
+
+/** The hero bento: the film tile with its headline, then one light tile per category. A server component; only the film is client code. */
 export function Hero({
   content = defaultHomeDetails.hero,
   media,
 }: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
   const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
-  const video = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const v = video.current;
-    if (!v) return;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    const apply = () => {
-      if (reduced?.matches) v.pause();
-      else { v.muted = true; void v.play()?.catch(() => {}); }
-    };
-    apply();
-    reduced?.addEventListener?.("change", apply);
-    return () => reduced?.removeEventListener?.("change", apply);
-  }, []);
   return (
-    <section className="hero-grid" aria-label="Explore Maple furniture">
-      <div className="hero-film">
-        <Image
-          src={poster.image}
-          alt={poster.alt}
-          fill
-          sizes="(max-width: 700px) 100vw, 50vw"
-          preload
-        />
-        <video
-          ref={video}
-          src={heroFilm}
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-        />
+    <section className="hero-grid" data-hero-bento aria-label="Explore Maple furniture">
+      <div className="hero-film" data-hero-film>
+        <Image src={poster.image} alt={poster.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload />
+        <HeroFilm />
         <div className="hero-introduction">
+          <h2 data-hero-headline>{headline}</h2>
+          <p data-hero-intro>{intro}</p>
           <Link className="hero-cta" href="/pages/nimbus-collection">
-            {content.cta} <ArrowUpRight size={17} />
+            {content.cta} <ArrowRight aria-hidden size={17} />
           </Link>
         </div>
       </div>
       <div className="hero-categories">
-        {content.tiles.map(({ key, label, priceLabel }) => {
+        {content.tiles.map(({ key, label }) => {
           const artwork = resolveHomeTemplateMedia(`home-hero-${key}`, media);
-          return <Link
-            href={(key === "beds" ? "/collections/" : "/pages/") + key}
-            className="category-tile"
-            key={key}
-          >
-            <Image
-              src={artwork.image}
-              alt={artwork.alt}
-              fill
-              sizes="(max-width: 700px) 48vw, 25vw"
-              preload
-            />
-            <div>
-              <h2>{label}</h2>
-              <p>{priceLabel}</p>
-            </div>
-            <ArrowUpRight aria-hidden size={21} />
-          </Link>;
+          return (
+            <Link href={(key === "beds" ? "/collections/" : "/pages/") + key} className="category-tile" data-hero-tile={key} key={key}>
+              <Image src={artwork.image} alt={artwork.alt} fill sizes="(max-width: 700px) 48vw, 25vw" preload />
+              <div>
+                <h2 data-hero-tile-title>{label}</h2>
+                <p data-hero-tile-cta>View Collection <ArrowRight aria-hidden size={12} /></p>
+              </div>
+            </Link>
+          );
         })}
       </div>
     </section>
