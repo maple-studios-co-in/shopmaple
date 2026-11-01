@@ -3,7 +3,7 @@
 workshop.mp4 and workshop-poster.webp derive from Maple's currently published Shopify homepage video:
 https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/756c69d84abb4904895cd9b52af85e20/756c69d84abb4904895cd9b52af85e20.HD-1080p-7.2Mbps-84649651.mp4?v=0
 
-Retrieved 25 October 2026 for the owner's requested storefront migration. Video is a silent 12-second, 960px-wide H.264 derivative; poster is a frame at 1 second encoded as WebP. No generated product imagery is used.
+Retrieved 25 October 2026 for the owner's requested storefront migration. Video is a silent 12-second, 960px-wide H.264 derivative; poster is a frame at 1 second encoded as WebP. No generated product imagery is used, with one exception: `home/hero-sofas.webp`, `hero-chairs.webp`, `hero-tables.webp` and `hero-beds.webp` are the four hero tile photos cropped from the raster in the owner's Figma frame "Maple / Impact Layout" (`nTEPXzov9IuWraGF0Ace6V`, node 1049:27808, raw image 1536 x 1024), with the tile title and link text painted out, enlarged 2x and saved as WebP on 1 November 2026. They are mock-up renders from the owner's design file, not Maple photographs; replace them in Template media when real tile photos exist.
 
 Other current storefront images remain referenced at their original Shopify CDN URLs during the preview. R2 migration is not yet implemented.
 

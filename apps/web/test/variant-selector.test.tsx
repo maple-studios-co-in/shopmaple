@@ -23,7 +23,7 @@ async function render(props: Partial<React.ComponentProps<typeof VariantSelector
 
 test("the selector is fed plain variants: a name, an optional slug and an optional image", async () => {
   await render({}, (doc, selected) => {
-    assert.equal(doc.querySelector("[data-variants] legend")?.textContent, "Personalise your finish");
+    assert.equal(doc.querySelector("[data-variants] legend")?.textContent, "Finish: Deep Atlantic");
     const tiles = [...doc.querySelectorAll<HTMLInputElement>('[data-variants] input[type="radio"]')];
     assert.deepEqual(tiles.map((input) => input.value), ["a", "b"]);
     assert.equal(doc.querySelector("[data-variant-image] img")?.getAttribute("alt"), "");

@@ -83,7 +83,7 @@ test("homepage reads one compact batch per enabled rail and recovers only compac
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
     assert.equal(doc.querySelectorAll("[data-product-card]").length, 4);
-    assert.deepEqual(requests.filter(u => u.pathname !== "/api/content/storefront").map(u => u.pathname + u.search), ["/api/catalogue/cards?handles=second%2Cfirst", "/api/catalogue/cards?handles=chair-two%2Cchair-one"]);
+    assert.deepEqual(requests.filter(u => !["/api/content/storefront", "/api/instagram/feed"].includes(u.pathname)).map(u => u.pathname + u.search), ["/api/catalogue/cards?handles=second%2Cfirst", "/api/catalogue/cards?handles=chair-two%2Cchair-one"]);
   }, { content: railContent() });
   const content = railContent();
   content.homeMerchandising!.bestsellers = ["second", "broken", "first"];
@@ -102,7 +102,7 @@ test("hidden or empty homepage rails issue no product requests", async () => {
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
     assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 1);
-    assert.deepEqual(requests.map(u => u.pathname), ["/api/content/storefront"]);
+    assert.deepEqual(requests.map(u => u.pathname).sort(), ["/api/content/storefront", "/api/instagram/feed"], "Only the content and the Instagram feed; no catalogue reads");
   }, { content });
 });
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
+import { otherPieces } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
@@ -49,8 +50,9 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
-      />
-      <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} category={product.category} />
+      >
+        <RelatedProducts products={otherPieces(related, product)} />
+      </ProductDetail>
     </>
   );
 }

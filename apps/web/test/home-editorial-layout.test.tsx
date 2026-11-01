@@ -54,7 +54,7 @@ test("editorial restyling preserves the complete original testimonial and custom
       "Delivery was on time, and everything was handled professionally. Truly a no-stress experience from start to finish.",
     ]);
     assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
-    assert.equal(doc.querySelector(".home-review-stars")?.getAttribute("aria-label"), "5 out of 5 stars");
+    assert.equal(doc.querySelector(".home-review-stars"), null, "the stars were typed in, not data; the Impact Layout frame has none");
     const video = doc.querySelector("video")!;
     assert.ok(video.controls);
     assert.ok(video.playsInline);

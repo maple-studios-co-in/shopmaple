@@ -4,7 +4,8 @@ import { useState, type FormEvent } from "react";
 import { useEnquiry } from "@/components/use-enquiry";
 import { ArrowRight } from "lucide-react";
 
-export function HomeProjectForm() {
+/** `card` is the homepage look (one-line message box, "Send enquiry"); the default is the original form. */
+export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
   const enquiry = useEnquiry();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -12,7 +13,7 @@ export function HomeProjectForm() {
     void enquiry.submit({kind: "project", name: String(data.get("name") ?? ""), email: String(data.get("email") ?? ""), phone: String(data.get("phone") ?? ""), message: String(data.get("message") ?? ""), context: {product:"",variant:"",sku:"",pincode:""}});
   }
   return (
-    <form className="home-project-form" onSubmit={submit} onChange={enquiry.clear}>
+    <form className="home-project-form" {...(card ? { "data-project-card": "" } : {})} onSubmit={submit} onChange={enquiry.clear}>
       <div className="home-form-pair">
         <label>
           <span className="sr-only">Name</span>
@@ -55,7 +56,7 @@ export function HomeProjectForm() {
         />
       </label>
       <button className="button" type="submit" disabled={enquiry.pending}>
-        {enquiry.pending ? "Saving…" : "Submit"}
+        {enquiry.pending ? "Saving…" : card ? <>Send enquiry <ArrowRight size={14} aria-hidden /></> : "Submit"}
       </button>
       {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="home-preview-detail">{enquiry.message}</p>}
     </form>

@@ -12,6 +12,8 @@ const { createRoot } = await import("react-dom/client");
 const { Header } = await import("../components/header");
 const { ProductDetail } = await import("../components/product-detail");
 const { ShopProvider } = await import("../components/shop-provider");
+const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
+const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
 const product = (handle: string): Product => ({ id: handle, handle, title: `${handle} Chair`, description: "Source description", category: "chairs", images: [], published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: `${handle}-variant`, title: "Standard", sku: null, pricePaise: 123400, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
 import { cardEnvelope, pageFixture } from "./support/catalogue-fixtures";
 const page = (handles: string[], total = handles.length, q = "") => Response.json(pageFixture(handles, total, q));
@@ -114,9 +116,9 @@ test("recent lookups reject mismatched identities without hiding independently l
 });
 test("canonical product visits record bounded newest-first handles, without product data or duplicates", async t => {
   const app=await setup(t,JSON.stringify(["one","two","three","four","five","six","seven","eight"])); try {
-    await act(async()=>app.root.render(<ShopProvider><ProductDetail product={product("alpha")} /></ShopProvider>));
+    await act(async()=>app.root.render(<ShopProvider><AppRouterContext.Provider value={router}><ProductDetail product={product("alpha")} /></AppRouterContext.Provider></ShopProvider>));
     assert.equal(localStorage.getItem(storageKey),'["alpha","one","two","three","four","five","six","seven"]');
-    await act(async()=>app.root.render(<ShopProvider><ProductDetail product={product("two")} /></ShopProvider>));
+    await act(async()=>app.root.render(<ShopProvider><AppRouterContext.Provider value={router}><ProductDetail product={product("two")} /></AppRouterContext.Provider></ShopProvider>));
     assert.equal(localStorage.getItem(storageKey),'["two","alpha","one","three","four","five","six","seven"]');
   } finally { await app.close(); }
 });
@@ -135,7 +137,7 @@ test("storage denial does not block search or product browsing", async t => {
   try {
     prototype.getItem=()=>{throw new Error("Blocked storage");}; prototype.setItem=()=>{throw new Error("Blocked storage");};
     await click("Search furniture"); await settle(app.requests[0]!,page(["alpha"])); assert.deepEqual(names(),["alpha Chair"]);
-    await act(async()=>app.root.render(<ShopProvider><ProductDetail product={product("alpha")} /></ShopProvider>));
+    await act(async()=>app.root.render(<ShopProvider><AppRouterContext.Provider value={router}><ProductDetail product={product("alpha")} /></AppRouterContext.Provider></ShopProvider>));
     assert.equal(document.querySelector("h1")?.textContent,"alpha Chair");
   } finally { prototype.getItem=oldGet; prototype.setItem=oldSet; await app.close(); }
 });

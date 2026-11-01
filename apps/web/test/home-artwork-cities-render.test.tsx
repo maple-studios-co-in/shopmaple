@@ -51,7 +51,7 @@ async function render(body: unknown) {
   };
   try {
     const html = await new Response(await renderToReadableStream(<ShopProvider><Home /></ShopProvider>)).text();
-    assert.ok(requests.every(r => r.method === "GET" && (r.url.endsWith("/api/content/storefront") || new URL(r.url).pathname === "/api/catalogue/cards")), "Only public content and catalogue reads; never drafts or writes");
+    assert.ok(requests.every(r => r.method === "GET" && (r.url.endsWith("/api/content/storefront") || ["/api/catalogue/cards", "/api/instagram/feed"].includes(new URL(r.url).pathname))), "Only public content and catalogue reads; never drafts or writes");
     assert.ok(requests.filter(r => r.url.endsWith("/api/content/storefront")).every(r => r.cache === "no-store"));
     return new JSDOM(html).window.document;
   } finally { globalThis.fetch = previous; }

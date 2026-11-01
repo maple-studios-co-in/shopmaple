@@ -421,3 +421,37 @@ model EnquiryDeliveryRetryAudit {
   createdAt DateTime @default(now())
   @@unique([deliveryId, version])
 }
+
+/// The automatic Instagram feed's single state row (id 1): last refresh, error, lease and any refreshed token.
+model InstagramFeedState {
+  id Int @id @default(1)
+  lastAttemptAt DateTime?
+  lastSuccessAt DateTime?
+  errorCode String?
+  tokenExpiresAt DateTime?
+  dataAccessExpiresAt DateTime?
+  /// SHA-256 of the env token the stored token was refreshed from; a new env token replaces it.
+  tokenSource String?
+  /// The refreshed token, AES-256-GCM encrypted with a key derived from the app secret.
+  tokenCiphertext String?
+  leaseToken String?
+  leaseExpiresAt DateTime?
+}
+
+/// The last good set of posts from Instagram, with our own copy of each image.
+model InstagramFeedPost {
+  id String @id
+  permalink String
+  mediaType String
+  caption String
+  postedAt DateTime
+  imageSha256 String
+  image Bytes
+  width Int
+  height Int
+  hidden Boolean @default(false)
+  hiddenAt DateTime?
+  fetchedAt DateTime
+  @@index([postedAt])
+  @@index([imageSha256])
+}

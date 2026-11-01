@@ -5,7 +5,13 @@ import { defaultStoryPage } from "./story-content-defaults";
 import { defaultHomeDetails } from "./home-details-defaults";
 import { defaultNimbusPage } from "./nimbus-content-defaults";
 import posts from "@/data/instagram-posts.json";
-import { homeSectionKeys, type StorefrontContent } from "@shopmaple/contracts";
+import type { StorefrontContent } from "@shopmaple/contracts";
+
+/** The "Maple / Impact Layout" frame's order. Its design has no newsletter band; it stays last, and staff can hide it in the section builder. */
+const homeSectionOrder: StorefrontContent["homeSections"][number]["key"][] = [
+  "hero", "announcement", "difference", "categories", "ticker", "offers", "nimbus", "dining-banner", "instagram", "bestsellers",
+  "seating-banner", "chairs", "promos", "cities", "testimonial", "project", "values", "newsletter",
+];
 
 // These placements originally scrolled to the product grid on their own collection page.
 const collectionCampaignDestinations: Partial<
@@ -25,7 +31,7 @@ export const defaultStorefrontContent: StorefrontContent = {
   storyPage: defaultStoryPage,
   homeDetails: defaultHomeDetails,
   nimbusPage: defaultNimbusPage,
-  homeSections: homeSectionKeys.map((key) => ({ key, enabled: true })),
+  homeSections: homeSectionOrder.map((key) => ({ key, enabled: true })),
   homeCopy: {
     categoryHeading: "Shop By Category",
     bestsellersHeading: "Bestsellers",

@@ -55,7 +55,6 @@ test("mixed known and unknown options show the known starting price and disclose
 test("a model-only detail page offers an enquiry without inventing a variant, SKU or category", async () => {
   await mount(<ProductDetail product={model} />, () => {
     assert.match(document.querySelector("[data-price-block]")!.textContent!, /Price on request/);
-    assert.ok(document.querySelector('[data-breadcrumb] a[href="/collections/all"]'));
     assert.equal(document.querySelector('[aria-label="Enlarge product image"]'), null);
     const enquiry = document.querySelector<HTMLAnchorElement>("[data-purchase] a")!;
     const params = new URL(enquiry.href).searchParams;

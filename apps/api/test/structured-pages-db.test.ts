@@ -80,6 +80,21 @@ test('page-only missing targets fail atomically even when authored articles are 
   }
 });
 
+test('links written in a rich-text page are checked like block links before publishing', async () => {
+  const rich = (href: string) => ({ slug: 'studio', title: 'Studio', description: '', body: 'Recovery copy', banner: null,
+    content: [{ tag: 'p', children: ['See ', { tag: 'strong', children: [{ tag: 'a', href, children: ['this'] }] }] }] });
+  for (const href of ['/pages/missing', '/products/missing', '/collections/missing#top']) {
+    const saved = await save({ ...fixture(), pages: [rich(href)] });
+    const before = await snapshot();
+    const response = await publish(saved.version);
+    assert.equal(response.status, 400, `${href} in rich text must be checked`);
+    assert.equal(response.body.code, 'PAGE_LINK_TARGET_MISSING');
+    assert.deepEqual(await snapshot(), before);
+  }
+  assert.equal((await publish((await save({ ...fixture(), pages: [rich('/collections/chairs#top')] })).version)).status, 200);
+  assert.equal((await publish((await save({ ...fixture(), pages: [rich('mailto:care@maplefurnishers.com')] })).version)).status, 200, 'email and phone links are not store pages');
+});
+
 test('page links accept candidate pages and articles plus real catalogue and source destinations', async () => {
   const hrefs = ['/', '/#intro', '/pages/studio#intro', '/pages/new-room', '/blogs/news/new-linked-story', '/products/page-chair#details', '/collections/chairs', '/collections/frontpage', '/policies/privacy-policy', '/blogs/life-culture', '/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes', '/pages/our-story'];
   const content = { ...fixture(), pages: [page(hrefs.map((href, i) => ({ id: `link-${i}`, type: 'link', text: 'Read', href }))), { slug: 'new-room', title: 'Room', description: '', body: 'Hello', banner: null }], authoredArticles: [article('new-linked-story')] };

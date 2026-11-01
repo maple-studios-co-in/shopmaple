@@ -42,6 +42,8 @@ export function HomeNimbus({
         >
           {open ? <ChevronDown /> : <ChevronUp />}
         </button>
+        <p className="home-nimbus-lead" data-nimbus-lead>{content.tagline}</p>
+        <Link className="home-nimbus-explore" href="/pages/nimbus-collection" data-nimbus-explore>{content.cta}</Link>
         <div className="home-nimbus-content" id="nimbus-details">
           <h2>{content.heading}</h2>
           <p>{content.tagline}</p>

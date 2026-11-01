@@ -1,0 +1,812 @@
+/* The homepage as the "Maple / Impact Layout" frame (Figma 1049:27656). Every rule is scoped to a
+   [data-home-section] wrapper, so category pages, the product page and the other templates that
+   share the legacy class names are untouched. Widths follow the frame at 1265px, with the same
+   48px gutter that carries on to larger windows. */
+[data-home-section] {
+  --impact-burgundy: #741a14;
+  --impact-ink: #29251f;
+  --impact-linen: #faf8f4;
+  --impact-bento: #f9f7f5;
+  --impact-serif: Newsreader, Georgia, serif;
+  --impact-body: "Barlow", system-ui, sans-serif;
+}
+
+/* The homepage sits on white, as in the frame; the bento, bestsellers and enquiry bands are cream. */
+.home-refined {
+  background: #fff;
+}
+
+/* ---- Hero bento ------------------------------------------------------------------------ */
+[data-home-section="hero"] .hero-grid {
+  height: auto;
+  margin: 0;
+  padding: 17px 48px 8px;
+  gap: 8px;
+  background: var(--impact-bento);
+  grid-template-columns: 619fr 542fr;
+  box-shadow: 0 0 0 100vmax var(--impact-bento);
+  clip-path: inset(0 -100vmax);
+}
+[data-home-section="hero"] .hero-film {
+  min-height: 429px;
+  border-radius: 14px;
+}
+[data-home-section="hero"] .hero-film::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(60 40 28 / 0.82) 0%, rgb(60 40 28 / 0.62) 50%, rgb(60 40 28 / 0) 85%);
+  pointer-events: none;
+}
+[data-home-section="hero"] .hero-introduction {
+  position: absolute;
+  inset: auto;
+  padding: 0;
+  background: none;
+  z-index: 1;
+  left: 38px;
+  top: 50%;
+  transform: translateY(-46%);
+  width: min(300px, calc(100% - 76px));
+  color: #fff;
+}
+[data-home-section="hero"] .hero-introduction h2 {
+  margin: 0 0 22px;
+  color: #fff;
+  font: 300 38px/1.08 var(--impact-serif);
+  letter-spacing: -0.005em;
+}
+[data-home-section="hero"] .hero-introduction > p {
+  margin: 0 0 28px;
+  text-transform: none;
+  letter-spacing: normal;
+  max-width: 170px;
+  font: 400 13px/1.45 var(--impact-body);
+}
+[data-home-section="hero"] .hero-cta {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 3px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 500 13px/1.2 var(--impact-body);
+}
+[data-home-section="hero"] .hero-cta:hover {
+  background: #5c140f;
+  color: #fff;
+}
+[data-home-section="hero"] .hero-categories {
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+[data-home-section="hero"] .category-tile {
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  background: #eeebe6;
+  color: var(--impact-ink);
+  box-shadow: 0 6px 18px rgb(41 37 31 / 0.08);
+}
+/* A soft pale wash behind the title keeps it readable if the admin supplies a darker photo. */
+[data-home-section="hero"] .category-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(238 235 230 / 0.85) 0%, rgb(238 235 230 / 0) 55%);
+  pointer-events: none;
+}
+[data-home-section="hero"] .category-tile > div {
+  top: 22px;
+  left: 22px;
+}
+[data-home-section="hero"] .category-tile h2 {
+  margin: 0;
+  color: var(--impact-ink);
+  font: 400 19px/1.2 var(--impact-serif);
+}
+[data-home-section="hero"] .category-tile p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 12px 0 0;
+  color: #5b2a22;
+  font: 400 11px/1.2 var(--impact-body);
+}
+
+/* ---- Announcement strip ("Always Together") -------------------------------------------- */
+[data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0 48px 9px;
+  background: var(--impact-bento);
+  box-shadow: 0 0 0 100vmax var(--impact-bento);
+  clip-path: inset(0 -100vmax);
+  color: var(--impact-ink);
+}
+[data-campaign-layout="strip"] .campaign-scene {
+  aspect-ratio: 1169 / 188;
+  min-height: 150px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #e9dcd2 0%, #efe6df 60%, #f3ede8 100%);
+  border: 1px solid rgb(41 37 31 / 0.06);
+}
+[data-campaign-layout="strip"] .campaign-art-mobile {
+  display: none;
+}
+[data-campaign-layout="strip"] .campaign-art-desktop {
+  display: block;
+  right: auto;
+  width: 56%;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 78%, transparent 100%);
+}
+[data-campaign-layout="strip"] .campaign-art-desktop img {
+  object-position: left center;
+}
+[data-campaign-layout="strip"] .campaign-shade,
+[data-campaign-layout="strip"] .campaign-bottom-shade {
+  display: none;
+}
+[data-campaign-layout="strip"] .campaign-copy {
+  top: 50%;
+  left: 59.5%;
+  width: 36%;
+  transform: translateY(-50%);
+  gap: 8px;
+  color: var(--impact-ink);
+  font-family: var(--impact-body);
+}
+[data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) {
+  top: 50%;
+  gap: 8px;
+}
+[data-campaign-layout="strip"] .campaign-ornament {
+  display: block;
+  width: 106px;
+  height: 14px;
+  background:
+    linear-gradient(var(--impact-burgundy), var(--impact-burgundy)) left center / 38px 1px no-repeat,
+    linear-gradient(var(--impact-burgundy), var(--impact-burgundy)) right center / 38px 1px no-repeat,
+    radial-gradient(circle at center, transparent 3px, var(--impact-burgundy) 3.5px, var(--impact-burgundy) 5px, transparent 5.5px) center / 14px 14px no-repeat;
+  opacity: 0.8;
+}
+[data-campaign-layout="strip"] .campaign-copy h2 {
+  color: var(--impact-ink);
+  font: 400 clamp(26px, 3.6cqw, 40px) / 1.1 var(--impact-serif);
+}
+[data-campaign-layout="strip"] .campaign-copy .campaign-label {
+  color: var(--impact-burgundy);
+  font-size: 11px;
+  line-height: 1.3;
+}
+[data-campaign-layout="strip"] .campaign-copy .campaign-supporting,
+[data-campaign-layout="strip"] .campaign-copy .campaign-offer {
+  color: #4a443c;
+  font-size: 13px;
+  line-height: 1.4;
+}
+[data-campaign-layout="strip"] .campaign-copy .campaign-eligibility {
+  color: #6a6258;
+  font-size: 11px;
+  line-height: 1.4;
+}
+[data-campaign-layout="strip"] .campaign-cta {
+  margin-top: 6px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 500 13px/1.2 var(--impact-body);
+}
+
+/* ---- The Maple Difference -------------------------------------------------------------- */
+[data-home-section="difference"] .home-difference {
+  padding: 78px 48px 0;
+  max-width: none;
+}
+[data-home-section="difference"] .home-eyebrow {
+  margin: 0 0 6px;
+  color: #1c1b19;
+  font: 500 15px/1.3 var(--impact-body);
+  letter-spacing: 0.02em;
+}
+[data-home-section="difference"] h2 {
+  margin: 0 0 24px;
+  color: var(--impact-burgundy);
+  font: 700 38px/1.15 var(--impact-serif);
+}
+[data-home-section="difference"] [data-difference-link] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--impact-burgundy);
+  font: 400 15px/1.3 var(--impact-body);
+}
+[data-home-section="difference"] .home-difference ul {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 34px 0 0;
+  padding: 0;
+}
+[data-home-section="difference"] .home-difference li {
+  gap: 12px;
+  padding: 0 14px;
+  border-right: 1px solid #e3e0da;
+}
+[data-home-section="difference"] .home-difference li:last-child {
+  border-right: 0;
+}
+[data-home-section="difference"] .home-difference li:first-child {
+  padding-left: 0;
+}
+[data-home-section="difference"] .home-difference li img {
+  width: 64px;
+  height: auto;
+}
+[data-home-section="difference"] .home-difference li span {
+  color: #4b4640;
+  font: 700 clamp(15px, 1.5vw, 19px) / 1.2 var(--impact-serif);
+  font-style: normal;
+}
+
+/* ---- Shop by Category ------------------------------------------------------------------ */
+[data-home-section="categories"] .home-category-section {
+  padding: 96px 48px 0;
+  max-width: none;
+}
+[data-home-section="categories"] h2 {
+  margin: 0;
+  color: var(--impact-burgundy);
+  font: 400 40px/1.15 var(--impact-serif);
+  font-style: normal;
+  text-align: center;
+}
+.home-heading-ornament {
+  display: block;
+  width: 100px;
+  height: 14px;
+  margin: 8px auto 26px;
+  background:
+    linear-gradient(#a99a90, #a99a90) left center / 34px 1px no-repeat,
+    linear-gradient(#a99a90, #a99a90) right center / 34px 1px no-repeat,
+    radial-gradient(circle at center, var(--impact-burgundy) 0 3px, transparent 3.5px) center / 14px 14px no-repeat;
+}
+[data-home-section="categories"] .home-categories {
+  gap: 30px;
+}
+[data-home-section="categories"] .home-categories a {
+  position: relative;
+  align-items: center;
+  flex-direction: column;
+}
+[data-home-section="categories"] .home-categories a > div {
+  width: 100%;
+  border-radius: 50%;
+  border: 1px solid #efe8e1;
+  box-shadow: 0 0 0 4px #fff, 0 0 0 5px #f1ebe5;
+}
+[data-home-section="categories"] .home-categories h3 {
+  margin: 14px 0 0;
+  color: #2c2a26;
+  font: 500 13px/1.3 "DM Sans", var(--impact-body);
+}
+[data-category-arrow] {
+  position: absolute;
+  top: calc(100% - 48px);
+  right: 14%;
+  width: 26px;
+  height: 26px;
+  padding: 6px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--impact-burgundy);
+  box-shadow: 0 2px 6px rgb(41 37 31 / 0.18);
+  transform: translateY(-100%);
+}
+
+/* ---- Statement band -------------------------------------------------------------------- */
+[data-home-section="ticker"] .home-statement {
+  width: calc(100% - 80px);
+  margin: 30px auto 20px;
+  padding: 22px 24px;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #7a1b15 0%, #741a14 55%, #6b1711 100%);
+  color: #fff;
+  font: 400 clamp(24px, 2.7vw, 36px) / 1.2 var(--impact-serif);
+  text-align: center;
+}
+[data-home-section="ticker"] .home-statement em {
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* ---- Offer tiles ----------------------------------------------------------------------- */
+[data-home-section="offers"] > section {
+  max-width: none;
+  padding-inline: 40px;
+}
+[data-home-section="offers"] .home-offers {
+  gap: 16px;
+}
+[data-home-section="offers"] .home-offer-tiles a {
+  position: relative;
+  display: block;
+  border-radius: 12px;
+  background: var(--impact-linen);
+  border: 1px solid rgb(41 37 31 / 0.05);
+}
+[data-home-section="offers"] .home-offer-tiles a > div {
+  aspect-ratio: 288 / 154;
+  border-radius: 12px;
+}
+[data-offer-arrow] {
+  position: absolute;
+  left: 22px;
+  bottom: 16px;
+  width: 20px;
+  height: 20px;
+  padding: 4px;
+  border: 1px solid var(--impact-burgundy);
+  border-radius: 50%;
+  color: var(--impact-burgundy);
+}
+
+/* ---- Nimbus ---------------------------------------------------------------------------- */
+[data-home-section="nimbus"] .home-nimbus-wrap {
+  padding: 56px 48px;
+}
+[data-home-section="nimbus"] .home-nimbus {
+  height: auto;
+  max-width: none;
+  aspect-ratio: 1169 / 640;
+  min-height: 420px;
+  border-radius: 14px;
+}
+[data-home-section="nimbus"] .home-nimbus-lead {
+  position: absolute;
+  z-index: 1;
+  top: 20%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: #fff;
+  font: 600 clamp(20px, 2.2vw, 28px) / 1.2 var(--impact-body);
+  text-align: center;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+  transition: opacity 0.3s;
+}
+[data-home-section="nimbus"] .home-nimbus-explore {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 56%;
+  transform: translateX(-50%);
+  padding: 17px 41px;
+  border-radius: 30px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 600 16px/1.2 var(--impact-body);
+  transition: opacity 0.3s;
+}
+/* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-lead,
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore {
+  visibility: hidden;
+}
+@media (hover: hover) {
+  [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead {
+    opacity: 0;
+  }
+}
+
+/* ---- Campaign banners and cards -------------------------------------------------------- */
+[data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-cta {
+  padding: 0.6em 1.1em;
+  border: 0;
+  border-radius: 2px;
+  background: #fff3dc;
+  color: var(--impact-burgundy);
+  font-size: max(12px, 0.8cqw);
+}
+[data-home-section] [data-campaign-layout="band"] .campaign-copy .campaign-label,
+[data-home-section] [data-campaign-layout="card"] .campaign-copy .campaign-label {
+  color: #e9c9a4;
+  font-size: max(10px, 0.62cqw);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+[data-campaign-layout="card"] .campaign-scene {
+  border-radius: 22px;
+}
+[data-campaign-layout="card"] .campaign-banner,
+[data-home-section="promos"] .campaign-banner {
+  border-radius: 22px;
+}
+[data-home-section="promos"] .campaign-promo-grid {
+  max-width: none;
+  gap: 16px;
+  margin-block: 56px;
+  padding-inline: 35px;
+}
+[data-home-section="promos"] .campaign-copy {
+  bottom: 8cqw;
+  height: auto;
+}
+[data-home-section="promos"] .campaign-copy .campaign-cta {
+  margin-top: auto;
+}
+
+/* ---- Product bands (Bestsellers, Chairs) ----------------------------------------------- */
+[data-home-section="bestsellers"] .home-products,
+[data-home-section="chairs"] .home-products {
+  max-width: none;
+  padding: 64px 64px 72px;
+}
+[data-home-section="bestsellers"] .home-products {
+  background: var(--impact-linen);
+  box-shadow: 0 0 0 100vmax var(--impact-linen);
+  clip-path: inset(0 -100vmax);
+}
+[data-home-section] .home-products header {
+  margin-bottom: 26px;
+  align-items: flex-start;
+}
+[data-home-section] .home-products .home-eyebrow {
+  margin: 0 0 14px;
+  color: var(--impact-burgundy);
+  font: 600 12px/1.3 var(--impact-body);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+[data-home-section] .home-products header h2 {
+  color: var(--impact-ink);
+  font: 700 44px/1.1 var(--impact-serif);
+  font-style: normal;
+}
+[data-home-section] .home-products .home-rail-lede {
+  margin: 22px 0 0;
+  color: #6a6258;
+  font: 400 16px/1.4 var(--impact-body);
+}
+[data-home-section] .home-products header > a[data-rail-viewall] {
+  min-width: 212px;
+  min-height: 50px;
+  border: 1px solid #e3dcd5;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--impact-burgundy);
+  font: 600 14px/1.2 var(--impact-body);
+}
+[data-home-section="bestsellers"] .home-product-rail,
+[data-home-section="chairs"] .home-product-rail {
+  grid-auto-columns: 246px;
+  gap: 20px;
+}
+
+/* ---- Social proof ---------------------------------------------------------------------- */
+[data-home-section="instagram"] .home-social {
+  padding-block: 56px 72px;
+}
+[data-home-section="instagram"] .home-social h2 {
+  color: var(--impact-ink);
+  font: 400 40px/1.2 var(--impact-serif);
+}
+
+/* ---- Numbers band ---------------------------------------------------------------------- */
+.home-stat-band {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin: 80px 0 4px;
+  padding: 80px 48px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  text-align: center;
+}
+.home-stat-band > div + div {
+  border-left: 1px solid rgb(255 255 255 / 0.18);
+}
+.home-stat-band p {
+  margin: 0;
+}
+.home-stat-value {
+  font: 700 clamp(88px, 11vw, 150px) / 1 var(--impact-body);
+  letter-spacing: -0.02em;
+}
+.home-stat-band .home-stat-label {
+  margin-top: 28px;
+  font: 600 clamp(20px, 2vw, 26px) / 1.2 var(--impact-body);
+}
+/* Cities: the frame's panel runs edge to edge with the arches alone; the admin's eyebrow and heading
+   stay in the page for screen readers, and the photo credits stay visible below the arches. */
+[data-home-section="cities"] .home-cities.home-container {
+  position: relative;
+  display: block;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 40px 48px 44px;
+  border: 0;
+  border-radius: 0;
+  background: #f3efea;
+}
+[data-home-section="cities"] .home-cities header {
+  display: contents;
+}
+[data-home-section="cities"] .home-cities header .home-eyebrow,
+[data-home-section="cities"] .home-cities header h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-home-section="cities"] .home-cities .city-photo-credits {
+  position: absolute;
+  right: 48px;
+  bottom: 14px;
+  margin: 0;
+}
+[data-home-section="cities"] .city-motion {
+  padding-inline: 56px;
+}
+[data-home-section="cities"] .home-city-track {
+  min-width: 100%;
+  justify-content: center;
+}
+
+/* ---- Testimonial ----------------------------------------------------------------------- */
+[data-home-section="testimonial"] .home-testimonial {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 104px 48px 96px;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+}
+[data-home-section="testimonial"] .home-testimonial figure.home-quote {
+  position: relative;
+  max-width: 936px;
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  text-align: center;
+}
+[data-home-section="testimonial"] .home-quote-mark {
+  position: absolute;
+  height: auto;
+  top: -22px;
+  left: -34px;
+  color: #e7e5e2;
+  font: italic 700 190px/1 var(--impact-serif);
+  pointer-events: none;
+}
+.home-quote blockquote {
+  position: relative;
+  margin: 0;
+}
+[data-home-section="testimonial"] .home-quote figcaption {
+  margin: 0;
+  color: #1b1a18;
+  font: 600 clamp(24px, 2.6vw, 32px) / 1.2 var(--impact-body);
+  letter-spacing: -0.01em;
+}
+[data-home-section="testimonial"] .home-quote figcaption {
+  position: relative;
+}
+[data-home-section="testimonial"] .home-quote blockquote h3 {
+  margin: 0;
+  color: #1b1a18;
+  font: 600 clamp(24px, 2.6vw, 32px) / 1.2 var(--impact-body);
+  font-style: normal;
+  letter-spacing: -0.01em;
+}
+[data-home-section="testimonial"] .home-quote figcaption strong {
+  font-weight: 600;
+}
+[data-home-section="testimonial"] .home-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+[data-home-section="testimonial"] .home-quote blockquote {
+  display: contents;
+}
+[data-home-section="testimonial"] .home-quote blockquote h3 { order: 1; }
+[data-home-section="testimonial"] .home-quote figcaption { order: 2; }
+[data-home-section="testimonial"] .home-testimonial > video {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  max-height: 460px;
+  margin: 56px auto 0;
+  border-radius: 14px;
+  background: #e9e4e0;
+}
+[data-home-section="testimonial"] .home-quote blockquote p {
+  order: 3;
+  max-width: 720px;
+  margin: 24px 0 0;
+  color: #4b4640;
+  font: 400 16px/1.7 var(--impact-body);
+  letter-spacing: normal;
+}
+
+/* ---- Enquiry --------------------------------------------------------------------------- */
+[data-home-section="project"] .home-project {
+  max-width: none;
+  align-items: start;
+  gap: 56px;
+  padding: 56px 56px 80px;
+  background: var(--impact-linen);
+  box-shadow: 0 0 0 100vmax var(--impact-linen);
+  clip-path: inset(0 -100vmax);
+}
+[data-home-section="project"] .home-project .home-project-eyebrow {
+  display: block;
+  margin: 0 0 24px;
+  color: var(--impact-burgundy);
+  font: 600 12px/1.2 var(--impact-body);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+[data-home-section="project"] .home-project h2 {
+  margin: 0 0 24px;
+  color: var(--impact-ink);
+  font: 700 clamp(40px, 4.2vw, 52px) / 1.1 var(--impact-serif);
+  font-style: normal;
+}
+[data-home-section="project"] .home-project > div > p {
+  max-width: 480px;
+  color: #29251f;
+  font: 400 17px/1.55 var(--impact-body);
+}
+[data-home-section="project"] .home-project .home-project-promise {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 32px;
+  font-size: 14px;
+}
+.home-project-promise svg {
+  flex: none;
+  color: var(--impact-burgundy);
+}
+.home-project-promise span span {
+  display: block;
+  margin-top: 4px;
+  color: #6a6258;
+  font-size: 13px;
+}
+[data-home-section="project"] .home-project-form {
+  gap: 14px;
+  padding: 24px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(41 37 31 / 0.04);
+}
+[data-home-section="project"] .home-project-form input,
+[data-home-section="project"] .home-project-form textarea {
+  min-height: 44px;
+  padding: 12px 13px;
+  border: 1px solid #d9d4cc;
+  border-radius: 4px;
+  background: #fff;
+  font: 400 13px/1.4 var(--impact-body);
+}
+[data-home-section="project"] .home-project-form textarea {
+  height: 44px;
+  resize: vertical;
+}
+[data-home-section="project"] .home-project-form .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 600 13px/1.2 var(--impact-body);
+}
+
+/* ---- Values and the closing invitation ------------------------------------------------- */
+[data-home-section="values"] .home-values {
+  max-width: none;
+  gap: 24px 16px;
+  padding: 24px 90px 110px;
+}
+[data-home-section="values"] .home-values .home-values-watermark {
+  grid-column: 1 / -1;
+  margin: 0 0 72px;
+  background: linear-gradient(180deg, #e9e0e1 0%, rgb(255 255 255 / 0.9) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font: 700 clamp(40px, 10.2vw, 170px) / 1.05 var(--impact-body);
+  overflow-wrap: anywhere;
+  letter-spacing: -0.03em;
+  text-align: center;
+  user-select: none;
+}
+[data-home-section="values"] .home-values h3 {
+  margin: 18px 0 14px;
+  color: #4b4640;
+  font: 500 19px/1.2 var(--impact-body);
+}
+[data-home-section="values"] .home-values div > p {
+  color: #4b4640;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.home-values-cta {
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin-top: 56px;
+  padding: 18px 34px;
+  border-radius: 30px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 600 16px/1.2 var(--impact-body);
+}
+
+@media (max-width: 1000px) {
+  [data-home-section="hero"] .hero-film { min-height: 380px; }
+  [data-home-section="difference"] .home-difference { padding-inline: 30px; }
+}
+@media (max-width: 749px) {
+  [data-home-section="hero"] .hero-grid { padding: 12px 16px 8px; grid-template-columns: 1fr; }
+  [data-home-section="hero"] .hero-film { min-height: 420px; }
+  [data-home-section="hero"] .hero-film::after { background: linear-gradient(180deg, rgb(60 40 28 / 0.35) 0%, rgb(60 40 28 / 0.6) 100%); }
+  [data-home-section="hero"] .hero-categories { grid-template-rows: none; grid-auto-rows: 170px; }
+  [data-home-section="announcement"] > .campaign-banner[data-campaign-layout="strip"] { padding-inline: 16px; }
+  [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; min-height: 280px; }
+  [data-campaign-layout="strip"] .campaign-art-desktop { display: block; width: 100%; height: 55%; inset: 0 0 auto 0; -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+  [data-campaign-layout="strip"] .campaign-art-mobile { display: none; }
+  [data-campaign-layout="strip"] .campaign-copy { top: auto; bottom: 18px; left: 18px; width: calc(100% - 36px); transform: none; }
+  [data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) { top: auto; }
+  [data-home-section="difference"] .home-difference { padding: 48px 16px 0; }
+  [data-home-section="difference"] .home-difference ul { grid-template-columns: repeat(2, 1fr); row-gap: 20px; }
+  [data-home-section="difference"] .home-difference li { border: 0; padding: 0; gap: 10px; }
+  [data-home-section="difference"] .home-difference li img { width: 44px; }
+  [data-home-section="difference"] .home-difference li span { font-size: 16px; overflow-wrap: normal; word-break: normal; hyphens: none; }
+  [data-home-section="categories"] .home-category-section { padding: 56px 16px 0; }
+  [data-home-section="categories"] .home-categories { gap: 22px 14px; }
+  [data-home-section="ticker"] .home-statement { width: calc(100% - 32px); }
+  [data-home-section="offers"] > section { padding-inline: 16px; }
+  [data-home-section="nimbus"] .home-nimbus-wrap { padding: 32px 16px; }
+  [data-home-section="nimbus"] .home-nimbus { aspect-ratio: auto; min-height: 480px; }
+  [data-home-section="bestsellers"] .home-products,
+  [data-home-section="chairs"] .home-products { padding: 40px 16px 48px; }
+  [data-home-section="bestsellers"] .home-product-rail,
+  [data-home-section="chairs"] .home-product-rail { grid-auto-columns: 72%; gap: 12px; }
+  [data-home-section] .home-products header h2 { font-size: 34px; }
+  .home-stat-band { grid-auto-flow: row; padding: 48px 16px; row-gap: 40px; margin-top: 48px; }
+  .home-stat-band > div + div { border-left: 0; }
+  [data-home-section="testimonial"] .home-testimonial { padding: 56px 16px; width: auto; }
+  [data-home-section="testimonial"] .home-testimonial figure.home-quote { padding: 0; border-radius: 0; }
+  .home-quote-mark { left: -6px; top: -26px; font-size: 110px; }
+  [data-home-section="project"] .home-project { padding: 40px 16px 56px; gap: 28px; }
+  [data-home-section="values"] .home-values { padding: 16px 16px 72px; }
+  [data-home-section="cities"] .home-cities.home-container { padding: 28px 12px 40px; }
+  [data-home-section="cities"] .city-motion { padding-inline: 44px; }
+  [data-home-section="cities"] .home-cities .city-photo-credits { right: 12px; padding: 8px; }
+  [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
+}

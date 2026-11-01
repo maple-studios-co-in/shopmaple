@@ -1,4 +1,5 @@
 import { createElement, Fragment } from "react";
+import { managedUpload, storeMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
 export type ContentNode =
   | string
@@ -80,13 +81,34 @@ function tableChildren(tag: string, children: ContentNode[]): ContentNode[] {
   });
 }
 
-export function StoreContent({ nodes }: { nodes: ContentNode[] }) {
+/** `previewUploads`: the admin preview shows unpublished media library uploads through the private preview address. */
+export function StoreContent({ nodes, previewUploads = false }: { nodes: ContentNode[]; previewUploads?: boolean }) {
   return (
     <>
       {nodes.map((node, index) => {
         if (typeof node === "string")
           return <Fragment key={index}>{node}</Fragment>;
         if (node.tag === "img") {
+          // The staff draft preview frame has already moved uploads to their private preview address.
+          if (node.src && /^\/api\/admin\/media\/[a-f0-9]{64}\/preview$/.test(node.src))
+            // eslint-disable-next-line @next/next/no-img-element -- a private, signed-in preview address
+            return <img key={index} src={node.src} alt={node.alt || ""} width={1200} height={800} style={{ width: "100%", height: "auto" }} />;
+          // A picture the store serves itself (media library uploads, Keeri photos, campaign art).
+          if (node.src && storeMedia(node.src))
+            return previewUploads && managedUpload.test(node.src) ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a private, signed-in preview address
+              <img key={index} src={`/api/admin/media/${node.src.slice(15, 79)}/preview`} alt={node.alt || ""} width={1200} height={800} style={{ width: "100%", height: "auto" }} />
+            ) : (
+              <Image
+                key={index}
+                src={node.src}
+                alt={node.alt || ""}
+                width={1200}
+                height={800}
+                sizes="(max-width:749px) 92vw, 860px"
+                style={{ width: "100%", height: "auto" }}
+              />
+            );
           let url: URL | null = null;
           try {
             url = node.src
@@ -127,7 +149,7 @@ export function StoreContent({ nodes }: { nodes: ContentNode[] }) {
           props,
           ...(["hr", "br"].includes(tag)
             ? []
-            : [<StoreContent key="content" nodes={tableChildren(tag, node.children)} />]),
+            : [<StoreContent key="content" nodes={tableChildren(tag, node.children)} previewUploads={previewUploads} />]),
         );
       })}
     </>
