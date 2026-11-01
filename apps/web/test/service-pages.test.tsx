@@ -68,6 +68,22 @@ test("source service routes retain forms, help, operational notices, media and a
   });
 });
 
+// The enquiry context the contact page hands its form: walks the element tree for the `context` prop.
+const contextOf = (node: unknown): Record<string, string> | undefined => {
+  if (!node || typeof node !== "object") return undefined;
+  const props = (node as { props?: { context?: Record<string, string>; children?: unknown } }).props;
+  if (props?.context && "sku" in props.context) return props.context;
+  for (const child of ([] as unknown[]).concat(props?.children ?? [])) { const found = contextOf(child); if (found) return found; }
+  return undefined;
+};
+test("the contact page bounds the item code it sends with the enquiry, though it no longer writes it", async () => {
+  await withResponse(null, async () => {
+    const element = await ServicePage({ params: Promise.resolve({ slug: "contact" }), searchParams: Promise.resolve({ product: "Aero", sku: "z".repeat(200) }) });
+    assert.equal(contextOf(element)?.sku, "z".repeat(160));
+    assert.doesNotMatch(renderToStaticMarkup(element), /zzzz/);
+  });
+});
+
 test("service query context remains bounded, escaped and rejects array and malformed pincodes", async () => {
   await withResponse(null, async () => {
     const doc = await renderPage("contact", { product: "<script>bad()</script>" + "x".repeat(600), variant: "y".repeat(400), sku: "z".repeat(200), pincode: "1100157" });

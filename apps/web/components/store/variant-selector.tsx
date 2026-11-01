@@ -28,6 +28,12 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
   layout?: "photo" | "swatch" | "text";
 }) {
   const chosen = variants.find((variant) => variant.id === selectedId);
+  // Finishes that share a name (the same finish from two catalogue sources) are told apart by position, never by item code:
+  // "Desert Taupe (option 1 of 2)". The visible caption and the legend keep the plain name.
+  const named = (variant: SelectorVariant) => {
+    const same = variants.filter((other) => other.name === variant.name);
+    return same.length > 1 ? `${variant.name} (option ${same.indexOf(variant) + 1} of ${same.length})` : variant.name;
+  };
   return (
     <fieldset data-variants={layout} className="m-0 min-w-0 border-0 p-0">
       <legend className="mb-4 max-w-[calc(100%-10rem)] p-0 text-[14px] leading-[1.6] text-black">Finish: <span className="font-semibold">{chosen?.name}</span></legend>
@@ -35,7 +41,7 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
         {variants.map((variant) => {
           const selected = variant.id === selectedId;
           return (
-            <label key={variant.id} title={variant.name} data-selected={selected}
+            <label key={variant.id} title={named(variant)} data-selected={selected}
               className={cx("group/option relative flex cursor-pointer text-meta text-espresso has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-maple",
                 layout === "photo" && "w-[calc((100%-24px)/3)] max-w-[122px] flex-col items-start gap-1.5",
                 layout === "swatch" && "w-[100px] flex-col items-start gap-2 sm:w-[130px]",
@@ -44,7 +50,7 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
               {layout === "photo" && (
                 <span aria-hidden="true"
                   className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] bg-cream shadow-[0_0_0_1px_rgb(86_60_73/0.2)] transition-shadow motion-reduce:transition-none [&_img]:object-cover",
-                    selected && "shadow-[0_0_0_3px_#80241c]")}>
+                    selected && "shadow-[0_0_0_3px_var(--color-maple)]")}>
                   {variant.image
                     ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="122px" /></span>
                     : variant.swatch
@@ -62,7 +68,7 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
                     : <span data-variant-placeholder className="absolute inset-0" />}
                 </span>
               )}
-              <span className={cx(layout === "photo" ? "sr-only" : "grid gap-0.5", selected && "font-semibold")}>{variant.name}</span>
+              <span className={cx(layout === "photo" ? "sr-only" : "grid gap-0.5", selected && "font-semibold")}>{layout === "photo" ? named(variant) : variant.name}</span>
             </label>
           );
         })}

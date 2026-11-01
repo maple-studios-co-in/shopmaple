@@ -23,7 +23,7 @@ export function ProductEnquiry({ product, variant, sku }: { product: string; var
     });
   }
   return (
-    <section data-store data-enquiry aria-labelledby="product-enquiry-title" className="bg-[#f8f7f3] px-4 py-12 font-product md:px-12 md:py-[32px] lg:px-[50px]">
+    <section data-store data-enquiry aria-labelledby="product-enquiry-title" className="bg-[#f8f7f3] px-4 py-12 font-product md:px-12 md:py-[32px]">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,max(674px,45%))] lg:items-center lg:gap-[40px]">
         <div className="flex flex-col gap-6">
           <h2 id="product-enquiry-title" className="m-0 max-w-[433px] text-[44px] leading-[1.1] font-medium text-black md:text-[64px] md:leading-[75px]">Have a Space in Mind?</h2>

@@ -5,7 +5,8 @@ import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
-const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 720px, calc(100vw - 712px)";
+// The photo column: the window less the gutters, the gap, the buy box (at least 455 px, 32 % of the grid) and the thumbnail strip.
+const STAGE_SIZES = "(max-width:1023px) 100vw, calc(100vw - 257px - max(455px, (100vw - 96px) * 0.32))";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));

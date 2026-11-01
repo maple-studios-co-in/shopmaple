@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { Cart, Product } from "@shopmaple/contracts";
 import { ProductDetail } from "../components/product-detail";
+import { cheapestPriced } from "../components/store/product-assurances";
 import { ShopProvider } from "../components/shop-provider";
 
 // The owner's review of the live page (2026-11-02): item codes, and the chosen finish not coming up properly.
@@ -25,14 +26,14 @@ const aero: Product = {
     { id: "taupe-s", title: "Desert Taupe", sku: "MPL-CH-DIN-NOR-07-03", pricePaise: 2_360_000, compareAtPaise: 2_714_000, available: false, stockPolicy: "unverified", slug: "desert-taupe" },
   ],
 };
-async function mount(check: (doc: Document) => void | Promise<void>, value: Product = aero) {
+async function mount(check: (doc: Document) => void | Promise<void>, value: Product = aero, initialVariant?: string) {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json(empty);
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
   window.history.replaceState(null, "", "/products/aero-dining-chair");
   try {
-    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} /></ShopProvider></AppRouterContext.Provider>));
+    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} initialVariant={initialVariant} /></ShopProvider></AppRouterContext.Provider>));
     await check(document);
   } finally {
     await act(async () => root.unmount());
@@ -50,7 +51,7 @@ test("item codes are not written on the page, while the enquiry links still carr
   });
 });
 
-test("the page opens on a priced finish with a photo, so its price matches the cards and the chosen finish is the one shown", async () => {
+test("the page opens on a priced finish with a photo, and the chosen finish is the one shown", async () => {
   await mount((doc) => {
     assert.equal(doc.querySelector<HTMLInputElement>("input[name=variant]:checked")?.value, "atlantic");
     assert.equal(text(doc.querySelector("[data-variants] legend")), "Finish: Deep Atlantic");
@@ -73,9 +74,39 @@ test("exactly one finish tile is marked as chosen, it is the checked one, and th
   });
 });
 
-test("every finish tile names its finish for hover and screen readers, since photo tiles show no caption", async () => {
+test("every finish tile names its finish for hover and screen readers, and finishes that share a name are told apart by position, not by code", async () => {
   await mount((doc) => {
     const labels = [...doc.querySelectorAll<HTMLElement>("[data-variants] label")];
-    assert.deepEqual(labels.map((label) => label.getAttribute("title")), ["Nordic Ivory", "Desert Taupe", "Deep Atlantic", "Desert Taupe"]);
+    const names = ["Nordic Ivory", "Desert Taupe (option 1 of 2)", "Deep Atlantic", "Desert Taupe (option 2 of 2)"];
+    assert.deepEqual(labels.map((label) => label.getAttribute("title")), names);
+    const accessibleName = (label: HTMLElement) => { const copy = label.cloneNode(true) as HTMLElement; copy.querySelectorAll("[aria-hidden=true]").forEach((hidden) => hidden.remove()); return text(copy); };
+    assert.deepEqual(labels.map(accessibleName), names, "The accessible name of each radio is its label text, without the decorative tile");
   });
+});
+
+const variant = (id: string, pricePaise: number | null, images?: string[]) => ({ id, title: id, sku: id.toUpperCase(), pricePaise, compareAtPaise: null, available: false, stockPolicy: "made_to_order" as const, ...(images ? { images } : {}), slug: id });
+const withVariants = (...variants: Product["variants"]): Product => ({ ...aero, variants });
+const photo = (id: string) => `https://example.com/${id}.jpg`;
+const checked = (doc: Document) => doc.querySelector<HTMLInputElement>("input[name=variant]:checked")?.value;
+
+test("the default finish is the cheapest priced one that has a photo, so the page opens on a finish with both", async () => {
+  await mount((doc) => {
+    assert.equal(checked(doc), "cheap-photo");
+    assert.equal(text(doc.querySelector("[data-price]")), "Rs. 20,000.00");
+    assert.match(doc.querySelector("[data-main-image] img")!.getAttribute("src")!, /cheap\.jpg/);
+  }, withVariants(variant("dear-photo", 3_000_000, [photo("dear")]), variant("cheap-photo", 2_000_000, [photo("cheap")]), variant("cheapest-plain", 1_500_000), variant("unpriced", null, [photo("u")])));
+});
+
+test("without a priced finish that has a photo, the cheapest priced one; ties go to the first; unpriced pieces open on the first photo, else the first finish", async () => {
+  await mount((doc) => assert.equal(checked(doc), "cheap-plain"), withVariants(variant("dear-plain", 3_000_000), variant("cheap-plain", 2_000_000), variant("unpriced", null, [photo("u")])));
+  await mount((doc) => assert.equal(checked(doc), "b-photo"), withVariants(variant("a-plain", 2_000_000), variant("b-photo", 2_000_000, [photo("b")]), variant("c-photo", 2_000_000, [photo("c")])));
+  await mount((doc) => assert.equal(checked(doc), "a-plain"), withVariants(variant("a-plain", 2_000_000), variant("b-plain", 2_000_000)));
+  await mount((doc) => assert.equal(checked(doc), "has-photo"), withVariants(variant("none", null), variant("has-photo", null, [photo("h")])));
+  await mount((doc) => assert.equal(checked(doc), "none"), withVariants(variant("none", null), variant("none-2", null)));
+  assert.equal(cheapestPriced([variant("x", null)], () => true), undefined);
+});
+
+test("a finish named in the address wins over the default", async () => {
+  await mount((doc) => assert.equal(checked(doc), "ivory"), aero, "nordic-ivory");
+  await mount((doc) => assert.equal(checked(doc), "taupe-k"), aero, "desert-taupe-2");
 });

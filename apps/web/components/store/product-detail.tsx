@@ -13,7 +13,7 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
-import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
+import { assurances, cheapestPriced, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
@@ -36,9 +36,6 @@ const solid = cx(pill, "cursor-pointer border-0 bg-maple text-white hover:bg-bra
 const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-white text-maple hover:bg-maple/6");
 const stepper = "grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-[rgba(86,60,73,0.04)] p-0 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-maple";
 const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[14px] leading-[1.6] font-medium text-black no-underline hover:text-maple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple";
-
-/** The lowest-priced finish; the first of equals, so the catalogue's own order breaks ties. */
-const cheapest = <T extends { pricePaise: number | null }>(variants: T[]) => variants.reduce<T | undefined>((best, v) => (best === undefined || v.pricePaise! < best.pricePaise! ? v : best), undefined);
 
 /** A card's text: the captured rich text when it has any; null when the catalogue holds nothing for it. */
 const richCard = (content: ProductRichTextValue | null | undefined): ReactNode => content?.children.length ? <ProductRichText content={content} /> : null;
@@ -73,10 +70,9 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const initial =
     selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
-    // With nothing chosen, open on a finish the shopper can price: the cheapest, preferring one with its own photo, so the
-    // page agrees with the card's "From" price. Otherwise the first finish with a photo, else the first.
-    cheapest(product.variants.filter((v) => v.pricePaise !== null && variantImage(v.id)))?.id ??
-    cheapest(product.variants.filter((v) => v.pricePaise !== null))?.id ??
+    // With nothing chosen, open on a finish the shopper can price (see cheapestPriced); with no prices, the first finish
+    // with a photo, else the first.
+    cheapestPriced(product.variants, variantImage)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
     product.variants[0]?.id ??
     "";
