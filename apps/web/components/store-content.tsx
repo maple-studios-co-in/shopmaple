@@ -81,8 +81,44 @@ function tableChildren(tag: string, children: ContentNode[]): ContentNode[] {
   });
 }
 
-/** `previewUploads`: the admin preview shows unpublished media library uploads through the private preview address. */
-export function StoreContent({ nodes, previewUploads = false }: { nodes: ContentNode[]; previewUploads?: boolean }) {
+// Ids the storefront layout itself uses, so a heading anchor never takes the skip link's target.
+const layoutIds = ["main", "site-search", "maple-mobile-navigation", "newsletter", "policy-contents-list", "policy-help-title"];
+
+function plainText(nodes: ContentNode[]): string {
+  return nodes.map(node => typeof node === "string" ? node : node.tag === "br" ? " " : tags.has(node.tag) ? plainText(node.children) : "").join("");
+}
+
+export type HeadingOutline = {
+  anchors: ReadonlyMap<ContentNode, string>;
+  entries: { id: string; text: string; level: 2 | 3 }[];
+};
+
+/** The h2 and h3 headings `StoreContent` renders (an h1 renders as an h2), each with a unique anchor made from its words. */
+export function headingOutline(nodes: ContentNode[]): HeadingOutline {
+  const anchors = new Map<ContentNode, string>();
+  const entries: HeadingOutline["entries"] = [];
+  const used = new Set(layoutIds);
+  const visit = (node: ContentNode) => {
+    if (typeof node === "string" || !tags.has(node.tag)) return;
+    if (!["h1", "h2", "h3"].includes(node.tag)) return node.children.forEach(visit);
+    const text = plainText(node.children).replace(/\s+/g, " ").trim();
+    if (!text) return;
+    const base = text.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+    let id = base;
+    for (let count = 2; used.has(id); count++) id = `${base}-${count}`;
+    used.add(id);
+    anchors.set(node, id);
+    entries.push({ id, text, level: node.tag === "h3" ? 3 : 2 });
+  };
+  nodes.forEach(visit);
+  return { anchors, entries };
+}
+
+/**
+ * `previewUploads`: the admin preview shows unpublished media library uploads through the private preview address.
+ * `anchors`: ids for headings, from `headingOutline` (policy pages link to their sections).
+ */
+export function StoreContent({ nodes, previewUploads = false, anchors }: { nodes: ContentNode[]; previewUploads?: boolean; anchors?: HeadingOutline["anchors"] }) {
   return (
     <>
       {nodes.map((node, index) => {
@@ -143,13 +179,14 @@ export function StoreContent({ nodes, previewUploads = false }: { nodes: Content
           key: index,
           ...(tag === "a" ? { href: destination(node.href || "") } : {}),
           ...(tag === "table" ? { tabIndex: 0, "aria-label": "Content table" } : {}),
+          ...(anchors?.has(node) ? { id: anchors.get(node) } : {}),
         };
         return createElement(
           tag,
           props,
           ...(["hr", "br"].includes(tag)
             ? []
-            : [<StoreContent key="content" nodes={tableChildren(tag, node.children)} previewUploads={previewUploads} />]),
+            : [<StoreContent key="content" nodes={tableChildren(tag, node.children)} previewUploads={previewUploads} anchors={anchors} />]),
         );
       })}
     </>

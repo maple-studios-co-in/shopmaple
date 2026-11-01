@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PolicyArticle } from "@/components/policy-page";
+import { PolicyArticle, policyLinks } from "@/components/policy-page";
 import source from "@/data/store-content.json";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
@@ -33,5 +33,5 @@ export default async function PolicyPage({
   const { policies } = resolveEditorialContent(content.editorialContent);
   const policy = policies[slug];
   if (!policy) notFound();
-  return <PolicyArticle policy={policy} />;
+  return <PolicyArticle policy={policy} slug={slug} policies={policyLinks(policies)} />;
 }

@@ -7,7 +7,7 @@ import { NimbusLanding } from "@/components/category-nimbus";
 import { StoryLanding } from "@/components/category-story";
 import { ContentPage } from "@/components/content-page";
 import { HomePage } from "@/components/home-page";
-import { PolicyArticle } from "@/components/policy-page";
+import { PolicyArticle, policyLinks } from "@/components/policy-page";
 import { BulkEnquiry, Contact, ReturnsPageContent, emptyEnquiryContext } from "@/components/service-pages";
 import source from "@/data/store-content.json";
 import type { StorefrontDocument } from "@/lib/content";
@@ -49,8 +49,9 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
   }
   if (root === "policies" && second !== undefined && third === undefined) {
     if (!Object.hasOwn(source.policies, second)) return null;
-    const policy = resolveEditorialContent(content.editorialContent).policies[second];
-    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} /> } : null;
+    const { policies } = resolveEditorialContent(content.editorialContent);
+    const policy = policies[second];
+    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} policies={policyLinks(policies)} /> } : null;
   }
   if (root === "blogs" && second !== undefined) {
     if (!source.blogs.some((item) => item.handle === second)) return null;

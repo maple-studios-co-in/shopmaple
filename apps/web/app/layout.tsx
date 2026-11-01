@@ -18,6 +18,7 @@ import "@/components/legacy-chairs.css";
 import "@/styles/navigation-parity.css";
 import "@/styles/site-chrome.css";
 import "@/styles/suggested-pages.css";
+import "@/styles/policy-page.css";
 import "@/styles/search-dialog.css";
 import "@/styles/campaign-banners.css";
 import "@/styles/home-ticker.css";
