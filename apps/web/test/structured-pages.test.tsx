@@ -24,19 +24,16 @@ const banner = {
 };
 const documentFor = (element: Parameters<typeof renderToStaticMarkup>[0]) => new JSDOM(renderToStaticMarkup(element)).window.document;
 
-// Exact markup apart from the utility classes, which carry the look rather than the structure.
-const markup = (element: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(element).replace(/ class="[^"]*"/g, "");
-
 test("legacy pages retain exact paragraph markup, whitespace and escaped source text", () => {
-  const html = markup(<ContentPage page={legacyPage} />);
-  assert.equal(html, '<article data-store="true" data-content-page="true"><header><h1>Room &amp; reading guide</h1><p>A quiet corner</p></header><div data-content-copy="true"><p> First line\nsecond line</p><p>&lt;script&gt;plain text&lt;/script&gt;</p><p>Last &amp; final </p></div></article>');
-  assert.equal(markup(<ContentPage page={{ ...legacyPage, description: "", body: "" }} />), '<article data-store="true" data-content-page="true"><header><h1>Room &amp; reading guide</h1></header><div data-content-copy="true"></div></article>');
+  const html = renderToStaticMarkup(<ContentPage page={legacyPage} />);
+  assert.equal(html, '<article class="content-page home-container"><header><h1>Room &amp; reading guide</h1><p>A quiet corner</p></header><div class="content-page-copy"><p> First line\nsecond line</p><p>&lt;script&gt;plain text&lt;/script&gt;</p><p>Last &amp; final </p></div></article>');
+  assert.equal(renderToStaticMarkup(<ContentPage page={{ ...legacyPage, description: "", body: "" }} />), '<article class="content-page home-container"><header><h1>Room &amp; reading guide</h1></header><div class="content-page-copy"></div></article>');
 });
 
 test("legacy banner remains between the header and paragraph copy with responsive media", () => {
   const doc = documentFor(<ContentPage page={{ ...legacyPage, banner }} />);
   assert.deepEqual([...doc.querySelector("article")!.children].map(element => element.tagName), ["HEADER", "A", "DIV"]);
-  const link = doc.querySelector("[data-content-banner]")!;
+  const link = doc.querySelector(".content-page-banner")!;
   assert.equal(link.getAttribute("href"), "/collections/chairs");
   assert.equal(link.querySelector("source")?.getAttribute("media"), "(max-width:749px)");
   assert.equal(link.querySelector("source")?.getAttribute("srcset"), "/media/mobile.webp");
@@ -60,7 +57,7 @@ const structuredPage: Page = { ...legacyPage, body: "Retained legacy text for re
 
 test("structured pages render all block kinds in author order and suppress retained body", () => {
   const doc = documentFor(<ContentPage page={structuredPage} />);
-  const copy = doc.querySelector("[data-content-copy]")!;
+  const copy = doc.querySelector(".content-page-copy")!;
   assert.deepEqual([...copy.children].map(element => element.tagName), ["H2", "P", "H3", "BLOCKQUOTE", "OL", "UL", "P", "IMG"]);
   assert.equal(copy.querySelector("h2")?.textContent, "Choose your corner");
   assert.equal(copy.querySelector("p")?.textContent, '<script>alert("hello")</script> is literal copy.');
@@ -76,14 +73,14 @@ test("structured pages render all block kinds in author order and suppress retai
   assert.ok(!copy.textContent?.includes("Retained legacy text for recovery"));
   assert.deepEqual([...doc.querySelector("article")!.children].map(element => element.tagName), ["HEADER", "A", "DIV"]);
   const legacy = documentFor(<ContentPage page={{ ...legacyPage, banner }} />);
-  assert.equal(doc.querySelector("[data-content-banner]")?.outerHTML, legacy.querySelector("[data-content-banner]")?.outerHTML);
+  assert.equal(doc.querySelector(".content-page-banner")?.outerHTML, legacy.querySelector(".content-page-banner")?.outerHTML);
 });
 
 test("page rendering leaves dangerous unsaved link destinations as escaped plain text", () => {
   for (const href of ["javascript:alert(1)", "https://attacker.example", "//attacker.example", "/admin", "/collections/../admin", "/pages/%2f%2fattacker.example"]) {
     const page = { ...structuredPage, banner: null, blocks: [{ id: "link", type: "link" as const, href, text: "Read <script>bad()</script>" }] };
     const doc = documentFor(<ContentPage page={page} />);
-    assert.equal(doc.querySelector("[data-content-copy]")?.textContent, "Read <script>bad()</script>");
+    assert.equal(doc.querySelector(".content-page-copy")?.textContent, "Read <script>bad()</script>");
     assert.equal(doc.querySelector("a, script"), null, href);
   }
 });
@@ -92,7 +89,7 @@ test("page rendering never requests dangerous or noncanonical unsaved images", (
   for (const src of ["javascript:alert(1)", "https://attacker.example/track", "//attacker.example/track", "/api/admin/media/private", "/media/uploads/not-a-hash.webp", "/media/uploads/../private.webp", "data:image/svg+xml,<svg onload='alert(1)'/>"]) {
     const page = { ...structuredPage, banner: null, blocks: [{ id: "image", type: "image" as const, src, alt: "Unsafe image" }, { id: "safe", type: "paragraph" as const, text: "Safe copy" }] };
     const doc = documentFor(<ContentPage page={page} />);
-    assert.equal(doc.querySelector("[data-content-copy]")?.textContent, "Safe copy");
+    assert.equal(doc.querySelector(".content-page-copy")?.textContent, "Safe copy");
     assert.equal(doc.querySelector("img"), null, src);
   }
 });
@@ -125,8 +122,8 @@ test("published structured pages reach the real route and retain title and descr
     assert.notEqual(page, null, "published structured page must have a public route");
     const doc = documentFor(page);
     assert.equal(doc.querySelector("h1")?.textContent, "Room & reading guide");
-    assert.equal(doc.querySelector("[data-content-copy] h2")?.textContent, "Choose your corner");
-    assert.equal(doc.querySelector("[data-content-copy] img")?.getAttribute("src"), managedImage);
+    assert.equal(doc.querySelector(".content-page-copy h2")?.textContent, "Choose your corner");
+    assert.equal(doc.querySelector(".content-page-copy img")?.getAttribute("src"), managedImage);
     assert.deepEqual(await generateMetadata(routeProps()), { title: "Room & reading guide", description: "A quiet corner", alternates: { canonical: "/pages/design-guide" } });
   });
 });

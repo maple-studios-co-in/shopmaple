@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { Hero } from "../components/hero";
 
-type Options = { reduced?: boolean; visible?: boolean; intersecting?: boolean | null; observer?: boolean; matchMedia?: boolean; pendingPlay?: boolean; rejectPlay?: boolean };
+type Options = { reduced?: boolean; visible?: boolean; intersecting?: boolean; observer?: boolean; matchMedia?: boolean; pendingPlay?: boolean; rejectPlay?: boolean };
 async function withVideo(
   options: Options,
   check: (video: HTMLVideoElement, button: HTMLButtonElement, reduce: (value: boolean) => Promise<void>, browser: {
@@ -68,9 +68,8 @@ async function withVideo(
   const intersect = (value: boolean) => intersectBatch([value]);
   try {
     await act(async () => root.render(<Hero />));
-    // null: the observer has not reported yet.
-    if (options.intersecting !== null) await intersect(options.intersecting ?? true);
-    await check(document.querySelector("video")!, document.querySelector<HTMLButtonElement>("[data-video-control]")!, async (value) => {
+    await intersect(options.intersecting ?? true);
+    await check(document.querySelector("video")!, document.querySelector<HTMLButtonElement>(".video-control")!, async (value) => {
       await act(async () => { reduced = value; motion.dispatchEvent(new dom.window.Event("change")); });
     }, {
       intersect, intersectBatch, unmount, attempts, listeners, observed,
@@ -97,126 +96,149 @@ async function withVideo(
   }
 }
 
-// The film live on shop.maplefurnishers.com's hero, 1 November 2026.
-const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
-const PAUSE = "Pause hero film", PLAY = "Play hero film";
-
-test("server rendering shows the film's poster and leaves the video unloaded, so script-free thumbnails draw the still", () => {
+test("server rendering keeps the workshop poster and leaves the video unloaded", () => {
   const dom = new JSDOM(renderToStaticMarkup(<Hero />));
-  const video = dom.window.document.querySelector("video")!;
-  assert.equal(video.getAttribute("src"), null);
-  assert.equal(video.hasAttribute("autoplay"), false, "Reduced-motion visitors must not get a film before the page can check their preference");
-  assert.ok(video.hasAttribute("loop") && video.hasAttribute("playsinline"));
-  assert.match(dom.window.document.querySelector("[data-hero-film] img")!.getAttribute("src") ?? "", /f9239e922cef45df9972f1dac1b89e0a\.thumbnail/);
+  assert.equal(dom.window.document.querySelector("video")!.getAttribute("src"), null);
+  assert.ok(dom.window.document.querySelector(".hero-film img")!.getAttribute("src"));
   dom.window.close();
 });
 
-test("the hero film plays on its own, muted and looping, and the control pauses and resumes it", async () => {
+test("workshop video loads only on explicit Play and supports explicit Pause", async () => {
   await withVideo({}, async (video, button, _reduce, browser) => {
-    assert.equal(video.getAttribute("src"), film); assert.equal(browser.attempts.length, 1);
-    assert.equal(video.muted, true); assert.equal(video.loop, true);
-    assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), PAUSE);
-    await act(async () => button.click()); assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), PLAY);
-    await act(async () => button.click()); assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), PAUSE);
+    await browser.visibility(false); await browser.visibility(true); await browser.intersect(false); await browser.intersect(true);
+    assert.equal(video.getAttribute("src"), null); assert.equal(browser.attempts.length, 0);
+    await act(async () => button.click()); assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
+    assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), "Pause workshop video");
+    await act(async () => button.click()); assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), "Play workshop video");
   });
 });
 
 for (const boundary of ["offscreen", "hidden"] as const) {
-  test(`the hero film pauses when ${boundary} and plays again on return`, async () => {
+  test(`workshop video pauses when ${boundary} and requires explicit Play on return`, async () => {
     await withVideo({}, async (video, button, _reduce, browser) => {
+      await act(async () => button.click());
       if (boundary === "offscreen") await browser.intersect(false); else await browser.visibility(false);
-      assert.equal(video.paused, true, `${boundary} film must stop`);
-      assert.equal(button.getAttribute("aria-label"), PLAY);
+      assert.equal(video.paused, true, `${boundary} workshop video must stop`);
+      assert.equal(button.getAttribute("aria-label"), "Play workshop video");
       await browser.intersect(true); await browser.visibility(true);
-      assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), PAUSE);
+      assert.equal(video.paused, true); assert.equal(browser.attempts.length, 1);
+      await act(async () => button.click()); assert.equal(video.paused, false);
     });
   });
 }
 
-test("a film the shopper paused stays paused when it scrolls away and back", async () => {
+test("latest batched intersection observation determines whether playback stops", async () => {
   await withVideo({}, async (video, button, _reduce, browser) => {
-    await act(async () => button.click());
-    await browser.intersect(false); await browser.intersect(true); await browser.visibility(false); await browser.visibility(true);
-    assert.equal(video.paused, true); assert.equal(browser.attempts.length, 1);
-  });
-});
-
-test("the film waits until it is on screen and the tab is visible", async () => {
-  await withVideo({ intersecting: false }, async (video, _button, _reduce, browser) => {
-    assert.equal(video.paused, true);
-    await browser.intersect(true); assert.equal(video.paused, false);
-  });
-  await withVideo({ visible: false }, async (video, _button, _reduce, browser) => {
-    assert.equal(browser.attempts.length, 0);
-    await browser.visibility(true); assert.equal(video.paused, false);
-  });
-});
-
-test("the film does not load until the observer says the hero is on screen", async () => {
-  await withVideo({ intersecting: null }, async (video, _button, _reduce, browser) => {
-    assert.equal(video.getAttribute("src"), null, "A page opened scrolled away from the hero downloads nothing");
-    assert.equal(browser.attempts.length, 0);
-    await browser.intersect(true); assert.equal(video.paused, false);
-  });
-});
-
-test("latest batched intersection observation decides whether the film plays", async () => {
-  await withVideo({}, async (video, _button, _reduce, browser) => {
-    await browser.intersectBatch([false, true]); assert.equal(video.paused, false);
+    await act(async () => button.click()); await browser.intersectBatch([false, true]); assert.equal(video.paused, false);
     await browser.intersectBatch([true, false]); assert.equal(video.paused, true);
   });
 });
 
-test("reduced motion keeps the film still until the shopper presses Play, and turning it on stops a film that started by itself", async () => {
-  await withVideo({ reduced: true }, async (video, button, reduce) => {
-    assert.equal(video.getAttribute("src"), null); assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), PLAY);
-    await act(async () => button.click()); assert.equal(video.paused, false, "An explicit Play is honoured");
-    await reduce(false); await reduce(true); assert.equal(video.paused, false, "A shopper's own Play survives preference changes");
-  });
-  await withVideo({}, async (video, button, reduce) => {
-    await reduce(true); assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), PLAY);
-    await reduce(false); assert.equal(video.paused, false, "Automatic playback returns when the preference allows it");
-  });
-});
-
-test("a refused autoplay leaves the poster and a Play control, and does not retry on its own", async () => {
-  await withVideo({ rejectPlay: true }, async (video, button, _reduce, browser) => {
-    assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), PLAY);
-    await browser.intersect(false); await browser.intersect(true); await browser.visibility(false); await browser.visibility(true);
-    assert.equal(browser.attempts.length, 1);
-    await act(async () => button.click()); assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), PAUSE);
-  });
-});
-
 for (const boundary of ["pause", "offscreen", "hidden", "unmount", "reduced motion"] as const) {
-  test(`a late film start cannot override ${boundary}`, async () => {
+  test(`late workshop playback cannot restart after ${boundary}`, async () => {
     await withVideo({ pendingPlay: true }, async (video, button, reduce, browser) => {
-      assert.equal(button.getAttribute("aria-label"), PAUSE, "A starting film offers Pause");
+      await act(async () => button.click());
       if (boundary === "pause") await act(async () => button.click());
       if (boundary === "offscreen") await browser.intersect(false);
       if (boundary === "hidden") await browser.visibility(false);
       if (boundary === "unmount") await browser.unmount();
       if (boundary === "reduced motion") await reduce(true);
       await browser.settle();
-      assert.equal(video.paused, true, `late play must stay stopped after ${boundary}`);
-      if (boundary !== "unmount") assert.equal(button.getAttribute("aria-label"), PLAY);
+      assert.equal(video.paused, true, `late play must remain cancelled after ${boundary}`);
+      if (boundary !== "unmount") assert.equal(button.getAttribute("aria-label"), "Play workshop video");
     });
   });
 }
 
-for (const event of ["ended", "error"]) {
-  test(`native ${event} returns the control to Play and permits a retry`, async () => {
-    await withVideo({}, async (video, button, _reduce, browser) => {
-      await browser.native(event, true); assert.equal(button.getAttribute("aria-label"), PLAY);
-      await act(async () => button.click()); assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), PAUSE);
-    });
-  });
-}
-
-test("unmount stops the film and disconnects listeners and observer", async () => {
-  await withVideo({}, async (video, _button, _reduce, browser) => {
-    assert.ok(browser.listeners.size > 0); assert.equal(browser.observed.size, 1);
-    await browser.unmount();
-    assert.equal(video.paused, true); assert.equal(browser.listeners.size, 0); assert.equal(browser.observed.size, 0);
+test("pending workshop playback has an honest cancel control and rapid cancel does not request another play", async () => {
+  await withVideo({ pendingPlay: true }, async (video, button, _reduce, browser) => {
+    await act(async () => button.click()); assert.equal(button.getAttribute("aria-label"), "Cancel workshop video playback");
+    await act(async () => button.click()); assert.equal(browser.attempts.length, 1); assert.equal(button.getAttribute("aria-label"), "Play workshop video");
+    await browser.settle(); assert.equal(video.paused, true);
   });
 });
+
+test("failed workshop playback remains retryable without showing Pause", async () => {
+  await withVideo({ rejectPlay: true }, async (video, button) => {
+    await act(async () => button.click()); assert.equal(video.paused, true); assert.equal(button.getAttribute("aria-label"), "Play workshop video");
+    await act(async () => button.click()); assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), "Pause workshop video");
+  });
+});
+
+for (const event of ["pause", "ended", "error"]) {
+  test(`native workshop ${event} returns the control to Play and permits retry`, async () => {
+    await withVideo({}, async (video, button, _reduce, browser) => {
+      await act(async () => button.click());
+      await browser.native(event, true);
+      assert.equal(button.getAttribute("aria-label"), "Play workshop video");
+      await act(async () => button.click()); assert.equal(video.paused, false);
+    });
+  });
+}
+
+test("queued native pause does not mislabel media that is currently playing", async () => {
+  await withVideo({}, async (video, button) => {
+    await act(async () => button.click()); await act(async () => video.dispatchEvent(new window.Event("pause")));
+    assert.equal(button.getAttribute("aria-label"), "Pause workshop video");
+  });
+});
+
+test("reduced motion permits manual Play and preference changes pause without automatic resume", async () => {
+  await withVideo({ reduced: true }, async (video, button, reduce, browser) => {
+    assert.equal(video.getAttribute("src"), null);
+    await act(async () => button.click()); assert.equal(video.paused, false);
+    await reduce(false); await reduce(true); assert.equal(video.paused, true);
+    await reduce(false); await browser.intersect(false); await browser.intersect(true); assert.equal(video.paused, true);
+    await act(async () => button.click()); assert.equal(video.paused, false);
+  });
+});
+
+for (const options of [{ observer: false }, { matchMedia: false }]) {
+  test(`manual workshop Play and hidden pause survive ${JSON.stringify(options)}`, async () => {
+    await withVideo(options, async (video, button, _reduce, browser) => {
+      assert.equal(video.getAttribute("src"), null); assert.equal(browser.attempts.length, 0);
+      await act(async () => button.click()); assert.equal(video.paused, false);
+      await browser.visibility(false); assert.equal(video.paused, true);
+      await browser.visibility(true); assert.equal(video.paused, true);
+    });
+  });
+}
+
+for (const reject of [true, false]) {
+test(`an obsolete play ${reject ? "rejection" : "resolution"} cannot cancel a newer explicit Play`, async () => {
+  await withVideo({ pendingPlay: true }, async (video, button, _reduce, browser) => {
+    await act(async () => button.click()); await act(async () => button.click()); await act(async () => button.click());
+    assert.equal(browser.attempts.length, 2, "the middle click cancels the first pending request");
+    await browser.settle(reject); await browser.settle();
+    assert.equal(video.paused, false); assert.equal(button.getAttribute("aria-label"), "Pause workshop video");
+  });
+});
+
+}
+
+test("unmount stops active workshop playback and disconnects listeners and observer", async () => {
+  await withVideo({}, async (video, button, _reduce, browser) => {
+    await act(async () => button.click()); await browser.unmount();
+    assert.equal(video.paused, true); assert.equal(browser.observed.size, 0); assert.equal(browser.listeners.size, 0);
+  });
+});
+
+
+test("partially visible workshop playback continues until fully outside the viewport", async () => {
+  await withVideo({}, async (video, button, _reduce, browser) => {
+    await act(async () => button.click()); await browser.ratio(0.001); assert.equal(video.paused, false);
+    await browser.ratio(-1); assert.equal(video.paused, true);
+  });
+});
+
+for (const boundary of ["offscreen", "hidden"] as const) {
+  test(`returning from ${boundary} before an old Play resolves does not restore playback`, async () => {
+    await withVideo({ pendingPlay: true }, async (video, button, _reduce, browser) => {
+      await act(async () => button.click());
+      if (boundary === "offscreen") { await browser.intersect(false); await browser.intersect(true); }
+      else { await browser.visibility(false); await browser.visibility(true); }
+      await browser.settle(); assert.equal(video.paused, true);
+      assert.equal(button.getAttribute("aria-label"), "Play workshop video");
+    });
+  });
+}

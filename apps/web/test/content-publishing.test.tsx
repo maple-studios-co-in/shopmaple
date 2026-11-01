@@ -85,7 +85,7 @@ test("custom content renders text as text, with accessible approved image banner
     doc.querySelector("h1")?.textContent,
     "<img src=x onerror=alert(1)>",
   );
-  assert.equal(doc.querySelectorAll("[data-content-copy] p").length, 2);
+  assert.equal(doc.querySelectorAll(".content-page-copy p").length, 2);
   assert.equal(
     doc.querySelector("a")?.getAttribute("href"),
     "/collections/all",

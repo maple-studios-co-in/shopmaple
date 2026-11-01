@@ -86,23 +86,22 @@ async function mount(
 test("footer exposes callable customer-care and bulk-order contacts", async () => {
   await mount(<Footer />, () => {
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
-    assert.equal(links.length, 2);
+    assert.equal(links.length, 3);
     for (const link of links) assert.match(link.getAttribute("href")!, /^tel:\+91[0-9]{10}$/);
     assert.ok(document.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
   });
 });
 test("footer routes customer care and bulk collaboration to their respective business contacts", async () => {
   await mount(<Footer />, () => {
-    // Customer care (phone and email) sits in its column; the closing band carries the bulk-order line.
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="tel:"]')];
+    assert.equal(links.length, 3);
     assert.deepEqual(links.map((link) => [link.getAttribute("href"), link.textContent?.trim()]), [
       ["tel:+918796130252", "+91 87961 30252"],
       ["tel:+919262968727", "+91 92629 68727"],
+      ["tel:+918796130252", "+91 87961 30252"],
     ]);
-    assert.ok(document.querySelector('[data-footer-care] a[href="tel:+918796130252"]'));
-    const bulk = document.querySelector("[data-footer-contact]");
-    assert.match(bulk?.textContent ?? "", /Bulk enquiries/);
-    assert.ok(bulk?.querySelector('a[href="tel:+919262968727"]'));
+    const bulk = [...document.querySelectorAll(".maple-footer-contact > div")]
+      .find((section) => section.querySelector("h3")?.textContent === "For Bulk Order/Collaboration:");
     const email = bulk?.querySelector<HTMLAnchorElement>('a[href^="mailto:"]');
     assert.equal(email?.getAttribute("href"), "mailto:aditya@maplefurnishers.com");
     assert.equal(email?.textContent?.trim(), "aditya@maplefurnishers.com");
@@ -118,7 +117,7 @@ test("contact page phone action dials the current business number", async () => 
     globalThis.fetch = previousFetch;
   }
   await mount(page, () => {
-    const link = document.querySelector<HTMLAnchorElement>('[data-help-support] a[href^="tel:"]');
+    const link = document.querySelector<HTMLAnchorElement>('.cp-contact-links a[href^="tel:"]');
     assert.equal(link?.getAttribute("href"), "tel:+918796130252");
     assert.equal(link?.textContent?.trim(), "+91 87961 30252");
   });
@@ -246,7 +245,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
   );
 });
 
-test("hero keeps product discovery clear and plays the shop film, which the shopper can pause", async () => {
+test("hero keeps product discovery clear and only downloads its film when requested", async () => {
   const mediaPrototype = dom.window.HTMLMediaElement.prototype;
   const savedMedia = new Map(["play", "pause", "paused"].map(key => [key, Object.getOwnPropertyDescriptor(mediaPrototype, key)]));
   const savedMotion = Object.getOwnPropertyDescriptor(dom.window, "matchMedia");
@@ -272,27 +271,27 @@ test("hero keeps product discovery clear and plays the shop film, which the shop
       const video = document.querySelector("video")!;
       assert.equal(
         video.getAttribute("src"),
-        "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0",
-        "the shop's hero film plays on its own, as on shop.maplefurnishers.com",
+        null,
+        "the film should not consume bandwidth before a shopper requests it",
       );
       assert.match(
-        document.querySelector("[data-hero-film]")!.textContent!,
+        document.querySelector(".hero-film")!.textContent!,
         /Explore Collection/,
       );
       assert.match(
-        document.querySelector("[data-hero-tiles]")!.textContent!,
+        document.querySelector(".hero-categories")!.textContent!,
         /Starting from ₹25,000/,
       );
       await act(async () =>
         document
           .querySelector<HTMLButtonElement>(
-            'button[aria-label="Pause hero film"]',
+            'button[aria-label="Play workshop video"]',
           )!
           .click(),
       );
-      assert.equal(video.paused, true);
+      assert.equal(video.getAttribute("src"), "/media/workshop.mp4");
       assert.ok(
-        document.querySelector('button[aria-label="Play hero film"]'),
+        document.querySelector('button[aria-label="Pause workshop video"]'),
       );
     });
   } finally {

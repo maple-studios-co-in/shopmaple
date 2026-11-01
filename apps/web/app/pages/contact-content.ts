@@ -1,14 +1,14 @@
 // Public help content from the current Maple contact-page template.
 export const contactCategories = [
   {
-    title: "Order tracking & delivery",
+    title: "Order Tracking And Delivery",
     subtitle: "Queries related to tracking and delivery",
     icon: "Del_mf.svg",
     questions: [
       {
-        question: "How do I track my order?",
+        question: "How to Track my Order?",
         answer:
-          "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.",
+          "Go to My Orders in your Maple Furnishers account to track your order.",
       },
       {
         question:
@@ -23,19 +23,19 @@ export const contactCategories = [
           "In case you missed the delivery, the logistic partner will try to deliver the product on the next business day and you will receive a call prior from our delivery team to schedule your delivery.",
       },
       {
-        question: "When will my order arrive?",
+        question: "What is the estimated delivery time?",
         answer:
           "The delivery time differs from product to product which is based on the in-stock availability or made-to-order and your delivery location. Moreover, please refer to the product details tab on individual product pages for estimated delivery timelines.",
       },
       {
-        question: "Can I change my delivery address?",
+        question: "How can I change my delivery address?",
         answer:
           "Raise a ticket for that order and easily change your delivery address with the help of our support team.Within 24 hours of placing of order.",
       },
     ],
   },
   {
-    title: "Payment & invoice",
+    title: "Payment & Invoice",
     subtitle: "Help related to payment related queries",
     icon: "engaged_3.svg",
     questions: [
@@ -64,14 +64,14 @@ export const contactCategories = [
     ],
   },
   {
-    title: "Manage account",
+    title: "Manage Account",
     subtitle: "Help related to account management queries",
     icon: "engaged_2.svg",
     questions: [
       {
-        question: "Do I need an account with Maple Furnishers?",
+        question: "How to Create an Account with Maple Furnishers?",
         answer:
-          "Not yet. Customer accounts arrive with online checkout. Until then, the furniture you save stays in your browser and our team looks after your orders: contact us with any question about an order.",
+          "Click on the signup link, present at the top right corner of our maplefurnishers. This will show a pop-up menu where you can register from either of the following ways to get on board.\n\nManual form filling: You can manually fill up the form to register yourself by filling the general details.\n\nSign up through Gmail: You can also sign up through your Gmail account by clicking on “or continue with Gmail”, presented at the below side of the popup menu.\nYour maplefurnishers account is now ready.",
       },
       {
         question: "How can I change my phone number or my shipping address?",
@@ -93,7 +93,7 @@ export const contactCategories = [
     ],
   },
   {
-    title: "Damaged or defective item",
+    title: "Damaged Or Defective Item",
     subtitle: "Track your customer care query/complaint",
     icon: "qc_mf.svg",
     questions: [

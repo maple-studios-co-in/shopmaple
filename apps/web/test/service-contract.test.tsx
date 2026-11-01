@@ -118,8 +118,8 @@ test("service fallback preserves original page copy and returns isolated editabl
   const fallback = resolveServicePages();
   assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, servicePages: fallback }).success, true);
   assert.equal(fallback.contact.title, "Contact Us");
-  assert.equal(fallback.contact.heading, "Tell us what you need. We’ll help you shape it.");
-  assert.equal(fallback.contact.categories[0]!.questions[0]!.answer, "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.");
+  assert.equal(fallback.contact.heading, "Tell us what you need. We’ll help you shape it");
+  assert.equal(fallback.contact.categories[0]!.questions[0]!.answer, "Go to My Orders in your Maple Furnishers account to track your order.");
   assert.deepEqual(fallback.contact.categories.map(category => category.questions.map(question => question.key)), [["q1", "q2", "q3", "q4", "q5"], ["q1", "q2", "q3", "q4"], ["q1", "q2"], ["q1"], ["q1"]]);
   assert.equal(fallback.bulk.heading, "Home Interior");
   assert.equal(fallback.bulk.trust.metricValue, "100+");
@@ -128,7 +128,7 @@ test("service fallback preserves original page copy and returns isolated editabl
   assert.equal(fallback.returns.intro, "Contact our team about your order.");
   fallback.contact.categories[0]!.questions[0]!.answer = "Private edit";
   fallback.bulk.sections[0]!.enabled = false;
-  assert.equal(defaultServicePages.contact.categories[0]!.questions[0]!.answer, "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.");
+  assert.equal(defaultServicePages.contact.categories[0]!.questions[0]!.answer, "Go to My Orders in your Maple Furnishers account to track your order.");
   assert.equal(resolveServicePages().bulk.sections[0]!.enabled, true);
   const edited = resolveServicePages(fallback);
   assert.equal(edited.contact.categories[0]!.questions[0]!.answer, "Private edit");

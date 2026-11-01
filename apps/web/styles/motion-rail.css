@@ -1,0 +1,73 @@
+/* Rows remain natively scrollable before JavaScript and with reduced motion. */
+/* Native focus reaches rotation controls first; their visual placement stays below the row. */
+.home-carousel-autoplay { display: flex; flex-direction: column; }
+.home-carousel-autoplay > .home-carousel-controls { order: 1; }
+.home-carousel-controls[hidden] { display: none; }
+.home-carousel-controls button:focus-visible,
+.home-carousel [tabindex]:focus-visible,
+.home-instagram-posts a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.home-carousel-controls button:disabled { opacity: .45; cursor: default; }
+.instagram-motion { --social-columns: 6; --social-gap: calc(5% / var(--social-columns)); }
+.home-social .instagram-motion .home-instagram-posts {
+  display: flex;
+  gap: var(--social-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+  padding: 0 0 12px;
+  margin-top: 24px;
+}
+.home-social .instagram-motion .home-instagram-posts > a {
+  display: block;
+  position: relative;
+  flex: 0 0 calc((100% - (var(--social-columns) - 1) * var(--social-gap)) / var(--social-columns));
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  border-radius: 0;
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+.instagram-motion .home-carousel-controls { margin-top: 12px; }
+.city-motion { min-width: 0; }
+.city-motion .home-city-viewport { overflow-x: auto; overscroll-behavior-x: contain; }
+.city-motion .home-city-track { align-items: center; }
+@media (max-width: 1199px) { .instagram-motion { --social-columns: 5; } }
+@media (max-width: 1023px) { .instagram-motion { --social-columns: 4; } }
+@media (max-width: 767px) { .instagram-motion { --social-columns: 3; } }
+@media (max-width: 479px) { .instagram-motion { --social-columns: 2; } }
+@media (prefers-reduced-motion: reduce) {
+  .instagram-motion .home-instagram-posts { scroll-behavior: auto; }
+  .instagram-motion .home-instagram-posts img { transition: none; }
+  .instagram-motion .home-instagram-posts a:hover img { transform: none; }
+}
+
+/* No visible scrollbar or persistent play badge over the editorial rails. */
+.home-social .instagram-motion .home-instagram-posts,
+.city-motion .home-city-viewport { scrollbar-width: none; }
+.home-social .instagram-motion .home-instagram-posts::-webkit-scrollbar,
+.city-motion .home-city-viewport::-webkit-scrollbar { display: none; }
+.home-carousel-autoplay > .home-carousel-controls > button:first-child { opacity: 0; pointer-events: none; }
+/* A visitor-paused row must expose Resume even after touch focus leaves.
+   HomeCarousel's accessible Play label is the existing paused-state signal. */
+.home-carousel-autoplay:hover > .home-carousel-controls > button:first-child:not(:disabled),
+.home-carousel-autoplay:focus-within > .home-carousel-controls > button:first-child:not(:disabled),
+.home-carousel-autoplay > .home-carousel-controls > button:first-child[aria-label^="Play "]:not(:disabled),
+.home-carousel-autoplay > .home-carousel-controls > button:first-child:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.city-motion { position: relative; padding-inline: 44px; }
+.city-motion .home-carousel-controls { position: static; margin: 0; height: 0; }
+.city-motion .home-carousel-controls > button { position: absolute; top: 45%; transform: translateY(-50%); background: #fff; border: 1px solid #e7d9cc; color: #741a14; width: 36px; height: 36px; }
+.city-motion .home-carousel-controls > button:nth-last-child(2) { left: 0; }
+.city-motion .home-carousel-controls > button:last-child { right: 0; }
+.city-motion .home-carousel-controls > button:first-child:not(:nth-last-child(2)) { top: auto; bottom: -32px; left: 50%; }
+/* Keep carousel navigation comfortably tappable on touch screens. */
+.city-motion .home-carousel-controls > button {
+  min-width: 44px;
+  min-height: 44px;
+}

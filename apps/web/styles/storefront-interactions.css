@@ -1,0 +1,15 @@
+/* StoreChrome renders .site-header only on public routes, including their dialogs.
+ * Override rail-specific scrollbar styles without changing native overflow. */
+html:has(.site-header),
+html:has(.site-header) * {
+  scrollbar-width: none !important;
+}
+
+html:has(.site-header)::-webkit-scrollbar,
+html:has(.site-header) *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Shared product-card and product-gallery wishlist control. */

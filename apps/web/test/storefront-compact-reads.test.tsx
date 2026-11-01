@@ -6,7 +6,6 @@ import { JSDOM } from "jsdom";
 import Home from "../app/page";
 import ProductPage from "../app/products/[handle]/page";
 import { CategoryLanding, CategoryProducts } from "../components/category-landing";
-import { CategoryRail } from "../components/store/category-landing";
 import { NimbusLanding } from "../components/category-nimbus";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductCard } from "../components/product-card";
@@ -102,7 +101,7 @@ test("hidden or empty homepage rails issue no product requests", async () => {
   content.homeMerchandising!.chairs = [];
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
-    assert.equal(doc.querySelectorAll("[data-catalogue-unavailable]").length, 1);
+    assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 1);
     assert.deepEqual(requests.map(u => u.pathname), ["/api/content/storefront"]);
   }, { content });
 });
@@ -124,7 +123,7 @@ test("category parent returns its hero before catalogue loading and all rendered
       release();
       const doc = await pendingDocument;
       assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
-      assert.equal(doc.querySelectorAll("[data-category-rail]").length, 5);
+      assert.equal(doc.querySelectorAll(".landing-products").length, 5);
       assert.ok(doc.querySelectorAll("[data-product-card]").length > 0);
     } finally {
       release();
@@ -154,8 +153,8 @@ test("standalone category rail preserves source-only enquiry cards and skips unk
   await fixture(async requests => {
     const doc = await documentFor(<CategoryProducts handles={["live-chair", handle, "unknown-chair"]} />);
     assert.deepEqual(links(doc), ["/products/live-chair", `/pages/contact?product=${encodeURIComponent(original.title)}`]);
-    assert.equal(doc.querySelector("[data-source-product] [data-card-price]")!.textContent, "Price on request");
-    assert.equal(doc.querySelector("[data-source-product] img")!.getAttribute("alt"), original.title);
+    assert.equal(doc.querySelector(".landing-source-product [data-card-price]")!.textContent, "Price on request");
+    assert.equal(doc.querySelector(".landing-source-product img")!.getAttribute("alt"), original.title);
     assert.equal(requests.length, 1);
     assert.equal(requests[0]!.pathname, "/api/catalogue/cards");
   }, { missing: [handle, "unknown-chair"] });
@@ -164,10 +163,10 @@ test("standalone category rail preserves source-only enquiry cards and skips unk
 test("deferred category errors are consumed by every rail without falling back to invented availability", async () => {
   await fixture(async requests => {
     const page = await CategoryLanding({ slug: "sofas" });
-    const rails = propsOf(page, CategoryRail);
+    const rails = propsOf(page, CategoryProducts);
     assert.equal(rails.length, 5);
     const results = await Promise.allSettled(rails.map(props =>
-      CategoryRail(props as Parameters<typeof CategoryRail>[0]),
+      CategoryProducts(props as Parameters<typeof CategoryProducts>[0]),
     ));
     assert.deepEqual(results.map(result => result.status), Array(5).fill("rejected"));
     assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 1);

@@ -20,9 +20,10 @@ These rules apply across the monorepo. Read any more-specific `AGENTS.md` before
 
 ## Storefront UI
 
-- The storefront is moving to the "Maple Website review" Figma designs page by page ([docs/storefront-redesign.md](docs/storefront-redesign.md)). Rebuilt components live in `apps/web/components/store` and use Tailwind utilities with the storefront tokens (`bg-cream`, `text-espresso`, `text-taupe`, `border-sand`, `bg-brand`, `font-body`, `font-serif`, `text-label` ... `text-h1`); the old path re-exports them. Wrap rebuilt markup in `data-store` so the scoped base applies.
-- `apps/web/styles/tailwind.css` is the one stylesheet for the admin and the storefront (the root layout adds only the font faces in `shopify-fonts.css` and the frozen `checkout.css`): tokens, a small zero-weight global base, checkout's legacy rules, the `[data-store]` base and the utilities, with no global preflight. Write no hand-written storefront CSS and add no stylesheet; style with utilities in `components/store` (the top-level `components/*.tsx` paths only re-export). Pages the designs do not cover keep their current look, restated in utilities, until they are rebuilt.
-- Reach rebuilt markup in tests through `data-*` hooks, not class names.
+- The owner decided on 2026-11-01: the product page follows the "Maple / PDF Review" Figma design; every other storefront page (homepage, header, footer, mega-menu, collections, category pages, Our Story, Help, wishlist and account) keeps its classic look. Don't rebuild those pages on a Figma design unless the owner asks for that page, and show the owner a preview before any visual change ships.
+- The product page and its parts live in `apps/web/components/store` and use Tailwind utilities with the storefront tokens (`bg-cream`, `text-espresso`, `text-taupe`, `border-sand`, `bg-brand`, `font-body`, `font-serif`, `text-label` ... `text-h1`), wrapped in `data-store`. Its "More …" row uses `product-card-figma.tsx`; the rest of the store uses the classic `product-card.tsx`.
+- Classic pages are styled by their own stylesheets in `apps/web/styles` (loaded by the root layout) together with `tailwind.css`. Keep visual changes to classic pages small and in the existing stylesheet for that page.
+- Reach markup in tests through `data-*` hooks, not class names.
 
 ## Security and delivery
 

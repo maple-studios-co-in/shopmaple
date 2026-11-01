@@ -33,12 +33,12 @@ test("the shared renderer shows draft content while the public route keeps the p
     assert.equal(draft.title, "Home");
     const preview = new JSDOM(await html(draft.node)).window.document;
     assert.deepEqual([...preview.querySelectorAll("[data-home-section]")].map(node => node.getAttribute("data-home-section")), ["categories", "instagram"]);
-    assert.equal(preview.querySelector("[data-home-category-section] h2")?.textContent, "Draft-only heading");
+    assert.equal(preview.querySelector(".home-category-section h2")?.textContent, "Draft-only heading");
     const post = preview.querySelector<HTMLImageElement>(`img[src="/api/admin/media/${sha}/preview"]`);
     assert.ok(post, "Private library media renders through the staff preview route");
     assert.ok(post.hasAttribute("data-unoptimized"), "Staff-only media bypasses the shared image optimizer cache");
     const published = new JSDOM(await html(<Home />)).window.document;
-    assert.equal(published.querySelector("[data-home-category-section] h2")?.textContent, defaultStorefrontContent.homeCopy.categoryHeading);
+    assert.equal(published.querySelector(".home-category-section h2")?.textContent, defaultStorefrontContent.homeCopy.categoryHeading);
     assert.equal(published.querySelectorAll("[data-home-section]").length, defaultStorefrontContent.homeSections.filter(section => section.enabled).length);
     assert.equal(published.querySelector(`img[src^="/api/admin/media/"]`), null);
   } finally { globalThis.fetch = previous; }
@@ -50,7 +50,7 @@ test("the renderer resolves every storefront page family from one document and r
   assert.equal(page?.title, "Care guide draft");
   const pageDoc = new JSDOM(await html(page!.node)).window.document;
   assert.equal(pageDoc.querySelector("h1")?.textContent, "Care guide draft");
-  assert.equal(pageDoc.querySelector("[data-content-banner] img")?.getAttribute("src"), `/api/admin/media/${sha}/preview`);
+  assert.equal(pageDoc.querySelector(".content-page-banner img")?.getAttribute("src"), `/api/admin/media/${sha}/preview`);
   assert.equal(renderStorefrontRoute(["pages", "our-story"], draft)?.path, "/pages/our-story");
   assert.equal(renderStorefrontRoute(["pages", "sofas"], draft)?.title, "Sofas");
   assert.equal(renderStorefrontRoute(["pages", "contact"], draft)?.path, "/pages/contact");
