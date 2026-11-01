@@ -127,7 +127,7 @@ test("published structured pages reach the real route and retain title and descr
     assert.equal(doc.querySelector("h1")?.textContent, "Room & reading guide");
     assert.equal(doc.querySelector("[data-content-copy] h2")?.textContent, "Choose your corner");
     assert.equal(doc.querySelector("[data-content-copy] img")?.getAttribute("src"), managedImage);
-    assert.deepEqual(await generateMetadata(routeProps()), { title: "Room & reading guide", description: "A quiet corner" });
+    assert.deepEqual(await generateMetadata(routeProps()), { title: "Room & reading guide", description: "A quiet corner", alternates: { canonical: "/pages/design-guide" } });
   });
 });
 

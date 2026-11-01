@@ -13,8 +13,10 @@ export async function generateMetadata({
   const { blog } = await params;
   const content = await getPublishedContent();
   const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const record = blogs.find((item) => item.handle === blog);
   return {
-    title: blogs.find((item) => item.handle === blog)?.title || "Blogs",
+    title: record?.title || "Blogs",
+    ...(record ? { alternates: { canonical: `/blogs/${blog}` } } : {}),
   };
 }
 export default async function BlogPage({

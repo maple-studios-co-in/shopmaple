@@ -31,6 +31,8 @@ export type AppConfig = {
   /** Only opt in for a loopback-bound API behind the trusted local Next/Tunnel proxy. */
   trustProxyLoopback?: boolean;
   mediaRoot?: string;
+  /** SEO_INDEXING=on: the store's photos may appear in search. The API itself never may. */
+  seoIndexing?: boolean;
   /** Signs staff draft-preview tokens; share it across API processes, or omit it for a per-process key. */
   previewSecret?: string;
   catalogueMedia?: CatalogueMediaConfig;
@@ -51,6 +53,11 @@ export function createApp(
   app.disable("x-powered-by");
   if (config.trustProxyLoopback) app.set("trust proxy", "loopback");
   app.use(helmet());
+  // The API is never a search result; product photos join search only once the store launches.
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api") || !config.seoIndexing) res.set("X-Robots-Tag", "noindex, nofollow");
+    next();
+  });
   app.use("/api/admin", (_req, res, next) => {
     res.set("Cache-Control", "private, no-store");
     next();

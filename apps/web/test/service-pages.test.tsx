@@ -214,7 +214,7 @@ test("legacy, outage, malformed and draft responses retain original service defa
 test("custom pages still render published content and unknown routes remain not found", async () => {
   await withResponse({ version: 1, content: { ...defaultStorefrontContent, pages: [{ slug: "care-guide", title: "Care guide", description: "Care information", body: "Clean gently.", banner: null }] } }, async () => {
     assert.equal((await renderPage("care-guide")).querySelector("h1")?.textContent, "Care guide");
-    assert.deepEqual(await generateMetadata({ params: Promise.resolve({ slug: "care-guide" }) }), { title: "Care guide", description: "Care information" });
+    assert.deepEqual(await generateMetadata({ params: Promise.resolve({ slug: "care-guide" }) }), { title: "Care guide", description: "Care information", alternates: { canonical: "/pages/care-guide" } });
     await assert.rejects(() => renderPage("unknown-service"), /NEXT_HTTP_ERROR_FALLBACK;404/);
   });
 });

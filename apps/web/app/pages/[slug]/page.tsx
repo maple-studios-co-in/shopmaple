@@ -18,10 +18,11 @@ export async function generateMetadata({
     return {
       title: page?.title ?? "Page not found",
       description: page?.description,
+      ...(page ? { alternates: { canonical: `/pages/${slug}` } } : {}),
     };
   }
   const content = resolveServicePages((await getPublishedContent()).servicePages);
-  return { title: slug === "bulk-enquiry" ? content.bulk.title : content.contact.title };
+  return { title: slug === "bulk-enquiry" ? content.bulk.title : content.contact.title, alternates: { canonical: `/pages/${slug}` } };
 }
 export default async function ContactPage({
   params,

@@ -87,6 +87,14 @@ after(async () => {
   await db.$disconnect();
 });
 
+test("search engines never index the API, and the store's photos stay out of search until launch", async () => {
+  assert.equal((await request(app).get("/api/products")).headers["x-robots-tag"], "noindex, nofollow");
+  assert.equal((await request(app).get("/media/keeri/missing.webp")).headers["x-robots-tag"], "noindex, nofollow");
+  const launched = createApp(db, { webOrigin: origin, catalogMode: "preview", secureCookies: false, seoIndexing: true });
+  assert.equal((await request(launched).get("/api/products")).headers["x-robots-tag"], "noindex, nofollow");
+  assert.equal((await request(launched).get("/media/keeri/missing.webp")).headers["x-robots-tag"], undefined, "after launch product photos may appear in image search");
+});
+
 test("catalogue excludes unpublished products and filters by query/category", async () => {
   const r = await request(app).get("/api/products?category=chairs&q=walnut");
   assert.equal(r.status, 200);
