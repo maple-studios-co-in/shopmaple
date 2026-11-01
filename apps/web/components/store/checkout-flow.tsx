@@ -1,7 +1,7 @@
 "use client";
 import { checkoutInputSchema, type CheckoutInput } from "@shopmaple/contracts";
 import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { z } from "zod";
 import { useShop } from "@/components/shop-provider";
 import { cx } from "@/lib/cx";
@@ -170,13 +170,19 @@ type FlowProps = {
 };
 /** Live checkout: details → Keeri quote (Shiprocket delivery) → Razorpay → confirmation. */
 export function CheckoutFlow(props: FlowProps) {
+  const top = useRef<HTMLDivElement>(null);
   return (
-    <div data-store data-checkout className="font-body">
-      <CheckoutStages {...props} />
+    <div ref={top} data-store data-checkout className="scroll-mt-6 font-body">
+      <CheckoutStages {...props} top={top} />
     </div>
   );
 }
-function CheckoutStages({ options, pollIntervalMs = 2500, confirmationWindowMs = defaultConfirmationWindowMs }: FlowProps) {
+function CheckoutStages({
+  options,
+  pollIntervalMs = 2500,
+  confirmationWindowMs = defaultConfirmationWindowMs,
+  top,
+}: FlowProps & { top: RefObject<HTMLDivElement | null> }) {
   const id = useId();
   const { cart, cartReady, recoverCart } = useShop();
   const client = useMemo(() => createCheckoutClient(), []);
@@ -307,6 +313,13 @@ function CheckoutStages({ options, pollIntervalMs = 2500, confirmationWindowMs =
       setBusy(false);
     }
   }
+  // A new step replaces the form the buyer was at the bottom of; start them at its top.
+  const shown = useRef(stage.kind);
+  useEffect(() => {
+    if (shown.current === stage.kind) return;
+    shown.current = stage.kind;
+    if (stage.kind !== "resuming") top.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+  }, [stage.kind, top]);
   useEffect(() => {
     if (quoteExpiry === null || quoteExpiry <= now) return;
     const timer = setTimeout(() => setNow(Date.now()), Math.min(quoteExpiry - now + 50, 2_147_483_647));

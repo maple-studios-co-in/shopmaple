@@ -447,3 +447,18 @@ test("the payment window length comes from the server, not the buyer's clock", a
     assert.equal(razorpay!.options.timeout, 200);
   } finally { await cleanup(); }
 });
+
+test("each new checkout step brings the buyer back to the top of the checkout", async () => {
+  const scrolled: Element[] = [];
+  const original = (window.HTMLElement.prototype as any).scrollIntoView;
+  (window.HTMLElement.prototype as any).scrollIntoView = function (this: Element) { scrolled.push(this); };
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }));
+  try {
+    assert.equal(scrolled.length, 0, "the first view does not jump");
+    await submitDetails();
+    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the review starts at the top, not where the button was");
+  } finally {
+    (window.HTMLElement.prototype as any).scrollIntoView = original;
+    await cleanup();
+  }
+});

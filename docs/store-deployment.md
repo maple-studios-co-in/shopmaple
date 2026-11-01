@@ -90,6 +90,8 @@ Run in this order; tick each with the date, the person, and where the evidence i
 **Email (owner)**
 - [ ] The Resend sender domain is verified; `ENQUIRY_MAIL_TO`/`ORDER_MAIL_TO` is a monitored staff inbox.
 
+**Local sandbox run with doubles (done 2026-11-01).** Real API, workers, PostgreSQL and production web build; Keeri, Razorpay, Shiprocket (recorded serviceability shape) and Resend were in-process doubles, and the Razorpay window was a stand-in that returned a correctly signed callback. Verified in the browser: an unserviceable pincode is refused with the enquiry offer; a stocked plus a made-to-order piece were quoted with the cheapest Shiprocket surface courier, paid, verified, confirmed by the Keeri double and emailed to buyer and staff; the payment window was set to the hold minus two minutes (779 s); a payment completed after the buyer released the attempt was kept as `paid_hold_lapsed` with both emails; a forged webhook got 401. This does not replace the step below with the real accounts.
+
 **Sandbox evidence on the deployed host (test keys)**
 - [ ] A stocked piece and a made-to-order piece bought with a Razorpay test method reach `fulfillmentStatus: confirmed` with a Keeri order reference; the buyer and staff emails arrive.
 - [ ] A pincode Shiprocket cannot serve is refused with "We can't price delivery…" and no payment.
