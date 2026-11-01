@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { templateMediaDecorativeKeys, templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
@@ -14,10 +14,30 @@ import { ActionButton, FieldGrid, PanelHeader, Prose, SectionHeading, SelectFiel
 import { MediaPicker } from "./media-picker";
 
 const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"] as const;
-export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
-  value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void;
-}) {
-  const [selected, setSelected] = useState<TemplateMediaKey>("home-workshop-poster");
+type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
+
+/** The Artwork screen: every page's artwork, chosen by group and placement. */
+export function TemplateArtworkFields(props: Props) {
+  const [group, setGroup] = useState<(typeof groups)[number]>("Homepage");
+  return (
+    <section aria-label="Template artwork">
+      <PanelHeader title="Artwork" description="Choose a page and placement to replace its image. Save a draft, then publish when ready." />
+      <ArtworkSlots {...props} keys={templateMediaSlots.filter(item => item.group === group).map(item => item.key)}
+        group={<SelectField label="Artwork group" value={group} onChange={event => setGroup(event.target.value as (typeof groups)[number])}>
+          {groups.map(item => <NativeSelectOption key={item} value={item}>{item}</NativeSelectOption>)}
+        </SelectField>} />
+    </section>
+  );
+}
+
+/**
+ * Replace the artwork of one placement among `keys`: the Artwork screen passes a whole group,
+ * a homepage section's inspector only the placements that section draws.
+ */
+export function ArtworkSlots({ value, onChange, session, onExpired, keys, group }: Props & { keys: readonly TemplateMediaKey[]; group?: ReactNode }) {
+  const [chosen, setSelected] = useState<TemplateMediaKey>(keys[0]!);
+  // A new set of placements (another group) starts at its first; the group control keeps focus.
+  const selected = keys.includes(chosen) ? chosen : keys[0]!;
   const placement = useRef<HTMLSelectElement>(null);
   const slot = templateMediaSlots.find(item => item.key === selected)!;
   const artwork = resolveTemplateMedia(selected, value);
@@ -27,20 +47,15 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
     const next = { ...artwork, ...patch };
     onChange(overridden ? value!.map(item => item.key === selected ? next : item) : [...(value ?? []), next]);
   }
-  const select = (slot?: (typeof templateMediaSlots)[number]) => slot && setSelected(slot.key);
   return (
-    <section aria-label="Template artwork">
-      <PanelHeader title="Artwork" description="Choose a page and placement to replace its image. Save a draft, then publish when ready." />
+    <>
       <FieldGrid className="mb-6">
-        <SelectField label="Artwork group" value={slot.group} onChange={event => select(templateMediaSlots.find(item => item.group === event.target.value))}>
-          {groups.map(group => <NativeSelectOption key={group} value={group}>{group}</NativeSelectOption>)}
-        </SelectField>
-        <SelectField ref={placement} label="Artwork placement" value={selected}
-          onChange={event => select(templateMediaSlots.find(item => item.key === event.target.value))}>
-          {templateMediaSlots.filter(item => item.group === slot.group).map(item => <NativeSelectOption key={item.key} value={item.key}>{item.label}</NativeSelectOption>)}
+        {group}
+        <SelectField ref={placement} label="Artwork placement" value={selected} onChange={event => setSelected(event.target.value as TemplateMediaKey)}>
+          {keys.map(key => <NativeSelectOption key={key} value={key}>{templateMediaSlots.find(item => item.key === key)!.label}</NativeSelectOption>)}
         </SelectField>
       </FieldGrid>
-      <Card className="gap-5 px-5 py-5 shadow-xs sm:px-6">
+      <Card className="@container gap-5 px-5 py-5 shadow-xs sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectionHeading className="m-0">{slot.label}</SectionHeading>
           <Badge variant="secondary" className={cn("rounded-md border-0 font-semibold", overridden ? "bg-accent-tint text-primary" : "bg-neutral-bg text-neutral")}>
@@ -51,7 +66,7 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
           Changing this poster replaces the still image; the video stays unchanged.{selected !== "home-workshop-poster" && " The image description also labels the video."}
         </Notice>}
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
-        <div className={cn("grid gap-5", responsive && "lg:grid-cols-2")} key={selected}>
+        <div className={cn("grid gap-5", responsive && "@xl:grid-cols-2")} key={selected}>
           {(responsive ? (["Desktop", "Mobile"] as const) : (["Desktop"] as const)).map(kind => {
             const key = kind === "Desktop" ? "image" : "mobileImage", url = artwork[key] ?? "";
             return <div key={kind} role="group" aria-label={`${kind} artwork`} className="grid min-w-0 content-start gap-3">
@@ -70,6 +85,6 @@ export function TemplateArtworkFields({ value, onChange, session, onExpired }: {
         <div><ActionButton icon={RotateCcw} disabled={!overridden}
           onClick={() => { onChange((value ?? []).filter(item => item.key !== selected)); placement.current?.focus(); }}>Restore original</ActionButton></div>
       </Card>
-    </section>
+    </>
   );
 }

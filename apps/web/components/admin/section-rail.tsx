@@ -12,19 +12,6 @@ import { MoveButtons, focusRing, rowCard } from "./kit";
 import { SortableList } from "./sortable-list";
 
 type Section = StorefrontContent["homeSections"][number];
-export type SectionScreen = "Campaigns" | "Merchandising" | "Instagram";
-/** Where a section's content is edited: a panel or field on the Homepage screen, or another screen. */
-type EditTarget = { kind: "panel" } | { kind: "field"; label: string } | { kind: "screen"; screen: SectionScreen };
-const editTargets: Record<HomeSectionKey, EditTarget> = {
-  hero: { kind: "panel" }, difference: { kind: "panel" }, nimbus: { kind: "panel" }, testimonial: { kind: "panel" },
-  newsletter: { kind: "panel" }, values: { kind: "panel" }, cities: { kind: "panel" }, project: { kind: "panel" },
-  ticker: { kind: "field", label: "Brand ticker" },
-  announcement: { kind: "screen", screen: "Campaigns" }, "dining-banner": { kind: "screen", screen: "Campaigns" },
-  "seating-banner": { kind: "screen", screen: "Campaigns" }, promos: { kind: "screen", screen: "Campaigns" },
-  categories: { kind: "screen", screen: "Merchandising" }, offers: { kind: "screen", screen: "Merchandising" },
-  bestsellers: { kind: "screen", screen: "Merchandising" }, chairs: { kind: "screen", screen: "Merchandising" },
-  instagram: { kind: "screen", screen: "Instagram" },
-};
 
 /** The width the storefront is drawn at inside a thumbnail, and how much of the section's top it shows. */
 const frameWidth = 1280;
@@ -106,12 +93,13 @@ export function SectionThumbnail({ section, content, source, width }: {
  * live thumbnail, visibility, drag and Move buttons, and the way to its content. Hidden
  * sections keep their place, dimmed; "Add section" brings one back after the selected card.
  */
-export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, source }: {
+export function SectionRail({ content, edit, selected, onSelect, onInspect, source }: {
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
   selected: string | null;
   onSelect: (section: string) => void;
-  onOpenScreen: (screen: SectionScreen) => void;
+  /** Open the section's inspector: everything it shows, in this column. */
+  onInspect: (section: HomeSectionKey) => void;
   source: ThumbnailSource;
 }) {
   const [picking, setPicking] = useState(false);
@@ -127,18 +115,6 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
     document.querySelector<HTMLElement>(`[data-section-card="${selected}"]`)?.scrollIntoView?.({ block: "nearest" });
   }, [selected]);
 
-  function openContent(section: Section) {
-    const target = editTargets[section.key];
-    if (target.kind === "screen") { onOpenScreen(target.screen); return; }
-    onSelect(section.key);
-    const panel = target.kind === "panel" ? document.querySelector<HTMLDetailsElement>(`details[data-preview-section="${section.key}"]`) : null;
-    const node = panel ?? (target.kind === "field" ? document.querySelector<HTMLElement>(`[aria-label="${target.label}"]`) : null);
-    if (!node) return;
-    if (panel) panel.open = true;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    node.scrollIntoView?.({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    (panel?.querySelector<HTMLElement>("summary") ?? node).focus({ preventScroll: true });
-  }
   function add(key: HomeSectionKey) {
     // The selected card is the hidden section itself: show it where it is.
     if (selected === key) setSections(sections.map((section) => section.key === key ? { ...section, enabled: true } : section));
@@ -180,8 +156,6 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
         })}
         renderItem={(section, index, handle) => {
           const name = sectionName(section.key);
-          const target = editTargets[section.key];
-          const elsewhere = target.kind === "screen" ? target.screen : null;
           return (
             <>
               {handle}
@@ -197,11 +171,10 @@ export function SectionRail({ content, edit, selected, onSelect, onOpenScreen, s
                     onChange={(event) => setSections(sections.map((item) => item.key === section.key ? { ...item, enabled: event.target.checked } : item))} />
                   <span className={cn("truncate text-sm font-medium", !section.enabled && "text-muted-foreground line-through decoration-faint/60")}>{name}</span>
                 </label>
-                <span className="truncate pl-6 text-xs text-muted-foreground @max-md:hidden">{section.enabled ? elsewhere ? `Content in ${elsewhere}` : "Content on this screen" : "Hidden from visitors"}</span>
+                <span className="truncate pl-6 text-xs text-muted-foreground @max-md:hidden">{section.enabled ? "Shown on the homepage" : "Hidden from visitors"}</span>
               </div>
               <Button type="button" variant="ghost" size="sm" className="shrink-0"
-                aria-label={elsewhere ? (name === elsewhere ? `Edit ${name}` : `Edit ${name} in ${elsewhere}`) : `Edit ${name} content`}
-                onClick={() => openContent(section)}>Edit</Button>
+                data-section-edit aria-label={`Edit ${name}`} onClick={() => { onSelect(section.key); onInspect(section.key); }}>Edit</Button>
               <MoveButtons className="@max-md:hidden" name={name} index={index} length={sections.length} onMove={(direction) => {
                 const next = [...sections];
                 [next[index], next[index + direction]] = [next[index + direction]!, next[index]!];

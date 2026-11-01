@@ -32,9 +32,14 @@ const tally = (count: number, max: number, noun: string, button: ReactNode) => (
   <><span className="text-xs text-muted-foreground tabular-nums">{count} of {max} {noun}</span>{button}</>
 );
 
-export function CampaignFields(props: Props) {
-  const { content, onChange, onScheduleEditingChange } = props;
-  const [selected, setSelected] = useState(0);
+/** `only` narrows the editor to the campaigns one homepage section shows (the section inspector); `embedded` drops the screen header. */
+export function CampaignFields(props: Props & { only?: readonly string[]; embedded?: boolean }) {
+  const { content, onChange, onScheduleEditingChange, only, embedded = false } = props;
+  const choices = content.campaigns.flatMap((value, index) => !only || only.includes(value.key) ? [index] : []);
+  // Chosen by key, so a reloaded draft with campaigns in another order keeps the same one.
+  const [chosenKey, setChosenKey] = useState(content.campaigns[choices[0] ?? 0]?.key);
+  const selected = choices.find((index) => content.campaigns[index]!.key === chosenKey) ?? choices[0] ?? -1;
+  const setSelected = (index: number) => setChosenKey(content.campaigns[index]?.key);
   const [scheduleEditing, setScheduleEditing] = useState(false);
   useEffect(() => {
     onScheduleEditingChange?.(scheduleEditing);
@@ -45,18 +50,18 @@ export function CampaignFields(props: Props) {
   const update = (patch: Partial<CampaignContent>) => onChange({ ...content, campaigns: patchAt(content.campaigns, selected, patch) });
   const artwork = (patch: Partial<NonNullable<CampaignContent["artwork"]>>) => campaign?.artwork && update({ artwork: { ...campaign.artwork, ...patch } });
   return <>
-    <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />
+    {!embedded && <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />}
     {!campaign ? (
-      <EmptyState title="No campaigns in this draft" icon={<Megaphone strokeWidth={1.5} />}>
+      <EmptyState title={only ? "This campaign is not in the draft" : "No campaigns in this draft"} icon={<Megaphone strokeWidth={1.5} />}>
         Campaigns come with the storefront theme. To bring them back, restore an earlier version from History.
       </EmptyState>
     ) : <>
-      <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
-        {content.campaigns.map((value, index) => (
-          <NativeSelectOption key={value.key} value={index} className="capitalize">{value.key.replace(/-/g, " ")}</NativeSelectOption>
+      {(!only || choices.length > 1) && <SelectField label="Campaign" className="mb-6 max-w-sm" value={selected} disabled={scheduleEditing} onChange={(event) => setSelected(Number(event.target.value))}>
+        {choices.map((index) => (
+          <NativeSelectOption key={content.campaigns[index]!.key} value={index} className="capitalize">{content.campaigns[index]!.key.replace(/-/g, " ")}</NativeSelectOption>
         ))}
-      </SelectField>
-      <EditorWithPreview>
+      </SelectField>}
+      <EditorWithPreview data-campaign-key={campaign.key}>
         <div>
           <SectionHeading description="Use one line per headline or offer line, up to three. Destinations must be store links such as /collections/chairs.">Copy</SectionHeading>
           <FieldGrid>
@@ -100,8 +105,9 @@ export function CampaignFields(props: Props) {
   </>;
 }
 
-export function InstagramFields(props: Props) {
-  const { content, onChange } = props;
+/** `embedded` (the section inspector) keeps the post count and Add button without the screen heading. */
+export function InstagramFields(props: Props & { embedded?: boolean }) {
+  const { content, onChange, embedded = false } = props;
   const posts = content.instagramPosts;
   const media = mediaProps(props);
   const setPosts = (instagramPosts: typeof posts) => onChange({ ...content, instagramPosts });
@@ -109,8 +115,8 @@ export function InstagramFields(props: Props) {
   const addPost = <ActionButton icon={Plus} variant="default" size="default" disabled={posts.length >= 30}
     onClick={() => setPosts([...posts, { href: "", src: "", alt: "" }])}>Add Instagram post</ActionButton>;
   return <>
-    <PanelHeader title="Instagram" actions={posts.length > 0 && tally(posts.length, 30, "posts", addPost)}
-      description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers." />
+    {embedded ? posts.length > 0 && <div className="mb-4 flex justify-end">{tally(posts.length, 30, "posts", addPost)}</div> : <PanelHeader title="Instagram" actions={posts.length > 0 && tally(posts.length, 30, "posts", addPost)}
+      description="Posts appear in this order. Use a public Instagram post or reel link and an approved Maple image. Image descriptions help visitors using screen readers." />}
     {posts.length === 0 ? (
       <EmptyState title="No Instagram posts yet" icon={<Images strokeWidth={1.5} />} action={addPost}>
         The homepage needs at least one post. Add a post link and an approved image to fill the Instagram row.

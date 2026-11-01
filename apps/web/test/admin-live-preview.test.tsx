@@ -320,29 +320,29 @@ test("inside the frame: hovering a draft section offers Edit, which selects that
   } finally { await act(async () => root.unmount()); }
 });
 
-test("pressing Edit on a section in the live preview selects its card; a message from elsewhere selects nothing", async () => {
+test("pressing Edit on a section in the live preview opens its inspector; a message from elsewhere opens nothing", async () => {
   const app = await setup();
   try {
     await click("Live preview");
     await click("Homepage");
     const frameWindow = frame().contentWindow!;
     const select = { source: previewMessageSource, type: "select", section: "nimbus" };
-    const card = () => container.querySelector('[data-section-card="nimbus"]');
+    const inspecting = () => container.querySelector("[data-section-inspector]")?.getAttribute("data-section-inspector");
     await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: select, origin: "https://evil.example", source: frameWindow })); });
-    assert.equal(card()?.getAttribute("aria-current"), null);
+    assert.equal(inspecting(), undefined);
     await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: select, origin: "http://localhost:3000", source: frameWindow })); });
-    assert.equal(card()?.getAttribute("aria-current"), "true");
+    assert.equal(inspecting(), "nimbus");
   } finally { await app.close(); }
 });
 
-test("pressing Edit in the preview from another screen that shows the homepage opens Homepage with that section selected", async () => {
+test("pressing Edit in the preview from another screen that shows the homepage opens Homepage with that section's inspector", async () => {
   const app = await setup();
   try {
     await click("Live preview");
     await click("Merchandising");
     const frameWindow = frame().contentWindow!;
     await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, type: "select", section: "values" }, origin: "http://localhost:3000", source: frameWindow })); });
-    await until(() => container.querySelector('[data-section-card="values"]')?.getAttribute("aria-current") === "true", "Homepage with Values selected");
+    await until(() => container.querySelector("[data-section-inspector]")?.getAttribute("data-section-inspector") === "values", "Homepage with the Values inspector open");
   } finally { await app.close(); }
 });
 

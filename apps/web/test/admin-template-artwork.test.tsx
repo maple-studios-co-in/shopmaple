@@ -75,8 +75,11 @@ test("legacy Artwork browsing shows grouped original placements without creating
     assert.equal(input("Desktop image URL").value, originalDesktop);
     assert.equal(input("Mobile image URL").value, originalMobile);
     assert.equal(button("Restore original").disabled, true);
+    const group = container.querySelector<HTMLSelectElement>('select[aria-label="Artwork group"]')!;
+    group.focus();
     await select("Artwork group", "Nimbus");
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 11);
+    assert.ok(document.activeElement === container.querySelector('select[aria-label="Artwork group"]'), "changing the group keeps keyboard focus on it");
     await select("Artwork group", "Our Story");
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 2);
     assert.equal(button("Save draft").disabled, true);
