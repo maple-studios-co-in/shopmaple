@@ -352,8 +352,16 @@ export function createRazorpayGateway(
     return result;
   }
 
+  /** Authenticity of the browser's success callback only; capture is still verified by fetch. */
+  function authenticateCheckoutCallback(storedOrderId: string, callback: CheckoutCallback) {
+    if (!verifyCheckoutSignature(storedOrderId, callback, keySecret))
+      throw new PaymentGatewayError("INVALID_SIGNATURE");
+    return { orderId: storedOrderId, paymentId: callback.razorpay_payment_id };
+  }
+
   return {
     createOrder,
+    authenticateCheckoutCallback,
     verifyCallback,
     verifyCapturedPayment,
     authenticateWebhook,

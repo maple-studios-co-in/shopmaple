@@ -631,6 +631,35 @@ export function createOrderService(db: PrismaClient, options: Options) {
       throw error;
     }
   }
+  /** The buyer's browser reports Razorpay's signed success callback. Authenticity is
+   * checked with the key secret; the row then takes the same leased, fetch-verified
+   * path as a webhook, so a callback alone never marks anything paid. */
+  async function recordPaymentCallback(
+    cartToken: string,
+    attemptId: string,
+    callback: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+  ) {
+    const attempt = await ownedAttempt(cartToken, attemptId);
+    if (!attempt.providerOrderId) throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
+    const { orderId, paymentId } = gateway.authenticateCheckoutCallback(attempt.providerOrderId, callback);
+    const bodySha256 = hash(`checkout-callback:${orderId}|${paymentId}`);
+    try {
+      await db.paymentWebhookInbox.create({
+        data: {
+          merchantScope,
+          eventId: `callback-${paymentId}`.slice(0, 128),
+          bodySha256,
+          eventType: "checkout.callback",
+          providerOrderId: orderId,
+          paymentId,
+          state: "pending",
+        },
+      });
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+    }
+    return attempt;
+  }
   function binding(attempt: CheckoutAttempt) {
     return {
       attemptId: attempt.id,
@@ -690,23 +719,29 @@ export function createOrderService(db: PrismaClient, options: Options) {
     });
     if (!attempt || !inbox.providerOrderId || !inbox.paymentId)
       return reconcile(inboxId, "UNKNOWN_PROVIDER_ORDER", claim);
-    if (attempt.state === "captured" && attempt.paymentId !== inbox.paymentId)
+    if (["captured", "paid_hold_lapsed"].includes(attempt.state) && attempt.paymentId !== inbox.paymentId)
       return reconcile(inboxId, "PAYMENT_ID_CONFLICT", claim);
+    if (attempt.state === "paid_hold_lapsed")
+      return reconcile(inboxId, "PAID_HOLD_LAPSED", claim);
     if (!["awaiting_payment", "captured"].includes(attempt.state))
       return reconcile(inboxId, "ORDER_STATE_REQUIRES_RECONCILIATION", claim);
+    // Whether Keeri still holds the goods. A lapsed or lost hold no longer drops an
+    // actual payment into silence: once Razorpay confirms the capture it is kept as
+    // `paid_hold_lapsed` for staff to fulfil by hand or refund (docs/checkout-recovery.md).
+    let holdLive = attempt.state === "captured";
     if (attempt.state !== "captured") {
-      if (
-        !reservations ||
-        !attempt.reservationId ||
-        !attempt.reservationExpiresAt ||
-        attempt.reservationExpiresAt <= now()
-      )
-        return reconcile(inboxId, "RESERVATION_EXPIRED_OR_UNAVAILABLE", claim);
-      try {
-        if (!(await reservations.verify(binding(attempt))))
-          return reconcile(inboxId, "RESERVATION_INVALID", claim);
-      } catch {
-        return reconcile(inboxId, "RESERVATION_UNCERTAIN", claim);
+      if (!reservations) return reconcile(inboxId, "RESERVATION_EXPIRED_OR_UNAVAILABLE", claim);
+      holdLive =
+        Boolean(attempt.reservationId) &&
+        Boolean(attempt.reservationExpiresAt) &&
+        attempt.reservationExpiresAt! > now();
+      if (holdLive) {
+        try {
+          holdLive = await reservations.verify(binding(attempt));
+        } catch {
+          // Keeri unreachable: retry under the worker's backoff rather than guess.
+          throw new OrderFlowError("RESERVATION_UNCERTAIN");
+        }
       }
     }
     try {
@@ -720,6 +755,10 @@ export function createOrderService(db: PrismaClient, options: Options) {
         inbox.paymentId,
       );
     } catch (error) {
+      // The browser's callback can beat Razorpay's auto-capture by a moment; retry it.
+      if (inbox.eventType === "checkout.callback" && error instanceof PaymentGatewayError &&
+          error.code === "PAYMENT_NOT_CAPTURED")
+        throw new OrderFlowError("PAYMENT_NOT_YET_CAPTURED");
       return reconcile(
         inboxId,
         error instanceof PaymentGatewayError
@@ -768,15 +807,33 @@ export function createOrderService(db: PrismaClient, options: Options) {
             "reconciliation_required",
             "ORDER_STATE_REQUIRES_RECONCILIATION",
           );
+        const clearCart = async () => {
+          // Paid goods leave the cart in the same transaction, so a refresh or a
+          // second tab cannot quote and pay for them again.
+          await tx.cartItem.deleteMany({ where: { cartId: current.cartId } });
+          await tx.cart.updateMany({
+            where: { id: current.cartId },
+            data: { revision: { increment: 1 } },
+          });
+        };
         if (
+          !holdLive ||
           !current.reservationExpiresAt ||
           current.reservationExpiresAt <= now() ||
           current.reservationId !== attempt.reservationId
-        )
-          return finish(
-            "reconciliation_required",
-            "RESERVATION_EXPIRED_OR_UNAVAILABLE",
-          );
+        ) {
+          await tx.checkoutAttempt.update({
+            where: { id: current.id },
+            data: {
+              state: "paid_hold_lapsed",
+              paymentId: inbox.paymentId,
+              capturedAt: now(),
+              failureCode: "PAID_HOLD_LAPSED",
+            },
+          });
+          await clearCart();
+          return finish("reconciliation_required", "PAID_HOLD_LAPSED");
+        }
         await tx.checkoutAttempt.update({
           where: { id: current.id },
           data: {
@@ -786,13 +843,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
             failureCode: null,
           },
         });
-        // Paid goods leave the cart in the same transaction, so a refresh or a
-        // second tab cannot quote and pay for them again.
-        await tx.cartItem.deleteMany({ where: { cartId: current.cartId } });
-        await tx.cart.updateMany({
-          where: { id: current.cartId },
-          data: { revision: { increment: 1 } },
-        });
+        await clearCart();
         await tx.orderOutbox.create({
           data: {
             attemptId: current.id,
@@ -843,7 +894,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
       fulfillmentStatus: confirmed
         ? "confirmed"
         : outbox?.state === "failed" ||
-            attempt.state === "reconciliation_required"
+            ["reconciliation_required", "paid_hold_lapsed"].includes(attempt.state)
           ? "review_required"
           : "pending",
       orderReference: confirmed ? outbox!.externalOrderId : null,
@@ -855,6 +906,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
     createProviderOrder,
     releaseAttempt,
     ingestWebhook,
+    recordPaymentCallback,
     processWebhook,
   };
 }

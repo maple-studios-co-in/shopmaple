@@ -259,6 +259,27 @@ model OrderOutbox {
   @@index([state, nextAttemptAt])
 }
 
+/// One email per checkout attempt (or unmatched payment) and purpose. The body is rendered
+/// at send time from the attempt, so no customer details are copied here.
+model OrderNotification {
+  id String @id @default(cuid())
+  merchantScope String
+  /// A CheckoutAttempt id, or `inbox:<PaymentWebhookInbox id>` for a payment matching no attempt.
+  subjectId String
+  kind String
+  state String @default("pending")
+  deliveryAttempts Int @default(0)
+  nextAttemptAt DateTime @default(dbgenerated("timezone('UTC'::text, now())"))
+  leaseToken String?
+  leaseExpiresAt DateTime?
+  providerId String?
+  failureCode String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([merchantScope, subjectId, kind])
+  @@index([state, nextAttemptAt])
+}
+
 // Shop presentation authority is separate from Keeri commerce data.
 enum ShopAdminRole {
   editor

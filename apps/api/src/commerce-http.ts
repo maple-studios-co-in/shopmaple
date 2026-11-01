@@ -11,7 +11,8 @@ import { KeeriCommerceError } from "./keeri-commerce.js";
 export type CommerceHttpService = Pick<
   ReturnType<typeof createOrderService>,
   "freezeCart" | "getAttempt" | "createProviderOrder" | "releaseAttempt" | "ingestWebhook"
->;
+> &
+  Partial<Pick<ReturnType<typeof createOrderService>, "recordPaymentCallback">>;
 /** Public, non-secret values the storefront needs before it can quote and pay. */
 export interface CheckoutOptions {
   deliveryMethods: Array<{ id: string; label: string }>;
@@ -22,6 +23,15 @@ const emptyBody = z.object({}).strict();
 const quoteRejectedMessage =
   "We can't quote this order as entered. Check the delivery method and address, or contact our team. No payment has been taken.";
 const attemptId = z.uuid();
+const paymentCallback = z
+  .object({
+    razorpay_order_id: z.string().regex(/^order_[A-Za-z0-9]{1,80}$/),
+    razorpay_payment_id: z.string().regex(/^pay_[A-Za-z0-9]{1,80}$/),
+    razorpay_signature: z.string().regex(/^[a-f0-9]{64}$/i),
+  })
+  .strict();
+/** The buyer's payment window closes this long before Keeri's hold lapses. */
+const payWindowMarginMs = 2 * 60_000;
 const idempotencyKey = z.string().regex(/^[A-Za-z0-9_-]{8,128}$/);
 
 function guestToken(req: Request, secure: boolean) {
@@ -68,8 +78,13 @@ function publicAttempt(
     state: attempt.state,
     amountPaise: attempt.amountPaise,
     currency: attempt.currency,
-    paid: attempt.state === "captured",
+    // A payment Razorpay confirmed is never reported as unpaid, even if the hold lapsed.
+    paid: attempt.state === "captured" || attempt.state === "paid_hold_lapsed",
     providerOrderId: attempt.providerOrderId,
+    payBy:
+      attempt.state === "awaiting_payment" && attempt.reservationExpiresAt
+        ? new Date(attempt.reservationExpiresAt.getTime() - payWindowMarginMs).toISOString()
+        : null,
   };
 }
 
@@ -161,6 +176,14 @@ export function registerCheckoutRoutes(
       publicAttempt(await commerce.createProviderOrder(guestToken(req, secure), id)),
     );
   });
+  app.post("/api/checkout/:attemptId/payment-callback", async (req, res) => {
+    const id = attemptId.parse(req.params.attemptId);
+    const body = paymentCallback.parse(req.body);
+    if (!commerce.recordPaymentCallback) throw new OrderFlowError("ATTEMPT_REQUIRES_RECONCILIATION");
+    const attempt = await commerce.recordPaymentCallback(guestToken(req, secure), id, body);
+    // Receipt only: the worker verifies the capture with Razorpay before anything is paid.
+    res.status(202).json(publicAttempt(await commerce.getAttempt(guestToken(req, secure), attempt.id)));
+  });
   app.get("/api/checkout/:attemptId", async (req, res) => {
     const id = attemptId.parse(req.params.attemptId);
     res.json(publicAttempt(await commerce.getAttempt(guestToken(req, secure), id)));
@@ -221,7 +244,7 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
       return new HttpError(
         401,
         "INVALID_SIGNATURE",
-        "The webhook could not be authenticated.",
+        "The payment confirmation could not be authenticated.",
       );
     if (error.code === "INVALID_WEBHOOK")
       return new HttpError(400, "INVALID_WEBHOOK", "Invalid webhook request.");
