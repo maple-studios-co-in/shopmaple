@@ -10,6 +10,7 @@ import { HomeCarousel } from "@/components/home-carousel";
 import { HomeScrollRail } from "@/components/home-scroll-rail";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
+import { HomeCompare, HomeEditorial } from "@/components/home-editorial";
 import {
   HomeStatementBand,
   HomeDifference,
@@ -186,6 +187,8 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         <CampaignBanner campaign="landing-consoles" compact content={content} />
       </div>
     ),
+    editorial: <HomeEditorial content={details.editorial} />,
+    compare: <HomeCompare content={details.compare} />,
     testimonial: (
       <HomeTestimonial
         content={details.testimonial}
