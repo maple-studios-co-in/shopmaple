@@ -5,8 +5,11 @@ import { SliderDots } from "@/components/slider-dots";
 import { SliderIsland } from "@/components/slider-island";
 import { shopFile } from "@/lib/format";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
-import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
+import { homeTemplateMedia, resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
+
+/** The big word over the bundled cloud photo: the collection name without "The" and "Collection". */
+const nimbusWord = (heading: string) => heading.replace(/^the\s+/i, "").replace(/\s+collection$/i, "") || heading;
 
 type Card = { id: string; heading: string; tagline: string; features: readonly string[]; cta: string; href: string; image: string; mobileImage?: string; alt: string };
 
@@ -21,6 +24,8 @@ export function HomeNimbus({
   media,
 }: { content?: HomeDetails["nimbus"]; media?: TemplateMedia } = {}) {
   const artwork = resolveHomeTemplateMedia("home-nimbus", media);
+  // The bundled photo has no lettering, so the name is live text; staff artwork keeps whatever it carries.
+  const liveWord = artwork.image === homeTemplateMedia["home-nimbus"].image;
   const cards: Card[] = [
     { id: "nimbus-details", heading: content.heading, tagline: content.tagline, features: content.features, cta: content.cta, href: "/pages/nimbus-collection", image: artwork.image, mobileImage: artwork.mobileImage, alt: artwork.alt },
     // An extra slide with no artwork yet (a draft in the editor) has nothing to show, so it is left out.
@@ -48,6 +53,7 @@ export function HomeNimbus({
               >
                 <ChevronUp />
               </button>
+              {i === 0 && liveWord && <p className="home-nimbus-title" data-nimbus-title aria-hidden="true">{nimbusWord(card.heading)}</p>}
               <p className="home-nimbus-lead" data-nimbus-lead>{card.tagline}</p>
               <Link className="home-nimbus-explore" href={card.href} data-nimbus-explore>{card.cta}</Link>
               <div className="home-nimbus-content" id={card.id}>

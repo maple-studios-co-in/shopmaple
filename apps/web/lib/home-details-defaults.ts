@@ -19,7 +19,7 @@ export const defaultHomeDetails: HomeDetails = {
     promises: ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"],
   },
   nimbus: {
-    heading: "The Nimbus Collection", tagline: "Comfort Shaped Like Clouds",
+    heading: "The Nimbus Collection", tagline: "Soft presence. Strong craftsmanship.",
     features: ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"], cta: "Shop Now",
   },
   testimonial: {

@@ -84,3 +84,21 @@ test("the announcement default is the frame's Always Together strip with its own
   assert.match(text(strip.querySelector("a")), /^Celebrate Together/);
   assert.equal(shownSrc(strip.querySelector('[data-artwork="desktop"] img')!), "/media/home/strip-always-together.webp");
 });
+
+test("Nimbus shows the frame's clean cloud photo with the collection name set as live text", async () => {
+  const nimbus = section(await renderHome(), "nimbus");
+  const base = nimbus.querySelector("[data-nimbus-slide]")!;
+  assert.equal(text(base.querySelector("[data-nimbus-title]")), "Nimbus");
+  assert.equal(text(base.querySelector("[data-nimbus-lead]")), "Soft presence. Strong craftsmanship.");
+  assert.equal(shownSrc(base.querySelector("picture img")!), "/media/home/nimbus-clouds.webp");
+  assert.ok(existsSync(local("/media/home/nimbus-clouds.webp")));
+});
+
+test("Nimbus with the staff's own artwork keeps the word in the artwork, with no live word on top", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { HomeNimbus } = await import("../components/home-nimbus");
+  const media = [{ key: "home-nimbus" as const, image: "https://shop.maplefurnishers.com/cdn/shop/files/custom-nimbus.webp", alt: "Staff artwork" }];
+  const doc = new JSDOM(renderToStaticMarkup(<HomeNimbus media={media} />)).window.document;
+  assert.equal(doc.querySelector("[data-nimbus-title]"), null);
+  assert.match(doc.querySelector("picture img")!.getAttribute("src")!, /custom-nimbus\.webp/);
+});

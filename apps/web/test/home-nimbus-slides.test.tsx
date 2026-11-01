@@ -24,7 +24,7 @@ test("without extra slides it is the single Nimbus card, with no dots", () => {
   const page = doc(<HomeNimbus />);
   assert.equal(cards(page).length, 1);
   assert.equal(page.querySelector("h2")?.textContent, "The Nimbus Collection");
-  assert.equal(page.querySelector("[data-nimbus-lead]")?.textContent, "Comfort Shaped Like Clouds");
+  assert.equal(page.querySelector("[data-nimbus-lead]")?.textContent, "Soft presence. Strong craftsmanship.");
   assert.equal(page.querySelector("[data-nimbus-explore]")?.getAttribute("href"), "/pages/nimbus-collection");
   assert.equal(all(page, "[data-slider-dot]").length, 0);
   const toggle = page.querySelector("[data-slider-toggle]")!;
@@ -38,7 +38,7 @@ test("extra collections follow the base card, each with its own words, artwork a
   const rendered = cards(page);
   assert.equal(rendered.length, 3);
   assert.deepEqual(rendered.map(card => card.querySelector("h2")?.textContent), ["The Nimbus Collection", "The Terra Collection", "The Olive Collection"]);
-  assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-lead]")?.textContent), ["Comfort Shaped Like Clouds", "Earthy and warm", "Quietly green"]);
+  assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-lead]")?.textContent), ["Soft presence. Strong craftsmanship.", "Earthy and warm", "Quietly green"]);
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/pages/nimbus-collection", "/collections/terra", "/pages/olive"]);
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-explore]")?.textContent), ["Shop Now", "Shop Terra", "Shop Olive"]);
   assert.deepEqual(rendered.map(card => card.querySelector(".home-nimbus-content a")?.getAttribute("href")), ["/pages/nimbus-collection", "/collections/terra", "/pages/olive"]);

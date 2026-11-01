@@ -11,8 +11,8 @@ const { ContentEditor } = await import("../components/admin/editor");
 const container = document.getElementById("root")!;
 const image = `/media/uploads/${"a".repeat(64)}.webp`;
 const preview = `/api/admin/media/${"a".repeat(64)}/preview`;
-const originalDesktop = "https://shop.maplefurnishers.com/cdn/shop/files/Chairs_9.svg";
-const originalMobile = "https://shop.maplefurnishers.com/cdn/shop/files/Chairs_300_x_600_px.webp?width=900";
+const originalDesktop = "/media/home/nimbus-clouds.webp";
+const originalMobile = "/media/home/nimbus-clouds.webp";
 const sibling = { key: "story-hero", image: "/media/story.webp", alt: "Story room" };
 function button(name: string, scope: ParentNode = container) {
   const found = [...scope.querySelectorAll<HTMLButtonElement>("button")].find(b => b.getAttribute("aria-label") === name || b.textContent === name);
