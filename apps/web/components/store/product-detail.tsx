@@ -1,20 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { ArrowRight, Minus, Plus, Share2 } from "lucide-react";
-import type { Product } from "@shopmaple/contracts";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Truck } from "lucide-react";
+import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
-import { shopMoney, categoryNames } from "@/lib/format";
+import { shopMoney } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
-import { PromiseStrip } from "./promise-strip";
-import { eyebrow } from "./section-heading";
 import { useProductHighlights } from "./product-highlights";
 import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
+import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
+import { ProductBanner } from "./product-banner";
+import { ProductEnquiry } from "./product-enquiry";
+import { ProductFaq } from "./product-faq";
+import { ProductFeatures, type Feature } from "./product-features";
+import { ProductPromises } from "./product-promises";
+import { ProductReviews } from "./product-reviews";
+import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
@@ -24,18 +30,26 @@ type Presentation = {
   reviewLabel: string | null;
 };
 
-// The design's 6 px buttons: burgundy (Add to cart, Check) and white with a sand border (Speak to a designer, Write a review).
-const button = "inline-flex items-center justify-center gap-2 rounded-[6px] px-[14px] text-ui font-bold no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60";
-const solid = cx(button, "h-12 cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
-const outline = cx(button, "h-[50px] border border-solid border-sand bg-white text-brand hover:bg-cream");
-const stepper = "grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-taupe hover:text-espresso disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand";
+// Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall.
+const pill = "inline-flex h-[50px] items-center justify-center rounded-[30px] px-6 text-[14px] leading-[1.2] font-medium no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
+const solid = cx(pill, "cursor-pointer border-0 bg-maple text-white hover:bg-brand-deep");
+const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-white text-maple hover:bg-maple/6");
+const stepper = "grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-[rgba(86,60,73,0.04)] p-0 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-maple";
+const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[14px] leading-[1.6] font-medium text-black no-underline hover:text-maple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple";
 
-export function ProductDetail({ product, initialVariant, presentation }: {
+/** A card's text: the captured rich text when it has any; null when the catalogue holds nothing for it. */
+const richCard = (content: ProductRichTextValue | null | undefined): ReactNode => content?.children.length ? <ProductRichText content={content} /> : null;
+const textCard = (value: string | null | undefined): ReactNode => value?.trim() ? value : null;
+
+/** `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. */
+export function ProductDetail({ product, initialVariant, presentation, children }: {
   product: Product;
   initialVariant?: string;
   presentation?: Presentation;
+  children?: ReactNode;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const queryVariant = searchParams ? searchParams.get("variant") ?? undefined : initialVariant;
   // An option's photo: the variant's own first photo, else the curated Shopify mapping.
   const variantImage = (id: string) => {
@@ -50,7 +64,8 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
   const textOptions = !optionPhotos && product.images.length > 0;
   // Staff-entered colours (the card highlights' swatches) fill the finish circles when an option has no photo.
-  const { swatch } = useProductHighlights();
+  const highlights = useProductHighlights();
+  const { swatch } = highlights;
   const optionLayout = optionPhotos || !textOptions ? "photo" : product.variants.every((v) => swatch(v.title)) ? "swatch" : "text";
   const initial =
     selectedVariant(product, queryVariant)?.id ??
@@ -64,8 +79,6 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
-    [pin, setPin] = useState(""),
-    [checkedPin, setCheckedPin] = useState(""),
     [shared, setShared] = useState("");
   if (urlVariant !== initial) {
     setUrlVariant(initial);
@@ -84,18 +97,16 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   const enquiry = !product.published || !canAddToCart(variant);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
-  const enquiryHref =
-    "/pages/contact?" +
-    new URLSearchParams({
-      product: product.title,
-      ...(variant ? { variant: variant.title } : {}),
-      ...(variant?.sku ? { sku: variant.sku } : {}),
-      ...(checkedPin ? { pincode: checkedPin } : {}),
-    });
-  const discounted = variant?.pricePaise != null && !!variant.compareAtPaise && variant.compareAtPaise > variant.pricePaise;
+  const enquiryHref = enquiryLink(product, variant);
+  const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
+  const rating = highlights.product(product.handle)?.rating;
+  const isNew = highlights.product(product.handle)?.isNew;
   async function add() {
-    if (enquiry || !variant) return;
-    if (await setQuantity(variantId, selectedQuantity + quantity)) setCartOpen(true);
+    if (enquiry || !variant) return false;
+    return setQuantity(variantId, selectedQuantity + quantity);
+  }
+  async function buyNow() {
+    if (await add()) router.push("/checkout");
   }
   function selectVariant(id: string) {
     setVariantId(id);
@@ -124,157 +135,127 @@ export function ProductDetail({ product, initialVariant, presentation }: {
       setShared(error instanceof Error && error.name === "AbortError" ? "" : "Couldn’t copy the link");
     }
   }
-  const category = product.category && categoryNames[product.category] ? product.category : "all";
-  const accordion = "group bg-white p-6";
-  const summary = "flex w-fit cursor-pointer list-none items-center gap-[22px] text-subhead font-bold text-espresso marker:hidden [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand";
-  // The sign follows the label ("Details  −" in the design). It is generated content on a hidden span, so neither the
-  // summary's text nor its accessible name includes it.
-  const sign = <span data-disclosure-sign aria-hidden="true" className="after:content-['+'] group-open:after:content-['−']" />;
-  // Panels hold admin rich text or plain catalogue text: headings, paragraph spacing, lists and line breaks are restated here.
-  const panel = "mt-3 text-price leading-[1.45] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 [&_:is(h2,h3,h4,h5,h6)]:font-serif [&_:is(h2,h3,h4,h5,h6)]:text-card [&_:is(h2,h3,h4,h5,h6)]:font-semibold [&_:is(h2,h3,h4,h5,h6)]:text-espresso [&_:is(h2,h3,h4,h5,h6):not(:first-child)]:mt-4 [&_:is(h2,h3,h4,h5,h6)+*]:mt-1.5 [&_p+p]:mt-2.5 [&_p+a]:mt-2.5 [&_p+a]:inline-block [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_li+li]:mt-1";
+  const photo = product.images[1] ?? product.images[0];
+  const features: Feature[] = [];
+  // Captured (admin) text leads; with none, the catalogue's own text. The description stands in for About only on
+  // products that were never captured, and an empty captured card stays empty rather than borrowing other copy.
+  const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
+  if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
+  const dimensions = product.sourceDetails?.dimensions?.trim();
+  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
+  const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
+  if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
+  const shipping = richCard(product.pdpContent?.shippingReturns);
+  if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping });
+  const warranty = warrantyLabel(product);
   return (
-    <div data-store className="bg-linen font-body text-espresso">
+    <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
-      <div className="mx-auto max-w-[1440px] px-4 pt-6 pb-12 md:px-8 md:pt-10 xl:px-16 xl:pt-16 xl:pb-16">
-        <nav data-breadcrumb aria-label="Breadcrumb" className="mb-5 text-meta text-taupe md:mb-7">
-          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0 [&_a]:text-taupe [&_a]:no-underline [&_a:hover]:text-brand">
-            <li className="flex items-center gap-2"><Link href="/">Home</Link><span aria-hidden="true">/</span></li>
-            <li className="flex items-center gap-2"><Link href={"/collections/" + category}>{categoryNames[category]}</Link><span aria-hidden="true">/</span></li>
-            <li><span aria-current="page">{product.title}</span></li>
-          </ol>
-        </nav>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,680fr)_minmax(0,584fr)] lg:items-start xl:gap-12">
+      <section aria-label={product.title} className="mx-auto grid max-w-[1432px] gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start lg:gap-[35px]">
+        <div className="min-w-0 lg:sticky lg:top-6">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
-          <div data-product-info className="flex min-w-0 flex-col gap-5">
-            <Link data-product-eyebrow href={"/collections/" + category} className={cx(eyebrow, "w-fit no-underline hover:underline hover:underline-offset-4")}>
-              Maple · {category === "all" ? "Collection" : categoryNames[category] + " collection"}
-            </Link>
-            <h1 className="font-serif text-[34px] leading-[1.1] font-bold text-espresso sm:text-h1">{product.title}</h1>
-            {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
-              <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
-            )}
-            <div data-price-block className="flex flex-col gap-5">
-              <strong className="text-[30px] leading-[1.45] font-bold text-brand">{shopMoney(variant?.pricePaise ?? null)}</strong>
-              {discounted && <p data-was className="text-price text-taupe"><span className="sr-only">Was </span><del>{shopMoney(variant!.compareAtPaise!)}</del></p>}
+        </div>
+        <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
+          {isNew && <div className="flex gap-2"><span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span></div>}
+          <h1 className="m-0 text-[28px] leading-[1.2] font-medium text-[#1c1c1c] sm:text-[34px]">{product.title}</h1>
+          {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
+            <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
+          )}
+          <div data-price-block className="grid gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <strong data-price className="text-[20px] leading-[1.2] font-medium text-maple">{shopMoney(variant?.pricePaise ?? null)}</strong>
+              {discount >= 1 && <span data-discount className="inline-flex h-[27px] items-center rounded-[5px] bg-[rgba(66,132,69,0.1)] px-2 text-[12px] leading-[1.6] font-medium text-[#2f6b32]">{discount}%OFF</span>}
             </div>
-            {product.description && <p data-description className="text-lead text-espresso">{product.description}</p>}
-            {product.variants.length > 1 && <>
+            <div className="flex items-center justify-between gap-3">
+              {discount >= 1 ? <p data-was className="m-0 text-[16px] font-medium text-black"><span className="sr-only">Was </span><del>{shopMoney(variant!.compareAtPaise!)}</del></p> : <span />}
+              {rating && <p data-rating className="m-0 inline-flex items-center gap-1 text-[14px] leading-[1.6] text-black">{rating.value.toFixed(1)}
+                {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design star */}
+                <img src="/product-page/star.svg" alt="" width={15} height={15} className="size-[15px]" />
+              </p>}
+            </div>
+          </div>
+          {product.description && <p data-description className="m-0 text-[14px] leading-[1.6] text-[#1c1c1c]">{product.description}</p>}
+          {product.variants.length > 1 && (
+            <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                   code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
-              <p data-variant-note className="text-meta text-taupe">Other finishes are custom requests. Confirm materials and pricing with our team.</p>
-            </>}
-            <div className="grid gap-3">
-              <div data-purchase className="flex gap-4">
-                {!enquiry && (
-                  <div className="flex h-[52px] w-[120px] shrink-0 items-center justify-between rounded-[6px] border border-solid border-sand bg-white px-2 text-ui text-taupe">
-                    <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1 || busy} onClick={() => setQuantityValue((q) => q - 1)} className={stepper}>
-                      <Minus aria-hidden="true" className="size-3" />
-                    </button>
-                    <output aria-live="polite" aria-label="Quantity" className="min-w-6 text-center tabular-nums">{quantity}</output>
-                    <button type="button" aria-label="Increase quantity" disabled={quantity >= 20 || busy} onClick={() => setQuantityValue((q) => q + 1)} className={stepper}>
-                      <Plus aria-hidden="true" className="size-3" />
-                    </button>
-                  </div>
-                )}
-                {enquiry ? (
-                  <Link data-primary className={cx(solid, "flex-1 sm:max-w-[360px]")} href={enquiryHref}>
-                    Enquire about this piece <ArrowRight aria-hidden="true" className="size-4" />
-                  </Link>
-                ) : (
-                  <button type="button" data-primary className={cx(solid, "flex-1 sm:max-w-[360px]")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add()}>
-                    {busy ? "Updating cart…" : "Add to cart"}
-                  </button>
-                )}
-              </div>
-              {selectedQuantity + quantity > 20 && <p className="text-meta text-brand">You can add up to 20 of this item. Contact our team for larger orders.</p>}
-              {error && <p role="alert" className="text-meta text-brand">{error}</p>}
-            </div>
-            <section data-custom aria-labelledby="customisation-title" className="flex flex-col items-start gap-2.5 bg-cream p-5">
-              <h2 id="customisation-title" className="text-[18px] leading-[1.45] font-bold text-espresso">Customisation available</h2>
-              <p className="text-card text-espresso">A different colour or material? Let’s shape it together.</p>
-              <Link data-customization href={enquiryHref} className={cx(outline, "w-full sm:w-[240px]")}>
-                Speak to a designer <span aria-hidden="true">→</span>
+              <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
+                Customisation available
               </Link>
-            </section>
-            <form data-serviceability id="delivery-enquiry" className="flex scroll-mt-6 flex-col gap-3"
-              onSubmit={(e) => { e.preventDefault(); setCheckedPin(pin); }}>
-              <label htmlFor="delivery-pincode" className="text-lead font-bold text-espresso">Delivery enquiry</label>
-              <div className="flex gap-3">
-                <input id="delivery-pincode" placeholder="Enter your pincode" inputMode="numeric" pattern="[1-9][0-9]{5}" maxLength={6} required value={pin}
-                  onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); setCheckedPin(""); }}
-                  className="h-[52px] min-w-0 flex-1 rounded-[6px] border border-solid border-sand bg-white px-[15px] text-ui text-espresso placeholder:text-taupe focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand" />
-                <button type="submit" className={cx(solid, "w-[120px] shrink-0 sm:w-[182px]")}>Add pincode</button>
-              </div>
-              <p data-disclosure className="text-meta text-taupe">Enter a pincode so our team can confirm delivery, lead time and applicable taxes. Delivery and payment options will be confirmed before ordering.</p>
-              {checkedPin && (
-                <p data-prose role="status" className="text-meta [&_a]:font-semibold [&_a]:text-brand [&_a]:underline">
-                  Please <Link href={enquiryHref}>ask our team to confirm delivery to {checkedPin}</Link>. Live delivery checking is being connected.
-                </p>
-              )}
-            </form>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <button type="button" data-share onClick={() => void share()}
-                className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-meta font-medium text-taupe hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-                <Share2 aria-hidden="true" className="size-3.5" /> Share
-              </button>
-              <span data-share-status role="status" className="text-meta text-espresso empty:hidden">{shared}</span>
             </div>
+          )}
+          <div className="mt-3 grid gap-3">
+            <div data-purchase className="flex gap-[11px]">
+              {!enquiry && (
+                <div className="flex h-[50px] w-[128px] shrink-0 items-center justify-between rounded-[30px] border border-solid border-maple/8 bg-white px-[7px] text-[14px] text-maple">
+                  <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1 || busy} onClick={() => setQuantityValue((q) => q - 1)} className={stepper}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                    <img src="/product-page/minus.svg" alt="" width={12} height={12} className="size-3" />
+                  </button>
+                  <output aria-live="polite" aria-label="Quantity" className="min-w-6 text-center tabular-nums">{quantity}</output>
+                  <button type="button" aria-label="Increase quantity" disabled={quantity >= 20 || busy} onClick={() => setQuantityValue((q) => q + 1)} className={stepper}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                    <img src="/product-page/plus.svg" alt="" width={12} height={12} className="size-3" />
+                  </button>
+                </div>
+              )}
+              {enquiry ? (
+                <Link data-primary className={cx(solid, "flex-1")} href={enquiryHref}>Enquire about this piece</Link>
+              ) : (
+                <button type="button" data-primary className={cx(solid, "flex-1")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add().then((added) => { if (added) setCartOpen(true); })}>
+                  {busy ? "Updating cart…" : "Add to cart"}
+                </button>
+              )}
+            </div>
+            {!enquiry && cart.checkoutEnabled ? (
+              <button type="button" data-buy-now className={cx(outline, "w-full")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void buyNow()}>Buy it now</button>
+            ) : enquiry ? (
+              <Link data-designer href={enquiryHref} className={cx(outline, "w-full")}>Speak to a designer</Link>
+            ) : (
+              <Link data-enquire href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
+            )}
+            {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
+            {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
+          </div>
+          <ul data-assurances className="m-0 grid list-none grid-cols-3 rounded-[10px] bg-maple/6 py-3 text-center text-[13px] leading-[1.3] font-medium text-maple">
+            <li className="flex flex-col items-center gap-1.5 px-2"><Truck aria-hidden="true" className="size-[18px]" strokeWidth={1.6} />{assurances.delivery}</li>
+            <li className="flex flex-col items-center gap-1.5 border-0 border-l border-solid border-maple/10 px-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+              <img src="/product-page/returns.svg" alt="" width={15} height={15} className="size-[18px]" />{assurances.cover}
+            </li>
+            <li className="flex flex-col items-center gap-1.5 border-0 border-l border-solid border-maple/10 px-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+              <img src="/product-page/shield-a.svg" alt="" width={15} height={15} className="size-[18px]" />{warranty}
+            </li>
+          </ul>
+          <p data-shipping-note className="m-0 -mt-2 text-[12px] leading-[1.5] text-[#5e574f]">Shipping is charged separately and quoted before you confirm your order.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Link data-ask href={enquiryHref} className={iconLink}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+              <img src="/product-page/ask.svg" alt="" width={14} height={14} className="size-3.5" />Ask a question
+            </Link>
+            <button type="button" data-share onClick={() => void share()} className={iconLink}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+              <img src="/product-page/share.svg" alt="" width={14} height={14} className="size-3.5" />Share
+            </button>
+            <span data-share-status role="status" className="text-[13px] text-black empty:hidden">{shared}</span>
           </div>
         </div>
-      </div>
-      <section data-product-details aria-label="Product details" className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pt-4 pb-12 md:px-8 md:pt-6 xl:px-16 xl:pt-16 xl:pb-16">
-        <PromiseStrip warranty={product.sourceDetails?.warranty} />
-        <div data-accordions className="grid gap-6">
-          <details open className={accordion}>
-            <summary className={summary}>Details{sign}</summary>
-            <div data-prose className={panel}>
-              {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p className="whitespace-pre-line">
-                {product.sourceDetails?.details || product.description || "Our team can help with materials, dimensions, finishes and customization for this piece."}
-              </p>}
-            </div>
-          </details>
-          <details className={accordion}>
-            <summary className={summary}>Materials &amp; care{sign}</summary>
-            <div data-prose className={panel}>
-              {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
-                {product.sourceDetails.materials && <p className="whitespace-pre-line">{product.sourceDetails.materials}</p>}
-                {product.sourceDetails.careInstructions && <p className="whitespace-pre-line">{product.sourceDetails.careInstructions}</p>}
-              </> : <>
-                <p>Contact our team for the materials and care guidance for your selected finish.</p>
-                <Link href={enquiryHref}>Request care guidance</Link>
-              </>}
-            </div>
-          </details>
-          <details className={accordion}>
-            <summary className={summary}>Shipping &amp; returns{sign}</summary>
-            <div data-prose className={panel}>
-              {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
-                <p>Confirm delivery serviceability, charges, lead time and applicable return terms before ordering.</p>
-                <Link href={enquiryHref}>Ask about delivery</Link>
-              </>}
-            </div>
-          </details>
-          <details id="product-specifications" className={cx(accordion, "scroll-mt-6")}>
-            <summary className={summary}>Product specifications{sign}</summary>
-            <div data-prose className={panel}>
-              {product.sourceDetails?.dimensions ? <p className="whitespace-pre-line">{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
-              {variant?.sku && <p>SKU: {variant.sku}</p>}
-              {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
-            </div>
-          </details>
-        </div>
-        {product.source.startsWith("shopify") && (
-          <section id="product-reviews" aria-labelledby="product-reviews-title" className="flex flex-col items-start gap-6">
-            <h2 id="product-reviews-title" className="font-serif text-[30px] leading-[1.1] font-bold text-espresso">Customer reviews</h2>
-            <p className="text-price text-taupe">{presentation?.reviewLabel === "No reviews" ? "No reviews yet." : "Customer reviews are not shown on this storefront yet."} Share your experience with this piece.</p>
-            <Link className={cx(outline, "w-[180px]")} href={enquiryHref}>Write a review</Link>
-          </section>
-        )}
       </section>
+      <ProductFeatures features={features} photo={photo} title={product.title} />
+      <ProductBanner />
+      <ProductTicker warranty={warranty} />
+      <ProductReviews rating={rating} writeHref={enquiryHref} />
+      {children}
+      <ProductFaq />
+      <ProductPromises />
+      <ProductEnquiry product={product.title} variant={variant?.title ?? ""} sku={variant?.sku ?? ""} />
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div data-zoom className="[&_img]:h-auto [&_img]:w-full">
           <ProductImage src={images[shown]} alt={product.title} width={1200} height={1200} sizes="90vw" />

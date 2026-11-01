@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
-import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
-const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 680px, calc((100vw - 112px) * 0.538)";
+const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 720px, calc(100vw - 712px)";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
@@ -81,7 +81,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   return (
     <div
       data-gallery
-      className="flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4"
+      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[114px_minmax(0,1fr)] lg:items-start lg:gap-3")}
       role="group"
       aria-label="Product images"
       tabIndex={images.length > 1 ? 0 : undefined}
@@ -97,11 +97,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className="relative overflow-hidden rounded-[12px] bg-cream">
+      <div className={cx("relative overflow-hidden rounded-[20px] bg-cream lg:rounded-[30px]", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className="relative block aspect-[17/16] w-full cursor-zoom-in overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
+            className="relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -152,7 +152,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[17/16] w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
@@ -163,21 +163,30 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
           <span data-gallery-status aria-live="polite" aria-atomic="true" className="sr-only">Photo {selected + 1} of {images.length}</span>
         )}
         {images.length > 1 && (
-          <div data-gallery-controls className="absolute top-1/2 right-[18px] z-[2] flex lg:hidden -translate-y-1/2 flex-col items-center gap-1.5 rounded-full border border-solid border-brand/8 bg-white px-1.5 py-1.5 text-label text-brand">
+          // The frame's vertical pill beside the large photo: previous, a track showing the position, next.
+          <div data-gallery-controls className="absolute top-1/2 right-[18px] z-[2] flex -translate-y-1/2 flex-col items-center gap-1.5 rounded-[30px] border border-solid border-maple/8 bg-white px-[6.5px] py-[5.5px]">
             <button type="button" aria-label="Previous product image" onClick={() => advance(-1)}
-              className="grid size-6 cursor-pointer place-items-center rounded-full border border-solid border-brand/10 bg-white p-0 text-brand hover:bg-cream focus-visible:outline-2 focus-visible:outline-brand"><ChevronUp aria-hidden="true" className="size-3.5" /></button>
-            <span aria-hidden="true" className="py-1 [writing-mode:vertical-rl] tabular-nums">{selected + 1} / {images.length}</span>
+              className="grid size-6 cursor-pointer place-items-center rounded-full border border-solid border-maple/8 bg-white p-0 hover:bg-cream focus-visible:outline-2 focus-visible:outline-maple">
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design chevron, turned to point up */}
+              <img src="/product-page/arrow-prev.svg" alt="" width={8} height={6} className="rotate-90" />
+            </button>
+            <span aria-hidden="true" className="relative my-1 block h-[60px] w-1.5 overflow-hidden rounded-full bg-maple/10">
+              <span className="absolute inset-x-0 rounded-full bg-maple transition-[top] duration-200 motion-reduce:transition-none" style={{ top: `${(selected / images.length) * 100}%`, height: `${100 / images.length}%` }} />
+            </span>
             <button type="button" aria-label="Next product image" onClick={() => advance(1)}
-              className="grid size-6 cursor-pointer place-items-center rounded-full border border-solid border-brand/10 bg-white p-0 text-brand hover:bg-cream focus-visible:outline-2 focus-visible:outline-brand"><ChevronDown aria-hidden="true" className="size-3.5" /></button>
+              className="grid size-6 cursor-pointer place-items-center rounded-full border border-solid border-maple/8 bg-white p-0 hover:bg-cream focus-visible:outline-2 focus-visible:outline-maple">
+              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design chevron, turned to point down */}
+              <img src="/product-page/arrow-next.svg" alt="" width={8} height={6} className="rotate-90" />
+            </button>
           </div>
         )}
       </div>
-      <div data-thumbnails ref={strip} className={cx("flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4", images.length < 2 && "hidden")}>
+      <div data-thumbnails ref={strip} className={cx("flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 lg:order-first lg:col-start-1 lg:h-0 lg:min-h-full lg:flex-col lg:self-stretch lg:overflow-x-hidden lg:overflow-y-auto lg:gap-4", images.length < 2 && "hidden")}>
         {images.map((image, i) => (
           <button key={image} data-index={i} onClick={() => onSelect(i)} aria-label={"Show product image " + (i + 1)} aria-pressed={selected === i}
-            className="relative aspect-[158/130] shrink-0 basis-[calc((100%-36px)/4)] cursor-pointer overflow-hidden rounded-[12px] border-0 bg-cream p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] aria-pressed:after:shadow-[inset_0_0_0_2px_var(--color-espresso)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand sm:basis-[calc((100%-48px)/4)] [&_img]:size-full [&_img]:object-cover">
+            className="relative aspect-[4/5] shrink-0 basis-[calc((100%-36px)/4)] cursor-pointer overflow-hidden rounded-[15px] border-0 bg-cream p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] aria-pressed:after:shadow-[inset_0_0_0_2px_#563c49] lg:basis-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand sm:basis-[calc((100%-48px)/4)] [&_img]:size-full [&_img]:object-cover">
             {near.has(i) || selected === i
-              ? <ProductImage src={image} alt="" width={316} height={260} sizes="(max-width:1023px) 25vw, 158px" />
+              ? <ProductImage src={image} alt="" width={228} height={285} sizes="(max-width:1023px) 25vw, 114px" />
               : <span aria-hidden="true" className="block size-full bg-cream" />}
           </button>
         ))}

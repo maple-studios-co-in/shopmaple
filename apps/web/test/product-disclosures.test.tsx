@@ -33,20 +33,21 @@ async function mount(value: Product, check: () => void) {
     check();
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
+// The frame's expandable cards (data-feature) carry what the old page called disclosures.
+const cards: Record<string, string> = { "Details": "About Product", "Materials & care": "Material & Care", "Shipping & returns": "Shipping & Returns", "Product specifications": "Specification" };
 function disclosure(label: string) {
-  const element = [...document.querySelectorAll("[data-accordions] details")].find(item => item.querySelector("summary")?.textContent === label);
-  assert.ok(element, `Disclosure ${label} is available`);
+  const element = [...document.querySelectorAll("[data-feature]")].find(item => item.querySelector("h3")?.textContent === cards[label]);
+  assert.ok(element, `Card ${label} is available`);
   return element;
 }
+const absent = (label: string) => ![...document.querySelectorAll("[data-feature]")].some(item => item.querySelector("h3")?.textContent === cards[label]);
 
-test("products without captured disclosures retain description, care and delivery enquiry fallback", async () => {
+test("products without captured text show their description and leave out cards that have no text", async () => {
   for (const value of [product, { ...product, source: "keeri", pdpContent: null }]) {
     await mount(value, () => {
-      assert.equal(disclosure("Details").querySelector("p")?.textContent, "Standard description must not replace captured Details.");
-      assert.match(disclosure("Materials & care").textContent!, /Contact our team for the materials and care guidance/);
-      assert.equal(disclosure("Materials & care").querySelector("a")?.textContent, "Request care guidance");
-      assert.match(disclosure("Shipping & returns").textContent!, /Confirm delivery serviceability/);
-      assert.equal(disclosure("Shipping & returns").querySelector("a")?.textContent, "Ask about delivery");
+      assert.equal(disclosure("Details").querySelector("[data-feature-body]")?.textContent, "Standard description must not replace captured Details.");
+      for (const label of ["Materials & care", "Shipping & returns", "Product specifications"]) assert.ok(absent(label), `${label} is not invented`);
+      assert.doesNotMatch(document.body.textContent!, /Contact our team for the materials|Confirm delivery serviceability|Request care guidance|Request dimensions/);
     });
   }
 });
@@ -61,18 +62,14 @@ test("captured source disclosures replace generic copy without changing purchase
     assert.equal(document.querySelector("h1")?.textContent, "Source Chair");
     assert.match(document.querySelector("[data-price-block] strong")!.textContent!, /23,600/);
     assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
-    assert.match(document.querySelector("[data-disclosure]")!.textContent!, /Delivery and payment options will be confirmed before ordering/);
-    assert.match(disclosure("Product specifications").textContent!, /SKU: CHAIR-NAT/);
   });
 });
 
-test("captured empty disclosure bodies stay empty and never invent fallback copy", async () => {
+test("captured empty bodies leave their cards out and never invent fallback copy", async () => {
   for (const empty of [null, { type: "root", children: [] } as ProductRichText]) {
     await mount(captured(empty, empty, empty), () => {
-      for (const label of ["Details", "Materials & care", "Shipping & returns"]) {
-        assert.equal(disclosure(label).textContent, label);
-        assert.equal(disclosure(label).querySelector("p, a"), null);
-      }
+      for (const label of ["Details", "Materials & care", "Shipping & returns"]) assert.ok(absent(label), `${label} stays out`);
+      assert.ok(!document.querySelector("[data-features]")?.textContent?.includes("Standard description must not replace"));
     });
   }
 });
@@ -86,7 +83,7 @@ test("source paragraphs, emphasis, newlines, headings and ordered and unordered 
     { type: "list", listType: "ordered", children: [{ type: "list-item", children: [{ type: "text", value: "Wipe gently" }] }] },
   ] }), () => {
     const details = disclosure("Details");
-    assert.equal(details.querySelector("h3")?.textContent, "Crafted for comfort");
+    assert.equal(details.querySelector("[data-feature-body] h3")?.textContent, "Crafted for comfort");
     assert.deepEqual([...details.querySelectorAll("p")].map(p => p.textContent), ["Solid oak and woven fabric", "First line\nSecond line"]);
     assert.equal(details.querySelector("p strong")?.textContent, "Solid oak");
     assert.equal(details.querySelector("p em")?.textContent, "woven fabric");
@@ -118,7 +115,7 @@ test("malicious source text stays literal and unsafe link destinations are inert
     { type: "text", value: '<img src=x onerror="alert(1)"><script>alert(1)</script>' },
     ...unsafe.map((url, i) => ({ type: "link" as const, url, children: [{ type: "text" as const, value: `Unsafe ${i}` }] })),
   ] }] }), () => {
-    const details = disclosure("Details");
+    const details = disclosure("Details").querySelector("[data-feature-body]")!;
     assert.match(details.textContent!, /<img src=x onerror="alert\(1\)"><script>alert\(1\)<\/script>/);
     assert.equal(details.querySelector("img, script, iframe"), null);
     assert.equal(details.querySelector("a"), null);
@@ -133,7 +130,7 @@ test('Keeri product details show source materials, dimensions, care and warranty
   assert.match(disclosure('Materials & care').textContent!,/Oak and linen/);
   assert.match(disclosure('Materials & care').textContent!,/Dry cloth/);
   assert.match(disclosure('Product specifications').textContent!,/80 x 60 cm/);
-  assert.match(document.querySelector('[data-accordions]')!.textContent!,/One year/);
+  assert.match(document.querySelector('[data-assurances]')!.textContent!,/One year warranty/);
  });
 });
 
