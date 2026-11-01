@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { articleHandles, blogHandles, policySlugs, categories, type StorefrontContent } from "@shopmaple/contracts";
+import { articleHandles, blogHandles, policySlugs, categories, type EditorialNode, type StorefrontContent } from "@shopmaple/contracts";
 import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "../cart.js";
 
@@ -28,9 +28,18 @@ function enabledChromePaths(content: StorefrontContent): string[] {
   ].map(link => link.href.split("#")[0]!);
 }
 
+/** Every link address in a rich-text document (an editorial tag tree). */
+function documentLinks(nodes: readonly EditorialNode[]): string[] {
+  return nodes.flatMap(node => typeof node === "string" ? [] : [...(node.tag === "a" && node.href ? [node.href] : []), ...documentLinks(node.children)]);
+}
+
 export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient, content: StorefrontContent) {
   const articlePaths = new Set((content.authoredArticles ?? []).flatMap(article => article.blocks.flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
-  const pagePaths = new Set(content.pages.flatMap(page => (page.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
+  const pagePaths = new Set(content.pages.flatMap(page => [
+    ...(page.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : []),
+    // Store links written in rich text; email, phone and other Maple sites are not store pages.
+    ...documentLinks(page.content ?? []).filter(href => href.startsWith("/")).map(href => href.split("#")[0]!),
+  ]));
   const chromePaths = new Set(enabledChromePaths(content));
   const paths = new Set([...articlePaths, ...pagePaths, ...chromePaths]);
   if (!paths.size) return;

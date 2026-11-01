@@ -136,6 +136,22 @@ test("prose mentioning a private URL does not publish it; only actual image fiel
  await db.$transaction(tx=>prepareMediaForPublication(tx,{instagramPosts:[{src:asset.url}]},root));
  assert.equal((await request(app()).get(asset.url)).status,200);
 });
+test("pictures inside rich-text pages, policies and articles are published with them, and missing ones are refused",async()=>{
+ const shot=async(colour:string)=>{const uploaded=await upload(request(app()),await sharp({create:{width:23,height:17,channels:3,background:colour}}).png().toBuffer());assert.equal(uploaded.status,201);return uploaded.body.asset.url as string;};
+ const [inPage,inPolicy,inArticle]=[await shot("#112233"),await shot("#223344"),await shot("#334455")];
+ const img=(src:string)=>({tag:"img",src,alt:"Room",children:[]});
+ const content={pages:[{content:[{tag:"div",children:[{tag:"p",children:["Look: "]},img(inPage)]}]}],
+  editorialContent:{policies:[{content:[img(inPolicy)]}],articles:[{content:[{tag:"blockquote",children:[img(inArticle)]}]}]}};
+ for(const url of [inPage,inPolicy,inArticle]) assert.equal((await request(app()).get(url)).status,404);
+ await db.$transaction(tx=>prepareMediaForPublication(tx,content,root));
+ for(const url of [inPage,inPolicy,inArticle]) assert.equal((await request(app()).get(url)).status,200,`${url} is public once its page is published`);
+ await assert.rejects(db.$transaction(tx=>prepareMediaForPublication(tx,{pages:[{content:[img(`/media/uploads/${"d".repeat(64)}.webp`)]}]},root)),(e:unknown)=>e instanceof HttpError&&e.code==="MEDIA_REFERENCE_MISSING");
+ await assert.rejects(db.$transaction(tx=>prepareMediaForPublication(tx,{pages:[{content:[img("/media/uploads/not-a-hash.webp")]}]},root)),(e:unknown)=>e instanceof HttpError&&e.code==="MEDIA_REFERENCE_INVALID");
+ // Words that mention an address are text, not a picture.
+ const quiet=await shot("#445566");
+ await db.$transaction(tx=>prepareMediaForPublication(tx,{pages:[{content:[{tag:"p",children:[quiet]}]}]},root));
+ assert.equal((await request(app()).get(quiet)).status,404);
+});
 test("publication rejects an uploaded asset whose persistent file is missing",async()=>{
  const input=await sharp({create:{width:17,height:23,channels:3,background:"#ccddee"}}).png().toBuffer();
  const uploaded=await upload(request(app()),input);assert.equal(uploaded.status,201);const asset=uploaded.body.asset;

@@ -381,8 +381,8 @@ test("campaign, Instagram and page forms preserve typed edits and escape their l
     await click("Add page");
     await fill("Page title", "Craft stories");
     await fill("Page slug", "craft-stories");
-    await fill("Page description", "How furniture is crafted");
-    await fill("Page body", "<script>unsafe()</script>\nCrafted with care.");
+    // The body is a rich-text editor (test/admin-structured-pages.test.tsx); the description shows typed markup as text.
+    await fill("Page description", "<script>unsafe()</script> How furniture is crafted");
     await click("Add page banner");
     await fill("Desktop image", "/media/craft.webp");
     await fill("Mobile image", "/media/craft-mobile.webp");

@@ -146,6 +146,14 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   if (!match) throw new HttpError(400, "MEDIA_REFERENCE_INVALID", "Choose a valid image from the media library.");
   hashes.add(match[1]!);
  }
+ /** Every picture in a rich-text document (an editorial tag tree); words are never treated as pictures. */
+ function pictures(nodes: unknown): void {
+  for (const value of list(nodes)) {
+   const node = record(value);
+   if (node.tag === "img") image(node.src);
+   pictures(node.children);
+  }
+ }
  const document = record(content);
  const merchandising = record(document.homeMerchandising);
  // Hidden tiles remain part of the published document and use the same private-media gate.
@@ -164,7 +172,11 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   const page = record(item), banner = record(page.banner);
   image(banner.desktopImage); image(banner.mobileImage);
   for (const block of list(page.blocks)) if (record(block).type === "image") image(record(block).src);
+  pictures(page.content);
  }
+ // Rich-text policies and articles may hold media library pictures too.
+ const editorial = record(document.editorialContent);
+ for (const item of [...list(editorial.policies), ...list(editorial.articles)]) pictures(record(item).content);
  if (!hashes.size) return;
  const absent = () => new HttpError(400, "MEDIA_REFERENCE_MISSING", "An image is missing from the media library. Choose it again before publishing.");
  if (!mediaRoot || !isAbsolute(mediaRoot)) throw absent();
