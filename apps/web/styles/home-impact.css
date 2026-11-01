@@ -89,6 +89,15 @@
   color: var(--impact-ink);
   box-shadow: 0 6px 18px rgb(41 37 31 / 0.08);
 }
+/* A soft pale wash behind the title keeps it readable if the admin supplies a darker photo. */
+[data-home-section="hero"] .category-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(238 235 230 / 0.85) 0%, rgb(238 235 230 / 0) 55%);
+  pointer-events: none;
+}
 [data-home-section="hero"] .category-tile > div {
   top: 22px;
   left: 22px;
@@ -557,6 +566,7 @@
   padding-inline: 56px;
 }
 [data-home-section="cities"] .home-city-track {
+  min-width: 100%;
   justify-content: center;
 }
 
@@ -796,6 +806,7 @@
   [data-home-section="project"] .home-project { padding: 40px 16px 56px; gap: 28px; }
   [data-home-section="values"] .home-values { padding: 16px 16px 72px; }
   [data-home-section="cities"] .home-cities.home-container { padding: 28px 12px 40px; }
-  [data-home-section="cities"] .city-motion { padding-inline: 0; }
+  [data-home-section="cities"] .city-motion { padding-inline: 44px; }
+  [data-home-section="cities"] .home-cities .city-photo-credits { right: 12px; padding: 8px; }
   [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
 }
