@@ -30,7 +30,7 @@ const variant = (id: string, pricePaise: number | null, compareAtPaise: number |
 const card = (id: string, title = id, category = "chairs") => ({
   id, handle: id, title, image: "https://example.com/first.jpg", pricePaise: null,
   compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 0,
-  category, optionNames: [] as string[],
+  category, optionNames: [] as string[], optionThumbs: [] as never[],
 });
 // Cards carry option names for colour dots, never SKUs or other variant fields.
 const named = { optionNames: ["Variant detail"] };
