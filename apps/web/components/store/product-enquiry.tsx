@@ -23,8 +23,8 @@ export function ProductEnquiry({ product, variant, sku }: { product: string; var
     });
   }
   return (
-    <section data-store data-enquiry aria-labelledby="product-enquiry-title" className="bg-[#f8f7f3] px-4 py-12 font-product md:px-12 md:py-[32px] lg:px-[50px]">
-      <div className="mx-auto grid max-w-[1340px] gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,674px)] lg:items-center lg:gap-[40px]">
+    <section data-store data-enquiry aria-labelledby="product-enquiry-title" className="bg-[#f8f7f3] px-4 py-12 font-product md:px-12 md:py-[32px]">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,max(674px,45%))] lg:items-center lg:gap-[40px]">
         <div className="flex flex-col gap-6">
           <h2 id="product-enquiry-title" className="m-0 max-w-[433px] text-[44px] leading-[1.1] font-medium text-black md:text-[64px] md:leading-[75px]">Have a Space in Mind?</h2>
           <p className="m-0 max-w-[560px] text-[18px] leading-[1.45] text-[#4b4b4b]">Describe your project to us and our team will come back within 24 hours with options, pricing and a clear timeline.</p>

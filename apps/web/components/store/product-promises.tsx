@@ -10,7 +10,7 @@ const promises = [
 export function ProductPromises() {
   return (
     <section data-store data-promises aria-label="Our promises" className="bg-white px-4 py-10 font-product md:px-12 md:py-[95px]">
-      <ul className="m-0 mx-auto grid max-w-[1336px] list-none gap-8 rounded-[20px] border border-solid border-maple/8 px-8 py-8 md:grid-cols-3 md:gap-6 md:py-[26px]">
+      <ul className="m-0 grid list-none gap-8 rounded-[20px] border border-solid border-maple/8 px-8 py-8 md:grid-cols-3 md:gap-6 md:py-[26px]">
         {promises.map((promise) => (
           <li key={promise.icon} className="flex flex-col items-center gap-2 text-center text-[#1a1a1a]">
             <span aria-hidden="true" className="grid size-[46px] place-items-center rounded-full bg-maple/6">

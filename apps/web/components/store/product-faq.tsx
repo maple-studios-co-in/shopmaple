@@ -19,7 +19,7 @@ export function ProductFaq() {
   const [open, setOpen] = useState(-1);
   return (
     <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 py-12 font-product text-black md:px-12 md:py-[88px]">
-      <div className="mx-auto flex max-w-[1004px] flex-col gap-10 lg:flex-row lg:gap-24">
+      <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">
         <div className="flex flex-col items-start gap-6 lg:order-2 lg:w-[452px] lg:shrink-0">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
           <p className="m-0 text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>

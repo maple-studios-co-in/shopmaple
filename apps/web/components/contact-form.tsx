@@ -41,10 +41,7 @@ export function ContactForm({
       {(context.product || context.pincode) && (
         <div className="cp-enquiry-context">
           <strong>{context.product}</strong>
-          <span>
-            {context.variant}
-            {context.sku ? ` · SKU: ${context.sku}` : ""}
-          </span>
+          <span>{context.variant}</span>
           {context.pincode && <span>Delivery pincode: {context.pincode}</span>}
         </div>
       )}

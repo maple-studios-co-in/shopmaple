@@ -13,7 +13,7 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
-import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
+import { assurances, cheapestPriced, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
@@ -24,10 +24,13 @@ import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
+import { resolveHotspots, type Cutout } from "@/lib/product-hotspots";
 
 type Presentation = {
   variantImages: Record<string, string>;
   reviewLabel: string | null;
+  /** White-background photos by finish address (`variant.slug`), with hotspot positions; the notes come from the product's own text. */
+  cutouts?: Record<string, Cutout>;
 };
 
 // Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall.
@@ -58,7 +61,22 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
-  const galleryFor = (id: string) => variantGallery(product, product.variants.find((v) => v.id === id));
+  // A finish with a white-background photo opens on it, and it leads that finish's gallery.
+  const cutoutFor = (id: string) => {
+    const slug = product.variants.find((v) => v.id === id)?.slug;
+    return slug ? presentation?.cutouts?.[slug] : undefined;
+  };
+  const galleryFor = (id: string) => {
+    const gallery = variantGallery(product, product.variants.find((v) => v.id === id));
+    const cutout = cutoutFor(id);
+    return cutout ? [cutout.image, ...gallery.filter((src) => src !== cutout.image)] : gallery;
+  };
+  // The photo to show when a finish is chosen: its white-background photo, else its own first photo.
+  const startAt = (id: string) => {
+    if (cutoutFor(id)) return 0;
+    const src = variantImage(id);
+    return src ? Math.max(0, galleryFor(id).indexOf(src)) : undefined;
+  };
   // Catalogues without any per-option photos present plain option tiles rather than a grid of
   // "Photo unavailable" boxes.
   const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
@@ -70,13 +88,15 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const initial =
     selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
+    // With nothing chosen, open on a finish the shopper can price (see cheapestPriced); with no prices, the first finish
+    // with a photo, else the first.
+    cheapestPriced(product.variants, variantImage)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
-    product.variants.find((v) => v.pricePaise !== null)?.id ??
     product.variants[0]?.id ??
     "";
   const [variantId, setVariantId] = useState(initial);
   const [urlVariant, setUrlVariant] = useState(initial);
-  const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
+  const [image, setImage] = useState(() => startAt(initial) ?? 0),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [shared, setShared] = useState("");
@@ -85,8 +105,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     // History navigation changes the option without remounting the enquiry.
     if (variantId !== initial) {
       setVariantId(initial);
-      const src = variantImage(initial);
-      if (src) setImage(Math.max(0, galleryFor(initial).indexOf(src)));
+      const start = startAt(initial);
+      if (start !== undefined) setImage(start);
     }
   }
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
@@ -112,8 +132,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     setVariantId(id);
     // The option's own photo leads its gallery; a shared gallery jumps to the option's photo.
     // Without one, the shopper keeps the photo they were looking at.
-    const src = variantImage(id);
-    if (src) setImage(Math.max(0, galleryFor(id).indexOf(src)));
+    const start = startAt(id);
+    if (start !== undefined) setImage(start);
     const chosen = product.variants.find((v) => v.id === id);
     const url = new URL(window.location.href);
     url.searchParams.set("variant", chosen?.slug ?? id);
@@ -142,7 +162,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
   if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
   const dimensions = product.sourceDetails?.dimensions?.trim();
-  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
+  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: product.sourceDetails?.warranty?.trim() ? `Warranty: ${product.sourceDetails.warranty.trim()}` : undefined });
   const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
   if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
   const shipping = richCard(product.pdpContent?.shippingReturns);
@@ -151,15 +171,16 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   return (
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="mx-auto grid max-w-[1432px] gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start lg:gap-[35px]">
-        <div className="min-w-0 lg:sticky lg:top-6">
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
+            hotspotImage={cutoutFor(variantId)?.image} hotspots={resolveHotspots(cutoutFor(variantId), product.sourceDetails)}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {isNew && <div className="flex gap-2"><span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span></div>}
           <h1 className="m-0 text-[28px] leading-[1.2] font-medium text-[#1c1c1c] sm:text-[34px]">{product.title}</h1>
-          {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
+          {variant && !variantImage(variant.id) && !cutoutFor(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
             <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
           )}
           <div data-price-block className="grid gap-2">
@@ -181,7 +202,6 @@ export function ProductDetail({ product, initialVariant, presentation, children 
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
-                  code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
               <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}

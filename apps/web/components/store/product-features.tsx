@@ -14,17 +14,17 @@ export function ProductFeatures({ features, photo, title }: { features: Feature[
   if (!features.length) return null;
   return (
     <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-12 font-product text-black md:px-12 md:pt-[60px] md:pb-[120px]">
-      <div className="mx-auto flex max-w-[1336px] flex-col items-center gap-3 text-center">
+      <div className="flex flex-col items-center gap-3 text-center">
         <h2 id="product-features-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Precision in Every Detail</h2>
         <p data-features-intro className="m-0 text-[14px] leading-[1.6]">Crafted in Delhi, made to order and fully customisable.</p>
       </div>
-      <div className="mx-auto mt-10 grid max-w-[1188px] gap-10 md:mt-[95px] lg:grid-cols-[508px_minmax(0,1fr)] lg:items-center lg:gap-[88px]">
+      <div className="mt-10 grid gap-10 md:mt-[95px] lg:grid-cols-[minmax(0,508px)_minmax(0,900px)] lg:items-center lg:justify-center lg:gap-[88px]">
         <div className="flex flex-col gap-6 lg:gap-10">
           {features.map((feature) => <FeatureCard key={feature.key} feature={feature} />)}
         </div>
         {photo && (
-          <div data-feature-photo className="relative mx-auto aspect-[760/604] w-full max-w-[760px] overflow-hidden rounded-[20px] bg-cream [&_img]:object-cover">
-            <ProductImage src={photo} alt={`${title} — detail view`} fill sizes="(max-width:1023px) 90vw, 560px" />
+          <div data-feature-photo className="relative mx-auto aspect-[760/604] w-full max-w-[900px] overflow-hidden rounded-[20px] bg-cream [&_img]:object-cover">
+            <ProductImage src={photo} alt={`${title} — detail view`} fill sizes="(max-width:1023px) 90vw, min(900px, calc(100vw - 772px))" />
           </div>
         )}
       </div>

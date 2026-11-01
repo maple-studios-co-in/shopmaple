@@ -187,8 +187,8 @@ test("the banner uses Maple's own static photo and the store's promises instead 
   await mount((doc) => {
     const banner = hook(doc, "data-banner")!;
     assert.match(banner.querySelector("img")!.getAttribute("src")!, /^\/product-page\/banner\.jpg/);
-    assert.equal(text(banner.querySelector("h2")), "Crafted in Delhi. Made to order.");
-    assert.equal(text(banner.querySelector("p")), "In our own workshop, and backed by our warranty.");
+    assert.equal(text(banner.querySelector("h2")), "Made for your space.");
+    assert.equal(text(banner.querySelector("p")), "Every Maple piece is made to order in our Delhi workshop, in the finish you choose.");
     assert.equal(banner.querySelector("button, video"), null, "The frame's play button has no video behind it");
   });
 });
@@ -310,20 +310,17 @@ test("the warranty label reads well for short, self-describing and long catalogu
   assert.equal(warrantyLabel({ sourceDetails: null }), "36-month warranty");
 });
 
-test("the ticker can be paused, a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
-  await mount(async (doc) => {
-    const pause = doc.querySelector<HTMLButtonElement>("button[data-ticker-pause]")!;
-    assert.equal(pause.getAttribute("aria-pressed"), "false");
-    await act(async () => pause.click());
-    assert.equal(pause.getAttribute("aria-pressed"), "true");
-    assert.equal(hook(doc, "data-ticker-track")!.getAttribute("style")?.includes("paused"), true);
+test("the ticker shows no pause button (owner), a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
+  await mount((doc) => {
+    assert.equal(doc.querySelector("button[data-ticker-pause]"), null);
+    assert.doesNotMatch(hook(doc, "data-ticker")!.textContent!, /scrolling text/i);
   });
   await mount((doc) => assert.equal(hook(doc, "data-features"), null), { ...product, description: "", sourceDetails: null });
   await mount(async (doc) => {
     const spec = doc.querySelectorAll("[data-feature]")[1]!;
     assert.equal(spec.querySelector("[data-feature-meta]"), null, "Collapsed, the card shows no extras");
     await act(async () => spec.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
-    assert.equal(text(spec.querySelector("[data-feature-meta]")), "SKU: AERO-A · Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
+    assert.equal(text(spec.querySelector("[data-feature-meta]")), "Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
     assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "Product warranty");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
 });
