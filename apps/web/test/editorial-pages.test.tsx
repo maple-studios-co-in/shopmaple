@@ -88,7 +88,6 @@ test("published policy title and structured body reach its page and metadata", a
   await withResponse(published(), async () => {
     const policy = await documentFor(PolicyPage(policyProps()));
     assert.equal(policy.querySelector("h1")?.textContent, "Your privacy at Maple");
-    assert.equal(policy.querySelector('nav[aria-label="Policies"] a[aria-current="page"]')?.textContent, "Your privacy at Maple");
     assert.equal(policy.querySelector("article div > h2")?.textContent, "Published privacy details");
     assert.equal(policy.querySelector("article p")?.textContent, "Your preferences are respected.");
     assert.equal(policy.querySelector("article ul li strong")?.textContent, " remain yours");

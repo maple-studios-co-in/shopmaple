@@ -5,685 +5,351 @@
       "title": "Privacy policy",
       "content": [
         {
-          "tag": "div",
+          "tag": "p",
           "children": [
-            "\n",
+            "Learn how Maple Furnishers collects, protects, and responsibly uses your information."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
                 {
-                  "tag": "div",
+                  "tag": "strong",
                   "children": [
-                    "MAPLE FURNISHERS"
+                    "Privacy Focused"
                   ]
                 },
-                "\n",
                 {
-                  "tag": "h2",
-                  "children": [
-                    "Privacy Policy"
-                  ]
+                  "tag": "br",
+                  "children": []
                 },
-                "\n",
-                {
-                  "tag": "p",
-                  "children": [
-                    "Learn how Maple Furnishers collects, protects, and responsibly uses your information."
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "✦"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Privacy Focused"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Your information is treated with care and responsibility."
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "◎"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Secure Handling"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Industry-standard security practices are followed."
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "◷"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Transparent Policies"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Clear communication about how your data is used."
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n"
+                "Your information is treated with care and responsibility."
               ]
             },
-            "\n",
-            "\n",
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
                 {
-                  "tag": "div",
+                  "tag": "strong",
                   "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Introduction"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Your Privacy Matters"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "At Maple Furnishers, we respect your privacy and are committed to protecting the information you share with us."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "This Privacy Policy explains how we collect, use, and safeguard your personal data when you interact with our website, place an order, or communicate with us."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "By using our website or services, you agree to the practices described below."
-                      ]
-                    },
-                    "\n"
+                    "Secure Handling"
                   ]
                 },
-                "\n",
-                "\n",
                 {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Information Collection"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Information We Collect"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Personal Information"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Name"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Phone number"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Email address"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Shipping and billing address"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Order & Transaction Information"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Product preferences and customisation details"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Payment details"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Order history"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Technical Information"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "IP address"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Browser type and device information"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Website usage data"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
+                  "tag": "br",
+                  "children": []
                 },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Data Usage"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "How We Use Your Information"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Process and fulfil your orders"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Communicate order updates and support"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Improve customer experience"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Send relevant updates and offers"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Information Sharing"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Sharing of Information"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We do not sell or trade your personal information."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Security"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Data Security"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We take reasonable measures to protect your information from misuse or unauthorised access."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Cookies"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Cookies & Tracking"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Our website may use cookies to improve browsing experience and analyse traffic."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Communication"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Customer Communication"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We may contact you via phone calls, SMS, or email regarding orders and updates."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Retention"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Data Retention"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We retain information only for operational, legal, and customer service purposes."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Third-Party Platforms"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Marketplace & Third-Party Policies"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Third-party marketplace purchases may also be governed by their respective privacy policies."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Your Rights"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Access & Preferences"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "You may request access, updates, or communication preferences regarding your information."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Policy Updates"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Updates to This Policy"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We may update this Privacy Policy from time to time. Changes will be reflected on this page."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Contact"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Contact Us"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            {
-                              "tag": "strong",
-                              "children": [
-                                "Maple Furnishers"
-                              ]
-                            }
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "Delhi, India"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "Email: contact@maplefurnishers.com"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "Phone: +91 8796130252"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n"
+                "Industry-standard security practices are followed."
               ]
             },
-            "\n"
+            {
+              "tag": "li",
+              "children": [
+                {
+                  "tag": "strong",
+                  "children": [
+                    "Transparent Policies"
+                  ]
+                },
+                {
+                  "tag": "br",
+                  "children": []
+                },
+                "Clear communication about how your data is used."
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Your Privacy Matters"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "At Maple Furnishers, we respect your privacy and are committed to protecting the information you share with us."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "This Privacy Policy explains how we collect, use, and safeguard your personal data when you interact with our website, place an order, or communicate with us."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "By using our website or services, you agree to the practices described below."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Information We Collect"
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "Personal Information"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Name"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Phone number"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Email address"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Shipping and billing address"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "Order & Transaction Information"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Product preferences and customisation details"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Payment details"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Order history"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "Technical Information"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "IP address"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Browser type and device information"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Website usage data"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "How We Use Your Information"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Process and fulfil your orders"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Communicate order updates and support"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Improve customer experience"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Send relevant updates and offers"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Sharing of Information"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We do not sell or trade your personal information."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Data Security"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We take reasonable measures to protect your information from misuse or unauthorised access."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Cookies & Tracking"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Our website may use cookies to improve browsing experience and analyse traffic."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Customer Communication"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We may contact you via phone calls, SMS, or email regarding orders and updates."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Data Retention"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We retain information only for operational, legal, and customer service purposes."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Marketplace & Third-Party Policies"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Third-party marketplace purchases may also be governed by their respective privacy policies."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Access & Preferences"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "You may request access, updates, or communication preferences regarding your information."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Updates to This Policy"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We may update this Privacy Policy from time to time. Changes will be reflected on this page."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Contact Us"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            {
+              "tag": "strong",
+              "children": [
+                "Maple Furnishers"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Delhi, India"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Email: contact@maplefurnishers.com"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Phone: +91 8796130252"
           ]
         }
       ]
@@ -692,495 +358,280 @@
       "title": "Refund policy",
       "content": [
         {
-          "tag": "div",
+          "tag": "h2",
           "children": [
-            "\n\n  ",
-            "\n  ",
+            "Cancellation, Return & Refund Policy"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Made-to-order furniture, crafted with care. Please review our policy terms below."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n\n    ",
                 {
-                  "tag": "div",
+                  "tag": "strong",
                   "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Maple Furnishers\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Cancellation, Return ",
-                        {
-                          "tag": "br",
-                          "children": []
-                        },
-                        "& Refund Policy\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Made-to-order furniture, crafted with care. Please review our policy terms below.\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    "\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n\n        ",
-                        "\n        ",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            ✦\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Custom Built\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Every Maple piece is manufactured only after order confirmation.\n          "
-                              ]
-                            },
-                            "\n\n        "
-                          ]
-                        },
-                        "\n\n        ",
-                        "\n        ",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            ◎\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Inspection Led\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Claims are reviewed and approved after assessment by Maple Furnishers.\n          "
-                              ]
-                            },
-                            "\n\n        "
-                          ]
-                        },
-                        "\n\n        ",
-                        "\n        ",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            ◷\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Report Quickly\n          "
-                              ]
-                            },
-                            "\n\n          ",
-                            {
-                              "tag": "div",
-                              "children": [
-                                "\n            Issues should be reported within 24–48 hours of delivery.\n          "
-                              ]
-                            },
-                            "\n\n        "
-                          ]
-                        },
-                        "\n\n      "
-                      ]
-                    },
-                    "\n\n    "
+                    "Custom Built "
                   ]
                 },
-                "\n\n  "
+                {
+                  "tag": "br",
+                  "children": []
+                },
+                " Every Maple piece is manufactured only after order confirmation."
               ]
             },
-            "\n\n  ",
-            "\n  ",
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n\n    ",
-                "\n    ",
                 {
-                  "tag": "div",
+                  "tag": "strong",
                   "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 1\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Made-to-Order Policy\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        All Maple Furnishers products are custom-built on order.\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Due to the personalised nature of our furniture, we follow a strict no-return and no-refund policy, except under specific conditions outlined below.\n      "
-                      ]
-                    },
-                    "\n\n    "
+                    "Inspection Led "
                   ]
                 },
-                "\n\n    ",
-                "\n    ",
                 {
-                  "tag": "div",
-                  "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 2\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Cancellation Policy\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Orders can be cancelled only before production begins"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Once production has started, cancellations are not permitted"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Approved cancellations, if any, will be processed after deduction of applicable costs"
-                          ]
-                        },
-                        "\n      "
-                      ]
-                    },
-                    "\n\n    "
-                  ]
+                  "tag": "br",
+                  "children": []
                 },
-                "\n\n    ",
-                "\n    ",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 3\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Eligible Cases for Return / Replacement\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Returns or replacements are accepted only in the following cases:\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Manufacturing defects"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Damage during transit"
-                          ]
-                        },
-                        "\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        No other reasons, including change of mind, aesthetic preference, or minor variation, will be accepted.\n      "
-                      ]
-                    },
-                    "\n\n    "
-                  ]
-                },
-                "\n\n    ",
-                "\n    ",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 4\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Reporting an Issue\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        To raise a concern:\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Notify us within 24–48 hours of delivery"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Share clear photos/videos highlighting the issue"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Include order details for reference"
-                          ]
-                        },
-                        "\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Delayed reporting may result in rejection of the claim.\n      "
-                      ]
-                    },
-                    "\n\n    "
-                  ]
-                },
-                "\n\n    ",
-                "\n    ",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 5\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Assessment & Resolution\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        All claims are subject to inspection and approval by Maple Furnishers.\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        The company reserves the sole right to determine whether a product qualifies as defective.\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Based on evaluation, we may offer:\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Repair   |   Replacement   |   Partial correction\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        Refunds are not standard practice and are issued only in exceptional cases.\n      "
-                      ]
-                    },
-                    "\n\n    "
-                  ]
-                },
-                "\n\n    ",
-                "\n    ",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n\n      ",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n        Section 6\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "\n        Non-Eligible Conditions\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "\n        The following are not considered defects and are not eligible for return or refund:\n      "
-                      ]
-                    },
-                    "\n\n      ",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Natural wood grains, texture, or colour variations"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Minor finish or polish differences"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Fabric tone variations due to lighting or screen differences"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Seasonal expansion or contraction of wood"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Normal wear and tear"
-                          ]
-                        },
-                        "\n        ",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Damage due to misuse, improper handling, or environmental exposure"
-                          ]
-                        },
-                        "\n      "
-                      ]
-                    },
-                    "\n\n    "
-                  ]
-                },
-                "\n\n  "
+                " Claims are reviewed and approved after assessment by Maple Furnishers."
               ]
             },
-            "\n\n"
+            {
+              "tag": "li",
+              "children": [
+                {
+                  "tag": "strong",
+                  "children": [
+                    "Report Quickly "
+                  ]
+                },
+                {
+                  "tag": "br",
+                  "children": []
+                },
+                " Issues should be reported within 24–48 hours of delivery."
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Made-to-Order Policy"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All Maple Furnishers products are custom-built on order."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Due to the personalised nature of our furniture, we follow a strict no-return and no-refund policy, except under specific conditions outlined below."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Cancellation Policy"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Orders can be cancelled only before production begins"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Once production has started, cancellations are not permitted"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Approved cancellations, if any, will be processed after deduction of applicable costs"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Eligible Cases for Return / Replacement"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Returns or replacements are accepted only in the following cases:"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Manufacturing defects"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Damage during transit"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "No other reasons, including change of mind, aesthetic preference, or minor variation, will be accepted."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Reporting an Issue"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "To raise a concern:"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Notify us within 24–48 hours of delivery"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Share clear photos/videos highlighting the issue"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Include order details for reference"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Delayed reporting may result in rejection of the claim."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Assessment & Resolution"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All claims are subject to inspection and approval by Maple Furnishers."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "The company reserves the sole right to determine whether a product qualifies as defective."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Based on evaluation, we may offer:"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Repair | Replacement | Partial correction"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Refunds are not standard practice and are issued only in exceptional cases."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Non-Eligible Conditions"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "The following are not considered defects and are not eligible for return or refund:"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Natural wood grains, texture, or colour variations"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Minor finish or polish differences"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Fabric tone variations due to lighting or screen differences"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Seasonal expansion or contraction of wood"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Normal wear and tear"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Damage due to misuse, improper handling, or environmental exposure"
+              ]
+            }
           ]
         }
       ]
@@ -1189,396 +640,199 @@
       "title": "Shipping",
       "content": [
         {
-          "tag": "div",
+          "tag": "h2",
           "children": [
-            "\n",
+            "Shipping & Delivery Policy"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Made-to-order furniture, crafted with care. Please review our shipping processes and terms below."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Made-to-Order Manufacturing"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All Maple Furnishers products are crafted on order."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Each piece enters production only after order confirmation and payment. This allows us to maintain complete control over quality, materials, and finish."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Delivery Timeline"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "As every product is made-to-order, delivery timelines vary based on: Product type and complexity, level of customisation, and production load."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Note: Timelines shared at the time of purchase are indicative, not guaranteed. We prioritise craftsmanship over speed and we keep you informed through the process."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Shipping Charges"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "Maple Furnishers"
-                  ]
-                },
-                "\n",
-                {
-                  "tag": "h2",
-                  "children": [
-                    "Shipping & Delivery Policy"
-                  ]
-                },
-                "\n",
-                {
-                  "tag": "p",
-                  "children": [
-                    "Made-to-order furniture, crafted with care. Please review our shipping processes and terms below."
-                  ]
-                },
-                "\n"
+                "Shipping is chargeable and not included in product prices"
               ]
             },
-            "\n",
-            "\n",
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 01"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Made-to-Order Manufacturing"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "All Maple Furnishers products are crafted on order."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Each piece enters production only after order confirmation and payment. This allows us to maintain complete control over quality, materials, and finish."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 02"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Delivery Timeline"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "As every product is made-to-order, delivery timelines vary based on: Product type and complexity, level of customisation, and production load."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Note: Timelines shared at the time of purchase are indicative, not guaranteed. We prioritise craftsmanship over speed and we keep you informed through the process."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 03"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Shipping Charges"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Shipping is chargeable and not included in product prices"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Charges are calculated based on product size, weight, and delivery location"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Final shipping cost will be communicated before order confirmation"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 04"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Delivery Process"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Deliveries are handled through trusted logistics partners and in-house coordination where applicable."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "The delivery team will contact you prior to dispatch or delivery. Customers must ensure availability to receive the product at the scheduled time."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 05"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Site Readiness"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Before delivery, please ensure: Clear access paths (doorways, lifts, staircases), adequate space for movement and placement, and necessary permissions for entry, if applicable."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Maple Furnishers is not responsible for delivery delays or additional costs arising due to site constraints."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 06"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Installation Services"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Installation is chargeable and may vary based on product and location"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Availability of installation depends on service coverage"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Installation, where applicable, is scheduled separately from delivery"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 07"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Delays & External Factors"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "While we aim to deliver within committed timelines, delays may occur due to: Logistics disruptions, weather conditions, regional restrictions, and supply chain dependencies."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Such delays do not qualify for cancellation or compensation."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 08"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Delivery Acceptance"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "At the time of delivery, customers are required to: Inspect the product for visible damage or defects, and confirm receipt only after basic verification."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Once the product is accepted, responsibility transfers to the customer. Delayed reporting of issues may result in rejection of claims. Delay claims must be registered within 24-48 hours."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 09"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Multiple Shipments"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "For orders with multiple products, items may be delivered separately, depending on production timelines."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "No guarantee of a single consolidated delivery."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n"
+                "Charges are calculated based on product size, weight, and delivery location"
               ]
             },
-            "\n"
+            {
+              "tag": "li",
+              "children": [
+                "Final shipping cost will be communicated before order confirmation"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Delivery Process"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Deliveries are handled through trusted logistics partners and in-house coordination where applicable."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "The delivery team will contact you prior to dispatch or delivery. Customers must ensure availability to receive the product at the scheduled time."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Site Readiness"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Before delivery, please ensure: Clear access paths (doorways, lifts, staircases), adequate space for movement and placement, and necessary permissions for entry, if applicable."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Maple Furnishers is not responsible for delivery delays or additional costs arising due to site constraints."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Installation Services"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Installation is chargeable and may vary based on product and location"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Availability of installation depends on service coverage"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Installation, where applicable, is scheduled separately from delivery"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Delays & External Factors"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "While we aim to deliver within committed timelines, delays may occur due to: Logistics disruptions, weather conditions, regional restrictions, and supply chain dependencies."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Such delays do not qualify for cancellation or compensation."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Delivery Acceptance"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "At the time of delivery, customers are required to: Inspect the product for visible damage or defects, and confirm receipt only after basic verification."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Once the product is accepted, responsibility transfers to the customer. Delayed reporting of issues may result in rejection of claims. Delay claims must be registered within 24-48 hours."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Multiple Shipments"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "For orders with multiple products, items may be delivered separately, depending on production timelines."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "No guarantee of a single consolidated delivery."
           ]
         }
       ]
@@ -1587,943 +841,519 @@
       "title": "Terms of service",
       "content": [
         {
-          "tag": "div",
+          "tag": "p",
           "children": [
-            "\n",
+            "Please read these Terms & Conditions carefully before accessing, browsing, or placing an order with Maple Furnishers."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Introduction"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "These Terms & Conditions govern your use of the Maple Furnishers website and services. By accessing, browsing, or placing an order, you agree to be bound by these terms."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "“Company”, “we”, “us”, “our” refers to Maple Furnishers"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "“You”, “user”, “customer” refers to any individual accessing or purchasing from the website"
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Nature of Products"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All products offered by Maple Furnishers are made-to-order. Each piece is manufactured specifically after an order is confirmed."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "MAPLE FURNISHERS"
-                  ]
-                },
-                "\n",
-                {
-                  "tag": "h2",
-                  "children": [
-                    "Terms of Service"
-                  ]
-                },
-                "\n",
-                {
-                  "tag": "p",
-                  "children": [
-                    "Please read these Terms & Conditions carefully before accessing, browsing, or placing an order with Maple Furnishers."
-                  ]
-                },
-                "\n"
+                "No two products are identical"
               ]
             },
-            "\n",
-            "\n",
             {
-              "tag": "div",
+              "tag": "li",
               "children": [
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 01"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Introduction"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "These Terms & Conditions govern your use of the Maple Furnishers website and services. By accessing, browsing, or placing an order, you agree to be bound by these terms."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "“Company”, “we”, “us”, “our” refers to Maple Furnishers"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "“You”, “user”, “customer” refers to any individual accessing or purchasing from the website"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 02"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Nature of Products"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "All products offered by Maple Furnishers are made-to-order. Each piece is manufactured specifically after an order is confirmed."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "No two products are identical"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Natural materials such as wood and fabric will exhibit variations in grain, texture, tone, and finish"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "These variations are not defects, but a characteristic of handcrafted furniture"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 03"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Customisation Policy"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We offer full customisation across dimensions, materials, finishes, and fabrics."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Final output may have minor variations from digital renders or reference images"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "All custom specifications are considered final once production begins"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Custom orders cannot be altered after production has started"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 04"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Orders & Payments"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "All orders are confirmed only upon 100% advance payment"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Cash on Delivery (COD) is not available"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Maple Furnishers reserves the right to accept or reject any order at its discretion"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 05"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Cancellation Policy"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Orders can be cancelled only before production begins"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Once production has started, no cancellations will be accepted"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Refunds for eligible cancellations will be processed after deduction of applicable charges (if any)"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 06"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Manufacturing & Delivery"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "All products are manufactured after order confirmation. Delivery timelines vary based on product type, design complexity, and customisation requirements. Any timelines communicated are indicative and not guaranteed."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Shipping Terms"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Shipping charges are additional and will be communicated at the time of order"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Delivery delays may occur due to external factors such as logistics, weather, or operational constraints"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 07"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Installation"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Installation services are chargeable, unless specified otherwise"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Installation availability depends on location and product type"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "The customer is responsible for ensuring site readiness before installation"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 08"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Product Inspection & Acceptance"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "At the time of delivery, you are required to inspect the product for visible damage, structural defects, and finish inconsistencies beyond acceptable standards."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Once the product is delivered and accepted, any damage due to handling, usage, or environmental factors becomes the customer’s responsibility."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 09"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Returns & Replacements"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We follow a strict no-return policy, except in cases of manufacturing defects or transit damage."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "Conditions"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Issue must be reported within 24–48 hours of delivery"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Clear photographic/video evidence must be provided"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Maple Furnishers reserves the sole right to determine validity of the claim"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Resolution may include: Repair, Replacement, or Partial correction."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 10"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Warranty"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We offer a 36-month warranty on our products."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "This warranty covers"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "p",
-                          "children": [
-                            "Manufacturing defects in structure or workmanship"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "div",
-                          "children": [
-                            "This warranty does NOT cover"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "ul",
-                          "children": [
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Natural wear and tear"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Wood movement, grain variation, or seasonal expansion"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Fabric fading, staining, or misuse"
-                              ]
-                            },
-                            "\n",
-                            {
-                              "tag": "li",
-                              "children": [
-                                "Damage due to improper handling, exposure to moisture, heat, or sunlight"
-                              ]
-                            },
-                            "\n"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 11"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Material Disclaimer"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Our products use natural and hand-finished materials."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Wood may expand or contract based on climate conditions"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Fabric colours may appear different under varying lighting conditions"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Minor polish or finish variation is part of handcrafted production"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "These are not considered defects."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 12"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Use of Website"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Misuse the website or attempt unauthorized access"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Copy, reproduce, or distribute content without permission"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Engage in any activity that disrupts the platform"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 13"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Intellectual Property"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "All content on this website — including designs, images, text, and branding — is the property of Maple Furnishers. No part may be used or reproduced without prior written consent."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 14"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Limitation of Liability"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Indirect or consequential damages"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Delays caused by external factors"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Variations inherent to natural materials"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Your use of the website and purchase of products is at your own discretion."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 15"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Third-Party Platforms"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "Maple Furnishers may offer products through third-party platforms (such as marketplaces)."
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "ul",
-                      "children": [
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Platform-specific policies may also apply"
-                          ]
-                        },
-                        "\n",
-                        {
-                          "tag": "li",
-                          "children": [
-                            "Maple’s manufacturing and product standards remain consistent"
-                          ]
-                        },
-                        "\n"
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 16"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Governing Law"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "These terms shall be governed by the laws of India. All disputes shall be subject to the jurisdiction of Delhi."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n",
-                "\n",
-                {
-                  "tag": "div",
-                  "children": [
-                    "\n",
-                    {
-                      "tag": "div",
-                      "children": [
-                        "Section 17"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "h2",
-                      "children": [
-                        "Updates to Terms"
-                      ]
-                    },
-                    "\n",
-                    {
-                      "tag": "p",
-                      "children": [
-                        "We reserve the right to update or modify these Terms at any time. Users are encouraged to review this page periodically."
-                      ]
-                    },
-                    "\n"
-                  ]
-                },
-                "\n"
+                "Natural materials such as wood and fabric will exhibit variations in grain, texture, tone, and finish"
               ]
             },
-            "\n"
+            {
+              "tag": "li",
+              "children": [
+                "These variations are not defects, but a characteristic of handcrafted furniture"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Customisation Policy"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We offer full customisation across dimensions, materials, finishes, and fabrics."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Final output may have minor variations from digital renders or reference images"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "All custom specifications are considered final once production begins"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Custom orders cannot be altered after production has started"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Orders & Payments"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "All orders are confirmed only upon 100% advance payment"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Cash on Delivery (COD) is not available"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Maple Furnishers reserves the right to accept or reject any order at its discretion"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Cancellation Policy"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Orders can be cancelled only before production begins"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Once production has started, no cancellations will be accepted"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Refunds for eligible cancellations will be processed after deduction of applicable charges (if any)"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Manufacturing & Delivery"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All products are manufactured after order confirmation. Delivery timelines vary based on product type, design complexity, and customisation requirements. Any timelines communicated are indicative and not guaranteed."
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "Shipping Terms"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Shipping charges are additional and will be communicated at the time of order"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Delivery delays may occur due to external factors such as logistics, weather, or operational constraints"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Installation"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Installation services are chargeable, unless specified otherwise"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Installation availability depends on location and product type"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "The customer is responsible for ensuring site readiness before installation"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Product Inspection & Acceptance"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "At the time of delivery, you are required to inspect the product for visible damage, structural defects, and finish inconsistencies beyond acceptable standards."
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Once the product is delivered and accepted, any damage due to handling, usage, or environmental factors becomes the customer’s responsibility."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Returns & Replacements"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We follow a strict no-return policy, except in cases of manufacturing defects or transit damage."
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "Conditions"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Issue must be reported within 24–48 hours of delivery"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Clear photographic/video evidence must be provided"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Maple Furnishers reserves the sole right to determine validity of the claim"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Resolution may include: Repair, Replacement, or Partial correction."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Warranty"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We offer a 36-month warranty on our products."
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "This warranty covers"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Manufacturing defects in structure or workmanship"
+          ]
+        },
+        {
+          "tag": "h3",
+          "children": [
+            "This warranty does NOT cover"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Natural wear and tear"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Wood movement, grain variation, or seasonal expansion"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Fabric fading, staining, or misuse"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Damage due to improper handling, exposure to moisture, heat, or sunlight"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Material Disclaimer"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Our products use natural and hand-finished materials."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Wood may expand or contract based on climate conditions"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Fabric colours may appear different under varying lighting conditions"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Minor polish or finish variation is part of handcrafted production"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "These are not considered defects."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Use of Website"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Misuse the website or attempt unauthorized access"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Copy, reproduce, or distribute content without permission"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Engage in any activity that disrupts the platform"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Intellectual Property"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "All content on this website — including designs, images, text, and branding — is the property of Maple Furnishers. No part may be used or reproduced without prior written consent."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Limitation of Liability"
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Indirect or consequential damages"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Delays caused by external factors"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Variations inherent to natural materials"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Your use of the website and purchase of products is at your own discretion."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Third-Party Platforms"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "Maple Furnishers may offer products through third-party platforms (such as marketplaces)."
+          ]
+        },
+        {
+          "tag": "ul",
+          "children": [
+            {
+              "tag": "li",
+              "children": [
+                "Platform-specific policies may also apply"
+              ]
+            },
+            {
+              "tag": "li",
+              "children": [
+                "Maple’s manufacturing and product standards remain consistent"
+              ]
+            }
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Governing Law"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "These terms shall be governed by the laws of India. All disputes shall be subject to the jurisdiction of Delhi."
+          ]
+        },
+        {
+          "tag": "h2",
+          "children": [
+            "Updates to Terms"
+          ]
+        },
+        {
+          "tag": "p",
+          "children": [
+            "We reserve the right to update or modify these Terms at any time. Users are encouraged to review this page periodically."
           ]
         }
       ]
