@@ -1,7 +1,7 @@
 /** Frame 999:252: a rounded full-width photo with a burgundy wash on the left and a headline over it. */
 export function ProductBanner() {
   return (
-    <section data-store data-banner aria-labelledby="product-banner-title" className="mx-auto w-full max-w-[1432px] px-4 md:px-12">
+    <section data-store data-banner aria-labelledby="product-banner-title" className="w-full px-4 md:px-12">
       <div className="relative isolate flex min-h-[420px] items-end overflow-hidden rounded-[24px] bg-maple font-product text-white md:min-h-[751px] md:items-center md:rounded-[40px]">
         {/* eslint-disable-next-line @next/next/no-img-element -- static design photo, sized by the section */}
         <img src="/product-page/banner.jpg" alt="" width={800} height={450} loading="lazy" className="absolute inset-0 -z-20 size-full object-cover" />

@@ -101,7 +101,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         {images.length ? (
           <button
             data-main-image
-            className="relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
+            className="relative block aspect-[4/5] w-full cursor-zoom-in 2xl:aspect-square overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -152,7 +152,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

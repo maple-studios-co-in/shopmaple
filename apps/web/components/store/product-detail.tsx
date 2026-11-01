@@ -37,6 +37,9 @@ const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-w
 const stepper = "grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-[rgba(86,60,73,0.04)] p-0 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-maple";
 const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[14px] leading-[1.6] font-medium text-black no-underline hover:text-maple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple";
 
+/** The lowest-priced finish; the first of equals, so the catalogue's own order breaks ties. */
+const cheapest = <T extends { pricePaise: number | null }>(variants: T[]) => variants.reduce<T | undefined>((best, v) => (best === undefined || v.pricePaise! < best.pricePaise! ? v : best), undefined);
+
 /** A card's text: the captured rich text when it has any; null when the catalogue holds nothing for it. */
 const richCard = (content: ProductRichTextValue | null | undefined): ReactNode => content?.children.length ? <ProductRichText content={content} /> : null;
 const textCard = (value: string | null | undefined): ReactNode => value?.trim() ? value : null;
@@ -70,8 +73,11 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const initial =
     selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
+    // With nothing chosen, open on a finish the shopper can price: the cheapest, preferring one with its own photo, so the
+    // page agrees with the card's "From" price. Otherwise the first finish with a photo, else the first.
+    cheapest(product.variants.filter((v) => v.pricePaise !== null && variantImage(v.id)))?.id ??
+    cheapest(product.variants.filter((v) => v.pricePaise !== null))?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
-    product.variants.find((v) => v.pricePaise !== null)?.id ??
     product.variants[0]?.id ??
     "";
   const [variantId, setVariantId] = useState(initial);
@@ -142,7 +148,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
   if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
   const dimensions = product.sourceDetails?.dimensions?.trim();
-  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
+  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: product.sourceDetails?.warranty?.trim() ? `Warranty: ${product.sourceDetails.warranty.trim()}` : undefined });
   const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
   if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
   const shipping = richCard(product.pdpContent?.shippingReturns);
@@ -151,8 +157,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   return (
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="mx-auto grid max-w-[1432px] gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start lg:gap-[35px]">
-        <div className="min-w-0 lg:sticky lg:top-6">
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
@@ -181,7 +187,6 @@ export function ProductDetail({ product, initialVariant, presentation, children 
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
-                  code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
               <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}

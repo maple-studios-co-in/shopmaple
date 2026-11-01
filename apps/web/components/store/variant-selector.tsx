@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
@@ -12,8 +13,6 @@ export type SelectorVariant = {
   slug?: string;
   image?: string;
   swatch?: string;
-  /** Shown only when two variants share a name, so shoppers can tell them apart. */
-  code?: string;
 };
 
 /**
@@ -36,7 +35,7 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
         {variants.map((variant) => {
           const selected = variant.id === selectedId;
           return (
-            <label key={variant.id}
+            <label key={variant.id} title={variant.name} data-selected={selected}
               className={cx("group/option relative flex cursor-pointer text-meta text-espresso has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-maple",
                 layout === "photo" && "w-[calc((100%-24px)/3)] max-w-[122px] flex-col items-start gap-1.5",
                 layout === "swatch" && "w-[100px] flex-col items-start gap-2 sm:w-[130px]",
@@ -44,13 +43,14 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
               <input type="radio" name="variant" value={variant.id} checked={selected} onChange={() => onSelect(variant.id)} className="sr-only" />
               {layout === "photo" && (
                 <span aria-hidden="true"
-                  className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] bg-cream shadow-[0_0_0_2px_rgb(86_60_73/0.12)] transition-shadow motion-reduce:transition-none [&_img]:object-cover",
-                    selected && "shadow-[0_0_0_2px_#563c49]")}>
+                  className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] bg-cream shadow-[0_0_0_1px_rgb(86_60_73/0.2)] transition-shadow motion-reduce:transition-none [&_img]:object-cover",
+                    selected && "shadow-[0_0_0_3px_#80241c]")}>
                   {variant.image
                     ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="122px" /></span>
                     : variant.swatch
                       ? <span data-variant-swatch className="absolute inset-0" style={{ backgroundColor: variant.swatch }} />
                       : <span data-variant-placeholder className="absolute inset-0 grid place-items-center p-1 text-center text-label">{variant.name}</span>}
+                  {selected && <span data-selected-mark className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-maple text-white"><Check aria-hidden="true" className="size-3" strokeWidth={3} /></span>}
                 </span>
               )}
               {layout === "swatch" && (
@@ -63,7 +63,6 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
                 </span>
               )}
               <span className={cx(layout === "photo" ? "sr-only" : "grid gap-0.5", selected && "font-semibold")}>{variant.name}</span>
-              {variant.code && <small data-variant-code className="text-label font-normal text-taupe">Item code: {variant.code}</small>}
             </label>
           );
         })}

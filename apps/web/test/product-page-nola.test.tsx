@@ -323,7 +323,7 @@ test("the ticker can be paused, a photo without cards shows no feature section, 
     const spec = doc.querySelectorAll("[data-feature]")[1]!;
     assert.equal(spec.querySelector("[data-feature-meta]"), null, "Collapsed, the card shows no extras");
     await act(async () => spec.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
-    assert.equal(text(spec.querySelector("[data-feature-meta]")), "SKU: AERO-A · Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
+    assert.equal(text(spec.querySelector("[data-feature-meta]")), "Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
     assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "Product warranty");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
 });

@@ -72,7 +72,7 @@ test("service query context remains bounded, escaped and rejects array and malfo
   await withResponse(null, async () => {
     const doc = await renderPage("contact", { product: "<script>bad()</script>" + "x".repeat(600), variant: "y".repeat(400), sku: "z".repeat(200), pincode: "1100157" });
     assert.equal(doc.querySelector(".cp-enquiry-context strong")?.textContent?.length, 500);
-    assert.equal(doc.querySelector(".cp-enquiry-context span")?.textContent, "y".repeat(300) + " · SKU: " + "z".repeat(160));
+    assert.equal(doc.querySelector(".cp-enquiry-context span")?.textContent, "y".repeat(300), "The item code is sent with the enquiry but not written on the page");
     assert.equal(doc.querySelector("script"), null);
     assert.doesNotMatch(doc.body.textContent ?? "", /Delivery pincode/);
     for (const pincode of ["000000", "11001", "1100157", ["110015"]]) {
