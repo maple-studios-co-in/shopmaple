@@ -49,12 +49,13 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
   }
 }
 
-test("server rendering shows the poster and the latest film, set to play on its own with no controls", () => {
+test("server rendering shows the poster and the latest film, muted and looping, with no controls", () => {
   const doc = new JSDOM(renderToStaticMarkup(<Hero />)).window.document;
   assert.ok(doc.querySelector(".hero-film img")?.getAttribute("src"), "the poster shows until the film plays");
   const video = doc.querySelector(".hero-film video")!;
   assert.equal(video.getAttribute("src"), film);
-  for (const attribute of ["autoplay", "muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), attribute);
+  for (const attribute of ["muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), attribute);
+  assert.equal(video.hasAttribute("autoplay"), false, "started by script, so reduced motion never sees it move");
   assert.equal(video.getAttribute("aria-hidden"), "true", "the film is decoration");
   assert.equal(doc.querySelectorAll("button").length, 0, "no play or pause control");
 });

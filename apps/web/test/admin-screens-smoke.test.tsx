@@ -18,6 +18,7 @@ const screens: [string, RegExp][] = [
   ["Homepage", /^Homepage$/],
   ["Navigation & footer", /^Navigation & footer$/],
   ["Merchandising", /merchandising/i],
+  ["Product highlights", /^Product highlights$/],
   ["Artwork", /^Artwork$/],
   ["Campaigns", /^Campaigns$/],
   ["Instagram", /^Instagram$/],

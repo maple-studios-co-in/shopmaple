@@ -28,6 +28,15 @@
 /* Storefront design tokens (the "Maple Website review" Figma file). Static, so every token is
    available to the storefront's own CSS as well as to utilities. */
 @theme static {
+  /* Tokens the product page design (Figma) uses, from the redesign sheet. */
+  --color-paper: #f4f2ec;
+  --color-ink: #292d28;
+  --color-ink-soft: #5d605a;
+  --color-rule: #dfded7;
+  --color-forest: #294a34;
+  --font-manrope: "Manrope", sans-serif;
+  --font-redhat: "Red Hat Display", sans-serif;
+
   --color-brand: #741a14;
   --color-brand-deep: #5c140f;
   --color-cream: #f0eae3;
@@ -63,6 +72,11 @@
   --text-title--line-height: 1.2;
   --text-h1: 42px;
   --text-h1--line-height: 1.1;
+  /* Product page section headings (the Figma product page design). */
+  --text-band: 26px;
+  --text-band--line-height: 1.1;
+  --text-display: 40px;
+  --text-display--line-height: 1.1;
 }
 
 /* Admin tokens. The values live on .shop-admin (admin.css); utilities read them inline, so

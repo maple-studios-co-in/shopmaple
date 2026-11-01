@@ -36,6 +36,15 @@ test("an edit reloads only the thumbnails of the sections it changes", () => {
   assert.deepEqual(changed((c) => { c.homeMerchandising = { ...c.homeMerchandising!, chairs: [] }; }), ["chairs"]);
 });
 
+test("product highlights reload the thumbnails of the sections that show product cards", () => {
+  const highlights = { swatches: [{ name: "Deep Atlantic", hex: "#1f4e5f" }], products: [{ handle: "caro", isNew: true, rating: { value: 4.6, count: 12 } }] };
+  assert.deepEqual(changed((c) => { c.productHighlights = highlights; }), ["bestsellers", "chairs"]);
+  const edited = (c: StorefrontContent) => { c.productHighlights = highlights; };
+  const before = base(); edited(before);
+  const after = base(); after.productHighlights = { ...highlights, products: [{ ...highlights.products[0]!, isNew: false }] };
+  assert.deepEqual(homeSectionKeys.filter((key) => sectionSignature(before, key) !== sectionSignature(after, key)), ["bestsellers", "chairs"]);
+});
+
 test("a campaign edit reloads the banners that show that campaign", () => {
   const announcement = (c: StorefrontContent) => { c.campaigns = [...c.campaigns.filter((item) => item.key !== "landing-announcement"), { ...c.campaigns.find((item) => item.key === "landing-dining")!, key: "landing-announcement" }]; };
   assert.deepEqual(changed(announcement), ["announcement"]);

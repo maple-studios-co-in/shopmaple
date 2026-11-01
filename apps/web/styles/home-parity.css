@@ -1,6 +1,6 @@
 /* React recreation of Maple's published homepage, using its public content and media. */
 .home-container {
-  /* Full window width on large screens, with the same 40px gutters (owner, 2026-11-01). */
+  max-width: 1440px;
   padding-inline: 40px;
   margin-inline: auto;
 }
@@ -18,6 +18,7 @@
   margin: 0 0 6px;
 }
 .home-promo {
+  max-width: 1440px;
   margin: 24px auto;
   padding-inline: 40px;
 }
@@ -345,6 +346,7 @@
 }
 .home-testimonial {
   width: calc(100% - 80px);
+  max-width: 1360px;
   padding: clamp(24px, 3vw, 48px);
   margin: 32px auto;
   background: #faf7f2;
@@ -436,6 +438,7 @@
   background: #741a14;
   color: #f5f5f5;
   width: calc(100% - 80px);
+  max-width: 1360px;
   margin: 32px auto;
   border-radius: 24px;
   padding-block: clamp(32px, 4vw, 64px);
@@ -1097,6 +1100,7 @@
 /* The Figma cities reference groups destinations into an inset, rounded rail. */
 .home-cities.home-container {
   width: calc(100% - 80px);
+  max-width: 1360px;
   padding: 42px 36px;
   background: #f0ece6;
   border: 1px solid #e9e2d9;
@@ -1162,9 +1166,15 @@
 .home-scroll-rail {
   cursor: grab;
 }
+.home-scroll-rail a,
 .home-scroll-rail img {
   -webkit-user-drag: none;
   user-select: none;
+}
+/* While dragging, the row follows the pointer; it settles on the nearest card on release. */
+.home-scroll-rail[data-dragging] {
+  scroll-snap-type: none;
+  cursor: grabbing;
 }
 .home-scroll-track {
   position: relative;
@@ -1184,4 +1194,14 @@
   bottom: 0;
   border-radius: 2px;
   background: #741a14;
+}
+
+/* Homepage sections use the full window width on large screens, with the same 40px gutters
+   (owner, 2026-11-01). Other pages that share these classes keep their caps. */
+[data-home-section] > .home-container,
+[data-home-section] > .home-promo,
+[data-home-section] > .home-testimonial,
+[data-home-section] > .home-newsletter,
+[data-home-section] > section > .home-newsletter {
+  max-width: none;
 }

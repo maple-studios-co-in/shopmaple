@@ -34,7 +34,7 @@ test("the hero plays the latest shop film on its own, looping, with no play or p
   const hero = section(await renderHome(), "hero");
   const video = hero.querySelector("video")!;
   assert.equal(video.getAttribute("src"), film);
-  for (const attribute of ["autoplay", "muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), `${attribute} is set`);
+  for (const attribute of ["muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), `${attribute} is set`);
   assert.equal([...hero.querySelectorAll("button")].filter((button) => /play|pause|video|motion/i.test(button.getAttribute("aria-label") ?? button.textContent ?? "")).length, 0, "no video controls");
 });
 

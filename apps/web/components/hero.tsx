@@ -11,8 +11,9 @@ import { defaultHomeDetails } from "@/lib/home-details-defaults";
 export const heroFilm = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
 
 /**
- * The film plays on its own, muted and looping, with no controls (the owner's choice). A shopper
- * whose device asks for reduced motion sees the still poster instead.
+ * The film plays on its own, muted and looping, with no controls (the owner's choice). It is
+ * started by script rather than the autoplay attribute, so a shopper whose device asks for
+ * reduced motion never sees it move and keeps the still poster.
  */
 export function Hero({
   content = defaultHomeDetails.hero,
@@ -45,7 +46,6 @@ export function Hero({
         <video
           ref={video}
           src={heroFilm}
-          autoPlay
           muted
           loop
           playsInline

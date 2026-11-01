@@ -54,7 +54,7 @@ export function Contact({ context, content }: { context: EnquiryContext; content
             title="Maple Furnishers showroom in Kirti Nagar"
             src={`https://maps.google.com/maps?q=${encodeURIComponent(mapAddress)}&z=14&output=embed`}
             loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
+            referrerPolicy="no-referrer"
           />
         </div>
         <ContactForm context={context} />
