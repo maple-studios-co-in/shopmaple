@@ -33,5 +33,5 @@ export default async function PolicyPage({
   const { policies } = resolveEditorialContent(content.editorialContent);
   const policy = policies[slug];
   if (!policy) notFound();
-  return <PolicyArticle policy={policy} />;
+  return <PolicyArticle policy={policy} slug={slug} />;
 }
