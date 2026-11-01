@@ -211,6 +211,9 @@ model CheckoutAttempt {
   failureCode String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  delivery OrderDelivery?
+  reviewInvitations ProductReviewInvitation[]
+  reviews ProductReview[]
   @@unique([cartId, idempotencyKey])
 }
 
@@ -283,6 +286,9 @@ model ShopAdmin {
   contactActivity ContactActivity[] @relation("ContactActivityActor")
   followUpTasks FollowUpTask[] @relation("FollowUpTaskAssignee")
   createdFollowUpTasks FollowUpTask[] @relation("FollowUpTaskCreator")
+  recordedDeliveries OrderDelivery[]
+  moderatedReviews ProductReview[]
+  reviewAudit ProductReviewAudit[]
 }
 model ShopAdminSession {
   id String @id @default(cuid())
@@ -431,4 +437,86 @@ model InstagramFeedPost {
   fetchedAt DateTime
   @@index([postedAt])
   @@index([imageSha256])
+}
+
+/// A confirmed order the buyer has received: recorded by staff today, by Keeri's signed
+/// delivery event later. It carries the one review-invitation email for the order; the body
+/// is rendered at send time from the checkout, so no customer details are copied here.
+model OrderDelivery {
+  attemptId String @id
+  attempt CheckoutAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  deliveredAt DateTime
+  /// staff | keeri
+  source String
+  recordedById String?
+  recordedBy ShopAdmin? @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  emailState String @default("pending")
+  emailAttempts Int @default(0)
+  emailNextAttemptAt DateTime @default(dbgenerated("timezone('UTC'::text, now())"))
+  emailLeaseToken String?
+  emailLeaseExpiresAt DateTime?
+  emailProviderId String?
+  emailFailureCode String?
+  emailSentAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([emailState, emailNextAttemptAt])
+}
+/// One single-use review link per delivered order line. The link is the id plus an HMAC of it,
+/// so it can be rebuilt for a resend without storing anything secret.
+model ProductReviewInvitation {
+  id String @id
+  attemptId String
+  attempt CheckoutAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  /// Local catalogue ids at delivery time; the handle and titles are kept for the form and email.
+  productId String
+  variantId String
+  productHandle String
+  productTitle String
+  variantTitle String
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  review ProductReview?
+  @@unique([attemptId, variantId])
+}
+/// A verified buyer's review of one order line. The store shows it only once approved.
+model ProductReview {
+  id String @id
+  invitationId String @unique
+  invitation ProductReviewInvitation @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  attemptId String
+  attempt CheckoutAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  productId String
+  productHandle String
+  variantId String
+  rating Int
+  title String
+  body String
+  displayName String
+  city String?
+  /// pending | approved | rejected
+  status String @default("pending")
+  version Int @default(0)
+  moderatedById String?
+  moderatedBy ShopAdmin? @relation(fields: [moderatedById], references: [id], onDelete: Restrict)
+  moderatedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  audit ProductReviewAudit[]
+  @@unique([attemptId, variantId])
+  @@index([productId, status, createdAt])
+  @@index([status, createdAt, id])
+}
+/// Every moderation decision, in order; never updated or deleted by the store.
+model ProductReviewAudit {
+  id String @id @default(cuid())
+  reviewId String
+  review ProductReview @relation(fields: [reviewId], references: [id], onDelete: Restrict)
+  actorId String
+  actor ShopAdmin @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  version Int
+  action String
+  note String?
+  createdAt DateTime @default(now())
+  @@unique([reviewId, version])
 }

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./catalogue-registry": "./src/catalogue-registry.ts"
+    "./catalogue-registry": "./src/catalogue-registry.ts",
+    "./reviews": "./src/reviews.ts"
   },
   "dependencies": {
     "zod": "^4.1.12"

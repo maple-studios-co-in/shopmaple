@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Truck } from "lucide-react";
 import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
+import type { ProductReviews as ApprovedReviews } from "@shopmaple/contracts/reviews";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney } from "@/lib/format";
 import { cx } from "@/lib/cx";
@@ -42,8 +43,10 @@ const richCard = (content: ProductRichTextValue | null | undefined): ReactNode =
 const textCard = (value: string | null | undefined): ReactNode => value?.trim() ? value : null;
 
 /** `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. */
-export function ProductDetail({ product, initialVariant, presentation, children }: {
+export function ProductDetail({ product, initialVariant, presentation, reviews, children }: {
   product: Product;
+  /** Approved buyer reviews; null when there are none or they could not be read. */
+  reviews?: ApprovedReviews | null;
   initialVariant?: string;
   presentation?: Presentation;
   children?: ReactNode;
@@ -99,7 +102,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const saved = favourites.includes(product.handle);
   const enquiryHref = enquiryLink(product, variant);
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
-  const rating = highlights.product(product.handle)?.rating;
+  // Only approved buyer reviews rate a product; a staff-typed highlight rating is never shown here.
+  const rating = reviews?.count && reviews.average !== null ? { value: reviews.average, count: reviews.count } : null;
   const isNew = highlights.product(product.handle)?.isNew;
   async function add() {
     if (enquiry || !variant) return false;
@@ -251,7 +255,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
       <ProductFeatures features={features} photo={photo} title={product.title} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
-      <ProductReviews rating={rating} writeHref={enquiryHref} />
+      <ProductReviews reviews={reviews} writeHref="/reviews" />
       {children}
       <ProductFaq />
       <ProductPromises />

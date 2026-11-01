@@ -55,6 +55,7 @@ test("the sidebar groups sections, marks exactly one current section and moves i
     assert.equal(inGroup("Policies & blogs"), "Pages");
     assert.equal(inGroup("Media"), "Library");
     assert.equal(inGroup("Enquiries"), "Customers");
+    assert.equal(inGroup("Reviews"), "Customers");
     assert.equal(inGroup("History"), "Publishing");
     await act(async () => navButton("Campaigns").click());
     assert.deepEqual(current(), ["Campaigns"]);
@@ -71,6 +72,7 @@ test("staff without enquiry access see no Customers group", async () => {
   const app = await setup({ canManageEnquiries: false });
   try {
     assert.equal([...nav().querySelectorAll("button")].some((b) => b.textContent === "Enquiries"), false);
+    assert.equal([...nav().querySelectorAll("button")].some((b) => b.textContent === "Reviews"), false);
     assert.equal(nav().querySelector('[data-nav-group="Customers"]'), null);
   } finally { await app.close(); }
 });

@@ -77,7 +77,7 @@ test("the highlights screen sits with Merchandising, explains itself and starts 
     assert.equal(names.indexOf("Product highlights"), names.indexOf("Merchandising") + 1, "listed right after Merchandising");
     await click("Product highlights");
     assert.equal(panel().querySelector("h2")?.textContent, "Product highlights");
-    assert.match(text(), /Colours, New badges and review ratings shown on the product page and its "More …" row\. Only what you set here is shown\./);
+    assert.match(text(), /Colours and New badges for the product page and its "More …" row, and the rating on product cards\. The product page itself rates a product only from approved buyer reviews \(Reviews screen\)\. Only what you set here is shown\./);
     assert.ok(panel().querySelector('[aria-label="Colours"] [data-empty]'), "colours empty state");
     assert.ok(panel().querySelector('[aria-label="Products"] [data-empty]'), "products empty state");
     assert.equal(button("Save draft").disabled, true, "opening the screen changes nothing");
