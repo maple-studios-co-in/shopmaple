@@ -46,7 +46,15 @@ const card = (key: string) => {
 const thumbnail = (key: string, scope: ParentNode = card(key)) => scope.querySelector<HTMLIFrameElement>("iframe[data-section-thumbnail-frame]");
 const order = () => [...container.querySelectorAll<HTMLElement>("[data-section-card]")].map((node) => node.dataset.sectionCard);
 
-async function setup() {
+/** A draft saved before the editorial and compare sections: neither is in its section list or details. */
+const publishedEarlier = (content: typeof defaultStorefrontContent) => {
+  content.homeSections = content.homeSections.filter((section) => section.key !== "editorial" && section.key !== "compare");
+  delete content.homeDetails!.editorial;
+  delete content.homeDetails!.compare;
+};
+async function setup(edit?: (content: typeof defaultStorefrontContent) => void) {
+  const initial = structuredClone(defaultStorefrontContent);
+  edit?.(initial);
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const calls: { method: string; path: string; body?: any }[] = [];
@@ -66,12 +74,12 @@ async function setup() {
       return Response.json({ token: minted === 1 ? tokenA : tokenB, version, expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() });
     }
     assert.equal(`${method} ${path}`, "GET /api/admin/content", "Unexpected request");
-    return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
+    return Response.json({ version: 4, draft: structuredClone(initial), publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
   };
   await act(async () => root.render(
     <ContentEditor
       session={{ user: { id: "editor", email: "editor@example.test", role: "editor" }, csrfToken: "c".repeat(64) }}
-      initialContent={defaultStorefrontContent}
+      initialContent={initial}
       onExpired={() => assert.fail("Unexpected expiry")}
       livePreviewDebounceMs={30}
     />,
@@ -158,6 +166,31 @@ test("a hidden section comes back from the Add section picker, after the selecte
     assert.equal(keys[keys.indexOf("nimbus") + 1], "values", "placed after the selected section");
     assert.equal(card("values").dataset.hidden, undefined, "and shown");
     assert.equal(card("values").querySelector<HTMLInputElement>('input[aria-label="Show Values"]')?.checked, true);
+  } finally { await app.close(); }
+});
+
+test("sections a document predates are offered by Add section and join the page where chosen", async () => {
+  const app = await setup(publishedEarlier);
+  try {
+    const before = order();
+    assert.equal(before.length, 18);
+    assert.equal(button("Add section").disabled, false, "nothing is hidden, but two sections are new");
+    assert.match(container.textContent ?? "", /18 of 18 visible/);
+    await click("Select Nimbus", card("nimbus"));
+    await click("Add section");
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+    assert.ok(dialog, "the picker opens");
+    assert.deepEqual([...dialog.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["editorial", "compare"]);
+    await until(() => thumbnail("editorial", dialog)?.hasAttribute("src") === true, "the picker thumbnail");
+    assert.match(thumbnail("editorial", dialog)!.getAttribute("src")!, /&section=editorial$/);
+    await click("Add Pull Up A Chair", dialog);
+    const keys = order();
+    assert.equal(keys.length, 19);
+    assert.equal(keys[keys.indexOf("nimbus") + 1], "editorial", "placed after the selected section");
+    assert.deepEqual(keys.filter((key) => key !== "editorial"), before, "the others keep their order");
+    assert.equal(card("editorial").dataset.hidden, undefined, "and shown");
+    await click("Add section");
+    assert.deepEqual([...document.querySelector('[role="dialog"]')!.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["compare"], "only the one left");
   } finally { await app.close(); }
 });
 
