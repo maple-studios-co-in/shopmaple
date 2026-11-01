@@ -69,7 +69,7 @@ test("the heart shows a count badge and opens a left wishlist drawer that lists 
     await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
     assert.ok(drawer().hasAttribute("open"));
     assert.ok(drawer().hasAttribute("data-store"));
-    assert.equal(drawer().querySelector("h2")?.textContent, "My Wishlist (1)");
+    assert.equal(drawer().querySelector("h2")?.textContent, "My wishlist (1)");
     assert.ok(drawer().contains(document.activeElement), "focus moves into the drawer");
     const item = drawer().querySelector("[data-wishlist-item]")!;
     assert.ok(item, "saved product row");
@@ -79,13 +79,13 @@ test("the heart shows a count badge and opens a left wishlist drawer that lists 
     assert.match(item.querySelector("[data-wishlist-item-price]")?.textContent ?? "", /Rs\.|Price on request/);
     const view = drawer().querySelector<HTMLAnchorElement>("a[data-wishlist-view]");
     assert.equal(view?.getAttribute("href"), "/favourites");
-    assert.equal(view?.textContent, "View Wishlist");
+    assert.equal(view?.textContent, "View wishlist →");
     assert.doesNotMatch(drawer().textContent!, /My Lists|Create new list|Saved for later/);
     assert.equal(drawer().querySelector('input[type="checkbox"]'), null);
   });
 });
 
-test("removing the last piece in the drawer shows the empty state and keeps focus on Explore Collections", async () => {
+test("removing the last piece in the drawer shows the empty state and keeps focus on Explore collections", async () => {
   await mount(["alpha"], <Header />, async () => {
     await act(async () => heart().click());
     await waitFor(() => document.querySelector("dialog[data-wishlist-drawer]"));
@@ -94,13 +94,13 @@ test("removing the last piece in the drawer shows the empty state and keeps focu
     remove.focus();
     await act(async () => remove.click());
     assert.equal(localStorage.getItem("maple-favourites"), "[]");
-    assert.equal(drawer().querySelector("h2")?.textContent, "My Wishlist (0)");
+    assert.equal(drawer().querySelector("h2")?.textContent, "My wishlist");
     assert.equal(heart().querySelector("[data-wishlist-count]"), null, "no badge without saved items");
     const empty = drawer().querySelector("[data-wishlist-empty]")!;
-    assert.match(empty.textContent!, /Your wishlist is empty/);
-    assert.match(empty.textContent!, /Browse our collections and add your favourite pieces\./);
+    assert.match(empty.textContent!, /Your next favourite is waiting\./);
+    assert.match(empty.textContent!, /Save the pieces you love and return to them whenever inspiration strikes\./);
     const explore = empty.querySelector<HTMLAnchorElement>('a[href="/collections/all"]')!;
-    assert.equal(explore.textContent, "Explore Collections");
+    assert.equal(explore.textContent, "Explore collections →");
     assert.equal(document.activeElement, explore);
     assert.equal(drawer().querySelector("a[data-wishlist-view]"), null, "nothing to view when empty");
   });
@@ -146,10 +146,10 @@ test("the account icon is a disclosure with only the entries the shop really has
     assert.equal(button.getAttribute("aria-expanded"), "true");
     const menu = document.querySelector<HTMLElement>("[data-account-menu]")!;
     assert.equal(button.getAttribute("aria-controls"), menu.id);
-    assert.equal(menu.querySelector("h2")?.textContent, "Account");
-    assert.match(menu.textContent!, /accounts arrive with online checkout/i);
+    assert.equal(menu.querySelector("h2")?.textContent, "Your account");
+    assert.match(menu.textContent!, /Sign-in arrives with online checkout/i);
     const saved = menu.querySelector<HTMLAnchorElement>('a[href="/favourites"]')!;
-    assert.match(saved.textContent!, /Saved furniture/);
+    assert.match(saved.textContent!, /Wishlist/);
     assert.equal(saved.querySelector("[data-account-saved-count]")?.textContent, "2");
     assert.ok(menu.querySelector('a[href^="/pages/contact"]'), "contact our team");
     assert.ok(menu.querySelector('a[href="/account"]'));
@@ -176,13 +176,13 @@ test("the favourites page shows a heading, a count and the new product cards", a
   await mount(["alpha", "bravo"], <FavouritesPage />, async () => {
     const page = document.querySelector("[data-favourites-page]")!;
     assert.ok(page.hasAttribute("data-store"));
-    assert.equal(page.querySelector("h1")?.textContent, "Saved furniture");
+    assert.equal(page.querySelector("h1")?.textContent, "My wishlist");
     assert.equal(page.querySelector("[data-saved-count]")?.textContent, "2 pieces");
     assert.equal(page.querySelectorAll("[data-saved-grid] [data-product-card]").length, 2);
   });
   await mount([], <FavouritesPage />, async () => {
     assert.equal(document.querySelector("[data-saved-count]")?.textContent, "0 pieces");
-    assert.match(document.querySelector("[data-wishlist-empty]")?.textContent ?? "", /Browse our collections and add your favourite pieces\./);
+    assert.match(document.querySelector("[data-wishlist-empty]")?.textContent ?? "", /Save the pieces you love and return to them whenever inspiration strikes\./);
   });
 });
 
@@ -190,8 +190,8 @@ test("the account page describes what is available today and nothing that does n
   await mount(["alpha"], <AccountOverview />, async () => {
     const page = document.querySelector("[data-account-page]")!;
     assert.ok(page.hasAttribute("data-store"));
-    assert.equal(page.querySelector("h1")?.textContent, "Account");
-    assert.match(page.textContent!, /accounts arrive with online checkout/i);
+    assert.equal(page.querySelector("h1")?.textContent, "Your account");
+    assert.match(page.textContent!, /Sign-in arrives with online checkout/i);
     assert.equal(page.querySelector('a[href="/favourites"] [data-account-saved-count]')?.textContent, "1");
     assert.ok(page.querySelector('a[href="/pages/contact?product=Order%20support"]'));
     assert.ok(page.querySelector('a[href="/pages/contact?product=Account%20support"]'));

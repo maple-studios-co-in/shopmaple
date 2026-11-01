@@ -6,13 +6,16 @@ import dynamic from "next/dynamic";
 import { cx } from "@/lib/cx";
 import { useShop } from "../shop-provider";
 import { primaryButton } from "./wishlist-styles";
-import { HeartIcon } from "./icons";
 import { drawerId } from "./wishlist-drawer";
 
 // The saved-pieces list (with its product cards) loads on demand, keeping cards out of every page's first-load JavaScript.
 const Favourites = dynamic(() => import("./favourites").then((module) => module.Favourites));
 
-/** "My Wishlist": a left-side drawer listing the saved furniture, with a link to the full page. */
+/**
+ * "My wishlist": the "Wishlist empty" / "Wishlist with items" drawer from "Maple / PDF Review". A linen
+ * panel floating 20 px from the top-left corner (16 px under 750 px), 420 px wide while empty and 460 px
+ * with saved pieces, over a 32% black scrim. It scrolls as a whole when the list outgrows the screen.
+ */
 export function WishlistDrawer({
   open,
   onClose,
@@ -55,8 +58,12 @@ export function WishlistDrawer({
       id={drawerId}
       data-store
       data-wishlist-drawer
+      data-wishlist-state={count ? "saved" : "empty"}
       aria-labelledby="wishlist-drawer-title"
-      className="m-0 mr-auto h-dvh max-h-none w-[min(400px,100vw-32px)] max-w-none overscroll-contain border-0 bg-linen p-0 font-body text-espresso shadow-[8px_0_32px_rgb(41_37_31/0.18)] backdrop:bg-espresso/40"
+      className={cx(
+        "m-5 h-fit max-h-[calc(100dvh-40px)] max-w-[calc(100vw-40px)] overflow-y-auto overscroll-contain rounded-xl border-0 bg-linen p-8 font-body text-espresso backdrop:bg-black/32 max-[750px]:m-4 max-[750px]:max-h-[calc(100dvh-32px)] max-[750px]:max-w-[calc(100vw-32px)] max-[750px]:p-6",
+        count ? "w-[460px]" : "w-[420px]",
+      )}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -65,34 +72,36 @@ export function WishlistDrawer({
         if (open) onClose();
       }}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) {
+          const box = event.currentTarget.getBoundingClientRect();
+          const inside = event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+          if (!inside) onClose();
+        }
       }}
     >
-      <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2.5 border-b border-sand bg-white px-5 py-4">
-          <HeartIcon filled className="size-5 shrink-0 text-brand" />
-          <h2 id="wishlist-drawer-title" className="font-serif text-h4 font-bold">
-            My Wishlist <span className="font-body text-ui font-normal text-taupe">({count})</span>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between gap-4">
+          <h2 id="wishlist-drawer-title" className="font-serif text-[24px]/[1.1] font-bold">
+            My wishlist{count ? ` (${count})` : ""}
           </h2>
           <button
             ref={close}
             type="button"
             aria-label="Close wishlist"
             onClick={onClose}
-            className="ml-auto grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-espresso transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
+            className="-my-2 -mr-2.5 grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-espresso transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
           >
-            <X aria-hidden="true" className="size-5" />
+            <X aria-hidden="true" strokeWidth={1.5} className="size-4" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-          {visited && <Favourites variant="drawer" onNavigate={onClose} />}
-        </div>
+        {visited && <Favourites variant="drawer" onNavigate={onClose} />}
         {count > 0 && (
-          <div className="border-t border-sand bg-white p-5">
+          <>
             <Link data-wishlist-view href="/favourites" onClick={onClose} className={cx(primaryButton, "w-full")}>
-              View Wishlist
+              View wishlist →
             </Link>
-          </div>
+            <p className="text-meta text-taupe">Keep all your favourites together.</p>
+          </>
         )}
       </div>
     </dialog>
