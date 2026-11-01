@@ -1,5 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { reviewTokenSchema } from "@shopmaple/contracts";
+import { reviewTokenSchema } from "@shopmaple/contracts/reviews";
 
 /** How long a buyer has to use a review link after delivery. */
 export const reviewLinkLifetimeMs = 90 * 86_400_000;

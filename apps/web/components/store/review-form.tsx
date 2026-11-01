@@ -1,7 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import type { ReviewInvitation } from "@shopmaple/contracts";
+import type { ReviewInvitation } from "@shopmaple/contracts/reviews";
 
 const field = "w-full rounded-[10px] border border-solid border-[#d9d2ca] bg-white px-4 py-3 font-product text-[16px] text-black focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-maple";
 const label = "grid gap-2 text-[14px] font-medium";

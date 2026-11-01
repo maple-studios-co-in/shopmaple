@@ -3,7 +3,7 @@ import { after, afterEach, test } from "node:test";
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
-import { adminReviewListSchema, productReviewsSchema, reviewOrderListSchema } from "@shopmaple/contracts";
+import { adminReviewListSchema, productReviewsSchema, reviewOrderListSchema } from "@shopmaple/contracts/reviews";
 import { createApp } from "../src/app.js";
 import { loadEnquiryDeliveryConfig } from "../src/enquiry-delivery-provider.js";
 import { runReviewInvitationEmails } from "../src/reviews/invitations.js";

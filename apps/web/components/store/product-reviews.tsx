@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ProductReviews as Reviews, PublicReview } from "@shopmaple/contracts";
+import type { ProductReviews as Reviews, PublicReview } from "@shopmaple/contracts/reviews";
 
 const pill = "inline-flex h-11 items-center gap-2 rounded-[30px] bg-white px-6 text-[14px] font-medium text-maple no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 

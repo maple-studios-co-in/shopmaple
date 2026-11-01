@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { MessageSquareQuote, PackageCheck } from "lucide-react";
-import { adminReviewListSchema, adminReviewSchema, reviewOrderListSchema, reviewOrderSchema, type AdminReview, type ReviewOrder } from "@shopmaple/contracts";
+import { adminReviewListSchema, adminReviewSchema, reviewOrderListSchema, reviewOrderSchema, type AdminReview, type ReviewOrder } from "@shopmaple/contracts/reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TabsContent } from "@/components/ui/tabs";

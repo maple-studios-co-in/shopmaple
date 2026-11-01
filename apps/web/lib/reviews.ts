@@ -1,5 +1,5 @@
 import "server-only";
-import { productReviewsSchema, reviewInvitationSchema, type ProductReviews, type ReviewInvitation } from "@shopmaple/contracts";
+import { productReviewsSchema, reviewInvitationSchema, type ProductReviews, type ReviewInvitation } from "@shopmaple/contracts/reviews";
 
 const api = () => process.env.API_URL ?? "http://127.0.0.1:4100";
 

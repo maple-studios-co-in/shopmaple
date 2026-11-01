@@ -3,15 +3,7 @@ import express, { type Express } from "express";
 import { rateLimit } from "express-rate-limit";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import {
-  keeriDeliveryEventSchema,
-  reviewIdSchema,
-  reviewInputSchema,
-  reviewModerationInputSchema,
-  reviewStatuses,
-  type AdminReview,
-  type ReviewOrder,
-} from "@shopmaple/contracts";
+import { keeriDeliveryEventSchema, reviewIdSchema, reviewInputSchema, reviewModerationInputSchema, reviewStatuses, type AdminReview, type ReviewOrder } from "@shopmaple/contracts/reviews";
 import { randomUUID } from "node:crypto";
 import { HttpError } from "../cart.js";
 import type { EnquiryDeliveryConfig } from "../enquiry-delivery-provider.js";

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import React, { act } from "react";
 import { JSDOM } from "jsdom";
-import type { AdminReview, ReviewOrder } from "@shopmaple/contracts";
+import type { AdminReview, ReviewOrder } from "@shopmaple/contracts/reviews";
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import("react-dom/client");
