@@ -70,9 +70,11 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
           items: body.items.map((item: { variantId: string; quantity: number }) => ({
             variantId: item.variantId, productId: "keeri:maple:comp-chair", title: "Composition Chair", variantTitle: "Oak",
             sku: "COMP-CHAIR", quantity: item.quantity, unitPricePaise: 150000, lineTotalPaise: 150000 * item.quantity,
-            hsn: "9401", taxRateBps: 1800,
+            hsn: "9401", taxRateBps: 1800, fulfilment: { kind: "stocked", leadTimeDays: null },
           })),
           subtotalPaise: 0, shippingPaise: 25000, taxPaise: 0, totalPaise: 0,
+          delivery: { source: "carrier", carrierPriced: true, fallbackReason: null,
+            carrier: { provider: "shiprocket", courierId: 51, courierName: "Delhivery Surface", estimatedDays: 6, chargeWeightGrams: 30000 } },
         };
         snapshot.subtotalPaise = snapshot.items.reduce((n: number, i: { lineTotalPaise: number }) => n + i.lineTotalPaise, 0);
         snapshot.taxPaise = Math.round((snapshot.subtotalPaise + snapshot.shippingPaise) * 0.18);

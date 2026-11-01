@@ -60,6 +60,7 @@ export interface ReservationPort {
   ): Promise<boolean>;
 }
 import { OrderFlowError } from "./errors.js";
+import { sellablePolicy } from "./eligibility.js";
 export { OrderFlowError } from "./errors.js";
 import { resolveCatalogueBindings, sameCatalogueBindings, storedCatalogueBindings, revalidateCatalogueBindings } from "./catalogue-bindings.js";
 interface Options {
@@ -77,6 +78,10 @@ interface Options {
   keeriTenantId?: string;
   quoteAuthority?(request: QuoteRequest): Promise<unknown>;
   now?: () => Date;
+}
+/** Stocked carries no lead time; made to order always carries one. */
+function consistentFulfilment(f: QuoteSnapshot["items"][number]["fulfilment"]) {
+  return f !== undefined && (f.kind === "stocked" ? f.leadTimeDays === null : f.leadTimeDays !== null);
 }
 const hash = (input: string) =>
   createHash("sha256").update(input).digest("hex");
@@ -289,7 +294,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
           ({ quantity, variant: v }) =>
             !v.published ||
             !v.product.published ||
-            v.stockPolicy !== "stocked" ||
+            !sellablePolicy(v.stockPolicy) ||
             !Number.isInteger(quantity) ||
             quantity < 1 ||
             quantity > 20,
@@ -370,9 +375,14 @@ export function createOrderService(db: PrismaClient, options: Options) {
       s.totalPaise !==
         s.subtotalPaise +
           s.shippingPaise +
-          (s.gstMode === "excluded" ? s.taxPaise : 0)
+          (s.gstMode === "excluded" ? s.taxPaise : 0) ||
+      s.items.some((i) => !consistentFulfilment(i.fulfilment))
     )
       throw new OrderFlowError("QUOTE_INVALID");
+    // The owner's rule: only a delivery charge Shiprocket priced may be paid. A
+    // policy amount (fallback or otherwise) is refused, never charged.
+    if (s.delivery?.source !== "carrier" || !s.delivery.carrier)
+      throw new OrderFlowError("DELIVERY_UNPRICED");
     for (let retry = 0; ; retry++) {
       try {
         return await transaction(db, async (tx) => {

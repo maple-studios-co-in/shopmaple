@@ -136,8 +136,11 @@ test("status responses carry the public quote, payment key and fulfilment fields
   const snapshot = {
     version: 2, currency: "INR", policyId: "routes", quoteId: "quote_routes", expiresAt: "2026-10-27T10:15:00.000Z", ...input,
     gstMode: "included", items: [{ variantId: "keeri:maple:v", productId: "keeri:maple:p", title: "Routes Chair", variantTitle: "Oak", sku: null,
-      quantity: 1, unitPricePaise: 100000, lineTotalPaise: 100000, hsn: "9401", taxRateBps: 1800 }],
+      quantity: 1, unitPricePaise: 100000, lineTotalPaise: 100000, hsn: "9401", taxRateBps: 1800,
+      fulfilment: { kind: "made_to_order", leadTimeDays: 21 } }],
     subtotalPaise: 100000, shippingPaise: 5000, taxPaise: 16017, totalPaise: 105000,
+    delivery: { source: "carrier", carrierPriced: true, fallbackReason: null,
+      carrier: { provider: "shiprocket", courierId: 7, courierName: "Bluedart", estimatedDays: 4, chargeWeightGrams: 12000 } },
   };
   const attempt = {
     id: attemptId, cartId: "cart", merchantScope: "routes", idempotencyKey: "routes-request-1", receipt: "sm_routes", snapshot,
@@ -149,7 +152,9 @@ test("status responses carry the public quote, payment key and fulfilment fields
   const response = await request(app).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
   assert.equal(response.status, 200);
   assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderReference", "paid", "providerOrderId", "quote", "state"]);
-  assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "expiresAt", "gstMode", "items", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
+  assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "delivery", "expiresAt", "gstMode", "items", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
+  assert.deepEqual(response.body.quote.delivery, { courierName: "Bluedart", estimatedDays: 4 });
+  assert.deepEqual(response.body.quote.items[0].fulfilment, { kind: "made_to_order", leadTimeDays: 21 });
   assert.equal(response.body.orderReference, "SO-42");
-  assert.doesNotMatch(JSON.stringify(response.body), /buyer@example|400001|sm_routes|hold/);
+  assert.doesNotMatch(JSON.stringify(response.body), /buyer@example|400001|sm_routes|hold|chargeWeight|courierId/);
 });

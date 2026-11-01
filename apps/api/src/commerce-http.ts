@@ -41,6 +41,13 @@ function publicAttempt(
       ? {
           quote: {
             items: quote.data.items,
+            // The courier and its estimate only: the carrier's ids and weights stay internal.
+            delivery: quote.data.delivery?.carrier
+              ? {
+                  courierName: quote.data.delivery.carrier.courierName,
+                  estimatedDays: quote.data.delivery.carrier.estimatedDays,
+                }
+              : null,
             currency: quote.data.currency,
             subtotalPaise: quote.data.subtotalPaise,
             shippingPaise: quote.data.shippingPaise,
@@ -181,6 +188,12 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
         409,
         "WEBHOOK_CONFLICT",
         "The webhook could not be accepted.",
+      );
+    if (error.code === "DELIVERY_UNPRICED")
+      return new HttpError(
+        422,
+        "DELIVERY_UNPRICED",
+        "We can't price delivery to this pincode online right now. Send us an enquiry and our team will quote delivery for you. No payment has been taken.",
       );
     if (error.code === "CHECKOUT_IN_PROGRESS")
       return new HttpError(

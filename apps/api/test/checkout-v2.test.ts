@@ -41,6 +41,18 @@ function canonical(x: any): string {
           .join(",")}}`
       : JSON.stringify(x);
 }
+// What Keeri's quote authority sends today: every item states its fulfilment and the
+// delivery line says how it was priced (docs/contracts/shopmaple-quote-v2.json).
+const shiprocketDelivery = {
+  source: "carrier",
+  carrierPriced: true,
+  fallbackReason: null,
+  carrier: { provider: "shiprocket", courierId: 51, courierName: "Delhivery Surface", estimatedDays: 6, chargeWeightGrams: 32000 },
+};
+function resigned(q: any) {
+  q.snapshotSha256 = createHash("sha256").update(canonical(q.snapshot)).digest("hex");
+  return q;
+}
 function quotation(_request: any) {
   const snapshot = {
     version: 2,
@@ -62,12 +74,14 @@ function quotation(_request: any) {
         lineTotalPaise: 20000,
         hsn: "9401",
         taxRateBps: 1800,
+        fulfilment: { kind: "stocked", leadTimeDays: null },
       },
     ],
     subtotalPaise: 20000,
     shippingPaise: 1000,
     taxPaise: 3600,
     totalPaise: 24600,
+    delivery: shiprocketDelivery,
   };
   return {
     version: 2,
@@ -532,4 +546,61 @@ test("quote authority requires an explicit valid tenant configuration", () => {
       gateway: createRazorpayGateway({ keyId: "rzp_test_fixture", keySecret: "fixture", webhookSecret: "fixture" }),
     }), { code: "INVALID_CONFIGURATION" });
   }
+});
+
+test("only a Shiprocket-priced delivery line can be paid; a policy fallback or an unstated one freezes nothing", async () => {
+  const fallback = { source: "policy", carrierPriced: true, fallbackReason: "carrier_unavailable", carrier: null };
+  for (const delivery of [fallback, { ...fallback, fallbackReason: "carrier_unserviceable" }, { source: "policy", carrierPriced: false, fallbackReason: null, carrier: null }, undefined]) {
+    const flow = service(async (r) => {
+      const q = quotation(r);
+      if (delivery) q.snapshot.delivery = delivery as any;
+      else delete (q.snapshot as any).delivery;
+      return resigned(q);
+    });
+    await assert.rejects(freeze(flow), { code: "DELIVERY_UNPRICED" });
+  }
+  assert.equal(await db.checkoutAttempt.count(), 0);
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false },
+    service(async (r) => { const q = quotation(r); q.snapshot.delivery = fallback as any; return resigned(q); }));
+  const response = await request(app)
+    .post("/api/checkout")
+    .set("Origin", "http://localhost:3000")
+    .set("Cookie", `maple_cart=${token}`)
+    .set("Idempotency-Key", "http-unpriced")
+    .send(input);
+  assert.equal(response.status, 422);
+  assert.equal(response.body.code, "DELIVERY_UNPRICED");
+  assert.doesNotMatch(JSON.stringify(response.body), /carrier_unavailable|policy/);
+});
+
+test("a made-to-order piece Keeri sells is quoted with its lead time and the chosen courier is shown for review", async () => {
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { stockPolicy: "made_to_order" } });
+  const flow = service(async (r) => {
+    const q = quotation(r);
+    q.snapshot.items[0]!.fulfilment = { kind: "made_to_order", leadTimeDays: 28 } as any;
+    return resigned(q);
+  });
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, flow);
+  const response = await request(app)
+    .post("/api/checkout")
+    .set("Origin", "http://localhost:3000")
+    .set("Cookie", `maple_cart=${token}`)
+    .set("Idempotency-Key", "http-made-to-order")
+    .send(input);
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.quote.items[0].fulfilment, { kind: "made_to_order", leadTimeDays: 28 });
+  assert.deepEqual(response.body.quote.delivery, { courierName: "Delhivery Surface", estimatedDays: 6 });
+});
+
+test("a quote whose fulfilment contradicts itself or the catalogue cannot freeze", async () => {
+  for (const fulfilment of [
+    { kind: "stocked", leadTimeDays: 10 },
+    { kind: "made_to_order", leadTimeDays: null },
+  ]) {
+    const flow = service(async (r) => { const q = quotation(r); q.snapshot.items[0]!.fulfilment = fulfilment as any; return resigned(q); });
+    await assert.rejects(freeze(flow), { code: "QUOTE_INVALID" });
+  }
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { stockPolicy: "dropship" } });
+  await assert.rejects(freeze(service()), { code: "RESERVATION_NOT_ELIGIBLE" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
 });

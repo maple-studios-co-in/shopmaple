@@ -62,6 +62,38 @@ export const quoteRequestSchema = checkoutInputSchema
       .max(50),
   })
   .strict();
+/** Stocked, or made to order with the lead time Keeri staff approved. */
+export const fulfilmentSchema = z
+  .object({
+    kind: z.enum(["stocked", "made_to_order"]),
+    leadTimeDays: z.number().int().min(1).max(365).nullable(),
+  })
+  .strict();
+const deliverySchema = z
+  .object({
+    source: z.enum(["policy", "carrier"]),
+    carrierPriced: z.boolean(),
+    fallbackReason: z
+      .enum([
+        "shipping_data_missing",
+        "shipment_out_of_bounds",
+        "carrier_not_configured",
+        "carrier_unserviceable",
+        "carrier_unavailable",
+      ])
+      .nullable(),
+    carrier: z
+      .object({
+        provider: z.literal("shiprocket"),
+        courierId: z.number().int().min(0),
+        courierName: text(200),
+        estimatedDays: z.number().int().min(0).max(365).nullable(),
+        chargeWeightGrams: z.number().int().min(0),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
 export const quoteSnapshotSchema = checkoutInputSchema
   .extend({
     version: z.literal(2),
@@ -84,6 +116,8 @@ export const quoteSnapshotSchema = checkoutInputSchema
             lineTotalPaise: money,
             hsn: z.string().regex(/^\d{2,8}$/),
             taxRateBps: z.number().int().min(0).max(10000),
+            // Keeri states it on every new quote; absent only on attempts frozen before it did.
+            fulfilment: fulfilmentSchema.optional(),
           })
           .strict(),
       )
@@ -93,6 +127,8 @@ export const quoteSnapshotSchema = checkoutInputSchema
     shippingPaise: money,
     taxPaise: money,
     totalPaise: money.min(100),
+    /** How Keeri priced `shippingPaise`; absent only on quotes issued before carrier pricing. */
+    delivery: deliverySchema.optional(),
   })
   .strict();
 export const quoteResponseSchema = z
@@ -107,3 +143,4 @@ export const quoteResponseSchema = z
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 export type QuoteSnapshot = z.infer<typeof quoteSnapshotSchema>;
+export type Fulfilment = z.infer<typeof fulfilmentSchema>;
