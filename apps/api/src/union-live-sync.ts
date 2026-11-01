@@ -35,7 +35,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     )
       throw new Error("ISOLATED_DATABASE_APPROVAL_REQUIRED");
   }
-  const request = (includeAttributes: boolean) => fetchKeeriExport({
+  const request = (includeAttributes: boolean, includeCompareAt = false) => fetchKeeriExport({
     endpoint: `${options.origin}/api/storefront/catalogue/v2`,
     trustedOrigin: options.origin,
     token: options.token,
@@ -44,12 +44,18 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     includeTaxonomy: true,
     includeContent: true,
     includeAttributes,
+    includeCompareAt,
     fetch: options.fetch,
   });
-  // Variant options need a Keeri release that offers them; until then the catalogue syncs without them.
-  const snapshot = await request(true).catch((error: unknown) => {
+  // Compare-at prices and variant options need a Keeri release that offers them; until then the
+  // catalogue syncs one level down, so it never freezes.
+  const withoutOptions = (error: unknown) => {
     if (error instanceof KeeriFetchError && error.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
     throw error;
+  };
+  const snapshot = await request(true, true).catch((error: unknown) => {
+    if (error instanceof KeeriFetchError && error.code === "COMPARE_AT_UNSUPPORTED") return request(true).catch(withoutOptions);
+    return withoutOptions(error);
   });
   const age =
     (options.now ?? new Date()).getTime() - Date.parse(snapshot.capturedAt);

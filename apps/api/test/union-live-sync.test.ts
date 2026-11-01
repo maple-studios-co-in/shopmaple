@@ -16,7 +16,7 @@ function options() {
     fetch: async (input: URL | RequestInfo) => {
       assert.equal(
         String(input),
-        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1&attributes=1",
+        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1&attributes=1&compareAt=1",
       );
       return new Response(JSON.stringify(k), {
         headers: { "content-type": "application/json" },
@@ -58,6 +58,19 @@ test("a Keeri that does not offer variant options yet is asked again without the
     return new Response(JSON.stringify(k), { headers: { "content-type": "application/json" } });
   } });
   assert.equal(result.totalProducts, 2);
-  assert.deepEqual(asked.map((url) => new URL(url).search), ["?taxonomy=1&content=1&attributes=1", "?taxonomy=1&content=1"]);
+  assert.deepEqual(asked.map((url) => new URL(url).search), ["?taxonomy=1&content=1&attributes=1&compareAt=1", "?taxonomy=1&content=1&attributes=1", "?taxonomy=1&content=1"]);
   await assert.rejects(pullCatalogueUnion({ ...base, fetch: async () => Response.json({ error: "unauthorized" }, { status: 401 }) }), "other refusals are not retried");
+});
+
+test("a Keeri that offers options but not compare-at prices is asked again with options only", async () => {
+  const asked: string[] = [];
+  const k = v2Fixture();
+  k.publicMedia = [];
+  for (const model of k.models) Object.assign(model, { taxonomy: { category: "Dining", subCategory: null }, content: { details: null, materials: null, dimensions: null, careInstructions: null, warranty: null } });
+  await pullCatalogueUnion({ ...options(), fetch: async (input: URL | RequestInfo) => {
+    asked.push(String(input));
+    if (String(input).includes("compareAt=1")) return Response.json({ error: "query_not_supported" }, { status: 400 });
+    return new Response(JSON.stringify(k), { headers: { "content-type": "application/json" } });
+  } });
+  assert.deepEqual(asked.map((url) => new URL(url).search), ["?taxonomy=1&content=1&attributes=1&compareAt=1", "?taxonomy=1&content=1&attributes=1"]);
 });

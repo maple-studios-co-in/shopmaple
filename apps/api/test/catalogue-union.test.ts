@@ -126,32 +126,32 @@ test("a reused SKU cannot override stable Shopify identifiers missing from the c
   }
 });
 
-test("Keeri raw MRP with unknown tax basis is not presented as a customer price", () => {
+test("a Keeri-only listing shows Keeri's MRP, GST included, as its price", () => {
   const { s, k } = fixtures();
   s.products = [];
   const result = planCatalogueUnion(s, k, "maple");
-  assert.equal(result.products[0]!.variants[0]!.pricePaise, null);
+  assert.equal(result.products[0]!.variants[0]!.pricePaise, 1234567);
 });
 
-test("raw Keeri MRP cannot overwrite verified public prices across repeated sync plans", () => {
+test("Keeri's MRP replaces the Shopify price on every sync, and outlives Shopify's price list", () => {
   const { k } = fixtures();
   const s = shopifyPricedFixture();
   const first = planCatalogueUnion(s, k, "maple");
-  assert.equal(first.products[0]!.variants[0]!.pricePaise, 12345);
-  assert.equal(first.products[0]!.variants[0]!.compareAtPaise, 15000);
+  assert.equal(first.products[0]!.variants[0]!.pricePaise, 1234567);
+  assert.equal(first.products[0]!.variants[0]!.compareAtPaise, null, "Shopify's compare-at is not struck against a Keeri price");
   const repeated = planCatalogueUnion(s, k, "maple", {
     products: first.products,
     productBindings: first.productBindings,
     variantBindings: first.variantBindings,
   });
-  assert.equal(repeated.products[0]!.variants[0]!.pricePaise, 12345);
+  assert.equal(repeated.products[0]!.variants[0]!.pricePaise, 1234567);
   s.publicPrices.products = [];
   const revoked = planCatalogueUnion(s, k, "maple", {
     products: repeated.products,
     productBindings: repeated.productBindings,
     variantBindings: repeated.variantBindings,
   });
-  assert.equal(revoked.products[0]!.variants[0]!.pricePaise, null);
+  assert.equal(revoked.products[0]!.variants[0]!.pricePaise, 1234567);
 });
 
 test("exactly mapped products retain Shopify copy and leading photos while appending approved Keeri photos", () => {
@@ -165,7 +165,7 @@ test("exactly mapped products retain Shopify copy and leading photos while appen
   assert.equal(p.id, "preview-101");
   assert.equal(p.handle, "real-chair");
   assert.deepEqual(p.variants.map(v => [v.id, v.pricePaise, v.compareAtPaise, v.available, v.stockPolicy]),
-    [["preview-201", 12345, 15000, false, "stocked"]]);
+    [["preview-201", 1234567, null, false, "stocked"]]);
   assert.deepEqual(plan.variantBindings, [
     { source: "shopify", externalId: "preview-201", targetId: "preview-201" },
     { source: "keeri:maple", externalId: "keeri:maple:variant1", targetId: "preview-201" },
@@ -186,7 +186,7 @@ test("empty Shopify copy remains unchanged while current approved Keeri photos f
   assert.deepEqual(next.products[0]!.images, ["https://cdn.shopify.com/s/files/1/keeri.jpg"]);
 });
 
-test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct and unpriced", () => {
+test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct, each at Keeri's MRP", () => {
   const { k } = fixtures();
   const extra = structuredClone(k.models[0]!.variants[0]!);
   extra.id = "variant2";
@@ -195,8 +195,8 @@ test("mapped variant labels preserve Shopify copy while unmatched same-name vari
   k.models[0]!.variants.push(extra);
   const plan = planCatalogueUnion(shopifyPricedFixture(), k, "maple");
   assert.deepEqual(plan.products[0]!.variants.map(v => [v.id, v.title, v.sku, v.pricePaise, v.available]), [
-    ["preview-201", "Oak", "CHAIR-OAK", 12345, false],
-    ["keeri:maple:variant2", "Oak", "UNMATCHED-OAK", null, false],
+    ["preview-201", "Oak", "CHAIR-OAK", 1234567, false],
+    ["keeri:maple:variant2", "Oak", "UNMATCHED-OAK", 1234567, false],
   ]);
 });
 
@@ -211,7 +211,7 @@ test("Keeri-only products retain their current display copy and approved photos"
   assert.equal(p.description, "Solid wood chair");
   assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/keeri.jpg"]);
   assert.equal(p.variants[0]!.title, "Linen / Walnut");
-  assert.equal(p.variants[0]!.pricePaise, null);
+  assert.equal(p.variants[0]!.pricePaise, 1234567);
   assert.equal(p.variants[0]!.available, false);
 });
 

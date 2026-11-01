@@ -152,6 +152,8 @@ export function planCatalogueUnion(
   for (const c of candidates)
     if (c.target) claims.set(c.target, (claims.get(c.target) ?? 0) + 1);
   let mergedModels = 0;
+  let keeriPricedVariants = 0;
+  let priceChangedFromShopify = 0;
   let ambiguousModels = 0;
   for (const c of candidates) {
     const ambiguous =
@@ -176,14 +178,18 @@ export function planCatalogueUnion(
         title: before?.title ?? v.title,
         // A merged listing filters Keeri photos to approved hosts rather than failing, as its gallery does.
         images: base ? (v.images ?? []).filter(approvedCatalogueImage) : v.images,
-        // V2 MRP has no reliable tax/market basis. Keep it in Keeri, never label it a buyer price.
-        pricePaise: before?.pricePaise ?? null,
-        compareAtPaise: before?.compareAtPaise ?? null,
-        // Purchasable only when Keeri sells it AND the shown price is exactly the
-        // MRP its quote will charge; a Keeri-only listing has no shown price.
-        available: v.available && before?.pricePaise != null && before.pricePaise === v.pricePaise,
+        // The owner's rule (1 Nov 2026): the store shows Keeri's MRP, GST included, which is
+        // what its quote charges, with Keeri's compare-at. Shopify's price shows only where
+        // Keeri has no MRP, and such a variant is never purchasable.
+        pricePaise: v.pricePaise ?? before?.pricePaise ?? null,
+        compareAtPaise: v.pricePaise != null ? (v.compareAtPaise ?? null) : (before?.compareAtPaise ?? null),
+        available: v.available && v.pricePaise != null,
         leadTimeDays: v.leadTimeDays ?? null,
       });
+      if (v.pricePaise != null) {
+        keeriPricedVariants++;
+        if (before?.pricePaise != null && before.pricePaise !== v.pricePaise) priceChangedFromShopify++;
+      }
       variantBindings.push({ source, externalId: v.id, targetId: variantId });
     }
     const product = productSchema.parse({
@@ -236,6 +242,8 @@ export function planCatalogueUnion(
       keeriProducts: keeri.products.length,
       mergedModels,
       ambiguousModels,
+      keeriPricedVariants,
+      priceChangedFromShopify,
       totalProducts: result.length,
       totalVariants: variantIds.size,
     },

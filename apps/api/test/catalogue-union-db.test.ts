@@ -135,30 +135,26 @@ test("complete Keeri snapshot revokes former price and approved images instead o
   );
 });
 
-test("scheduled refresh persists verified public prices and never restores raw MRP", async () => {
+test("scheduled refresh persists Keeri's MRP, falls back to Shopify's price only where Keeri has none", async () => {
   const { k } = fixtures();
   const s = shopifyPricedFixture();
+  const price = async () => {
+    const v = await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } });
+    return [v.pricePaise, v.compareAtPaise];
+  };
   await syncCatalogueUnion(db, s, k, "maple");
-  assert.equal(
-    (await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } }))
-      .pricePaise,
-    12345,
-  );
+  assert.deepEqual(await price(), [1234567, null]);
   k.capturedAt = "2026-10-25T11:00:00Z";
   await syncCatalogueUnion(db, s, k, "maple");
-  assert.equal(
-    (await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } }))
-      .pricePaise,
-    12345,
-  );
-  s.publicPrices.products = [];
+  assert.deepEqual(await price(), [1234567, null]);
+  k.models[0]!.variants[0]!.prices = [];
   k.capturedAt = "2026-10-25T12:00:00Z";
   await syncCatalogueUnion(db, s, k, "maple");
-  const unknown = await db.variant.findUniqueOrThrow({
-    where: { id: "preview-201" },
-  });
-  assert.equal(unknown.pricePaise, null);
-  assert.equal(unknown.compareAtPaise, null);
+  assert.deepEqual(await price(), [12345, 15000]);
+  s.publicPrices.products = [];
+  k.capturedAt = "2026-10-25T13:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.deepEqual(await price(), [null, null]);
 });
 
 test("newer union refresh restores Shopify presentation without moving cart or source identities", async () => {
@@ -181,7 +177,7 @@ test("newer union refresh restores Shopify presentation without moving cart or s
   assert.equal(p.description, "Actual description");
   assert.deepEqual(p.images, ["https://cdn.shopify.com/s/files/1/chair.jpg", "https://cdn.shopify.com/s/files/1/keeri.jpg"]);
   assert.equal(p.handle, "real-chair");
-  assert.deepEqual(p.variants.map(v => [v.id, v.title, v.pricePaise, v.available]), [["preview-201", "Oak", 12345, false]]);
+  assert.deepEqual(p.variants.map(v => [v.id, v.title, v.pricePaise, v.available]), [["preview-201", "Oak", 1234567, false]]);
   assert.deepEqual((await db.cartItem.findMany({ where: { cartId: cart.id } })).map(i => [i.variantId, i.quantity]), [["preview-201", 2]]);
   assert.equal(await db.productSourceIdentity.count({ where: { productId: "preview-101" } }), 2);
   assert.equal(await db.variantSourceIdentity.count({ where: { variantId: "preview-201" } }), 2);
