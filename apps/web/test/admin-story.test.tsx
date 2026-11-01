@@ -49,7 +49,7 @@ test("staff edit the existing Our Story template and save a typed unpublished dr
       initialContent={defaultStorefrontContent} onExpired={() => assert.fail("Unexpected expiry")} />));
     await act(async () => button("Existing pages").click());
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Our Story page title"]')?.value, "Our Story");
-    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Our Story hero heading"]')?.value, "MADE DIFFERENT,\nBY DESIGN");
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Our Story hero heading"]')?.value, "Made different,\nby design.");
     await fill("Our Story page title", "Our story, revisited");
     await fill("Our Story hero heading", "Our workshop\nYour home");
     await fill("Our Story belief body", "<img src=x onerror=alert(1)> Built with care.");
