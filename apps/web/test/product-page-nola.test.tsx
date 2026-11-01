@@ -10,6 +10,8 @@ import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
 import { RelatedProducts } from "../components/store/related-products";
+import { otherPieces } from "../lib/product-related";
+import { warrantyLabel } from "../components/store/product-assurances";
 
 // "1440w light" (Figma nTEPXzov9IuWraGF0Ace6V, node 999:3): the product page the owner chose.
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3028/products/aero-dining-chair" });
@@ -120,7 +122,7 @@ test("purchase row: quantity, Add to cart and a second action that follows wheth
 
 test("assurances state only what the store's policies support", async () => {
   await mount((doc) => {
-    assert.deepEqual([...doc.querySelectorAll("[data-assurances] li")].map(text), ["Delivery across India", "Defect and damage cover", "36-month warranty"]);
+    assert.deepEqual([...doc.querySelectorAll("[data-assurances] li")].map(text), ["Delivery across India", "Defects and transit damage", "36-month warranty"]);
   });
   await mount((doc) => {
     assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "One year warranty", "The product's own warranty replaces the store-wide one");
@@ -130,6 +132,7 @@ test("assurances state only what the store's policies support", async () => {
 
 test("Ask a question opens an enquiry about the piece, and Share stays a real control", async () => {
   await mount((doc) => {
+    assert.equal(text(hook(doc, "data-shipping-note")), "Shipping is charged separately and quoted before you confirm your order.");
     const ask = doc.querySelector<HTMLAnchorElement>("a[data-ask]")!;
     assert.equal(text(ask), "Ask a question");
     assert.match(ask.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
@@ -145,7 +148,6 @@ test("the gallery keeps its thumbnails, status and previous / next controls at e
     const controls = gallery.querySelector("[data-gallery-controls]")!;
     assert.ok(controls.querySelector('button[aria-label="Previous product image"]'));
     assert.ok(controls.querySelector('button[aria-label="Next product image"]'));
-    assert.doesNotMatch(controls.className, /lg:hidden/, "The frame shows the arrows beside the large photo on desktop");
   });
 });
 
@@ -186,7 +188,7 @@ test("the banner uses Maple's own static photo and the store's promises instead 
     const banner = hook(doc, "data-banner")!;
     assert.match(banner.querySelector("img")!.getAttribute("src")!, /^\/product-page\/banner\.jpg/);
     assert.equal(text(banner.querySelector("h2")), "Crafted in Delhi. Made to order.");
-    assert.equal(text(banner.querySelector("p")), "In our own workshop, with a 36-month warranty on every piece.");
+    assert.equal(text(banner.querySelector("p")), "In our own workshop, and backed by our warranty.");
     assert.equal(banner.querySelector("button, video"), null, "The frame's play button has no video behind it");
   });
 });
@@ -242,7 +244,7 @@ test("the FAQ answers from the store's published policies and opens one question
 test("the promise row keeps to promises the store can keep", async () => {
   await mount((doc) => {
     const row = hook(doc, "data-promises")!;
-    assert.deepEqual([...row.querySelectorAll("li")].map((item) => text(item.querySelector("strong"))), ["Delivery across India", "Defect and damage cover", "Customer service"]);
+    assert.deepEqual([...row.querySelectorAll("li")].map((item) => text(item.querySelector("strong"))), ["Delivery across India", "Defects and transit damage", "Customer service"]);
     assert.match(text(row)!, /Report within 24–48 hours of delivery/);
     assert.doesNotMatch(text(row)!, /secure checkout|free shipping|hassle/i);
   });
@@ -285,9 +287,43 @@ test("sections follow the frame's order, and the visible breadcrumb is gone", as
   });
 });
 
-test("related pieces sit under the frame's own heading and keep to the product's category", () => {
+test("related pieces sit under the frame's own heading", () => {
   const card = toProductCard({ ...product, id: "beno", handle: "beno", title: "Beno" });
   const html = new JSDOM(renderToStaticMarkup(<ShopProvider><RelatedProducts products={[card]} /></ShopProvider>)).window.document;
   assert.equal(html.querySelector("[data-related] h2")?.textContent, "You may also like");
   assert.equal(html.querySelectorAll("[data-related] [data-product-card]").length, 1);
+});
+
+test("the related row holds other pieces only, in order, at most four", () => {
+  const cards = ["a", "own", "b", "c", "d", "e"].map((id) => ({ id }));
+  assert.deepEqual(otherPieces(cards, { id: "own" }).map((card) => card.id), ["a", "b", "c", "d"]);
+  assert.deepEqual(otherPieces(cards.slice(0, 2), { id: "own" }).map((card) => card.id), ["a"]);
+});
+
+test("the warranty label reads well for short, self-describing and long catalogue text, and falls back to the store's 36 months", () => {
+  const label = (warranty: string | null) => warrantyLabel({ sourceDetails: { details: null, materials: null, dimensions: null, careInstructions: null, warranty } });
+  assert.equal(label("36 Months"), "36 Months warranty");
+  assert.equal(label("1 year warranty"), "1 year warranty");
+  assert.equal(label("Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use."), "Product warranty");
+  assert.equal(label("  "), "36-month warranty");
+  assert.equal(label(null), "36-month warranty");
+  assert.equal(warrantyLabel({ sourceDetails: null }), "36-month warranty");
+});
+
+test("the ticker can be paused, a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
+  await mount(async (doc) => {
+    const pause = doc.querySelector<HTMLButtonElement>("button[data-ticker-pause]")!;
+    assert.equal(pause.getAttribute("aria-pressed"), "false");
+    await act(async () => pause.click());
+    assert.equal(pause.getAttribute("aria-pressed"), "true");
+    assert.equal(hook(doc, "data-ticker-track")!.getAttribute("style")?.includes("paused"), true);
+  });
+  await mount((doc) => assert.equal(hook(doc, "data-features"), null), { ...product, description: "", sourceDetails: null });
+  await mount(async (doc) => {
+    const spec = doc.querySelectorAll("[data-feature]")[1]!;
+    assert.equal(spec.querySelector("[data-feature-meta]"), null, "Collapsed, the card shows no extras");
+    await act(async () => spec.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
+    assert.equal(text(spec.querySelector("[data-feature-meta]")), "SKU: AERO-A · Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
+    assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "Product warranty");
+  }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
 });

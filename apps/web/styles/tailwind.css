@@ -21,6 +21,37 @@
 @source "../app/admin";
 @source "../lib/preview-request.tsx";
 
+/* Frame 999:3 sets its text in Medium and SemiBold; the storefront's Manrope has only 400 and 700. The product page uses this
+   copy of the same typeface, so no other page's text changes weight. */
+@font-face {
+  font-family: "Manrope Product";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Manrope Product";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Manrope Product";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Manrope Product";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-700-normal.woff2") format("woff2");
+}
+
 /* Light only. shadcn's components carry dark: classes; tie them to a .dark class nothing sets,
    so they never follow the visitor's OS colour scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -79,6 +110,7 @@
   --text-display--line-height: 1.1;
   /* Frame 999:3 ("1440w light"): its burgundy is a shade lighter than the brand's, and its ticker scrolls. */
   --color-maple: #80241c;
+  --font-product: "Manrope Product", "Manrope", sans-serif;
   --animate-pdp-ticker: pdp-ticker 48s linear infinite;
   @keyframes pdp-ticker {
     to { transform: translateX(-50%); }

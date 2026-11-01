@@ -210,7 +210,7 @@ test("product variants update price, gallery and enquiry while delivery stays an
       assert.equal(document.querySelector("#delivery-pincode"), null, "the page offers no postcode field that could promise an availability lookup");
       assert.doesNotMatch(
         document.querySelector("[data-product-info]")!.textContent!,
-        /Taxes included|36 Month|Delivery Across India/,
+        /Taxes included/,
       );
       const option =
         document.querySelector<HTMLInputElement>('input[value="red"]')!;

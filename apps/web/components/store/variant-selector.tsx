@@ -31,7 +31,7 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
   const chosen = variants.find((variant) => variant.id === selectedId);
   return (
     <fieldset data-variants={layout} className="m-0 min-w-0 border-0 p-0">
-      <legend className="mb-4 p-0 text-[14px] leading-[1.6] text-black">Finish: <span className="font-semibold">{chosen?.name}</span></legend>
+      <legend className="mb-4 max-w-[calc(100%-10rem)] p-0 text-[14px] leading-[1.6] text-black">Finish: <span className="font-semibold">{chosen?.name}</span></legend>
       <div className={cx("flex flex-wrap", layout === "photo" ? "gap-3" : "gap-x-3 gap-y-4")}>
         {variants.map((variant) => {
           const selected = variant.id === selectedId;

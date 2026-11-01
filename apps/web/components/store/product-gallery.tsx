@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
-import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
-const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 720px, calc((100vw - 200px) * 0.62)";
+const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 720px, calc(100vw - 712px)";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
@@ -81,7 +81,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   return (
     <div
       data-gallery
-      className="flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4 lg:grid lg:grid-cols-[114px_minmax(0,1fr)] lg:items-start lg:gap-3"
+      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[114px_minmax(0,1fr)] lg:items-start lg:gap-3")}
       role="group"
       aria-label="Product images"
       tabIndex={images.length > 1 ? 0 : undefined}
@@ -97,7 +97,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className="relative overflow-hidden rounded-[20px] bg-cream lg:rounded-[30px]">
+      <div className={cx("relative overflow-hidden rounded-[20px] bg-cream lg:rounded-[30px]", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
@@ -181,7 +181,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
           </div>
         )}
       </div>
-      <div data-thumbnails ref={strip} className={cx("flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 lg:order-first lg:h-0 lg:min-h-full lg:flex-col lg:self-stretch lg:overflow-x-hidden lg:overflow-y-auto lg:gap-4", images.length < 2 && "hidden")}>
+      <div data-thumbnails ref={strip} className={cx("flex gap-3 overflow-x-auto [scrollbar-width:none] sm:gap-4 lg:order-first lg:col-start-1 lg:h-0 lg:min-h-full lg:flex-col lg:self-stretch lg:overflow-x-hidden lg:overflow-y-auto lg:gap-4", images.length < 2 && "hidden")}>
         {images.map((image, i) => (
           <button key={image} data-index={i} onClick={() => onSelect(i)} aria-label={"Show product image " + (i + 1)} aria-pressed={selected === i}
             className="relative aspect-[4/5] shrink-0 basis-[calc((100%-36px)/4)] cursor-pointer overflow-hidden rounded-[15px] border-0 bg-cream p-0 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] aria-pressed:after:shadow-[inset_0_0_0_2px_#563c49] lg:basis-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand sm:basis-[calc((100%-48px)/4)] [&_img]:size-full [&_img]:object-cover">

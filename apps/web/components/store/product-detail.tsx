@@ -142,14 +142,14 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
   if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
   const dimensions = product.sourceDetails?.dimensions?.trim();
-  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: variant?.sku ? `SKU: ${variant.sku}` : undefined });
+  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
   const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
   if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
   const shipping = richCard(product.pdpContent?.shippingReturns);
   if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping });
   const warranty = warrantyLabel(product);
   return (
-    <div data-store data-product-page className="bg-white font-manrope text-black">
+    <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
       <section aria-label={product.title} className="mx-auto grid max-w-[1432px] gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start lg:gap-[35px]">
         <div className="min-w-0 lg:sticky lg:top-6">
@@ -234,6 +234,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
               <img src="/product-page/shield-a.svg" alt="" width={15} height={15} className="size-[18px]" />{warranty}
             </li>
           </ul>
+          <p data-shipping-note className="m-0 -mt-2 text-[12px] leading-[1.5] text-[#5e574f]">Shipping is charged separately and quoted before you confirm your order.</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <Link data-ask href={enquiryHref} className={iconLink}>
               {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}

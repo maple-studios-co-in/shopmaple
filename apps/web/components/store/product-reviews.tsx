@@ -10,7 +10,7 @@ const pill = "inline-flex h-11 items-center gap-2 rounded-[30px] bg-white px-6 t
 export function ProductReviews({ rating, writeHref }: { rating: { value: number; count: number } | null | undefined; writeHref: string }) {
   const filled = rating ? Math.round(rating.value) : 0;
   return (
-    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-manrope text-white md:px-[93px] md:py-[91px]">
+    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-product text-white md:px-[93px] md:py-[91px]">
       <div className="mx-auto flex max-w-[1246px] flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col items-start gap-6">
           <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.2] font-medium md:text-[48px]">Hear From Them</h2>

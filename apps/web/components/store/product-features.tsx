@@ -11,9 +11,9 @@ export type Feature = { key: string; title: string; icon: string; body: ReactNod
  * frame's placeholder copy, and a card with no text behind it is not shown.
  */
 export function ProductFeatures({ features, photo, title }: { features: Feature[]; photo?: string; title: string }) {
-  if (!features.length && !photo) return null;
+  if (!features.length) return null;
   return (
-    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-12 font-manrope text-black md:px-12 md:pt-[60px] md:pb-[120px]">
+    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-12 font-product text-black md:px-12 md:pt-[60px] md:pb-[120px]">
       <div className="mx-auto flex max-w-[1336px] flex-col items-center gap-3 text-center">
         <h2 id="product-features-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Precision in Every Detail</h2>
         <p data-features-intro className="m-0 text-[14px] leading-[1.6]">Crafted in Delhi, made to order and fully customisable.</p>
@@ -40,7 +40,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
       <div className="flex items-start justify-between">
         {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
         <img src={`/product-page/${feature.icon}.svg`} alt="" width={26} height={24} className="h-6 w-auto" />
-        <button type="button" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? "Collapse" : "Expand"} ${feature.title}`} onClick={() => setOpen((value) => !value)}
+        <button type="button" aria-expanded={open} aria-controls={bodyId} aria-label={feature.title} onClick={() => setOpen((value) => !value)}
           className="relative grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-maple p-0 before:absolute before:h-px before:w-2 before:bg-white after:absolute after:h-2 after:w-px after:bg-white data-[open=true]:after:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple"
           data-open={open} />
       </div>
