@@ -119,7 +119,16 @@ export async function CampaignBanner({
           <div className="campaign-bottom-shade" aria-hidden="true" />
         )}
         <div className="campaign-copy">
-          {layout === "strip" && <span className="campaign-ornament" data-campaign-ornament aria-hidden="true" />}
+          {layout === "strip" && (
+            <span className="campaign-ornament" data-campaign-ornament aria-hidden="true">
+              <i />
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => <ellipse key={angle} cx="12" cy="5.4" rx="2" ry="4.4" transform={`rotate(${angle} 12 12)`} />)}
+                <circle cx="12" cy="12" r="1.7" fill="#fff" />
+              </svg>
+              <i />
+            </span>
+          )}
           {data.label && <p className="campaign-label">{data.label}</p>}
           <h2>
             {data.headline.map((line) => (
