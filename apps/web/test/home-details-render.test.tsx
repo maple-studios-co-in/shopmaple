@@ -106,7 +106,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.equal(doc.querySelector(".home-project strong")?.textContent, "two working days");
   assert.equal(doc.querySelector("[data-card-price]")?.textContent, "Rs. 23,600.00");
   assert.ok(requests.every(({ method }) => method === "GET"), "Rendering marketing prices must never write catalogue, stock, order or checkout data");
-  assert.ok(requests.every(({ url }) => /\/api\/(content\/storefront|products\/[^/]+)$/.test(url)));
+  assert.ok(requests.every(({ url }) => /\/api\/(content\/storefront|instagram\/feed|products\/[^/]+)$/.test(url)));
 });
 
 test("published detail strings are escaped as text rather than interpreted as markup", async () => {

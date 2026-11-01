@@ -1,6 +1,5 @@
 import "server-only";
 import { instagramFeedResponseSchema, type InstagramFeedPost } from "@shopmaple/contracts";
-import type { StorefrontContent } from "@shopmaple/contracts";
 
 /** The API's cached Instagram posts; empty when the feed is off, not fetched yet, or the API fails (docs/instagram-feed.md). */
 export async function readInstagramFeed(transport: typeof fetch = fetch): Promise<InstagramFeedPost[]> {
@@ -17,13 +16,4 @@ export async function readInstagramFeed(transport: typeof fetch = fetch): Promis
   } finally {
     clearTimeout(timer);
   }
-}
-
-/**
- * The posts for the homepage Instagram row, in the same shape as the staff-edited `instagramPosts`:
- * the fetched feed when it has posts, otherwise the staff list unchanged.
- */
-export async function homeInstagramPosts(staffPosts: StorefrontContent["instagramPosts"], transport: typeof fetch = fetch): Promise<StorefrontContent["instagramPosts"]> {
-  const posts = await readInstagramFeed(transport);
-  return posts.length ? posts : staffPosts;
 }

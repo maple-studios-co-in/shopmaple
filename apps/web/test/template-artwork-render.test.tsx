@@ -61,7 +61,7 @@ async function withPublished(body: unknown, run: () => Promise<void>) {
   };
   try {
     await run();
-    assert.ok(requests.every(r => r.method === "GET" && (new URL(r.url).pathname === "/api/catalogue/cards" || r.url.endsWith("/api/content/storefront"))), "Pages must only read public content and catalogue, never drafts or writes");
+    assert.ok(requests.every(r => r.method === "GET" && (["/api/catalogue/cards", "/api/instagram/feed"].includes(new URL(r.url).pathname) || r.url.endsWith("/api/content/storefront"))), "Pages must only read public content and catalogue, never drafts or writes");
     assert.ok(requests.filter(r => r.url.endsWith("/api/content/storefront")).every(r => r.cache === "no-store"));
   } finally { globalThis.fetch = previous; }
 }
