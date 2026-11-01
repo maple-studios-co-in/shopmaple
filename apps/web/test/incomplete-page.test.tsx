@@ -23,7 +23,8 @@ test("an uncategorized model detail loads without sending an invalid related-cat
     const html = await new Response(stream).text();
     assert.match(html, /Uncategorized Model/);
     assert.match(html, /Price on request/);
-    assert.deepEqual(requests, ["/api/products/model"]);
+    // The approved-reviews read fails here (400) and the page still renders without reviews.
+    assert.deepEqual(requests, ["/api/products/model", "/api/products/model/reviews"]);
   } finally {
     globalThis.fetch = previous;
   }

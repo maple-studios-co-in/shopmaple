@@ -137,7 +137,7 @@ test("Shopify-origin details keep review and support navigation internal", async
         false,
       );
       assert.ok(
-        document.querySelector('#product-reviews a[href^="/pages/contact"]'),
+        document.querySelector('#product-reviews a[href="/reviews"]'),
       );
     },
   );
