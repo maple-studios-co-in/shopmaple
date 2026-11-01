@@ -2,12 +2,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, ChevronDown, CircleHelp, Hammer, Minus, Plus, Share2, ShieldCheck, Star, Truck } from "lucide-react";
+import { ArrowRight, Minus, Plus, Share2 } from "lucide-react";
 import type { Product } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney, categoryNames } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
+import { PromiseStrip } from "./promise-strip";
+import { eyebrow } from "./section-heading";
+import { useProductHighlights } from "./product-highlights";
 import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
@@ -21,16 +24,11 @@ type Presentation = {
   reviewLabel: string | null;
 };
 
-const pill = "inline-flex h-[50px] items-center justify-center gap-2 rounded-full px-6 text-price font-semibold no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60";
-const solidPill = cn(pill, "cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
-const outlinePill = cn(pill, "border-2 border-solid border-brand bg-white text-brand hover:bg-cream");
-const quiet = "inline-flex items-center gap-1.5 text-ui font-medium text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-// The store's promises; a product's own warranty from the catalogue replaces the store-wide one.
-const productPromises = (warranty?: string | null) => [
-  { icon: Hammer, label: "Made to order in Delhi" },
-  { icon: ShieldCheck, label: warranty?.trim() ? `Warranty: ${warranty.trim()}` : "36-month warranty" },
-  { icon: Truck, label: "Delivery across India" },
-];
+// The design's 6 px buttons: burgundy (Add to cart, Check) and white with a sand border (Speak to a designer, Write a review).
+const button = "inline-flex items-center justify-center gap-2 rounded-[6px] px-[14px] text-ui font-bold no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60";
+const solid = cx(button, "h-12 cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
+const outline = cx(button, "h-[50px] border border-solid border-sand bg-white text-brand hover:bg-cream");
+const stepper = "grid size-7 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-taupe hover:text-espresso disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-brand";
 
 export function ProductDetail({ product, initialVariant, presentation }: {
   product: Product;
@@ -51,6 +49,9 @@ export function ProductDetail({ product, initialVariant, presentation }: {
   // "Photo unavailable" boxes.
   const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
   const textOptions = !optionPhotos && product.images.length > 0;
+  // Staff-entered colours (the card highlights' swatches) fill the finish circles when an option has no photo.
+  const { swatch } = useProductHighlights();
+  const optionLayout = optionPhotos || !textOptions ? "photo" : product.variants.every((v) => swatch(v.title)) ? "swatch" : "text";
   const initial =
     selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
@@ -123,191 +124,157 @@ export function ProductDetail({ product, initialVariant, presentation }: {
       setShared(error instanceof Error && error.name === "AbortError" ? "" : "Couldn’t copy the link");
     }
   }
-  const detailImage = product.images[1] ?? product.images[0];
-  const accordion = "group rounded-xl border border-solid border-sand bg-white open:shadow-xs";
-  const summary = "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-card font-bold text-espresso marker:hidden [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand";
+  const category = product.category && categoryNames[product.category] ? product.category : "all";
+  const accordion = "group bg-white p-6";
+  const summary = "flex w-fit cursor-pointer list-none items-center gap-[22px] text-subhead font-bold text-espresso marker:hidden [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand";
+  // The sign follows the label ("Details  −" in the design). It is generated content on a hidden span, so neither the
+  // summary's text nor its accessible name includes it.
+  const sign = <span data-disclosure-sign aria-hidden="true" className="after:content-['+'] group-open:after:content-['−']" />;
   // Panels hold admin rich text or plain catalogue text: headings, paragraph spacing, lists and line breaks are restated here.
-  const panel = "px-5 pb-5 text-ui leading-[1.6] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 [&_:is(h2,h3,h4,h5,h6)]:font-serif [&_:is(h2,h3,h4,h5,h6)]:text-card [&_:is(h2,h3,h4,h5,h6)]:font-semibold [&_:is(h2,h3,h4,h5,h6)]:text-espresso [&_:is(h2,h3,h4,h5,h6):not(:first-child)]:mt-4 [&_:is(h2,h3,h4,h5,h6)+*]:mt-1.5 [&_p+p]:mt-2.5 [&_p+a]:mt-2.5 [&_p+a]:inline-block [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_li+li]:mt-1";
-  const chevron = <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-brand transition-transform group-open:rotate-180" />;
+  const panel = "mt-3 text-price leading-[1.45] text-taupe [&_a]:font-semibold [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 [&_:is(h2,h3,h4,h5,h6)]:font-serif [&_:is(h2,h3,h4,h5,h6)]:text-card [&_:is(h2,h3,h4,h5,h6)]:font-semibold [&_:is(h2,h3,h4,h5,h6)]:text-espresso [&_:is(h2,h3,h4,h5,h6):not(:first-child)]:mt-4 [&_:is(h2,h3,h4,h5,h6)+*]:mt-1.5 [&_p+p]:mt-2.5 [&_p+a]:mt-2.5 [&_p+a]:inline-block [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_li+li]:mt-1";
   return (
-    <div data-store className="bg-white font-body text-espresso">
+    <div data-store className="bg-linen font-body text-espresso">
       <ProductVisit handle={product.handle} />
-      <div className="mx-auto max-w-[1432px] px-4 pt-4 pb-10 md:px-8 lg:pb-16 xl:px-12">
-        <nav data-breadcrumb aria-label="Breadcrumb" className="mb-4 flex items-center gap-2 text-label text-taupe [&_a]:text-taupe [&_a:hover]:text-brand">
-          <Link href="/">Home</Link>
-          <span aria-hidden="true">›</span>
-          <Link href={"/collections/" + (product.category ?? "all")}>{categoryNames[product.category ?? "all"]}</Link>
+      <div className="mx-auto max-w-[1440px] px-4 pt-6 pb-12 md:px-8 md:pt-10 xl:px-16 xl:pt-16 xl:pb-16">
+        <nav data-breadcrumb aria-label="Breadcrumb" className="mb-5 text-meta text-taupe md:mb-7">
+          <ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0 [&_a]:text-taupe [&_a]:no-underline [&_a:hover]:text-brand">
+            <li className="flex items-center gap-2"><Link href="/">Home</Link><span aria-hidden="true">/</span></li>
+            <li className="flex items-center gap-2"><Link href={"/collections/" + category}>{categoryNames[category]}</Link><span aria-hidden="true">/</span></li>
+            <li><span aria-current="page">{product.title}</span></li>
+          </ol>
         </nav>
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start xl:gap-10">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,680fr)_minmax(0,584fr)] lg:items-start xl:gap-12">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
-          <div data-product-info className="grid gap-5 rounded-[20px] border border-solid border-brand/8 bg-white p-[22px] lg:sticky lg:top-6">
-            <div className="grid gap-2">
-              <Link href={"/collections/" + (product.category ?? "all")}
-                className="w-fit rounded-[5px] bg-brand/12 px-2.5 py-1 text-label font-semibold text-brand no-underline hover:bg-brand/18">
-                {categoryNames[product.category ?? "all"]}
-              </Link>
-              <h1 className="text-[28px] leading-[1.2] font-medium sm:text-title">{product.title}</h1>
-              {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
-                <p role="status" className="text-meta text-taupe">Photo for this option unavailable</p>
-              )}
-              {presentation?.reviewLabel === "No reviews" && (
-                <a href="#product-reviews" className="inline-flex w-fit items-center gap-2 text-meta text-taupe no-underline">
-                  <span aria-hidden="true" className="flex text-sand">{Array.from({ length: 5 }, (_, i) => <Star key={i} className="size-4" />)}</span>
-                  <span>No reviews yet</span>
-                </a>
-              )}
+          <div data-product-info className="flex min-w-0 flex-col gap-5">
+            <Link data-product-eyebrow href={"/collections/" + category} className={cx(eyebrow, "w-fit no-underline hover:underline hover:underline-offset-4")}>
+              Maple · {category === "all" ? "Collection" : categoryNames[category] + " collection"}
+            </Link>
+            <h1 className="font-serif text-[34px] leading-[1.1] font-bold text-espresso sm:text-h1">{product.title}</h1>
+            {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
+              <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
+            )}
+            <div data-price-block className="flex flex-col gap-5">
+              <strong className="text-[30px] leading-[1.45] font-bold text-brand">{shopMoney(variant?.pricePaise ?? null)}</strong>
+              {discounted && <p data-was className="text-price text-taupe"><span className="sr-only">Was </span><del>{shopMoney(variant!.compareAtPaise!)}</del></p>}
             </div>
-            <div data-price-block className="grid gap-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <strong className="text-subhead font-semibold text-brand">{shopMoney(variant?.pricePaise ?? null)}</strong>
-                {discounted && (
-                  <span data-discount className="rounded-[5px] bg-leaf/10 px-2.5 py-1 text-label font-semibold text-[#2f6b32]">
-                    {Math.round((1 - variant!.pricePaise! / variant!.compareAtPaise!) * 100)}% off
-                  </span>
-                )}
-              </div>
-              {discounted && <del className="text-price text-espresso">{shopMoney(variant!.compareAtPaise!)}</del>}
-              <p className="text-meta text-taupe">Delivery and applicable taxes will be confirmed by our team.</p>
-            </div>
-            {product.description && <p data-description className="text-ui leading-[1.6]">{product.description}</p>}
-            {product.variants.length > 1 && (
-              <VariantSelector layout={textOptions ? "text" : "photo"} selectedId={variantId} onSelect={selectVariant} enquiryHref={enquiryHref}
+            {product.description && <p data-description className="text-lead text-espresso">{product.description}</p>}
+            {product.variants.length > 1 && <>
+              <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
-                  id: v.id, name: v.title, image: variantImage(v.id), priceLabel: shopMoney(v.pricePaise),
+                  id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                   code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
-            )}
-            <div className="flex flex-wrap gap-x-5 gap-y-1 text-meta [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2">
-              <a href="#product-specifications">Dimensions &amp; specifications</a>
-              <a href="#delivery-enquiry">Delivery enquiry</a>
-            </div>
+              <p data-variant-note className="text-meta text-taupe">Other finishes are custom requests. Confirm materials and pricing with our team.</p>
+            </>}
             <div className="grid gap-3">
-              <div data-purchase className="flex gap-3">
+              <div data-purchase className="flex gap-4">
                 {!enquiry && (
-                  <div className="flex h-[50px] shrink-0 items-center gap-1 rounded-full border border-solid border-brand/8 px-2">
-                    <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1 || busy} onClick={() => setQuantityValue((q) => q - 1)}
-                      className="grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-espresso/4 p-0 text-espresso disabled:cursor-not-allowed disabled:opacity-50">
+                  <div className="flex h-[52px] w-[120px] shrink-0 items-center justify-between rounded-[6px] border border-solid border-sand bg-white px-2 text-ui text-taupe">
+                    <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1 || busy} onClick={() => setQuantityValue((q) => q - 1)} className={stepper}>
                       <Minus aria-hidden="true" className="size-3" />
                     </button>
-                    <output aria-live="polite" aria-label="Quantity" className="w-10 text-center text-ui text-brand tabular-nums">{quantity}</output>
-                    <button type="button" aria-label="Increase quantity" disabled={quantity >= 20 || busy} onClick={() => setQuantityValue((q) => q + 1)}
-                      className="grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-espresso/4 p-0 text-espresso disabled:cursor-not-allowed disabled:opacity-50">
+                    <output aria-live="polite" aria-label="Quantity" className="min-w-6 text-center tabular-nums">{quantity}</output>
+                    <button type="button" aria-label="Increase quantity" disabled={quantity >= 20 || busy} onClick={() => setQuantityValue((q) => q + 1)} className={stepper}>
                       <Plus aria-hidden="true" className="size-3" />
                     </button>
                   </div>
                 )}
                 {enquiry ? (
-                  <Link data-primary className={cn(solidPill, "flex-1")} href={enquiryHref}>
+                  <Link data-primary className={cx(solid, "flex-1 sm:max-w-[360px]")} href={enquiryHref}>
                     Enquire about this piece <ArrowRight aria-hidden="true" className="size-4" />
                   </Link>
                 ) : (
-                  <button type="button" data-primary className={cn(solidPill, "flex-1 disabled:cursor-not-allowed")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add()}>
+                  <button type="button" data-primary className={cx(solid, "flex-1 sm:max-w-[360px]")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add()}>
                     {busy ? "Updating cart…" : "Add to cart"}
                   </button>
                 )}
               </div>
               {selectedQuantity + quantity > 20 && <p className="text-meta text-brand">You can add up to 20 of this item. Contact our team for larger orders.</p>}
               {error && <p role="alert" className="text-meta text-brand">{error}</p>}
-              <div data-custom className="grid gap-1.5">
-                <Link className={outlinePill} href={enquiryHref}>Speak to our team</Link>
-                <p className="text-center text-label text-taupe">Have a size, fabric or finish in mind? Let’s discuss what’s possible.</p>
-              </div>
             </div>
-            <ul data-product-promises aria-label="With every piece" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[10px] bg-brand/6 px-4 py-3 text-ui font-medium text-brand">
-              {productPromises(product.sourceDetails?.warranty).map(({ icon: Icon, label }) => (
-                <li key={label} className="flex items-center gap-1.5"><Icon aria-hidden="true" className="size-4" />{label}</li>
-              ))}
-            </ul>
-            <p data-disclosure className="text-label text-taupe">Delivery and payment options will be confirmed before ordering.</p>
-            <form data-serviceability id="delivery-enquiry" className="grid scroll-mt-6 gap-2 rounded-[10px] bg-brand/6 p-4"
+            <section data-custom aria-labelledby="customisation-title" className="flex flex-col items-start gap-2.5 bg-cream p-5">
+              <h2 id="customisation-title" className="text-[18px] leading-[1.45] font-bold text-espresso">Customisation available</h2>
+              <p className="text-card text-espresso">A different colour or material? Let’s shape it together.</p>
+              <Link data-customization href={enquiryHref} className={cx(outline, "w-full sm:w-[240px]")}>
+                Speak to a designer <span aria-hidden="true">→</span>
+              </Link>
+            </section>
+            <form data-serviceability id="delivery-enquiry" className="flex scroll-mt-6 flex-col gap-3"
               onSubmit={(e) => { e.preventDefault(); setCheckedPin(pin); }}>
-              <label htmlFor="delivery-pincode" className="text-ui font-semibold">Delivery enquiry</label>
-              <p className="text-meta text-taupe">Add your Indian postcode so our team can confirm charges and lead time.</p>
-              <div className="flex gap-2">
-                <input id="delivery-pincode" placeholder="Enter pincode" inputMode="numeric" pattern="[1-9][0-9]{5}" maxLength={6} required value={pin}
+              <label htmlFor="delivery-pincode" className="text-lead font-bold text-espresso">Delivery enquiry</label>
+              <div className="flex gap-3">
+                <input id="delivery-pincode" placeholder="Enter your pincode" inputMode="numeric" pattern="[1-9][0-9]{5}" maxLength={6} required value={pin}
                   onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); setCheckedPin(""); }}
-                  className="h-10 min-w-0 flex-1 rounded-full border border-solid border-sand bg-white px-4 text-ui focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand" />
-                <button type="submit" className="h-10 cursor-pointer rounded-full border-0 bg-white px-4 text-ui font-semibold text-brand hover:bg-cream focus-visible:outline-2 focus-visible:outline-brand">Add postcode</button>
+                  className="h-[52px] min-w-0 flex-1 rounded-[6px] border border-solid border-sand bg-white px-[15px] text-ui text-espresso placeholder:text-taupe focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand" />
+                <button type="submit" className={cx(solid, "w-[120px] shrink-0 sm:w-[182px]")}>Add pincode</button>
               </div>
+              <p data-disclosure className="text-meta text-taupe">Enter a pincode so our team can confirm delivery, lead time and applicable taxes. Delivery and payment options will be confirmed before ordering.</p>
               {checkedPin && (
                 <p data-prose role="status" className="text-meta [&_a]:font-semibold [&_a]:text-brand [&_a]:underline">
                   Please <Link href={enquiryHref}>ask our team to confirm delivery to {checkedPin}</Link>. Live delivery checking is being connected.
                 </p>
               )}
             </form>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <Link data-ask href={enquiryHref} className={quiet}><CircleHelp aria-hidden="true" className="size-4" /> Ask a question</Link>
-              <button type="button" data-share onClick={() => void share()} className={cn(quiet, "cursor-pointer border-0 bg-transparent p-0")}>
-                <Share2 aria-hidden="true" className="size-4" /> Share
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <button type="button" data-share onClick={() => void share()}
+                className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-meta font-medium text-taupe hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                <Share2 aria-hidden="true" className="size-3.5" /> Share
               </button>
               <span data-share-status role="status" className="text-meta text-espresso empty:hidden">{shared}</span>
-              <a data-phone href="tel:+918796130252" className={cn(quiet, "ml-auto text-meta")}>Call +91 87961 30252</a>
             </div>
           </div>
         </div>
       </div>
-      <section data-product-details aria-labelledby="product-details-title" className="bg-linen py-12 lg:py-20">
-        <div className="mx-auto grid max-w-[1432px] gap-8 px-4 md:px-8 xl:px-12">
-          <div className="grid justify-items-center gap-2 text-center">
-            <h2 id="product-details-title" className="font-serif text-h2 font-bold text-brand md:text-h1">Precision in every detail</h2>
-            <p className="text-ui text-taupe">Made in our Delhi workshop, to the size, fabric and finish you choose.</p>
-          </div>
-          <div className={cn("grid items-start gap-8", detailImage && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]")}>
-            <div data-accordions className="grid gap-3">
-              <details open className={accordion}>
-                <summary className={summary}>Details{chevron}</summary>
-                <div data-prose className={panel}>
-                  {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p className="whitespace-pre-line">
-                    {product.sourceDetails?.details || product.description || "Our team can help with materials, dimensions, finishes and customization for this piece."}
-                  </p>}
-                </div>
-              </details>
-              <details className={accordion}>
-                <summary className={summary}>Materials + Care{chevron}</summary>
-                <div data-prose className={panel}>
-                  {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
-                    {product.sourceDetails.materials && <p className="whitespace-pre-line">{product.sourceDetails.materials}</p>}
-                    {product.sourceDetails.careInstructions && <p className="whitespace-pre-line">{product.sourceDetails.careInstructions}</p>}
-                  </> : <>
-                    <p>Contact our team for the materials and care guidance for your selected finish.</p>
-                    <Link href={enquiryHref}>Request care guidance</Link>
-                  </>}
-                </div>
-              </details>
-              <details className={accordion}>
-                <summary className={summary}>Shipping + Returns{chevron}</summary>
-                <div data-prose className={panel}>
-                  {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
-                    <p>Confirm delivery serviceability, charges, lead time and applicable return terms before ordering.</p>
-                    <Link href={enquiryHref}>Ask about delivery</Link>
-                  </>}
-                </div>
-              </details>
-              <details id="product-specifications" open className={cn(accordion, "scroll-mt-6")}>
-                <summary className={summary}>Dimensions &amp; specifications{chevron}</summary>
-                <div data-prose className={panel}>
-                  {product.sourceDetails?.dimensions ? <p className="whitespace-pre-line">{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
-                  {variant?.sku && <p>SKU: {variant.sku}</p>}
-                  {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
-                </div>
-              </details>
+      <section data-product-details aria-label="Product details" className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 pt-4 pb-12 md:px-8 md:pt-6 xl:px-16 xl:pt-16 xl:pb-16">
+        <PromiseStrip warranty={product.sourceDetails?.warranty} />
+        <div data-accordions className="grid gap-6">
+          <details open className={accordion}>
+            <summary className={summary}>Details{sign}</summary>
+            <div data-prose className={panel}>
+              {product.pdpContent && (product.pdpContent.details?.children.length || !product.sourceDetails?.details) ? <ProductRichText content={product.pdpContent.details} /> : <p className="whitespace-pre-line">
+                {product.sourceDetails?.details || product.description || "Our team can help with materials, dimensions, finishes and customization for this piece."}
+              </p>}
             </div>
-            {detailImage && (
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[30px] bg-cream lg:sticky lg:top-6 [&_img]:object-cover">
-                <ProductImage src={detailImage} alt="" fill sizes="(max-width:1023px) 100vw, 660px" />
-              </div>
-            )}
-          </div>
+          </details>
+          <details className={accordion}>
+            <summary className={summary}>Materials &amp; care{sign}</summary>
+            <div data-prose className={panel}>
+              {product.pdpContent && (product.pdpContent.materialsCare?.children.length || !(product.sourceDetails?.materials || product.sourceDetails?.careInstructions)) ? <ProductRichText content={product.pdpContent.materialsCare} /> : product.sourceDetails?.materials || product.sourceDetails?.careInstructions ? <>
+                {product.sourceDetails.materials && <p className="whitespace-pre-line">{product.sourceDetails.materials}</p>}
+                {product.sourceDetails.careInstructions && <p className="whitespace-pre-line">{product.sourceDetails.careInstructions}</p>}
+              </> : <>
+                <p>Contact our team for the materials and care guidance for your selected finish.</p>
+                <Link href={enquiryHref}>Request care guidance</Link>
+              </>}
+            </div>
+          </details>
+          <details className={accordion}>
+            <summary className={summary}>Shipping &amp; returns{sign}</summary>
+            <div data-prose className={panel}>
+              {product.pdpContent ? <ProductRichText content={product.pdpContent.shippingReturns} /> : <>
+                <p>Confirm delivery serviceability, charges, lead time and applicable return terms before ordering.</p>
+                <Link href={enquiryHref}>Ask about delivery</Link>
+              </>}
+            </div>
+          </details>
+          <details id="product-specifications" className={cx(accordion, "scroll-mt-6")}>
+            <summary className={summary}>Product specifications{sign}</summary>
+            <div data-prose className={panel}>
+              {product.sourceDetails?.dimensions ? <p className="whitespace-pre-line">{product.sourceDetails.dimensions}</p> : <Link href={enquiryHref}>Request dimensions and specifications</Link>}
+              {variant?.sku && <p>SKU: {variant.sku}</p>}
+              {product.sourceDetails?.warranty && <p>Warranty: {product.sourceDetails.warranty}</p>}
+            </div>
+          </details>
         </div>
+        {product.source.startsWith("shopify") && (
+          <section id="product-reviews" aria-labelledby="product-reviews-title" className="flex flex-col items-start gap-6">
+            <h2 id="product-reviews-title" className="font-serif text-[30px] leading-[1.1] font-bold text-espresso">Customer reviews</h2>
+            <p className="text-price text-taupe">{presentation?.reviewLabel === "No reviews" ? "No reviews yet." : "Customer reviews are not shown on this storefront yet."} Share your experience with this piece.</p>
+            <Link className={cx(outline, "w-[180px]")} href={enquiryHref}>Write a review</Link>
+          </section>
+        )}
       </section>
-      {product.source.startsWith("shopify") && (
-        <section id="product-reviews" className="mx-auto grid max-w-[1432px] justify-items-center gap-3 px-4 py-12 text-center md:px-8 xl:px-12">
-          <h2 className="font-serif text-h2 font-bold">Customer reviews</h2>
-          <p className="text-ui text-taupe">{presentation?.reviewLabel === "No reviews" ? "No reviews yet" : "Customer reviews are not available on this storefront yet."}</p>
-          <Link className={outlinePill} href={enquiryHref}>Contact support</Link>
-        </section>
-      )}
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div data-zoom className="[&_img]:h-auto [&_img]:w-full">
           <ProductImage src={images[shown]} alt={product.title} width={1200} height={1200} sizes="90vw" />

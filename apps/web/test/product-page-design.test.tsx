@@ -33,40 +33,27 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
   }
 }
 
-test("the purchase card follows the design: title, price with discount chip, description, option label and customization link", async () => {
+test("the purchase column follows the design: title, price, struck-out price, description, finish heading and designer link", async () => {
   await mount((doc) => {
     const card = doc.querySelector("[data-product-info]")!;
     assert.equal(card.querySelector("h1")?.textContent, "Nola Accent Chair");
     assert.equal(card.querySelector("[data-price-block] strong")?.textContent, "Rs. 29,500.00");
-    assert.equal(card.querySelector("[data-discount]")?.textContent, "17% off");
     assert.equal(card.querySelector("[data-price-block] del")?.textContent, "Rs. 35,400.00");
     assert.equal(card.querySelector("[data-description]")?.textContent, "A soft barrel-back accent chair.");
-    assert.match(card.querySelector("[data-variants] legend")?.textContent ?? "", /^Option: Rust/);
+    assert.equal(card.querySelector("[data-variants] legend")?.textContent, "Personalise your finish");
     const custom = card.querySelector<HTMLAnchorElement>("a[data-customization]")!;
-    assert.equal(custom.textContent?.trim(), "Customization available");
     assert.match(custom.getAttribute("href") ?? "", /^\/pages\/contact\?product=Nola\+Accent\+Chair/);
   });
 });
 
-test("add to cart sits beside the quantity, with a full-width enquiry below and the promises after", async () => {
+test("add to cart sits beside the quantity, with the customisation panel below", async () => {
   await mount((doc) => {
     const purchase = doc.querySelector("[data-purchase]")!;
     assert.equal(purchase.querySelector("button[data-primary]")?.textContent, "Add to cart");
     assert.ok(purchase.querySelector('[aria-label="Increase quantity"]'));
     const team = doc.querySelector<HTMLAnchorElement>("[data-custom] a")!;
-    assert.equal(team.textContent?.trim(), "Speak to our team");
-    assert.deepEqual([...doc.querySelectorAll("[data-product-promises] li")].map((item) => item.textContent), ["Made to order in Delhi", "36-month warranty", "Delivery across India"]);
-    assert.equal(doc.querySelector<HTMLAnchorElement>("a[data-ask]")?.textContent?.trim(), "Ask a question");
+    assert.equal(team.textContent?.trim(), "Speak to a designer →");
     assert.ok(doc.querySelector("button[data-share]"), "Share stays a real control");
-  });
-});
-
-test("the details read as the design's 'Precision in every detail' section beside a product picture", async () => {
-  await mount((doc) => {
-    const section = doc.querySelector("[data-product-details]")!;
-    assert.equal(section.querySelector("h2")?.textContent, "Precision in every detail");
-    assert.deepEqual([...section.querySelectorAll("[data-accordions] summary")].map((summary) => summary.textContent), ["Details", "Materials + Care", "Shipping + Returns", "Dimensions & specifications"]);
-    assert.equal(section.querySelector("img")?.getAttribute("src")?.includes("nola-2"), true, "The second photo pictures the details");
   });
 });
 
@@ -93,19 +80,11 @@ test("admin rich text keeps its headings and paragraph spacing, and plain source
   }, { ...product, sourceDetails: { details: "Line one\nLine two", materials: null, dimensions: null, careInstructions: null, warranty: null } } as Product);
 });
 
-test("the warranty promise follows the product's own warranty when it has one", async () => {
+test("the option group is named by its heading alone, and the customisation link sits outside it", async () => {
   await mount((doc) => {
-    assert.deepEqual([...doc.querySelectorAll("[data-product-promises] li")].map((item) => item.textContent), ["Made to order in Delhi", "Warranty: One year", "Delivery across India"]);
-  }, { ...product, sourceDetails: { details: null, materials: null, dimensions: null, careInstructions: null, warranty: "One year" } } as Product);
-});
-
-test("the option group is named by its option alone, and the detail photo is decorative", async () => {
-  await mount((doc) => {
-    assert.equal(doc.querySelector("[data-variants] legend")?.textContent, "Option: Rust");
-    assert.equal(doc.querySelector("[data-variants] legend a"), null, "The customization link is outside the group label");
+    assert.equal(doc.querySelector("[data-variants] legend")?.textContent, "Personalise your finish");
+    assert.equal(Boolean(doc.querySelector("[data-variants] a")), false, "The customisation link is outside the option group");
     assert.ok(doc.querySelector("a[data-customization]"));
-    assert.equal(doc.querySelector("[data-product-details] img")?.getAttribute("alt"), "");
-    assert.match(doc.querySelector("[data-discount]")?.className ?? "", /text-\[#2f6b32\]/, "The discount chip text meets 4.5:1");
   });
 });
 

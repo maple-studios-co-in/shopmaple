@@ -3,7 +3,6 @@ import { getProduct, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
-import { HomeNewsletter, HomeValues } from "@/components/home-sections";
 import presentationData from "@/data/product-presentation.json";
 export const dynamic = "force-dynamic";
 export default async function ProductPage({
@@ -36,9 +35,7 @@ export default async function ProductPage({
         }
         presentation={presentation}
       />
-      <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} />
-      <HomeNewsletter />
-      <HomeValues />
+      <RelatedProducts products={related.filter((p) => p.id !== product.id).slice(0, 4)} category={product.category} />
     </>
   );
 }

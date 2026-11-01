@@ -83,7 +83,7 @@ test("selecting an unmapped option keeps the product gallery and discloses the m
     await act(async () => tile("catalogue-nordic").querySelector("input")!.click());
     assert.ok(notice());
     assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/blue.webp");
-    assert.match(tile("catalogue-nordic").textContent!, /Photo unavailable/);
+    assert.ok(tile("catalogue-nordic").querySelector("[data-variant-placeholder]"), "The option's circle stays empty rather than borrowing another photo");
     assert.equal(tile("catalogue-nordic").querySelector("img"), null);
     assert.equal(new URL(window.location.href).searchParams.get("variant"), "catalogue-nordic");
     assert.deepEqual(replacements, [], "variant URL changes do not request a new server route");

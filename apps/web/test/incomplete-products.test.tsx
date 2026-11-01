@@ -71,7 +71,7 @@ test("selecting an unpriced option replaces cart purchase with enquiry without a
     assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
     await act(async () => document.querySelector<HTMLInputElement>('input[value="option"]')!.click());
     assert.match(document.querySelector("[data-price-block]")!.textContent!, /Price on request/);
-    assert.equal(document.querySelector("[data-discount]"), null);
+    assert.equal(Boolean(document.querySelector("[data-price-block] del")), false, "An unpriced option shows no struck-out price");
     assert.equal(document.querySelector("[data-purchase] button"), null);
     const params = new URL(document.querySelector<HTMLAnchorElement>("[data-purchase] a")!.href).searchParams;
     assert.equal(params.get("variant"), "Natural");
