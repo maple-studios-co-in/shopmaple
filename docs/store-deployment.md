@@ -74,8 +74,11 @@ Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker c
 Run in this order; tick each with the date, the person, and where the evidence is saved. Steps marked **owner** need the owner's accounts or a production action that only the owner runs.
 
 **Keeri (owner, with Keeri admin access)**
-- [ ] Keeri `develop` with PRs #788 (made-to-order eligibility) and #789 (Shiprocket-priced quotes) is deployed, and its migrations are applied.
-- [ ] `STOREFRONT_SHIPROCKET_ACCOUNTS` holds one row for tenant + merchant scope: Shiprocket API-user email and password, API version, the Delhi pickup pincode and mode (`Surface`).
+- [ ] Keeri `develop` with PRs #788 (made-to-order eligibility), #789 (Shiprocket-priced quotes) and #793 (whole-unit serviceability request, not-serviceable reply) is deployed, and its migrations are applied.
+- [ ] A Shiprocket **API user** exists (Shiprocket → Settings → API → Create API User, with an email different from the Shiprocket login, Couriers module allowed).
+- [ ] Keeri's `STOREFRONT_SHIPROCKET_ACCOUNTS` holds one row for tenant + merchant scope. ShopMaple never holds Shiprocket credentials; Keeri logs in, keeps the token (renewed after 9 days, or on a 401) and calls serviceability. For a local sandbox run it goes in the Keeri checkout's `apps/admin/.env.local` (git-ignored); on the server, in Keeri's private environment. One line:
+  `STOREFRONT_SHIPROCKET_ACCOUNTS='[{"tenantId":"<KEERI_TENANT_ID>","merchantScope":"<KEERI_MERCHANT_SCOPE>","email":"<API-user email>","password":"<API-user password>","version":"1","pickupPincode":"<Delhi pickup pincode>","mode":"Surface"}]'`
+  `tenantId` and `merchantScope` are the same values as ShopMaple's `KEERI_TENANT_ID` and `KEERI_MERCHANT_SCOPE`. `version` is any label; change it whenever the password changes so Keeri drops the cached token.
 - [ ] `STOREFRONT_COMMERCE_POLICIES` holds one reviewed policy for the scope, `gstMode: "included"` (store prices include GST), and every delivery method listed in `CHECKOUT_DELIVERY_METHODS` has `carrierPriced: true`.
 - [ ] Every variant to be sold has its packed weight and carton size (Keeri variant drawer → Shipping), a ShopMaple selection, and for made-to-order pieces an approval with a lead time.
 - [ ] A commerce-scoped Keeri credential (`quotes:write`, `reservations:write`, `orders:write`) is issued for ShopMaple.
