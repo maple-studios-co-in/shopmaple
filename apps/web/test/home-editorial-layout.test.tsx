@@ -44,8 +44,9 @@ test("editorial restyling preserves the complete original testimonial and custom
   const dom = new JSDOM(renderToStaticMarkup(<HomeTestimonial />));
   try {
     const doc = dom.window.document;
-    assert.equal(doc.querySelector("h2")?.textContent, "Why They Love Us");
-    assert.equal(doc.querySelector("header p")?.textContent, "Thoughtful designs. Exceptional service.");
+    assert.equal(doc.querySelector("[data-section-eyebrow]")?.textContent, "Why They Love Us");
+    assert.equal(doc.querySelector("h2")?.textContent, "Loved for more than just our sofas.");
+    assert.equal(doc.querySelector("[data-section-lede]")?.textContent, "Thoughtful designs. Exceptional service.");
     assert.equal(doc.querySelector("h3")?.textContent, "Getting our sofa made by Maple was a completely hassle-free experience.");
     assert.deepEqual([...doc.querySelectorAll("blockquote p")].map(p => p.textContent), [
       "From the first conversation to the final delivery, the process felt smooth and well-managed.",
@@ -54,7 +55,7 @@ test("editorial restyling preserves the complete original testimonial and custom
       "Delivery was on time, and everything was handled professionally. Truly a no-stress experience from start to finish.",
     ]);
     assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
-    assert.equal(doc.querySelector("[data-review-stars]")?.getAttribute("aria-label"), "5 out of 5 stars");
+    assert.equal(doc.querySelector("[data-review-stars]"), null, "No star rating without review data");
     const video = doc.querySelector("video")!;
     assert.ok(video.controls);
     assert.ok(video.playsInline);
@@ -77,11 +78,12 @@ test("published editorial copy names both regions and retains editable media wit
   </>));
   try {
     const doc = dom.window.document;
-    for (const [selector, heading] of [["[data-home-testimonial]", "Customers at home"], ["[data-home-newsletter]", "Workshop updates"]]) {
+    // The testimonial's published heading is the eyebrow above the design's title, which names the region.
+    for (const [selector, title, heading] of [["[data-home-testimonial]", "Loved for more than just our sofas.", "Customers at home"], ["[data-home-newsletter]", "Workshop updates", "Workshop updates"]]) {
       const region = doc.querySelector(selector!)!;
       const labelledBy = region.getAttribute("aria-labelledby");
       assert.ok(labelledBy, `${heading} must be discoverable as a named region`);
-      assert.equal(doc.getElementById(labelledBy)?.textContent, heading);
+      assert.equal(doc.getElementById(labelledBy)?.textContent, title);
       assert.equal(region.querySelectorAll("h2").length, 1);
       assert.equal(region.textContent?.split(heading!).length, 2, "Editorial headings must not be repeated for visual positioning");
     }

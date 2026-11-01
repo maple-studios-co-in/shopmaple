@@ -108,7 +108,7 @@ export const defaultSiteChrome: SiteChrome = {
     bulkPhoneLabel: "+91 92629 68727",
     bulkEmail: "aditya@maplefurnishers.com",
     copyrightName: "Maple Furnishers",
-    instagram: "https://www.instagram.com/the_maple_experience/",
+    instagram: "https://www.instagram.com/maplefurnishers/",
     linkedin: "https://www.linkedin.com/company/maplefurnishers/",
   },
   whatsapp: {

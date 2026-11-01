@@ -275,3 +275,12 @@ html:has([data-site-header]) *::-webkit-scrollbar { display: none !important; wi
 :where([data-store]) button { font: inherit; color: inherit; }
 
 @tailwind utilities source(none);
+
+/* Storefront links carry no underline (owner's review, 1 November 2026), whatever utility a component
+   gives them: this follows the utilities and outweighs `underline`, `hover:underline` and
+   `group-hover:underline` on a link or the text inside it, leaving struck-through old prices alone.
+   Running text keeps its own link cue, so links inside product details, policy, article and page
+   bodies (and any other [data-prose] text) are left alone. Focus outlines are unchanged. */
+[data-store] :is(a, a :not(del, s)):not(:where([data-prose], [data-policy-body], [data-article-body], [data-content-copy]) *):is(*, :hover) {
+  text-decoration-line: none;
+}

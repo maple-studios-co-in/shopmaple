@@ -7,7 +7,7 @@ import { Hero } from "../components/hero";
 function destinations() {
   const { document } = new JSDOM(renderToStaticMarkup(<Hero />)).window;
   return [...document.querySelectorAll<HTMLAnchorElement>("[data-hero-tiles] a")].map((link) => ({
-    category: link.querySelector("h2")?.textContent,
+    category: link.querySelector("h3")?.textContent,
     href: link.getAttribute("href"),
   }));
 }

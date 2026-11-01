@@ -18,13 +18,13 @@ import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
 const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
-  ["home-workshop-poster", "home", "[data-hero-film] img", "/media/workshop-poster.webp", "Furniture craftsmanship at Maple"],
+  ["home-workshop-poster", "home", "[data-hero-film] img", files + "preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
   ["home-hero-sofas", "home", '[data-hero-tile][href="/pages/sofas"] img', files + "engaged_5.jpg?v=1767435623", ""],
   ["home-hero-chairs", "home", '[data-hero-tile][href="/pages/chairs"] img', files + "engaged_6_1.jpg?v=1767444019", ""],
   ["home-hero-tables", "home", '[data-hero-tile][href="/pages/tables"] img', files + "engaged_8_1.jpg?v=1767444598", ""],
   ["home-hero-beds", "home", '[data-hero-tile][href="/collections/beds"] img', files + "engaged_9_1.jpg?v=1767448207", ""],
   ["home-nimbus", "home", "[data-nimbus-media] img", files + "Chairs_9.svg", "The Nimbus Collection — cloud-like upholstered furniture", files + "Chairs_300_x_600_px.webp?width=900"],
-  ["home-newsletter", "home", "[data-home-newsletter] img", files + "Cover_Image_Maple_1.png", "Maple Furnishers"],
+  // "home-newsletter" is drawn only by the product page's newsletter panel now: the "Maple / PDF Review / Home" band has no artwork.
   ["home-testimonial-poster", "home", "[data-home-testimonial] video", files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960", "Maple customer testimonial"],
   ["nimbus-room-bedroom", "nimbus", '[data-nimbus-tiles] a[href="/collections/bedroom-nimbus"] img', files + "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Bedroom"],
   ["nimbus-room-living", "nimbus", '[data-nimbus-tiles] a[href="/collections/living-room-nimbus"] img', files + "Untitled_design_6.svg", "Living Room"],
@@ -121,8 +121,8 @@ async function checkArtwork(edited: boolean) {
     if (page === "home") {
       assert.equal(doc.querySelector("[data-hero-cta]")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector("[data-hero-cta]")?.getAttribute("href"), "/pages/nimbus-collection");
-      assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("aria-label"), "Maple furniture craftsmanship");
-      assert.ok(doc.querySelector('button[aria-label="Play workshop video"]'));
+      assert.equal(doc.querySelector("[data-hero-film] video")?.getAttribute("aria-label"), "Maple at home, the shop film");
+      assert.ok(doc.querySelector('button[aria-label="Play hero film"]'), "The server draws Play; the film starts only once the page has checked motion settings");
       assert.ok(doc.querySelector('[data-home-testimonial] video[controls] source[src$="84199271.mp4?v=0"]'));
       assert.equal(doc.querySelector("[data-home-newsletter] h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
@@ -165,11 +165,11 @@ async function checkArtwork(edited: boolean) {
   }
 }
 
-test("legacy published pages preserve all 21 original artwork slots and six responsive pairs", async () => {
+test("legacy published pages preserve all 20 drawn original artwork slots and six responsive pairs", async () => {
   await withPublished(published(), () => checkArtwork(false));
 });
 
-test("published artwork overrides reach all 21 slots, six responsive pairs and accessible descriptions", async () => {
+test("published artwork overrides reach all 20 drawn slots, six responsive pairs and accessible descriptions", async () => {
   await withPublished(published(overrides()), () => checkArtwork(true));
 });
 
