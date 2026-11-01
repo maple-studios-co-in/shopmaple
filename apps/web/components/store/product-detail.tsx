@@ -180,7 +180,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {isNew && <div className="flex gap-2"><span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span></div>}
           <h1 className="m-0 text-[28px] leading-[1.2] font-medium text-[#1c1c1c] sm:text-[34px]">{product.title}</h1>
-          {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
+          {variant && !variantImage(variant.id) && !cutoutFor(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
             <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
           )}
           <div data-price-block className="grid gap-2">

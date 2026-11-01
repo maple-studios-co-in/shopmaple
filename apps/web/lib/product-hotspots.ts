@@ -6,6 +6,8 @@ export type Cutout = { image: string; hotspots: HotspotSpec[] };
 export type Hotspot = { x: number; y: number; label: string; note: string };
 
 const clean = (line: string) => line.replace(/^[\s•\-*]+/, "").trim();
+// One fact per line, or per bullet when bullets share a line.
+const facts = (source: string) => source.split(/\n|•/).map(clean).filter(Boolean);
 
 /**
  * A note is the product's own words, never written here: `materials` notes are the text after "<line>:" on the matching
@@ -15,8 +17,9 @@ const clean = (line: string) => line.replace(/^[\s•\-*]+/, "").trim();
 export function hotspotNote(spec: HotspotSpec, details: Product["sourceDetails"]): string | undefined {
   const source = spec.from === "materials" ? details?.materials : spec.from === "dimensions" ? details?.dimensions : undefined;
   if (!source) return undefined;
-  const lines = source.split("\n").map(clean).filter(Boolean);
-  if (spec.from === "dimensions") return lines.map((line) => line.replace(/^([A-Za-z ]+):\s*/, "$1 ")).join(" · ") || undefined;
+  const lines = facts(source);
+  // Dimensions are the lines that carry a measurement; a heading or a remark is not one.
+  if (spec.from === "dimensions") return lines.filter((line) => /\d/.test(line)).map((line) => line.replace(/^([^:]+):\s*/, "$1 ")).join(" · ") || undefined;
   const wanted = (spec.line ?? spec.label).toLowerCase();
   for (const line of lines) {
     const colon = line.indexOf(":");

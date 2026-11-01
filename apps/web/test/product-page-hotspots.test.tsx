@@ -7,9 +7,10 @@ import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared
 import type { Cart, Product } from "@shopmaple/contracts";
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
+import { hotspotNote } from "../lib/product-hotspots";
 
 // The owner asked for a white-background photo with hotspots about fabric and material that changes with the finish
-// (2026-11-02). Cut-outs and hotspot positions are presentation data; every note is read from the product's own text.
+// (2026-11-01). Cut-outs and hotspot positions are presentation data; every note is read from the product's own text.
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3028/products/aero-dining-chair" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, FormData: dom.window.FormData, IS_REACT_ACT_ENVIRONMENT: true });
 const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
@@ -123,4 +124,38 @@ test("products without cut-out data behave as before", async () => {
     assert.doesNotMatch(mainSrc(doc), /cutouts/);
     assert.match(mainSrc(doc), /atlantic-1\.jpg/, "the finish's own first photo, as before");
   }, aero, { variantImages: {}, reviewLabel: null });
+});
+
+test("tapping the photo to dismiss a note does not also open the zoom", async () => {
+  dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
+  await mount(async (doc) => {
+    await act(async () => markers(doc)[0]!.click());
+    assert.ok(doc.querySelector("[data-hotspot-note]"));
+    const photo = doc.querySelector<HTMLButtonElement>("button[data-main-image]")!;
+    await act(async () => { photo.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); photo.click(); });
+    assert.equal(doc.querySelector("[data-hotspot-note]"), null, "the tap closes the note");
+    assert.equal(doc.querySelector("dialog")?.open ?? false, false, "and does not open the zoom");
+    await act(async () => photo.click());
+    assert.equal(doc.querySelector("dialog")?.open, true, "the next tap zooms as usual");
+  });
+});
+
+test("a finish whose only photo is the white-background one does not claim its photo is unavailable", async () => {
+  await mount(async (doc) => {
+    await act(async () => doc.querySelector<HTMLInputElement>('input[value="plain"]')!.click());
+    assert.equal(doc.querySelector("p[role=status]"), null);
+    assert.match(mainSrc(doc), /plain\.jpg/);
+  }, aero,
+  { variantImages: {}, reviewLabel: null, cutouts: { plain: { image: "/product-page/cutouts/plain.jpg", hotspots: [] } } });
+});
+
+test("hotspot notes keep to the labelled facts: no headings, hyphenated labels kept, bullets on one line split, a label with no value hidden", () => {
+  const details = (materials: string | null, dimensions: string | null) => ({ details: null, materials, dimensions, careInstructions: null, warranty: null });
+  const note = (spec: Parameters<typeof hotspotNote>[0], d: ReturnType<typeof details>) => hotspotNote(spec, d);
+  assert.equal(note({ x: 0, y: 0, label: "Size", from: "dimensions" }, details(null, 'Dimensions\n• Width: 22" (≈ 56 cm)\n• Seat-Height: 18"\n• Weight (kg): 5')), 'Width 22" (≈ 56 cm) · Seat-Height 18" · Weight (kg) 5');
+  assert.equal(note({ x: 0, y: 0, label: "Frame & legs", from: "materials", line: "Frame & Legs" }, details("• Frame & Legs: Oak • Upholstery: Velvet", null)), "Oak");
+  assert.equal(note({ x: 0, y: 0, label: "Upholstery", from: "materials" }, details("• Frame & Legs: Oak • Upholstery: Velvet", null)), "Velvet");
+  assert.equal(note({ x: 0, y: 0, label: "Upholstery", from: "materials" }, details("Upholstery:\n", null)), undefined);
+  assert.equal(note({ x: 0, y: 0, label: "Size", from: "dimensions" }, details(null, "Made by hand")), undefined);
 });

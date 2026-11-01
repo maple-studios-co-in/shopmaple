@@ -26,14 +26,21 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
 }) {
   const src = images[selected];
   const cutout = Boolean(hotspotImage) && src === hotspotImage;
-  const [openSpot, setOpenSpot] = useState<number | null>(null);
+  // The open note belongs to the photo it was opened on, so it is never applied to another photo or finish.
+  const [opened, setOpened] = useState<{ src: string | undefined; index: number } | null>(null);
+  const openSpot = opened && opened.src === src ? opened.index : null;
+  const setOpenSpot = (index: number | null) => setOpened(index === null ? null : { src, index });
+  const swallowClick = useRef(0);
   const spotLayer = useRef<HTMLDivElement>(null);
   const noteId = useId();
-  // A note belongs to the photo and finish it was opened on.
-  useEffect(() => setOpenSpot(null), [src]);
   useEffect(() => {
     if (openSpot === null) return;
-    const close = (event: PointerEvent) => { if (!spotLayer.current?.contains(event.target as Node)) setOpenSpot(null); };
+    const close = (event: PointerEvent) => {
+      if (spotLayer.current?.contains(event.target as Node)) return;
+      // Tapping the photo to dismiss a note is not a request to zoom.
+      if ((event.target as Element | null)?.closest?.("[data-main-image]")) swallowClick.current = Date.now() + 500;
+      setOpened(null);
+    };
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
   }, [openSpot]);
@@ -114,13 +121,14 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className={cx("relative overflow-hidden rounded-[20px] lg:rounded-[30px]", cutout ? "border border-solid border-maple/8 bg-white" : "bg-cream", images.length > 1 && "lg:col-start-2")}>
+      <div className={cx("relative overflow-hidden rounded-[20px] border border-solid lg:rounded-[30px]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square", cutout ? "bg-white [&_img]:object-contain" : "bg-cream [&_img]:object-cover")}
+            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
+              if (swallowClick.current > Date.now()) { swallowClick.current = 0; return; }
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
               onZoom();
             }}
@@ -157,6 +165,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                 alt={title + " — view " + (selected + 1)}
                 fill
                 sizes={STAGE_SIZES}
+                className={src === hotspotImage ? "object-contain" : "object-cover"}
                 preload={src === initialSrc.current}
                 onLoad={() => setReadySrc(src)}
                 onError={() => setReadySrc(src)}
@@ -164,7 +173,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             </span>
             {settledSrc && settledSrc !== src && (
               <span className="absolute inset-0" aria-hidden="true">
-                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} />
+                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === hotspotImage ? "object-contain" : "object-cover"} />
               </span>
             )}
           </button>
@@ -191,13 +200,13 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                     <button type="button" data-hotspot aria-label={spot.label} aria-expanded={open} aria-controls={open ? noteId : undefined}
                       onClick={() => setOpenSpot(open ? null : i)} style={{ left, top }}
                       className="pointer-events-auto absolute grid size-8 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-solid border-maple bg-white p-0 text-maple shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-                      <span aria-hidden="true" className="absolute inset-0 rounded-full bg-maple/30 motion-safe:animate-ping" />
+                      <span aria-hidden="true" className="absolute inset-0 rounded-full bg-maple/30 motion-safe:animate-[ping_1.2s_cubic-bezier(0,0,0.2,1)_3]" />
                       <Plus aria-hidden="true" strokeWidth={2.4} className={cx("relative size-4 transition-transform motion-reduce:transition-none", open && "rotate-45")} />
                     </button>
                     {open && (
-                      <div id={noteId} data-hotspot-note role="group" aria-label={spot.label}
+                      <div id={noteId} data-hotspot-note
                         style={{ [spot.y > 0.5 ? "bottom" : "top"]: spot.y > 0.5 ? `calc(${100 - Math.round(spot.y * 1000) / 10}% + 22px)` : `calc(${top} + 22px)`, ...(spot.x < 0.35 ? { left: `calc(${left} - 16px)` } : spot.x > 0.65 ? { right: `calc(${100 - Math.round(spot.x * 1000) / 10}% - 16px)` } : { left, transform: "translateX(-50%)" }) }}
-                        className="pointer-events-auto absolute z-[4] w-[min(240px,70%)] rounded-[10px] border border-solid border-maple/10 bg-white p-3 text-left text-[13px] leading-[1.45] text-black shadow-md">
+                        className="pointer-events-auto absolute z-[4] max-h-[55%] w-[min(240px,70%)] overflow-y-auto rounded-[10px] border border-solid border-maple/10 bg-white p-3 text-left text-[13px] leading-[1.45] text-black shadow-md">
                         <strong className="block text-[12px] font-semibold text-maple">{spot.label}</strong>{" "}
                         <span>{spot.note}</span>
                       </div>
