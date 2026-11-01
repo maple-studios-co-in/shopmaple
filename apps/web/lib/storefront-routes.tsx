@@ -51,7 +51,7 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
     if (!Object.hasOwn(source.policies, second)) return null;
     const { policies } = resolveEditorialContent(content.editorialContent);
     const policy = policies[second];
-    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} policies={policyLinks(policies)} /> } : null;
+    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} policies={policyLinks(policies)} media={content.templateMedia} /> } : null;
   }
   if (root === "blogs" && second !== undefined) {
     if (!source.blogs.some((item) => item.handle === second)) return null;

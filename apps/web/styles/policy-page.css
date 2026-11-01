@@ -1,71 +1,55 @@
 /* Policy pages (/policies/<slug>), in the type, colours and spacing of the Impact Layout homepage
-   (Figma 1049:27656) and the product page (999:3): a cream header band, Newsreader titles, Barlow
-   text at about 70 characters a line, and an "On this page" list that stays beside the text.
+   (Figma 1049:27656) and the product page (999:3): a wide photograph, then the text on a white sheet
+   that rises over it, Newsreader titles, Barlow text at about 70 characters a line, and an
+   "On this page" list that stays beside the text.
    The text is staff-edited rich text imported from the old store: untitled <div>s carry its
    eyebrows ("Section 01"), notes and summary cards, so those are recognised by shape below.
    Blog articles keep .editorial-page and .store-prose. */
 .policy-page {
   --policy-gutter: 48px;
   --policy-measure: 680px;
+  --policy-sheet: 56px;
   --policy-rule: var(--color-sand);
   background: #fff;
   color: #4b4640;
   font-family: var(--font-body);
 }
 
-/* ---- Header ---------------------------------------------------------------------------- */
-.policy-header {
-  background: #f9f7f5;
-  border-bottom: 1px solid #efe8e1;
+/* ---- Photograph: the page opens on a wide picture, as the homepage opens on its hero ----- */
+.policy-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
-.policy-header-inner,
-.policy-layout {
-  display: grid;
-  grid-template-columns: 240px minmax(0, var(--policy-measure));
-  column-gap: 96px;
-  justify-content: center;
-  padding-inline: var(--policy-gutter);
+.policy-visual {
+  position: relative;
+  height: clamp(280px, 30vw, 540px);
+  margin: 17px var(--policy-gutter) 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #efe8e1;
 }
-.policy-header-inner {
-  padding-block: 32px 40px;
+.policy-visual img {
+  object-fit: cover;
+  object-position: 50% 30%;
 }
-.policy-header-inner > * {
-  grid-column: 2;
+.policy-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(60 40 28 / 0) 55%, rgb(60 40 28 / 0.28) 100%);
+  pointer-events: none;
 }
-.policy-header .breadcrumbs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: var(--text-meta);
-  color: var(--color-taupe);
-}
-.policy-header .breadcrumbs a:hover {
-  color: var(--color-brand);
-}
-.policy-header .breadcrumbs a::after {
-  content: "/";
-  margin-left: 8px;
-  color: #a99a90;
-}
-.policy-eyebrow {
-  margin: 40px 0 12px;
-  font-size: var(--text-label);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-brand);
-}
-.policy-header h1 {
-  margin: 0;
-  font: 500 clamp(38px, 3.4vw, 52px) / 1.08 var(--font-serif);
-  letter-spacing: -0.015em;
-  color: var(--color-espresso);
-}
+
+/* Links to all four policies, after the help box. */
 .policy-switcher ul {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 28px 0 0;
+  margin: 24px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -94,16 +78,34 @@
 
 /* ---- Body: contents beside the text ---------------------------------------------------- */
 .policy-layout {
-  padding-block: 56px 96px;
+  display: grid;
+  grid-template-columns: 240px minmax(0, calc(var(--policy-measure) + 2 * var(--policy-sheet)));
+  column-gap: 40px;
+  justify-content: center;
   align-items: start;
+  padding: 0 var(--policy-gutter) 96px;
 }
 .policy-layout > .policy-prose,
-.policy-layout > .policy-help {
+.policy-layout > .policy-help,
+.policy-layout > .policy-switcher {
   grid-column: 2;
+}
+/* The text sits on a white sheet that rises over the bottom of the photograph. */
+.policy-layout > .policy-prose {
+  position: relative;
+  margin-top: -160px;
+  padding: 48px var(--policy-sheet) 0;
+  border-radius: 14px 14px 0 0;
+  background: #fff;
+}
+.policy-layout > .policy-help,
+.policy-layout > .policy-switcher {
+  margin-inline: var(--policy-sheet);
 }
 .policy-contents {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 3;
+  margin-top: 56px;
   position: sticky;
   top: 32px;
   max-height: calc(100vh - 64px);
@@ -335,8 +337,14 @@
   line-height: 1.5;
 }
 .policy-prose div:not(:has(> :not(div), > div > :not(div), > div > div > *)):has(> div > div) > div > div:first-child {
-  margin-bottom: 8px;
-  font-size: 18px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: #f3ede8;
+  font-size: 20px;
   line-height: 1;
   color: var(--color-brand);
 }
@@ -392,10 +400,9 @@
 
 /* ---- Wide windows: centre the text itself, with the contents in the left margin --------- */
 @media (min-width: 1500px) {
-  .policy-header-inner,
   .policy-layout {
-    grid-template-columns: 260px minmax(0, var(--policy-measure)) 260px;
-    column-gap: 120px;
+    grid-template-columns: 260px minmax(0, calc(var(--policy-measure) + 2 * var(--policy-sheet))) 260px;
+    column-gap: 72px;
   }
 }
 
@@ -404,28 +411,40 @@
   .policy-page {
     --policy-gutter: 32px;
   }
-  .policy-header-inner,
+  .policy-visual {
+    height: 300px;
+  }
   .policy-layout {
     grid-template-columns: minmax(0, var(--policy-measure));
+    padding-bottom: 72px;
   }
-  .policy-header-inner > *,
   .policy-layout > .policy-contents,
   .policy-layout > .policy-prose,
-  .policy-layout > .policy-help {
+  .policy-layout > .policy-help,
+  .policy-layout > .policy-switcher {
     grid-column: 1;
+    margin-inline: 0;
   }
-  .policy-layout {
-    padding-block: 32px 72px;
+  .policy-layout > .policy-prose {
+    margin-top: 0;
+    padding: 0;
+    border-radius: 0;
+    background: none;
   }
-  .policy-contents {
+  /* The folded contents card rests on the bottom edge of the photograph. */
+  .policy-layout > .policy-contents {
     grid-row: auto;
-    position: static;
+    position: relative;
+    top: -28px;
+    z-index: 1;
     max-height: none;
     overflow: visible;
-    margin-bottom: 40px;
+    margin: 0 16px 12px;
     padding: 0;
     border: 1px solid var(--color-sand);
     border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgb(41 37 31 / 0.08);
   }
   .policy-contents-title {
     display: none;
@@ -466,14 +485,9 @@
   .policy-page {
     --policy-gutter: 16px;
   }
-  .policy-header-inner {
-    padding-block: 20px 28px;
-  }
-  .policy-eyebrow {
-    margin-top: 28px;
-  }
-  .policy-header h1 {
-    font-size: 34px;
+  .policy-visual {
+    height: 220px;
+    margin-top: 12px;
   }
   .policy-switcher ul {
     flex-wrap: nowrap;

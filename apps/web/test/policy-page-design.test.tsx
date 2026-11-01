@@ -135,6 +135,38 @@ test("every policy ends with a help box linking the contact page, and lets reade
   });
 });
 
+// The store's own photographs, one per policy, from the artwork staff manage in the admin.
+const photographs: Record<string, string> = {
+  "privacy-policy": "/cdn/shop/files/ChatGPT_Image_Apr_24_2026_03_29_31_AM.png",
+  "refund-policy": "/cdn/shop/files/Frame129.png",
+  "shipping-policy": "/f9239e922cef45df9972f1dac1b89e0a.",
+  "terms-of-service": "/84351f35cf124a0ab27f853cb96b817f.",
+};
+
+// Catches the owner's request (1 November): no header band, a photograph instead.
+test("each policy opens with a photograph instead of a header band, keeping one title for search and screen readers", async () => {
+  await unpublished(async () => {
+    for (const slug of slugs) {
+      const doc = await policyDocument(slug);
+      const images = [...doc.querySelectorAll("img")];
+      assert.equal(images.length, 1, slug);
+      assert.ok(images[0]!.getAttribute("src")?.includes(photographs[slug]!), `${slug}: ${images[0]!.getAttribute("src")}`);
+      assert.equal(images[0]!.getAttribute("alt"), "", "the photograph is decoration; the policy text carries the meaning");
+      assert.ok(images[0]!.compareDocumentPosition(doc.querySelector("article")!) & 4 /* following */, slug);
+      assert.equal(doc.querySelector('nav[aria-label="Breadcrumb"]'), null, slug);
+      assert.equal(doc.querySelector("header"), null, slug);
+      assert.deepEqual([...doc.querySelectorAll("h1")].map(text), [(before[slug]!.metadata as { title: string }).title], slug);
+    }
+  });
+});
+
+// Catches the photograph ignoring artwork staff have replaced in the admin.
+test("a photograph staff replace in the admin replaces it on the policy page too", async () => {
+  const replaced = "https://cdn.shopify.com/s/files/1/0001/files/new-craft-photo.jpg";
+  const doc = render(renderToStaticMarkup(<PolicyArticle policy={{ title: "Refund policy", content: [] }} slug="refund-policy" policies={[]} media={[{ key: "story-hero", image: replaced, alt: "Hand-finished upholstery" }]} />));
+  assert.ok(doc.querySelector("img")?.getAttribute("src")?.includes("new-craft-photo.jpg"));
+});
+
 // Catches the policy redesign leaking into blog articles, which share the content renderer.
 test("blog articles keep their headings without policy anchors or a table of contents", async () => {
   await unpublished(async () => {
