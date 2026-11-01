@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import React, { act } from "react";
 import { JSDOM } from "jsdom";
-import { CategoryIntro } from "../components/store/category-intro";
+import { CategoryIntroduction } from "../components/category-controls";
 import categories from "../data/landing-categories.json";
 
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/pages/sofas" });
@@ -17,7 +17,7 @@ const container = document.getElementById("root")!;
 
 async function mount(description: string) {
   const root = createRoot(container);
-  await act(async () => root.render(<CategoryIntro title="Sofas" description={description} />));
+  await act(async () => root.render(<CategoryIntroduction title="Sofas" description={description} />));
   return async () => { await act(async () => root.unmount()); };
 }
 
@@ -25,8 +25,8 @@ test("original sofa introduction retains its initial excerpt and Read More contr
   const cleanup = await mount(categories.sofas.description);
   try {
     assert.equal(container.querySelector("h1")?.textContent, "Sofas");
-    assert.equal(container.querySelector("[data-category-intro] p")?.textContent, "A sofa is not just the most used piece in a living room. It is where the home slows down. From morning coffee to family conversations, movie nights, guests, celebrations, and quiet moments alone, t...");
-    assert.equal(container.querySelector("button")?.textContent, "Read more");
+    assert.equal(container.querySelector("p")?.textContent, "A sofa is not just the most used piece in a living room. It is where the home slows down. From morning coffee to family conversations, movie nights, guests, celebrations, and quiet moments alone, t...");
+    assert.equal(container.querySelector("button")?.textContent, "Read More");
     assert.equal(container.querySelector("button")?.getAttribute("aria-expanded"), "false");
   } finally { await cleanup(); }
 });
@@ -35,19 +35,19 @@ test("long normalized introduction expands completely and collapses through its 
   const prefix = "A".repeat(197);
   const cleanup = await mount(` \n${prefix}\t complete description. \n`);
   try {
-    const paragraph = container.querySelector("[data-category-intro] p")!;
+    const paragraph = container.querySelector("p")!;
     const button = container.querySelector("button")!;
     assert.equal(paragraph.textContent, `${prefix}...`);
     assert.equal(button.getAttribute("aria-controls"), paragraph.id);
-    assert.equal(button.textContent, "Read more");
+    assert.equal(button.textContent, "Read More");
     assert.equal(button.getAttribute("aria-expanded"), "false");
     await act(async () => button.click());
     assert.equal(paragraph.textContent, `${prefix} complete description.`);
-    assert.equal(button.textContent, "Read less");
+    assert.equal(button.textContent, "Read Less");
     assert.equal(button.getAttribute("aria-expanded"), "true");
     await act(async () => button.click());
     assert.equal(paragraph.textContent, `${prefix}...`);
-    assert.equal(button.textContent, "Read more");
+    assert.equal(button.textContent, "Read More");
     assert.equal(button.getAttribute("aria-expanded"), "false");
   } finally { await cleanup(); }
 });
@@ -64,7 +64,7 @@ for (const [label, description, expected] of [
   test(`${label} displays completely without invented ellipsis or expansion control`, async () => {
     const cleanup = await mount(description);
     try {
-      assert.equal(container.querySelector("[data-category-intro] p")?.textContent, expected);
+      assert.equal(container.querySelector("p")?.textContent, expected);
       assert.equal(container.querySelectorAll("button").length, 0);
     } finally { await cleanup(); }
   });

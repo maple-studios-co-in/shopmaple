@@ -142,9 +142,9 @@ test("query-driven chairs retain category membership, filters, sort and paginati
 test("separate Chairs page retains six categories and Best Sellers destination", async () => {
   const doc = await render({}, true);
   assert.equal(doc.querySelector("h1")?.textContent, "Chairs");
-  assert.equal(doc.querySelectorAll("[data-category-tile]").length, 6);
+  assert.equal(doc.querySelectorAll(".landing-categories a").length, 6);
   assert.equal(
-    doc.querySelector("[data-category-rail] a[data-view-all]")?.getAttribute("href"),
+    doc.querySelector(".landing-products header a")?.getAttribute("href"),
     "/collections/chair-collection",
   );
 });
@@ -152,7 +152,7 @@ test("bare Chairs collection restores source editorial sequence and honest local
   const doc = await render();
   assert.equal(doc.querySelector("h1")?.textContent, "Our Newest Arrivals");
   assert.deepEqual(
-    [...doc.querySelectorAll("[data-chairs-categories] h2")].map(
+    [...doc.querySelectorAll(".legacy-chairs-categories h2")].map(
       (n) => n.textContent,
     ),
     [
@@ -169,19 +169,19 @@ test("bare Chairs collection restores source editorial sequence and honest local
     ],
   );
   assert.deepEqual(
-    [...doc.querySelectorAll("[data-chairs-room] h2")].map(
+    [...doc.querySelectorAll(".legacy-chairs-room h2")].map(
       (n) => n.textContent,
     ),
     ["Bed Room", "Living Room"],
   );
   assert.deepEqual(
-    [...doc.querySelectorAll("[data-category-values] h3")].map((n) => n.textContent),
+    [...doc.querySelectorAll(".landing-values h3")].map((n) => n.textContent),
     ["Grain", "Edge", "Fabric", "Polish"],
   );
   const content = doc.body.textContent ?? "";
   const sectionLabels = [
     ...doc.querySelectorAll(
-      "h1, h2, [data-chairs-rhythm-track] > span:not([aria-hidden]), [data-category-values] h3",
+      "h1, h2, .legacy-chairs-rhythm-track > span:not([aria-hidden]), .landing-values h3",
     ),
   ].map((node) => node.textContent);
   let previous = -1;
@@ -208,14 +208,14 @@ test("bare Chairs collection restores source editorial sequence and honest local
     /No products are currently available in this collection/,
   );
   assert.doesNotMatch(content, /Next, select a collection|Collection name/);
-  assert.equal(doc.querySelectorAll("[data-chairs-offers] a").length, 4);
-  assert.equal(doc.querySelectorAll("[data-chairs-faq] details").length, 5);
+  assert.equal(doc.querySelectorAll(".legacy-chairs-offers a").length, 4);
+  assert.equal(doc.querySelectorAll(".legacy-chairs-faq details").length, 5);
   assert.equal(
-    doc.querySelectorAll("[data-chairs-faq] details[open]").length,
+    doc.querySelectorAll(".legacy-chairs-faq details[open]").length,
     0,
   );
   assert.match(
-    doc.querySelector("[data-chairs-faq]")?.textContent ?? "",
+    doc.querySelector(".legacy-chairs-faq")?.textContent ?? "",
     /checkout is disabled/i,
   );
   for (const link of doc.querySelectorAll<HTMLAnchorElement>("a")) {
@@ -228,12 +228,12 @@ test("bare Chairs collection restores source editorial sequence and honest local
   }
   assert.ok(doc.querySelector('a[href="/collections/all?category=chairs"]'));
   const first = doc.querySelector<HTMLDetailsElement>(
-    "[data-chairs-faq] details",
+    ".legacy-chairs-faq details",
   )!;
   first.querySelector<HTMLElement>("summary")!.click();
   assert.equal(first.open, true);
   assert.equal(
-    doc.querySelectorAll("[data-chairs-faq] details[open]").length,
+    doc.querySelectorAll(".legacy-chairs-faq details[open]").length,
     1,
   );
   first.querySelector<HTMLElement>("summary")!.click();
@@ -306,7 +306,7 @@ test("all chair reset controls keep the unfiltered chair grid and other collecti
 
 test("rooms retain their source product cards as honest enquiries when the owned catalogue lacks them", async () => {
   const doc = await render();
-  const rooms = [...doc.querySelectorAll("[data-chairs-room]")];
+  const rooms = [...doc.querySelectorAll(".legacy-chairs-room")];
   assert.deepEqual(
     rooms.map((room) => room.querySelectorAll("[data-product-card]").length),
     [1, 6],
@@ -354,14 +354,14 @@ test("editorial Chairs exposes the full category catalogue, honest prices and wo
     assert.equal(doc.querySelectorAll("h1").length, 1);
     assert.equal(doc.querySelector("h1")?.textContent, "Our Newest Arrivals");
     assert.equal(listing.querySelector("h2")?.textContent, "Chairs");
-    assert.ok(doc.querySelector('[data-chairs-hero] a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
+    assert.ok(doc.querySelector('.legacy-chairs-hero a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
     assert.equal(listing.querySelectorAll("[data-product-card]").length, 24);
-    assert.match(listing.querySelector("[data-item-count]")?.textContent ?? "", /^26 products/);
+    assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 items/);
     assert.ok(!listing.textContent?.includes("Chair matching table"));
     const unpriced = [...listing.querySelectorAll("[data-product-card]")].find(card => card.querySelector("[data-card-name]")?.textContent === "Chair 23");
     assert.equal(unpriced?.querySelector("[data-card-price]")?.textContent, "Price on request");
-    assert.equal(listing.querySelector("[data-filter-form]")?.getAttribute("action"), "/collections/chairs");
-    const next = listing.querySelector<HTMLAnchorElement>("[data-pagination] a")!;
+    assert.equal(listing.querySelector(".collection-filter-form")?.getAttribute("action"), "/collections/chairs");
+    const next = listing.querySelector<HTMLAnchorElement>(".collection-pagination a")!;
     assert.equal(next.textContent, "Next");
     const url = new URL(next.href);
     assert.equal(url.pathname, "/collections/chairs");

@@ -5,7 +5,6 @@ import { JSDOM } from "jsdom";
 import { createRoot } from "react-dom/client";
 import { Header } from "../components/header";
 import { ShopProvider } from "../components/shop-provider";
-import { waitFor } from "./support/wait-for";
 const dom = new JSDOM('<div id="root"></div>', {
   url: "http://localhost:3003",
 });
@@ -27,7 +26,7 @@ dom.window.HTMLDialogElement.prototype.showModal = function () {
 dom.window.HTMLDialogElement.prototype.close = function () {
   this.removeAttribute("open");
 };
-test("header wishlist opens a working drawer and the account menu never hands off to Shopify", async () => {
+test("header wishlist opens a working drawer and account support never hands off to Shopify", async () => {
   const previous = globalThis.fetch;
   globalThis.fetch = async () =>
     Response.json({
@@ -52,7 +51,6 @@ test("header wishlist opens a working drawer and the account menu never hands of
     );
     assert.ok(saved, "wishlist should open a drawer");
     await act(async () => saved.click());
-    await waitFor(() => document.querySelector("dialog[open]"));
     const panel = document.querySelector("dialog[open]")!;
     assert.ok(panel);
     // The wishlist list is loaded on demand; wait for it to arrive.
@@ -71,13 +69,7 @@ test("header wishlist opens a working drawer and the account menu never hands of
         .querySelector<HTMLButtonElement>('button[aria-label="Your account"]')!
         .click(),
     );
-    const account = document.querySelector("[data-account-menu]")!;
-    assert.equal(
-      document
-        .querySelector('button[aria-label="Your account"]')!
-        .getAttribute("aria-expanded"),
-      "true",
-    );
+    const account = document.querySelector("dialog[open]")!;
     assert.ok(account.querySelector('a[href="/account"]'));
     assert.equal(
       account.querySelector('a[href*="shop.maplefurnishers.com"]'),

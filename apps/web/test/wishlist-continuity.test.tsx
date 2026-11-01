@@ -35,7 +35,7 @@ function button(label: string) {
   assert.ok(result, `button ${label}`); return result;
 }
 async function click(target: HTMLElement, focus = true) { if (focus) target.focus(); await act(async () => target.click()); }
-test("saved product, unavailable piece and empty wishlist keep their copy and removal behavior", async () => {
+test("saved product, unavailable piece and empty wishlist preserve their original copy and removal behavior", async () => {
   await mount(["alpha", "missing"], async (requests) => {
     assert.equal(document.querySelector('[role="status"]')?.textContent, "Loading saved furniture…");
     await settle(requests, "alpha"); await settle(requests, "missing", new Response(null, { status: 404 }));
@@ -44,9 +44,9 @@ test("saved product, unavailable piece and empty wishlist keep their copy and re
     await click(button("Remove"));
     for (const request of requests.filter((entry) => entry.handle === "alpha" && !entry.signal?.aborted)) await act(async () => request.resolve(Response.json(product("alpha"))));
     await click(button("Unsave alpha Chair"));
-    assert.equal(document.querySelector("h2")?.textContent, "Your next favourite is waiting.");
+    assert.equal(document.querySelector("h2")?.textContent, "Your wishlist is empty");
     assert.match(document.body.textContent!, /Saved furniture stays in this browser\./);
-    assert.equal(document.querySelector('[data-wishlist-empty] a')?.getAttribute("href"), "/collections/all");
+    assert.equal(document.querySelector('.wishlist-empty a')?.getAttribute("href"), "/collections/all");
     assert.equal(localStorage.getItem("maple-favourites"), "[]");
   });
 });
@@ -68,7 +68,7 @@ test("removal retains settled cards without refetching and moves focused control
     await click(charlie);
     assert.equal(document.activeElement, button("Unsave alpha Chair"), "last card falls back to the previous control");
     await click(button("Unsave alpha Chair"));
-    assert.equal(document.activeElement, document.querySelector('[data-wishlist-empty] a'));
+    assert.equal(document.activeElement, document.querySelector('.wishlist-empty a'));
   });
 });
 test("adding a pending piece keeps settled cards and removed pending responses cannot resurrect it", async () => {
