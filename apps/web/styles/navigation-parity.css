@@ -85,7 +85,7 @@
 }
 .maple-menu-link:hover,
 .maple-menu-parent:hover {
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 3px;
 }
 .maple-desktop-nav :focus-visible,

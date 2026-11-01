@@ -103,11 +103,11 @@ export function HomeSocial({
         {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
       </h2>
       <a
-        href="https://www.instagram.com/the_maple_experience/"
+        href="https://www.instagram.com/maplefurnishers/"
         target="_blank"
         rel="noreferrer"
       >
-        <Instagram size={20} /> @the_maple_experience <ArrowRight size={18} />
+        <Instagram size={20} /> @maplefurnishers <ArrowRight size={18} />
       </a>
       <InstagramRail posts={posts} autoplay={autoplay} />
     </section>

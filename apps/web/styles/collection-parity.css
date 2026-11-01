@@ -177,7 +177,7 @@
 .collection-clear {
   display: block;
   text-align: center;
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 4px;
   padding: 14px;
   font-size: 13px;
@@ -215,7 +215,7 @@
 }
 .collection-filter-summary a {
   margin-left: 12px;
-  text-decoration: underline;
+  text-decoration: none;
 }
 .collection-preview-note {
   margin: 28px 0 0;
@@ -223,7 +223,7 @@
   font-size: 12px;
 }
 .collection-preview-note a {
-  text-decoration: underline;
+  text-decoration: none;
 }
 .collection-mobile-filter {
   display: none;
@@ -416,7 +416,7 @@
 }
 .collection-reset {
   font-size: 12px;
-  text-decoration: underline;
+  text-decoration: none;
   padding: 8px;
 }
 .collection-products .product-card-image {

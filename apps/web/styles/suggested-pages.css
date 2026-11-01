@@ -88,7 +88,7 @@
 }
 .editorial-grid article > a {
   font-size: 14px;
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 4px;
 }
 .editorial-page > .cp-form {

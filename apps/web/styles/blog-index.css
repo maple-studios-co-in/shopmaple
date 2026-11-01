@@ -81,7 +81,7 @@
   line-height: 1.6;
 }
 .blog-index-copy a:hover {
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 3px;
 }
 .blog-index a:focus-visible {

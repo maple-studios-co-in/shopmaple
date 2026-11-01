@@ -76,7 +76,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector(".home-project strong")?.textContent, "24 hours");
   assert.ok(doc.querySelector('.home-project-form input[name="email"][required]'));
   assert.ok(doc.querySelector('.home-newsletter-form input[type="email"][required]'));
-  assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), "/media/workshop-poster.webp");
+  assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
   assert.ok(doc.querySelector(".home-testimonial video[controls] source"));
 });
 

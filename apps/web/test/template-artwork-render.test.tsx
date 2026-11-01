@@ -17,7 +17,7 @@ import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
 const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
-  ["home-workshop-poster", "home", ".hero-film img", "/media/workshop-poster.webp", "Furniture craftsmanship at Maple"],
+  ["home-workshop-poster", "home", ".hero-film img", "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
   ["home-hero-sofas", "home", '.category-tile[href="/pages/sofas"] img', files + "engaged_5.jpg?v=1767435623", ""],
   ["home-hero-chairs", "home", '.category-tile[href="/pages/chairs"] img', files + "engaged_6_1.jpg?v=1767444019", ""],
   ["home-hero-tables", "home", '.category-tile[href="/pages/tables"] img', files + "engaged_8_1.jpg?v=1767444598", ""],
@@ -111,8 +111,9 @@ async function checkArtwork(edited: boolean) {
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
-      assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-label"), "Maple furniture craftsmanship");
-      assert.ok(doc.querySelector('button[aria-label="Play workshop video"]'));
+      // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
+      assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
+      assert.equal(doc.querySelector(".hero-film button"), null);
       assert.ok(doc.querySelector('.home-testimonial video[controls] source[src$="84199271.mp4?v=0"]'));
       assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }

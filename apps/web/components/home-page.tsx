@@ -6,6 +6,7 @@ import { CampaignBanner } from "@/components/campaign-banner";
 import { Hero } from "@/components/hero";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
+import { HomeScrollRail } from "@/components/home-scroll-rail";
 import { HomeTicker } from "@/components/home-ticker";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
@@ -57,11 +58,14 @@ async function HomeProducts({
   heading,
   label,
   browseHref,
+  scrollbar = false,
 }: {
   handles: string[];
   heading?: string;
   label: string;
   browseHref: string;
+  /** A plain row with a visible scrollbar: no arrows and no "View all" link (Bestsellers). */
+  scrollbar?: boolean;
 }) {
   const products = await getProductCards(handles).catch(async () => {
     // Preserve healthy siblings when one failed card invalidates the batch.
@@ -78,15 +82,23 @@ async function HomeProducts({
             <p className="home-eyebrow">Shop By</p>
             <h2>{heading}</h2>
           </div>
-          <Link href={browseHref} aria-label={`View all ${heading}`}>View all →</Link>
+          {!scrollbar && <Link href={browseHref} aria-label={`View all ${heading}`}>View all →</Link>}
         </header>
       )}
       {products.length ? (
-        <HomeCarousel label={label}>
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </HomeCarousel>
+        scrollbar ? (
+          <HomeScrollRail label={label}>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </HomeScrollRail>
+        ) : (
+          <HomeCarousel label={label}>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </HomeCarousel>
+        )
       ) : (
         <p className="home-catalogue-unavailable">
           This collection is temporarily unavailable.{" "}
@@ -138,6 +150,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         heading={copy.bestsellersHeading}
         label="Bestsellers"
         browseHref="/collections/all"
+        scrollbar
       />
     ),
     "seating-banner": <CampaignBanner campaign="landing-sofa-accent-chair" content={content} />,

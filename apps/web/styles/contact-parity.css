@@ -248,7 +248,7 @@
   margin: 20px 24px;
 }
 .cp-account-note a {
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 3px;
 }
 .cp-bulk-hero {

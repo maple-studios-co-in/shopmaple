@@ -1,118 +1,36 @@
 "use client";
 import { ContentImage as Image } from "@/components/content-image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 
+/** The shop's latest hero film, as published on shop.maplefurnishers.com. */
+export const heroFilm = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
+
+/**
+ * The film plays on its own, muted and looping, with no controls (the owner's choice). A shopper
+ * whose device asks for reduced motion sees the still poster instead.
+ */
 export function Hero({
   content = defaultHomeDetails.hero,
   media,
 }: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
   const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
   const video = useRef<HTMLVideoElement>(null);
-  const togglePlayback = useRef<(() => void) | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [starting, setStarting] = useState(false);
-
   useEffect(() => {
     const v = video.current;
     if (!v) return;
-    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    let disposed = false;
-    let intersecting: boolean | null = null;
-    let requested = false;
-    let request = 0;
-    let pending: number | null = null;
-    const permitted = () => !disposed && requested &&
-      document.visibilityState === "visible" && intersecting !== false;
-    const pause = () => {
-      requested = false;
-      request += 1;
-      pending = null;
-      v.pause();
-      if (!disposed) {
-        setStarting(false);
-        setPlaying(false);
-      }
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const apply = () => {
+      if (reduced?.matches) v.pause();
+      else { v.muted = true; void v.play()?.catch(() => {}); }
     };
-    const onPlay = () => {
-      if (!permitted()) pause();
-      else setPlaying(!v.paused);
-    };
-    const onPause = () => {
-      // A queued pause event can arrive after a newer Play has already started.
-      if (v.paused) pause();
-      else setPlaying(true);
-    };
-    const toggle = () => {
-      if (pending !== null || !v.paused) {
-        pause();
-        return;
-      }
-      requested = true;
-      if (!permitted()) {
-        pause();
-        return;
-      }
-      if (!v.getAttribute("src")) v.src = "/media/workshop.mp4";
-      const currentRequest = ++request;
-      pending = currentRequest;
-      setStarting(true);
-      const settle = (failed = false) => {
-        if (disposed) {
-          if (!togglePlayback.current) v.pause();
-          return;
-        }
-        // Old completions must not cancel a newer explicit Play. Every stop
-        // clears intent, so returning onscreen never revives a cancelled request.
-        if (!permitted()) {
-          pause();
-          return;
-        }
-        if (request !== currentRequest) return;
-        pending = null;
-        setStarting(false);
-        if (failed) pause();
-        else setPlaying(!v.paused);
-      };
-      void v.play().then(() => settle(), () => settle(true));
-    };
-    const onVisibility = () => { if (document.hidden) pause(); };
-    const onMotion = () => { if (motion?.matches) pause(); };
-    togglePlayback.current = toggle;
-    v.addEventListener("play", onPlay);
-    v.addEventListener("pause", onPause);
-    v.addEventListener("ended", pause);
-    v.addEventListener("error", pause);
-    document.addEventListener("visibilitychange", onVisibility);
-    motion?.addEventListener("change", onMotion);
-    const observer = typeof window.IntersectionObserver === "function"
-      ? new window.IntersectionObserver((entries) => {
-          const entry = entries.reduce<IntersectionObserverEntry | undefined>(
-            (latest, item) => item.target === v && (!latest || item.time >= latest.time) ? item : latest,
-            undefined,
-          );
-          if (!entry || disposed) return;
-          intersecting = entry.isIntersecting;
-          if (!intersecting) pause();
-        }, { threshold: 0 })
-      : null;
-    observer?.observe(v);
-    return () => {
-      disposed = true;
-      togglePlayback.current = null;
-      observer?.disconnect();
-      motion?.removeEventListener("change", onMotion);
-      document.removeEventListener("visibilitychange", onVisibility);
-      v.removeEventListener("play", onPlay);
-      v.removeEventListener("pause", onPause);
-      v.removeEventListener("ended", pause);
-      v.removeEventListener("error", pause);
-      pause();
-    };
+    apply();
+    reduced?.addEventListener?.("change", apply);
+    return () => reduced?.removeEventListener?.("change", apply);
   }, []);
   return (
     <section className="hero-grid" aria-label="Explore Maple furniture">
@@ -126,25 +44,19 @@ export function Hero({
         />
         <video
           ref={video}
+          src={heroFilm}
+          autoPlay
           muted
-          playsInline
           loop
-          preload="none"
-          aria-label="Maple furniture craftsmanship"
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
         />
         <div className="hero-introduction">
           <Link className="hero-cta" href="/pages/nimbus-collection">
             {content.cta} <ArrowUpRight size={17} />
           </Link>
         </div>
-        <button
-          className="video-control"
-          type="button"
-          onClick={() => togglePlayback.current?.()}
-          aria-label={playing ? "Pause workshop video" : starting ? "Cancel workshop video playback" : "Play workshop video"}
-        >
-          <span className="sr-only">Toggle motion</span>
-        </button>
       </div>
       <div className="hero-categories">
         {content.tiles.map(({ key, label, priceLabel }) => {

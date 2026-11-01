@@ -75,10 +75,13 @@ async function renderHome({ merchandising, products = Object.fromEntries([...ori
 const texts = (doc: Document, selector: string) => [...doc.querySelectorAll(selector)].map(node => node.textContent?.trim());
 const attributes = (doc: Document, selector: string, attribute: string) => [...doc.querySelectorAll(selector)].map(node => node.getAttribute(attribute));
 
-test("both homepage rails expose a visible heading and a context-labelled browse destination even when empty", async () => {
+test("both homepage rails expose a visible heading, and Chairs a context-labelled browse destination, even when empty", async () => {
   for (const options of [{}, { merchandising: { bestsellers: [], chairs: [], categories: [], offers: [] } }]) {
     const { doc } = await renderHome(options);
-    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
+    // Bestsellers has no "View all" link (owner, 2026-11-01); Chairs keeps its browse action.
+    assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Bestsellers");
+    assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null);
+    for (const [key, heading, href] of [["chairs", "Chairs", "/collections/chairs"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
       const browse = rail.querySelector("header a");
@@ -94,7 +97,7 @@ test("published rail headings are used for visible navigation without changing c
   assert.equal(doc.querySelector('[data-home-section="chairs"] h2')?.textContent, "Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="chairs"] header a')?.getAttribute("aria-label"), "View all Your reading nook");
   assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Selected favourites");
-  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a')?.getAttribute("href"), "/collections/all");
+  assert.equal(doc.querySelector('[data-home-section="bestsellers"] header a'), null, "Bestsellers has no View all link");
 });
 
 test("category and offer images describe their different responsive slots without changing artwork", async () => {
