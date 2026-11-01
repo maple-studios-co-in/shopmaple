@@ -18,7 +18,7 @@ import categories from "../data/landing-categories.json";
 import nimbus from "../data/landing-nimbus.json";
 import source from "../data/landing-catalog.json";
 
-const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[], optionThumbs: [] as never[] });
 const product = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, description: "Full detail description", category: "chairs", images: ["https://example.com/chair.jpg", "https://example.com/gallery.jpg"], published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "one", title: "Oak", sku: "ONE", pricePaise: 1234500, compareAtPaise: 1500000, available: true, stockPolicy: "stocked" }, { id: "two", title: "Custom", sku: null, pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
 let fixtureId = 0;
 async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void> } = {}) {
