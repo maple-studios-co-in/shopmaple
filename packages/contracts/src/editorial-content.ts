@@ -20,7 +20,8 @@ const controls = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 const text = (max: number) => z.string().max(max).refine(value => !controls.test(value), "Control characters are not content");
 const heading = (max: number) => text(max).refine(value => value.trim().length > 0, "Use a nonempty title");
 const tags = new Set(["div", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "strong", "b", "em", "i", "u", "br", "a", "blockquote", "table", "thead", "tbody", "tr", "th", "td", "span", "hr", "img"]);
-function safeLink(value: unknown): boolean {
+/** Whether an editorial link may be published: store paths, Maple pages, mailto: and tel: only. */
+export function safeLink(value: unknown): boolean {
   if (typeof value !== "string" || value.length > 1000 || /[\s\\%\u0000-\u001f\u007f]/.test(value)) return false;
   if (value.split(/[/?#]/).some(segment => segment === ".." || segment === ".")) return false;
   if (value.startsWith("/")) return contentLinkSchema.safeParse(value).success;
@@ -58,7 +59,9 @@ function validDocument(value: unknown): value is EditorialNode[] {
   }
   return new TextEncoder().encode(JSON.stringify(value)).length <= 48 * 1024;
 }
-const documentSchema = z.custom<EditorialNode[]>(validDocument, { error: "Invalid or oversized editorial document", abort: true });
+/** One policy or article body: allowed tags and links, at most 2000 nodes, 20 levels deep and 48 KiB. */
+export const editorialDocumentSchema = z.custom<EditorialNode[]>(validDocument, { error: "Invalid or oversized editorial document", abort: true });
+const documentSchema = editorialDocumentSchema;
 const fitsDocument = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length <= 48 * 1024;
 const policySchema = z.object({ slug: z.enum(policySlugs), title: heading(160), content: documentSchema }).strict().refine(fitsDocument, "Editorial document exceeds 48 KiB");
 const blogSchema = z.object({ handle: z.enum(blogHandles), title: heading(160) }).strict();

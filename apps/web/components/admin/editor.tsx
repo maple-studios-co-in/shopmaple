@@ -409,7 +409,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>
         <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
-        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} />
+        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} disabled={busy || conflict} />
         <AuthoredArticleFields value={content.authoredArticles} onChange={set("authoredArticles")} session={session} onExpired={onExpired} />
       </>;
       case "Existing pages": return <>
