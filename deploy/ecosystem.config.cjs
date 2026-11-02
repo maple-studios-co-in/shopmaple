@@ -19,7 +19,9 @@ module.exports = {
       cwd: "/home/deploy/shopmaple/current/apps/web",
       script: "../../node_modules/next/dist/bin/next",
       args: "start --hostname 127.0.0.1 --port 3110",
-      node_args: "--env-file=/home/deploy/shopmaple/shared/store.env",
+      // Node collects garbage only near its own heap ceiling (gigabytes by default), so without a cap
+      // the store grows ~0.9 MB per homepage view until PM2 kills it at max_memory_restart.
+      node_args: "--env-file=/home/deploy/shopmaple/shared/store.env --max-old-space-size=384",
       env: { NODE_ENV: "production" },
       max_memory_restart: "768M",
       kill_timeout: 10000,
