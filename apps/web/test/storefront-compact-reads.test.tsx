@@ -200,7 +200,7 @@ test("PDP retains full main detail and requests five compact related cards befor
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
       assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
-      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs"]);
+      assert.deepEqual(requests.map(u => u.pathname + u.search).sort(), ["/api/catalogue/related?category=chairs", "/api/products/main", "/api/products/main/reviews"]);
     }, { related });
   }
 });

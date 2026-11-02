@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Upload, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, MessageSquareQuote, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
@@ -30,6 +30,7 @@ import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highli
 import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
+import { ReviewsPanel } from "./reviews-panel";
 import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
@@ -50,7 +51,7 @@ type Document = {
 };
 const tabs = [
   "Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram",
-  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
+  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "Reviews", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
@@ -59,13 +60,13 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram"] },
   { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
   { label: "Library", items: ["Media"] },
-  { label: "Customers", items: ["Enquiries"] },
+  { label: "Customers", items: ["Enquiries", "Reviews"] },
   { label: "Publishing", items: ["History"] },
 ];
 const icons: Record<Tab, typeof House> = {
   Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, "Product highlights": Sparkles, Artwork: ImageIcon,
   Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
-  Media: Images, Enquiries: Inbox, History,
+  Media: Images, Enquiries: Inbox, Reviews: MessageSquareQuote, History,
 };
 /** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
 const existingPages = [
@@ -346,7 +347,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
 
   const canManageEnquiries = session.user.canManageEnquiries === true;
   const visibleGroups = navGroups
-    .map((group) => ({ ...group, items: group.items.filter((name) => name !== "Enquiries" || canManageEnquiries) }))
+    .map((group) => ({ ...group, items: group.items.filter((name) => (name !== "Enquiries" && name !== "Reviews") || canManageEnquiries) }))
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
     if (name === "History") { void history(); return; }
@@ -357,7 +358,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     setInspecting(null);
     setTab(name);
   }
-  const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
+  const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Reviews" && name !== "Overview");
   const roleLabel = session.user.role === "publisher" ? "Publisher" : "Editor";
   const unavailableDraft = busy ? (
     <div aria-busy="true">
@@ -553,7 +554,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             <section
               className={panelClass}
               data-admin-panel
-              data-wide={tab === "Enquiries" ? "true" : undefined}
+              data-wide={tab === "Enquiries" || tab === "Reviews" ? "true" : undefined}
               aria-label={`${tab} editor`}
               onFocusCapture={(event) => {
                 const row = (event.target as HTMLElement).closest?.("[data-preview-section]");
@@ -562,6 +563,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             >
               {tab === "Enquiries" && canManageEnquiries ? (
                 <EnquiryInbox session={session} onExpired={onExpired} />
+              ) : tab === "Reviews" && canManageEnquiries ? (
+                <ReviewsPanel session={session} onExpired={onExpired} />
               ) : !content ? unavailableDraft : (
               <DisabledScope disabled={busy || conflict} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : undefined}>
               <fieldset disabled={busy || conflict} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">

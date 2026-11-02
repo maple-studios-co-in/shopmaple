@@ -46,7 +46,7 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
 const hook = (doc: Document, name: string) => doc.querySelector(`[${name}]`);
 
-test("the buy box shows the title, price, discount, struck-out price, rating and New chip only from product data", async () => {
+test("the buy box shows the title, price, discount, struck-out price and New chip only from product data", async () => {
   await mount((doc) => {
     const info = hook(doc, "data-product-info")!;
     assert.equal(info.querySelector("h1")?.textContent, "Aero Dining Chair");
@@ -54,7 +54,7 @@ test("the buy box shows the title, price, discount, struck-out price, rating and
     assert.equal(text(info.querySelector("[data-discount]")), "13%OFF", "(27,140 − 23,600) / 27,140 = 13.04 %");
     assert.equal(text(info.querySelector("[data-was]")), "Was Rs. 27,140.00");
     assert.equal(info.querySelector("[data-was] del")?.textContent, "Rs. 27,140.00");
-    assert.equal(text(info.querySelector("[data-rating]")), "4.6");
+    assert.equal(info.querySelector("[data-rating]") === null, true, "A staff-typed rating is not a review: approved reviews alone rate a product");
     assert.equal(text(info.querySelector("[data-chip='new']")), "New");
     assert.equal(info.querySelector("[data-description]")?.textContent, "A considered silhouette for a welcoming place at the table.");
   }, product, { highlights });
@@ -202,21 +202,18 @@ test("the ticker names the warranty and the store's promises, and is readable wi
   });
 });
 
-test("Hear From Them shows the real rating and count, invites a review and shows no invented reviews", async () => {
+test("Hear From Them shows no invented reviews and explains how to write one", async () => {
   await mount((doc) => {
     const band = hook(doc, "data-reviews")!;
     assert.equal(band.id, "product-reviews");
     assert.equal(text(band.querySelector("h2")), "Hear From Them");
-    assert.equal(text(band.querySelector("[data-rating-summary]")), "4.6 12 reviews");
-    assert.equal(band.querySelectorAll("[data-rating-summary] [data-star]").length, 5);
+    assert.equal(band.querySelector("[data-rating-summary]") === null, true, "Staff highlights never fill the band");
     const write = band.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
     assert.equal(text(write), "Write a review");
-    assert.match(write.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
-    assert.equal(band.querySelector("[data-review-card]"), null, "The catalogue holds no customer review text");
+    assert.equal(write.getAttribute("href"), "/reviews");
+    assert.equal(band.querySelector("[data-review-card]") === null, true, "No approved reviews, no cards");
+    assert.equal(text(hook(doc, "data-reviews-note")), "No reviews to show yet. Buyers are invited to review after delivery.");
   }, product, { highlights });
-  await mount((doc) => {
-    assert.equal(text(hook(doc, "data-reviews-note")), "No reviews to show yet. Share your experience with this piece.");
-  });
 });
 
 test("the FAQ answers from the store's published policies and opens one question at a time", async () => {

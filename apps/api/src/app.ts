@@ -16,6 +16,7 @@ import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-m
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagram-feed.js";
 import { saveEnquiry } from "./enquiries.js";
+import { registerKeeriDeliveryRoute, registerReviewRoutes, type ReviewsConfig } from "./reviews/routes.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
   commerceHttpError,
@@ -46,6 +47,8 @@ export type AppConfig = {
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
   instagramFeed?: InstagramFeedConfig | null;
+  /** Verified reviews; null or absent until REVIEW_LINK_SECRET is set. */
+  reviews?: ReviewsConfig | null;
 };
 export function createApp(
   db: PrismaClient,
@@ -75,6 +78,7 @@ export function createApp(
     }),
   );
   if (commerce) registerPaymentWebhook(app, commerce);
+  registerKeeriDeliveryRoute(app, db, config.reviews);
   registerMediaRoutes(app, db, config);
   app.use("/api/admin/content", express.json({ limit: "128kb" }));
   app.use(express.json({ limit: "16kb" }));
@@ -99,6 +103,7 @@ export function createApp(
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
   registerInstagramFeedRoutes(app, db, config.instagramFeed ?? null, config.secureCookies);
+  registerReviewRoutes(app, db, config.reviews, config.secureCookies, config.enquiryDelivery ?? null);
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({

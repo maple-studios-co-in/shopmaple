@@ -28,6 +28,7 @@ const screens: [string, RegExp][] = [
   ["Category pages", /^Category pages$/],
   ["Media", /^Media library$/],
   ["Enquiries", /^Customer enquiries$/],
+  ["Reviews", /^Reviews$/],
   ["History", /^Revision history$/],
 ];
 
@@ -43,6 +44,7 @@ test("each screen renders its heading on the shell without raising an alert", as
     if (path.startsWith("/api/admin/crm/summary")) return Response.json({ stages: { new: 0, contacted: 0, quoted: 0, won: 0, lost: 0 }, overdueTasks: 0, dueTodayTasks: 0, newLastSevenDays: 0 });
     if (path.startsWith("/api/admin/enquiries/assignees")) return Response.json({ items: [], nextCursor: null });
     if (path.startsWith("/api/admin/enquiries")) return Response.json({ items: [], nextCursor: null });
+    if (path.startsWith("/api/admin/reviews")) return Response.json({ items: [], nextCursor: null });
     if (path === "/api/admin/instagram-feed") return Response.json({ configured: false, status: "not_configured", lastAttemptAt: null, lastSuccessAt: null, errorCode: null, tokenExpiresAt: null, dataAccessExpiresAt: null, posts: [] });
     assert.fail(`Unexpected request ${path}`);
   };

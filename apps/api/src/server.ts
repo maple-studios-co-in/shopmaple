@@ -8,6 +8,8 @@ import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
 import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 import { installShutdown } from "./server-lifecycle.js";
 import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
+import { loadReviewsConfig } from "./reviews/routes.js";
+import { runReviewInvitationEmails } from "./reviews/invitations.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -33,6 +35,8 @@ const enquiryDelivery = loadEnquiryDeliveryConfig(process.env);
 const commerceConfig = loadCommerceConfig(process.env);
 // The homepage Instagram feed is off (staff-edited posts) until every private Meta setting is present.
 const instagramFeed = loadInstagramFeedConfig(process.env);
+// Verified reviews are off until REVIEW_LINK_SECRET is set; their emails also need enquiry delivery.
+const reviews = loadReviewsConfig(process.env);
 const db = new PrismaClient();
 const commerce = commerceConfig ? composeCommerce(db, commerceConfig) : null;
 const server = createApp(
@@ -49,6 +53,7 @@ const server = createApp(
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
     instagramFeed,
+    reviews,
   },
   commerce?.commerce,
 ).listen(env.API_PORT, env.API_HOST, () =>
@@ -81,9 +86,16 @@ const instagramRunner = instagramFeed
       15 * 60_000,
     )
   : null;
+const reviewRunner = reviews && enquiryDelivery
+  ? startEnquiryDeliveryRunner(
+      () => runReviewInvitationEmails(db, { email: enquiryDelivery, linkSecret: reviews.linkSecret }),
+      () => console.error("Review invitation cycle failed; queued emails remain recoverable."),
+      60_000,
+    )
+  : null;
 installShutdown({
   server,
   db,
-  runners: [deliveryRunner, orderRunner, instagramRunner],
+  runners: [deliveryRunner, orderRunner, instagramRunner, reviewRunner],
   exit: (code) => process.exit(code),
 });
