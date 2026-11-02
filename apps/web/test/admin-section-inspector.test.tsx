@@ -179,16 +179,21 @@ test("while a campaign schedule is open, the inspector stays put: Back is disabl
   } finally { await app.close(); }
 });
 
-test("a one-panel section shows no tabs; Instagram has one heading; hiding from the inspector hides the section", async () => {
+test("a one-panel section shows no tabs; Instagram has one heading; the inspector shows and hides the section", async () => {
   const app = await setup();
   try {
     await click("Edit Project", card("project"));
     assert.equal(inspector()!.querySelector('[role="tablist"]'), null);
     assert.ok(field("Project heading", inspector()!));
-    const show = field("Show on the homepage", inspector()!);
-    await act(async () => show.click());
+    // The enquiry band starts hidden: the homepage now closes on the values.
+    assert.equal(field("Show on the homepage", inspector()!).checked, false);
+    await act(async () => field("Show on the homepage", inspector()!).click());
     await click("Back to sections");
-    assert.equal(card("project").dataset.hidden, "true");
+    assert.equal(card("project").dataset.hidden, undefined, "shown from the inspector");
+    await click("Edit Project", card("project"));
+    await act(async () => field("Show on the homepage", inspector()!).click());
+    await click("Back to sections");
+    assert.equal(card("project").dataset.hidden, "true", "and hidden again");
 
     await click("Edit Instagram", card("instagram"));
     assert.deepEqual([...inspector()!.querySelectorAll("h2")].map((h) => h.textContent), ["Instagram"]);

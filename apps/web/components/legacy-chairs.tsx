@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
 import { ProductCard } from "./product-card";
+import { CardRating } from "./store/card-highlights";
 import { HomeCarousel } from "./home-carousel";
 import { CategoryValues } from "./category-landing";
 import { shopFile } from "@/lib/format";
@@ -56,9 +57,12 @@ function LegacyProducts({
             />
           </Link>
         </div>
-        <Link data-card-name className="product-card-name" href={href}>
-          {source.title}
-        </Link>
+        <div data-card-heading className="product-card-heading">
+          <Link data-card-name className="product-card-name" href={href}>
+            {source.title}
+          </Link>
+          <span data-card-rating-slot className="product-card-rating"><CardRating handle={handle} /></span>
+        </div>
         <p data-card-price className="product-card-price">Price on request</p>
       </article>
     );

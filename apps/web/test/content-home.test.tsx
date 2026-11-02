@@ -44,7 +44,9 @@ test("published homepage follows saved order and visibility and renders edited s
       [...doc.querySelectorAll("h2")].map((n) => n.textContent),
       ["Approved social heading", "Shop By Category", "Approved campaign"],
     );
-    assert.equal(doc.querySelectorAll(".home-instagram-posts a").length, 24);
+    // The drifting row draws its posts twice; the second pass is hidden decoration.
+    assert.equal(doc.querySelectorAll("[data-marquee-group]:not([data-marquee-copy]) .home-instagram-posts a").length, 24);
+    assert.equal(doc.querySelector("[data-marquee-copy]")?.getAttribute("aria-hidden"), "true");
   });
 });
 test("published custom pages resolve without replacing functional contact routes", async () => {

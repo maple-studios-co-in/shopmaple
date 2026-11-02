@@ -16,7 +16,10 @@ const withNimbus = (slides: unknown) => ({ ...defaultHomeDetails, nimbus: { ...d
 const ok = (value: unknown) => homeDetailsSchema.safeParse(value).success;
 
 test("documents published before slides existed still parse and keep no slides", () => {
-  const parsed = homeDetailsSchema.safeParse(defaultHomeDetails);
+  // The defaults now follow Nimbus with Terra; an older document has no extra collections at all.
+  const older = structuredClone(defaultHomeDetails);
+  delete older.nimbus.slides;
+  const parsed = homeDetailsSchema.safeParse(older);
   assert.equal(parsed.success, true);
   if (parsed.success) { assert.equal(parsed.data.hero.slides, undefined); assert.equal(parsed.data.nimbus.slides, undefined); }
 });

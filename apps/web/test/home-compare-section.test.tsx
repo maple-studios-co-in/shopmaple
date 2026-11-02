@@ -59,18 +59,18 @@ test("Find your feel shows the header and a card with the two products' catalogu
   assert.equal(text(right.querySelector("[data-compare-label]")), "Caro");
 });
 
-test("the divider is a slider that starts at the middle, with no script needed", async () => {
+test("the divider is a slider that starts a quarter in, the old piece on a quarter and the new on the rest, with no script needed", async () => {
   const section = compareSection((await renderHome()).doc)!;
   const card = section.querySelector<HTMLElement>("[data-compare-card]");
   assert.ok(card, "the card is drawn");
-  assert.match(card.getAttribute("style") ?? "", /--compare-pos:\s*50%/);
+  assert.match(card.getAttribute("style") ?? "", /--compare-pos:\s*25%/);
   const grip = section.querySelector('[role="slider"]');
   assert.ok(grip, "with a slider grip");
   assert.ok(section.querySelector("[data-compare-divider]")!.contains(grip));
   assert.equal(grip.getAttribute("aria-label"), "Compare Aera and Caro");
   assert.equal(grip.getAttribute("aria-valuemin"), "0");
   assert.equal(grip.getAttribute("aria-valuemax"), "100");
-  assert.equal(grip.getAttribute("aria-valuenow"), "50");
+  assert.equal(grip.getAttribute("aria-valuenow"), "25");
   assert.equal(grip.querySelectorAll("[data-compare-bar]").length, 3, "three small bars");
   assert.equal(grip.hasAttribute("tabindex"), false, "nothing to tab to until the script that moves it arrives");
   assert.equal(section.querySelectorAll("script").length, 0);
@@ -94,7 +94,7 @@ test("a product the catalogue does not have leaves no section, never a half", as
   const gone = await renderHome({ edit: handles("gone"), cards: (handle) => handle.endsWith("-b") ? null : card(handle) });
   assert.equal(compareSection(gone.doc)?.querySelector("[data-compare]") ?? null, null, "no card");
   assert.equal(compareSection(gone.doc)?.textContent?.trim() ?? "", "", "and no header over nothing");
-  assert.ok(gone.doc.querySelector('[data-home-section="testimonial"]'), "the rest of the page is untouched");
+  assert.ok(gone.doc.querySelector('[data-home-section="values"]'), "the rest of the page is untouched");
 });
 
 test("a product without a photo leaves no section", async () => {

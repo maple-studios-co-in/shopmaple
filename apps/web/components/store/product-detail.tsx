@@ -2,7 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Truck } from "lucide-react";
+import { Star, Truck } from "lucide-react";
 import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney } from "@/lib/format";
@@ -101,6 +101,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
   const rating = highlights.product(product.handle)?.rating;
   const isNew = highlights.product(product.handle)?.isNew;
+  const isLimited = highlights.product(product.handle)?.isLimited;
   async function add() {
     if (enquiry || !variant) return false;
     return setQuantity(variantId, selectedQuantity + quantity);
@@ -157,7 +158,12 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
-          {isNew && <div className="flex gap-2"><span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span></div>}
+          {(isNew || isLimited) && (
+            <div className="flex gap-2">
+              {isNew && <span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span>}
+              {isLimited && <span data-chip="limited" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#b07a1f] px-2 text-[12px] leading-[1.6] font-medium text-white">Limited</span>}
+            </div>
+          )}
           <h1 className="m-0 text-[28px] leading-[1.2] font-medium text-[#1c1c1c] sm:text-[34px]">{product.title}</h1>
           {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
             <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
@@ -169,10 +175,16 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             </div>
             <div className="flex items-center justify-between gap-3">
               {discount >= 1 ? <p data-was className="m-0 text-[16px] font-medium text-black"><span className="sr-only">Was </span><del>{shopMoney(variant!.compareAtPaise!)}</del></p> : <span />}
-              {rating && <p data-rating className="m-0 inline-flex items-center gap-1 text-[14px] leading-[1.6] text-black">{rating.value.toFixed(1)}
+              {rating ? <p data-rating className="m-0 inline-flex items-center gap-1 text-[14px] leading-[1.6] text-black">{rating.value.toFixed(1)}
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design star */}
                 <img src="/product-page/star.svg" alt="" width={15} height={15} className="size-[15px]" />
-              </p>}
+              </p> : (
+                // No reviews yet: said in the rating's place, ending on an empty star, and leading to the reviews band.
+                <a data-rating data-rating-empty href="#product-reviews" className="inline-flex items-center gap-1 text-[14px] leading-[1.6] text-[#5e574f] no-underline hover:text-maple">
+                  No reviews yet
+                  <Star aria-hidden="true" strokeWidth={1.75} className="size-[15px] text-[#FFB74A]" />
+                </a>
+              )}
             </div>
           </div>
           {product.description && <p data-description className="m-0 text-[14px] leading-[1.6] text-[#1c1c1c]">{product.description}</p>}

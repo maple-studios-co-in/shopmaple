@@ -5,13 +5,30 @@ import { CompareIsland } from "@/components/compare-island";
 import { getProductCards } from "@/lib/catalog";
 import type { ResolvedHomeDetails } from "@/lib/home-details-defaults";
 
+/**
+ * Maple's dining pieces the square photo cuts through, after the staff's own photo: a hard cut every 800 ms,
+ * on and on while it is in view, as in the owner's reference recording.
+ */
+export const editorialFlipFrames = [
+  "/media/home/editorial-flip-arden.webp",
+  "/media/home/editorial-flip-runo.webp",
+  "/media/home/editorial-flip-aero.webp",
+  "/media/home/editorial-flip-varyn.webp",
+  "/media/home/editorial-flip-seno.webp",
+] as const;
+
 /** "Pull up a chair": a square photo with its caption beside one large photo. */
 export function HomeEditorial({ content }: { content: ResolvedHomeDetails["editorial"] }) {
+  const frames = [content.leftImage, ...editorialFlipFrames.filter((src) => src !== content.leftImage)];
   return (
     <section className="home-editorial home-container" aria-label={content.title} data-editorial>
       <div data-editorial-left>
-        <div data-editorial-photo="square">
-          <Image src={content.leftImage} alt={content.leftAlt} fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 386px, 32vw" />
+        <div data-editorial-photo="square" data-flipbook>
+          {frames.map((src, i) => (
+            <div key={src} data-flip-frame data-active={i === 0 ? "" : undefined} aria-hidden={i === 0 ? undefined : true}>
+              <Image src={src} alt={i === 0 ? content.leftAlt : ""} fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 386px, 32vw" />
+            </div>
+          ))}
         </div>
         <div data-editorial-caption>
           <h2 data-editorial-title>{content.title}</h2>
@@ -28,10 +45,13 @@ export function HomeEditorial({ content }: { content: ResolvedHomeDetails["edito
   );
 }
 
+/** Where the divider rests: a quarter of the old piece, the rest the new one, until the shopper drags it. */
+export const compareStart = 25;
+
 /**
  * "Find your feel": two catalogue photos either side of a divider. Everything is server HTML, with
- * the divider at the middle by a CSS variable; the drag script loads later (CompareIsland). Without
- * both products and both photos there is nothing to compare, so the section draws nothing.
+ * the divider a quarter of the way across by a CSS variable; the drag script loads later (CompareIsland).
+ * Without both products and both photos there is nothing to compare, so the section draws nothing.
  */
 export async function HomeCompare({ content }: { content: ResolvedHomeDetails["compare"] }) {
   const handles = [content.left.handle, content.right.handle];
@@ -51,7 +71,7 @@ export async function HomeCompare({ content }: { content: ResolvedHomeDetails["c
         <h2>{content.heading}</h2>
         <p data-compare-lede>{content.lede}</p>
       </header>
-      <div data-compare-card style={{ "--compare-pos": "50%" } as CSSProperties}>
+      <div data-compare-card style={{ "--compare-pos": `${compareStart}%` } as CSSProperties}>
         {sides.map(({ side, label, product }) => (
           <div key={side} data-compare-pane={side}>
             <Image src={product!.image!} alt={product!.title} fill sizes="(max-width:749px) calc(100vw - 32px), 779px" />
@@ -60,7 +80,7 @@ export async function HomeCompare({ content }: { content: ResolvedHomeDetails["c
         ))}
         <div data-compare-divider>
           <span role="slider" aria-label={`Compare ${content.left.label} and ${content.right.label}`} aria-orientation="horizontal"
-            aria-valuemin={0} aria-valuemax={100} aria-valuenow={50} data-compare-grip>
+            aria-valuemin={0} aria-valuemax={100} aria-valuenow={compareStart} data-compare-grip>
             <i data-compare-bar /><i data-compare-bar /><i data-compare-bar />
           </span>
         </div>

@@ -48,10 +48,11 @@ test("category photos are the frame's, filling the circle, served from this repo
   for (const tile of tiles) { const file = local(shownSrc(tile.querySelector("img")!)); assert.ok(existsSync(file) && statSync(file).size > 5000); }
 });
 
-test("the statement band reads as the frame: 'crafted' in script, from the admin's line", async () => {
+test("the statement band reads as the owner's line, 'custom-built' in script, its closing clause ready to type", async () => {
   const band = section(await renderHome(), "ticker").querySelector("[data-statement-band]")!;
-  assert.equal(text(band), "Elegance isn’t found. At Maple, it is crafted.");
-  assert.equal(text(band.querySelector("[data-statement-accent]")), "crafted");
+  assert.equal(text(band.querySelector("[data-statement-text]")), "Elegance isn’t found. At Maple, it is custom-built.");
+  assert.equal(text(band.querySelector("[data-typed-live] [data-statement-accent]")), "custom-built");
+  assert.equal(text(band.querySelector("[data-typed-live]")), "it is custom-built.");
 });
 
 test("offer cards carry the frame's artwork edge to edge, with no second arrow on top of the artwork's own", async () => {
@@ -88,7 +89,8 @@ test("the announcement default is the frame's Always Together strip with its own
 test("Nimbus shows the frame's clean cloud photo with the collection name set as live text", async () => {
   const nimbus = section(await renderHome(), "nimbus");
   const base = nimbus.querySelector("[data-nimbus-slide]")!;
-  assert.equal(text(base.querySelector("[data-nimbus-title]")), "Nimbus");
+  assert.equal(text(base.querySelector("[data-nimbus-word]")), "Nimbus");
+  assert.equal(text(base.querySelector("[data-nimbus-heading]")), "The Nimbus Collection");
   assert.equal(text(base.querySelector("[data-nimbus-lead]")), "Soft presence. Strong craftsmanship.");
   assert.equal(shownSrc(base.querySelector("picture img")!), "/media/home/nimbus-clouds.webp");
   assert.ok(existsSync(local("/media/home/nimbus-clouds.webp")));
@@ -99,8 +101,9 @@ test("Nimbus with the staff's own artwork keeps the word in the artwork, with no
   const { HomeNimbus } = await import("../components/home-nimbus");
   const media = [{ key: "home-nimbus" as const, image: "https://shop.maplefurnishers.com/cdn/shop/files/custom-nimbus.webp", alt: "Staff artwork" }];
   const doc = new JSDOM(renderToStaticMarkup(<HomeNimbus media={media} />)).window.document;
-  assert.equal(doc.querySelector("[data-nimbus-title]"), null);
-  assert.match(doc.querySelector("picture img")!.getAttribute("src")!, /custom-nimbus\.webp/);
+  const nimbus = doc.querySelector("[data-nimbus-slide]")!;
+  assert.ok(!nimbus.querySelector("[data-nimbus-title]"), "the Nimbus card has no live word; Terra after it keeps its own");
+  assert.match(nimbus.querySelector("picture img")!.getAttribute("src")!, /custom-nimbus\.webp/);
 });
 
 test("the hero ships with four slides, as the frame has four dots: the shop film, then three Maple room photos", async () => {

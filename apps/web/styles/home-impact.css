@@ -360,9 +360,7 @@
   margin: 28px auto 24px;
   padding: 17px 24px 15px;
   border-radius: 12px;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='96' viewBox='0 0 600 96' fill='none' stroke='%23ffffff' stroke-opacity='.07'%3E%3Cpath d='M-20 70C80 20 160 90 260 48S440 10 620 52'/%3E%3Cpath d='M-20 82C90 36 170 100 270 62S450 26 620 66'/%3E%3C/svg%3E") center / cover no-repeat,
-    linear-gradient(100deg, #7a1c16 0%, #701913 55%, #6a1711 100%);
+  background: var(--impact-burgundy);
   color: #f7e5da;
   font: 300 clamp(24px, 2.7vw, 34px) / 1.25 var(--impact-serif);
   text-align: center;
@@ -914,4 +912,505 @@
   [data-home-section="cities"] .city-motion { padding-inline: 44px; }
   [data-home-section="cities"] .home-cities .city-photo-credits { right: 12px; padding: 8px; }
   [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
+}
+
+/* ======================================================================================== */
+/* Cinematic motion (the owner's notes of 2 November 2026). Pictures grow inside their own   */
+/* frames on hover; the collections stage, the drifting rows, the counting figures, the     */
+/* typed statement, the editorial flipbook and the wordmark reveal follow. lib/home-effects */
+/* drives the scripted parts; under reduced motion everything rests in its finished state.  */
+/* ======================================================================================== */
+
+/* ---- Hover zoom: every photo tile scales its picture a little, clipped by its own frame ---- */
+[data-home-section="hero"] .category-tile,
+[data-home-section="categories"] .home-categories a > div,
+[data-home-section="offers"] .home-offer-tiles a > div,
+[data-home-section="promos"] .campaign-scene,
+[data-home-section="editorial"] [data-editorial-photo="wide"] {
+  overflow: hidden;
+  isolation: isolate;
+}
+[data-home-section="hero"] .category-tile img,
+[data-home-section="categories"] .home-categories a > div img,
+[data-home-section="offers"] .home-offer-tiles img,
+[data-home-section="promos"] .campaign-scene > [data-artwork],
+[data-home-section="promos"] .campaign-scene > .campaign-art-desktop,
+[data-home-section="promos"] .campaign-scene > .campaign-art-mobile,
+[data-home-section="editorial"] [data-editorial-photo="wide"] img {
+  transition: transform 1.1s cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+@media (hover: hover) {
+  [data-home-section="hero"] .category-tile:hover img,
+  [data-home-section="offers"] .home-offer-tiles a:hover img { transform: scale(1.07); }
+  /* A campaign picture can be several tiles side by side, so the whole layer grows as one. */
+  [data-home-section="promos"] .campaign-banner:hover .campaign-scene > [data-artwork],
+  [data-home-section="promos"] .campaign-banner:hover .campaign-scene > .campaign-art-desktop,
+  [data-home-section="promos"] .campaign-banner:hover .campaign-scene > .campaign-art-mobile { transform: scale(1.07); }
+  [data-home-section="categories"] .home-categories a:hover > div img { transform: scale(1.09); }
+  [data-home-section="editorial"] [data-editorial-photo="wide"]:hover img { transform: scale(1.04); }
+}
+[data-home-section="hero"] .category-tile:focus-visible img,
+[data-home-section="offers"] .home-offer-tiles a:focus-visible img,
+[data-home-section="categories"] .home-categories a:focus-visible > div img { transform: scale(1.06); }
+
+/* The small arrow on each category trades colours with its background when the circle is pointed at. */
+[data-category-arrow] {
+  transition: background-color 0.35s ease, color 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.65, 0.2, 1), box-shadow 0.35s ease;
+}
+[data-home-section="categories"] .home-categories a:hover [data-category-arrow],
+[data-home-section="categories"] .home-categories a:focus-visible [data-category-arrow] {
+  background: var(--impact-burgundy);
+  color: #fff;
+  box-shadow: 0 6px 16px rgb(116 26 20 / 0.35);
+  transform: translateY(-100%) translateX(2px);
+}
+
+/* ---- Statement band: the closing clause types itself out, a caret blinking at its end ---- */
+[data-typed] {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+[data-typed-ghost] { visibility: hidden; }
+[data-typed-live] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+}
+html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin-left: 4px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: home-caret 1.05s steps(1) infinite;
+}
+@keyframes home-caret { 50% { opacity: 0; } }
+
+/* ---- Collections stage (Nimbus, Terra): Figma 1:597 and 1:1069 -------------------------- */
+/* The card sits 48px in from either side of a band of its own photo, blurred ("Maple imagery" in the frame). */
+[data-home-section="nimbus"] .home-nimbus-wrap {
+  position: relative;
+  display: block;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 102px 48px 64px;
+  background: #f4f2ec;
+}
+.nimbus-stage-backdrops {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.nimbus-stage-backdrops::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 0.3);
+}
+.nimbus-stage-backdrop {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  max-width: none;
+  object-fit: cover;
+  filter: blur(5.5px);
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nimbus-stage-backdrop[data-active] { opacity: 1; }
+.nimbus-stage-frame {
+  position: relative;
+  aspect-ratio: 1169 / 640;
+  max-height: 82vh;
+  min-height: 420px;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #ddd8d0;
+}
+.nimbus-stage-slide {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 1s;
+}
+.nimbus-stage-slide[data-active] {
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
+}
+.nimbus-stage-media,
+.nimbus-stage-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nimbus-stage-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(26 22 18 / 0.3) 0%, rgb(26 22 18 / 0.06) 46%, rgb(26 22 18 / 0.22) 100%),
+    rgb(26 26 26 / 0.05);
+  pointer-events: none;
+}
+.nimbus-stage-slide[data-active] .nimbus-stage-media img {
+  animation: stage-drift calc(var(--stage-interval, 5200ms) + 1.8s) cubic-bezier(0.25, 0.6, 0.3, 1) both;
+}
+.nimbus-stage-copy {
+  position: absolute;
+  inset: 13% 6% auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  text-align: center;
+}
+[data-home-section="nimbus"] .nimbus-stage-copy .nimbus-stage-tagline,
+[data-home-section="nimbus"] .nimbus-stage-copy .nimbus-stage-word { color: #fff; }
+.nimbus-stage-tagline {
+  margin: 0;
+  font: 700 clamp(18px, 2.5vw, 31.6px) / 1.6 var(--impact-body);
+  text-shadow: 0 2px 22px rgb(0 0 0 / 0.22);
+}
+.nimbus-stage-word {
+  margin: 0;
+  font: 700 clamp(52px, 7.5vw, 95px) / 1.1 var(--impact-body);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 8px 44px rgb(0 0 0 / 0.16);
+}
+.nimbus-stage-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 136px;
+  height: 60px;
+  margin-top: clamp(28px, 6.6vw, 86px);
+  padding: 0 34px;
+  border-radius: 60px;
+  background: var(--impact-burgundy);
+  color: #fff;
+  font: 700 16px / 1 var(--impact-body);
+  text-decoration: none;
+  box-shadow: 0 14px 34px -14px rgb(116 26 20 / 0.75);
+  transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.65, 0.2, 1), box-shadow 0.3s ease;
+}
+.nimbus-stage-cta:hover { background: #5c140f; transform: translateY(-2px); box-shadow: 0 18px 40px -14px rgb(116 26 20 / 0.85); }
+.nimbus-stage-cta:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.nimbus-stage-slide[data-active] .nimbus-stage-tagline { animation: stage-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.25s both; }
+.nimbus-stage-slide[data-active] .nimbus-stage-word { animation: stage-word 1.25s cubic-bezier(0.2, 0.7, 0.2, 1) 0.38s both; }
+.nimbus-stage-slide[data-active] .nimbus-stage-cta { animation: stage-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.62s both; }
+@keyframes stage-drift { from { transform: scale(1.09); } to { transform: scale(1); } }
+@keyframes stage-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes stage-word {
+  from { opacity: 0; letter-spacing: 0.14em; filter: blur(7px); }
+  to { opacity: 1; letter-spacing: -0.02em; filter: blur(0); }
+}
+
+/* The numbers: a faint ring each, and on the current one a white arc that fills; when it closes the next collection fades in. */
+.nimbus-stage-dots {
+  position: absolute;
+  right: 48px;
+  bottom: 48px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+.nimbus-stage-dots button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(26 22 18 / 0.08);
+  color: rgb(255 255 255 / 0.7);
+  font: 700 16px / 1 var(--impact-body);
+  cursor: pointer;
+  transition: color 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+}
+.nimbus-stage-dots button:hover { color: #fff; transform: scale(1.08); background: rgb(26 22 18 / 0.18); }
+.nimbus-stage-dots button[aria-current="true"] { color: #fff; }
+.nimbus-stage-dots button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.nimbus-stage-dots svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+.nimbus-stage-dots circle { fill: none; stroke-width: 2; }
+.nimbus-stage-dots [data-ring-track] { stroke: rgb(255 255 255 / 0.21); }
+.nimbus-stage-dots [aria-current="true"] [data-ring-track] { stroke: rgb(255 255 255 / 0.3); }
+.nimbus-stage-dots [data-ring-progress] {
+  stroke: #fff;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+}
+.nimbus-stage-dots [aria-current="true"] [data-ring-progress] { stroke-dashoffset: 0; }
+[data-stage-ready] .nimbus-stage-dots [aria-current="true"] [data-ring-progress] {
+  animation: stage-ring var(--stage-interval, 5200ms) linear both;
+}
+/* As specific as the rule that starts the ring, whose shorthand would otherwise set it running again. */
+[data-stage-ready][data-stage-paused] .nimbus-stage-dots [aria-current="true"] [data-ring-progress] { animation-play-state: paused; }
+@keyframes stage-ring { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+
+/* The arrow: a white disc with a chevron whose dark ring fills with the collection's time; a press moves on.
+   With a mouse it is the pointer over the photo: lib/home-effects sets --next-x/--next-y, [data-following]
+   and, while the mouse is over the photo, [data-pointer-in]; it steps aside over the Explore button and the
+   numbers. On touch screens, and for the keyboard, it rests at its edge. */
+.nimbus-stage-next {
+  position: absolute;
+  top: 50%;
+  right: 40px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #1a1612;
+  cursor: pointer;
+  box-shadow: 0 14px 34px -14px rgb(26 22 18 / 0.5);
+  transform: translateY(-50%);
+  transition: scale 0.35s cubic-bezier(0.2, 0.65, 0.2, 1), opacity 0.3s ease;
+}
+.nimbus-stage-next:hover { scale: 1.06; }
+.nimbus-stage-next:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.nimbus-stage-next > svg:first-child {
+  position: absolute;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+.nimbus-stage-next circle { fill: none; stroke-width: 2.4; }
+.nimbus-stage-next [data-next-track] { stroke: rgb(26 22 18 / 0.12); }
+.nimbus-stage-next [data-next-progress] {
+  stroke: #1a1612;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+}
+[data-stage-ready] .nimbus-stage-next [data-next-progress] { animation: stage-ring var(--stage-interval, 5200ms) linear both; }
+[data-stage-ready][data-stage-paused] .nimbus-stage-next [data-next-progress] { animation-play-state: paused; }
+.nimbus-stage-next-arrow {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Following: the disc is the pointer, so the system cursor hides and presses go to the photo beneath it. */
+.nimbus-stage-frame[data-pointer-in]:not([data-next-aside]) { cursor: none; }
+.nimbus-stage-frame[data-following] .nimbus-stage-next {
+  top: 0;
+  right: auto;
+  left: 0;
+  pointer-events: none;
+  transform: translate(calc(var(--next-x, 0px) - 50%), calc(var(--next-y, 0px) - 50%));
+}
+.nimbus-stage-frame[data-following][data-next-aside] .nimbus-stage-next { opacity: 0; scale: 0.5; }
+/* With a mouse the arrow shows only while the pointer is over the photo, as in the reference, appearing under it
+   and fading out where it is when the mouse leaves; a keyboard still finds it at its edge. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-stage-ready] .nimbus-stage-next { opacity: 0; scale: 0.6; }
+  [data-stage-ready] .nimbus-stage-frame[data-pointer-in]:not([data-next-aside]) .nimbus-stage-next,
+  [data-stage-ready] .nimbus-stage-next:focus-visible { opacity: 1; scale: 1; }
+}
+
+/* ---- Drifting rows (Social proof, Cities): continuous, each card sharp to the last, slipping out of sight at the margins ---- */
+.home-marquee { position: relative; overflow: visible; }
+.home-marquee-viewport { overflow: hidden; }
+.home-marquee-viewport:focus-visible { outline: 2px solid var(--impact-burgundy, #741a14); outline-offset: 6px; }
+.home-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: home-marquee var(--marquee-duration, 40s) linear infinite;
+}
+.home-marquee:not([data-marquee]) .home-marquee-track { animation: none; }
+.home-marquee-group { display: flex; flex: none; }
+.home-marquee:hover .home-marquee-track,
+.home-marquee:focus-within .home-marquee-track,
+.home-marquee:has([data-marquee-pause]:checked) .home-marquee-track { animation-play-state: paused; }
+@keyframes home-marquee { to { transform: translateX(-50%); } }
+
+/* The pause switch: two bars while the row drifts, a play triangle once paused. */
+.home-marquee-toggle {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e3d8cd;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--impact-burgundy, #741a14);
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.home-marquee-toggle input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.home-marquee-toggle::before {
+  content: "";
+  width: 9px;
+  height: 11px;
+  border-inline: 3px solid currentColor;
+}
+.home-marquee-toggle:has(input:checked)::before {
+  width: 0;
+  height: 0;
+  border-block: 6px solid transparent;
+  border-inline: 10px solid currentColor;
+  border-inline-end: 0;
+  margin-left: 3px;
+}
+.home-marquee-toggle:hover { background: var(--impact-burgundy, #741a14); color: #fff; }
+.home-marquee-toggle:has(input:focus-visible) { outline: 2px solid var(--impact-burgundy, #741a14); outline-offset: 3px; }
+
+/* Social proof sits within the page's 48px margins, like the bands above it. */
+[data-home-section="instagram"] .home-social {
+  max-width: none;
+  padding-inline: 48px;
+}
+[data-home-section="instagram"] .home-social h2 { margin-bottom: 30px; text-align: center; }
+.home-social .instagram-motion .home-instagram-posts {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0 16px 0 0;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+.home-social .instagram-motion .home-instagram-posts > a {
+  flex: 0 0 clamp(196px, 18.5vw, 270px);
+  aspect-ratio: 4 / 5;
+  border-radius: 10px;
+  overflow: hidden;
+  scroll-snap-align: none;
+}
+.home-social .instagram-motion .home-instagram-posts > a img { transition: transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1); }
+.home-social .instagram-motion .home-instagram-posts > a:hover img { transform: scale(1.06); }
+
+/* Cities drift on their own; the arrows the paging row needed are gone. */
+[data-home-section="cities"] .city-motion { padding-inline: 0; }
+.city-motion .home-city-track {
+  min-width: 0;
+  justify-content: flex-start;
+  gap: 22px;
+  padding-right: 22px;
+}
+[data-home-section="cities"] .home-city-card { flex: 0 0 112px; width: 112px; }
+[data-home-section="cities"] .home-city-artwork { height: 178px; box-shadow: 0 10px 26px -14px rgb(41 37 31 / 0.35); }
+[data-home-section="cities"] .home-marquee-toggle { top: auto; bottom: -38px; right: 50%; transform: translateX(50%); }
+
+/* ---- Numbers band: Figma 1:242, each figure counting up the first time it is seen ---- */
+.home-stat-value { font-variant-numeric: tabular-nums; font-size: clamp(88px, 11.4vw, 144px); }
+.home-stat-band .home-stat-label { margin-top: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.home-stat-band .home-stat-description {
+  margin-top: 18px;
+  color: rgb(255 255 255 / 0.88);
+  font: 400 16px / 1.6 var(--impact-body);
+}
+.home-stat-band > div + div { border-left-color: rgb(255 255 255 / 0.1); }
+
+/* ---- Pull up a chair: the square photo flips through Maple's dining pieces, hard cuts, on and on ---- */
+[data-flipbook] [data-flip-frame] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+[data-flipbook] [data-flip-frame][data-active] { opacity: 1; }
+
+/* ---- Closing wordmark: Figma 1:253, fading in as it scrolls into view ---- */
+[data-home-section="values"] .home-values .home-values-watermark {
+  background: linear-gradient(180deg, rgb(116 26 20 / 0.2) 0%, rgb(116 26 20 / 0) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font: 700 clamp(48px, 11.9vw, 150px) / 1.28 var(--impact-body);
+  letter-spacing: -0.0256em;
+}
+[data-reveal] {
+  transition: opacity 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 1.6s ease;
+}
+html[data-home-effects="live"] [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(40px) scale(0.97);
+  filter: blur(8px);
+}
+
+@media (max-width: 749px) {
+  [data-home-section="nimbus"] .home-nimbus-wrap { padding: 40px 16px; }
+  .nimbus-stage-frame { aspect-ratio: auto; height: clamp(440px, 120vw, 560px); min-height: 0; }
+  .nimbus-stage-copy { inset: 11% 5% auto; }
+  .nimbus-stage-cta { height: 50px; min-width: 120px; padding-inline: 28px; }
+  .nimbus-stage-dots { right: 18px; bottom: 18px; }
+  .nimbus-stage-next { top: auto; right: auto; bottom: 18px; left: 18px; width: 54px; height: 54px; transform: none; }
+  .nimbus-stage-next-arrow { width: 20px; height: 20px; }
+  [data-home-section="instagram"] .home-social { padding-inline: 16px; padding-bottom: 96px; }
+  .instagram-motion .home-marquee-toggle { top: auto; bottom: -50px; right: 50%; transform: translateX(50%); }
+  .home-social .instagram-motion .home-instagram-posts { gap: 12px; padding-right: 12px; }
+  .home-social .instagram-motion .home-instagram-posts > a { flex-basis: 58vw; }
+  [data-home-section="cities"] .home-city-card { flex-basis: 98px; width: 98px; }
+  [data-home-section="cities"] .home-city-artwork { height: 152px; }
+  .home-stat-band .home-stat-description { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-home-section] img,
+  .nimbus-stage-slide,
+  .nimbus-stage-backdrop,
+  .nimbus-stage-next,
+  [data-reveal],
+  [data-category-arrow] { transition: none !important; }
+  .nimbus-stage-slide[data-active] .nimbus-stage-media img,
+  .nimbus-stage-slide[data-active] .nimbus-stage-tagline,
+  .nimbus-stage-slide[data-active] .nimbus-stage-word,
+  .nimbus-stage-slide[data-active] .nimbus-stage-cta,
+  [data-stage-ready] .nimbus-stage-dots [aria-current="true"] [data-ring-progress],
+  [data-stage-ready] .nimbus-stage-next [data-next-progress] { animation: none; }
+  .home-marquee-track { animation: none; }
+  .home-marquee-viewport { overflow-x: auto; }
+  .home-marquee-group[data-marquee-copy],
+  .home-marquee-toggle { display: none; }
+  @media (hover: hover) {
+    [data-home-section] .category-tile:hover img,
+    [data-home-section] a:hover img,
+    [data-home-section] .home-categories a:hover > div img,
+    [data-home-section="promos"] .campaign-banner:hover .campaign-scene > * { transform: none; }
+  }
+  [data-home-section="promos"] .campaign-scene > * { transition: none; }
 }
