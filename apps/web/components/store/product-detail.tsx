@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Truck } from "lucide-react";
-import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
+import { batchNudge, type Product, type ProductCard, type ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney } from "@/lib/format";
 import { cx } from "@/lib/cx";
@@ -13,7 +13,7 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
-import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
+import { assurances, cheapestPriced, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
@@ -24,10 +24,15 @@ import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
+import { resolveHotspots, type Cutout } from "@/lib/product-hotspots";
+import { bundlePieces, cutoutOf, productFaq, productHighlightLines, productRating, productReviews, specLines } from "@/lib/product-page-data";
+import { CompleteTheLook, ProductBundles, type ShownBundle } from "./product-bundle";
 
 type Presentation = {
   variantImages: Record<string, string>;
   reviewLabel: string | null;
+  /** White-background photos by finish address (`variant.slug`), with hotspot positions; the notes come from the product's own text. */
+  cutouts?: Record<string, Cutout>;
 };
 
 // Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall.
@@ -41,11 +46,15 @@ const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-tr
 const richCard = (content: ProductRichTextValue | null | undefined): ReactNode => content?.children.length ? <ProductRichText content={content} /> : null;
 const textCard = (value: string | null | undefined): ReactNode => value?.trim() ? value : null;
 
-/** `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. */
-export function ProductDetail({ product, initialVariant, presentation, children }: {
+/**
+ * `children` render between the reviews band and the FAQ: the page passes the "You may also like" row.
+ * `bundleCards` are the catalogue cards of the other pieces in this product's Keeri bundles.
+ */
+export function ProductDetail({ product, initialVariant, presentation, bundleCards = [], children }: {
   product: Product;
   initialVariant?: string;
   presentation?: Presentation;
+  bundleCards?: ProductCard[];
   children?: ReactNode;
 }) {
   const searchParams = useSearchParams();
@@ -58,7 +67,24 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     const src = presentation?.variantImages[id];
     return src && product.images.includes(src) ? src : undefined;
   };
-  const galleryFor = (id: string) => variantGallery(product, product.variants.find((v) => v.id === id));
+  // A finish with a white-background photo opens on it, and it leads that finish's gallery. Keeri's photo and notes
+  // come first; the hand-placed presentation cut-outs remain only for products Keeri has none for.
+  const presentationCutout = (id: string): Cutout | undefined => {
+    const slug = product.variants.find((v) => v.id === id)?.slug;
+    return slug ? presentation?.cutouts?.[slug] : undefined;
+  };
+  const cutoutFor = (id: string) => cutoutOf(product, id, presentationCutout(id), (c) => resolveHotspots(c, product.sourceDetails));
+  const galleryFor = (id: string) => {
+    const gallery = variantGallery(product, product.variants.find((v) => v.id === id));
+    const cutout = cutoutFor(id);
+    return cutout ? [cutout.image, ...gallery.filter((src) => src !== cutout.image)] : gallery;
+  };
+  // The photo to show when a finish is chosen: its white-background photo, else its own first photo.
+  const startAt = (id: string) => {
+    if (cutoutFor(id)) return 0;
+    const src = variantImage(id);
+    return src ? Math.max(0, galleryFor(id).indexOf(src)) : undefined;
+  };
   // Catalogues without any per-option photos present plain option tiles rather than a grid of
   // "Photo unavailable" boxes.
   const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
@@ -70,13 +96,15 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const initial =
     selectedVariant(product, queryVariant)?.id ??
     product.variants.find((v) => v.id === "preview-" + queryVariant)?.id ??
+    // With nothing chosen, open on a finish the shopper can price (see cheapestPriced); with no prices, the first finish
+    // with a photo, else the first.
+    cheapestPriced(product.variants, variantImage)?.id ??
     product.variants.find((v) => variantImage(v.id))?.id ??
-    product.variants.find((v) => v.pricePaise !== null)?.id ??
     product.variants[0]?.id ??
     "";
   const [variantId, setVariantId] = useState(initial);
   const [urlVariant, setUrlVariant] = useState(initial);
-  const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
+  const [image, setImage] = useState(() => startAt(initial) ?? 0),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [shared, setShared] = useState("");
@@ -85,8 +113,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     // History navigation changes the option without remounting the enquiry.
     if (variantId !== initial) {
       setVariantId(initial);
-      const src = variantImage(initial);
-      if (src) setImage(Math.max(0, galleryFor(initial).indexOf(src)));
+      const start = startAt(initial);
+      if (start !== undefined) setImage(start);
     }
   }
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
@@ -99,7 +127,14 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const saved = favourites.includes(product.handle);
   const enquiryHref = enquiryLink(product, variant);
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
-  const rating = highlights.product(product.handle)?.rating;
+  // Keeri's approved reviews give the rating; staff-typed ratings remain for products Keeri has none for.
+  const rating = productRating(product, highlights.product(product.handle)?.rating);
+  const nudge = batchNudge(variant?.productPage?.batch);
+  const highlightLines = productHighlightLines(product);
+  const bundles: ShownBundle[] = (product.productPage?.bundles ?? []).flatMap((bundle) => {
+    const shown = bundlePieces(bundle, product, variant, bundleCards);
+    return shown ? [{ id: bundle.id, name: bundle.name, description: bundle.description, ...shown }] : [];
+  });
   const isNew = highlights.product(product.handle)?.isNew;
   const isLimited = highlights.product(product.handle)?.isLimited;
   async function add() {
@@ -113,8 +148,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     setVariantId(id);
     // The option's own photo leads its gallery; a shared gallery jumps to the option's photo.
     // Without one, the shopper keeps the photo they were looking at.
-    const src = variantImage(id);
-    if (src) setImage(Math.max(0, galleryFor(id).indexOf(src)));
+    const start = startAt(id);
+    if (start !== undefined) setImage(start);
     const chosen = product.variants.find((v) => v.id === id);
     const url = new URL(window.location.href);
     url.searchParams.set("variant", chosen?.slug ?? id);
@@ -142,8 +177,10 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   // products that were never captured, and an empty captured card stays empty rather than borrowing other copy.
   const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
   if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
-  const dimensions = product.sourceDetails?.dimensions?.trim();
-  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
+  // Keeri's measured specifications lead; the free-text dimensions remain for products nobody has measured.
+  const measured = specLines(product, variant);
+  const dimensions = measured.length ? measured.map((line) => `• ${line}`).join("\n") : product.sourceDetails?.dimensions?.trim();
+  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: product.sourceDetails?.warranty?.trim() ? `Warranty: ${product.sourceDetails.warranty.trim()}` : undefined });
   const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
   if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
   const shipping = richCard(product.pdpContent?.shippingReturns);
@@ -152,9 +189,10 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   return (
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="mx-auto grid max-w-[1432px] gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_455px] lg:items-start lg:gap-[35px]">
-        <div className="min-w-0 lg:sticky lg:top-6">
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
+        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
+            hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
@@ -165,7 +203,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             </div>
           )}
           <h1 className="m-0 text-[28px] leading-[1.2] font-medium text-[#1c1c1c] sm:text-[34px]">{product.title}</h1>
-          {variant && !variantImage(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
+          {variant && !variantImage(variant.id) && !cutoutFor(variant.id) && !textOptions && (product.variants.length > 1 || product.images.length === 0) && (
             <p role="status" className="-mt-2 text-meta text-taupe">Photo for this option unavailable</p>
           )}
           <div data-price-block className="grid gap-2">
@@ -188,12 +226,16 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             </div>
           </div>
           {product.description && <p data-description className="m-0 text-[14px] leading-[1.6] text-[#1c1c1c]">{product.description}</p>}
+          {highlightLines.length > 0 && (
+            <ul data-highlights className="m-0 -mt-2 grid list-none gap-1 p-0 text-[14px] leading-[1.6] text-[#1c1c1c]">
+              {highlightLines.map((line) => <li key={line} className="flex gap-2"><span aria-hidden="true" className="text-maple">✓</span>{line}</li>)}
+            </ul>
+          )}
           {product.variants.length > 1 && (
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
-                  code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
               <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
@@ -235,6 +277,16 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
             {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
           </div>
+          {nudge !== null && variant?.productPage?.batch && (
+            // A staff-set production batch counted down by store orders, shown only at or below its threshold.
+            <div data-batch className="grid gap-2 rounded-[10px] border border-solid border-maple/8 px-4 py-3">
+              <p className="m-0 text-[14px] leading-[1.4] font-medium text-[#2f6b32]">Only {nudge} left in this batch</p>
+              <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-[#2f6b32]/12">
+                <div className="h-full rounded-full bg-[#2f6b32]" style={{ width: `${Math.max(8, Math.min(100, (nudge / variant.productPage.batch.showAtOrBelow) * 100))}%` }} />
+              </div>
+            </div>
+          )}
+          {bundles[0] && <CompleteTheLook bundle={bundles[0]} />}
           <ul data-assurances className="m-0 grid list-none grid-cols-3 rounded-[10px] bg-maple/6 py-3 text-center text-[13px] leading-[1.3] font-medium text-maple">
             <li className="flex flex-col items-center gap-1.5 px-2"><Truck aria-hidden="true" className="size-[18px]" strokeWidth={1.6} />{assurances.delivery}</li>
             <li className="flex flex-col items-center gap-1.5 border-0 border-l border-solid border-maple/10 px-2">
@@ -263,9 +315,10 @@ export function ProductDetail({ product, initialVariant, presentation, children 
       <ProductFeatures features={features} photo={photo} title={product.title} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
-      <ProductReviews rating={rating} writeHref={enquiryHref} />
+      <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
+      <ProductBundles bundles={bundles} enquiryHref={enquiryHref} />
       {children}
-      <ProductFaq />
+      <ProductFaq extra={productFaq(product)} />
       <ProductPromises />
       <ProductEnquiry product={product.title} variant={variant?.title ?? ""} sku={variant?.sku ?? ""} />
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>

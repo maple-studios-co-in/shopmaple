@@ -92,6 +92,21 @@ export function productStructuredData(settings: SeoSettings, product: Product): 
     brand: { "@type": "Brand", name: brand },
     ...(product.category ? { category: product.category } : {}),
     offers,
+    ...reviewData(product),
+  };
+}
+
+/** Keeri's approved reviews, as they appear on the page: its own average and count, and the newest few in full. */
+function reviewData(product: Product): object {
+  const reviews = product.productPage?.reviews;
+  if (!reviews || reviews.count < 1 || reviews.average === null) return {};
+  return {
+    aggregateRating: { "@type": "AggregateRating", ratingValue: reviews.average, reviewCount: reviews.count, bestRating: 5, worstRating: 1 },
+    review: reviews.items.slice(0, 5).map((r) => ({
+      "@type": "Review", name: r.title, reviewBody: r.body, datePublished: r.reviewedAt,
+      author: { "@type": "Person", name: r.reviewerName },
+      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+    })),
   };
 }
 

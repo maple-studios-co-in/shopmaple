@@ -7,7 +7,7 @@ import { VariantSelector, type SelectorVariant } from "../components/store/varia
 
 const variants: SelectorVariant[] = [
   { id: "a", name: "Deep Atlantic", slug: "deep-atlantic", image: "https://example.com/a.jpg" },
-  { id: "b", name: "Desert Taupe", slug: "desert-taupe", code: "MF-B" },
+  { id: "b", name: "Desert Taupe", slug: "desert-taupe" },
 ];
 
 async function render(props: Partial<React.ComponentProps<typeof VariantSelector>>, check: (doc: Document, selected: string[]) => void) {
@@ -28,7 +28,7 @@ test("the selector is fed plain variants: a name, an optional slug and an option
     assert.deepEqual(tiles.map((input) => input.value), ["a", "b"]);
     assert.equal(doc.querySelector("[data-variant-image] img")?.getAttribute("alt"), "");
     assert.equal(doc.querySelectorAll("[data-variant-placeholder]").length, 1, "A variant without an image shows the placeholder");
-    assert.equal(doc.querySelector("[data-variant-code]")?.textContent, "Item code: MF-B");
+    assert.equal(doc.querySelector("[data-variant-code]"), null, "Item codes are never written on a tile");
     assert.equal(doc.querySelector("[data-variant-slug]"), null, "Slugs are data for the URL, not shown");
     tiles[1]!.click();
     assert.deepEqual(selected, ["b"]);

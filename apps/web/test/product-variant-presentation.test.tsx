@@ -92,12 +92,16 @@ test("selecting an unmapped option keeps the product gallery and discloses the m
     assert.equal(notice(), undefined);
   });
 });
-test("repeated option titles are distinguished by differing public item codes", async () => {
+test("repeated option titles stay separate options with no item code written, and each carries its own code into enquiries", async () => {
   await mount(async () => {
     for (const [id, code] of [["catalogue-taupe", "AERO-DT"], ["preview-taupe", "AERO-DT-02"], ["catalogue-slate", "AERO-SM"], ["preview-slate", "AERO-SM-03"]]) {
-      assert.equal(tile(id!).querySelector("[data-variant-code]")?.textContent, `Item code: ${code}`);
+      assert.equal(tile(id!).querySelector("[data-variant-code]"), null);
+      await act(async () => tile(id!).querySelector("input")!.click());
+      assert.equal(selected(), id);
+      assert.equal(tile(id!).getAttribute("data-selected"), "true");
+      assert.equal(new URL(document.querySelector<HTMLAnchorElement>("a[data-ask]")!.href, "http://localhost").searchParams.get("sku"), code);
     }
-    assert.doesNotMatch(document.querySelector("[data-product-info]")!.textContent!, /catalogue-taupe|preview-taupe|shopify-preview/);
+    assert.doesNotMatch(document.querySelector("[data-product-info]")!.textContent!, /Item code|AERO-|catalogue-taupe|preview-taupe|shopify-preview/);
   });
 });
 test("all six options stay selectable while only priced options offer cart selection", async () => {

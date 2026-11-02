@@ -15,11 +15,14 @@ const questions = [
   ["Do you deliver across India?", "Maple delivers across India. Share your location and we will confirm delivery details and the charge before you order."],
 ] as const;
 
-export function ProductFaq() {
+/** `extra`: the product's own questions from Keeri, shown first; a general question it repeats is left out. */
+export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string, string])[] }) {
   const [open, setOpen] = useState(-1);
+  const asked = new Set(extra.map(([q]) => q.trim().toLowerCase()));
+  const items = [...extra, ...questions.filter(([q]) => !asked.has(q.toLowerCase()))];
   return (
     <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 py-12 font-product text-black md:px-12 md:py-[88px]">
-      <div className="mx-auto flex max-w-[1004px] flex-col gap-10 lg:flex-row lg:gap-24">
+      <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">
         <div className="flex flex-col items-start gap-6 lg:order-2 lg:w-[452px] lg:shrink-0">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
           <p className="m-0 text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
@@ -30,7 +33,7 @@ export function ProductFaq() {
           </Link>
         </div>
         <div className="max-w-[452px] lg:order-1 lg:w-[452px] lg:shrink-0">
-          {questions.map(([question, answer], i) => (
+          {items.map(([question, answer], i) => (
             <details key={question} data-faq-item open={open === i} className="group border-0 border-b border-solid border-maple/8"
               onToggle={(event) => {
                 const opened = event.currentTarget.open;

@@ -7,7 +7,109 @@
     "variantImages": {
       "preview-46728293843133": "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455"
     },
-    "reviewLabel": "No reviews"
+    "reviewLabel": "No reviews",
+    "cutouts": {
+      "nordic-ivory": {
+        "image": "/product-page/cutouts/aero-dining-chair/nordic-ivory.jpg",
+        "hotspots": [
+          {
+            "x": 0.28,
+            "y": 0.44,
+            "label": "Upholstery",
+            "from": "materials",
+            "line": "Upholstery"
+          },
+          {
+            "x": 0.2,
+            "y": 0.78,
+            "label": "Frame & legs",
+            "from": "materials",
+            "line": "Frame & Legs"
+          },
+          {
+            "x": 0.48,
+            "y": 0.13,
+            "label": "Size",
+            "from": "dimensions"
+          }
+        ]
+      },
+      "desert-taupe-2": {
+        "image": "/product-page/cutouts/aero-dining-chair/desert-taupe-2.jpg",
+        "hotspots": [
+          {
+            "x": 0.35,
+            "y": 0.44,
+            "label": "Upholstery",
+            "from": "materials",
+            "line": "Upholstery"
+          },
+          {
+            "x": 0.17,
+            "y": 0.68,
+            "label": "Frame & legs",
+            "from": "materials",
+            "line": "Frame & Legs"
+          },
+          {
+            "x": 0.6,
+            "y": 0.13,
+            "label": "Size",
+            "from": "dimensions"
+          }
+        ]
+      },
+      "slate-modern-2": {
+        "image": "/product-page/cutouts/aero-dining-chair/slate-modern-2.jpg",
+        "hotspots": [
+          {
+            "x": 0.3,
+            "y": 0.45,
+            "label": "Upholstery",
+            "from": "materials",
+            "line": "Upholstery"
+          },
+          {
+            "x": 0.2,
+            "y": 0.72,
+            "label": "Frame & legs",
+            "from": "materials",
+            "line": "Frame & Legs"
+          },
+          {
+            "x": 0.48,
+            "y": 0.13,
+            "label": "Size",
+            "from": "dimensions"
+          }
+        ]
+      },
+      "deep-atlantic": {
+        "image": "/product-page/cutouts/aero-dining-chair/deep-atlantic.jpg",
+        "hotspots": [
+          {
+            "x": 0.35,
+            "y": 0.45,
+            "label": "Upholstery",
+            "from": "materials",
+            "line": "Upholstery"
+          },
+          {
+            "x": 0.22,
+            "y": 0.68,
+            "label": "Frame & legs",
+            "from": "materials",
+            "line": "Frame & Legs"
+          },
+          {
+            "x": 0.46,
+            "y": 0.12,
+            "label": "Size",
+            "from": "dimensions"
+          }
+        ]
+      }
+    }
   },
   "aileron-signature-bed": {
     "variantImages": {},
