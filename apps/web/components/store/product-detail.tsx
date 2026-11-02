@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Truck } from "lucide-react";
@@ -13,6 +13,7 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
+import { CustomRequest } from "./custom-request";
 import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
 import { ProductEnquiry } from "./product-enquiry";
@@ -79,6 +80,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
+    [customising, setCustomising] = useState(false),
     [shared, setShared] = useState("");
   if (urlVariant !== initial) {
     setUrlVariant(initial);
@@ -101,6 +103,13 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
   const rating = highlights.product(product.handle)?.rating;
   const isNew = highlights.product(product.handle)?.isNew;
+  // "Customisation available" and "Speak to a designer" open the custom request; the contact link stays for
+  // modified clicks (a new tab) and pages without scripts.
+  function customise(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setCustomising(true);
+  }
   async function add() {
     if (enquiry || !variant) return false;
     return setQuantity(variantId, selectedQuantity + quantity);
@@ -183,7 +192,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                   code: v.sku?.trim() && product.variants.some((other) => other.id !== v.id && other.title === v.title && other.sku?.trim() && other.sku !== v.sku) ? v.sku : undefined,
                 }))} />
-              <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+              <Link data-customization href={enquiryHref} onClick={customise} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                 <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
                 Customisation available
@@ -216,7 +225,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             {!enquiry && cart.checkoutEnabled ? (
               <button type="button" data-buy-now className={cx(outline, "w-full")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void buyNow()}>Buy it now</button>
             ) : enquiry ? (
-              <Link data-designer href={enquiryHref} className={cx(outline, "w-full")}>Speak to a designer</Link>
+              <Link data-designer href={enquiryHref} onClick={customise} className={cx(outline, "w-full")}>Speak to a designer</Link>
             ) : (
               <Link data-enquire href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
             )}
@@ -261,6 +270,8 @@ export function ProductDetail({ product, initialVariant, presentation, children 
           <ProductImage src={images[shown]} alt={product.title} width={1200} height={1200} sizes="90vw" />
         </div>
       </Modal>
+      <CustomRequest key={variantId} open={customising} onClose={() => setCustomising(false)}
+        piece={{ title: product.title, handle: product.handle, variant: variant?.title ?? "", sku: variant?.sku ?? "" }} />
     </div>
   );
 }

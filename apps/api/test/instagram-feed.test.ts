@@ -290,10 +290,19 @@ test("staff see the feed status; only a publisher can hide a post or refresh, an
   assert.equal((await refresh(editor)).status, 403);
   assert.equal((await refresh(publisher, null)).status, 409, "Nothing to refresh until the feed is set up");
   const before = (await db.instagramFeedState.findUniqueOrThrow({ where: { id: 1 } })).lastSuccessAt!;
-  const refreshed = await refresh(publisher);
+  // The doubled Meta answers at once, so hold the background cycle at its media request until the
+  // second press is in; otherwise a fast runner finishes the cycle first and the second press starts another.
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const held = config((async (input: string | URL | Request, init?: RequestInit) => {
+    if (String(input instanceof Request ? input.url : input).includes("/media")) await gate;
+    return transport(input, init);
+  }) as typeof fetch);
+  const refreshed = await refresh(publisher, held);
   assert.equal(refreshed.status, 202, "Refresh now starts a cycle and answers at once");
   assert.equal(instagramFeedStatusSchema.parse(refreshed.body).status, "refreshing");
-  assert.equal((await refresh(publisher)).status, 409, "A second press while it runs is refused");
+  assert.equal((await refresh(publisher, held)).status, 409, "A second press while it runs is refused");
+  release();
   for (let i = 0; i < 100 && (await db.instagramFeedState.findUniqueOrThrow({ where: { id: 1 } })).leaseToken; i++) await new Promise((resolve) => setTimeout(resolve, 50));
   const done = instagramFeedStatusSchema.parse((await client(settings).get("/api/admin/instagram-feed").set("Cookie", editor.cookie)).body);
   assert.equal(done.status, "ok");

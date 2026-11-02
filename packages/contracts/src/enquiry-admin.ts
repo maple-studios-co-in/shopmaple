@@ -1,4 +1,8 @@
 import { z } from "zod";
+/** Enquiry kinds: the contact form, a project brief, a bulk order, and a product page's custom request. */
+export const enquiryKinds = ["contact", "project", "bulk", "custom"] as const;
+export const enquiryKindSchema = z.enum(enquiryKinds);
+export type EnquiryKind = z.infer<typeof enquiryKindSchema>;
 /** Pipeline stages in display order. Legacy `reviewed` rows were migrated to `contacted`. */
 export const enquiryStages = ["new", "contacted", "quoted", "won", "lost"] as const;
 export const enquiryStageSchema = z.enum(enquiryStages);
@@ -23,7 +27,7 @@ export const singleLineText = (max: number) => z.string().max(max).refine(value 
 export const multiLineText = (max: number) => z.string().max(max).refine(value => !forbiddenAnywhere.test(value) && !/\r/.test(value), "Control characters are not allowed").trim();
 export const enquiryAdminIdSchema = z.string().regex(/^enq_[a-f0-9-]{36}$/);
 export const enquiryAdminQuerySchema = z.object({
-    kind: z.enum(["contact", "project", "bulk"]).optional(),
+    kind: enquiryKindSchema.optional(),
     status: enquiryStageSchema.optional(),
     assignment: z.enum(["mine", "unassigned"]).optional(),
     assigneeId: z.string().regex(/^c[a-z0-9]{24}$/).optional(),
@@ -45,7 +49,7 @@ export const enquirySearchInputSchema = enquiryAdminQuerySchema.omit({ limit: tr
 export const enquiryReviewInputSchema = z.object({ expectedVersion: z.number().int().min(0).max(2147483646) }).strict();
 export const enquiryAdminSummarySchema = z.object({
     id: enquiryAdminIdSchema,
-    kind: z.enum(["contact", "project", "bulk"]),
+    kind: enquiryKindSchema,
     status: enquiryStageSchema,
     version: z.number().int().nonnegative(),
     assignedToId: z.string().max(100).nullable().default(null),
@@ -60,7 +64,10 @@ export const enquiryAdminListSchema = z.object({ items: z.array(enquiryAdminSumm
 export const enquiryAdminDetailSchema = enquiryAdminSummarySchema.extend({
     email: z.email().max(254), phone: z.string().max(30), message: z.string().max(5000),
     lostReason: z.string().max(500).nullable().default(null),
-    context: z.object({ product: z.string().max(500), variant: z.string().max(300), sku: z.string().max(160), pincode: z.string().max(6) }).strict(),
+    context: z.object({ product: z.string().max(500), variant: z.string().max(300), sku: z.string().max(160), pincode: z.string().max(6),
+        /** Custom requests only: the product page and the options the shopper asked for. */
+        handle: z.string().max(120).optional(), fabric: z.string().max(200).optional(), finish: z.string().max(200).optional(),
+        size: z.string().max(200).optional(), quantity: z.number().int().min(1).max(999).optional() }).strict(),
     reviews: z.array(z.object({ id: z.string().max(100), actorId: z.string().max(100), version: z.number().int().positive(), action: z.literal("reviewed"), createdAt: z.iso.datetime() }).strict()).max(1),
 }).strict();
 export type EnquiryAdminSummary = z.infer<typeof enquiryAdminSummarySchema>;
