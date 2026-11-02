@@ -12,33 +12,37 @@ type Artwork = (typeof campaigns)[CampaignKey]["desktop"];
 function ArtworkLayer({
   artwork,
   mobile,
+  framed = false,
 }: {
   artwork: Artwork;
   mobile: boolean;
+  /** Keep the slices in one frame at the artwork's own proportions (the strip shows a crop of it, not a squeezed copy). */
+  framed?: boolean;
 }) {
   const width = mobile ? 500 : 1900;
   const height = mobile ? 500 : 350;
+  const tiles = artwork.layers.map((layer) => (
+    <div
+      key={layer.nodeId}
+      data-figma-node={layer.nodeId}
+      className="campaign-art-tile"
+      style={{
+        left: `${(layer.x / width) * 100}%`,
+        top: `${(layer.y / height) * 100}%`,
+        width: `${(layer.width / width) * 100}%`,
+        height: `${(layer.height / height) * 100}%`,
+      }}
+    >
+      <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} />
+    </div>
+  ));
   return (
     <div
       className={mobile ? "campaign-art-mobile" : "campaign-art-desktop"}
       data-artwork={mobile ? "mobile" : "desktop"}
       aria-hidden="true"
     >
-      {artwork.layers.map((layer) => (
-        <div
-          key={layer.nodeId}
-          data-figma-node={layer.nodeId}
-          className="campaign-art-tile"
-          style={{
-            left: `${(layer.x / width) * 100}%`,
-            top: `${(layer.y / height) * 100}%`,
-            width: `${(layer.width / width) * 100}%`,
-            height: `${(layer.height / height) * 100}%`,
-          }}
-        >
-          <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} />
-        </div>
-      ))}
+      {framed ? <div className="campaign-art-frame" data-art-frame style={{ aspectRatio: `${width} / ${height}` }}>{tiles}</div> : tiles}
     </div>
   );
 }
@@ -110,7 +114,7 @@ export async function CampaignBanner({
           </>
         ) : (
           <>
-            <ArtworkLayer artwork={data.desktop} mobile={false} />
+            <ArtworkLayer artwork={data.desktop} mobile={false} framed={layout === "strip"} />
             <ArtworkLayer artwork={data.mobile} mobile />
           </>
         )}

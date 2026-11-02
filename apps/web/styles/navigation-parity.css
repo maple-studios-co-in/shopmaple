@@ -34,8 +34,9 @@
 }
 .maple-menu-trigger:hover,
 .maple-menu-trigger[aria-expanded="true"],
-.maple-desktop-nav > a:hover {
-  color: #555;
+.maple-desktop-nav > a:hover,
+.maple-desktop-nav > a[aria-current="page"] {
+  color: var(--burgundy);
 }
 .maple-mega {
   position: absolute;
@@ -83,10 +84,17 @@
   line-height: 25.6px;
   color: #000;
 }
+/* Active links take the theme's red, never an underline. */
 .maple-menu-link:hover,
-.maple-menu-parent:hover {
+.maple-menu-parent:hover,
+.maple-menu-link:focus-visible,
+.maple-menu-parent:focus-visible,
+.maple-menu-link[aria-current="page"],
+.maple-menu-parent[aria-current="page"],
+.maple-mega-feature a:hover,
+.maple-mega-discovery a:hover {
+  color: var(--burgundy);
   text-decoration: none;
-  text-underline-offset: 3px;
 }
 .maple-desktop-nav :focus-visible,
 .maple-mobile-drawer :focus-visible {
@@ -274,15 +282,6 @@
 }
 .maple-menu-trigger[aria-expanded="true"] {
   color: var(--burgundy);
-}
-.maple-menu-trigger[aria-expanded="true"]::after {
-  content: "";
-  position: absolute;
-  bottom: 6px;
-  height: 2px;
-  background: var(--burgundy);
-  left: 0;
-  right: 0;
 }
 .maple-mega {
   left: 0;

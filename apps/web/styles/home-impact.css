@@ -152,6 +152,15 @@
 [data-campaign-layout="strip"] .campaign-art-desktop img {
   object-position: left center;
 }
+/* A campaign drawn as slices of one wide panorama (the Diwali artwork): the slices stay joined at
+   the artwork's own proportions and the strip shows the middle of it, the way the single photo crops. */
+[data-campaign-layout="strip"] .campaign-art-frame {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  transform: translateX(-50%);
+}
 [data-campaign-layout="strip"] .campaign-shade,
 [data-campaign-layout="strip"] .campaign-bottom-shade {
   display: none;
@@ -452,7 +461,8 @@
 /* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-lead,
 [data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-explore,
-[data-home-section="nimbus"] .home-nimbus:focus-within:not(:has(.home-nimbus-explore:focus)) .home-nimbus-lead {
+[data-home-section="nimbus"] .home-nimbus:focus-within:not(:has(.home-nimbus-explore:focus)) .home-nimbus-lead,
+[data-home-section="nimbus"] .home-nimbus:focus-within:not(:has(.home-nimbus-explore:focus)) .home-nimbus-explore {
   visibility: hidden;
 }
 /* A soft grey wash keeps the white lettering readable over the pale cloud photo. */
@@ -465,8 +475,11 @@
 }
 [data-home-section="nimbus"] .home-nimbus-media { position: relative; }
 @media (hover: hover) {
-  [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead {
+  /* Hovering opens the panel over the right half, so the centred button would sit across its edge. */
+  [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-lead,
+  [data-home-section="nimbus"] .home-nimbus:hover .home-nimbus-explore {
     opacity: 0;
+    pointer-events: none;
   }
 }
 
