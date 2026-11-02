@@ -60,6 +60,7 @@ export async function syncCatalogueUnion(
         const data = {
           ...fields,
           pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull,
+          productPage: fields.productPage ?? Prisma.DbNull,
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };
         await tx.product.upsert({
@@ -75,6 +76,7 @@ export async function syncCatalogueUnion(
             throw new Error("VARIANT_REPARENT_FORBIDDEN");
           const data = {
             ...variant,
+            productPage: variant.productPage ?? Prisma.DbNull,
             productId: product.id,
             published: true,
             available: false,
