@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProduct, getRelatedProductCards } from "@/lib/catalog";
+import { getProduct, getProductCards, getRelatedProductCards } from "@/lib/catalog";
+import { bundleHandles } from "@/lib/product-page-data";
 import { productRedirect } from "@/lib/product-address";
 import { otherPieces } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
@@ -29,9 +30,11 @@ export default async function ProductPage({
   // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
   const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
   if (moved) permanentRedirect(moved);
-  const related = product.category
-    ? await getRelatedProductCards(product.category)
-    : [];
+  const [related, bundleCards] = await Promise.all([
+    product.category ? getRelatedProductCards(product.category) : [],
+    // The other pieces of this product's bundles; a failed read leaves the bundles out rather than the page.
+    bundleHandles(product).length ? getProductCards(bundleHandles(product)).catch(() => []) : [],
+  ]);
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
@@ -50,6 +53,7 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
+        bundleCards={bundleCards}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>
