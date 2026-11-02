@@ -136,8 +136,24 @@ test("hero: editing other hero text never adds a slides field to an older docume
   } finally { await close(); }
 });
 
-test("nimbus: more collections are added, filled in, moved and removed, up to five", async () => {
+test("nimbus: a fresh draft follows the Nimbus card with Terra, and nothing more", async () => {
   const close = await mount("nimbus");
+  try {
+    assert.equal(field("Nimbus collection 1 heading")?.value, "The Terra Collection");
+    assert.equal(field("Nimbus collection 1 image")?.value, "/media/home/nimbus-terra.webp");
+    assert.ok(!field("Nimbus collection 2 heading"));
+  } finally { await close(); }
+});
+
+/** A document saved before Terra joined the defaults: the Nimbus card alone. */
+function nimbusOnly() {
+  const details = structuredClone(defaultHomeDetails);
+  delete details.nimbus.slides;
+  return details;
+}
+
+test("nimbus: more collections are added, filled in, moved and removed, up to five", async () => {
+  const close = await mount("nimbus", nimbusOnly());
   try {
     assert.equal(field("Nimbus collection 1 heading"), null, "none until added");
     await click("Add nimbus collection");

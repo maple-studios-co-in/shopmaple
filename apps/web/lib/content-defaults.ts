@@ -13,6 +13,13 @@ const homeSectionOrder: StorefrontContent["homeSections"][number]["key"][] = [
   "seating-banner", "chairs", "promos", "editorial", "cities", "compare", "testimonial", "project", "values", "newsletter",
 ];
 
+/**
+ * The owner took the testimonial, the enquiry form and the newsletter off the homepage on 2 November 2026,
+ * so the page closes as the frame's "Main" does: the numbers, the cities, the comparison and the wordmark.
+ * They stay in the section builder, switched off, for staff to turn back on.
+ */
+const hiddenHomeSections = new Set<string>(["testimonial", "project", "newsletter"]);
+
 // These placements originally scrolled to the product grid on their own collection page.
 const collectionCampaignDestinations: Partial<
   Record<keyof typeof campaigns, string>
@@ -48,13 +55,13 @@ export const defaultStorefrontContent: StorefrontContent = {
   storyPage: defaultStoryPage,
   homeDetails: defaultHomeDetails,
   nimbusPage: defaultNimbusPage,
-  homeSections: homeSectionOrder.map((key) => ({ key, enabled: true })),
+  homeSections: homeSectionOrder.map((key) => ({ key, enabled: !hiddenHomeSections.has(key) })),
   homeCopy: {
     categoryHeading: "Shop By Category",
     bestsellersHeading: "Bestsellers",
     chairsHeading: "Chairs",
     socialHeading: "Our Social Proof",
-    ticker: "Elegance isn’t found. At Maple, it is crafted.",
+    ticker: "Elegance isn’t found. At Maple, it is custom-built.",
     testimonialHeading: "Why They Love Us",
     testimonialSubheading: "Thoughtful designs. Exceptional service.",
   },
@@ -76,4 +83,17 @@ export const defaultStorefrontContent: StorefrontContent = {
   })),
   pages: [],
   motion: { autoplaySocial: true, autoplayCities: true, revealSections: false },
+  // A first set of card tags the owner asked for; ratings stay empty until real reviews are entered.
+  productHighlights: {
+    swatches: [],
+    products: [
+      { handle: "aera-swivel-lounge-chair", isNew: true, rating: null },
+      { handle: "aero-dining-chair", isNew: false, isLimited: true, rating: null },
+      { handle: "aileron-signature-bed", isNew: true, rating: null },
+      { handle: "alcyone-7-seater-sofa", isNew: false, isLimited: true, rating: null },
+      { handle: "caro", isNew: true, rating: null },
+      { handle: "nola", isNew: false, isLimited: true, rating: null },
+      { handle: "tara", isNew: true, rating: null },
+    ],
+  },
 };

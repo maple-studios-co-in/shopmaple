@@ -44,8 +44,9 @@ for (const [price, compare, label] of [[90000, 100000, "10% OFF"], [25000, 30000
       const chip = document.querySelector("[data-card-discount]");
       assert.equal(chip?.textContent?.trim() ?? null, label);
       if (chip) {
-        assert.ok(chip.closest("[data-card-price]"), "the chip sits in the price line, beside the struck-through price");
-        assert.equal(chip.previousElementSibling?.tagName, "DEL");
+        assert.ok(chip.closest("[data-card-price]"), "the chip sits in the price line");
+        assert.equal(chip.previousElementSibling?.tagName, "SPAN", "right after the price, as in the card design");
+        assert.equal(chip.nextElementSibling?.tagName, "DEL", "with the struck-through price beneath");
       }
     });
   });

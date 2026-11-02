@@ -11,6 +11,7 @@ import { HomeScrollRail } from "@/components/home-scroll-rail";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
 import { HomeCompare, HomeEditorial } from "@/components/home-editorial";
+import { HomeEffectsIsland } from "@/components/home-effects-island";
 import {
   HomeStatementBand,
   HomeDifference,
@@ -218,6 +219,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
             {sections[section.key]}
           </div>
         ))}
+      <HomeEffectsIsland />
     </SectionReveal>
   );
 }

@@ -62,7 +62,7 @@ test("homepage places six linked Diwali campaigns in the corresponding Shopify s
   }
 });
 
-test("homepage includes source Instagram posts and the original customer testimonial", async () => {
+test("homepage includes source Instagram posts; the original customer testimonial is kept, off by default", async () => {
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
   try {
@@ -71,9 +71,10 @@ test("homepage includes source Instagram posts and the original customer testimo
         <Home />
       </ShopProvider>,
     );
-    const doc = new JSDOM(await new Response(stream).text()).window.document;
+    const page = new JSDOM(await new Response(stream).text()).window.document;
     const posts = [
-      ...doc.querySelectorAll<HTMLAnchorElement>(".home-instagram-posts a"),
+      // The drifting row draws its posts twice; the second pass is hidden decoration.
+      ...page.querySelectorAll<HTMLAnchorElement>("[data-marquee-group]:not([data-marquee-copy]) .home-instagram-posts a"),
     ];
     assert.equal(
       posts.length,
@@ -87,6 +88,11 @@ test("homepage includes source Instagram posts and the original customer testimo
           p.querySelector("img"),
       ),
     );
+    assert.equal(page.querySelector(".home-testimonial"), null, "the page now closes on the values and wordmark");
+    assert.ok(page.querySelector(".home-values"));
+    assert.ok(page.querySelector(".home-cities"));
+    const { HomeTestimonial } = await import("../components/home-sections");
+    const doc = new JSDOM((await import("react-dom/server")).renderToStaticMarkup(<HomeTestimonial />)).window.document;
     assert.ok(
       doc
         .querySelector(".home-testimonial")
@@ -104,8 +110,6 @@ test("homepage includes source Instagram posts and the original customer testimo
       poster && !poster.includes("_small.jpg") && poster.includes("width=960"),
       "Customer video needs the verified full-resolution poster",
     );
-    assert.ok(doc.querySelector(".home-values"));
-    assert.ok(doc.querySelector(".home-cities"));
   } finally {
     globalThis.fetch = previousFetch;
   }
@@ -139,8 +143,8 @@ test("homepage preserves the original brand ticker and four offer collections", 
     );
     const doc = new JSDOM(await new Response(stream).text()).window.document;
     assert.equal(
-      doc.querySelector("[data-statement-band]")?.textContent,
-      "Elegance isn’t found. At Maple, it is crafted.",
+      doc.querySelector("[data-statement-band] [data-statement-text]")?.textContent,
+      "Elegance isn’t found. At Maple, it is custom-built.",
     );
     assert.deepEqual(
       [...doc.querySelectorAll(".home-offers a")].map((a) =>
