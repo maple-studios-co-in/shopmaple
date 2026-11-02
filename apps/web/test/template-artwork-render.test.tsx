@@ -22,7 +22,7 @@ const slots = [
   ["home-hero-chairs", "home", '.category-tile[href="/pages/chairs"] img', "/media/home/hero-chairs.webp", ""],
   ["home-hero-tables", "home", '.category-tile[href="/pages/tables"] img', "/media/home/hero-tables.webp", ""],
   ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', "/media/home/hero-beds.webp", ""],
-  ["home-nimbus", "home", ".home-nimbus-media img", files + "Chairs_9.svg", "The Nimbus Collection — cloud-like upholstered furniture", files + "Chairs_300_x_600_px.webp?width=900"],
+  ["home-nimbus", "home", ".nimbus-stage-media img", "/media/home/nimbus-clouds.webp", "The Nimbus Collection — cloud-like upholstered furniture", "/media/home/nimbus-clouds.webp"],
   ["home-newsletter", "home", ".home-newsletter img", files + "Cover_Image_Maple_1.png", "Maple Furnishers"],
   ["home-testimonial-poster", "home", ".home-testimonial video", files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960", "Maple customer testimonial"],
   ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', files + "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Bedroom"],
@@ -96,12 +96,16 @@ async function withIsland(element: React.ReactElement, small: boolean, run: (doc
     for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); }
   }
 }
-async function checkArtwork(edited: boolean) {
+/** Sections a fresh homepage keeps hidden (it closes on the values); their artwork is checked wherever a document shows them. */
+const hiddenByDefault = new Set(["home-newsletter", "home-testimonial-poster"]);
+async function checkArtwork(edited: boolean, fallback = false) {
   for (const page of ["home", "nimbus", "story"] as const) {
     const doc = await documentFor(page);
     for (const [key, scope, selector, image, alt, mobile] of slots) {
       if (scope !== page || key.startsWith("nimbus-slide-")) continue;
       const node = doc.querySelector(selector)!;
+      // Content that falls back to the defaults draws a fresh homepage, without those sections.
+      if (!node && fallback && hiddenByDefault.has(key)) continue;
       assert.ok(node, key);
       const video = node.tagName === "VIDEO";
       assert.equal(node.getAttribute(video ? "poster" : "src"), edited ? `/media/${key}.webp` : image, key);
@@ -113,9 +117,9 @@ async function checkArtwork(edited: boolean) {
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
       // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
       assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
-      assert.equal(doc.querySelector(".hero-film button"), null);
-      assert.ok(doc.querySelector('.home-testimonial video[controls] source[src$="84199271.mp4?v=0"]'));
-      assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
+      assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
+      if (!fallback || doc.querySelector(".home-testimonial")) assert.ok(doc.querySelector('.home-testimonial video[controls] source[src$="84199271.mp4?v=0"]'));
+      if (!fallback || doc.querySelector(".home-newsletter")) assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
     if (page === "nimbus") {
       assert.equal(doc.querySelector(".landing-nimbus-intro h2")?.textContent, "Introducing nimbus");
@@ -170,7 +174,7 @@ test("draft-only, malformed artwork, malformed responsive pairs and unavailable 
     published([{ key: "story-hero", image: "javascript:alert(1)", alt: "Unsafe" }]),
     published([{ key: "home-nimbus", image: "/media/incomplete.webp", alt: "Incomplete" }]),
     "offline",
-  ]) await withPublished(body, () => checkArtwork(false));
+  ]) await withPublished(body, () => checkArtwork(false, true));
 });
 
 test("renamed and reordered Nimbus rooms keep dynamic default descriptions and keyed overrides", async () => {

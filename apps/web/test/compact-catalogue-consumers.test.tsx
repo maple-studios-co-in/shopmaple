@@ -6,7 +6,7 @@ import { CollectionListing } from "../components/collection-listing";
 import { searchProducts, recentProduct } from "../lib/search-products";
 import { requestSavedProduct } from "../lib/saved-product-request";
 
-const card = { id: "oak", handle: "oak", title: "Oak Chair", image: null, pricePaise: 120000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] };
+const card = { id: "oak", handle: "oak", title: "Oak Chair", image: null, pricePaise: 120000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[], optionThumbs: [] as never[] };
 const query = { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 };
 const page = { handle: "all", query, products: [card], total: 1, collectionTotal: 539, inStock: 400, outOfStock: 200, highestPrice: 990000, limit: 24, published: true, mode: "preview", checkoutEnabled: false };
 const full = { id: "oak", handle: "oak", title: "Oak Chair", description: "Full description", images: [], category: "chairs", published: true, source: "fixture", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "oak-v", title: "Standard", sku: null, pricePaise: 120000, compareAtPaise: null, available: true, stockPolicy: "stocked" }] };

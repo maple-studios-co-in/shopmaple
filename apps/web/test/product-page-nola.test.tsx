@@ -60,11 +60,15 @@ test("the buy box shows the title, price, discount, struck-out price, rating and
   }, product, { highlights });
 });
 
-test("what the frame shows without data behind it is left out: vendor, countdown, code, stock, pickup, absent rating", async () => {
+test("what the frame shows without data behind it is left out: vendor, countdown, code, stock, pickup; an absent rating says so", async () => {
   await mount((doc) => {
     const page = hook(doc, "data-product-page")!;
     const info = hook(doc, "data-product-info")!;
-    assert.equal(info.querySelector("[data-rating]"), null, "No staff-entered rating, no number");
+    const rating = info.querySelector("[data-rating]")!;
+    assert.ok(rating.hasAttribute("data-rating-empty"), "No staff-entered rating: it says so rather than leaving a gap");
+    assert.equal(rating.querySelectorAll("svg").length, 1, "ending on one empty star");
+    assert.equal(text(rating), "No reviews yet", "and no number");
+    assert.equal(rating.getAttribute("href"), "#product-reviews", "leading to the reviews band, where the first can be written");
     assert.equal(info.querySelector("[data-chip='new']"), null);
     for (const hookName of ["data-countdown", "data-stock", "data-pickup", "data-vendor"]) assert.equal(hook(doc, hookName), null, hookName);
     assert.doesNotMatch(page.textContent!, /in stock|Pickup available|SALE30|NEW20|ChicAura|Don.t miss the deal|\$\s?100/i);

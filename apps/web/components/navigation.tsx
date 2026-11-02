@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, ChevronRight, X } from "lucide-react";
 import type { ChromeNavigationLink, SiteChrome } from "@shopmaple/contracts";
@@ -16,11 +17,15 @@ function CategoryLink({
   item: ChromeNavigationLink;
   onNavigate?: () => void;
 }) {
+  const href = chromeHref(item);
+  // The page you are on stays marked in red in the menu.
+  const current = usePathname() === href.split(/[?#]/)[0];
   return (
     <Link
-      href={chromeHref(item)}
+      href={href}
       onClick={onNavigate}
       className={item.parent ? "maple-menu-parent" : "maple-menu-link"}
+      aria-current={current ? "page" : undefined}
     >
       {item.label}
     </Link>
@@ -33,6 +38,7 @@ export function DesktopNavigation({
   const [active, setActive] = useState<string | null>(null);
   const nav = useRef<HTMLElement>(null);
   const triggers = useRef(new Map<string, HTMLButtonElement>());
+  const pathname = usePathname();
   const group = navigation.find(
     (item) =>
       item.id === active &&
@@ -200,6 +206,7 @@ export function DesktopNavigation({
           <Link
             key={item.id}
             href={item.href}
+            aria-current={pathname === item.href ? "page" : undefined}
             onPointerEnter={() => setActive(null)}
             onFocus={() => setActive(null)}
           >

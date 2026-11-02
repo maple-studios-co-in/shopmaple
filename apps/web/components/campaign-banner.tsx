@@ -12,33 +12,37 @@ type Artwork = (typeof campaigns)[CampaignKey]["desktop"];
 function ArtworkLayer({
   artwork,
   mobile,
+  framed = false,
 }: {
   artwork: Artwork;
   mobile: boolean;
+  /** Keep the slices in one frame at the artwork's own proportions (the strip shows a crop of it, not a squeezed copy). */
+  framed?: boolean;
 }) {
   const width = mobile ? 500 : 1900;
   const height = mobile ? 500 : 350;
+  const tiles = artwork.layers.map((layer) => (
+    <div
+      key={layer.nodeId}
+      data-figma-node={layer.nodeId}
+      className="campaign-art-tile"
+      style={{
+        left: `${(layer.x / width) * 100}%`,
+        top: `${(layer.y / height) * 100}%`,
+        width: `${(layer.width / width) * 100}%`,
+        height: `${(layer.height / height) * 100}%`,
+      }}
+    >
+      <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} />
+    </div>
+  ));
   return (
     <div
       className={mobile ? "campaign-art-mobile" : "campaign-art-desktop"}
       data-artwork={mobile ? "mobile" : "desktop"}
       aria-hidden="true"
     >
-      {artwork.layers.map((layer) => (
-        <div
-          key={layer.nodeId}
-          data-figma-node={layer.nodeId}
-          className="campaign-art-tile"
-          style={{
-            left: `${(layer.x / width) * 100}%`,
-            top: `${(layer.y / height) * 100}%`,
-            width: `${(layer.width / width) * 100}%`,
-            height: `${(layer.height / height) * 100}%`,
-          }}
-        >
-          <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} />
-        </div>
-      ))}
+      {framed ? <div className="campaign-art-frame" data-art-frame style={{ aspectRatio: `${width} / ${height}` }}>{tiles}</div> : tiles}
     </div>
   );
 }
@@ -110,7 +114,7 @@ export async function CampaignBanner({
           </>
         ) : (
           <>
-            <ArtworkLayer artwork={data.desktop} mobile={false} />
+            <ArtworkLayer artwork={data.desktop} mobile={false} framed={layout === "strip"} />
             <ArtworkLayer artwork={data.mobile} mobile />
           </>
         )}
@@ -119,7 +123,17 @@ export async function CampaignBanner({
           <div className="campaign-bottom-shade" aria-hidden="true" />
         )}
         <div className="campaign-copy">
-          {layout === "strip" && <span className="campaign-ornament" data-campaign-ornament aria-hidden="true" />}
+          {layout === "strip" && (
+            <span className="campaign-ornament" data-campaign-ornament aria-hidden="true">
+              <i />
+              <svg data-strip-rosette viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.3">
+                {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => <ellipse key={angle} cx="12" cy="5.2" rx="2.1" ry="3.6" transform={`rotate(${angle} 12 12)`} />)}
+                <circle cx="12" cy="12" r="3.6" />
+                <rect x="10.8" y="10.8" width="2.4" height="2.4" fill="currentColor" stroke="none" transform="rotate(45 12 12)" />
+              </svg>
+              <i />
+            </span>
+          )}
           {data.label && <p className="campaign-label">{data.label}</p>}
           <h2>
             {data.headline.map((line) => (

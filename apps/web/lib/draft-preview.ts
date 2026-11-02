@@ -4,7 +4,7 @@ import { previewTokenPattern, storefrontContentSchema } from "@shopmaple/contrac
 import type { StorefrontDocument } from "./content";
 
 const uploadPattern = /^\/media\/uploads\/([a-f0-9]{64})\.webp$/;
-const imageKeys = new Set(["image", "mobileImage", "desktopImage", "src"]);
+const imageKeys = new Set(["image", "mobileImage", "desktopImage", "src", "poster", "leftImage", "rightImage"]);
 const staffCookieNames = new Set(["shop_admin", "__Host-shop_admin"]);
 export { previewTokenPattern };
 const draftSchema = z.object({

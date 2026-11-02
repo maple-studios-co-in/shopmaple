@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { ImageOff, Plus } from "lucide-react";
-import type { StorefrontContent } from "@shopmaple/contracts";
+import { homeSectionKeys, type StorefrontContent } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { NativeCheckbox } from "@/components/ui/native-checkbox";
@@ -108,6 +108,9 @@ export function SectionRail({ content, edit, selected, onSelect, onInspect, sour
   const added = useRef(false);
   const sections = content.homeSections;
   const hidden = sections.filter((section) => !section.enabled);
+  // Sections added to the site after this document was saved: not in its list yet, offered like a hidden one.
+  const unlisted = homeSectionKeys.filter((key) => !sections.some((section) => section.key === key));
+  const choices: HomeSectionKey[] = [...hidden.map((section) => section.key), ...unlisted];
   const setSections = (homeSections: Section[]) => edit({ ...content, homeSections });
   // A section selected from the live preview brings its card into view.
   useEffect(() => {
@@ -117,7 +120,7 @@ export function SectionRail({ content, edit, selected, onSelect, onInspect, sour
 
   function add(key: HomeSectionKey) {
     // The selected card is the hidden section itself: show it where it is.
-    if (selected === key) setSections(sections.map((section) => section.key === key ? { ...section, enabled: true } : section));
+    if (selected === key && sections.some((section) => section.key === key)) setSections(sections.map((section) => section.key === key ? { ...section, enabled: true } : section));
     else {
       const rest = sections.filter((section) => section.key !== key);
       const after = rest.findIndex((section) => section.key === selected);
@@ -134,7 +137,7 @@ export function SectionRail({ content, edit, selected, onSelect, onInspect, sour
     <>
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-xs text-muted-foreground tabular-nums">{sections.length - hidden.length} of {sections.length} visible</span>
-        <Button ref={addButton} type="button" variant="outline" size="sm" disabled={hidden.length === 0} onClick={() => setPicking(true)}>
+        <Button ref={addButton} type="button" variant="outline" size="sm" disabled={choices.length === 0} onClick={() => setPicking(true)}>
           <Plus aria-hidden="true" strokeWidth={1.5} />Add section
         </Button>
       </div>
@@ -193,17 +196,17 @@ export function SectionRail({ content, edit, selected, onSelect, onInspect, sour
         }}>
           <DialogHeader>
             <DialogTitle>Add a section</DialogTitle>
-            <DialogDescription>Hidden sections, as they look in your draft. The one you choose is shown{selected && sections.some((section) => section.key === selected && section.enabled) ? ` after ${sectionName(selected)}` : selected && hidden.some((section) => section.key === selected) ? ` in ${sectionName(selected)}'s place, or after it` : " at the end of the page"}.</DialogDescription>
+            <DialogDescription>Hidden and new sections, as they look in your draft. The one you choose is shown{selected && sections.some((section) => section.key === selected && section.enabled) ? ` after ${sectionName(selected)}` : selected && hidden.some((section) => section.key === selected) ? ` in ${sectionName(selected)}'s place, or after it` : " at the end of the page"}.</DialogDescription>
           </DialogHeader>
           <ul className="grid max-h-[60dvh] grid-cols-[repeat(auto-fill,minmax(256px,1fr))] gap-3 overflow-y-auto p-0.5">
-            {hidden.map((section) => {
-              const name = sectionName(section.key);
+            {choices.map((key) => {
+              const name = sectionName(key);
               return (
-                <li key={section.key} data-section-choice={section.key} className="grid gap-2 rounded-lg border border-border bg-card p-2 shadow-xs">
-                  <SectionThumbnail section={section.key} content={content} source={{ ...source, dirty: false }} width={256} />
+                <li key={key} data-section-choice={key} className="grid gap-2 rounded-lg border border-border bg-card p-2 shadow-xs">
+                  <SectionThumbnail section={key} content={content} source={{ ...source, dirty: false }} width={256} />
                   <div className="flex items-center justify-between gap-2 px-1">
                     <span className="truncate text-sm font-medium">{name}</span>
-                    <Button type="button" size="sm" aria-label={`Add ${name}`} onClick={() => add(section.key)}>Add</Button>
+                    <Button type="button" size="sm" aria-label={`Add ${name}`} onClick={() => add(key)}>Add</Button>
                   </div>
                 </li>
               );

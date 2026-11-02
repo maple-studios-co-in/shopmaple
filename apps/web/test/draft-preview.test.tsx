@@ -108,3 +108,15 @@ test("reading a draft preview forwards only the staff cookie, never caches and r
   const failing = await readDraftPreview("good.token", "", async () => { throw new Error("offline"); });
   assert.deepEqual([failing.ok, (failing as { status: number }).status], [false, 503]);
 });
+
+test("pictures chosen in hero slides, extra Nimbus cards and the editorial block show in the staff preview too", () => {
+  const upload = `/media/uploads/${sha}.webp`;
+  const content = previewMediaContent({ homeDetails: { hero: { slides: [{ kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/x.mp4", poster: upload }] }, nimbus: { slides: [{ image: upload, mobileImage: upload }] }, editorial: { leftImage: upload, rightImage: upload, text: `a path ${upload} in prose` } } });
+  const preview = `/api/admin/media/${sha}/preview`;
+  assert.equal(content.homeDetails.hero.slides[0]!.poster, preview);
+  assert.equal(content.homeDetails.nimbus.slides[0]!.image, preview);
+  assert.equal(content.homeDetails.nimbus.slides[0]!.mobileImage, preview);
+  assert.equal(content.homeDetails.editorial.leftImage, preview);
+  assert.equal(content.homeDetails.editorial.rightImage, preview);
+  assert.equal(content.homeDetails.editorial.text, `a path ${upload} in prose`, "prose is left alone");
+});

@@ -30,21 +30,26 @@ async function renderHome(edit?: (content: typeof defaultStorefrontContent) => v
 }
 const section = (doc: Document, key: string) => doc.querySelector(`[data-home-section="${key}"]`)!;
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").replace(/\s+/g, " ").trim();
+/** The testimonial and the enquiry band start hidden (the page closes on the values); staff can show them again. */
+const showing = (...keys: string[]) => (content: typeof defaultStorefrontContent) => {
+  for (const item of content.homeSections) if (keys.includes(item.key)) item.enabled = true;
+};
 
 import { sectionSignature } from "../lib/section-thumbnails";
 import { homeStats } from "../lib/home-stats";
 
-test("the numbers band shows the figures the admin's own words already state", async () => {
+test("the numbers band shows the figures the admin's own words already state, each with the frame's line beneath", async () => {
   const band = section(await renderHome(), "cities").querySelector("[data-stat-band]")!;
-  assert.deepEqual([...band.querySelectorAll("[data-stat]")].map((stat) => [text(stat.querySelector("[data-stat-value]")), text(stat.querySelector("[data-stat-label]"))]), [["36", "Month warranty"], ["20+", "Cities"]]);
+  assert.deepEqual([...band.querySelectorAll("[data-stat]")].map((stat) => [text(stat.querySelector("[data-stat-figure]")), text(stat.querySelector("[data-stat-label]")), text(stat.querySelector("[data-stat-description]"))]),
+    [["36", "Month warranty", "Built with lasting structure and care."], ["20+", "Cities served", "Delivery across India."]]);
 });
 
 test("the numbers follow edits and disappear when no figure is stated", async () => {
   const edited = await renderHome((content) => { content.homeDetails!.difference.promises[3] = "24-Month Warranty"; content.homeDetails!.cities.heading = "Across India"; });
-  assert.deepEqual([...section(edited, "cities").querySelectorAll("[data-stat-value]")].map(text), ["24"]);
+  assert.deepEqual([...section(edited, "cities").querySelectorAll("[data-stat-figure]")].map(text), ["24"]);
   const none = await renderHome((content) => { content.homeDetails!.difference.promises[3] = "Lifetime care"; content.homeDetails!.cities.heading = "Across India"; });
   assert.equal(section(none, "cities").querySelector("[data-stat-band]"), null);
-  assert.deepEqual(homeStats(["Fully Customizable"], "7 Studios"), [{ value: "7", label: "Studios" }]);
+  assert.deepEqual(homeStats(["Fully Customizable"], "7 Studios"), [{ value: "7", label: "Studios served", description: "Delivery across India." }]);
 });
 
 test("a figure from the promises or the cities heading reloads the cities thumbnail", () => {
@@ -58,7 +63,7 @@ test("a figure from the promises or the cities heading reloads the cities thumbn
 });
 
 test("the testimonial leads with one large quote and its author; the film and full review follow", async () => {
-  const testimonial = section(await renderHome(), "testimonial");
+  const testimonial = section(await renderHome(showing("testimonial")), "testimonial");
   assert.equal(text(testimonial.querySelector("[data-quote-text]")), "Getting our sofa made by Maple was a completely hassle-free experience.");
   assert.equal(text(testimonial.querySelector("[data-quote-author]")), "Anjali Gupta — Verified Customer");
   assert.ok(testimonial.querySelector("video"), "the customer film stays, below the quote");
@@ -68,7 +73,7 @@ test("the testimonial leads with one large quote and its author; the film and fu
 });
 
 test("the enquiry is a connect band with a card form that sends an enquiry", async () => {
-  const project = section(await renderHome(), "project");
+  const project = section(await renderHome(showing("project")), "project");
   assert.equal(text(project.querySelector("[data-project-eyebrow]")), "Let’s connect");
   assert.equal(text(project.querySelector("h2")), "Have a Space in Mind?");
   assert.equal(text(project.querySelector("[data-project-promise]")), "Quick response We respond within 24 hours.");
@@ -90,7 +95,7 @@ test("values end the page with the brand name as a watermark and an Experience M
 test("a fresh draft follows the frame's order, with the newsletter band last", () => {
   assert.deepEqual(defaultStorefrontContent.homeSections.map((section) => section.key), [
     "hero", "announcement", "difference", "categories", "ticker", "offers", "nimbus", "dining-banner", "instagram", "bestsellers",
-    "seating-banner", "chairs", "promos", "cities", "testimonial", "project", "values", "newsletter",
+    "seating-banner", "chairs", "promos", "editorial", "cities", "compare", "testimonial", "project", "values", "newsletter",
   ]);
 });
 
@@ -107,7 +112,7 @@ test("the enquiry form keeps its tall message box and Submit button wherever the
 });
 
 test("the testimonial's film follows the figure, so the caption stays the figure's last child", async () => {
-  const testimonial = section(await renderHome(), "testimonial");
+  const testimonial = section(await renderHome(showing("testimonial")), "testimonial");
   assert.equal(testimonial.querySelector("figure")!.lastElementChild!.tagName, "FIGCAPTION");
   assert.ok(testimonial.querySelector("figure + video, figure ~ video"));
 });
@@ -117,5 +122,6 @@ test("the cities panel keeps its eyebrow and heading in the page and its image c
   assert.equal(text(cities.querySelector("h2")), "20+ Cities");
   assert.equal(text(cities.querySelector(".home-eyebrow")), "We Are Serving");
   assert.equal(cities.querySelector<HTMLAnchorElement>('a[href="/media/cities/credits.html"]')?.textContent, "Image credits");
-  assert.equal(cities.querySelectorAll("figure").length, 10);
+  assert.equal(cities.querySelectorAll("[data-marquee-group]:not([data-marquee-copy]) figure").length, 10, "ten cities, drawn once more as the drifting row's hidden second pass");
+  assert.equal(cities.querySelectorAll("[data-marquee-copy] figure").length, 10);
 });

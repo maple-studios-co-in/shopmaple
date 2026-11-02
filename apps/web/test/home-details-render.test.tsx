@@ -65,7 +65,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds"]);
   assert.equal(doc.querySelector(".home-difference h2")?.textContent, "Every element is yours to reshape");
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
-  assert.equal(doc.querySelector(".home-nimbus h2")?.textContent, "The Nimbus Collection");
+  assert.equal(doc.querySelector("[data-nimbus-heading]")?.textContent, "The Nimbus Collection");
   assert.equal(doc.querySelector(".home-testimonial h3")?.textContent, "Getting our sofa made by Maple was a completely hassle-free experience.");
   assert.equal(doc.querySelectorAll("blockquote p").length, 4);
   assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
@@ -92,8 +92,8 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, ".home-difference .home-eyebrow, .home-difference h2, .home-difference a"), ["Why Maple", "Crafted around you", "Plan your space"]);
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Your fabric", "Your city", "Our workshop", "Our promise"]);
   assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");
-  assert.deepEqual(texts(doc, ".home-nimbus h2, .home-nimbus-content > p, .home-nimbus-content a"), ["Meet Nimbus", "A softer landing", "View Nimbus"]);
-  assert.deepEqual(texts(doc, ".home-nimbus-icons span"), ["Soft seats", "Gentle curves", "Light lines", "Room to relax"]);
+  assert.deepEqual(texts(doc, "[data-nimbus-lead], [data-nimbus-heading], [data-nimbus-explore]"), ["A softer landing", "Meet Nimbus", "View Nimbus"]);
+  assert.equal(doc.querySelector(".home-nimbus-icons"), null, "the stage shows the tagline, name and button, as in the frame, with no feature row");
   assert.equal(doc.querySelector(".home-testimonial h3")?.textContent, "Our room feels complete");
   assert.deepEqual(texts(doc, "blockquote p"), ["Helpful from day one.", "Beautiful when delivered."]);
   assert.equal(doc.querySelector("figcaption")?.textContent, "A Maple customer — Homeowner");
@@ -122,6 +122,6 @@ test("published detail strings are escaped as text rather than interpreted as ma
   details.cities.heading = markup;
   details.project.responseTime = markup;
   const { doc } = await renderHome(details);
-  for (const selector of [".hero-cta", ".home-difference h2", ".home-nimbus-content > p", "blockquote p", ".home-newsletter-row > div > p", ".home-values p", ".home-cities h2", ".home-project strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
+  for (const selector of [".hero-cta", ".home-difference h2", "[data-nimbus-lead]", "blockquote p", ".home-newsletter-row > div > p", ".home-values p", ".home-cities h2", ".home-project strong"]) assert.equal(doc.querySelector(selector)?.textContent?.trim(), markup);
   assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
 });

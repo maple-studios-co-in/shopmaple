@@ -141,6 +141,9 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
     { id: "new", header: "New badge", enableSorting: false, meta: { className: "w-20" },
       cell: ({ row }) => <Switch aria-label={`New badge for ${row.original.handle}`} ref={focus.track(`product:${row.original.handle}`)} checked={row.original.isNew}
         onCheckedChange={(isNew) => update({ products: products.map((item) => (item.handle === row.original.handle ? { ...item, isNew } : item)) })} /> },
+    { id: "limited", header: "Limited tag", enableSorting: false, meta: { className: "w-20" },
+      cell: ({ row }) => <Switch aria-label={`Limited tag for ${row.original.handle}`} checked={row.original.isLimited ?? false}
+        onCheckedChange={(isLimited) => update({ products: products.map((item) => (item.handle === row.original.handle ? { ...item, isLimited } : item)) })} /> },
     { id: "average", header: "Average rating", enableSorting: false, meta: { className: "w-28" },
       cell: ({ row }) => {
         const typed = textFor(row.original), error = averageError(typed), errorId = `${id}-${row.original.handle}-average`;
@@ -166,7 +169,7 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
   ];
 
   return <section aria-label="Product highlights" className="grid gap-10">
-    <PanelHeader className="mb-0" title="Product highlights" description="Colours, New badges and review ratings shown on the product page and its &quot;More …&quot; row. Only what you set here is shown." />
+    <PanelHeader className="mb-0" title="Product highlights" description="Colours, New and Limited tags and review ratings for the product cards across the store and the product page. Only what you set here is shown: a rating appears beside the name as its score and a gold star, and a product with no rating set shows a dash and an empty star." />
 
     <section aria-label="Colours" className="grid min-w-0 content-start gap-3">
       <SectionHeading className="mt-0 mb-0" description="Give an option name a colour, exactly as the product's option is called, such as Deep Atlantic. A card shows a dot for each of its options that has a colour.">
