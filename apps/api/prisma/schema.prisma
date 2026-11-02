@@ -17,6 +17,8 @@ model Product {
   source String
   sourceTaxonomy Json?
   sourceDetails Json?
+  /// Keeri's product-page data: specs, highlights, FAQ, reviews, photo details and bundles.
+  productPage Json?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]
@@ -39,6 +41,8 @@ model Variant {
   images String[] @default([])
   /// The readable ?variant= value, unique within its product.
   slug String?
+  /// Keeri's product-page data for this variant: measurements, copy, batch count and options.
+  productPage Json?
   cartItems CartItem[]
   identities VariantSourceIdentity[]
 }

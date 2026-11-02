@@ -32,3 +32,19 @@ test('upstream timeout releases capacity and late bytes never reach the browser'
  const result=await request(a).get('/media/keeri/approved1.webp');
  assert.equal(result.status,404);assert.doesNotMatch(result.text,/synthetic/);assert.equal(calls,1);
 });
+
+test('a review photo is served only while it belongs to an approved review on a listed product',async()=>{
+ const review={id:'r1',rating:5,title:'Lovely',body:'Synthetic review text.',reviewerName:'A',city:null,reviewedAt:'2026-10-20',source:'online_order',verifiedBuyer:true,variantId:null,photos:[{id:'photo1',url:'https://store.maplefurnishers.com/media/keeri-review/photo1.webp',width:10,height:10}]};
+ const page={specs:{widthCm:null,depthCm:null,heightCm:null,seatHeightCm:null,weightKg:null},highlights:[],faq:[],assembly:null,customisation:null,rooms:[],reviews:{average:5,count:1,items:[review]},media:[],bundles:[]};
+ await db.product.create({data:{id:'review-product',handle:'review-product',title:'Chair',description:'',images:[],published:true,source:'keeri:maple',sourceUpdatedAt:new Date(),productPage:page}});
+ const asked:string[]=[];
+ const a=app(async(url)=>{asked.push(String(url));return new Response(Buffer.from('RIFF0000WEBPsynthetic'),{headers:{'content-type':'image/webp'}})});
+ assert.equal((await request(a).get('/media/keeri-review/photo1.webp')).status,200);
+ assert.deepEqual(asked,['https://keeri.example/api/storefront/review-photos/photo1']);
+ // Not a photo of any review the store holds, and not a product photo address either.
+ assert.equal((await request(a).get('/media/keeri-review/photo2.webp')).status,404);
+ assert.equal((await request(a).get('/media/keeri/photo1.webp')).status,404);
+ await db.product.update({where:{id:'review-product'},data:{published:false}});
+ assert.equal((await request(a).get('/media/keeri-review/photo1.webp')).status,404);
+ assert.equal(asked.length,1);
+});

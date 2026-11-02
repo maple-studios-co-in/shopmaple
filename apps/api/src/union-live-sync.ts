@@ -35,7 +35,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     )
       throw new Error("ISOLATED_DATABASE_APPROVAL_REQUIRED");
   }
-  const request = (includeAttributes: boolean) => fetchKeeriExport({
+  const request = (includeAttributes: boolean, includeProductPage = includeAttributes) => fetchKeeriExport({
     endpoint: `${options.origin}/api/storefront/catalogue/v2`,
     trustedOrigin: options.origin,
     token: options.token,
@@ -44,10 +44,16 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     includeTaxonomy: true,
     includeContent: true,
     includeAttributes,
+    includeProductPage,
     fetch: options.fetch,
   });
-  // Variant options need a Keeri release that offers them; until then the catalogue syncs without them.
+  // Each richer level needs a Keeri release that offers it; an older Keeri steps the catalogue down a level.
   const snapshot = await request(true).catch((error: unknown) => {
+    if (error instanceof KeeriFetchError && error.code === "PRODUCT_PAGE_UNSUPPORTED")
+      return request(true, false).catch((inner: unknown) => {
+        if (inner instanceof KeeriFetchError && inner.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
+        throw inner;
+      });
     if (error instanceof KeeriFetchError && error.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
     throw error;
   });

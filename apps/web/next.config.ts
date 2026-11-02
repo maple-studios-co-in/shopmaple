@@ -7,6 +7,8 @@ const config: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "store.maplefurnishers.com", pathname: "/media/keeri/*.webp", search: "" },
+      // Customer photos on approved reviews, served by the API only while the review is listed.
+      { protocol: "https", hostname: "store.maplefurnishers.com", pathname: "/media/keeri-review/*.webp", search: "" },
       {
         protocol: "https",
         hostname: "cdn.shopify.com",
@@ -22,6 +24,7 @@ const config: NextConfig = {
   async rewrites() {
     return [
       { source: "/media/keeri/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri/:filename" },
+      { source: "/media/keeri-review/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri-review/:filename" },
       { source: "/media/instagram-feed/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/instagram-feed/:filename" },
       {
         source: "/media/uploads/:filename",

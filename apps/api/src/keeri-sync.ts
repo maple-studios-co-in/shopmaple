@@ -52,14 +52,14 @@ export async function syncKeeriExport(
             "Variant identity belongs to another product or source",
           );
         const { variants, ...fields } = product;
-        const data = { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, sourceUpdatedAt: capturedAt };
+        const data = { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, productPage: fields.productPage ?? Prisma.DbNull, sourceUpdatedAt: capturedAt };
         await tx.product.upsert({
           where: { id: product.id },
           create: data,
           update: data,
         });
         for (const variant of variants) {
-          const data = { ...variant, productId: product.id, published: true };
+          const data = { ...variant, productPage: variant.productPage ?? Prisma.DbNull, productId: product.id, published: true };
           await tx.variant.upsert({
             where: { id: variant.id },
             create: data,
