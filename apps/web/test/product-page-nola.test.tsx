@@ -60,6 +60,17 @@ test("the buy box shows the title, price, discount, struck-out price, rating and
   }, product, { highlights });
 });
 
+test("Add to cart fills from the pointer like the owner's reference, and the enquiry button fills as an outline button", async () => {
+  await mount((doc) => {
+    const info = hook(doc, "data-product-info")!;
+    assert.equal(info.querySelector("[data-primary]")?.getAttribute("data-fill-button"), "", "the solid button");
+    assert.equal(info.querySelector("[data-enquire]")?.getAttribute("data-fill-button"), "outline");
+  });
+  await mount((doc) => {
+    assert.equal(hook(doc, "data-buy-now")?.getAttribute("data-fill-button"), "outline", "Buy it now, where checkout is open");
+  }, product, { checkoutEnabled: true });
+});
+
 test("what the frame shows without data behind it is left out: vendor, countdown, code, stock, pickup; an absent rating says so", async () => {
   await mount((doc) => {
     const page = hook(doc, "data-product-page")!;

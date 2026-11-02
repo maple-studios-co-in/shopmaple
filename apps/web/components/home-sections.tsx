@@ -233,7 +233,7 @@ export function HomeValues({
           </div>
         );
       })}
-      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta>Experience Maple</Link>}
+      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
     </section>
   );
 }

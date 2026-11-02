@@ -17,7 +17,7 @@ export function ProductReviews({ rating, writeHref }: { rating: { value: number;
           {rating
             ? <p data-reviews-sub className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
             : <p data-reviews-note className="m-0 max-w-[420px] text-[20px] leading-[1.3] font-medium md:text-[24px]">No reviews to show yet. Share your experience with this piece.</p>}
-          <Link data-write-review href={writeHref} className={pill}>
+          <Link data-write-review data-fill-button="light" href={writeHref} className={pill}>
             Write a review
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px]" />

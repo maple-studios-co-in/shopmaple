@@ -67,8 +67,9 @@
   max-width: 170px;
   font: 400 13px/1.45 var(--impact-sans);
 }
+/* In the flow of the film's copy; relative (not static) so its fill from the pointer stays inside it. */
 [data-home-section="hero"] .hero-cta {
-  position: static;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -77,10 +78,6 @@
   background: var(--impact-burgundy);
   color: #fff;
   font: 500 13px/1.2 var(--impact-sans);
-}
-[data-home-section="hero"] .hero-cta:hover {
-  background: #5c140f;
-  color: #fff;
 }
 [data-home-section="hero"] .hero-categories {
   gap: 8px;
@@ -1109,7 +1106,6 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   box-shadow: 0 14px 34px -14px rgb(116 26 20 / 0.75);
   transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.65, 0.2, 1), box-shadow 0.3s ease;
 }
-.nimbus-stage-cta:hover { background: #5c140f; transform: translateY(-2px); box-shadow: 0 18px 40px -14px rgb(116 26 20 / 0.85); }
 .nimbus-stage-cta:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 .nimbus-stage-slide[data-active] .nimbus-stage-tagline { animation: stage-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.25s both; }
 .nimbus-stage-slide[data-active] .nimbus-stage-word { animation: stage-word 1.25s cubic-bezier(0.2, 0.7, 0.2, 1) 0.38s both; }
