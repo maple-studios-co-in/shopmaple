@@ -65,7 +65,8 @@ function fill(values: Record<string, string>) {
     element.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   }
 }
-const details = { name: "Test Buyer", email: "Buyer@Example.test", phone: "9876543210", "shipping.line1": "1 Test Street",
+// The form asks for first and last name (frame 30:492); the order keeps one name.
+const details = { firstName: "Test", lastName: "Buyer", email: "Buyer@Example.test", phone: "9876543210", "shipping.line1": "1 Test Street",
   "shipping.line2": "", "shipping.city": "Mumbai", "shipping.stateCode": "27", "shipping.pincode": "400001" };
 async function submitDetails() {
   fill(details);

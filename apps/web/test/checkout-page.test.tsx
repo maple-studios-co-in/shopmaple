@@ -10,7 +10,7 @@ import { ShopProvider } from "../components/shop-provider";
 const closedMarkup =
   '<section class="empty-state checkout-state"><h1>Checkout is not open in this preview</h1><p>Your cart is saved. We’re preparing online payments and confirming delivery and stock before opening checkout.</p><p>No payment has been taken and no order has been placed.</p><div class="button-row"><a class="button" href="/cart">Return to cart</a><a class="button secondary" href="/pages/contact">Contact our team</a></div></section>';
 const options = { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_page" };
-async function render(responder: (path: string) => Response | Promise<Response>) {
+async function render(responder: (path: string) => Response | Promise<Response>, searchParams?: Record<string, string>) {
   const previous = globalThis.fetch;
   const requests: string[] = [];
   globalThis.fetch = async (input) => {
@@ -19,7 +19,7 @@ async function render(responder: (path: string) => Response | Promise<Response>)
     return responder(path);
   };
   try {
-    const page = await CheckoutPage();
+    const page = await CheckoutPage(searchParams ? { searchParams: Promise.resolve(searchParams) } : undefined);
     const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
     const stream = await renderToReadableStream(
       <AppRouterContext.Provider value={router}><ShopProvider>{page}</ShopProvider></AppRouterContext.Provider>,
@@ -71,4 +71,13 @@ test("live checkout renders the delivery and contact form instead of the placeho
   assert.doesNotMatch(html, /Checkout is not open in this preview/);
   assert.match(html, /<h1[^>]*>Checkout<\/h1>/);
   assert.match(html, /Standard delivery/);
+  // Frame 30:492: numbered contact, delivery and payment steps beside the order.
+  for (const heading of ["Contact details", "Delivery details", "Payment", "Your order", "Continue to secure payment →"]) assert.match(html, new RegExp(heading));
+  assert.doesNotMatch(html, /promo code|Sign in|Keep me updated/i, "nothing the store cannot do yet");
+});
+
+test("on a local development server, ?preview=design shows the details step while checkout stays closed", async () => {
+  const closed = (path: string) => path === "/api/health" ? Response.json({ status: "ok", catalogMode: "preview", checkoutEnabled: false }) : new Response(null, { status: 404 });
+  assert.match((await render(closed, { preview: "design" })).html, /Home delivery[\s\S]*Store pickup/);
+  assert.match((await render(closed, { preview: "other" })).html, /Checkout is not open in this preview/);
 });
