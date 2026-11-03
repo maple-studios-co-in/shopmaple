@@ -43,11 +43,14 @@ function disclosure(label: string) {
 }
 const absent = (label: string) => ![...document.querySelectorAll("[data-feature]")].some(item => item.querySelector("h3")?.textContent === cards[label]);
 
-test("products without captured text show their description and leave out cards that have no text", async () => {
+test("products without captured text show their description, and cards without the product's own text state only store-wide facts", async () => {
   for (const value of [product, { ...product, source: "keeri", pdpContent: null }]) {
     await mount(value, () => {
       assert.equal(disclosure("Details").querySelector("[data-feature-body]")?.textContent, "Standard description must not replace captured Details.");
-      for (const label of ["Materials & care", "Shipping & returns", "Product specifications"]) assert.ok(absent(label), `${label} is not invented`);
+      assert.equal(disclosure("Materials & care").querySelector("[data-feature-body]")?.textContent, "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat.");
+      assert.deepEqual([...disclosure("Product specifications").querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map((cell) => cell.textContent)),
+        [["Measurements", "Shared on request"], ["Warranty", "36 months"]], "no measurements are invented");
+      assert.ok(absent("Shipping & returns"), "Shipping & returns is not invented");
       assert.doesNotMatch(document.body.textContent!, /Contact our team for the materials|Confirm delivery serviceability|Request care guidance|Request dimensions/);
     });
   }
@@ -66,10 +69,11 @@ test("captured source disclosures replace generic copy without changing purchase
   });
 });
 
-test("captured empty bodies leave their cards out and never invent fallback copy", async () => {
+test("captured empty bodies leave their own cards out, and only the store-wide cards stand in", async () => {
   for (const empty of [null, { type: "root", children: [] } as ProductRichText]) {
     await mount(captured(empty, empty, empty), () => {
-      for (const label of ["Details", "Materials & care", "Shipping & returns"]) assert.ok(absent(label), `${label} stays out`);
+      for (const label of ["Details", "Shipping & returns"]) assert.ok(absent(label), `${label} stays out`);
+      assert.equal(disclosure("Materials & care").querySelector("[data-feature-body]")?.textContent, "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat.");
       assert.ok(!document.querySelector("[data-features]")?.textContent?.includes("Standard description must not replace"));
     });
   }

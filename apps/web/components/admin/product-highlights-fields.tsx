@@ -1,6 +1,6 @@
 "use client";
 import { useId, useMemo, useState, type ComponentProps, type ReactNode } from "react";
-import { byTitle, productListSchema, toProductCard, type ProductHighlights, type ProductList } from "@shopmaple/contracts";
+import { toProductCard, type ProductHighlights, type ProductList } from "@shopmaple/contracts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Palette, Plus, Search, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -59,11 +59,6 @@ function averageError({ value, count }: RatingText) {
 function countError({ count }: RatingText) {
   if (!count.trim()) return "";
   return Number.isNaN(countFrom(count)) ? "Use a whole number of reviews from 1 to 100,000." : "";
-}
-/** The ratings typed for "Ratings in catalogue order" ("4.1, 4.1, 4.3"), or null when any is not a rating. */
-function ratingSequence(text: string) {
-  const values = text.split(/[\s,]+/).filter(Boolean).map(averageFrom);
-  return values.length && values.length <= 24 && values.every((value) => !Number.isNaN(value)) ? values : null;
 }
 function nameError(swatches: Swatch[], index: number) {
   const key = nameKey(swatches[index]!.name);
@@ -165,48 +160,6 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
     const next = products.filter((_, i) => i !== index), neighbour = next[index];
     update({ products: next }, neighbour ? `product:${neighbour.handle}` : "search");
   }
-  // Ratings in catalogue order: the owner's real ratings, given in the store's A–Z order and repeating, become each
-  // product's own rating here, so a piece shows the same score everywhere and can still be changed on its own.
-  const [sequenceText, setSequenceText] = useState("4.1, 4.1, 4.3, 4.3, 4.2, 4.2");
-  const [sequenceNote, setSequenceNote] = useState("");
-  const [applying, setApplying] = useState(false);
-  async function applySequence() {
-    const values = ratingSequence(sequenceText);
-    if (!values) { setSequenceNote("Use ratings from 1.0 to 5.0 with one decimal, separated by commas, such as 4.1, 4.3."); return; }
-    setApplying(true);
-    setSequenceNote("");
-    try {
-      const catalogue: ProductList["products"] = [];
-      for (let page = 1; page <= 20; page++) {
-        const response = await fetch(`/api/products?limit=50&page=${page}&sort=title`, { cache: "no-store", credentials: "same-origin" });
-        if (!response.ok) throw new Error("catalogue");
-        const list = productListSchema.parse(await response.json());
-        catalogue.push(...list.products);
-        if (!list.products.length || catalogue.length >= list.total) break;
-      }
-      // The products API sorts capitals first; the shop's A–Z listing doesn't, and the ratings follow what shoppers see.
-      catalogue.sort(byTitle);
-      const next = [...products];
-      let rated = 0;
-      catalogue.forEach((piece, i) => {
-        const value = values[i % values.length]!;
-        const at = next.findIndex((item) => item.handle === piece.handle);
-        if (at >= 0) {
-          if (next[at]!.rating) return;
-          next[at] = { ...next[at]!, rating: { value } };
-        } else if (next.length < productLimit) next.push({ handle: piece.handle, isNew: false, rating: { value } });
-        else return;
-        rated++;
-      });
-      setTitles((known) => ({ ...known, ...Object.fromEntries(catalogue.map((piece) => [piece.handle, piece.title])) }));
-      update({ products: next });
-      setSequenceNote(rated ? `Rated ${rated} ${rated === 1 ? "product" : "products"} in A–Z order. Save the draft, then publish, to show them.` : "Every product already has its own rating.");
-    } catch {
-      setSequenceNote("The catalogue couldn't be read. Please try again.");
-    } finally {
-      setApplying(false);
-    }
-  }
   const columns: ColumnDef<Highlight>[] = [
     { id: "product", header: "Product", enableSorting: false, meta: { className: "min-w-40" },
       cell: ({ row }) => <ProductName title={titles[row.original.handle] ?? row.original.handle} handle={row.original.handle} /> },
@@ -301,19 +254,6 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
       <SectionHeading className="mt-0 mb-0" description="Mark a product as New or add its review rating. Find products in the catalogue below.">
         Products<Count value={products.length} limit={productLimit} />
       </SectionHeading>
-      <div className={cn(rowCard, "grid gap-1.5 px-3 py-2.5")}>
-        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-          <RowField label="Ratings in catalogue order" className="flex-1 basis-56">
-            <Input aria-label="Ratings in catalogue order" value={sequenceText} maxLength={200} spellCheck={false} className="h-9 bg-card text-sm tabular-nums"
-              onChange={(event) => setSequenceText(event.currentTarget.value)} />
-          </RowField>
-          <ActionButton icon={Star} className="mb-0.5" disabled={applying || products.length >= productLimit} onClick={() => void applySequence()}>
-            {applying ? "Applying ratings…" : "Apply to products without a rating"}
-          </ActionButton>
-        </div>
-        <p className="text-xs text-muted-foreground">Gives each published product without its own rating the next value in this list, in the store&apos;s A–Z order, repeating. Each product then keeps that rating everywhere and can be changed on its own below. Use only your real customer ratings.</p>
-        {sequenceNote && <p role="status" className="text-xs font-medium">{sequenceNote}</p>}
-      </div>
       {products.length === 0 ? <EmptyState title="No products yet" icon={<Star strokeWidth={1.5} />} action={
         <ActionButton icon={Search} aria-label="Find products for product highlights" onClick={() => focus.focus("search")}>Find products</ActionButton>
       }>Cards show no New badge or rating until you add the product here.</EmptyState>

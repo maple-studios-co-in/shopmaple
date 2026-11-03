@@ -286,29 +286,13 @@ test("an offer for every product page: offer, code and end time, checked inline,
   } finally { await app.close(); }
 });
 
-test("ratings in catalogue order become each product's own rating, A–Z and repeating, keeping any rating already set", async () => {
-  const app = await setup({
-    highlights: { swatches: [], products: [{ handle: "bravo", isNew: true, rating: { value: 4.9, count: 3 } }] },
-    // As the products API returns them, capitals first; the store's A–Z listing puts "PRODUCT DELTA" after charlie.
-    products: [{ ...product("delta"), title: "PRODUCT DELTA" }, ...["alpha", "bravo", "charlie", "echo"].map((handle) => product(handle))],
-  });
+test("ratings can only be entered one product at a time: there is no tool that fills ratings in across the catalogue", async () => {
+  // A rating must be a product's own real customer rating. A list stamped across the catalogue in A-Z order would show
+  // made-up scores, so the admin offers no such control.
+  const app = await setup({ products: [product("alpha"), product("bravo")] });
   try {
     await click("Product highlights");
-    assert.equal(field("Ratings in catalogue order").value, "4.1, 4.1, 4.3, 4.3, 4.2, 4.2");
-    await fill("Ratings in catalogue order", "4.1, 4.1, 4.3");
-    await click("Apply to products without a rating");
-    assert.match(text(), /Rated 4 products in A–Z order/);
-    assert.equal(field("Average rating for charlie").value, "4.3");
-    await click("Save draft");
-    assert.deepEqual(app.saved().content.productHighlights.products, [
-      { handle: "bravo", isNew: true, rating: { value: 4.9, count: 3 } },
-      { handle: "alpha", isNew: false, rating: { value: 4.1 } },
-      { handle: "charlie", isNew: false, rating: { value: 4.3 } },
-      { handle: "delta", isNew: false, rating: { value: 4.1 } },
-      { handle: "echo", isNew: false, rating: { value: 4.1 } },
-    ], "the second catalogue place keeps its own 4.9; the list repeats from the fourth");
-    await fill("Ratings in catalogue order", "4.1, nine");
-    await click("Apply to products without a rating");
-    assert.match(text(), /Use ratings from 1\.0 to 5\.0/);
+    assert.equal(panel().querySelector('[aria-label="Ratings in catalogue order"]'), null);
+    assert.equal([...panel().querySelectorAll("button")].some((b) => /without a rating|applying ratings/i.test(b.textContent ?? "")), false);
   } finally { await app.close(); }
 });
