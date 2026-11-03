@@ -4,7 +4,10 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   images: {
-    formats: ["image/avif", "image/webp"],
+    // WebP only: encoding AVIF on a cold cache took seconds per photo and made pages wait on images. Shopify's own photos
+    // skip this optimizer altogether (lib/image-loading.ts); what is left is cached for a week once made.
+    formats: ["image/webp"],
+    minimumCacheTTL: 604800,
     remotePatterns: [
       { protocol: "https", hostname: "store.maplefurnishers.com", pathname: "/media/keeri/*.webp", search: "" },
       {

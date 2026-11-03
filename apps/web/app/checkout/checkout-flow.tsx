@@ -12,8 +12,8 @@ import {
   type CheckoutAttempt,
   type CheckoutOptions,
 } from "./checkout-client";
-import { indiaStates } from "./india-states";
 import { openHostedPayment } from "./razorpay";
+import { CheckoutDetails } from "@/components/store/checkout-details";
 
 type Stage =
   | { kind: "details" }
@@ -83,50 +83,13 @@ function readForm(form: HTMLFormElement, sameBilling: boolean) {
   });
   const shipping = address("shipping");
   return {
-    customer: { name: read("name"), email: read("email"), phone: read("phone").replace(/[\s-]/g, "") },
+    // The form asks for first and last name (frame 30:492); the order keeps one name.
+    customer: { name: [read("firstName"), read("lastName")].filter(Boolean).join(" "), email: read("email"), phone: read("phone").replace(/[\s-]/g, "") },
     shippingAddress: shipping,
     billingAddress: sameBilling ? shipping : address("billing"),
     deliveryMethodId: read("deliveryMethodId"),
   };
 }
-function AddressFields({ prefix, id, defaults }: { prefix: "shipping" | "billing"; id: string; defaults?: CheckoutInput["shippingAddress"] }) {
-  return (
-    <>
-      <label className="checkout-field">
-        <span>Address</span>
-        <input name={`${prefix}.line1`} autoComplete={`${prefix} address-line1`} required maxLength={200} defaultValue={defaults?.line1} id={`${id}-${prefix}-line1`} />
-      </label>
-      <label className="checkout-field">
-        <span>Address line 2 (optional)</span>
-        <input name={`${prefix}.line2`} autoComplete={`${prefix} address-line2`} maxLength={200} defaultValue={defaults?.line2} />
-      </label>
-      <div className="checkout-field-row">
-        <label className="checkout-field">
-          <span>City</span>
-          <input name={`${prefix}.city`} autoComplete={`${prefix} address-level2`} required maxLength={100} defaultValue={defaults?.city} />
-        </label>
-        <label className="checkout-field">
-          <span>State</span>
-          <select name={`${prefix}.stateCode`} autoComplete={`${prefix} address-level1`} required defaultValue={defaults?.stateCode ?? ""}>
-            <option value="" disabled>
-              Select a state
-            </option>
-            {indiaStates.map(([code, name]) => (
-              <option key={code} value={code}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="checkout-field">
-          <span>Pincode</span>
-          <input name={`${prefix}.pincode`} autoComplete={`${prefix} postal-code`} inputMode="numeric" required pattern="[1-9][0-9]{5}" maxLength={6} defaultValue={defaults?.pincode} />
-        </label>
-      </div>
-    </>
-  );
-}
-
 export function CheckoutFlow({
   options,
   pollIntervalMs = 2500,
@@ -589,101 +552,7 @@ export function CheckoutFlow({
       </div>
     );
   return (
-    <div className="checkout-layout">
-      <form className="checkout-form" onSubmit={(event) => void submit(event)} noValidate aria-describedby={`${id}-note`}>
-        <fieldset>
-          <legend>Contact details</legend>
-          <label className="checkout-field">
-            <span>Name</span>
-            <input name="name" autoComplete="name" required maxLength={120} defaultValue={input?.customer.name} />
-          </label>
-          <div className="checkout-field-row">
-            <label className="checkout-field">
-              <span>Email</span>
-              <input name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} required maxLength={254} defaultValue={input?.customer.email} />
-            </label>
-            <label className="checkout-field">
-              <span>Mobile number</span>
-              <input name="phone" type="tel" autoComplete="tel" inputMode="tel" required maxLength={16} placeholder="10-digit mobile" defaultValue={input?.customer.phone} />
-            </label>
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend>Delivery address</legend>
-          <AddressFields prefix="shipping" id={id} defaults={input?.shippingAddress} />
-        </fieldset>
-        <fieldset>
-          <legend>Delivery method</legend>
-          {options.deliveryMethods.map((method) => (
-            <label key={method.id} className="checkout-choice">
-              <input type="radio" name="deliveryMethodId" value={method.id} checked={deliveryMethodId === method.id} onChange={() => setDeliveryMethodId(method.id)} />
-              <span>{method.label}</span>
-            </label>
-          ))}
-          <p className="muted">Delivery charges and GST are confirmed on the next step before you pay.</p>
-        </fieldset>
-        <fieldset>
-          <legend>Billing address</legend>
-          <label className="checkout-choice">
-            <input type="checkbox" name="sameBilling" checked={sameBilling} onChange={(event) => setSameBilling(event.currentTarget.checked)} />
-            <span>Same as delivery address</span>
-          </label>
-          {!sameBilling && <AddressFields prefix="billing" id={id} defaults={input?.billingAddress} />}
-        </fieldset>
-        {problems.length > 0 && (
-          <p className="error-text" role="alert">
-            Please check: {problems.join(", ")}.
-          </p>
-        )}
-        {notice && (
-          <p className="error-text" role="alert">
-            {notice}
-          </p>
-        )}
-        <div className="button-row">
-          <button className="button" type="submit" disabled={busy || !cartReady}>
-            {busy ? "Confirming prices…" : "Continue to review"}
-          </button>
-          <Link className="button secondary" href="/cart">
-            Return to cart
-          </Link>
-        </div>
-        <p id={`${id}-note`} className="muted">
-          Your details are used only to quote delivery, raise your order and contact you about it. No payment is taken on this step.
-        </p>
-      </form>
-      <aside className="checkout-summary" aria-live="polite">
-        <h3>Your cart</h3>
-        {cartReady ? (
-          <>
-            <p>
-              {cart.itemCount} {cart.itemCount === 1 ? "item" : "items"} in your cart
-            </p>
-            <ul className="checkout-lines">
-              {cart.items.map((item) => (
-                <li key={item.variantId}>
-                  <span>
-                    <strong>{item.title}</strong>
-                    <span className="muted">
-                      {item.variantTitle} × {item.quantity}
-                    </span>
-                  </span>
-                  <span>{money(item.lineTotalPaise)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="checkout-totals">
-              <div>
-                <dt>Subtotal</dt>
-                <dd>{money(cart.subtotalPaise)}</dd>
-              </div>
-            </dl>
-            <p className="muted">Delivery and GST are confirmed in the next step.</p>
-          </>
-        ) : (
-          <p className="muted">Loading your saved cart…</p>
-        )}
-      </aside>
-    </div>
+    <CheckoutDetails id={id} input={input} options={options} deliveryMethodId={deliveryMethodId} onDeliveryMethod={setDeliveryMethodId}
+      sameBilling={sameBilling} onSameBilling={setSameBilling} problems={problems} notice={notice} busy={busy} onSubmit={(event) => void submit(event)} />
   );
 }

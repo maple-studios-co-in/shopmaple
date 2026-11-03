@@ -10,6 +10,7 @@ import products from "../data/navigation-products.json";
 import { shopFile, shopMoney } from "../lib/format";
 import { recentProduct } from "../lib/search-products";
 import type { ProductCardModel } from "../lib/product-card-model";
+import { MegaMenuFooter } from "./store/mega-menu-footer";
 function CategoryLink({
   item,
   onNavigate,
@@ -199,6 +200,7 @@ export function DesktopNavigation({
                       ))}
                   </div>
                 )}
+                <MegaMenuFooter />
               </div>
             )}
           </div>
