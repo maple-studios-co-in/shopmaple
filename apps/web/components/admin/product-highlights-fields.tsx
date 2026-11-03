@@ -19,7 +19,7 @@ type Rating = NonNullable<Highlight["rating"]>;
 /** What staff typed into a product's two rating fields, kept as text so "4." can become "4.6". */
 type RatingText = { value: string; count: string };
 
-const swatchLimit = 200, productLimit = 300, suggestionLimit = 24;
+const swatchLimit = 200, productLimit = 1000, suggestionLimit = 24;
 const empty: ProductHighlights = { swatches: [], products: [] };
 const hexPattern = /^#[0-9a-fA-F]{6}$/;
 const nameKey = (name: string) => name.trim().toLowerCase();

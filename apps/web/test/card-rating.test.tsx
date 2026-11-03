@@ -35,3 +35,9 @@ test("a card shows its own rating to one decimal, with the count read out only w
   assert.ok(unrated.hasAttribute("data-card-rating-empty"), "a piece without one says so: '– ☆'");
   assert.doesNotMatch(unrated.textContent ?? "", /\+/);
 });
+
+test("the highlights hold a rating for every product of a large catalogue (539 live on 3 November 2026), up to 1,000", () => {
+  const products = (n: number) => Array.from({ length: n }, (_, i) => ({ handle: `piece-${i}`, isNew: false, rating: { value: 4.1 } }));
+  for (const n of [539, 1000]) assert.equal(productHighlightsSchema.safeParse({ swatches: [], products: products(n) }).success, true, String(n));
+  assert.equal(productHighlightsSchema.safeParse({ swatches: [], products: products(1001) }).success, false);
+});

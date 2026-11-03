@@ -76,7 +76,8 @@ export function createApp(
   );
   if (commerce) registerPaymentWebhook(app, commerce);
   registerMediaRoutes(app, db, config);
-  app.use("/api/admin/content", express.json({ limit: "128kb" }));
+  // Staff content, which carries a rating for every product (up to 1,000, about 65 KB on their own).
+  app.use("/api/admin/content", express.json({ limit: "256kb" }));
   app.use(express.json({ limit: "16kb" }));
   app.use("/api", (req, res, next) => {
     if (

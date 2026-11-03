@@ -203,6 +203,27 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   if (care) features.push({ key: "care", title: "Material Care", icon: "detail-care", body: care, long: care.length > 180 });
   const shipping = richCard(captured?.shippingReturns);
   if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping, long: richPlain(captured?.shippingReturns).length > 180 });
+  // Every product shows the full set of cards (owner, 3 Nov 2026). Where the catalogue has no text for one, the card says
+  // what holds for every Maple piece (finishes chosen with Maple, measurements given on request, the store's delivery,
+  // cover and warranty); it never invents a specification.
+  const storeWarranty = ownWarranty || "36 months";
+  if (!features.some((feature) => feature.key === "specification"))
+    features.push({ key: "specification", title: "Specifications", icon: "detail-spec", rows: [
+      ...(variant?.stockPolicy === "made_to_order" ? [["Made", "To order, in our Delhi workshop"] as [string, string]] : []),
+      ["Measurements", "Shared on request"], ["Warranty", storeWarranty]], link: { label: "Ask Maple for exact dimensions", href: enquiryHref } });
+  if (!features.some((feature) => feature.key === "materials"))
+    features.push({ key: "materials", title: "Material & Care", icon: "detail-material", link: { label: "Explore materials with Maple", href: enquiryHref },
+      body: "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat." });
+  if (features.length < 4)
+    features.push({ key: "delivery", title: "Delivery & Warranty", icon: "feature-about", rows: [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", storeWarranty]] });
+  // Sofas and beds use frame 86:1814: About, Specifications and Material & Care stacked beside the piece, shown whole on
+  // its white-background photo where there is one.
+  const stacked = product.category === "sofas" || product.category === "beds";
+  const stackedOrder = ["about", "specification", "materials"];
+  const shownFeatures = stacked
+    ? [...stackedOrder.flatMap((key) => features.filter((feature) => feature.key === key)), ...features.filter((feature) => !stackedOrder.includes(feature.key))]
+    : features;
+  const featureCutout = stacked ? cutoutFor(variantId)?.image : undefined;
   const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
@@ -372,7 +393,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
         </div>
       </section>
       {deal && <DealTab deal={deal} />}
-      <ProductFeatures features={features} photo={photo} title={product.title} tagline={tagline} />
+      <ProductFeatures features={shownFeatures} photo={featureCutout ?? photo} contain={Boolean(featureCutout)} layout={stacked ? "stacked" : "around"} title={product.title} tagline={tagline} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
