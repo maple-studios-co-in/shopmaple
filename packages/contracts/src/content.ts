@@ -184,8 +184,7 @@ export const productHighlightsSchema = z.object({
     // The average and count of real customer reviews; never estimated.
     // The review count is optional: the owner may hold a piece's real rating without the count behind it.
     rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(100_000).optional() }).strict().nullable(),
-    // Room for every product in the catalogue (539 on 3 Nov 2026), so each can hold its own rating.
-  }).strict()).max(1000),
+  }).strict()).max(300),
   // A store-wide offer the product page counts down to ("Don't miss the deal") and names on its edge tab; shown only
   // until it ends, and optional so documents saved before it stay valid.
   deal: z.object({
