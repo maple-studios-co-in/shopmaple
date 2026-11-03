@@ -312,3 +312,14 @@ test("ratings in catalogue order become each product's own rating, A–Z and rep
     assert.match(text(), /Use ratings from 1\.0 to 5\.0/);
   } finally { await app.close(); }
 });
+
+test("ratings in catalogue order reach every product of a catalogue larger than 300", async () => {
+  const app = await setup({ products: Array.from({ length: 320 }, (_, i) => product(`piece-${String(i).padStart(3, "0")}`)) });
+  try {
+    await click("Product highlights");
+    await click("Apply to products without a rating");
+    assert.match(text(), /Rated 320 products in A–Z order/);
+    await click("Save draft");
+    assert.equal(app.saved().content.productHighlights.products.length, 320);
+  } finally { await app.close(); }
+});

@@ -181,14 +181,19 @@ test("Precision in Every Detail sets the catalogue's own text on its cards besid
   });
 });
 
-test("feature cards without catalogue text are left out, and the About card falls back to the description", async () => {
+test("every product shows the full set of cards: the About card falls back to the description, the rest to store-wide facts", async () => {
   await mount((doc) => {
     const cards = [...doc.querySelectorAll("[data-feature]")];
-    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product"]);
+    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care", "Delivery & Warranty"]);
     assert.equal(text(cards[0]!.querySelector("[data-feature-body]")), "A considered silhouette for a welcoming place at the table.");
+    const rows = (card: Element) => [...card.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text));
+    assert.deepEqual(rows(cards[1]!).slice(-2), [["Measurements", "Shared on request"], ["Warranty", "36 months"]], "no measurements are invented");
+    assert.deepEqual(rows(cards[3]!), [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", "36 months"]]);
+    assert.equal(text(cards[2]!.querySelector("[data-feature-body]")), "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat.");
   }, { ...product, sourceDetails: null });
   await mount((doc) => {
-    assert.equal(hook(doc, "data-features"), null, "No text and no photos, no section");
+    assert.deepEqual([...doc.querySelectorAll("[data-feature] h3")].map(text), ["Specifications", "Material & Care", "Delivery & Warranty"], "No text and no photos: the store-wide cards still show");
+    assert.equal(doc.querySelector("[data-feature-photo]"), null);
   }, { ...product, description: "", sourceDetails: null, images: [] });
 });
 
@@ -319,12 +324,12 @@ test("the warranty label reads well for short, self-describing and long catalogu
   assert.equal(warrantyLabel({ sourceDetails: null }), "36-month warranty");
 });
 
-test("the ticker shows no pause button (owner), a photo without cards shows no feature section, and the warranty text sits in the Specifications card", async () => {
+test("the ticker shows no pause button (owner), a product without text still shows the store-wide cards, and the warranty text sits in the Specifications card", async () => {
   await mount((doc) => {
     assert.equal(doc.querySelector("button[data-ticker-pause]"), null);
     assert.doesNotMatch(hook(doc, "data-ticker")!.textContent!, /scrolling text/i);
   });
-  await mount((doc) => assert.equal(hook(doc, "data-features"), null), { ...product, description: "", sourceDetails: null });
+  await mount((doc) => assert.deepEqual([...doc.querySelectorAll("[data-feature] h3")].map(text), ["Specifications", "Material & Care", "Delivery & Warranty"]), { ...product, description: "", sourceDetails: null });
   await mount((doc) => {
     const spec = [...doc.querySelectorAll("[data-feature]")].find((card) => text(card.querySelector("h3")) === "Specifications")!;
     const warranty = [...spec.querySelectorAll("[data-feature-row]")].at(-1)!;
@@ -332,4 +337,20 @@ test("the ticker shows no pause button (owner), a photo without cards shows no f
     assert.equal(warranty.getAttribute("data-feature-row"), "stacked", "A long value sits under its label");
     assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "Product warranty");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
+});
+
+test("sofas and beds stack About, Specifications and Material & Care beside the piece (frame 86:1814), each + marking its hotspot", async () => {
+  for (const category of ["sofas", "beds"] as const) {
+    await mount(async (doc) => {
+      const stage = doc.querySelector("[data-features-layout]")!;
+      assert.equal(stage.getAttribute("data-features-layout"), "stacked", category);
+      const cards = [...stage.querySelectorAll("[data-feature]")];
+      assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care"]);
+      assert.equal(stage.querySelectorAll("[data-hotspot]").length, 3);
+      assert.equal(stage.querySelector("[data-feature-number]"), null, "the frame's + stands where the number was");
+      await act(async () => cards[1]!.querySelector<HTMLButtonElement>("[data-feature-toggle]")!.click());
+      assert.equal(stage.querySelector('[data-hotspot="specification"]')?.getAttribute("aria-pressed"), "true");
+    }, { ...product, category, sourceDetails: null });
+  }
+  await mount((doc) => assert.equal(doc.querySelector("[data-features-layout]")?.getAttribute("data-features-layout"), "around", "other pieces keep frame 2:625"), { ...product, sourceDetails: null });
 });
