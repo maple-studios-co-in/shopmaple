@@ -1,92 +1,104 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
-import { Fragment } from "react";
+import type { Product, Variant } from "@shopmaple/contracts";
+import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney } from "@/lib/format";
-import type { BundlePiece } from "@/lib/product-page-data";
+import { useShop } from "../shop-provider";
 import { ProductImage } from "./product-image";
 
-export type ShownBundle = { id: string; name: string; description: string | null; pieces: BundlePiece[]; totalPaise: number | null };
-
-const piecePrice = (piece: BundlePiece) => (piece.pricePaise === null ? "Price on request" : shopMoney(piece.pricePaise));
-
-/**
- * "Complete the look" in the buy box: the other pieces of the product's first Keeri bundle. Each piece links to its own
- * page, where the buyer chooses a finish; nothing is added to the cart from here.
- */
-export function CompleteTheLook({ bundle }: { bundle: ShownBundle }) {
-  const others = bundle.pieces.filter((p) => !p.current);
-  if (!others.length) return null;
-  return (
-    <div data-complete-look className="grid gap-3">
-      <h2 className="m-0 text-[20px] leading-[1.2] font-medium text-[#1c1c1c]">Complete the look</h2>
-      <ul className="m-0 grid list-none gap-3 p-0">
-        {others.map((piece) => (
-          <li key={piece.handle} data-look-piece className="flex items-center gap-3 rounded-[10px] border border-solid border-maple/8 p-3">
-            <div className="relative size-16 shrink-0 overflow-hidden rounded-[6px] bg-[#f7f5f2]">
-              {piece.image && <ProductImage src={piece.image} alt="" fill sizes="64px" className="object-cover" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="m-0 truncate text-[14px] leading-[1.4] font-medium text-[#1c1c1c]">{piece.title}</p>
-              <p className="m-0 text-[13px] leading-[1.4] text-[#5e574f]">{piecePrice(piece)}{piece.quantity > 1 ? ` · ×${piece.quantity}` : ""}</p>
-            </div>
-            <Link href={`/products/${piece.handle}`} className="inline-flex h-9 shrink-0 items-center rounded-[30px] bg-maple/8 px-4 text-[13px] font-medium text-maple no-underline hover:bg-maple/14 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-              View<span className="sr-only"> {piece.title}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+type Piece = { product: Product; variant: Variant & { pricePaise: number }; current: boolean; quantity: number };
+const priced = (variant: Variant | undefined): variant is Variant & { pricePaise: number } => Boolean(variant && variant.pricePaise !== null && canAddToCart(variant));
 
 /**
- * "Buy in Bundle" (frame 2:371): each piece with its quantity and price, then the selection's total. Keeri gives no
- * bundle discount, so the total is the sum of the pieces and appears only when every piece has a single price.
+ * Frame 100:476 ("Buy in Bundle"): the piece with two it is styled with, each at its own price, totalled and added to
+ * the cart together. A pairing without a price is left out, and with no priced pairing the section is not shown.
+ * A piece that cannot go in the cart makes the bundle an enquiry instead. `quantities` (by handle) comes from a Keeri
+ * bundle staff built, such as four chairs with one table; without one each piece counts once. There is no discount.
  */
-export function ProductBundles({ bundles, enquiryHref }: { bundles: ShownBundle[]; enquiryHref: string }) {
-  if (!bundles.length) return null;
+export function ProductBundle({ product, variant, paired, quantities }: { product: Product; variant: Variant | undefined; paired: Product[]; quantities?: Record<string, number> }) {
+  const { cart, setQuantity, setCartOpen, busy } = useShop();
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+  const pieces: Piece[] = [];
+  const count = (handle: string) => Math.max(1, Math.min(20, quantities?.[handle] ?? 1));
+  if (priced(variant)) pieces.push({ product, variant, current: true, quantity: count(product.handle) });
+  for (const other of paired) {
+    const option = other.variants.find(priced);
+    if (pieces.length && option) pieces.push({ product: other, variant: option, current: false, quantity: count(other.handle) });
+  }
+  if (pieces.length < 2) return null;
+  const total = pieces.reduce((sum, piece) => sum + piece.variant.pricePaise * piece.quantity, 0);
+  const cartable = product.published && pieces.every((piece) => piece.product.published);
+  const names = pieces.map((piece) => `${piece.quantity} ${piece.product.title}`);
+  async function addBundle() {
+    setError("");
+    setAdding(true);
+    for (const piece of pieces) {
+      const held = cart.items.find((item) => item.variantId === piece.variant.id)?.quantity ?? 0;
+      if (!(await setQuantity(piece.variant.id, Math.min(20, held + piece.quantity)))) {
+        setAdding(false);
+        setError("We couldn’t add every piece. Please try again.");
+        return;
+      }
+    }
+    setAdding(false);
+    setCartOpen(true);
+  }
   return (
-    <section data-store data-bundles aria-labelledby="product-bundles-title" className="bg-white px-4 py-12 font-product text-black md:px-12 md:py-[88px]">
-      <h2 id="product-bundles-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Buy in Bundle</h2>
-      <p className="m-0 mt-3 text-[16px] leading-[1.6] text-[#5e574f]">Thoughtfully paired. Beautifully together.</p>
-      {bundles.map((bundle) => (
-        <div key={bundle.id} data-bundle className="mt-8 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-stretch">
-          <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-[repeat(auto-fit,minmax(200px,1fr))]">
-            {bundle.pieces.map((piece, i) => (
-              <Fragment key={piece.handle}>
-                <li data-bundle-piece className="relative flex flex-col gap-3 rounded-[10px] bg-[#f7f5f2] p-4">
-                  {i > 0 && <span aria-hidden="true" className="absolute top-1/2 -left-3 hidden -translate-y-1/2 text-[22px] text-maple sm:block">+</span>}
-                  <div className="relative aspect-square overflow-hidden rounded-[6px] bg-white">
-                    {piece.image && <ProductImage src={piece.image} alt="" fill sizes="(min-width: 1024px) 240px, 45vw" className="object-cover" />}
-                  </div>
-                  {piece.current
-                    ? <p className="m-0 text-[16px] leading-[1.4] font-medium text-[#1c1c1c]">{piece.title}</p>
-                    : <Link href={`/products/${piece.handle}`} className="text-[16px] leading-[1.4] font-medium text-[#1c1c1c] no-underline hover:text-maple">{piece.title}</Link>}
-                  <p className="m-0 mt-auto text-[13px] leading-[1.4] text-[#5e574f]">{piece.current ? "This piece" : "Paired piece"} · Quantity {piece.quantity}</p>
-                  <p className="m-0 text-[16px] leading-[1.2] font-medium text-maple">{piecePrice(piece)}</p>
-                </li>
-              </Fragment>
-            ))}
-          </ul>
-          <div data-bundle-summary className="flex flex-col gap-3 rounded-[10px] bg-[#f7f5f2] p-6">
-            <h3 className="m-0 text-[22px] leading-[1.2] font-medium text-maple">{bundle.name}</h3>
-            {bundle.description && <p className="m-0 text-[14px] leading-[1.6] text-[#5e574f]">{bundle.description}</p>}
-            <p className="m-0 text-[13px] text-[#5e574f]">{bundle.pieces.reduce((n, p) => n + p.quantity, 0)} pieces</p>
-            {bundle.totalPaise !== null && (
-              <div>
-                <p className="m-0 text-[13px] text-[#5e574f]">Bundle total</p>
-                <p data-bundle-total className="m-0 text-[28px] leading-[1.2] font-medium text-maple">{shopMoney(bundle.totalPaise)}</p>
-              </div>
-            )}
-            <ul className="m-0 list-none p-0 text-[13px] leading-[1.6] text-[#5e574f]">
-              {bundle.pieces.map((p) => <li key={p.handle}>{p.quantity} {p.title}</li>)}
-            </ul>
-            <Link data-bundle-enquire href={enquiryHref} className="mt-auto inline-flex h-[50px] items-center justify-center rounded-[30px] bg-maple px-6 text-[14px] font-medium text-white no-underline hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-              Enquire about this set
-            </Link>
-            <p className="m-0 text-[12px] text-[#5e574f]">Each piece is priced and confirmed on its own; finishes and delivery are agreed before you order.</p>
-          </div>
+    <section data-store data-bundle aria-labelledby="product-bundle-title" className="bg-white px-4 py-12 font-product md:px-12 md:py-16">
+      <div className="mx-auto flex max-w-[1336px] flex-col gap-7">
+        <div className="flex flex-col gap-2.5">
+          <h2 id="product-bundle-title" className="m-0 text-[34px] leading-[1.35] font-semibold text-maple md:text-[48px]">Buy in Bundle</h2>
+          <p data-bundle-lede className="m-0 text-[16px] leading-[1.35] text-[#756d68] md:text-[18px]">Thoughtfully paired. Beautifully together.</p>
         </div>
-      ))}
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
+          <ol className="m-0 flex list-none snap-x items-center gap-3 overflow-x-auto p-0 pb-1 [scrollbar-width:none] md:gap-4 [&::-webkit-scrollbar]:hidden">
+            {pieces.map((piece, i) => {
+              const photo = piece.variant.images?.[0] ?? piece.product.images[0];
+              return (
+                <li key={piece.product.id} className="flex shrink-0 snap-start items-center gap-3 md:gap-4">
+                  {i > 0 && <span data-bundle-plus aria-hidden="true" className="w-6 text-center text-[30px] leading-[1.35] text-maple">+</span>}
+                  <article data-bundle-piece className="flex w-[240px] flex-col gap-3 rounded-[12px] bg-[#f9f7f3] p-4 md:w-[280px]">
+                    <Link href={`/products/${piece.product.handle}`} className="relative block aspect-[248/242] overflow-hidden rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple [&_img]:object-contain">
+                      <ProductImage src={photo} alt={piece.product.title} fill sizes="(max-width:767px) 208px, 248px" />
+                    </Link>
+                    <h3 className="m-0 line-clamp-2 min-h-[2.7em] text-[18px] leading-[1.35] font-medium text-[#1c1c1c] md:text-[20px]">{piece.product.title}</h3>
+                    <p data-bundle-role className="m-0 text-[13px] leading-[1.35] text-[#756d68]">{piece.current ? "Current product" : "Paired product"} · Quantity {piece.quantity}</p>
+                    <p data-bundle-price className="m-0 text-[18px] leading-[1.35] font-medium text-maple">{shopMoney(piece.variant.pricePaise)}</p>
+                  </article>
+                </li>
+              );
+            })}
+          </ol>
+          <aside data-bundle-summary aria-label="Your paired selection" className="flex flex-col gap-5 rounded-[12px] bg-[#f9f7f3] p-6 md:p-8 xl:w-[368px] xl:shrink-0">
+            <h3 className="m-0 text-[24px] leading-[1.35] font-medium text-maple">Your paired selection</h3>
+            <p data-bundle-count className="m-0 text-[15px] leading-[1.35] text-[#756d68]">{pieces.reduce((n, piece) => n + piece.quantity, 0)} pieces · 1 considered space</p>
+            <div className="flex flex-col gap-1.5">
+              <p className="m-0 text-[14px] leading-[1.35] text-[#756d68]">Bundle total</p>
+              <p data-bundle-total className="m-0 text-[30px] leading-[1.35] font-semibold text-maple">{shopMoney(total)}</p>
+            </div>
+            <ul className="m-0 list-none p-0 text-[14px] leading-[1.35] text-[#756d68]">
+              {names.map((name) => <li key={name}>{name}</li>)}
+            </ul>
+            {cartable ? (
+              <button type="button" data-bundle-add data-fill-button="" disabled={adding || busy} onClick={() => void addBundle()}
+                className="w-full cursor-pointer rounded-[30px] border-0 bg-maple p-4 text-[16px] leading-[1.35] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                {adding ? "Adding to cart…" : "Add bundle to cart"}
+              </button>
+            ) : (
+              <Link data-bundle-enquire data-fill-button="" href={"/pages/contact?" + new URLSearchParams({ product: names.join(" + ") })}
+                className="w-full rounded-[30px] bg-maple p-4 text-center text-[16px] leading-[1.35] font-semibold text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                Enquire about this bundle
+              </Link>
+            )}
+            {error && <p role="alert" className="m-0 text-[13px] text-maple">{error}</p>}
+            <p className="m-0 text-[12px] leading-[1.35] text-[#756d68]">
+              {cart.checkoutEnabled ? "Review finishes and delivery at checkout." : "We confirm finishes and delivery with you before you order."}
+            </p>
+          </aside>
+        </div>
+      </div>
     </section>
   );
 }

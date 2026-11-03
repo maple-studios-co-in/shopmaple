@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
 import { CollectionListing } from "@/components/collection-listing";
+import { CollectionHero } from "@/components/store/collection-hero";
 import { LegacyChairs, legacyChairHandles } from "@/components/legacy-chairs";
 import { getCollectionPage, getProductCards } from "@/lib/catalog";
+import { collectionIntro, heroTitle } from "@/lib/collection-intro";
 import {
   collectionTitles,
   collectionQuery,
@@ -23,6 +25,7 @@ export async function generateMetadata({
   return { title, description: `${title} by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.`, alternates: { canonical: path } };
 }
 type Query = Record<string, string | string[] | undefined>;
+const categoryHandles = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"];
 export default async function Collection({
   params,
   searchParams,
@@ -44,6 +47,12 @@ export default async function Collection({
     "min",
     "max",
     "category",
+    "material",
+    "colour",
+    "wmin",
+    "wmax",
+    "dmin",
+    "dmax",
     "page",
   ].some((key) => Object.hasOwn(rawQuery, key));
   const showChairEditorial = handle === "chairs" && !browsingRequested;
@@ -58,14 +67,18 @@ export default async function Collection({
       "tv-media-units": "tv-units-hero",
     } as Record<string, CampaignKey>
   )[handle];
+  // The introduction speaks for the collection's kind of piece: its own category, or the one every listed piece shares.
+  const shared = [...new Set(result.products.map((product) => product.category).filter(Boolean))];
+  const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;
   return (
     <>
       {showChairEditorial && <LegacyChairs products={editorialProducts} />}
+      {!showChairEditorial && <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={result.facets?.cover ?? null} />}
       {campaign && <CampaignBanner campaign={campaign} />}
       <CollectionListing
         handle={handle}
         title={collectionTitles[handle]!}
-        headingLevel={showChairEditorial ? "h2" : "h1"}
+        headingLevel="h2"
         query={result.query}
         products={result.products}
         total={result.total}
@@ -74,6 +87,7 @@ export default async function Collection({
         inStock={result.inStock}
         outOfStock={result.outOfStock}
         highestPrice={result.highestPrice}
+        facets={result.facets}
       />
       {handle === "beds" && <CampaignBanner campaign="beds-sale" />}
     </>

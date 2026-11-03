@@ -182,8 +182,16 @@ export const productHighlightsSchema = z.object({
     // A "Limited" tag on the card; optional so documents saved before it stay valid.
     isLimited: z.boolean().optional(),
     // The average and count of real customer reviews; never estimated.
-    rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(100_000) }).strict().nullable(),
+    // The review count is optional: the owner may hold a piece's real rating without the count behind it.
+    rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(100_000).optional() }).strict().nullable(),
   }).strict()).max(300),
+  // A store-wide offer the product page counts down to ("Don't miss the deal") and names on its edge tab; shown only
+  // until it ends, and optional so documents saved before it stay valid.
+  deal: z.object({
+    offer: text(40).refine(offer => offer.trim().length > 0, "Describe the offer"),
+    code: z.string().regex(/^[A-Z0-9][A-Z0-9%-]{1,23}$/, "Use 2–24 capital letters, numbers, % or -"),
+    endsAt: z.iso.datetime({ offset: true }),
+  }).strict().optional(),
 }).strict().superRefine((value, ctx) => {
   if (new Set(value.swatches.map(swatch => swatch.name.trim().toLowerCase())).size !== value.swatches.length)
     ctx.addIssue({ code: "custom", message: "Swatch names must be unique" });

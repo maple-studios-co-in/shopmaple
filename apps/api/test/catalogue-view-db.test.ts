@@ -92,6 +92,33 @@ test("facets and filters preserve same-variant matching, enquiry options, zero p
   assert.deepEqual(handles(desc), ["matching", "tie-a", "tie-b", "mixed", "zero", "model", "unknown"]);
 });
 
+// The listing's Material, Colour and Size filters (Figma 1:1139) read the catalogue's own text, in the same one read.
+test("material, colour and size filters read the catalogue's text, and the page names its facets, categories and cover", async () => {
+  const chair = (id: string, title: string, materials: string, dimensions: string, option: string, taxonomy: string) => db.product.create({ data: {
+    ...product(id), title, images: [`https://example.com/${id}.jpg`],
+    sourceDetails: { details: null, materials, dimensions, careInstructions: null, warranty: null },
+    sourceTaxonomy: { productType: "Chair", category: taxonomy, subCategory: null },
+    variants: { create: [{ ...variant(`${id}-v`, 2360000, false), title: option, stockPolicy: "made_to_order" }] },
+  } });
+  await chair("fixture-nola", "Nola", "Walnut frame, bouclé upholstery", "Width: 28\" (≈ 71 cm)\nDepth: 30\" (≈ 76 cm)", "Ivory Walnut", "Accent");
+  await chair("fixture-aero", "Aero Dining Chair", "Sheesham wood, velvet seat", "Width (in) - 22\nDepth (in) - 24", "Deep Atlantic", "Dining");
+  queries.length = 0;
+  const all = await request(app).get("/api/catalogue/collections/chairs");
+  assert.equal(all.status, 200);
+  assert.equal(queries.filter(query => query.includes('FROM "public"."Product"')).length, 1, "facets come from the same single catalogue read");
+  assert.deepEqual(all.body.facets.materials.map((facet: { key: string; count: number }) => [facet.key, facet.count]), [["wood", 2], ["fabric", 2]]);
+  assert.deepEqual(all.body.facets.colours.map((facet: { key: string }) => facet.key), ["cream", "brown", "blue"]);
+  assert.deepEqual(all.body.facets.categories.map((family: { handle: string; count: number; kind: string }) => [family.handle, family.count, family.kind]), [["dining-chair", 1, "collection"], ["accent-chair", 1, "collection"]]);
+  assert.deepEqual(all.body.facets.cover, { image: "https://example.com/fixture-aero.jpg", title: "Aero Dining Chair", handle: "fixture-aero", pricePaise: 2360000, priceFrom: false });
+  assert.deepEqual(handles(await request(app).get("/api/catalogue/collections/chairs?colour=blue")), ["fixture-aero"]);
+  assert.deepEqual(handles(await request(app).get("/api/catalogue/collections/chairs?material=fabric&wmin=60")), ["fixture-nola"]);
+  const narrow = await request(app).get("/api/catalogue/collections/chairs?wmax=60&dmax=70");
+  assert.deepEqual(handles(narrow), ["fixture-aero"], "22 in wide, 24 in deep: 56 by 61 cm");
+  assert.deepEqual([narrow.body.query.wmax, narrow.body.query.dmax, narrow.body.query.material], ["60", "70", ""]);
+  for (const query of ["material=Wood", "material=wood&material=fabric", "colour=blue,", "wmin=0", "wmax=1000", "dmin=6.5"])
+    assert.equal((await request(app).get("/api/catalogue/collections/chairs?" + query)).status, 400, query);
+});
+
 test("collection suggestions match across title and description and preserve source membership", async () => {
   await db.product.create({ data: { ...product("caro"), title: "Oak chair", description: "Walnut finish" } });
   await db.product.create({ data: { ...product("other"), title: "Other", description: "Oak chair Walnut finish" } });

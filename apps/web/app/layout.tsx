@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { preconnect } from "react-dom";
 import "@/styles/shopify-fonts.css";
 import "@fontsource/barlow/400.css";
 import "@fontsource/barlow/500.css";
 import "@fontsource/barlow/600.css";
 import "@fontsource/barlow/700.css";
 import "@fontsource/newsreader/300.css";
+// The collection listing's headings (Figma frame 1:1094) are Newsreader Bold.
+import "@fontsource/newsreader/700.css";
 import "@fontsource/pinyon-script/400.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
@@ -52,6 +55,8 @@ export default async function Layout({
 }) {
   const { siteChrome, productHighlights } = await getPublishedContent();
   const seo = seoSettings(process.env);
+  // Catalogue photos come straight from Shopify's edge: open the connection while the page is still arriving.
+  preconnect("https://cdn.shopify.com");
   return (
     <html lang="en">
       <body>

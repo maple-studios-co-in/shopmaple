@@ -112,6 +112,8 @@
   --color-maple: #80241c;
   --font-product: "Manrope Product", "Manrope", sans-serif;
   --animate-pdp-ticker: pdp-ticker 48s linear infinite;
+  /* Frame 2:602: the buy box's promise strip drifts on the same loop, faster for its short track. */
+  --animate-pdp-strip: pdp-ticker 22s linear infinite;
   @keyframes pdp-ticker {
     to { transform: translateX(-50%); }
   }
