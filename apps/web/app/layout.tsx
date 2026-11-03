@@ -29,8 +29,10 @@ import "@/styles/home-slides.css";
 import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
+import "@/styles/button-fill.css";
 // Last, so a utility beats the legacy storefront rules it replaces.
 import "@/styles/tailwind.css";
+import { ButtonEffectsIsland } from "@/components/button-effects-island";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";
@@ -59,6 +61,7 @@ export default async function Layout({
             <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
           </ProductHighlightsProvider>
         </ShopProvider>
+        <ButtonEffectsIsland />
       </body>
     </html>
   );

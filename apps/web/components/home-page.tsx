@@ -92,7 +92,7 @@ async function HomeProducts({
             <h2>{heading}</h2>
             {lede && <p className="home-rail-lede" data-rail-lede>{lede}</p>}
           </div>
-          <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall>View all {heading.toLowerCase()} →</Link>
+          <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall data-fill-button="outline">View all {heading.toLowerCase()} →</Link>
         </header>
       )}
       {products.length ? (

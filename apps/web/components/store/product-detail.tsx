@@ -35,10 +35,11 @@ type Presentation = {
   cutouts?: Record<string, Cutout>;
 };
 
-// Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall.
-const pill = "inline-flex h-[50px] items-center justify-center rounded-[30px] px-6 text-[14px] leading-[1.2] font-medium no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
-const solid = cx(pill, "cursor-pointer border-0 bg-maple text-white hover:bg-brand-deep");
-const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-white text-maple hover:bg-maple/6");
+// Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall. Their hover is the
+// fill from the pointer (data-fill-button, styles/button-fill.css), which also brings their transitions.
+const pill = "inline-flex h-[50px] items-center justify-center rounded-[30px] px-6 text-[14px] leading-[1.2] font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
+const solid = cx(pill, "cursor-pointer border-0 bg-maple text-white");
+const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-white text-maple");
 const stepper = "grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-[rgba(86,60,73,0.04)] p-0 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-maple";
 const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[14px] leading-[1.6] font-medium text-black no-underline hover:text-maple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple";
 
@@ -260,19 +261,19 @@ export function ProductDetail({ product, initialVariant, presentation, bundleCar
                 </div>
               )}
               {enquiry ? (
-                <Link data-primary className={cx(solid, "flex-1")} href={enquiryHref}>Enquire about this piece</Link>
+                <Link data-primary data-fill-button="" className={cx(solid, "flex-1")} href={enquiryHref}>Enquire about this piece</Link>
               ) : (
-                <button type="button" data-primary className={cx(solid, "flex-1")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add().then((added) => { if (added) setCartOpen(true); })}>
+                <button type="button" data-primary data-fill-button="" className={cx(solid, "flex-1")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add().then((added) => { if (added) setCartOpen(true); })}>
                   {busy ? "Updating cart…" : "Add to cart"}
                 </button>
               )}
             </div>
             {!enquiry && cart.checkoutEnabled ? (
-              <button type="button" data-buy-now className={cx(outline, "w-full")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void buyNow()}>Buy it now</button>
+              <button type="button" data-buy-now data-fill-button="outline" className={cx(outline, "w-full")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void buyNow()}>Buy it now</button>
             ) : enquiry ? (
-              <Link data-designer href={enquiryHref} className={cx(outline, "w-full")}>Speak to a designer</Link>
+              <Link data-designer data-fill-button="outline" href={enquiryHref} className={cx(outline, "w-full")}>Speak to a designer</Link>
             ) : (
-              <Link data-enquire href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
+              <Link data-enquire data-fill-button="outline" href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
             )}
             {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
             {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
