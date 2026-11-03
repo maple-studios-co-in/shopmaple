@@ -34,7 +34,8 @@ async function mount(value: Product, check: () => void) {
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
 }
 // The frame's expandable cards (data-feature) carry what the old page called disclosures.
-const cards: Record<string, string> = { "Details": "About Product", "Materials & care": "Material & Care", "Shipping & returns": "Shipping & Returns", "Product specifications": "Specification" };
+// The review design (frame 2:625) splits the catalogue's materials and care into two cards; captured text keeps one.
+const cards: Record<string, string> = { "Details": "About Product", "Materials & care": "Material & Care", "Materials": "Materials", "Care": "Material Care", "Shipping & returns": "Shipping & Returns", "Product specifications": "Specifications" };
 function disclosure(label: string) {
   const element = [...document.querySelectorAll("[data-feature]")].find(item => item.querySelector("h3")?.textContent === cards[label]);
   assert.ok(element, `Card ${label} is available`);
@@ -57,8 +58,8 @@ test("captured source disclosures replace generic copy without changing purchase
     assert.equal(disclosure("Details").querySelector("p")?.textContent, "Source Details for this chair.");
     assert.equal(disclosure("Materials & care").querySelector("p")?.textContent, "Oak frame. Wipe with a dry cloth.");
     assert.equal(disclosure("Shipping & returns").querySelector("p")?.textContent, "Source delivery and returns terms.");
-    assert.equal(disclosure("Materials & care").querySelector("a"), null);
-    assert.equal(disclosure("Shipping & returns").querySelector("a"), null);
+    assert.equal(disclosure("Materials & care").querySelector("[data-feature-body] a"), null, "the source text carries no links");
+    assert.equal(disclosure("Shipping & returns").querySelector("[data-feature-body] a"), null);
     assert.equal(document.querySelector("h1")?.textContent, "Source Chair");
     assert.match(document.querySelector("[data-price-block] strong")!.textContent!, /23,600/);
     assert.equal(document.querySelector("[data-purchase] button[data-primary]")?.textContent, "Add to cart");
@@ -100,7 +101,7 @@ test("approved links keep source text and owned Shopify links navigate locally",
     { type: "link", url: "https://example.com/care", target: "_blank", title: "Care guide", children: [{ type: "text", value: "External guide" }] },
     { type: "link", url: "mailto:care@example.com", children: [{ type: "text", value: "Email care" }] },
   ] }] }), () => {
-    const links = [...disclosure("Details").querySelectorAll("a")];
+    const links = [...disclosure("Details").querySelectorAll("[data-feature-body] a")] as HTMLAnchorElement[];
     assert.deepEqual(links.map(a => a.getAttribute("href")), ["/pages/contact?product=chair#delivery", "/pages/care", "https://example.com/care", "mailto:care@example.com"]);
     assert.deepEqual(links.map(a => a.textContent), ["Delivery help", "Care", "External guide", "Email care"]);
     assert.equal(links[2]?.target, "_blank");
@@ -127,8 +128,8 @@ test('Keeri product details show source materials, dimensions, care and warranty
  await mount({...product,source:'keeri:maple',sourceDetails:{details:'Handcrafted <script>chair</script>',materials:'Oak and linen',dimensions:'80 x 60 cm',careInstructions:'Dry cloth',warranty:'One year'}},()=>{
   assert.match(disclosure('Details').textContent!,/Handcrafted <script>chair<\/script>/);
   assert.equal(disclosure('Details').querySelector('script'),null);
-  assert.match(disclosure('Materials & care').textContent!,/Oak and linen/);
-  assert.match(disclosure('Materials & care').textContent!,/Dry cloth/);
+  assert.match(disclosure('Materials').textContent!,/Oak and linen/);
+  assert.match(disclosure('Care').textContent!,/Dry cloth/);
   assert.match(disclosure('Product specifications').textContent!,/80 x 60 cm/);
   assert.match(document.querySelector('[data-assurances]')!.textContent!,/One year warranty/);
  });

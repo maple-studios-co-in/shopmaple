@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Truck } from "lucide-react";
-import type { Product, ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
+import { categoryNames, type Product, type ProductCard, type ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
 import { canAddToCart } from "@/lib/product-availability";
 import { shopMoney } from "@/lib/format";
 import { cx } from "@/lib/cx";
@@ -13,8 +13,11 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
-import { assurances, discountPercent, enquiryLink, warrantyLabel } from "./product-assurances";
+import { assurances, discountPercent, enquiryLink, showroom, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
+import { CompleteTheLook } from "./complete-the-look";
+import { ProductBundle } from "./product-bundle";
+import { DealTab, ProductDeal, dealLive } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
 import { ProductFeatures, type Feature } from "./product-features";
@@ -24,15 +27,16 @@ import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
+import { choiceLine, labelledRows, richPlain } from "@/lib/product-detail-text";
 
 type Presentation = {
   variantImages: Record<string, string>;
   reviewLabel: string | null;
 };
 
-// Frame 999:3's pills: burgundy "Add to cart" and the outlined second action, 50 px tall. Their hover is the
-// fill from the pointer (data-fill-button, styles/button-fill.css), which also brings their transitions.
-const pill = "inline-flex h-[50px] items-center justify-center rounded-[30px] px-6 text-[14px] leading-[1.2] font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
+// Frame 2:561's pills: burgundy "Add to cart" and the outlined second action, 50 px tall in 16 px SemiBold. Their hover
+// is the fill from the pointer (data-fill-button, styles/button-fill.css), which also brings their transitions.
+const pill = "inline-flex h-[50px] items-center justify-center rounded-[30px] px-6 text-[16px] leading-[1.2] font-semibold no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
 const solid = cx(pill, "cursor-pointer border-0 bg-maple text-white");
 const outline = cx(pill, "cursor-pointer border-2 border-solid border-maple bg-white text-maple");
 const stepper = "grid size-[25px] cursor-pointer place-items-center rounded-full border-0 bg-[rgba(86,60,73,0.04)] p-0 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-maple";
@@ -42,11 +46,17 @@ const iconLink = "inline-flex cursor-pointer items-center gap-1.5 border-0 bg-tr
 const richCard = (content: ProductRichTextValue | null | undefined): ReactNode => content?.children.length ? <ProductRichText content={content} /> : null;
 const textCard = (value: string | null | undefined): ReactNode => value?.trim() ? value : null;
 
-/** `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. */
-export function ProductDetail({ product, initialVariant, presentation, children }: {
+/**
+ * `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. `completeLook`
+ * holds pieces from the rooms this piece is styled with, for the buy box's "Complete the look"; `bundle` holds two of
+ * them in full, for "Buy in Bundle" above the related row.
+ */
+export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], children }: {
   product: Product;
   initialVariant?: string;
   presentation?: Presentation;
+  completeLook?: ProductCard[];
+  bundle?: Product[];
   children?: ReactNode;
 }) {
   const searchParams = useSearchParams();
@@ -80,7 +90,9 @@ export function ProductDetail({ product, initialVariant, presentation, children 
   const [image, setImage] = useState(() => Math.max(0, galleryFor(initial).indexOf(variantImage(initial) ?? ""))),
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
-    [shared, setShared] = useState("");
+    [shared, setShared] = useState(""),
+    // When the page opened: whether the store's offer is still running is read once, the same way on server and browser.
+    [openedAt] = useState(Date.now);
   if (urlVariant !== initial) {
     setUrlVariant(initial);
     // History navigation changes the option without remounting the enquiry.
@@ -138,18 +150,32 @@ export function ProductDetail({ product, initialVariant, presentation, children 
     }
   }
   const photo = product.images[1] ?? product.images[0];
+  const source = product.sourceDetails, captured = product.pdpContent;
   const features: Feature[] = [];
   // Captured (admin) text leads; with none, the catalogue's own text. The description stands in for About only on
   // products that were never captured, and an empty captured card stays empty rather than borrowing other copy.
-  const about = richCard(product.pdpContent?.details) ?? textCard(product.sourceDetails?.details) ?? (product.pdpContent ? null : textCard(product.description));
-  if (about) features.push({ key: "about", title: "About Product", icon: "feature-about", body: about });
-  const dimensions = product.sourceDetails?.dimensions?.trim();
-  if (dimensions) features.push({ key: "specification", title: "Specification", icon: "feature-specification", body: dimensions, meta: [variant?.sku && `SKU: ${variant.sku}`, product.sourceDetails?.warranty?.trim() && `Warranty: ${product.sourceDetails.warranty.trim()}`].filter(Boolean).join(" · ") || undefined });
-  const care = richCard(product.pdpContent?.materialsCare) ?? textCard([product.sourceDetails?.materials?.trim(), product.sourceDetails?.careInstructions?.trim()].filter(Boolean).join("\n\n"));
-  if (care) features.push({ key: "care", title: "Material & Care", icon: "feature-care", body: care });
-  const shipping = richCard(product.pdpContent?.shippingReturns);
-  if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping });
+  const aboutText = captured?.details?.children.length ? richPlain(captured.details) : source?.details?.trim() || (captured ? "" : product.description.trim());
+  const about = richCard(captured?.details) ?? textCard(source?.details) ?? (captured ? null : textCard(product.description));
+  if (about) features.push({ key: "about", title: "About Product", icon: "detail-finish", body: about, long: aboutText.length > 180, link: { label: "Explore finishes with Maple", href: enquiryHref } });
+  // Materials and care: one captured card when the admin captured them together, else the catalogue's two.
+  const capturedCare = richCard(captured?.materialsCare);
+  const materials = source?.materials?.trim();
+  const materialRows = labelledRows(materials);
+  if (capturedCare) features.push({ key: "materials", title: "Material & Care", icon: "detail-material", body: capturedCare, long: richPlain(captured?.materialsCare).length > 180, link: { label: "Explore materials with Maple", href: enquiryHref } });
+  else if (materials) features.push({ key: "materials", title: "Materials", icon: "detail-material", ...(materialRows ? { rows: materialRows, long: materialRows.length > 3 } : { body: materials, long: materials.length > 180 }), link: { label: "Explore materials with Maple", href: enquiryHref } });
+  const dimensions = source?.dimensions?.trim();
+  const dimensionRows = labelledRows(dimensions);
+  const ownWarranty = source?.warranty?.trim();
+  if (dimensions) features.push({ key: "specification", title: "Specifications", icon: "detail-spec", body: dimensionRows ? undefined : dimensions,
+    rows: [...(dimensionRows ?? []), ...(variant?.sku ? [["Item code", variant.sku] as [string, string]] : []), ...(ownWarranty ? [["Warranty", ownWarranty] as [string, string]] : [])] });
+  const care = capturedCare ? undefined : source?.careInstructions?.trim();
+  if (care) features.push({ key: "care", title: "Material Care", icon: "detail-care", body: care, long: care.length > 180 });
+  const shipping = richCard(captured?.shippingReturns);
+  if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping, long: richPlain(captured?.shippingReturns).length > 180 });
+  const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
+  const category = product.category ? categoryNames[product.category] : undefined;
+  const deal = dealLive(highlights.deal, openedAt) ? highlights.deal : undefined;
   return (
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
@@ -158,9 +184,11 @@ export function ProductDetail({ product, initialVariant, presentation, children 
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
         </div>
-        <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
-          {(isNew || isLimited) && (
-            <div className="flex gap-2">
+        <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[20px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
+          {(category || isNew || isLimited) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Frame 2:435's vendor chip; every piece is Maple's own, so the chip names its collection instead. */}
+              {category && <Link data-chip="category" href={`/collections/${product.category}`} className="inline-flex h-[27px] items-center rounded-[5px] bg-maple/12 px-2.5 text-[12px] leading-[1.6] font-semibold text-maple no-underline hover:bg-maple/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">{category}</Link>}
               {isNew && <span data-chip="new" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#803cee] px-2 text-[12px] leading-[1.6] font-medium text-white">New</span>}
               {isLimited && <span data-chip="limited" className="inline-flex h-[23px] items-center rounded-[4px] bg-[#b07a1f] px-2 text-[12px] leading-[1.6] font-medium text-white">Limited</span>}
             </div>
@@ -189,6 +217,7 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             </div>
           </div>
           {product.description && <p data-description className="m-0 text-[14px] leading-[1.6] text-[#1c1c1c]">{product.description}</p>}
+          {deal && <ProductDeal deal={deal} />}
           {product.variants.length > 1 && (
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
@@ -236,17 +265,53 @@ export function ProductDetail({ product, initialVariant, presentation, children 
             {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
             {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
           </div>
-          <ul data-assurances className="m-0 grid list-none grid-cols-3 rounded-[10px] bg-maple/6 py-3 text-center text-[13px] leading-[1.3] font-medium text-maple">
-            <li className="flex flex-col items-center gap-1.5 px-2"><Truck aria-hidden="true" className="size-[18px]" strokeWidth={1.6} />{assurances.delivery}</li>
-            <li className="flex flex-col items-center gap-1.5 border-0 border-l border-solid border-maple/10 px-2">
-              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
-              <img src="/product-page/returns.svg" alt="" width={15} height={15} className="size-[18px]" />{assurances.cover}
-            </li>
-            <li className="flex flex-col items-center gap-1.5 border-0 border-l border-solid border-maple/10 px-2">
-              {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
-              <img src="/product-page/shield-a.svg" alt="" width={15} height={15} className="size-[18px]" />{warranty}
-            </li>
-          </ul>
+          {variant?.stockPolicy === "made_to_order" && (
+            // Frame 2:580's stock line, saying what the catalogue knows: the piece is made to order. No count is shown.
+            <div data-availability className="relative mt-[7px] rounded-[10px] border border-solid border-maple/8 px-4 pt-[18px] pb-3.5">
+              <p className="absolute -top-[7px] left-4 m-0 bg-white px-4 text-[14px] leading-[14px] font-medium text-maple">Made to order</p>
+              {" "}
+              <p className="m-0 flex items-center gap-[15px] text-[13px] leading-[1.5] text-[#5e574f]">
+                {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                <img src="/product-page/availability.svg" alt="" width={15} height={15} className="size-[15px] shrink-0" />
+                Crafted for you in our Delhi workshop.
+              </p>
+            </div>
+          )}
+          <CompleteTheLook pieces={completeLook} />
+          <div data-showroom className="relative rounded-[10px] bg-maple/6 py-4 pr-4 pl-10">
+            {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+            <img src="/product-page/showroom-check.svg" alt="" width={14} height={14} className="absolute top-[20px] left-4 size-3.5" />
+            <p className="m-0 text-[14px] leading-[22.4px] font-medium text-black">{showroom.title}</p>
+            {" "}
+            <p className="m-0 text-[12px] leading-[19.2px] text-black">{showroom.address}</p>
+            {" "}
+            <p className="m-0 mt-1 flex justify-end">
+              <Link href={showroom.href} className="inline-flex items-center gap-1.5 text-[12px] leading-[14.4px] font-medium text-maple underline underline-offset-[3px] hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                View store information
+                {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                <img src="/product-page/store-arrow.svg" alt="" width={14} height={15} className="h-[15px] w-3.5" />
+              </Link>
+            </p>
+          </div>
+          {/* Frame 2:602: the store's promises drifting along a strip; still and wrapped for reduced motion. */}
+          <div data-assurances-strip className="group/strip overflow-hidden rounded-[10px] bg-maple/6 text-[14px] leading-[14px] font-medium text-maple">
+            <div className="flex w-max animate-pdp-strip group-hover/strip:[animation-play-state:paused] motion-reduce:w-full motion-reduce:animate-none">
+              {[false, true].map((copy) => (
+                <ul key={String(copy)} {...(copy ? { "data-assurances-copy": "", "aria-hidden": true } : { "data-assurances": "" })}
+                  className={cx("m-0 flex shrink-0 list-none items-center p-0", copy ? "motion-reduce:hidden" : "motion-reduce:flex-wrap motion-reduce:justify-center")}>
+                  <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap"><Truck aria-hidden="true" className="size-[15px]" strokeWidth={1.6} />{assurances.delivery}</li>
+                  <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                    <img src="/product-page/returns.svg" alt="" width={13} height={12} className="h-3 w-[13px]" />{assurances.cover}
+                  </li>
+                  <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+                    <img src="/product-page/shield-a.svg" alt="" width={11} height={14} className="h-3.5 w-[11px]" />{warranty}
+                  </li>
+                </ul>
+              ))}
+            </div>
+          </div>
           <p data-shipping-note className="m-0 -mt-2 text-[12px] leading-[1.5] text-[#5e574f]">Shipping is charged separately and quoted before you confirm your order.</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <Link data-ask href={enquiryHref} className={iconLink}>
@@ -261,10 +326,12 @@ export function ProductDetail({ product, initialVariant, presentation, children 
           </div>
         </div>
       </section>
-      <ProductFeatures features={features} photo={photo} title={product.title} />
+      {deal && <DealTab deal={deal} />}
+      <ProductFeatures features={features} photo={photo} title={product.title} tagline={tagline} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} />
+      <ProductBundle product={product} variant={variant} paired={bundle} />
       {children}
       <ProductFaq />
       <ProductPromises />

@@ -45,7 +45,7 @@ test("Chairs has the same eyebrow and a boxed link to every chair", async () => 
   assert.equal(text(chairs.querySelector("[data-rail-eyebrow]")), "Handpicked favourites");
   assert.equal(text(chairs.querySelector("h2")), "Chairs");
   const link = chairs.querySelector<HTMLAnchorElement>("[data-rail-viewall]")!;
-  assert.equal(link.getAttribute("href"), "/collections/chairs");
+  assert.equal(link.getAttribute("href"), "/collections/chairs?page=1", "the listing grid, not the editorial Chairs page");
   assert.match(text(link), /^View all chairs/);
   assert.equal(chairs.querySelector("[data-rail-lede]"), null, "the frame has no lede under Chairs");
 });

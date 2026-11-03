@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
-import { otherPieces } from "@/lib/product-related";
+import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
@@ -29,9 +29,18 @@ export default async function ProductPage({
   // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
   const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
   if (moved) permanentRedirect(moved);
-  const related = product.category
-    ? await getRelatedProductCards(product.category)
-    : [];
+  // "You may also like" draws from the piece's own category; "Complete the look" from the rooms it is styled with, and
+  // a room that fails to load only leaves its pieces out.
+  const [related, ...rooms] = await Promise.all([
+    product.category ? getRelatedProductCards(product.category) : [],
+    ...completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => [])),
+  ]);
+  const look = lookPieces(rooms, product);
+  // "Buy in Bundle" pairs the piece with the first two priced pieces it is styled with, read in full for their options;
+  // one that fails to load is simply left out.
+  const bundle = (await Promise.all(look.filter((card) => card.pricePaise !== null).slice(0, 2)
+    .map((card) => getProduct(card.handle).catch(() => null))))
+    .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
@@ -50,6 +59,8 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
+        completeLook={look}
+        bundle={bundle}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>

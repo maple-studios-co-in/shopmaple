@@ -178,7 +178,8 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         handles={merchandising.chairs}
         heading={copy.chairsHeading ?? "Chairs"}
         label="Chair collection"
-        browseHref="/collections/chairs"
+        // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.
+        browseHref="/collections/chairs?page=1"
       />
     ),
     promos: (
