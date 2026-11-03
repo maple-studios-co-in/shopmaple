@@ -339,17 +339,17 @@ test("the ticker shows no pause button (owner), a product without text still sho
   }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
 });
 
-test("sofas and beds stack About, Specifications and Material & Care beside the piece (frame 86:1814), each + marking its hotspot", async () => {
+test("sofas and beds stack About, Specifications and Material & Care beside the piece (frame 86:1814), with no hotspots inside the photo", async () => {
   for (const category of ["sofas", "beds"] as const) {
     await mount(async (doc) => {
       const stage = doc.querySelector("[data-features-layout]")!;
       assert.equal(stage.getAttribute("data-features-layout"), "stacked", category);
       const cards = [...stage.querySelectorAll("[data-feature]")];
       assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care"]);
-      assert.equal(stage.querySelectorAll("[data-hotspot]").length, 3);
+      assert.equal(stage.querySelectorAll("[data-hotspot]").length, 0, "the cards' lines run to the photo's edge instead (owner)");
       assert.equal(stage.querySelector("[data-feature-number]"), null, "the frame's + stands where the number was");
       await act(async () => cards[1]!.querySelector<HTMLButtonElement>("[data-feature-toggle]")!.click());
-      assert.equal(stage.querySelector('[data-hotspot="specification"]')?.getAttribute("aria-pressed"), "true");
+      assert.equal(cards[1]!.getAttribute("data-active"), "true", "the + opens its card");
     }, { ...product, category, sourceDetails: null });
   }
   await mount((doc) => assert.equal(doc.querySelector("[data-features-layout]")?.getAttribute("data-features-layout"), "around", "other pieces keep frame 2:625"), { ...product, sourceDetails: null });
