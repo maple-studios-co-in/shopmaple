@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getProductCards, getRelatedProductCards } from "@/lib/catalog";
-import { bundleHandles } from "@/lib/product-page-data";
 import { productRedirect } from "@/lib/product-address";
-import { otherPieces } from "@/lib/product-related";
+import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
@@ -30,11 +29,24 @@ export default async function ProductPage({
   // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
   const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
   if (moved) permanentRedirect(moved);
-  const [related, bundleCards] = await Promise.all([
+  // A bundle staff built in Keeri leads "Complete the look" and "Buy in Bundle", with Keeri's quantities. Without one,
+  // "Complete the look" draws from the rooms the piece is styled with, and a room that fails to load only leaves its
+  // pieces out; "You may also like" draws from the piece's own category.
+  const keeriBundle = product.productPage?.bundles[0];
+  const keeriHandles = (keeriBundle?.items ?? []).map((item) => item.handle).filter((h) => h !== product.handle);
+  const [related, keeriCards, ...rooms] = await Promise.all([
     product.category ? getRelatedProductCards(product.category) : [],
-    // The other pieces of this product's bundles; a failed read leaves the bundles out rather than the page.
-    bundleHandles(product).length ? getProductCards(bundleHandles(product)).catch(() => []) : [],
+    keeriHandles.length ? getProductCards(keeriHandles).catch(() => []) : [],
+    ...(keeriHandles.length ? [] : completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => []))),
   ]);
+  const keeriLook = keeriHandles.flatMap((h) => keeriCards.filter((card) => card.handle === h));
+  const look = keeriLook.length ? keeriLook : lookPieces(rooms, product);
+  // "Buy in Bundle": the Keeri bundle's pieces, else the first two priced pieces it is styled with, read in full for
+  // their options; one that fails to load is simply left out.
+  const bundle = (await Promise.all((keeriLook.length ? keeriLook : look.filter((card) => card.pricePaise !== null).slice(0, 2))
+    .map((card) => getProduct(card.handle).catch(() => null))))
+    .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
+  const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
@@ -53,7 +65,9 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
-        bundleCards={bundleCards}
+        completeLook={look}
+        bundle={bundle}
+        bundleQuantities={bundleQuantities}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>

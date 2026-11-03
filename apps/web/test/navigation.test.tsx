@@ -155,6 +155,10 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
     assert.ok(custom, "menu should expose custom furniture enquiries");
     assert.match(custom.href, /\/pages\/contact/);
     assert.ok(panel.querySelector('a[href="/collections/all"]'));
+    // Frame 1:1454: the Maple promise and the invitation to consult run under the columns.
+    const footer = panel.querySelector("[data-mega-footer]")!;
+    assert.deepEqual([...footer.querySelectorAll("[data-promise] strong")].map((title) => title.textContent), ["Fully customisable", "Crafted in Delhi", "36-month warranty", "Delivery across India"]);
+    assert.equal(footer.querySelector("p:last-child")?.textContent, "Your space. Your choices. Consult with Maple on colour, material, finish, and size.");
   } finally {
     await act(async () => root.unmount());
   }

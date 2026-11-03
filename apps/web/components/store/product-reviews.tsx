@@ -39,41 +39,44 @@ function ReviewCard({ review }: { review: ProductReview }) {
  * Keeri sent. Nothing is invented: with no reviews the band says so, and the rating is Keeri's own average and count
  * (or, for a product Keeri has no reviews for, the rating staff recorded from real reviews).
  */
-export function ProductReviews({ rating, writeHref, reviews = [] }: { rating: { value: number; count: number } | null | undefined; writeHref: string; reviews?: ProductReview[] }) {
-  const filled = rating ? Math.round(rating.value) : 0;
+export function ProductReviews({ rating, writeHref, reviews: items = [] }: { rating: { value: number; count?: number } | null | undefined; writeHref: string; reviews?: ProductReview[] }) {
+  const reviews = rating?.count ? `${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : "";
+  const summary = rating
+    ? { score: rating.value.toFixed(1), filled: Math.round(rating.value), line: reviews || `Rated ${rating.value.toFixed(1)} out of 5`, label: `Rated ${rating.value.toFixed(1)} out of 5${reviews ? ` from ${reviews}` : ""}` }
+    : null;
   return (
     <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-product text-white md:px-12 md:py-[91px]">
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col items-start gap-6">
           <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.2] font-medium md:text-[48px]">Hear From Them</h2>
-          {rating
+          {summary
             ? <p data-reviews-sub className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
             : <p data-reviews-note className="m-0 max-w-[420px] text-[20px] leading-[1.3] font-medium md:text-[24px]">No reviews to show yet. Share your experience with this piece.</p>}
-          <Link data-write-review href={writeHref} className={pill}>
+          <Link data-write-review data-fill-button="light" href={writeHref} className={pill}>
             Write a review
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px]" />
           </Link>
         </div>
-        {rating && (
-          <div data-rating-summary role="group" aria-label={`Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`} className="flex flex-col gap-4 md:items-start">
+        {summary && (
+          <div data-rating-summary role="group" aria-label={summary.label} className="flex flex-col gap-4 md:items-start">
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="text-[28px] leading-[1.6] md:text-[35.6px]">{rating.value.toFixed(1)}</span>
+              <span aria-hidden="true" className="text-[28px] leading-[1.6] md:text-[35.6px]">{summary.score}</span>
               <span aria-hidden="true" className="flex gap-2.5">
                 {[0, 1, 2, 3, 4].map((i) => (
                   // eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon
-                  <img key={i} data-star src="/product-page/star-white.svg" alt="" width={38} height={38} className={i < filled ? "size-7 md:size-[38px]" : "size-7 opacity-30 md:size-[38px]"} />
+                  <img key={i} data-star src="/product-page/star-white.svg" alt="" width={38} height={38} className={i < summary.filled ? "size-7 md:size-[38px]" : "size-7 opacity-30 md:size-[38px]"} />
                 ))}
               </span>
             </div>
             {" "}
-            <p className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">{rating.count} {rating.count === 1 ? "review" : "reviews"}</p>
+            <p className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">{summary.line}</p>
           </div>
         )}
       </div>
-      {reviews.length > 0 && (
+      {items.length > 0 && (
         <ul data-review-list aria-label="Customer reviews" className="m-0 mt-10 flex snap-x snap-mandatory list-none gap-6 overflow-x-auto p-0 pb-2 md:mt-14">
-          {reviews.map((review) => <ReviewCard key={review.id} review={review} />)}
+          {items.map((review) => <ReviewCard key={review.id} review={review} />)}
         </ul>
       )}
     </section>

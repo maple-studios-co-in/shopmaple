@@ -155,7 +155,7 @@ test("products: pick from the catalogue, set New and a complete rating, remove, 
   try {
     await click("Product highlights");
     await click("Add alpha to product highlights");
-    assert.match(text(), /Only enter the average and count of real customer reviews\./);
+    assert.match(text(), /Only enter real customer ratings\. The review count is optional\./);
     assert.equal(button("Add alpha to product highlights").disabled, true, "a product is listed once");
     const table = panel().querySelector('table[aria-label="Product highlights"]');
     assert.ok(table, "products are a table");
@@ -168,12 +168,14 @@ test("products: pick from the catalogue, set New and a complete rating, remove, 
     assert.equal(button("New badge for alpha").getAttribute("aria-checked"), "true");
 
     const help = document.getElementById(field("Average rating for alpha").getAttribute("aria-describedby")!.split(" ")[0]!);
-    assert.match(help?.textContent ?? "", /Only enter the average and count of real customer reviews/, "rating fields point at the help text");
+    assert.match(help?.textContent ?? "", /Only enter real customer ratings/, "rating fields point at the help text");
 
     await fill("Average rating for alpha", "4.6");
-    assert.match(errorFor("Review count for alpha"), /review count/i, "an average needs a count");
+    assert.equal(errorFor("Review count for alpha"), "", "an average can stand without its review count");
+    await fill("Review count for alpha", "12x");
+    assert.match(errorFor("Review count for alpha"), /whole number/i);
     await click("Save draft");
-    assert.equal(app.saves(), 0, "a half-entered rating is never sent");
+    assert.equal(app.saves(), 0, "a malformed count is never sent");
     await fill("Review count for alpha", "12");
     assert.equal(errorFor("Review count for alpha"), "");
     assert.equal(errorFor("Average rating for alpha"), "");
@@ -255,5 +257,58 @@ test("every highlights control is labelled and reachable from the keyboard", asy
     }
     assert.equal(field("Average rating for alpha").getAttribute("inputmode"), "decimal");
     assert.equal(field("Review count for alpha").getAttribute("inputmode"), "numeric");
+  } finally { await app.close(); }
+});
+
+test("an offer for every product page: offer, code and end time, checked inline, saved, and removable", async () => {
+  const app = await setup();
+  try {
+    await click("Product highlights");
+    await click("Add an offer");
+    assert.match(errorFor("Offer"), /describe the offer/i);
+    assert.match(errorFor("Offer code"), /capital letters/i);
+    await click("Save draft");
+    assert.equal(app.saves(), 0, "a half-made offer is never sent");
+    await fill("Offer", "20% off");
+    await fill("Offer code", "sale 20");
+    assert.equal(field("Offer code").value, "SALE20", "codes are capitals without spaces");
+    assert.equal(errorFor("Offer code"), "");
+    await fill("Offer ends", "2099-01-31T18:30");
+    assert.equal(field("Offer ends").value, "2099-01-31T18:30");
+    await click("Save draft");
+    const deal = app.saved().content.productHighlights.deal;
+    assert.deepEqual(deal, { offer: "20% off", code: "SALE20", endsAt: new Date("2099-01-31T18:30").toISOString() }, "the end is the editor's local time, stored with its zone");
+    await fill("Offer ends", "2001-01-31T18:30");
+    assert.match(errorFor("Offer ends"), /has passed/i, "an ended offer says product pages no longer show it");
+    await click("Remove the offer");
+    await click("Save draft");
+    assert.equal("deal" in app.saved().content.productHighlights, false, "removing it leaves no field");
+  } finally { await app.close(); }
+});
+
+test("ratings in catalogue order become each product's own rating, A–Z and repeating, keeping any rating already set", async () => {
+  const app = await setup({
+    highlights: { swatches: [], products: [{ handle: "bravo", isNew: true, rating: { value: 4.9, count: 3 } }] },
+    // As the products API returns them, capitals first; the store's A–Z listing puts "PRODUCT DELTA" after charlie.
+    products: [{ ...product("delta"), title: "PRODUCT DELTA" }, ...["alpha", "bravo", "charlie", "echo"].map((handle) => product(handle))],
+  });
+  try {
+    await click("Product highlights");
+    assert.equal(field("Ratings in catalogue order").value, "4.1, 4.1, 4.3, 4.3, 4.2, 4.2");
+    await fill("Ratings in catalogue order", "4.1, 4.1, 4.3");
+    await click("Apply to products without a rating");
+    assert.match(text(), /Rated 4 products in A–Z order/);
+    assert.equal(field("Average rating for charlie").value, "4.3");
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.productHighlights.products, [
+      { handle: "bravo", isNew: true, rating: { value: 4.9, count: 3 } },
+      { handle: "alpha", isNew: false, rating: { value: 4.1 } },
+      { handle: "charlie", isNew: false, rating: { value: 4.3 } },
+      { handle: "delta", isNew: false, rating: { value: 4.1 } },
+      { handle: "echo", isNew: false, rating: { value: 4.1 } },
+    ], "the second catalogue place keeps its own 4.9; the list repeats from the fourth");
+    await fill("Ratings in catalogue order", "4.1, nine");
+    await click("Apply to products without a rating");
+    assert.match(text(), /Use ratings from 1\.0 to 5\.0/);
   } finally { await app.close(); }
 });

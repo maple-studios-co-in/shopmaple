@@ -51,7 +51,7 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
 }
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
 const mainSrc = (doc: Document) => decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!);
-const markers = (doc: Document) => [...doc.querySelectorAll<HTMLButtonElement>("button[data-hotspot]")];
+const markers = (doc: Document) => [...doc.querySelectorAll<HTMLButtonElement>("[data-hotspots] button[data-hotspot]")];
 
 test("the chosen finish opens on its white-background photo, also the first thumbnail, with a marker per hotspot", async () => {
   await mount((doc) => {

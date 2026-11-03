@@ -74,7 +74,7 @@ export function Hero({
               <div className="hero-introduction">
                 <h2 data-hero-headline>{slide.headline}</h2>
                 <p data-hero-intro>{slide.intro}</p>
-                <Link className="hero-cta" href="/pages/nimbus-collection">
+                <Link className="hero-cta" href="/pages/nimbus-collection" data-fill-button="">
                   {content.cta} <ArrowRight aria-hidden size={17} />
                 </Link>
               </div>

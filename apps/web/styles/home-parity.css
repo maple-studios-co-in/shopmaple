@@ -1041,7 +1041,7 @@
   color: white;
 }
 .hero-introduction .hero-cta {
-  position: static;
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 20px;

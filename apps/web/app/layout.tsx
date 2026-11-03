@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { preconnect } from "react-dom";
 import "@/styles/shopify-fonts.css";
 import "@fontsource/barlow/400.css";
 import "@fontsource/barlow/500.css";
 import "@fontsource/barlow/600.css";
 import "@fontsource/barlow/700.css";
 import "@fontsource/newsreader/300.css";
+// The collection listing's headings (Figma frame 1:1094) are Newsreader Bold.
+import "@fontsource/newsreader/700.css";
 import "@fontsource/pinyon-script/400.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
@@ -29,8 +32,10 @@ import "@/styles/home-slides.css";
 import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
+import "@/styles/button-fill.css";
 // Last, so a utility beats the legacy storefront rules it replaces.
 import "@/styles/tailwind.css";
+import { ButtonEffectsIsland } from "@/components/button-effects-island";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";
@@ -50,6 +55,8 @@ export default async function Layout({
 }) {
   const { siteChrome, productHighlights } = await getPublishedContent();
   const seo = seoSettings(process.env);
+  // Catalogue photos come straight from Shopify's edge: open the connection while the page is still arriving.
+  preconnect("https://cdn.shopify.com");
   return (
     <html lang="en">
       <body>
@@ -59,6 +66,7 @@ export default async function Layout({
             <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
           </ProductHighlightsProvider>
         </ShopProvider>
+        <ButtonEffectsIsland />
       </body>
     </html>
   );

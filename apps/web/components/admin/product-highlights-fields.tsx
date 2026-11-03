@@ -1,6 +1,6 @@
 "use client";
 import { useId, useMemo, useState, type ComponentProps, type ReactNode } from "react";
-import { toProductCard, type ProductHighlights, type ProductList } from "@shopmaple/contracts";
+import { byTitle, productListSchema, toProductCard, type ProductHighlights, type ProductList } from "@shopmaple/contracts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Palette, Plus, Search, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { ActionButton, Hint, PanelHeader, RemoveButton, SectionHeading, rowCard,
 import { ProductName, ProductSearch } from "./product-search";
 
 type Swatch = ProductHighlights["swatches"][number];
+type Deal = NonNullable<ProductHighlights["deal"]>;
 type Highlight = ProductHighlights["products"][number];
 type Rating = NonNullable<Highlight["rating"]>;
 /** What staff typed into a product's two rating fields, kept as text so "4." can become "4.6". */
@@ -24,12 +25,12 @@ const hexPattern = /^#[0-9a-fA-F]{6}$/;
 const nameKey = (name: string) => name.trim().toLowerCase();
 
 /** The message the editor shows when a save is blocked by this screen's fields. */
-export const highlightsSaveMessage = "Check product highlights: fix the colours or ratings marked on the Product highlights screen, then save again.";
+export const highlightsSaveMessage = "Check product highlights: fix the colours, ratings or offer marked on the Product highlights screen, then save again.";
 
 /*
- * A rating is optional, but an average needs a count and a count needs an average. A half-entered
- * or malformed rating is kept in the draft as NaN, which the content schema rejects, so the editor
- * cannot save it; the fields say what is missing.
+ * A rating is optional. An average can stand alone (the owner's real rating without its review count),
+ * but a count needs an average. A half-entered or malformed rating is kept in the draft as NaN, which
+ * the content schema rejects, so the editor cannot save it; the fields say what is missing.
  */
 function averageFrom(text: string) {
   const value = text.trim();
@@ -41,11 +42,11 @@ function countFrom(text: string) {
 }
 function ratingFrom(text: RatingText): Rating | null {
   if (!text.value.trim() && !text.count.trim()) return null;
-  return { value: averageFrom(text.value), count: countFrom(text.count) };
+  return text.count.trim() ? { value: averageFrom(text.value), count: countFrom(text.count) } : { value: averageFrom(text.value) };
 }
 function textFrom(rating: Rating | null): RatingText {
   if (!rating) return { value: "", count: "" };
-  return { value: Number.isFinite(rating.value) ? rating.value.toFixed(1) : "", count: Number.isFinite(rating.count) ? String(rating.count) : "" };
+  return { value: Number.isFinite(rating.value) ? rating.value.toFixed(1) : "", count: rating.count !== undefined && Number.isFinite(rating.count) ? String(rating.count) : "" };
 }
 const sameRating = (a: Rating | null, b: Rating | null) => a === b || (a !== null && b !== null && Object.is(a.value, b.value) && Object.is(a.count, b.count));
 function averageError({ value, count }: RatingText) {
@@ -55,9 +56,14 @@ function averageError({ value, count }: RatingText) {
   if (/\.\d{2,}$/.test(text)) return "Use one decimal, such as 4.6.";
   return Number.isNaN(averageFrom(text)) ? "Use an average from 1.0 to 5.0." : "";
 }
-function countError({ value, count }: RatingText) {
-  if (!count.trim()) return value.trim() ? "Enter the review count too." : "";
+function countError({ count }: RatingText) {
+  if (!count.trim()) return "";
   return Number.isNaN(countFrom(count)) ? "Use a whole number of reviews from 1 to 100,000." : "";
+}
+/** The ratings typed for "Ratings in catalogue order" ("4.1, 4.1, 4.3"), or null when any is not a rating. */
+function ratingSequence(text: string) {
+  const values = text.split(/[\s,]+/).filter(Boolean).map(averageFrom);
+  return values.length && values.length <= 24 && values.every((value) => !Number.isNaN(value)) ? values : null;
 }
 function nameError(swatches: Swatch[], index: number) {
   const key = nameKey(swatches[index]!.name);
@@ -66,6 +72,23 @@ function nameError(swatches: Swatch[], index: number) {
   return first < index ? `${swatches[index]!.name.trim()} already has a colour in row ${first + 1}.` : "";
 }
 const hexError = (hex: string) => hexPattern.test(hex) ? "" : "Use a hex colour such as #1f4e5f.";
+
+/** The editor's local date and time for a datetime-local field ("2026-11-09T18:00"); empty without a valid time. */
+function localTime(iso: string) {
+  const at = new Date(iso);
+  if (!iso || Number.isNaN(at.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+/** What the offer's fields still need. An ended offer can be saved; the message says product pages no longer show it. */
+function dealErrors(deal: Deal, now: number) {
+  const ends = Date.parse(deal.endsAt);
+  return {
+    offer: deal.offer.trim() ? "" : "Describe the offer, such as 20% off.",
+    code: /^[A-Z0-9][A-Z0-9%-]{1,23}$/.test(deal.code) ? "" : "Use 2–24 capital letters, numbers, % or -, such as SALE20.",
+    endsAt: Number.isNaN(ends) ? "Choose when the offer ends." : ends <= now ? "This time has passed, so product pages no longer show the offer." : "",
+  };
+}
 
 function Count({ value, limit }: { value: number; limit: number }) {
   return <Badge variant="secondary" className="ml-2 rounded-md border-0 bg-neutral-bg align-middle font-semibold text-neutral tabular-nums">{value}/{limit}</Badge>;
@@ -96,10 +119,17 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [ratingText, setRatingText] = useState<Record<string, RatingText>>({});
   const focus = usePendingFocus<string>(current);
+  // When the screen opened, for telling an offer that has already ended.
+  const [openedAt] = useState(Date.now);
   function update(next: Partial<ProductHighlights>, target?: string) {
     focus.focusAfter(target ?? null);
     onChange({ ...current, ...next });
   }
+  const deal = current.deal;
+  const dealProblems = deal ? dealErrors(deal, openedAt) : null;
+  const patchDeal = (patch: Partial<Deal>) => { if (deal) update({ deal: { ...deal, ...patch } }); };
+  // A new offer starts a week out, on the hour, for the editor to adjust.
+  const addDeal = () => update({ deal: { offer: "", code: "", endsAt: new Date(Math.ceil((Date.now() + 7 * 86_400_000) / 3_600_000) * 3_600_000).toISOString() } }, "deal-offer");
   function heard(list: ProductList | null) {
     setResults(list);
     if (list?.products.length) setTitles((known) => ({ ...known, ...Object.fromEntries(list.products.map((product) => [product.handle, product.title])) }));
@@ -134,6 +164,48 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
   function removeProduct(index: number) {
     const next = products.filter((_, i) => i !== index), neighbour = next[index];
     update({ products: next }, neighbour ? `product:${neighbour.handle}` : "search");
+  }
+  // Ratings in catalogue order: the owner's real ratings, given in the store's A–Z order and repeating, become each
+  // product's own rating here, so a piece shows the same score everywhere and can still be changed on its own.
+  const [sequenceText, setSequenceText] = useState("4.1, 4.1, 4.3, 4.3, 4.2, 4.2");
+  const [sequenceNote, setSequenceNote] = useState("");
+  const [applying, setApplying] = useState(false);
+  async function applySequence() {
+    const values = ratingSequence(sequenceText);
+    if (!values) { setSequenceNote("Use ratings from 1.0 to 5.0 with one decimal, separated by commas, such as 4.1, 4.3."); return; }
+    setApplying(true);
+    setSequenceNote("");
+    try {
+      const catalogue: ProductList["products"] = [];
+      for (let page = 1; page <= 20; page++) {
+        const response = await fetch(`/api/products?limit=50&page=${page}&sort=title`, { cache: "no-store", credentials: "same-origin" });
+        if (!response.ok) throw new Error("catalogue");
+        const list = productListSchema.parse(await response.json());
+        catalogue.push(...list.products);
+        if (!list.products.length || catalogue.length >= list.total) break;
+      }
+      // The products API sorts capitals first; the shop's A–Z listing doesn't, and the ratings follow what shoppers see.
+      catalogue.sort(byTitle);
+      const next = [...products];
+      let rated = 0;
+      catalogue.forEach((piece, i) => {
+        const value = values[i % values.length]!;
+        const at = next.findIndex((item) => item.handle === piece.handle);
+        if (at >= 0) {
+          if (next[at]!.rating) return;
+          next[at] = { ...next[at]!, rating: { value } };
+        } else if (next.length < productLimit) next.push({ handle: piece.handle, isNew: false, rating: { value } });
+        else return;
+        rated++;
+      });
+      setTitles((known) => ({ ...known, ...Object.fromEntries(catalogue.map((piece) => [piece.handle, piece.title])) }));
+      update({ products: next });
+      setSequenceNote(rated ? `Rated ${rated} ${rated === 1 ? "product" : "products"} in A–Z order. Save the draft, then publish, to show them.` : "Every product already has its own rating.");
+    } catch {
+      setSequenceNote("The catalogue couldn't be read. Please try again.");
+    } finally {
+      setApplying(false);
+    }
   }
   const columns: ColumnDef<Highlight>[] = [
     { id: "product", header: "Product", enableSorting: false, meta: { className: "min-w-40" },
@@ -229,12 +301,25 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
       <SectionHeading className="mt-0 mb-0" description="Mark a product as New or add its review rating. Find products in the catalogue below.">
         Products<Count value={products.length} limit={productLimit} />
       </SectionHeading>
+      <div className={cn(rowCard, "grid gap-1.5 px-3 py-2.5")}>
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+          <RowField label="Ratings in catalogue order" className="flex-1 basis-56">
+            <Input aria-label="Ratings in catalogue order" value={sequenceText} maxLength={200} spellCheck={false} className="h-9 bg-card text-sm tabular-nums"
+              onChange={(event) => setSequenceText(event.currentTarget.value)} />
+          </RowField>
+          <ActionButton icon={Star} className="mb-0.5" disabled={applying || products.length >= productLimit} onClick={() => void applySequence()}>
+            {applying ? "Applying ratings…" : "Apply to products without a rating"}
+          </ActionButton>
+        </div>
+        <p className="text-xs text-muted-foreground">Gives each published product without its own rating the next value in this list, in the store&apos;s A–Z order, repeating. Each product then keeps that rating everywhere and can be changed on its own below. Use only your real customer ratings.</p>
+        {sequenceNote && <p role="status" className="text-xs font-medium">{sequenceNote}</p>}
+      </div>
       {products.length === 0 ? <EmptyState title="No products yet" icon={<Star strokeWidth={1.5} />} action={
         <ActionButton icon={Search} aria-label="Find products for product highlights" onClick={() => focus.focus("search")}>Find products</ActionButton>
       }>Cards show no New badge or rating until you add the product here.</EmptyState>
         : <>
           <DataTable label="Product highlights" columns={columns} data={products} getRowId={(product) => product.handle} empty="No products yet." />
-          <Hint id={helpId}>Only enter the average and count of real customer reviews.</Hint>
+          <Hint id={helpId}>Only enter real customer ratings. The review count is optional.</Hint>
         </>}
       <ProductSearch onResults={heard} onExpired={onExpired} inputRef={focus.track("search")} actions={(product) => {
         const listed = products.some((item) => item.handle === product.handle);
@@ -244,6 +329,39 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
           {listed ? "Added" : "Add"}
         </ActionButton>;
       }} />
+    </section>
+
+    <section aria-label="Product page offer" className="grid min-w-0 content-start gap-3">
+      <SectionHeading className="mt-0 mb-0" description="An offer every product page counts down to, with its code to copy, and names on a tab at the page's edge. It leaves the pages by itself when it ends. Add only an offer your team honours.">
+        Product page offer
+      </SectionHeading>
+      {deal && dealProblems ? <div className={cn(rowCard, "grid gap-2 px-3 py-2.5")}>
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+          <RowField label="Offer" className="flex-1 basis-40">
+            <Input aria-label="Offer" ref={focus.track("deal-offer")} placeholder="20% off" maxLength={40} value={deal.offer}
+              {...invalidProps(`${id}-deal-offer`, dealProblems.offer)} className="h-9 bg-card text-sm"
+              onChange={(event) => patchDeal({ offer: event.currentTarget.value })} />
+          </RowField>
+          <RowField label="Code">
+            <Input aria-label="Offer code" placeholder="SALE20" maxLength={24} spellCheck={false} value={deal.code}
+              {...invalidProps(`${id}-deal-code`, dealProblems.code)} className="h-9 w-36 bg-card font-mono text-sm"
+              onChange={(event) => patchDeal({ code: event.currentTarget.value.toUpperCase().replace(/\s+/g, "") })} />
+          </RowField>
+          <RowField label="Ends">
+            <Input type="datetime-local" aria-label="Offer ends" value={localTime(deal.endsAt)}
+              {...invalidProps(`${id}-deal-ends`, dealProblems.endsAt)} className="h-9 w-56 bg-card text-sm"
+              onChange={(event) => patchDeal({ endsAt: event.currentTarget.value ? new Date(event.currentTarget.value).toISOString() : "" })} />
+          </RowField>
+          <RemoveButton label="Remove the offer" className="mb-0.5" onClick={() => update({ deal: undefined }, "add-deal")} />
+        </div>
+        {(dealProblems.offer || dealProblems.code || dealProblems.endsAt) && <div className="grid gap-1">
+          <FieldError id={`${id}-deal-offer`}>{dealProblems.offer}</FieldError>
+          <FieldError id={`${id}-deal-code`}>{dealProblems.code}</FieldError>
+          <FieldError id={`${id}-deal-ends`}>{dealProblems.endsAt}</FieldError>
+        </div>}
+      </div> : <div>
+        <ActionButton icon={Plus} ref={focus.track("add-deal")} onClick={addDeal}>Add an offer</ActionButton>
+      </div>}
     </section>
   </section>;
 }

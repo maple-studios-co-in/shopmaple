@@ -80,7 +80,7 @@ test("both homepage rails expose a visible heading, and Chairs a context-labelle
     const { doc } = await renderHome(options);
     // The Impact Layout frame gives both rails a "View all" button (the owner's earlier no-"View all" fix is reversed).
     assert.equal(doc.querySelector('[data-home-section="bestsellers"] h2')?.textContent, "Bestsellers");
-    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs"]]) {
+    for (const [key, heading, href] of [["bestsellers", "Bestsellers", "/collections/all"], ["chairs", "Chairs", "/collections/chairs?page=1"]]) {
       const rail = doc.querySelector(`[data-home-section="${key}"]`)!;
       assert.equal(rail.querySelector("h2")?.textContent, heading);
       const browse = rail.querySelector("header a");

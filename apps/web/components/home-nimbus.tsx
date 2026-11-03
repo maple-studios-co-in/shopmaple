@@ -74,7 +74,7 @@ export function HomeNimbus({
                 {card.word
                   ? <h2 className="nimbus-stage-word" data-nimbus-title><span aria-hidden="true" data-nimbus-word>{card.word}</span><span className="sr-only" data-nimbus-heading>{card.heading}</span></h2>
                   : <h2 className="sr-only" data-nimbus-heading>{card.heading}</h2>}
-                <Link className="nimbus-stage-cta" href={card.href} data-nimbus-explore>{card.cta}</Link>
+                <Link className="nimbus-stage-cta" href={card.href} data-nimbus-explore data-fill-button="">{card.cta}</Link>
               </div>
             </article>
           ))}

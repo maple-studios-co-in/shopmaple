@@ -10,6 +10,9 @@ import products from "../data/navigation-products.json";
 import { shopFile, shopMoney } from "../lib/format";
 import { recentProduct } from "../lib/search-products";
 import type { ProductCardModel } from "../lib/product-card-model";
+import dynamic from "next/dynamic";
+// The promise strip shows only inside an open mega menu, so it loads then rather than with every page.
+const MegaMenuFooter = dynamic(() => import("./store/mega-menu-footer").then((m) => m.MegaMenuFooter));
 function CategoryLink({
   item,
   onNavigate,
@@ -199,6 +202,7 @@ export function DesktopNavigation({
                       ))}
                   </div>
                 )}
+                <MegaMenuFooter />
               </div>
             )}
           </div>

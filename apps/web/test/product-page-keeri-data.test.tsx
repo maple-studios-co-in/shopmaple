@@ -7,7 +7,7 @@ import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared
 import type { Cart, Product, ProductCard, ProductPage, ProductSpecs, VariantProductPage } from "@shopmaple/contracts";
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
-import { bundleHandles, bundlePieces, specLines } from "../lib/product-page-data";
+import { specLines } from "../lib/product-page-data";
 import { productStructuredData, seoSettings } from "../lib/seo";
 
 // Keeri's product-page data on the page (Keeri docs/shopmaple-product-page.md). Synthetic test values only.
@@ -50,15 +50,19 @@ const demo: Product = {
   ],
 };
 const table: ProductCard = { id: "table", handle: "demo-table", title: "Demo Table", image: photo("table"), pricePaise: 4_500_000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: "tables", optionNames: [], optionThumbs: [] };
+const tableProduct: Product = { id: "table", handle: "demo-table", title: "Demo Table", description: "", category: "tables", published: true, source: "keeri:maple", sourceUpdatedAt: "2026-11-01T00:00:00Z", images: [photo("table")],
+  variants: [{ id: "table-oak", title: "Oak", sku: "T", pricePaise: 4_500_000, compareAtPaise: null, available: false, stockPolicy: "made_to_order" }] };
+// What the route passes for a Keeri bundle: its other pieces as cards and in full, with Keeri's quantities.
+const keeriBundle: { completeLook: ProductCard[]; bundle: Product[]; bundleQuantities: Record<string, number> } = { completeLook: [table], bundle: [tableProduct], bundleQuantities: { "demo-chair": 4, "demo-table": 1 } };
 
-async function mount(check: (doc: Document) => void | Promise<void>, value: Product = demo, cards: ProductCard[] = [table], variant = "ash-grey") {
+async function mount(check: (doc: Document) => void | Promise<void>, value: Product = demo, pieces: typeof keeriBundle = keeriBundle, variant = "ash-grey") {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json(empty);
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
   window.history.replaceState(null, "", `/products/demo-chair?variant=${variant}`);
   try {
-    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} initialVariant={variant} bundleCards={cards} /></ShopProvider></AppRouterContext.Provider>));
+    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} initialVariant={variant} {...pieces} /></ShopProvider></AppRouterContext.Provider>));
     await check(document);
   } finally {
     await act(async () => root.unmount());
@@ -71,7 +75,7 @@ const click = (element: Element) => act(async () => { (element as HTMLElement).c
 test("the finish's white-background photo from Keeri leads the gallery, with Keeri's own notes on it", async () => {
   await mount(async (doc) => {
     assert.match(decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!), /grey-cutout\.webp/);
-    const markers = [...doc.querySelectorAll<HTMLButtonElement>("button[data-hotspot]")];
+    const markers = [...doc.querySelectorAll<HTMLButtonElement>("[data-hotspots] button[data-hotspot]")];
     assert.deepEqual(markers.map((m) => m.getAttribute("aria-label")), ["Fabric", "Legs"]);
     await click(markers[0]!);
     assert.equal(text(doc.querySelector("[data-hotspot-note]")), "Fabric Ash Grey boucle, removable cover.");
@@ -100,7 +104,7 @@ test("a product nobody has reviewed in Keeri says so, with no cards and no inven
 
 test("'Only N left' shows for a batch at or below its threshold, and not for one above it", async () => {
   await mount((doc) => assert.equal(text(doc.querySelector("[data-batch] p")), "Only 3 left in this batch"));
-  await mount((doc) => assert.equal(doc.querySelector("[data-batch]"), null), demo, [table], "natural-oak");
+  await mount((doc) => assert.equal(doc.querySelector("[data-batch]"), null), demo, keeriBundle, "natural-oak");
 });
 
 test("measured specifications replace the free-text dimensions, using this finish's own measurement first", () => {
@@ -118,18 +122,16 @@ test("the product's own questions lead the FAQ, and a general question it repeat
   });
 });
 
-test("a bundle shows its pieces, links the others, and totals only when every piece has one price", async () => {
+test("a Keeri bundle fills Complete the look and Buy in Bundle, totalled with Keeri's quantities and no discount", async () => {
   await mount((doc) => {
     assert.match(text(doc.querySelector("[data-complete-look]"))!, /Complete the look.*Demo Table/);
-    assert.equal(doc.querySelector("[data-complete-look] a")!.getAttribute("href"), "/products/demo-table");
+    assert.equal(doc.querySelector("[data-complete-look] [data-look-view]")!.getAttribute("href"), "/products/demo-table");
     assert.equal(doc.querySelectorAll("[data-bundle-piece]").length, 2);
-    // 4 chairs at Rs. 12,500 and 1 table at Rs. 45,000; Keeri adds no bundle discount.
+    assert.deepEqual([...doc.querySelectorAll("[data-bundle-role]")].map(text), ["Current product · Quantity 4", "Paired product · Quantity 1"]);
+    // 4 chairs at Rs. 12,500 and 1 table at Rs. 45,000.
     assert.equal(text(doc.querySelector("[data-bundle-total]")), "Rs. 95,000.00");
   });
-  const fromPrice = bundlePieces(page.bundles[0]!, demo, demo.variants[0], [{ ...table, priceFrom: true, optionCount: 3 }]);
-  assert.equal(fromPrice!.totalPaise, null);
-  assert.equal(bundlePieces(page.bundles[0]!, demo, demo.variants[0], []), null, "a piece the catalogue cannot show leaves the bundle out");
-  assert.deepEqual(bundleHandles(demo), ["demo-table"]);
+  await mount((doc) => assert.equal(doc.querySelector("[data-bundle]"), null, "no bundle without paired pieces"), demo, { completeLook: [], bundle: [], bundleQuantities: {} });
 });
 
 test("search engines get Keeri's real rating and reviews, and nothing for a product without any", () => {

@@ -272,9 +272,8 @@ textarea {
   color: var(--burgundy);
   font-size: 16px;
 }
+/* Its hover is the fill from the pointer (styles/button-fill.css). */
 .hero-cta:hover {
-  background: var(--burgundy);
-  color: white;
   text-decoration: none;
 }
 .video-control {
@@ -531,9 +530,7 @@ textarea {
     background 0.15s,
     color 0.15s;
 }
-.button:hover {
-  background: #571710;
-}
+/* Hovering fills the button from the pointer: styles/button-fill.css. */
 .button.light {
   background: white;
   color: var(--burgundy);
@@ -542,9 +539,6 @@ textarea {
 .button.secondary {
   background: transparent;
   color: var(--burgundy);
-}
-.button.secondary:hover {
-  background: #e9dfd6;
 }
 .button.compact {
   min-height: 42px;

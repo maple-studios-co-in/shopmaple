@@ -47,7 +47,7 @@ export function CardRating({ handle }: { handle: string }) {
   }
   const label = sample
     ? `Sample rating ${rating.value.toFixed(1)} out of 5, local preview only`
-    : `Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`;
+    : `Rated ${rating.value.toFixed(1)} out of 5${rating.count ? ` from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : ""}`;
   return (
     <span data-card-rating data-card-rating-sample={sample ? "" : undefined} role="img" aria-label={label} title={label}
       className="inline-flex items-center gap-1 text-[14px] leading-none text-[#3a352f]">

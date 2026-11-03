@@ -151,7 +151,7 @@ export async function CampaignBanner({
             </p>
           )}
           {data.eligibility && <p className="campaign-eligibility">{data.eligibility}</p>}
-          <Link className="campaign-cta" href={data.href}>
+          <Link className="campaign-cta" href={data.href} data-fill-button="">
             {data.cta}
             <span aria-hidden="true"> →</span>
           </Link>

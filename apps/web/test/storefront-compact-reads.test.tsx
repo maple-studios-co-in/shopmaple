@@ -36,7 +36,7 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
       if (options.unavailable || handles.some(h => options.broken?.includes(h))) return new Response(null, { status: 503 });
       return Response.json({ products: handles.filter(h => !options.missing?.includes(h)).map(card), published: true });
     }
-    if (url.pathname === "/api/catalogue/related") return Response.json({ category: "chairs", products: (options.related ?? []).map(card), published: true });
+    if (url.pathname === "/api/catalogue/related") return Response.json({ category: url.searchParams.get("category"), products: (options.related ?? []).map(card), published: true });
     if (url.pathname.startsWith("/api/products/")) {
       const handle = url.pathname.split("/").at(-1)!;
       if (options.broken?.includes(handle)) return new Response(null, { status: 503 });
@@ -192,7 +192,7 @@ test("Nimbus reads only series handles and hidden series reads none", async () =
   });
 });
 
-test("PDP retains full main detail and requests five compact related cards before self exclusion", async () => {
+test("PDP retains full main detail and requests five compact related cards before self exclusion, plus its rooms' cards for Complete the look", async () => {
   for (const related of [["main", "first", "second", "third", "fourth"], ["first", "second", "third", "fourth", "fifth"]]) {
     await fixture(async requests => {
       const node = await ProductPage({ params: Promise.resolve({ handle: "main" }), searchParams: Promise.resolve({ variant: "one" }) });
@@ -200,7 +200,8 @@ test("PDP retains full main detail and requests five compact related cards befor
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
       assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
-      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs"]);
+      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables", "/api/catalogue/related?category=sofas", "/api/products/first", "/api/products/second"], "then the bundle's two pieces in full, for their prices");
+      assert.deepEqual(detail.completeLook, ["first", "second", "third", "fourth"].map(card), "compact cards, never the piece itself");
     }, { related });
   }
 });
