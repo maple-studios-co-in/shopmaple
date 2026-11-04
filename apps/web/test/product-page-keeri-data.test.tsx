@@ -139,7 +139,8 @@ test("a Keeri bundle with a piece priced on request still shows whole, without a
   const onRequest: Product = { ...tableProduct, variants: [{ ...tableProduct.variants[0]!, pricePaise: null }] };
   await mount((doc) => {
     assert.deepEqual([...doc.querySelectorAll("[data-bundle-price]")].map(text), ["Rs. 12,500.00", "Price on request"]);
-    assert.equal(text(doc.querySelector("[data-bundle-total]")), "Price on request", "a total that left a piece out would mislead");
+    assert.equal(doc.querySelector("[data-bundle-total]"), null, "a total that left a piece out would mislead");
+    assert.ok(doc.querySelector("[data-bundle-on-request]"));
     assert.equal(doc.querySelector("button[data-bundle-add]"), null);
     assert.equal(new URL(doc.querySelector("[data-bundle-enquire]")!.getAttribute("href")!, "http://x").searchParams.get("product"), "4 Demo Chair + 1 Demo Table");
   }, demo, { ...keeriBundle, bundle: [onRequest] });
