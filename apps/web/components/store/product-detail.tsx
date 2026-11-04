@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Truck } from "lucide-react";
@@ -17,6 +17,7 @@ import { assurances, cheapestPriced, discountPercent, enquiryLink, showroom, war
 import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
+import { CustomiseQuote } from "./customise-quote";
 import { DealTab, ProductDeal, dealLive } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
@@ -131,6 +132,12 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
   const images = galleryFor(variantId);
+  const realPhotos = realPhotoGroups(product);
+  // "Customisation available" opens the quote dialog (Figma 44:479 / 46:630); without script the link leads to the enquiry
+  // page. The dialog joins the page on that first click (null until then) and keeps the visitor's choices once closed.
+  const [customising, setCustomising] = useState<boolean | null>(null);
+  const customiseLink = useRef<HTMLAnchorElement>(null);
+  const stopCustomising = () => { setCustomising(false); customiseLink.current?.focus(); };
   // A shorter gallery after switching options never points past its last photo.
   const shown = Math.min(image, Math.max(0, images.length - 1));
   const enquiry = !product.published || !canAddToCart(variant);
@@ -233,11 +240,12 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
       <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
-        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+        {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
-          <ProductRealImages groups={realPhotoGroups(product)} variantId={variantId} title={product.title} />
+          <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[20px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {(category || isNew || isLimited) && (
@@ -284,7 +292,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                 }))} />
-              <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+              <Link ref={customiseLink} data-customization href={enquiryHref} onClick={(event) => { event.preventDefault(); setCustomising(true); }} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                 <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
                 Customisation available
@@ -400,6 +408,10 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
       <ProductBundle product={product} variant={variant} paired={bundle} quantities={bundleQuantities} />
+      {customising !== null && (
+        <CustomiseQuote open={customising} onClose={stopCustomising} product={{ title: product.title, image: images[0], collection: category }}
+          variant={variant ? { title: variant.title, sku: variant.sku } : undefined} />
+      )}
       {children}
       <ProductFaq extra={productFaq(product)} />
       <ProductPromises />

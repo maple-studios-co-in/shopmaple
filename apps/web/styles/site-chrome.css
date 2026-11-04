@@ -112,3 +112,6 @@
 }
 .maple-footer-care a:last-child { margin-bottom: 0; }
 @media (min-width: 1101px) { .maple-footer-logo { margin-left: 10px; } }
+/* The city photos' credits, kept within reach beside the copyright (CC BY-SA). */
+.maple-footer-credits { margin-left: 16px; color: inherit; font-size: inherit; text-decoration: none; opacity: 0.85; }
+.maple-footer-credits:hover, .maple-footer-credits:focus-visible { text-decoration: underline; opacity: 1; }

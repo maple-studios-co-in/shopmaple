@@ -23,7 +23,9 @@ test("an uncategorized model detail loads without sending an invalid related-cat
     const html = await new Response(stream).text();
     assert.match(html, /Uncategorized Model/);
     assert.match(html, /Price on request/);
-    assert.deepEqual(requests, ["/api/products/model"]);
+    // Styled with chairs and tables for its look and bundle; never a request for an empty or null category.
+    assert.deepEqual(requests, ["/api/products/model", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables"]);
+    assert.ok(requests.every((request) => !/category=(null|undefined)?(&|$)/.test(request)));
   } finally {
     globalThis.fetch = previous;
   }

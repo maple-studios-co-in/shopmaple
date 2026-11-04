@@ -193,6 +193,7 @@ test("under reduced motion the numbers and the arrow still switch collections bu
 });
 
 test("the editorial photo cuts through Maple's dining pieces every 800 ms on and on while in view, pointed at or not", () => {
+  assert.ok(!editorialFlipFrames.some((src) => src.includes("arden")), "no sideboard: it is no place to pull up a chair (owner)");
   const content = resolveHomeDetails().editorial;
   const dom = new JSDOM(renderToStaticMarkup(<HomeEditorial content={content} />));
   // A stand-in for IntersectionObserver, so the test says when the photo is in view.
@@ -223,7 +224,7 @@ test("the editorial photo cuts through Maple's dining pieces every 800 ms on and
     book.dispatchEvent(new dom.window.Event("pointerleave"));
     mock.timers.tick(flipIntervalMs * 2);
     assert.equal(active(), 3, "the pointer has nothing to do with it");
-    mock.timers.tick(flipIntervalMs * 3);
+    mock.timers.tick(flipIntervalMs * (frames.length - 3));
     assert.equal(active(), 0, "after the last piece the staff's own photo comes round again");
     report(false);
     mock.timers.tick(flipIntervalMs * 4);
@@ -253,10 +254,10 @@ test("a drifting row draws its items twice, the second pass hidden and out of th
   assert.equal(still.querySelector("[data-marquee-toggle]"), null);
 });
 
-test("the homepage now closes on the wordmark: testimonial, enquiry form and newsletter are off but still in the builder", () => {
+test("the homepage closes on the enquiry form and the wordmark: testimonial and newsletter are off but still in the builder", () => {
   const sections = defaultStorefrontContent.homeSections;
-  assert.deepEqual(sections.filter((section) => !section.enabled).map((section) => section.key), ["testimonial", "project", "newsletter"]);
-  assert.deepEqual(sections.filter((section) => section.enabled).slice(-4).map((section) => section.key), ["editorial", "cities", "compare", "values"]);
+  assert.deepEqual(sections.filter((section) => !section.enabled).map((section) => section.key), ["testimonial", "newsletter"]);
+  assert.deepEqual(sections.filter((section) => section.enabled).slice(-5).map((section) => section.key), ["editorial", "cities", "compare", "project", "values"]);
   assert.equal(defaultStorefrontContent.homeCopy.ticker, "Elegance isn’t found. At Maple, it is custom-built.");
 });
 

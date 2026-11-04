@@ -1,24 +1,31 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import type { CollectionFacets } from "@shopmaple/contracts";
 import { shopMoney } from "@/lib/format";
 import type { CollectionIntroCopy } from "@/lib/collection-intro";
+import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
+
+/** The hero's photo and its piece; `width` (the photo's own pixels) and `position` come with a chosen photo. */
+export type HeroCover = NonNullable<CollectionFacets["cover"]> & { width?: number; position?: string };
 
 /**
  * Frame 105:484 ("Collection hero / Immersive chairs"): one of the collection's pieces fills the width under a dark
  * gradient, with the trail, the collection's name and its line on the left, and that piece featured on the right with
- * its price and a way to it.
+ * its price and a way to it. A photo of known size is never drawn wider than its own pixels: on a wider screen it keeps
+ * to the right and fades into the dark behind the title, so it stays sharp.
  */
-export function CollectionHero({ title, crumb, intro, cover }: { title: string; crumb: string; intro: CollectionIntroCopy; cover: CollectionFacets["cover"] }) {
+export function CollectionHero({ title, crumb, intro, cover }: { title: string; crumb: string; intro: CollectionIntroCopy; cover: HeroCover | null | undefined }) {
   return (
     <section data-store data-collection-hero aria-labelledby="collection-hero-title" className="relative isolate flex min-h-[420px] overflow-hidden bg-espresso font-product text-white lg:h-[500px]">
       {cover && (
-        <div data-hero-photo className="absolute inset-0 -z-10 [&_img]:object-cover">
-          <ProductImage src={cover.image} alt="" fill preload sizes="100vw" />
+        <div data-hero-photo className={cx("absolute inset-y-0 right-0 -z-10 w-full [&_img]:object-cover [&_img]:[object-position:var(--hero-position)]", cover.width ? "[mask-image:linear-gradient(to_right,transparent,#000_24%)]" : undefined)}
+          style={{ maxWidth: cover.width ? `${cover.width}px` : undefined, "--hero-position": cover.position ?? "center" } as CSSProperties}>
+          <ProductImage src={cover.image} alt="" fill preload sizes={cover.width ? `min(100vw, ${cover.width}px)` : "100vw"} />
         </div>
       )}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgb(20_14_10/0.8)_0%,rgb(20_14_10/0.28)_58%,rgb(20_14_10/0.16)_100%)]" />
-      <div className="mx-auto flex w-full max-w-[1440px] items-end justify-between gap-10 px-4 pt-24 pb-10 md:px-12 lg:items-center lg:px-16 lg:py-0">
+      <div className="mx-auto flex w-full max-w-[1440px] wide:max-w-none items-end justify-between gap-10 px-4 pt-24 pb-10 md:px-12 lg:items-center lg:px-16 lg:py-0">
         <div className="flex max-w-[850px] flex-col items-start gap-4 lg:gap-[26px]">
           <nav aria-label="Breadcrumb" className="text-[14px] leading-[1.35] font-medium md:text-[16px]">
             <ol className="m-0 flex list-none flex-wrap items-center gap-x-3 p-0">

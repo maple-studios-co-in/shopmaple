@@ -23,7 +23,7 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
   return (
     <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 py-12 font-product text-black md:px-12 md:py-[88px]">
       <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">
-        <div className="flex flex-col items-start gap-6 lg:order-2 lg:w-[452px] lg:shrink-0">
+        <div className="flex flex-col items-start gap-6 lg:order-2 lg:w-[452px] lg:shrink-0 wide:w-[30vw]">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
           <p className="m-0 text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
           <Link data-faq-contact href="/pages/contact" className="inline-flex h-11 items-center gap-2 rounded-[30px] bg-maple px-5 text-[14px] font-medium text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
@@ -32,7 +32,7 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px] rounded-full bg-white p-1" />
           </Link>
         </div>
-        <div className="max-w-[452px] lg:order-1 lg:w-[452px] lg:shrink-0">
+        <div className="max-w-[452px] lg:order-1 lg:w-[452px] lg:shrink-0 wide:w-[44vw] wide:max-w-none">
           {items.map(([question, answer], i) => (
             <details key={question} data-faq-item open={open === i} className="group border-0 border-b border-solid border-maple/8"
               onToggle={(event) => {

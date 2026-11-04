@@ -28,7 +28,9 @@ function listing(node: ReactNode): Record<string, unknown> | undefined {
 test("a normal collection makes one compact read and displays its authoritative page and facets", async () => {
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "all" }), searchParams: Promise.resolve({ q: " oak ", sort_by: "price-descending", page: "999" }) }))!;
-    assert.equal(requests.length, 1, "one collection page must not fetch the whole catalogue");
+    // The page, and the hero's featured piece (lib/collection-hero-photos), a one-product read the catalogue cache keeps.
+    assert.deepEqual(requests.map((request) => request.pathname), ["/api/catalogue/collections/all", "/api/catalogue/cards"], "one collection page must not fetch the whole catalogue");
+    assert.equal(requests[1]!.searchParams.get("handles"), "aria-5-seater-sofa");
     assert.equal(requests[0]!.pathname, "/api/catalogue/collections/all");
     assert.equal(requests[0]!.searchParams.get("limit"), "24");
     assert.equal(requests[0]!.searchParams.get("q"), "oak");

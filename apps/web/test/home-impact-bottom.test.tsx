@@ -117,11 +117,12 @@ test("the testimonial's film follows the figure, so the caption stays the figure
   assert.ok(testimonial.querySelector("figure + video, figure ~ video"));
 });
 
-test("the cities panel keeps its eyebrow and heading in the page and its image credits link, for the frame's heading-free look", async () => {
+test("the cities panel keeps its eyebrow and heading in the page, with no credits line or pause switch (owner), for the frame's heading-free look", async () => {
   const cities = section(await renderHome(), "cities").querySelector(".home-cities")!;
   assert.equal(text(cities.querySelector("h2")), "20+ Cities");
   assert.equal(text(cities.querySelector(".home-eyebrow")), "We Are Serving");
-  assert.equal(cities.querySelector<HTMLAnchorElement>('a[href="/media/cities/credits.html"]')?.textContent, "Image credits");
+  assert.equal(cities.querySelector('a[href="/media/cities/credits.html"]'), null, "the credits sit in the footer");
+  assert.equal(cities.querySelector("[data-marquee-toggle]"), null, "hover and focus hold the row");
   assert.equal(cities.querySelectorAll("[data-marquee-group]:not([data-marquee-copy]) figure").length, 10, "ten cities, drawn once more as the drifting row's hidden second pass");
   assert.equal(cities.querySelectorAll("[data-marquee-copy] figure").length, 10);
 });
