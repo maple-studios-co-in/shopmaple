@@ -13,6 +13,7 @@ import { productStructuredData, seoSettings } from "../lib/seo";
 // Keeri's product-page data on the page (Keeri docs/shopmaple-product-page.md). Synthetic test values only.
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3028/products/demo-chair" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, FormData: dom.window.FormData, IS_REACT_ACT_ENVIRONMENT: true });
+dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
 const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 const photo = (name: string) => `https://store.maplefurnishers.com/media/keeri/${name}.webp`;
 const noSpecs: ProductSpecs = { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null };
@@ -132,6 +133,38 @@ test("a Keeri bundle fills Complete the look and Buy in Bundle, totalled with Ke
     assert.equal(text(doc.querySelector("[data-bundle-total]")), "Rs. 95,000.00");
   });
   await mount((doc) => assert.equal(doc.querySelector("[data-bundle]"), null, "no bundle without paired pieces"), demo, { completeLook: [], bundle: [], bundleQuantities: {} });
+});
+
+test("a Keeri bundle with a piece priced on request still shows whole, without a total, as an enquiry", async () => {
+  const onRequest: Product = { ...tableProduct, variants: [{ ...tableProduct.variants[0]!, pricePaise: null }] };
+  await mount((doc) => {
+    assert.deepEqual([...doc.querySelectorAll("[data-bundle-price]")].map(text), ["Rs. 12,500.00", "Price on request"]);
+    assert.equal(doc.querySelector("[data-bundle-total]"), null, "a total that left a piece out would mislead");
+    assert.ok(doc.querySelector("[data-bundle-on-request]"));
+    assert.equal(doc.querySelector("button[data-bundle-add]"), null);
+    assert.equal(new URL(doc.querySelector("[data-bundle-enquire]")!.getAttribute("href")!, "http://x").searchParams.get("product"), "4 Demo Chair + 1 Demo Table");
+  }, demo, { ...keeriBundle, bundle: [onRequest] });
+});
+
+test("View real images opens the photos staff marked as real, on the finish being viewed, grouped by finish", async () => {
+  const real = (name: string, variantId: string | null, altText: string | null) => ({ url: photo(name), variantId, role: "detail", width: 1200, height: 1200, altText, realPhoto: true, hotspots: [] });
+  const marked: Product = { ...demo, productPage: { ...page, media: [...page.media,
+    real("piece-real", null, "The demo chair in the workshop"),
+    real("grey-real", "grey", "Ash Grey seat, close up"),
+    real("oak-real", "oak", null),
+    real("gone-real", "a-finish-the-store-does-not-list", "Left out"),
+    { ...real("rendered", "grey", "A rendering"), realPhoto: false },
+  ] } };
+  await mount(async (doc) => {
+    assert.equal(text(doc.querySelector("button[data-real-images]")), "View real images (3)");
+    await click(doc.querySelector("button[data-real-images]")!);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-finish]")].map((b) => [text(b), b.getAttribute("aria-pressed")]),
+      [["The piece", "false"], ["Ash Grey", "true"], ["Natural Oak", "false"]]);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-photo] img")].map((img) => img.getAttribute("alt")), ["Ash Grey seat, close up"]);
+    await click([...doc.querySelectorAll("[data-real-finish]")][2]!);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-photo] img")].map((img) => img.getAttribute("alt")), ["Demo Chair, real photograph"]);
+  }, marked);
+  await mount((doc) => assert.equal(doc.querySelector("[data-real-images]"), null, "nothing marked: no button, rather than other pictures under that name"));
 });
 
 test("search engines get Keeri's real rating and reviews, and nothing for a product without any", () => {

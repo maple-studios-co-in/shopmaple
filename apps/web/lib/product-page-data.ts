@@ -37,6 +37,27 @@ export function productReviews(product: Product): ProductReview[] {
   return product.productPage?.reviews.items ?? [];
 }
 
+export type RealPhoto = { url: string; alt: string };
+export type RealPhotoGroup = { variantId: string | null; label: string; photos: RealPhoto[] };
+
+/**
+ * "View real images": the photos staff marked as unedited photographs of the actual piece, the product's own first,
+ * then each finish's in the order the finishes are listed. A photo of a finish the store does not list is left out,
+ * and with none marked there is nothing to show (the button is hidden rather than filled with other pictures).
+ */
+export function realPhotoGroups(product: Product): RealPhotoGroup[] {
+  const real = (product.productPage?.media ?? []).filter((m) => m.realPhoto);
+  const photo = (m: (typeof real)[number]): RealPhoto => ({ url: m.url, alt: m.altText ?? `${product.title}, real photograph` });
+  const groups: RealPhotoGroup[] = [];
+  const own = real.filter((m) => m.variantId === null);
+  if (own.length) groups.push({ variantId: null, label: "The piece", photos: own.map(photo) });
+  for (const variant of product.variants) {
+    const photos = real.filter((m) => m.variantId === variant.id);
+    if (photos.length) groups.push({ variantId: variant.id, label: variant.title, photos: photos.map(photo) });
+  }
+  return groups;
+}
+
 const inches = (cm: number) => Math.round((cm / 2.54) * 10) / 10;
 const labels: [keyof ProductSpecs, string][] = [["widthCm", "Width"], ["depthCm", "Depth"], ["heightCm", "Height"], ["seatHeightCm", "Seat height"]];
 
