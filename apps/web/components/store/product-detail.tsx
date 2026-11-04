@@ -25,10 +25,11 @@ import { ProductPromises } from "./product-promises";
 import { ProductReviews } from "./product-reviews";
 import { ProductTicker } from "./product-ticker";
 import { ProductGallery } from "./product-gallery";
+import { ProductRealImages } from "./product-real-images";
 import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
 import { resolveHotspots, type Cutout } from "@/lib/product-hotspots";
-import { cutoutOf, productFaq, productHighlightLines, productRating, productReviews, specLines } from "@/lib/product-page-data";
+import { cutoutOf, productFaq, productHighlightLines, productRating, productReviews, realPhotoGroups, specLines } from "@/lib/product-page-data";
 import { choiceLine, labelledRows, richPlain } from "@/lib/product-detail-text";
 
 type Presentation = {
@@ -232,10 +233,11 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
       <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
-        <div className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
+          <ProductRealImages groups={realPhotoGroups(product)} variantId={variantId} title={product.title} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[20px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {(category || isNew || isLimited) && (
