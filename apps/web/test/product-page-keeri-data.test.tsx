@@ -173,3 +173,31 @@ test("search engines get Keeri's real rating and reviews, and nothing for a prod
   const unrated = productStructuredData(settings, { ...demo, productPage: null }) as Record<string, unknown>;
   assert.equal("aggregateRating" in unrated, false);
 });
+
+test("Keeri's highlights sit on the Precision photo as hotspots, each opening a chip with its line, one at a time", async () => {
+  await mount(async (doc) => {
+    const photo = doc.querySelector("[data-features] [data-feature-photo]")!;
+    const spots = [...photo.querySelectorAll<HTMLButtonElement>("button[data-highlight-spot]")];
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-label")), ["Highlight 1 of 3", "Highlight 2 of 3", "Highlight 3 of 3"]);
+    assert.match(photo.querySelector("img")!.getAttribute("src")!, /grey-cutout/, "on the finish's white-background photo, the piece whole under its hotspots");
+    assert.equal(doc.querySelectorAll("[data-features] [data-highlight-spot]").length, 3, "the hotspots are the highlights alone, apart from the four cards");
+    assert.equal(doc.querySelector("[data-features-lines]"), null, "and no line joins a card to the photo");
+    const chips = () => [...photo.querySelectorAll<HTMLElement>("[data-highlight-chip]")];
+    assert.deepEqual(chips().map((chip) => chip.textContent), ["Solid wood frame", "Choose your fabric", "Hand-finished"], "Keeri's own lines, in order");
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-describedby")), chips().map((chip) => chip.id), "each line describes its hotspot");
+    assert.ok(chips().every((chip) => chip.hidden), "closed until a hotspot is opened");
+    await act(async () => spots[1]!.click());
+    assert.equal(spots[1]!.getAttribute("aria-expanded"), "true");
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, false, true]);
+    await act(async () => spots[2]!.click());
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, true, false], "one chip at a time");
+    await act(async () => spots[2]!.click());
+    assert.ok(chips().every((chip) => chip.hidden), "the same hotspot closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "Escape closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.body.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "and so does a tap anywhere else");
+  });
+});
