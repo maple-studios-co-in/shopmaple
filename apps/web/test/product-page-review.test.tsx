@@ -111,7 +111,7 @@ test("availability says what the catalogue says: made to order, never a stock co
     { ...product, variants: product.variants.map((v) => ({ ...v, stockPolicy: "unverified" as const })) });
 });
 
-test("Complete the look carries real pieces from other rooms, each with its price and a way to it, in a carousel", async () => {
+test("Complete the look carries real pieces from other rooms, each with its price and a way to it, one below the other", async () => {
   await mount(async (doc) => {
     const look = hook(doc, "data-complete-look")!;
     assert.equal(text(look.querySelector("h2")), "Complete the look");
@@ -119,11 +119,10 @@ test("Complete the look carries real pieces from other rooms, each with its pric
     assert.deepEqual(items.map((item) => text(item.querySelector("[data-look-name]"))), ["Aileron Upholstered Bench", "Kora Side Table"]);
     assert.deepEqual(items.map((item) => text(item.querySelector("[data-look-price]"))), ["Rs. 37,760.00", "Price on request"]);
     assert.deepEqual(items.map((item) => item.querySelector("a[data-look-view]")?.getAttribute("href")), ["/products/aileron-bench", "/products/kora-side-table"]);
-    const previous = look.querySelector<HTMLButtonElement>("button[aria-label='Previous piece']")!;
-    assert.ok(look.querySelector("button[aria-label='Next piece']"));
-    assert.equal(previous.disabled, true, "The carousel starts at its first piece");
+    assert.ok(items.every((item) => item.tagName === "LI" && item.parentElement?.tagName === "UL"), "a list, each piece below the last (owner, 4 Nov 2026)");
+    assert.equal(look.querySelectorAll("button").length, 0, "no carousel arrows: the buy box scrolls on past the pieces");
   }, product, { completeLook: [card("aileron-bench", "Aileron Upholstered Bench", 3_776_000), card("kora-side-table", "Kora Side Table", null)] });
-  await mount((doc) => assert.equal(hook(doc, "data-complete-look"), null, "No pieces, no carousel"));
+  await mount((doc) => assert.equal(hook(doc, "data-complete-look"), null, "No pieces, no list"));
 });
 
 test("Complete the look picks other rooms for the piece and never the piece itself", () => {
