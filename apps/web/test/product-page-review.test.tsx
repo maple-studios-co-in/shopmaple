@@ -129,7 +129,7 @@ test("Complete the look carries real pieces from other rooms, each with its pric
 test("Complete the look picks other rooms for the piece and never the piece itself", () => {
   assert.deepEqual(completeLookCategories("chairs"), ["tables", "sofas"]);
   assert.deepEqual(completeLookCategories("beds"), ["storage", "chairs"]);
-  assert.deepEqual(completeLookCategories(null), []);
+  assert.deepEqual(completeLookCategories(null), ["chairs", "tables"], "an uncategorised piece is styled with chairs and tables");
   const tables = [card("t1", "T1", 1), card("t2", "T2", 1), card("t3", "T3", 1)];
   const sofas = [card("s1", "S1", 1, "sofas"), card("aero", "Aero", 1, "sofas"), card("s2", "S2", 1, "sofas")];
   assert.deepEqual(lookPieces([tables, sofas], { id: "aero" }).map((piece) => piece.id), ["t1", "s1", "t2", "s2"]);
@@ -246,12 +246,16 @@ test("Add bundle to cart adds each piece once, in order, then opens the cart", a
   });
 });
 
-test("a bundle needs priced pieces: an unpriced pairing is left out, and with none the section is not shown", async () => {
+test("every product has a bundle: a piece without an online price says so, and the bundle is then an enquiry (owner)", async () => {
   await mount((doc) => {
-    assert.deepEqual([...doc.querySelectorAll("[data-bundle-piece] h3")].map(text), ["Aero Dining Chair", "Aileron Upholstered Bench"]);
-    assert.equal(text(hook(doc, "data-bundle-count")), "2 pieces · 1 considered space");
+    assert.deepEqual([...doc.querySelectorAll("[data-bundle-piece] h3")].map(text), ["Aero Dining Chair", "Aileron Upholstered Bench", "On Request Sofa"]);
+    assert.equal(text(doc.querySelectorAll("[data-bundle-price]")[2]!), "Price on request");
+    assert.equal(text(hook(doc, "data-bundle-total")), "Price on request", "no total until every piece has a price");
+    assert.equal(hook(doc, "data-bundle-add"), null);
+    assert.match(hook(doc, "data-bundle-enquire")!.getAttribute("href")!, /^\/pages\/contact\?product=/);
+    assert.equal(text(hook(doc, "data-bundle-count")), "3 pieces · 1 considered space");
   }, product, { bundle: [bench, piece("on-request", "On Request Sofa", null)] });
-  await mount((doc) => assert.equal(hook(doc, "data-bundle"), null), product, { bundle: [] });
+  await mount((doc) => assert.equal(hook(doc, "data-bundle"), null, "with nothing to pair, no section"), product, { bundle: [] });
 });
 
 test("a rating without its review count shows the score, and the reviews band says what it means", async () => {
