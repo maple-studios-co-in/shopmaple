@@ -198,3 +198,26 @@ test("Keeri's highlights sit on the Precision photo as hotspots, each opening a 
     assert.ok(chips().every((chip) => chip.hidden), "and so does a tap anywhere else");
   });
 });
+
+test("the reviews slide: arrows for the previous and next review, the one with nothing behind it hidden", async () => {
+  await mount(async (doc) => {
+    const slider = doc.querySelector("[data-reviews] [data-review-slider]")!;
+    const prev = slider.querySelector<HTMLButtonElement>("button[data-review-prev]")!;
+    const next = slider.querySelector<HTMLButtonElement>("button[data-review-next]")!;
+    assert.deepEqual([prev, next].map((button) => button.getAttribute("aria-label")), ["Previous review", "Next review"]);
+    assert.equal(prev.disabled, true, "nothing before the first review");
+    assert.match(prev.className, /invisible/);
+    // A browser lays the row out wider than its window; measure it so here and slide a review along.
+    const list = slider.querySelector<HTMLElement>("[data-review-list]")!;
+    Object.defineProperties(list, { scrollWidth: { value: 1400, configurable: true }, clientWidth: { value: 700, configurable: true } });
+    const moves: ScrollToOptions[] = [];
+    list.scrollBy = ((options: ScrollToOptions) => { moves.push(options); }) as typeof list.scrollBy;
+    await act(async () => { list.dispatchEvent(new dom.window.Event("scroll")); });
+    assert.equal(next.disabled, false, "more reviews to the right");
+    assert.match(next.className, /group-hover\/slider:opacity-100/, "showing while the pointer is over the row");
+    await act(async () => next.click());
+    assert.equal(moves.length, 1);
+    assert.equal(moves[0]!.behavior, "smooth");
+    assert.ok((moves[0]!.left ?? 0) > 0, "one review on");
+  });
+});
