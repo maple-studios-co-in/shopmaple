@@ -237,7 +237,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
         {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
         <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
-            hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
+            cutoutImage={cutoutFor(variantId)?.image}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
           <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title} />
         </div>

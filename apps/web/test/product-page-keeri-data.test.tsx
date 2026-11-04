@@ -73,13 +73,10 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
 const click = (element: Element) => act(async () => { (element as HTMLElement).click(); });
 
-test("the finish's white-background photo from Keeri leads the gallery, with Keeri's own notes on it", async () => {
+test("the finish's white-background photo from Keeri leads the gallery, whole and without hotspots (owner, 4 Nov 2026)", async () => {
   await mount(async (doc) => {
     assert.match(decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!), /grey-cutout\.webp/);
-    const markers = [...doc.querySelectorAll<HTMLButtonElement>("[data-hotspots] button[data-hotspot]")];
-    assert.deepEqual(markers.map((m) => m.getAttribute("aria-label")), ["Fabric", "Legs"]);
-    await click(markers[0]!);
-    assert.equal(text(doc.querySelector("[data-hotspot-note]")), "Fabric Ash Grey boucle, removable cover.");
+    assert.equal(doc.querySelector("[data-hotspots]"), null, "Keeri's photo hotspots stay off the hero photo");
   });
 });
 
