@@ -160,5 +160,5 @@ test('default city strip uses photographic cards for the named locations',async(
  const images=[...doc.querySelectorAll(cityImages)];
  assert.equal(images.length,10);
  assert.deepEqual(images.map(i=>i.getAttribute('src')),['delhi','kolkata','hyderabad','varanasi','mumbai','jaipur','bengaluru','chennai','gujarat','agra'].map(k=>'/media/cities/'+k+'.webp'));
- assert.equal(doc.querySelector('.home-cities a[href="/media/cities/credits.html"]')?.textContent,'Image credits');
+ assert.equal(doc.querySelector('.home-cities a[href="/media/cities/credits.html"]'),null,'the credits moved to the footer (owner)');
 });

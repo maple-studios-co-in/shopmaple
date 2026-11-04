@@ -148,7 +148,7 @@ test("every card's Edit opens that section's inspector, and Back returns to the 
 test("a hidden section comes back from the Add section picker, after the selected card", async () => {
   const app = await setup();
   try {
-    assert.equal(button("Add section").disabled, false, "the testimonial, enquiry and newsletter start hidden");
+    assert.equal(button("Add section").disabled, false, "the testimonial and newsletter start hidden");
     const show = card("values").querySelector<HTMLInputElement>('input[aria-label="Show Values"]');
     assert.ok(show);
     await act(async () => show.click());
@@ -158,7 +158,7 @@ test("a hidden section comes back from the Add section picker, after the selecte
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     assert.ok(dialog, "the picker opens");
     const choices = [...dialog.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice);
-    assert.deepEqual(choices, ["testimonial", "project", "values", "newsletter"], "only hidden sections are offered, in page order");
+    assert.deepEqual(choices, ["testimonial", "values", "newsletter"], "only hidden sections are offered, in page order");
     const valuesChoice = dialog.querySelector('[data-section-choice="values"]')!;
     await until(() => thumbnail("values", valuesChoice)?.hasAttribute("src") === true, "the picker thumbnail");
     await click("Add Values", dialog);
@@ -176,12 +176,12 @@ test("sections a document predates are offered by Add section and join the page 
     const before = order();
     assert.equal(before.length, 18);
     assert.equal(button("Add section").disabled, false, "two sections are new");
-    assert.match(container.textContent ?? "", /15 of 18 visible/, "the testimonial, enquiry and newsletter start hidden");
+    assert.match(container.textContent ?? "", /16 of 18 visible/, "the testimonial and newsletter start hidden");
     await click("Select Nimbus", card("nimbus"));
     await click("Add section");
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     assert.ok(dialog, "the picker opens");
-    assert.deepEqual([...dialog.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["testimonial", "project", "newsletter", "editorial", "compare"], "hidden sections, then the new ones");
+    assert.deepEqual([...dialog.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["testimonial", "newsletter", "editorial", "compare"], "hidden sections, then the new ones");
     const editorialChoice = dialog.querySelector('[data-section-choice="editorial"]')!;
     await until(() => thumbnail("editorial", editorialChoice)?.hasAttribute("src") === true, "the picker thumbnail");
     assert.match(thumbnail("editorial", editorialChoice)!.getAttribute("src")!, /&section=editorial$/);
@@ -192,7 +192,7 @@ test("sections a document predates are offered by Add section and join the page 
     assert.deepEqual(keys.filter((key) => key !== "editorial"), before, "the others keep their order");
     assert.equal(card("editorial").dataset.hidden, undefined, "and shown");
     await click("Add section");
-    assert.deepEqual([...document.querySelector('[role="dialog"]')!.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["testimonial", "project", "newsletter", "compare"], "only the ones left");
+    assert.deepEqual([...document.querySelector('[role="dialog"]')!.querySelectorAll<HTMLElement>("[data-section-choice]")].map((node) => node.dataset.sectionChoice), ["testimonial", "newsletter", "compare"], "only the ones left");
   } finally { await app.close(); }
 });
 

@@ -504,7 +504,8 @@
 [data-home-section="promos"] .campaign-promo-grid {
   max-width: none;
   gap: 16px;
-  margin-block: 56px;
+  /* A shorter step down from the Chairs rail above (owner, 4 Nov 2026). */
+  margin-block: 32px 56px;
   padding-inline: 35px;
 }
 [data-home-section="promos"] .campaign-copy {
@@ -520,6 +521,9 @@
 [data-home-section="chairs"] .home-products {
   max-width: none;
   padding: 64px 64px 72px;
+}
+[data-home-section="chairs"] .home-products {
+  padding-bottom: 40px;
 }
 [data-home-section="bestsellers"] .home-products {
   background: var(--impact-linen);
@@ -894,7 +898,7 @@
   [data-home-section="nimbus"] .home-nimbus-wrap { padding: 32px 16px; }
   [data-home-section="nimbus"] .home-nimbus { aspect-ratio: auto; min-height: 480px; }
   [data-home-section="bestsellers"] .home-products,
-  [data-home-section="chairs"] .home-products { padding: 40px 16px 48px; }
+  [data-home-section="chairs"] .home-products { padding: 40px 16px 32px; }
   [data-home-section="bestsellers"] .home-product-rail,
   [data-home-section="chairs"] .home-product-rail { grid-auto-columns: 72%; gap: 12px; }
   [data-home-section] .home-products header h2 { font-size: 34px; }
@@ -1024,9 +1028,10 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 .nimbus-stage-backdrop[data-active] { opacity: 1; }
 .nimbus-stage-frame {
   position: relative;
-  aspect-ratio: 1169 / 640;
-  max-height: 82vh;
-  min-height: 420px;
+  /* As wide as its band (owner, 4 Nov 2026), so the photo holds the eye rather than the blur around it, and a little
+     taller as it widens, within the screen; at 1440px it keeps its old height. */
+  width: 100%;
+  height: clamp(420px, min(51vw, 88vh), 980px);
   margin-inline: auto;
   overflow: hidden;
   border-radius: 12px;
@@ -1180,8 +1185,8 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   z-index: 3;
   display: grid;
   place-items: center;
-  width: 68px;
-  height: 68px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -1196,9 +1201,9 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 .nimbus-stage-next:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 .nimbus-stage-next > svg:first-child {
   position: absolute;
-  inset: 5px;
-  width: calc(100% - 10px);
-  height: calc(100% - 10px);
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
   overflow: visible;
   transform: rotate(-90deg);
 }
@@ -1213,8 +1218,8 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 [data-stage-ready] .nimbus-stage-next [data-next-progress] { animation: stage-ring var(--stage-interval, 5200ms) linear both; }
 [data-stage-ready][data-stage-paused] .nimbus-stage-next [data-next-progress] { animation-play-state: paused; }
 .nimbus-stage-next-arrow {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -1374,7 +1379,7 @@ html[data-home-effects="live"] [data-reveal]:not([data-revealed]) {
   .nimbus-stage-copy { inset: 11% 5% auto; }
   .nimbus-stage-cta { height: 50px; min-width: 120px; padding-inline: 28px; }
   .nimbus-stage-dots { right: 18px; bottom: 18px; }
-  .nimbus-stage-next { top: auto; right: auto; bottom: 18px; left: 18px; width: 54px; height: 54px; transform: none; }
+  .nimbus-stage-next { top: auto; right: auto; bottom: 18px; left: 18px; width: 40px; height: 40px; transform: none; }
   .nimbus-stage-next-arrow { width: 20px; height: 20px; }
   [data-home-section="instagram"] .home-social { padding-inline: 16px; padding-bottom: 96px; }
   .instagram-motion .home-marquee-toggle { top: auto; bottom: -50px; right: 50%; transform: translateX(50%); }

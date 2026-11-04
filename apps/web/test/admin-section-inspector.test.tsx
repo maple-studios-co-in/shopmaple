@@ -185,15 +185,15 @@ test("a one-panel section shows no tabs; Instagram has one heading; the inspecto
     await click("Edit Project", card("project"));
     assert.equal(inspector()!.querySelector('[role="tablist"]'), null);
     assert.ok(field("Project heading", inspector()!));
-    // The enquiry band starts hidden: the homepage now closes on the values.
-    assert.equal(field("Show on the homepage", inspector()!).checked, false);
+    // The enquiry band starts shown, just above the values (owner, 4 Nov 2026).
+    assert.equal(field("Show on the homepage", inspector()!).checked, true);
     await act(async () => field("Show on the homepage", inspector()!).click());
     await click("Back to sections");
-    assert.equal(card("project").dataset.hidden, undefined, "shown from the inspector");
+    assert.equal(card("project").dataset.hidden, "true", "hidden from the inspector");
     await click("Edit Project", card("project"));
     await act(async () => field("Show on the homepage", inspector()!).click());
     await click("Back to sections");
-    assert.equal(card("project").dataset.hidden, "true", "and hidden again");
+    assert.equal(card("project").dataset.hidden, undefined, "and shown again");
 
     await click("Edit Instagram", card("instagram"));
     assert.deepEqual([...inspector()!.querySelectorAll("h2")].map((h) => h.textContent), ["Instagram"]);

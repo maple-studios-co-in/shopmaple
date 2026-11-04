@@ -60,10 +60,11 @@ test("a filling photo fades in once it has loaded; a preloaded one paints at onc
   });
 });
 
-test("content artwork keeps its exact URL and the optimizer, Shopify-hosted or not: only product photos are resized by Shopify", () => {
-  for (const src of [shopify, "https://shop.maplefurnishers.com/cdn/shop/files/Custom_F.svg", "/media/home/hero.webp"]) {
-    const html = renderToStaticMarkup(<ContentImage src={src} alt="Hero" width={640} height={400} />);
-    assert.ok(html.includes(`src="${src.replaceAll("&", "&amp;")}"`), src);
-    assert.doesNotMatch(html, /data-unoptimized|data-loader/, src);
-  }
+test("content artwork keeps its exact URL: Shopify's photos take Shopify's resizer, its SVG icons and the store's own files the optimizer", () => {
+  const icon = "https://shop.maplefurnishers.com/cdn/shop/files/Custom_F.svg";
+  const html = (src: string) => renderToStaticMarkup(<ContentImage src={src} alt="Hero" width={640} height={400} />);
+  for (const src of [shopify, "https://shop.maplefurnishers.com/cdn/shop/files/livingroom.png?v=1779440214", icon, "/media/home/hero.webp"])
+    assert.ok(html(src).includes(`src="${src.replaceAll("&", "&amp;")}"`), src);
+  assert.match(html(shopify), /data-loader="custom"/, "a 6 MB Shopify PNG no longer waits on the server's optimizer");
+  for (const src of [icon, "/media/home/hero.webp"]) assert.doesNotMatch(html(src), /data-unoptimized|data-loader/, src);
 });
