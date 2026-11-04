@@ -25,7 +25,12 @@ const product: Product = {
     { id: "taupe", title: "Desert Taupe", sku: "AERO-T", pricePaise: 2_360_000, compareAtPaise: 2_714_000, available: true, stockPolicy: "stocked" },
   ],
 };
-const highlights: ProductHighlights = { swatches: [], products: [{ handle: "aero-dining-chair", isNew: true, rating: { value: 4.6, count: 12 } }] };
+const highlights: ProductHighlights = { swatches: [], products: [{ handle: "aero-dining-chair", isNew: true, rating: null }] };
+// Keeri's product-page data holding nothing but approved reviews, the rating's only source (owner, 4 Nov 2026).
+const reviewed = (average: number, count: number): Product["productPage"] => ({
+  specs: { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, highlights: [], faq: [], assembly: null, customisation: null,
+  rooms: [], reviews: { average, count, items: [] }, media: [], bundles: [],
+});
 const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 type Mount = { highlights?: ProductHighlights; fetcher?: typeof fetch; push?: (href: string) => void; checkoutEnabled?: boolean };
 async function mount(check: (doc: Document) => void | Promise<void>, value: Product = product, options: Mount = {}) {
@@ -57,7 +62,7 @@ test("the buy box shows the title, price, discount, struck-out price, rating and
     assert.equal(text(info.querySelector("[data-rating]")), "4.6");
     assert.equal(text(info.querySelector("[data-chip='new']")), "New");
     assert.equal(info.querySelector("[data-description]")?.textContent, "A considered silhouette for a welcoming place at the table.");
-  }, product, { highlights });
+  }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
 });
 
 test("Add to cart fills from the pointer like the owner's reference, and the enquiry button fills as an outline button", async () => {
@@ -76,7 +81,7 @@ test("what the frame shows without data behind it is left out: vendor, countdown
     const page = hook(doc, "data-product-page")!;
     const info = hook(doc, "data-product-info")!;
     const rating = info.querySelector("[data-rating]")!;
-    assert.ok(rating.hasAttribute("data-rating-empty"), "No staff-entered rating: it says so rather than leaving a gap");
+    assert.ok(rating.hasAttribute("data-rating-empty"), "No approved reviews in Keeri: it says so rather than leaving a gap");
     assert.equal(rating.querySelectorAll("svg").length, 1, "ending on one empty star");
     assert.equal(text(rating), "No reviews yet", "and no number");
     assert.equal(rating.getAttribute("href"), "#product-reviews", "leading to the reviews band, where the first can be written");
@@ -227,7 +232,7 @@ test("Hear From Them shows the real rating and count, invites a review and shows
     assert.equal(text(write), "Write a review");
     assert.match(write.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
     assert.equal(band.querySelector("[data-review-card]"), null, "The catalogue holds no customer review text");
-  }, product, { highlights });
+  }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
   await mount((doc) => {
     assert.equal(text(hook(doc, "data-reviews-note")), "No reviews to show yet. Share your experience with this piece.");
   });

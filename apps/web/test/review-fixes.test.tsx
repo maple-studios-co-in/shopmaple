@@ -6,7 +6,6 @@ import { JSDOM } from "jsdom";
 import { storefrontContentSchema, toProductCard, type Product } from "@shopmaple/contracts";
 import { ShopProvider } from "../components/shop-provider";
 import { CardRating } from "../components/store/card-highlights";
-import { ProductHighlightsProvider } from "../components/store/product-highlights";
 // The product page design keeps the card with highlights; the rest of the store uses the classic card.
 import { ProductCard } from "../components/store/product-card-figma";
 import { defaultStorefrontContent } from "../lib/content-defaults";
@@ -16,7 +15,7 @@ const source = (path: string) => readFileSync(new URL(path, import.meta.url), "u
 const doc = (markup: string) => new JSDOM(markup).window.document;
 
 test("a card rating is announced: the label sits on an image role", () => {
-  const rating = doc(renderToStaticMarkup(<ProductHighlightsProvider value={{ swatches: [], products: [{ handle: "aero", isNew: false, rating: { value: 4.6, count: 12 } }] }}><CardRating handle="aero" /></ProductHighlightsProvider>)).querySelector("[data-card-rating]")!;
+  const rating = doc(renderToStaticMarkup(<CardRating rating={{ value: 4.6, count: 12 }} />)).querySelector("[data-card-rating]")!;
   assert.equal(rating.getAttribute("role"), "img");
 });
 

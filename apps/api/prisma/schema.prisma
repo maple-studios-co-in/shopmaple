@@ -19,6 +19,10 @@ model Product {
   sourceDetails Json?
   /// Keeri's product-page data: specs, highlights, FAQ, reviews, photo details and bundles.
   productPage Json?
+  /// Keeri's approved reviews, kept from productPage at each sync so cards carry a rating without reading the page:
+  /// how many there are (0 when none) and their average to one decimal (null when none).
+  reviewCount Int @default(0)
+  reviewAverage Float?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]

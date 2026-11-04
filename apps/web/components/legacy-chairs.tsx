@@ -61,7 +61,7 @@ function LegacyProducts({
           <Link data-card-name className="product-card-name" href={href}>
             {source.title}
           </Link>
-          <span data-card-rating-slot className="product-card-rating"><CardRating handle={handle} /></span>
+          <span data-card-rating-slot className="product-card-rating"><CardRating /></span>
         </div>
         <p data-card-price className="product-card-price">Price on request</p>
       </article>

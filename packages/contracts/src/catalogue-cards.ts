@@ -27,6 +27,9 @@ export const productCardSchema = z.object({
   optionNames: z.array(z.string().min(1).max(80)).max(8).default([]),
   // The options' own photos for the card's round thumbnails; absent from older payloads.
   optionThumbs: z.array(optionThumbSchema).max(8).default([]),
+  // Keeri's approved reviews: their average (to one decimal) and how many. Absent for a piece without any, so a card
+  // never shows a score nobody gave, and absent from older payloads.
+  rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(1_000_000) }).strict().optional(),
 }).strict().superRefine((card, ctx) => {
   if ((card.compareAtPaise !== null && (card.pricePaise === null || card.compareAtPaise <= card.pricePaise)) ||
       (card.pricePaise === null && (card.priceFrom || card.otherOptionsOnRequest)) ||
@@ -71,6 +74,8 @@ function optionThumbs(variants: { title?: string; images?: string[]; slug?: stri
 export function toProductCard(product: {
   id: string; handle: string; title: string; images: string[]; category?: string | null;
   variants: { pricePaise: number | null; compareAtPaise: number | null; title?: string; images?: string[]; slug?: string | null }[];
+  /** Keeri's approved reviews as the sync keeps them beside the product: how many, and their average. */
+  reviewCount?: number; reviewAverage?: number | null;
 }): ProductCard {
   const priced = pricedVariants(product);
   // Stable sorting retains the first equal-price variant's compare-at amount.
@@ -88,7 +93,13 @@ export function toProductCard(product: {
     optionNames: [...new Set(product.variants.map(variant => variant.title?.trim() ?? "")
       .filter(name => name && name.length <= 80 && !placeholderOption.test(name)))].slice(0, 8),
     optionThumbs: optionThumbs(product.variants),
+    ...(rated(product) ? { rating: { value: product.reviewAverage, count: product.reviewCount } } : {}),
   };
+}
+/** True when Keeri holds approved reviews for the piece, with an average a card can show. */
+function rated(product: { reviewCount?: number; reviewAverage?: number | null }): product is { reviewCount: number; reviewAverage: number } {
+  const { reviewCount: count, reviewAverage: average } = product;
+  return Number.isInteger(count) && count! >= 1 && typeof average === "number" && average >= 1 && average <= 5;
 }
 export const catalogueCardResponseSchema = z.object({ product: productCardSchema, published: z.literal(true) }).strict();
 export const catalogueCardsResponseSchema = z.object({ products: z.array(productCardSchema).max(50), published: z.literal(true) }).strict()

@@ -154,8 +154,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     </Link>
   );
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
-  // Keeri's approved reviews give the rating; staff-typed ratings remain for products Keeri has none for.
-  const rating = productRating(product, highlights.product(product.handle)?.rating);
+  // The rating is Keeri's: the average and count of the piece's approved reviews, and nothing in their place without any.
+  const rating = productRating(product);
   const nudge = batchNudge(variant?.productPage?.batch);
   const highlightLines = productHighlightLines(product);
   const isNew = highlights.product(product.handle)?.isNew;

@@ -27,10 +27,10 @@ export function altFor(product: Product, src: string | undefined): string | unde
 }
 
 /** The rating shown under the price and in the reviews band: Keeri's approved reviews first, else what staff typed. */
-export function productRating(product: Product, typed: { value: number; count?: number } | null | undefined): { value: number; count?: number } | null {
+/** The piece's rating: the average and count of its approved reviews in Keeri, or null when it has none (owner, 4 Nov 2026). */
+export function productRating(product: Product): { value: number; count: number } | null {
   const reviews = product.productPage?.reviews;
-  if (reviews && reviews.count > 0 && reviews.average !== null) return { value: reviews.average, count: reviews.count };
-  return typed ?? null;
+  return reviews && reviews.count > 0 && reviews.average !== null ? { value: reviews.average, count: reviews.count } : null;
 }
 
 export function productReviews(product: Product): ProductReview[] {
