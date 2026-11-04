@@ -88,13 +88,13 @@ export function ProductFeatures({ features, photo, title, tagline, layout = "aro
         <p data-features-intro className="m-0 text-[15px] leading-[26px] text-[#756d68] md:text-[17px]">Discover the finishes, textures and thoughtful details that make {title} your own.</p>
       </div>
       <div ref={stage} data-features-layout={layout} className={cx("relative mx-auto mt-10 grid gap-4 md:mt-16 md:grid-cols-2 md:gap-6 xl:mt-[90px] xl:pb-[60px]", stacked
-        ? "max-w-[1336px] xl:grid-cols-[minmax(0,560px)_minmax(0,729px)] xl:grid-rows-[auto_auto_auto] xl:items-center xl:justify-between xl:gap-x-16 xl:gap-y-8"
-        : "max-w-[1304px] xl:grid-cols-[304px_minmax(0,640px)_304px] xl:grid-rows-[auto_auto] xl:justify-between xl:gap-x-6 xl:gap-y-10")}>
+        ? "max-w-[1336px] xl:grid-cols-[minmax(0,560px)_minmax(0,729px)] xl:grid-rows-[auto_auto_auto] xl:items-center xl:justify-between xl:gap-x-16 xl:gap-y-8 wide:max-w-none wide:grid-cols-[minmax(0,0.77fr)_minmax(0,1fr)]"
+        : "max-w-[1304px] xl:grid-cols-[304px_minmax(0,640px)_304px] xl:grid-rows-[auto_auto] xl:justify-between xl:gap-x-6 xl:gap-y-10 wide:max-w-none wide:grid-cols-[minmax(0,1fr)_minmax(0,2.1fr)_minmax(0,1fr)]")}>
         {photo && (
           <figure className={cx("m-0 flex flex-col items-center md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-start-1", stacked ? "xl:row-span-3" : "xl:row-span-2")}>
-            <div data-feature-photo className={cx("relative w-full overflow-hidden", stacked ? "aspect-[729/579] max-w-[729px]" : "aspect-[640/508] max-w-[640px]",
+            <div data-feature-photo className={cx("relative w-full overflow-hidden", stacked ? "aspect-[729/579] max-w-[729px] wide:max-w-none" : "aspect-[640/508] max-w-[640px] wide:max-w-none",
               contain ? "bg-white [&_img]:object-contain" : "rounded-[20px] bg-cream [&_img]:object-cover")}>
-              <ProductImage src={photo} alt={`${title} — detail view`} fill sizes={stacked ? "(max-width:767px) 92vw, 729px" : "(max-width:767px) 92vw, 640px"} />
+              <ProductImage src={photo} alt={`${title} — detail view`} fill sizes={stacked ? "(max-width:767px) 92vw, (min-width:1600px) 54vw, 729px" : "(max-width:767px) 92vw, (min-width:1600px) 50vw, 640px"} />
               {!stacked && cards.map((feature, i) => (
                 <button key={feature.key} type="button" data-hotspot={feature.key} aria-label={`Show ${feature.title}`} aria-controls={`feature-${feature.key}`}
                   aria-pressed={active === feature.key} onClick={() => show(feature.key)} style={{ left: `${spots[i]![0]}%`, top: `${spots[i]![1]}%` }}

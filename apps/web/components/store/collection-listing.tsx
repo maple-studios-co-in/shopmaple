@@ -175,7 +175,7 @@ export function CollectionListing(props: Props) {
   const name = /^all\b/i.test(title) ? title : `All ${title.toLowerCase()}`;
   return (
     <section id="collection-products" data-store aria-label={title} className="bg-linen px-4 py-10 font-body text-espresso md:px-8 lg:px-16 lg:py-16">
-      <div className="mx-auto grid max-w-[1312px] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+      <div className="mx-auto grid max-w-[1312px] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start wide:max-w-none">
         <aside data-filters aria-label="Collection filters" className="hidden rounded-[12px] bg-white p-[22px] lg:block">
           <div className="mb-[22px] flex items-baseline gap-5">
             <h2 className="m-0 text-subhead font-bold text-espresso">Filters</h2>
@@ -222,10 +222,10 @@ export function CollectionListing(props: Props) {
             </div>
           )}
           {products.length ? (
-            <div className="collection-products grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+            <div className="collection-products grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4 wider:grid-cols-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product}
-                  imageSizes="(max-width:767px) calc((100vw - 44px) / 2), (max-width:1023px) calc((100vw - 96px) / 3), (max-width:1279px) calc((100vw - 452px) / 3), (min-width:1440px) 243px, calc((100vw - 468px) / 4)" />
+                  imageSizes="(max-width:767px) calc((100vw - 44px) / 2), (max-width:1023px) calc((100vw - 96px) / 3), (max-width:1279px) calc((100vw - 452px) / 3), (min-width:1900px) calc((100vw - 468px) / 6), (min-width:1600px) calc((100vw - 436px) / 4), (min-width:1440px) 243px, calc((100vw - 468px) / 4)" />
               ))}
             </div>
           ) : (

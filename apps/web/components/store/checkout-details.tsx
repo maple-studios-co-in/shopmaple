@@ -76,7 +76,7 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
   const { cart, cartReady, setQuantity } = useShop();
   const [first, ...rest] = (input?.customer.name ?? "").split(" ");
   return (
-    <div data-store data-checkout className="mx-auto grid max-w-[1176px] gap-12 font-product lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
+    <div data-store data-checkout className="mx-auto grid max-w-[1176px] wide:max-w-[75vw] gap-12 font-product lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
       <form className="checkout-form flex min-w-0 flex-col gap-8" onSubmit={onSubmit} noValidate aria-describedby={`${id}-note`}>
         <Section number="01" title="Contact details">
           <p className="m-0 text-[13px] leading-[19px] text-[#756d68]">Checkout as a guest</p>
