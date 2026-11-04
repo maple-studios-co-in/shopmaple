@@ -282,7 +282,6 @@ export function HomeCities({
       <header>
         <p className="home-eyebrow">{content.eyebrow}</p>
         <h2>{content.heading}</h2>
-        <a className="city-photo-credits" href="/media/cities/credits.html">Image credits</a>
       </header>
       <MovingCities autoplay={autoplay} count={cities.length}>
         {(copy) => cities.map(({ key }) => {

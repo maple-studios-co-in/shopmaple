@@ -5,6 +5,7 @@ import { CollectionHero } from "@/components/store/collection-hero";
 import { LegacyChairs, legacyChairHandles } from "@/components/legacy-chairs";
 import { getCollectionPage, getProductCards } from "@/lib/catalog";
 import { collectionIntro, heroTitle } from "@/lib/collection-intro";
+import { heroPhotosFor } from "@/lib/collection-hero-photos";
 import {
   collectionTitles,
   collectionQuery,
@@ -56,10 +57,18 @@ export default async function Collection({
     "page",
   ].some((key) => Object.hasOwn(rawQuery, key));
   const showChairEditorial = handle === "chairs" && !browsingRequested;
-  const [result, editorialProducts] = await Promise.all([
+  // The hero's photo for the whole range or a category (lib/collection-hero-photos), read with the listing; a failed
+  // read leaves the collection's own first photo in place.
+  const photos = showChairEditorial ? [] : heroPhotosFor(handle === "all" ? "all" : categoryHandles.includes(handle) ? handle : null);
+  const [result, editorialProducts, photoCards] = await Promise.all([
     getCollectionPage(handle, query),
     showChairEditorial ? getProductCards(legacyChairHandles) : Promise.resolve([]),
+    photos.length ? getProductCards(photos.map((photo) => photo.handle)).catch(() => []) : Promise.resolve([]),
   ]);
+  const chosen = photos.map((photo) => ({ photo, card: photoCards.find((card) => card.handle === photo.handle) })).find((entry) => entry.card);
+  const cover = chosen
+    ? { image: chosen.photo.image, title: chosen.card!.title, handle: chosen.card!.handle, pricePaise: chosen.card!.pricePaise, priceFrom: chosen.card!.priceFrom, width: chosen.photo.width, position: chosen.photo.position }
+    : result.facets?.cover ?? null;
   const campaign: CampaignKey | undefined = (
     {
       beds: "beds-hero",
@@ -73,7 +82,7 @@ export default async function Collection({
   return (
     <>
       {showChairEditorial && <LegacyChairs products={editorialProducts} />}
-      {!showChairEditorial && <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={result.facets?.cover ?? null} />}
+      {!showChairEditorial && <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />}
       {campaign && <CampaignBanner campaign={campaign} />}
       <CollectionListing
         handle={handle}

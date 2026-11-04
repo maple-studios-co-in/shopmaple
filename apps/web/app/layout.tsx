@@ -33,6 +33,8 @@ import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
 import "@/styles/button-fill.css";
+// Big screens: the page grows with the screen from 1600px (owner, 4 Nov 2026); after the sheets it repeats.
+import "@/styles/wide-screens.css";
 // Last, so a utility beats the legacy storefront rules it replaces.
 import "@/styles/tailwind.css";
 import { ButtonEffectsIsland } from "@/components/button-effects-island";

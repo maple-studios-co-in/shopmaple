@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Truck } from "lucide-react";
@@ -17,6 +17,7 @@ import { assurances, cheapestPriced, discountPercent, enquiryLink, showroom, war
 import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
+import { CustomiseQuote } from "./customise-quote";
 import { DealTab, ProductDeal, dealLive } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
@@ -131,6 +132,11 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
   const images = galleryFor(variantId);
+  // "Customisation available" opens the quote dialog (Figma 44:479 / 46:630); without script the link leads to the enquiry
+  // page. The dialog joins the page on that first click (null until then) and keeps the visitor's choices once closed.
+  const [customising, setCustomising] = useState<boolean | null>(null);
+  const customiseLink = useRef<HTMLAnchorElement>(null);
+  const stopCustomising = () => { setCustomising(false); customiseLink.current?.focus(); };
   // A shorter gallery after switching options never points past its last photo.
   const shown = Math.min(image, Math.max(0, images.length - 1));
   const enquiry = !product.published || !canAddToCart(variant);
@@ -284,7 +290,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                 }))} />
-              <Link data-customization href={enquiryHref} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+              <Link ref={customiseLink} data-customization href={enquiryHref} onClick={(event) => { event.preventDefault(); setCustomising(true); }} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                 <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
                 Customisation available
@@ -400,6 +406,10 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
       <ProductBundle product={product} variant={variant} paired={bundle} quantities={bundleQuantities} />
+      {customising !== null && (
+        <CustomiseQuote open={customising} onClose={stopCustomising} product={{ title: product.title, image: images[0], collection: category }}
+          variant={variant ? { title: variant.title, sku: variant.sku } : undefined} />
+      )}
       {children}
       <ProductFaq extra={productFaq(product)} />
       <ProductPromises />

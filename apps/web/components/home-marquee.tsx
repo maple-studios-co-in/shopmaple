@@ -5,10 +5,12 @@ import type { CSSProperties, ReactNode } from "react";
  * section's margins. It is CSS alone (the row twice over, sliding by half its width), so nothing loads for it: hovering
  * or focusing the row holds it, its pause switch stops it until switched back, and under reduced motion it
  * is a plain row that scrolls. The second copy is hidden from assistive technology and from the tab order.
+ * `toggle={false}` leaves the switch out, for a row the owner wants held by hover and focus alone.
  */
-export function HomeMarquee({ label, className = "", seconds, autoplay = true, items }: {
+export function HomeMarquee({ label, className = "", seconds, autoplay = true, toggle = true, items }: {
   label: string;
   className?: string;
+  toggle?: boolean;
   /** How long one full pass of the row takes. */
   seconds: number;
   autoplay?: boolean;
@@ -17,7 +19,7 @@ export function HomeMarquee({ label, className = "", seconds, autoplay = true, i
 }) {
   return (
     <div className={`home-marquee ${className}`} role="group" aria-roledescription="carousel" aria-label={label} data-marquee={autoplay ? "" : undefined}>
-      {autoplay && (
+      {autoplay && toggle && (
         <label className="home-marquee-toggle" data-marquee-toggle>
           <input type="checkbox" data-marquee-pause />
           <span className="sr-only">Pause {label}</span>

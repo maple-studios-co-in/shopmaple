@@ -31,7 +31,7 @@ export function MovingCities({ children, autoplay = true, count }: {
   count: number;
 }) {
   return (
-    <HomeMarquee label="Cities served" autoplay={autoplay} className="city-motion" seconds={Math.max(20, count * 4)}
+    <HomeMarquee label="Cities served" autoplay={autoplay} toggle={false} className="city-motion" seconds={Math.max(20, count * 4)}
       items={(copy) => <div className="home-city-track">{children(copy)}</div>} />
   );
 }

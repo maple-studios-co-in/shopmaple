@@ -14,11 +14,11 @@ const homeSectionOrder: StorefrontContent["homeSections"][number]["key"][] = [
 ];
 
 /**
- * The owner took the testimonial, the enquiry form and the newsletter off the homepage on 2 November 2026,
- * so the page closes as the frame's "Main" does: the numbers, the cities, the comparison and the wordmark.
- * They stay in the section builder, switched off, for staff to turn back on.
+ * The owner took the testimonial and the newsletter off the homepage on 2 November 2026, and put the enquiry form
+ * ("Have a space in mind?") back on 4 November, just above the Maple Furnishers wordmark and its values. The two
+ * stay in the section builder, switched off, for staff to turn back on.
  */
-const hiddenHomeSections = new Set<string>(["testimonial", "project", "newsletter"]);
+const hiddenHomeSections = new Set<string>(["testimonial", "newsletter"]);
 
 // These placements originally scrolled to the product grid on their own collection page.
 const collectionCampaignDestinations: Partial<

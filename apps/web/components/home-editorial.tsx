@@ -7,10 +7,10 @@ import type { ResolvedHomeDetails } from "@/lib/home-details-defaults";
 
 /**
  * Maple's dining pieces the square photo cuts through, after the staff's own photo: a hard cut every 800 ms,
- * on and on while it is in view, as in the owner's reference recording.
+ * on and on while it is in view, as in the owner's reference recording. Seating and tables only: the owner took the
+ * Arden sideboard out (4 Nov 2026), as it is no place to pull up a chair.
  */
 export const editorialFlipFrames = [
-  "/media/home/editorial-flip-arden.webp",
   "/media/home/editorial-flip-runo.webp",
   "/media/home/editorial-flip-aero.webp",
   "/media/home/editorial-flip-varyn.webp",
