@@ -125,7 +125,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         {images.length ? (
           <button
             data-main-image
-            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px)]", cutout ? "bg-white" : "bg-cream")}
+            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))]", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swallowClick.current > Date.now()) { swallowClick.current = 0; return; }
@@ -178,7 +178,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px)] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         {cutout && hotspots.length > 0 && (
           // Markers sit over the white-background photo, which is drawn 4:5 and centred in the stage.

@@ -132,6 +132,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const { cart, setQuantity, setCartOpen, busy, error, favourites, toggleFavourite } = useShop();
   const variant = product.variants.find((v) => v.id === variantId);
   const images = galleryFor(variantId);
+  const realPhotos = realPhotoGroups(product);
   // "Customisation available" opens the quote dialog (Figma 44:479 / 46:630); without script the link leads to the enquiry
   // page. The dialog joins the page on that first click (null until then) and keeps the visitor's choices once closed.
   const [customising, setCustomising] = useState<boolean | null>(null);
@@ -239,11 +240,12 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
       <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
-        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+        {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
-          <ProductRealImages groups={realPhotoGroups(product)} variantId={variantId} title={product.title} />
+          <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title} />
         </div>
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[20px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {(category || isNew || isLimited) && (

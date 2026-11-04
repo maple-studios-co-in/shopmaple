@@ -153,7 +153,7 @@ test("a piece with a single option offers no customisation, and the gallery stay
     assert.equal(doc.querySelector("a[data-customization]"), null);
     assert.equal(panel(doc), null);
     const photo = doc.querySelector<HTMLElement>("[data-main-image]")!;
-    assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026)");
+    assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026), less what sits under it");
     assert.ok(photo.closest(".lg\\:sticky"), "and pinned while the buy box scrolls past");
   }, { ...product, variants: product.variants.slice(0, 1) });
 });
