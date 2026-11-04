@@ -60,8 +60,13 @@ export function usePreviewToken({ version, draftRequired, active, mint }: {
   }, [active, version, draftRequired, tokenState, minting, error, attempt, mint]);
   useEffect(() => {
     if (tokenState.expiresAt === null) return;
-    const delay = Math.max(0, tokenState.expiresAt - previewTokenLeadMs - Date.now());
-    const timer = setTimeout(() => setAttempt((value) => value + 1), delay);
+    const due = tokenState.expiresAt - previewTokenLeadMs;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A timer can wake early: Node measures it from the clock as it stood when the loop turn began, which a long render
+    // leaves behind, and a clock set back does the same. The mint is decided against the clock, so a wake-up short of
+    // the lead time waits out the rest; asking then would find the token still valid and leave it unrenewed for good.
+    const wait = () => { timer = setTimeout(() => (Date.now() >= due ? setAttempt((value) => value + 1) : wait()), Math.max(0, due - Date.now())); };
+    wait();
     return () => clearTimeout(timer);
   }, [tokenState]);
   // A new version is a new attempt; an error from an older version no longer applies.

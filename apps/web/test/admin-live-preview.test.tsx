@@ -193,7 +193,8 @@ test("live updates can be paused; Update preview then saves and refreshes on dem
 });
 
 test("the token is minted again shortly before it expires", async () => {
-  const app = await setup({ expiresInMs: 60_000 + 150 });
+  // Due for renewal a second after minting: soon, yet after opening the preview has settled on a slow machine.
+  const app = await setup({ expiresInMs: 60_000 + 1_000 });
   try {
     await click("Live preview");
     assert.equal(app.posts().length, 1);
