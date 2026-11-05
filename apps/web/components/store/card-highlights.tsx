@@ -15,27 +15,12 @@ export function CardLimitedBadge({ handle }: { handle: string }) {
 }
 
 /**
- * A made-up score for reviewing the card design before real reviews exist. Only a local development server
- * gives one, and only when the repository's .env sets NEXT_PUBLIC_SAMPLE_RATINGS=1; a production build never
- * does, so no shopper sees it. The same product always gets the same score.
+ * Every card carries its rating on the right of the name, as the score and one gold star ("4.6 ★"): the average of
+ * the piece's approved reviews in Keeri, which the card brings with it (owner, 4 Nov 2026). A piece without approved
+ * reviews shows a dash and an empty star in the same place ("– ☆", read out and shown on hover as "No reviews yet").
+ * Nothing typed, sampled or estimated stands in for a rating.
  */
-export function sampleRating(handle: string): { value: number; count: number } | null {
-  if (process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_SAMPLE_RATINGS !== "1") return null;
-  let hash = 7;
-  for (const char of handle) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return { value: (43 + (hash % 7)) / 10, count: 8 + (hash % 53) };
-}
-
-/**
- * Every card carries its rating on the right of the name, as the score and one gold star ("4.6 ★"). The
- * score comes from the staff's record of real reviews, never an estimate: a piece with no reviews yet shows a
- * dash and an empty star in the same place ("– ☆", read out and shown on hover as "No reviews yet"), except on
- * a local preview with sample ratings switched on, where it says the score is a sample.
- */
-export function CardRating({ handle }: { handle: string }) {
-  const real = useProductHighlights().product(handle)?.rating;
-  const sample = real ? null : sampleRating(handle);
-  const rating = real ?? sample;
+export function CardRating({ rating }: { rating?: { value: number; count: number } | null }) {
   if (!rating) {
     return (
       <span data-card-rating data-card-rating-empty role="img" aria-label="No reviews yet" title="No reviews yet"
@@ -45,11 +30,9 @@ export function CardRating({ handle }: { handle: string }) {
       </span>
     );
   }
-  const label = sample
-    ? `Sample rating ${rating.value.toFixed(1)} out of 5, local preview only`
-    : `Rated ${rating.value.toFixed(1)} out of 5${rating.count ? ` from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : ""}`;
+  const label = `Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`;
   return (
-    <span data-card-rating data-card-rating-sample={sample ? "" : undefined} role="img" aria-label={label} title={label}
+    <span data-card-rating role="img" aria-label={label} title={label}
       className="inline-flex items-center gap-1 text-[14px] leading-none text-[#3a352f]">
       <span aria-hidden="true">{rating.value.toFixed(1)}</span>
       <Star aria-hidden="true" className="size-4 fill-[#f5a623] text-[#f5a623]" />

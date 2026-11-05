@@ -1,5 +1,9 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductReview } from "@shopmaple/contracts";
+import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
 const pill = "inline-flex h-11 items-center gap-2 rounded-[30px] bg-white px-6 text-[14px] font-medium text-maple no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
@@ -31,6 +35,51 @@ function ReviewCard({ review }: { review: ProductReview }) {
         </div>
       )}
     </li>
+  );
+}
+
+const arrow = "absolute top-1/2 z-[2] grid size-12 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-maple shadow-[0_8px_24px_rgb(31_18_13/0.25)] transition-opacity duration-200 hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white motion-reduce:transition-none";
+// An arrow shows while the pointer is over the row, or when it has keyboard focus; at its end of the row it is gone.
+const showing = (atEnd: boolean) => atEnd ? "invisible opacity-0"
+  : "pointer-events-none opacity-0 group-hover/slider:pointer-events-auto group-hover/slider:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100";
+
+/**
+ * The reviews in a row that slides: swiped on a phone, and on a computer moved a review at a time by the arrows that
+ * show while the pointer is over the row (owner, 4 Nov 2026).
+ */
+function ReviewSlider({ items }: { items: ProductReview[] }) {
+  const track = useRef<HTMLUListElement>(null);
+  const [ends, setEnds] = useState({ start: true, end: items.length < 2 });
+  useEffect(() => {
+    const row = track.current;
+    if (!row) return;
+    const measure = () => setEnds({ start: row.scrollLeft <= 2, end: row.scrollLeft + row.clientWidth >= row.scrollWidth - 2 });
+    measure();
+    row.addEventListener("scroll", measure, { passive: true });
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(row);
+    return () => { row.removeEventListener("scroll", measure); observer?.disconnect(); };
+  }, [items.length]);
+  const go = (direction: 1 | -1) => {
+    const row = track.current, card = row?.querySelector<HTMLElement>("[data-review]");
+    if (row && card) row.scrollBy?.({ left: direction * (card.offsetWidth + 24), behavior: "smooth" });
+  };
+  return (
+    <div data-review-slider className="group/slider relative mt-10 md:mt-14">
+      <ul ref={track} data-review-list aria-label="Customer reviews" className="m-0 flex snap-x snap-mandatory list-none gap-6 overflow-x-auto p-0 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {items.map((review) => <ReviewCard key={review.id} review={review} />)}
+      </ul>
+      {items.length > 1 && (
+        <>
+          <button type="button" data-review-prev aria-label="Previous review" disabled={ends.start} onClick={() => go(-1)} className={cx(arrow, "left-2 md:-left-6", showing(ends.start))}>
+            <ChevronLeft aria-hidden="true" strokeWidth={2} className="size-6" />
+          </button>
+          <button type="button" data-review-next aria-label="Next review" disabled={ends.end} onClick={() => go(1)} className={cx(arrow, "right-2 md:-right-6", showing(ends.end))}>
+            <ChevronRight aria-hidden="true" strokeWidth={2} className="size-6" />
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -74,11 +123,7 @@ export function ProductReviews({ rating, writeHref, reviews: items = [] }: { rat
           </div>
         )}
       </div>
-      {items.length > 0 && (
-        <ul data-review-list aria-label="Customer reviews" className="m-0 mt-10 flex snap-x snap-mandatory list-none gap-6 overflow-x-auto p-0 pb-2 md:mt-14">
-          {items.map((review) => <ReviewCard key={review.id} review={review} />)}
-        </ul>
-      )}
+      {items.length > 0 && <ReviewSlider items={items} />}
     </section>
   );
 }

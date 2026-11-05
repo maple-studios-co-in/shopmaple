@@ -53,69 +53,27 @@ const text = (element: Element | null | undefined) => element?.textContent?.repl
 const mainSrc = (doc: Document) => decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!);
 const markers = (doc: Document) => [...doc.querySelectorAll<HTMLButtonElement>("[data-hotspots] button[data-hotspot]")];
 
-test("the chosen finish opens on its white-background photo, also the first thumbnail, with a marker per hotspot", async () => {
+test("the chosen finish opens on its white-background photo, also the first thumbnail, with no hotspots on it (owner, 4 Nov 2026)", async () => {
   await mount((doc) => {
     assert.match(mainSrc(doc), /cutouts\/aero-dining-chair\/deep-atlantic\.jpg/);
     assert.match(decodeURIComponent(doc.querySelector("[data-thumbnails] button img")!.getAttribute("src")!), /deep-atlantic\.jpg/);
     assert.match(decodeURIComponent(doc.querySelectorAll("[data-thumbnails] button img")[1]!.getAttribute("src")!), /atlantic-1\.jpg/, "then the finish's own photos");
-    assert.deepEqual(markers(doc).map((marker) => marker.getAttribute("aria-label")), ["Upholstery", "Frame & legs", "Size"]);
+    assert.equal(doc.querySelector("[data-hotspots]"), null, "the hero photo carries no hotspots");
+    assert.equal(markers(doc).length, 0);
+    assert.match(doc.querySelector("[data-main-image] img")!.className, /object-contain/, "drawn whole, not cropped");
   });
 });
 
-test("a marker opens a note read from the product's own text, one at a time, and Escape closes it", async () => {
+test("changing the finish swaps the white-background photo, and a finish without one shows its normal photo", async () => {
   await mount(async (doc) => {
-    const [fabric, frame, size] = markers(doc);
-    assert.equal(fabric!.getAttribute("aria-expanded"), "false");
-    assert.equal(doc.querySelector("[data-hotspot-note]"), null);
-    await act(async () => fabric!.click());
-    assert.equal(fabric!.getAttribute("aria-expanded"), "true");
-    assert.equal(text(doc.querySelector("[data-hotspot-note]")), "Upholstery Velvet and Boucle over high-resilience foam");
-    await act(async () => frame!.click());
-    assert.equal(doc.querySelectorAll("[data-hotspot-note]").length, 1);
-    assert.equal(text(doc.querySelector("[data-hotspot-note]")), "Frame & legs Solid wood, dark walnut and natural oak finishes");
-    assert.equal(fabric!.getAttribute("aria-expanded"), "false");
-    await act(async () => size!.click());
-    assert.equal(text(doc.querySelector("[data-hotspot-note]")), 'Size Width 22" (≈ 56 cm) · Depth 24" (≈ 61 cm) · Height 34" (≈ 86 cm)');
-    await act(async () => { size!.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
-    assert.equal(doc.querySelector("[data-hotspot-note]"), null);
-    assert.ok(document.activeElement === size, "focus stays on the marker");
-  });
-});
-
-test("changing the finish swaps the white-background photo and its hotspots, and a finish without one shows its normal photo and no markers", async () => {
-  await mount(async (doc) => {
-    await act(async () => markers(doc)[0]!.click());
     await act(async () => doc.querySelector<HTMLInputElement>('input[value="ivory"]')!.click());
     assert.match(mainSrc(doc), /nordic-ivory\.jpg/);
-    assert.equal(markers(doc).length, 1);
-    assert.equal(doc.querySelector("[data-hotspot-note]"), null, "an open note closes with the finish");
-    assert.equal(markers(doc)[0]!.style.left, "40%");
     await act(async () => doc.querySelector<HTMLInputElement>('input[value="plain"]')!.click());
     assert.doesNotMatch(mainSrc(doc), /cutouts/);
-    assert.equal(markers(doc).length, 0);
     await act(async () => doc.querySelector<HTMLInputElement>('input[value="atlantic"]')!.click());
     assert.match(mainSrc(doc), /deep-atlantic\.jpg/);
-    assert.equal(markers(doc).length, 3);
+    assert.equal(markers(doc).length, 0, "and never a hotspot on any of them");
   });
-});
-
-test("markers show only on the white-background photo, not on the finish's other photos", async () => {
-  await mount(async (doc) => {
-    await act(async () => doc.querySelectorAll<HTMLButtonElement>("[data-thumbnails] button")[1]!.click());
-    assert.match(mainSrc(doc), /atlantic-1\.jpg/);
-    assert.equal(markers(doc).length, 0);
-    await act(async () => doc.querySelectorAll<HTMLButtonElement>("[data-thumbnails] button")[0]!.click());
-    assert.equal(markers(doc).length, 3);
-  });
-});
-
-test("a hotspot whose text is not in the product's data is left out, never invented", async () => {
-  await mount((doc) => assert.deepEqual(markers(doc).map((marker) => marker.getAttribute("aria-label")), ["Upholstery", "Frame & legs"]),
-    { ...aero, sourceDetails: { ...aero.sourceDetails!, dimensions: null } });
-  await mount((doc) => assert.deepEqual(markers(doc).map((marker) => marker.getAttribute("aria-label")), ["Size"]),
-    { ...aero, sourceDetails: { ...aero.sourceDetails!, materials: "Beech frame." } });
-  await mount((doc) => { assert.equal(markers(doc).length, 0, "no text, no markers"); assert.match(mainSrc(doc), /deep-atlantic\.jpg/, "the white-background photo still shows"); },
-    { ...aero, sourceDetails: null });
 });
 
 test("products without cut-out data behave as before", async () => {
@@ -126,18 +84,13 @@ test("products without cut-out data behave as before", async () => {
   }, aero, { variantImages: {}, reviewLabel: null });
 });
 
-test("tapping the photo to dismiss a note does not also open the zoom", async () => {
+test("a tap on the white-background photo zooms at once: there is no note to dismiss first", async () => {
   dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
   await mount(async (doc) => {
-    await act(async () => markers(doc)[0]!.click());
-    assert.ok(doc.querySelector("[data-hotspot-note]"));
     const photo = doc.querySelector<HTMLButtonElement>("button[data-main-image]")!;
     await act(async () => { photo.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); photo.click(); });
-    assert.equal(doc.querySelector("[data-hotspot-note]"), null, "the tap closes the note");
-    assert.equal(doc.querySelector("dialog")?.open ?? false, false, "and does not open the zoom");
-    await act(async () => photo.click());
-    assert.equal(doc.querySelector("dialog")?.open, true, "the next tap zooms as usual");
+    assert.equal(doc.querySelector("dialog")?.open, true);
   });
 });
 

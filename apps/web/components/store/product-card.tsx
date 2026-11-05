@@ -40,7 +40,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
           <Link data-card-name href={href} className="line-clamp-2 min-h-[2.9em] min-w-0 flex-[1_1_8.5rem] text-card font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
             {product.title}
           </Link>
-          <span data-card-rating-slot className="shrink-0 pt-[3px] whitespace-nowrap"><CardRating handle={product.handle} /></span>
+          <span data-card-rating-slot className="shrink-0 pt-[3px] whitespace-nowrap"><CardRating rating={product.rating} /></span>
         </div>
         <p data-card-price className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-price font-bold text-brand">
           <span>

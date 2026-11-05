@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getImageProps } from "next/image";
-import { Heart, Plus } from "lucide-react";
-import type { Hotspot } from "@/lib/product-hotspots";
+import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
@@ -12,7 +11,7 @@ const STAGE_SIZES = "(max-width:1023px) 100vw, calc(100vw - 257px - max(455px, (
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
 
-export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave, hotspotImage, hotspots = [] }: {
+export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave, cutoutImage }: {
   images: string[];
   title: string;
   selected: number;
@@ -20,30 +19,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   onZoom: () => void;
   saved: boolean;
   onSave: () => void;
-  /** A white-background photo among `images`; while it is shown, `hotspots` mark its details. */
-  hotspotImage?: string;
-  hotspots?: Hotspot[];
+  /** A white-background photo among `images`, drawn whole rather than cropped. It carries no hotspots (owner, 4 Nov 2026). */
+  cutoutImage?: string;
 }) {
   const src = images[selected];
-  const cutout = Boolean(hotspotImage) && src === hotspotImage;
-  // The open note belongs to the photo it was opened on, so it is never applied to another photo or finish.
-  const [opened, setOpened] = useState<{ src: string | undefined; index: number } | null>(null);
-  const openSpot = opened && opened.src === src ? opened.index : null;
-  const setOpenSpot = (index: number | null) => setOpened(index === null ? null : { src, index });
-  const swallowClick = useRef(0);
-  const spotLayer = useRef<HTMLDivElement>(null);
-  const noteId = useId();
-  useEffect(() => {
-    if (openSpot === null) return;
-    const close = (event: PointerEvent) => {
-      if (spotLayer.current?.contains(event.target as Node)) return;
-      // Tapping the photo to dismiss a note is not a request to zoom.
-      if ((event.target as Element | null)?.closest?.("[data-main-image]")) swallowClick.current = Date.now() + 500;
-      setOpened(null);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [openSpot]);
+  const cutout = Boolean(cutoutImage) && src === cutoutImage;
   const initialSrc = useRef(src);
   const [settledSrc, setSettledSrc] = useState(src);
   const [readySrc, setReadySrc] = useState<string>();
@@ -128,7 +108,6 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))]", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
-              if (swallowClick.current > Date.now()) { swallowClick.current = 0; return; }
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
               onZoom();
             }}
@@ -165,7 +144,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                 alt={title + " — view " + (selected + 1)}
                 fill
                 sizes={STAGE_SIZES}
-                className={src === hotspotImage ? "object-contain" : "object-cover"}
+                className={src === cutoutImage ? "object-contain" : "object-cover"}
                 preload={src === initialSrc.current}
                 onLoad={() => setReadySrc(src)}
                 onError={() => setReadySrc(src)}
@@ -173,49 +152,12 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             </span>
             {settledSrc && settledSrc !== src && (
               <span className="absolute inset-0" aria-hidden="true">
-                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === hotspotImage ? "object-contain" : "object-cover"} />
+                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === cutoutImage ? "object-contain" : "object-cover"} />
               </span>
             )}
           </button>
         ) : (
           <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
-        )}
-        {cutout && hotspots.length > 0 && (
-          // Markers sit over the white-background photo, which is drawn 4:5 and centred in the stage.
-          <div ref={spotLayer} data-hotspots className="pointer-events-none absolute inset-0 z-[3] grid place-items-center"
-            onKeyDown={(event) => {
-              if (event.key !== "Escape" || openSpot === null) return;
-              event.stopPropagation();
-              const opened = openSpot;
-              setOpenSpot(null);
-              spotLayer.current?.querySelectorAll<HTMLElement>("button[data-hotspot]")[opened]?.focus();
-            }}>
-            <div className="relative aspect-[4/5] h-full max-w-full">
-              {hotspots.map((spot, i) => {
-                const open = openSpot === i;
-                const left = `${Math.round(spot.x * 1000) / 10}%`;
-                const top = `${Math.round(spot.y * 1000) / 10}%`;
-                return (
-                  <div key={spot.label}>
-                    <button type="button" data-hotspot aria-label={spot.label} aria-expanded={open} aria-controls={open ? noteId : undefined}
-                      onClick={() => setOpenSpot(open ? null : i)} style={{ left, top }}
-                      className="pointer-events-auto absolute grid size-8 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-solid border-maple bg-white p-0 text-maple shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-                      <span aria-hidden="true" className="absolute inset-0 rounded-full bg-maple/30 motion-safe:animate-[ping_1.2s_cubic-bezier(0,0,0.2,1)_3]" />
-                      <Plus aria-hidden="true" strokeWidth={2.4} className={cx("relative size-4 transition-transform motion-reduce:transition-none", open && "rotate-45")} />
-                    </button>
-                    {open && (
-                      <div id={noteId} data-hotspot-note
-                        style={{ [spot.y > 0.5 ? "bottom" : "top"]: spot.y > 0.5 ? `calc(${100 - Math.round(spot.y * 1000) / 10}% + 22px)` : `calc(${top} + 22px)`, ...(spot.x < 0.35 ? { left: `calc(${left} - 16px)` } : spot.x > 0.65 ? { right: `calc(${100 - Math.round(spot.x * 1000) / 10}% - 16px)` } : { left, transform: "translateX(-50%)" }) }}
-                        className="pointer-events-auto absolute z-[4] max-h-[55%] w-[min(240px,70%)] overflow-y-auto rounded-[10px] border border-solid border-maple/10 bg-white p-3 text-left text-[13px] leading-[1.45] text-black shadow-md">
-                        <strong className="block text-[12px] font-semibold text-maple">{spot.label}</strong>{" "}
-                        <span>{spot.note}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

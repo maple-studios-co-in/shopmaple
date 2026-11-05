@@ -9,15 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "./crm-primitives";
 import { DataTable } from "./data-table";
-import { ActionButton, Hint, PanelHeader, RemoveButton, SectionHeading, rowCard, usePendingFocus } from "./kit";
+import { ActionButton, PanelHeader, RemoveButton, SectionHeading, rowCard, usePendingFocus } from "./kit";
 import { ProductName, ProductSearch } from "./product-search";
 
 type Swatch = ProductHighlights["swatches"][number];
 type Deal = NonNullable<ProductHighlights["deal"]>;
 type Highlight = ProductHighlights["products"][number];
-type Rating = NonNullable<Highlight["rating"]>;
-/** What staff typed into a product's two rating fields, kept as text so "4." can become "4.6". */
-type RatingText = { value: string; count: string };
 
 const swatchLimit = 200, productLimit = 300, suggestionLimit = 24;
 const empty: ProductHighlights = { swatches: [], products: [] };
@@ -25,41 +22,12 @@ const hexPattern = /^#[0-9a-fA-F]{6}$/;
 const nameKey = (name: string) => name.trim().toLowerCase();
 
 /** The message the editor shows when a save is blocked by this screen's fields. */
-export const highlightsSaveMessage = "Check product highlights: fix the colours, ratings or offer marked on the Product highlights screen, then save again.";
+export const highlightsSaveMessage = "Check product highlights: fix the colours or offer marked on the Product highlights screen, then save again.";
 
 /*
- * A rating is optional. An average can stand alone (the owner's real rating without its review count),
- * but a count needs an average. A half-entered or malformed rating is kept in the draft as NaN, which
- * the content schema rejects, so the editor cannot save it; the fields say what is missing.
+ * Ratings are not set here: every card and product page shows the average and count of the product's approved reviews
+ * in Keeri (owner, 4 Nov 2026). A rating saved here before then stays in the content, unread.
  */
-function averageFrom(text: string) {
-  const value = text.trim();
-  return /^\d(\.\d)?$/.test(value) && Number(value) >= 1 && Number(value) <= 5 ? Number(value) : NaN;
-}
-function countFrom(text: string) {
-  const value = text.trim();
-  return /^\d{1,6}$/.test(value) && Number(value) >= 1 && Number(value) <= 100_000 ? Number(value) : NaN;
-}
-function ratingFrom(text: RatingText): Rating | null {
-  if (!text.value.trim() && !text.count.trim()) return null;
-  return text.count.trim() ? { value: averageFrom(text.value), count: countFrom(text.count) } : { value: averageFrom(text.value) };
-}
-function textFrom(rating: Rating | null): RatingText {
-  if (!rating) return { value: "", count: "" };
-  return { value: Number.isFinite(rating.value) ? rating.value.toFixed(1) : "", count: rating.count !== undefined && Number.isFinite(rating.count) ? String(rating.count) : "" };
-}
-const sameRating = (a: Rating | null, b: Rating | null) => a === b || (a !== null && b !== null && Object.is(a.value, b.value) && Object.is(a.count, b.count));
-function averageError({ value, count }: RatingText) {
-  const text = value.trim();
-  if (!text) return count.trim() ? "Enter the average rating too." : "";
-  if (!/^\d+(\.\d+)?$/.test(text)) return "Use an average from 1.0 to 5.0 with one decimal, such as 4.6.";
-  if (/\.\d{2,}$/.test(text)) return "Use one decimal, such as 4.6.";
-  return Number.isNaN(averageFrom(text)) ? "Use an average from 1.0 to 5.0." : "";
-}
-function countError({ count }: RatingText) {
-  if (!count.trim()) return "";
-  return Number.isNaN(countFrom(count)) ? "Use a whole number of reviews from 1 to 100,000." : "";
-}
 function nameError(swatches: Swatch[], index: number) {
   const key = nameKey(swatches[index]!.name);
   if (!key) return "Enter the option name as the product shows it, such as Deep Atlantic.";
@@ -108,11 +76,9 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
 }) {
   const current = value ?? empty;
   const id = useId();
-  const helpId = `${id}-rating-help`;
   const [results, setResults] = useState<ProductList | null>(null);
   /** Titles of products seen in catalogue results, so table rows can show more than a handle. */
   const [titles, setTitles] = useState<Record<string, string>>({});
-  const [ratingText, setRatingText] = useState<Record<string, RatingText>>({});
   const focus = usePendingFocus<string>(current);
   // When the screen opened, for telling an offer that has already ended.
   const [openedAt] = useState(Date.now);
@@ -147,15 +113,6 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
 
   // Products
   const products = current.products;
-  const textFor = (product: Highlight) => {
-    const typed = ratingText[product.handle];
-    return typed && sameRating(ratingFrom(typed), product.rating) ? typed : textFrom(product.rating);
-  };
-  function setRating(product: Highlight, patch: Partial<RatingText>) {
-    const typed = { ...textFor(product), ...patch };
-    setRatingText((all) => ({ ...all, [product.handle]: typed }));
-    update({ products: products.map((item) => (item.handle === product.handle ? { ...item, rating: ratingFrom(typed) } : item)) });
-  }
   function removeProduct(index: number) {
     const next = products.filter((_, i) => i !== index), neighbour = next[index];
     update({ products: next }, neighbour ? `product:${neighbour.handle}` : "search");
@@ -169,32 +126,12 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
     { id: "limited", header: "Limited tag", enableSorting: false, meta: { className: "w-20" },
       cell: ({ row }) => <Switch aria-label={`Limited tag for ${row.original.handle}`} checked={row.original.isLimited ?? false}
         onCheckedChange={(isLimited) => update({ products: products.map((item) => (item.handle === row.original.handle ? { ...item, isLimited } : item)) })} /> },
-    { id: "average", header: "Average rating", enableSorting: false, meta: { className: "w-28" },
-      cell: ({ row }) => {
-        const typed = textFor(row.original), error = averageError(typed), errorId = `${id}-${row.original.handle}-average`;
-        return <div className="grid gap-1.5">
-          <Input aria-label={`Average rating for ${row.original.handle}`} inputMode="decimal" placeholder="4.6" maxLength={4} value={typed.value}
-            {...invalidProps(errorId, error, helpId)} className="h-9 w-20 bg-card text-sm tabular-nums"
-            onChange={(event) => setRating(row.original, { value: event.currentTarget.value })} />
-          <FieldError id={errorId}>{error}</FieldError>
-        </div>;
-      } },
-    { id: "count", header: "Review count", enableSorting: false, meta: { className: "w-28" },
-      cell: ({ row }) => {
-        const typed = textFor(row.original), error = countError(typed), errorId = `${id}-${row.original.handle}-count`;
-        return <div className="grid gap-1.5">
-          <Input aria-label={`Review count for ${row.original.handle}`} inputMode="numeric" placeholder="12" maxLength={6} value={typed.count}
-            {...invalidProps(errorId, error, helpId)} className="h-9 w-20 bg-card text-sm tabular-nums"
-            onChange={(event) => setRating(row.original, { count: event.currentTarget.value })} />
-          <FieldError id={errorId}>{error}</FieldError>
-        </div>;
-      } },
     { id: "remove", header: () => <span className="sr-only">Remove</span>, enableSorting: false, meta: { className: "w-12 text-right" },
       cell: ({ row }) => <RemoveButton label={`Remove ${row.original.handle} from product highlights`} onClick={() => removeProduct(row.index)} /> },
   ];
 
   return <section aria-label="Product highlights" className="grid gap-10">
-    <PanelHeader className="mb-0" title="Product highlights" description="Colours, New and Limited tags and review ratings for the product cards across the store and the product page. Only what you set here is shown: a rating appears beside the name as its score and a gold star, and a product with no rating set shows a dash and an empty star." />
+    <PanelHeader className="mb-0" title="Product highlights" description="Colours and New and Limited tags for the product cards across the store and the product page. Ratings are not set here: each card and product page shows the average of the product's approved reviews in Keeri, and a product without any shows a dash and an empty star." />
 
     <section aria-label="Colours" className="grid min-w-0 content-start gap-3">
       <SectionHeading className="mt-0 mb-0" description="Give an option name a colour, exactly as the product's option is called, such as Deep Atlantic. A card shows a dot for each of its options that has a colour.">
@@ -251,16 +188,13 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
     </section>
 
     <section aria-label="Products" className="grid min-w-0 content-start gap-3">
-      <SectionHeading className="mt-0 mb-0" description="Mark a product as New or add its review rating. Find products in the catalogue below.">
+      <SectionHeading className="mt-0 mb-0" description="Mark a product as New or Limited. Find products in the catalogue below.">
         Products<Count value={products.length} limit={productLimit} />
       </SectionHeading>
       {products.length === 0 ? <EmptyState title="No products yet" icon={<Star strokeWidth={1.5} />} action={
         <ActionButton icon={Search} aria-label="Find products for product highlights" onClick={() => focus.focus("search")}>Find products</ActionButton>
-      }>Cards show no New badge or rating until you add the product here.</EmptyState>
-        : <>
-          <DataTable label="Product highlights" columns={columns} data={products} getRowId={(product) => product.handle} empty="No products yet." />
-          <Hint id={helpId}>Only enter real customer ratings. The review count is optional.</Hint>
-        </>}
+      }>Cards show no New or Limited tag until you add the product here.</EmptyState>
+        : <DataTable label="Product highlights" columns={columns} data={products} getRowId={(product) => product.handle} empty="No products yet." />}
       <ProductSearch onResults={heard} onExpired={onExpired} inputRef={focus.track("search")} actions={(product) => {
         const listed = products.some((item) => item.handle === product.handle);
         return <ActionButton icon={listed ? Check : Plus} variant={listed ? "ghost" : "outline"} size="xs" aria-label={`Add ${product.handle} to product highlights`}

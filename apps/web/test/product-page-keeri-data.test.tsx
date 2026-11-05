@@ -73,13 +73,10 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
 const click = (element: Element) => act(async () => { (element as HTMLElement).click(); });
 
-test("the finish's white-background photo from Keeri leads the gallery, with Keeri's own notes on it", async () => {
+test("the finish's white-background photo from Keeri leads the gallery, whole and without hotspots (owner, 4 Nov 2026)", async () => {
   await mount(async (doc) => {
     assert.match(decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!), /grey-cutout\.webp/);
-    const markers = [...doc.querySelectorAll<HTMLButtonElement>("[data-hotspots] button[data-hotspot]")];
-    assert.deepEqual(markers.map((m) => m.getAttribute("aria-label")), ["Fabric", "Legs"]);
-    await click(markers[0]!);
-    assert.equal(text(doc.querySelector("[data-hotspot-note]")), "Fabric Ash Grey boucle, removable cover.");
+    assert.equal(doc.querySelector("[data-hotspots]"), null, "Keeri's photo hotspots stay off the hero photo");
   });
 });
 
@@ -139,7 +136,8 @@ test("a Keeri bundle with a piece priced on request still shows whole, without a
   const onRequest: Product = { ...tableProduct, variants: [{ ...tableProduct.variants[0]!, pricePaise: null }] };
   await mount((doc) => {
     assert.deepEqual([...doc.querySelectorAll("[data-bundle-price]")].map(text), ["Rs. 12,500.00", "Price on request"]);
-    assert.equal(text(doc.querySelector("[data-bundle-total]")), "Price on request", "a total that left a piece out would mislead");
+    assert.equal(doc.querySelector("[data-bundle-total]"), null, "a total that left a piece out would mislead");
+    assert.ok(doc.querySelector("[data-bundle-on-request]"));
     assert.equal(doc.querySelector("button[data-bundle-add]"), null);
     assert.equal(new URL(doc.querySelector("[data-bundle-enquire]")!.getAttribute("href")!, "http://x").searchParams.get("product"), "4 Demo Chair + 1 Demo Table");
   }, demo, { ...keeriBundle, bundle: [onRequest] });
@@ -172,4 +170,55 @@ test("search engines get Keeri's real rating and reviews, and nothing for a prod
   assert.deepEqual([rated.aggregateRating?.ratingValue, rated.aggregateRating?.reviewCount, rated.review?.length], [4.5, 2, 2]);
   const unrated = productStructuredData(settings, { ...demo, productPage: null }) as Record<string, unknown>;
   assert.equal("aggregateRating" in unrated, false);
+});
+
+test("Keeri's highlights sit on the Precision photo as hotspots, each opening a chip with its line, one at a time", async () => {
+  await mount(async (doc) => {
+    const photo = doc.querySelector("[data-features] [data-feature-photo]")!;
+    const spots = [...photo.querySelectorAll<HTMLButtonElement>("button[data-highlight-spot]")];
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-label")), ["Highlight 1 of 3", "Highlight 2 of 3", "Highlight 3 of 3"]);
+    assert.match(photo.querySelector("img")!.getAttribute("src")!, /grey-cutout/, "on the finish's white-background photo, the piece whole under its hotspots");
+    assert.equal(doc.querySelectorAll("[data-features] [data-highlight-spot]").length, 3, "the hotspots are the highlights alone, apart from the four cards");
+    assert.equal(doc.querySelector("[data-features-lines]"), null, "and no line joins a card to the photo");
+    const chips = () => [...photo.querySelectorAll<HTMLElement>("[data-highlight-chip]")];
+    assert.deepEqual(chips().map((chip) => chip.textContent), ["Solid wood frame", "Choose your fabric", "Hand-finished"], "Keeri's own lines, in order");
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-describedby")), chips().map((chip) => chip.id), "each line describes its hotspot");
+    assert.ok(chips().every((chip) => chip.hidden), "closed until a hotspot is opened");
+    await act(async () => spots[1]!.click());
+    assert.equal(spots[1]!.getAttribute("aria-expanded"), "true");
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, false, true]);
+    await act(async () => spots[2]!.click());
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, true, false], "one chip at a time");
+    await act(async () => spots[2]!.click());
+    assert.ok(chips().every((chip) => chip.hidden), "the same hotspot closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "Escape closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.body.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "and so does a tap anywhere else");
+  });
+});
+
+test("the reviews slide: arrows for the previous and next review, the one with nothing behind it hidden", async () => {
+  await mount(async (doc) => {
+    const slider = doc.querySelector("[data-reviews] [data-review-slider]")!;
+    const prev = slider.querySelector<HTMLButtonElement>("button[data-review-prev]")!;
+    const next = slider.querySelector<HTMLButtonElement>("button[data-review-next]")!;
+    assert.deepEqual([prev, next].map((button) => button.getAttribute("aria-label")), ["Previous review", "Next review"]);
+    assert.equal(prev.disabled, true, "nothing before the first review");
+    assert.match(prev.className, /invisible/);
+    // A browser lays the row out wider than its window; measure it so here and slide a review along.
+    const list = slider.querySelector<HTMLElement>("[data-review-list]")!;
+    Object.defineProperties(list, { scrollWidth: { value: 1400, configurable: true }, clientWidth: { value: 700, configurable: true } });
+    const moves: ScrollToOptions[] = [];
+    list.scrollBy = ((options: ScrollToOptions) => { moves.push(options); }) as typeof list.scrollBy;
+    await act(async () => { list.dispatchEvent(new dom.window.Event("scroll")); });
+    assert.equal(next.disabled, false, "more reviews to the right");
+    assert.match(next.className, /group-hover\/slider:opacity-100/, "showing while the pointer is over the row");
+    await act(async () => next.click());
+    assert.equal(moves.length, 1);
+    assert.equal(moves[0]!.behavior, "smooth");
+    assert.ok((moves[0]!.left ?? 0) > 0, "one review on");
+  });
 });

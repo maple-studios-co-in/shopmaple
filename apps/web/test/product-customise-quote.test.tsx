@@ -148,10 +148,16 @@ test("reference photos go to the Maple team on WhatsApp with the piece and the c
   });
 });
 
-test("a piece with a single option offers no customisation, and the gallery stays within the window beside the buy box", async () => {
+test("a piece with a single option offers customisation too, and the gallery stays within the window beside the buy box", async () => {
   await mount(async (doc) => {
-    assert.equal(doc.querySelector("a[data-customization]"), null);
-    assert.equal(panel(doc), null);
+    // Every piece can be made around its buyer (owner, 4 Nov 2026): with no options to sit beside, the link has its own line.
+    const link = doc.querySelector<HTMLAnchorElement>("a[data-customization]")!;
+    assert.ok(link, "Customisation available");
+    assert.equal(text(link), "Customisation available");
+    assert.equal(doc.querySelector("[data-option-group], [role=radiogroup]")?.contains(link) ?? false, false, "not inside an options block it does not have");
+    const dialog = await open(doc);
+    assert.equal(dialog.open, true);
+    assert.match(text(dialog)!, /Aero Dining Chair/);
     const photo = doc.querySelector<HTMLElement>("[data-main-image]")!;
     assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026), less what sits under it");
     assert.ok(photo.closest(".lg\\:sticky"), "and pinned while the buy box scrolls past");
