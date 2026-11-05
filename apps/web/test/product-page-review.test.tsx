@@ -145,44 +145,59 @@ test("the showroom box gives the real address and leads to the store's page, wit
   });
 });
 
-test("Precision in Every Detail: four numbered cards around the piece, each tied to a hotspot on its photo", async () => {
+test("Precision in Every Detail: four numbered cards around the piece, each showing a little and opening in place", async () => {
   await mount(async (doc) => {
     const section = hook(doc, "data-features")!;
     assert.equal(text(section.querySelector("h2")), "Precision in Every Detail");
     assert.equal(text(section.querySelector("[data-features-intro]")), "Discover the finishes, textures and thoughtful details that make Aero Dining Chair your own.");
-    const cards = [...section.querySelectorAll("[data-feature]")];
+    const cards = [...section.querySelectorAll<HTMLElement>("[data-feature]")];
     assert.deepEqual(cards.map((c) => text(c.querySelector("h3"))), ["About Product", "Materials", "Specifications", "Material Care"]);
     assert.deepEqual(cards.map((c) => text(c.querySelector("[data-feature-number]"))), ["01", "02", "03", "04"]);
     assert.equal(text(cards[0]!.querySelector("[data-feature-body]")), "Solid wood frame with a woven seat.");
     assert.deepEqual([...cards[1]!.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text)), [["Frame", "Oak with a walnut finish"], ["Seat", "Bouclé upholstery"]]);
-    assert.deepEqual([...cards[2]!.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text)),
-      [["Width", "28\" (≈ 71 cm)"], ["Depth", "61 cm"], ["Warranty", "36 Months"]]);
+    const specRows = () => [...cards[2]!.querySelectorAll<HTMLElement>("[data-feature-row]")];
+    assert.deepEqual(specRows().map((row) => [...row.children].map(text)), [["Width", "28\" (≈ 71 cm)"], ["Depth", "61 cm"], ["Warranty", "36 Months"]], "every row stays on the page");
     assert.equal(text(cards[3]!.querySelector("[data-feature-body]")), "Dust weekly.");
-    assert.deepEqual(cards.map((c) => text(c.querySelector("a[data-feature-link]"))), ["Explore finishes with Maple", "Explore materials with Maple", undefined, undefined]);
-    assert.match(cards[0]!.querySelector("a[data-feature-link]")!.getAttribute("href")!, /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
-    const hotspots = [...section.querySelectorAll<HTMLButtonElement>("button[data-hotspot]")];
-    assert.deepEqual(hotspots.map((h) => h.getAttribute("aria-label")), ["Show About Product", "Show Materials", "Show Specifications", "Show Material Care"]);
-    assert.deepEqual(hotspots.map((h) => h.getAttribute("aria-controls")), cards.map((c) => c.id));
-    await act(async () => hotspots[2]!.click());
-    assert.equal(cards[2]!.getAttribute("data-active"), "true");
-    assert.equal(hotspots[2]!.getAttribute("aria-pressed"), "true");
-    assert.equal(cards[0]!.getAttribute("data-active"), "false");
+    // Closed, a card shows a little (two lines, two rows) and keeps its link for when it opens (owner, 4 Nov 2026).
+    const toggles = cards.map((c) => c.querySelector<HTMLButtonElement>("h3 button[data-feature-toggle]"));
+    assert.deepEqual(toggles.map((toggle) => toggle?.getAttribute("aria-expanded") ?? null), ["false", "false", "false", null], "a card with nothing more to show has no toggle");
+    assert.deepEqual(toggles.slice(0, 3).map((toggle) => toggle!.getAttribute("aria-controls")), cards.slice(0, 3).map((c) => c.querySelector("[data-feature-content]")!.id));
+    assert.deepEqual(specRows().map((row) => row.hidden), [false, false, true], "two rows while closed");
+    assert.match(specRows()[2]!.className, /(^| )hidden( |$)/, "and really hidden: no display class overrides it");
+    const link = cards[0]!.querySelector<HTMLAnchorElement>("a[data-feature-link]")!;
+    assert.equal(link.hidden, true, "the link waits for the card to open");
+    await act(async () => toggles[0]!.click());
+    assert.equal(toggles[0]!.getAttribute("aria-expanded"), "true");
+    assert.equal(cards[0]!.getAttribute("data-open"), "true");
+    assert.equal(link.hidden, false);
+    assert.equal(text(link), "Explore finishes with Maple");
+    assert.match(link.getAttribute("href")!, /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    await act(async () => toggles[2]!.click());
+    assert.deepEqual(specRows().map((row) => row.hidden), [false, false, false], "open, the card shows every row");
+    assert.equal(cards[1]!.getAttribute("data-open"), "false", "each card opens on its own");
+    await act(async () => toggles[0]!.click());
+    assert.equal(link.hidden, true, "and closes again");
+    // The hotspots carry Keeri's highlights alone, and the cards stand apart from them: no line joins a card to the photo.
+    assert.equal(section.querySelectorAll("[data-highlight-spot]").length, 0, "no highlights in Keeri: no hotspots, nothing invented");
+    assert.equal(section.querySelector("[data-features-lines]"), null);
     const caption = section.querySelector("[data-features-caption]")!;
     assert.deepEqual([...caption.children].map(text), ["Aero Dining Chair", "Your choice of fabric. Your choice of finish."]);
     assert.match(section.querySelector<HTMLImageElement>("[data-feature-photo] img")!.getAttribute("src")!, /aero-2\.jpg/, "the second photo of the piece");
   });
 });
 
-test("Precision cards read in full on request, and a piece without upholstery is offered finish and size", async () => {
+test("a long card shows two lines until it is opened, and a piece without upholstery is offered finish and size", async () => {
   const long = "A barrel-back accent chair with a generously cushioned seat, a softly curved backrest and an exposed wooden arm structure that flows into splayed legs. ".repeat(2).trim();
   await mount(async (doc) => {
     const about = doc.querySelector("[data-feature]")!;
-    const more = about.querySelector<HTMLButtonElement>("button[data-feature-more]")!;
-    assert.equal(more.getAttribute("aria-expanded"), "false");
-    assert.equal(text(more), "Read more");
-    await act(async () => more.click());
-    assert.equal(more.getAttribute("aria-expanded"), "true");
-    assert.equal(text(more), "Read less");
+    const toggle = about.querySelector<HTMLButtonElement>("button[data-feature-toggle]")!;
+    const body = about.querySelector("[data-feature-body]")!;
+    assert.equal(text(body), long, "the whole text is on the page");
+    assert.match(body.className, /line-clamp-2/, "two lines show while the card is closed");
+    assert.equal(about.querySelector("[data-feature-more]"), null, "the card itself opens: no separate Read more");
+    await act(async () => toggle.click());
+    assert.doesNotMatch(body.className, /line-clamp/);
+    assert.equal(toggle.getAttribute("aria-expanded"), "true");
     assert.equal(text(hook(doc, "data-features-caption")?.lastElementChild), "Your choice of finish. Your choice of size.");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, details: long, materials: "Frame: Solid sheesham wood\nTop: Marble" } });
 });

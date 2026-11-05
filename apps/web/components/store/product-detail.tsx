@@ -21,7 +21,7 @@ import { CustomiseQuote } from "./customise-quote";
 import { DealTab, ProductDeal, dealLive } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
-import { ProductFeatures, type Feature } from "./product-features";
+import { ProductFeatures, previewChars, type Feature } from "./product-features";
 import { ProductPromises } from "./product-promises";
 import { ProductReviews } from "./product-reviews";
 import { ProductTicker } from "./product-ticker";
@@ -201,13 +201,13 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   // products that were never captured, and an empty captured card stays empty rather than borrowing other copy.
   const aboutText = captured?.details?.children.length ? richPlain(captured.details) : source?.details?.trim() || (captured ? "" : product.description.trim());
   const about = richCard(captured?.details) ?? textCard(source?.details) ?? (captured ? null : textCard(product.description));
-  if (about) features.push({ key: "about", title: "About Product", icon: "detail-finish", body: about, long: aboutText.length > 180, link: { label: "Explore finishes with Maple", href: enquiryHref } });
+  if (about) features.push({ key: "about", title: "About Product", icon: "detail-finish", body: about, long: aboutText.length > previewChars, link: { label: "Explore finishes with Maple", href: enquiryHref } });
   // Materials and care: one captured card when the admin captured them together, else the catalogue's two.
   const capturedCare = richCard(captured?.materialsCare);
   const materials = source?.materials?.trim();
   const materialRows = labelledRows(materials);
-  if (capturedCare) features.push({ key: "materials", title: "Material & Care", icon: "detail-material", body: capturedCare, long: richPlain(captured?.materialsCare).length > 180, link: { label: "Explore materials with Maple", href: enquiryHref } });
-  else if (materials) features.push({ key: "materials", title: "Materials", icon: "detail-material", ...(materialRows ? { rows: materialRows, long: materialRows.length > 3 } : { body: materials, long: materials.length > 180 }), link: { label: "Explore materials with Maple", href: enquiryHref } });
+  if (capturedCare) features.push({ key: "materials", title: "Material & Care", icon: "detail-material", body: capturedCare, long: richPlain(captured?.materialsCare).length > previewChars, link: { label: "Explore materials with Maple", href: enquiryHref } });
+  else if (materials) features.push({ key: "materials", title: "Materials", icon: "detail-material", ...(materialRows ? { rows: materialRows, long: materialRows.length > 3 } : { body: materials, long: materials.length > previewChars }), link: { label: "Explore materials with Maple", href: enquiryHref } });
   const dimensions = source?.dimensions?.trim();
   // Keeri's measured sizes lead; the free-text dimensions remain for products nobody has measured.
   const measured = specLines(product, variant).map((line): [string, string] => [line.slice(0, line.indexOf(": ")), line.slice(line.indexOf(": ") + 2)]);
@@ -217,9 +217,9 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   if (dimensions || measured.length) features.push({ key: "specification", title: "Specifications", icon: "detail-spec", body: dimensionRows ? undefined : dimensions,
     rows: [...(dimensionRows ?? []), ...(ownWarranty ? [["Warranty", ownWarranty] as [string, string]] : [])] });
   const care = capturedCare ? undefined : source?.careInstructions?.trim();
-  if (care) features.push({ key: "care", title: "Material Care", icon: "detail-care", body: care, long: care.length > 180 });
+  if (care) features.push({ key: "care", title: "Material Care", icon: "detail-care", body: care, long: care.length > previewChars });
   const shipping = richCard(captured?.shippingReturns);
-  if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping, long: richPlain(captured?.shippingReturns).length > 180 });
+  if (shipping) features.push({ key: "shipping", title: "Shipping & Returns", icon: "feature-about", body: shipping, long: richPlain(captured?.shippingReturns).length > previewChars });
   // Every product shows the full set of cards (owner, 3 Nov 2026). Where the catalogue has no text for one, the card says
   // what holds for every Maple piece (finishes chosen with Maple, measurements given on request, the store's delivery,
   // cover and warranty); it never invents a specification.
@@ -233,14 +233,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       body: "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat." });
   if (features.length < 4)
     features.push({ key: "delivery", title: "Delivery & Warranty", icon: "feature-about", rows: [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", storeWarranty]] });
-  // Sofas and beds use frame 86:1814: About, Specifications and Material & Care stacked beside the piece, shown whole on
-  // its white-background photo where there is one.
-  const stacked = product.category === "sofas" || product.category === "beds";
-  const stackedOrder = ["about", "specification", "materials"];
-  const shownFeatures = stacked
-    ? [...stackedOrder.flatMap((key) => features.filter((feature) => feature.key === key)), ...features.filter((feature) => !stackedOrder.includes(feature.key))]
-    : features;
-  const featureCutout = stacked ? cutoutFor(variantId)?.image : undefined;
+  // Keeri's highlights have no position: they stand on the finish's white-background photo, the piece whole in the middle.
+  const highlightPhoto = highlightLines.length ? cutoutFor(variantId)?.image : undefined;
   const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
@@ -252,7 +246,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
         {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
         <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
-            hotspotImage={cutoutFor(variantId)?.image} hotspots={cutoutFor(variantId)?.hotspots ?? []}
+            cutoutImage={cutoutFor(variantId)?.image}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
           <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title} />
         </div>
@@ -409,7 +403,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
         </div>
       </section>
       {deal && <DealTab deal={deal} />}
-      <ProductFeatures features={shownFeatures} photo={featureCutout ?? photo} contain={Boolean(featureCutout)} layout={stacked ? "stacked" : "around"} title={product.title} tagline={tagline} />
+      {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
+      <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} tagline={tagline} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
