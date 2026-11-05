@@ -15,6 +15,7 @@ import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 import { resolveServicePages } from "@/lib/service-page-defaults";
+import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 
 export type StorefrontRoute = { title: string; path: string; node: ReactNode };
@@ -43,14 +44,14 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
     const services = resolveServicePages(content.servicePages);
     if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} /> };
     if (second === "bulk-enquiry") return { title: services.bulk.title, path, node: <BulkEnquiry context={emptyEnquiryContext} content={services.bulk} /> };
-    if (second === "returns") return { title: services.returns.title, path, node: <ReturnsPageContent content={services.returns} /> };
+    if (second === "returns") return { title: services.returns.title, path, node: <ReturnsPageContent content={services.returns} footer={resolveSiteChrome(content.siteChrome).footer} /> };
     const page = content.pages.find((page) => page.slug === second);
     return page ? { title: page.title, path, node: <ContentPage page={page} /> } : null;
   }
   if (root === "policies" && second !== undefined && third === undefined) {
     if (!Object.hasOwn(source.policies, second)) return null;
     const policy = resolveEditorialContent(content.editorialContent).policies[second];
-    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} /> } : null;
+    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} footer={resolveSiteChrome(content.siteChrome).footer} /> } : null;
   }
   if (root === "blogs" && second !== undefined) {
     if (!source.blogs.some((item) => item.handle === second)) return null;
