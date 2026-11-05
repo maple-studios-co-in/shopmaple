@@ -12,7 +12,6 @@ import { HomeMarquee } from "../components/home-marquee";
 import { ProductCard } from "../components/product-card";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
-import { CardRating, sampleRating } from "../components/store/card-highlights";
 import { countAt, flipIntervalMs, mountFlipbook, mountStage, typedSlice } from "../lib/home-effects";
 import { countTarget, homeStats } from "../lib/home-stats";
 import { statementParts } from "../lib/home-statement";
@@ -270,9 +269,9 @@ test("the starting card tags mark some pieces New or Limited and never invent a 
 test("a card stacks Sale, New and Limited, and shows the rating to the right of the name", async () => {
   const card = toProductCard({
     id: "chair", handle: "cloud-chair", title: "Cloud Chair", category: "chairs", images: ["https://cdn.example.com/chair.jpg"],
-    variants: [{ pricePaise: 90000, compareAtPaise: 120000 }],
+    variants: [{ pricePaise: 90000, compareAtPaise: 120000 }], reviewCount: 12, reviewAverage: 4.6,
   });
-  const highlights: ProductHighlights = { swatches: [], products: [{ handle: "cloud-chair", isNew: true, isLimited: true, rating: { value: 4.6, count: 12 } }] };
+  const highlights: ProductHighlights = { swatches: [], products: [{ handle: "cloud-chair", isNew: true, isLimited: true, rating: null }] };
   const dom = new JSDOM("<div id='root'></div>", { url: "http://localhost:3000/" });
   Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document,
     localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
@@ -307,26 +306,10 @@ test("a card stacks Sale, New and Limited, and shows the rating to the right of 
   }
 });
 
-test("sample ratings fill in for a design review only on a local preview that asks for them, and say so", () => {
-  const env = process.env as Record<string, string | undefined>;
-  const before = { flag: env.NEXT_PUBLIC_SAMPLE_RATINGS, mode: env.NODE_ENV };
-  const rated: ProductHighlights = { swatches: [], products: [{ handle: "cloud-chair", isNew: false, rating: { value: 4.6, count: 12 } }] };
-  const rating = (handle: string) => doc(<ProductHighlightsProvider value={rated}><CardRating handle={handle} /></ProductHighlightsProvider>).querySelector("[data-card-rating]")!;
-  try {
-    delete env.NEXT_PUBLIC_SAMPLE_RATINGS;
-    assert.equal(sampleRating("aero-dining-chair"), null, "off unless the local .env asks for it");
-    env.NEXT_PUBLIC_SAMPLE_RATINGS = "1";
-    const sample = sampleRating("aero-dining-chair")!;
-    assert.ok(sample.value >= 4.3 && sample.value <= 4.9);
-    assert.deepEqual(sampleRating("aero-dining-chair"), sample, "the same product always gets the same score");
-    assert.ok(rating("aero-dining-chair").hasAttribute("data-card-rating-sample"));
-    assert.equal(rating("aero-dining-chair").getAttribute("aria-label"), `Sample rating ${sample.value.toFixed(1)} out of 5, local preview only`);
-    assert.equal(rating("cloud-chair").getAttribute("aria-label"), "Rated 4.6 out of 5 from 12 reviews", "a real rating always wins");
-    env.NODE_ENV = "production";
-    assert.equal(sampleRating("aero-dining-chair"), null, "a production build never shows one");
-    assert.ok(rating("aero-dining-chair").hasAttribute("data-card-rating-empty"));
-  } finally {
-    if (before.flag === undefined) delete env.NEXT_PUBLIC_SAMPLE_RATINGS; else env.NEXT_PUBLIC_SAMPLE_RATINGS = before.flag;
-    if (before.mode === undefined) delete env.NODE_ENV; else env.NODE_ENV = before.mode;
-  }
+test("a rating typed into the highlights is never shown: a card's rating is Keeri's, carried on the card", () => {
+  const typed: ProductHighlights = { swatches: [], products: [{ handle: "cloud-chair", isNew: false, rating: { value: 4.6, count: 12 } }] };
+  const plain = toProductCard({ id: "chair", handle: "cloud-chair", title: "Cloud Chair", category: "chairs", images: ["https://cdn.example.com/chair.jpg"], variants: [{ pricePaise: 90000, compareAtPaise: null }] });
+  const rating = doc(<ShopProvider><ProductHighlightsProvider value={typed}><ProductCard product={plain} /></ProductHighlightsProvider></ShopProvider>).querySelector("[data-card-rating]")!;
+  assert.ok(rating.hasAttribute("data-card-rating-empty"), "no approved reviews in Keeri: no rating, whatever was typed");
+  assert.equal(rating.getAttribute("aria-label"), "No reviews yet");
 });

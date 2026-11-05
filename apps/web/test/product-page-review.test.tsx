@@ -253,11 +253,11 @@ test("a bundle needs priced pieces: an unpriced pairing is left out, and with no
   await mount((doc) => assert.equal(hook(doc, "data-bundle"), null), product, { bundle: [] });
 });
 
-test("a rating without its review count shows the score, and the reviews band says what it means", async () => {
+test("the rating is Keeri's: one typed into the highlights is not shown, and the page says there are no reviews yet", async () => {
   await mount((doc) => {
-    assert.equal(text(hook(doc, "data-product-info")!.querySelector("[data-rating]")), "4.3");
-    const summary = hook(doc, "data-rating-summary")!;
-    assert.equal(summary.getAttribute("aria-label"), "Rated 4.3 out of 5");
-    assert.equal(text(summary), "4.3 Rated 4.3 out of 5");
+    const rating = hook(doc, "data-product-info")!.querySelector("[data-rating]")!;
+    assert.ok(rating.hasAttribute("data-rating-empty"));
+    assert.equal(text(rating), "No reviews yet");
+    assert.equal(hook(doc, "data-rating-summary"), null, "and the reviews band shows no score either");
   }, product, { highlights: { swatches: [], products: [{ handle: "aero-dining-chair", isNew: false, rating: { value: 4.3 } }] } });
 });

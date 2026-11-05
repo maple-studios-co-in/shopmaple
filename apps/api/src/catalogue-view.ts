@@ -31,7 +31,7 @@ const batchInput = z.object({
 }).strict();
 const relatedInput = z.object({ category: z.enum(categories) }).strict();
 const cardSelect = {
-  id: true, handle: true, title: true, images: true, category: true,
+  id: true, handle: true, title: true, images: true, category: true, reviewCount: true, reviewAverage: true,
   variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true, title: true, images: true, slug: true } },
 } satisfies Prisma.ProductSelect;
 const collectionSelect = {

@@ -144,9 +144,18 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
   const saved = favourites.includes(product.handle);
   const enquiryHref = enquiryLink(product, variant);
+  // Every piece can be made around its buyer (owner, 4 Nov 2026), so every piece offers it: beside the options when it
+  // has some, else on a line of its own. Rendered in one place only, as it carries the ref focus returns to.
+  const customiseTrigger = (place?: string) => (
+    <Link ref={customiseLink} data-customization href={enquiryHref} onClick={(event) => { event.preventDefault(); setCustomising(true); }} className={cx("inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple", place)}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+      <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
+      Customisation available
+    </Link>
+  );
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
-  // Keeri's approved reviews give the rating; staff-typed ratings remain for products Keeri has none for.
-  const rating = productRating(product, highlights.product(product.handle)?.rating);
+  // The rating is Keeri's: the average and count of the piece's approved reviews, and nothing in their place without any.
+  const rating = productRating(product);
   const nudge = batchNudge(variant?.productPage?.batch);
   const highlightLines = productHighlightLines(product);
   const isNew = highlights.product(product.handle)?.isNew;
@@ -292,13 +301,10 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
                 variants={product.variants.map((v) => ({
                   id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
                 }))} />
-              <Link ref={customiseLink} data-customization href={enquiryHref} onClick={(event) => { event.preventDefault(); setCustomising(true); }} className="absolute top-0 right-0 inline-flex items-center gap-1.5 text-[12px] leading-[1.6] font-medium text-maple no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-                {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
-                <img src="/product-page/customise.svg" alt="" width={12} height={12} className="size-3" />
-                Customisation available
-              </Link>
+              {customiseTrigger("absolute top-0 right-0")}
             </div>
           )}
+          {product.variants.length < 2 && <div data-customization-row className="flex">{customiseTrigger()}</div>}
           <div className="mt-3 grid gap-3">
             <div data-purchase className="flex gap-[11px]">
               {!enquiry && (
