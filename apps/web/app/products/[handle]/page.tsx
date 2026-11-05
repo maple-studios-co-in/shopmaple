@@ -41,12 +41,10 @@ export default async function ProductPage({
   ]);
   const keeriLook = keeriHandles.flatMap((h) => keeriCards.filter((card) => card.handle === h));
   const look = keeriLook.length ? keeriLook : lookPieces(rooms, product);
-  // "Buy in Bundle" on every product (owner, 4 Nov 2026): the Keeri bundle's pieces, else two pieces it is styled with,
-  // priced ones first, then its own category's; read in full for their options, one that fails to load left out.
-  const pairing = keeriLook.length ? keeriLook
-    : [...look.filter((card) => card.pricePaise !== null), ...look.filter((card) => card.pricePaise === null), ...otherPieces(related, product)]
-      .filter((card, i, all) => all.findIndex((other) => other.id === card.id) === i).slice(0, 2);
-  const bundle = (await Promise.all(pairing
+  // "Buy in Bundle" is the bundle staff built in Keeri and nothing else (Keeri's "Complete the look", described in its
+  // docs/shopmaple-product-page.md): its other pieces are read in full for their options, and one that fails to load is
+  // left out. A piece without a Keeri bundle shows none; the store never pairs pieces itself.
+  const bundle = (await Promise.all(keeriLook
     .map((card) => getProduct(card.handle).catch(() => null))))
     .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
   const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;

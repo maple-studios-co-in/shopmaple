@@ -20,8 +20,14 @@ import source from "../data/landing-catalog.json";
 
 const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[], optionThumbs: [] as never[] });
 const product = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, description: "Full detail description", category: "chairs", images: ["https://example.com/chair.jpg", "https://example.com/gallery.jpg"], published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "one", title: "Oak", sku: "ONE", pricePaise: 1234500, compareAtPaise: 1500000, available: true, stockPolicy: "stocked" }, { id: "two", title: "Custom", sku: null, pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
+// Keeri's product page data holding one bundle staff built (Keeri calls them "Complete the look"), and nothing else.
+const keeriPage = (items: { handle: string; quantity: number }[]) => ({
+  specs: { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, highlights: [], faq: [], assembly: null, customisation: null,
+  rooms: [], reviews: { average: null, count: 0, items: [] }, media: [],
+  bundles: [{ id: "set", name: "Dining set", description: null, items: items.map(({ handle, quantity }) => ({ productId: handle, handle, variantId: null, quantity })) }],
+});
 let fixtureId = 0;
-async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void> } = {}) {
+async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void>; bundle?: { handle: string; quantity: number }[] } = {}) {
   const previousFetch = globalThis.fetch;
   const previousApi = process.env.API_URL;
   process.env.API_URL = `http://storefront-compact-${++fixtureId}.test`;
@@ -41,7 +47,7 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
       const handle = url.pathname.split("/").at(-1)!;
       if (options.broken?.includes(handle)) return new Response(null, { status: 503 });
       if (options.missing?.includes(handle)) return new Response(null, { status: 404 });
-      return Response.json(product(handle));
+      return Response.json(handle === "main" && options.bundle ? { ...product(handle), productPage: keeriPage(options.bundle) } : product(handle));
     }
     if (url.pathname === "/api/products") {
       if (options.unavailable) return new Response(null, { status: 503 });
@@ -200,8 +206,22 @@ test("PDP retains full main detail and requests five compact related cards befor
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
       assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
-      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables", "/api/catalogue/related?category=sofas", "/api/products/first", "/api/products/second"], "then the bundle's two pieces in full, for their prices");
+      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables", "/api/catalogue/related?category=sofas"], "and no piece in full for a bundle");
+      assert.deepEqual(detail.bundle, [], "Buy in Bundle comes only from a bundle staff built in Keeri, never from pieces the store picks");
+      assert.equal(detail.bundleQuantities, undefined);
       assert.deepEqual(detail.completeLook, ["first", "second", "third", "fourth"].map(card), "compact cards, never the piece itself");
     }, { related });
   }
+});
+
+test("a bundle staff built in Keeri is the page's Buy in Bundle and leads Complete the look, with Keeri's quantities", async () => {
+  await fixture(async requests => {
+    const node = await ProductPage({ params: Promise.resolve({ handle: "main" }), searchParams: Promise.resolve({}) });
+    const detail = propsOf(node, ProductDetail)[0]!;
+    assert.deepEqual(detail.completeLook, ["first", "second"].map(card), "the bundle's other pieces, in Keeri's order");
+    assert.deepEqual((detail.bundle as { handle: string }[]).map(piece => piece.handle), ["first", "second"], "read in full for their options and prices");
+    assert.deepEqual(detail.bundleQuantities, { main: 4, first: 1, second: 2 });
+    assert.deepEqual(requests.map(u => u.pathname), ["/api/products/main", "/api/catalogue/related", "/api/catalogue/cards", "/api/products/first", "/api/products/second"]);
+    assert.equal(requests[2]!.searchParams.get("handles"), "first,second");
+  }, { related: ["first", "second", "third"], bundle: [{ handle: "main", quantity: 4 }, { handle: "first", quantity: 1 }, { handle: "second", quantity: 2 }] });
 });

@@ -13,12 +13,9 @@ const lookRooms: Record<string, [string, string]> = {
   outdoors: ["chairs", "tables"],
 };
 
-/**
- * The two categories "Complete the look" draws from for a piece of `category`. An uncategorised piece is styled with
- * chairs and tables, so it too has a look and a bundle (owner, 4 Nov 2026).
- */
+/** The two categories "Complete the look" draws from for a piece of `category`; none for an uncategorised piece. */
 export function completeLookCategories(category: string | null | undefined): string[] {
-  return category && Object.hasOwn(lookRooms, category) ? [...lookRooms[category]!] : ["chairs", "tables"];
+  return category && Object.hasOwn(lookRooms, category) ? [...lookRooms[category]!] : [];
 }
 
 /** "Complete the look": the rooms' pieces taken in turn (one from each, then the next), never the piece itself, at most `limit`. */
