@@ -28,7 +28,7 @@ export function ProductRealImages({ groups, variantId, title }: { groups: RealPh
         View real images <span className="text-[#756d68]">({count})</span>
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title={`Real photos of the ${title}`}>
-        <div data-real-gallery className="flex flex-col gap-4 font-product">
+        <div data-real-gallery className="flex flex-col gap-4 font-text">
           <p className="m-0 pr-10 text-[14px] leading-[1.5] text-[#756d68]">Unedited photographs of the actual piece.</p>
           {groups.length > 1 && (
             <div role="group" aria-label="Finish" className="flex flex-wrap gap-2">

@@ -22,8 +22,10 @@ export const singleLineText = (max: number) => z.string().max(max).refine(value 
 /** Plain text that may contain ordinary newlines and tabs, but no CR, other controls or bidi overrides. */
 export const multiLineText = (max: number) => z.string().max(max).refine(value => !forbiddenAnywhere.test(value) && !/\r/.test(value), "Control characters are not allowed").trim();
 export const enquiryAdminIdSchema = z.string().regex(/^enq_[a-f0-9-]{36}$/);
+/** What the inbox holds: enquiries from the store's forms, newsletter signups, and reviews Keeri could not take. */
+export const enquiryKinds = ["contact", "project", "bulk", "newsletter", "review"] as const;
 export const enquiryAdminQuerySchema = z.object({
-    kind: z.enum(["contact", "project", "bulk"]).optional(),
+    kind: z.enum(enquiryKinds).optional(),
     status: enquiryStageSchema.optional(),
     assignment: z.enum(["mine", "unassigned"]).optional(),
     assigneeId: z.string().regex(/^c[a-z0-9]{24}$/).optional(),
@@ -45,7 +47,7 @@ export const enquirySearchInputSchema = enquiryAdminQuerySchema.omit({ limit: tr
 export const enquiryReviewInputSchema = z.object({ expectedVersion: z.number().int().min(0).max(2147483646) }).strict();
 export const enquiryAdminSummarySchema = z.object({
     id: enquiryAdminIdSchema,
-    kind: z.enum(["contact", "project", "bulk"]),
+    kind: z.enum(enquiryKinds),
     status: enquiryStageSchema,
     version: z.number().int().nonnegative(),
     assignedToId: z.string().max(100).nullable().default(null),

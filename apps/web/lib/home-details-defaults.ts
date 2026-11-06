@@ -1,7 +1,9 @@
 import type { HomeDetails } from "@shopmaple/contracts";
 
 /** Details with the parts added after the first published documents filled in. */
-export type ResolvedHomeDetails = HomeDetails & Required<Pick<HomeDetails, "editorial" | "compare">>;
+export type ResolvedHomeDetails = Omit<HomeDetails, "cities"> & Required<Pick<HomeDetails, "editorial" | "compare">> & { cities: Required<HomeDetails["cities"]> };
+
+const citiesPromise = "Delivering comfort and elegance across India.";
 
 /** Original rendered homepage copy, including spaces around the emphasized response time. */
 export const defaultHomeDetails: HomeDetails = {
@@ -50,7 +52,7 @@ export const defaultHomeDetails: HomeDetails = {
     { key: "ages-beautifully", title: "Ages Beautifully", body: "Wood grains deepen. Fabrics soften. The piece becomes better with time" },
     { key: "strength", title: "Strength You Don’t See", body: "A solid frame, lasting structure, and details that stay quiet for years." },
   ],
-  cities: { eyebrow: "We Are Serving", heading: "20+ Cities" },
+  cities: { eyebrow: "We Are Serving", heading: "20+ Cities", description: citiesPromise },
   project: {
     heading: "Have a Space in Mind?",
     introBefore: "Describe your project to us and our team will come back within ",
@@ -71,6 +73,8 @@ export const defaultHomeDetails: HomeDetails = {
 };
 
 export function resolveHomeDetails(value?: HomeDetails): ResolvedHomeDetails {
-  // Documents published before the editorial and compare sections carry neither: they start from the defaults.
-  return structuredClone({ ...defaultHomeDetails, ...value } as ResolvedHomeDetails);
+  // Documents published before the editorial and compare sections carry neither: they start from the defaults. The same
+  // goes for the promise under the cities' figure, added later still.
+  const details = { ...defaultHomeDetails, ...value } as ResolvedHomeDetails;
+  return structuredClone({ ...details, cities: { ...details.cities, description: details.cities.description ?? citiesPromise } });
 }

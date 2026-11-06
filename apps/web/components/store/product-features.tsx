@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
@@ -24,7 +24,7 @@ const previewRows = 2;
 // Where a highlight's hotspot sits on the photo (left and top, as a share of it), in Keeri's order: spread over the
 // middle of the frame, where a product photograph puts the piece. Keeri's highlights carry no position of their own.
 const noteSpots = [[30, 34], [68, 30], [52, 56], [28, 74], [72, 72]] as const;
-// Card placement on wide screens (frame 2:625): 01 and 03 left of the photo, 02 and 04 right. The right pair sits 60px
+// Card placement on wide screens (frame 2:625): the first and third left of the photo, the second and fourth right. The right pair sits 60px
 // lower, moved rather than pushed, so the left column keeps its own spacing.
 const place = ["xl:col-start-1 xl:row-start-1", "xl:col-start-3 xl:row-start-1 xl:translate-y-[60px]", "xl:col-start-1 xl:row-start-2", "xl:col-start-3 xl:row-start-2 xl:translate-y-[60px]"];
 const shortRow = 28;
@@ -32,7 +32,7 @@ const rich = "[&_p]:m-0 [&_p+p]:mt-2 [&_:is(ul,ol)]:my-2 [&_:is(ul,ol)]:pl-5 [&_
 
 /**
  * Frame 2:625 ("Precision in Every Detail"), for every piece, sofas and beds included (owner, 4 Nov 2026): the piece's
- * photo with a hotspot for each of its highlights in Keeri, which opens a chip with that line, and four numbered cards
+ * photo with a hotspot for each of its highlights in Keeri, which opens a chip with that line, and four cards
  * around it. The hotspots and the cards stand apart: no line joins them, and a piece without highlights in Keeri has no
  * hotspots rather than invented ones. A card shows a little (two lines of text, two rows) and opens in place to show the
  * rest and its link; all of it stays on the page for search engines and screen readers. The cards carry the catalogue's
@@ -62,7 +62,7 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
   if (!cards.length) return null;
   const toggle = (key: string) => setOpen((shown) => (shown.includes(key) ? shown.filter((item) => item !== key) : [...shown, key]));
   return (
-    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-14 font-product text-black md:px-12 md:pt-[60px] md:pb-[100px]">
+    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-14 font-text text-black md:px-12 md:pt-[60px] md:pb-[100px]">
       <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-2 text-center">
         <h2 id="product-features-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[46px] md:leading-[1.5]">Precision in Every Detail</h2>
         <p data-features-intro className="m-0 text-[15px] leading-[26px] text-[#756d68] md:text-[17px]">Discover the finishes, textures and thoughtful details that make {title} your own.</p>
@@ -78,14 +78,17 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
               {notes.map((line, i) => {
                 const [x, y] = noteSpots[i]!, shown = shownNote === i, chipId = `${chipBase}-highlight-${i}`;
                 return (
-                  // A zero-size anchor at the point itself: the "+" centres on it, and a chip opens 30px to either side of it.
+                  // A zero-size anchor at the point itself: the arrow centres on it, and a chip opens 30px to either side of it.
                   <div key={i} data-highlight={i} className={cx("absolute size-0", shown ? "z-[4]" : "z-[3]")} style={{ left: `${x}%`, top: `${y}%` }}>
                     <button type="button" data-highlight-spot aria-label={`Highlight ${i + 1} of ${notes.length}`} aria-expanded={shown} aria-controls={chipId} aria-describedby={chipId}
                       onClick={() => setShownNote(shown ? null : i)}
                       className="group/spot relative grid size-[46px] -translate-1/2 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                       {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design halo */}
                       <img src="/product-page/hotspot-halo.svg" alt="" width={46} height={46} className="absolute inset-0 size-[46px]" />
-                      <span aria-hidden="true" className="relative grid size-8 place-items-center rounded-full bg-maple text-[20px] leading-[30px] text-white transition-transform group-aria-expanded/spot:rotate-45 motion-reduce:transition-none">+</span>
+                      {/* Up while closed, down once its chip is open (owner, 6 Nov 2026). */}
+                      <span data-highlight-arrow aria-hidden="true" className="relative grid size-8 place-items-center rounded-full bg-maple text-white transition-transform group-aria-expanded/spot:rotate-180 motion-reduce:transition-none">
+                        <ArrowUp className="size-4" strokeWidth={2.25} />
+                      </span>
                     </button>
                     <p id={chipId} data-highlight-chip hidden={!shown}
                       className={cx("absolute top-0 m-0 w-max max-w-[min(17rem,calc(50vw-46px))] -translate-y-1/2 rounded-[14px] border border-solid border-maple/15 bg-white px-4 py-2.5 text-left text-[13px] leading-[19px] font-medium text-[#3b3430] shadow-[0_10px_30px_rgb(31_18_13/0.16)]",
@@ -103,7 +106,7 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
           </figure>
         )}
         {cards.map((feature, i) => (
-          <FeatureCard key={feature.key} feature={feature} number={i + 1} open={open.includes(feature.key)} onToggle={() => toggle(feature.key)} className={place[i]!} />
+          <FeatureCard key={feature.key} feature={feature} open={open.includes(feature.key)} onToggle={() => toggle(feature.key)} className={place[i]!} />
         ))}
       </div>
     </section>
@@ -112,9 +115,11 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
 
 /**
  * A card that shows a little until it is opened: two lines of text, or two rows, with the rest and its link opening in
- * place from the "+" beside its title. A card with nothing more to show has no "+".
+ * place from the arrow in its top corner, which points up while closed and down once open (owner, 6 Nov 2026). The arrow
+ * belongs to the title's button, drawn in the corner, so one control opens the card and its title names it. A card with
+ * nothing more to show has no arrow.
  */
-function FeatureCard({ feature, number, open, onToggle, className }: { feature: Feature; number: number; open: boolean; onToggle: () => void; className: string }) {
+function FeatureCard({ feature, open, onToggle, className }: { feature: Feature; open: boolean; onToggle: () => void; className: string }) {
   const contentId = useId();
   const rows = feature.rows ?? [];
   // Plain text counts its own length; rich text comes with its length already judged.
@@ -124,18 +129,15 @@ function FeatureCard({ feature, number, open, onToggle, className }: { feature: 
   return (
     <article id={`feature-${feature.key}`} data-feature={feature.key} data-open={open}
       className={cx("relative z-[2] flex min-w-0 scroll-mt-24 flex-col items-start gap-3 self-start rounded-[12px] border border-solid border-[#eae5e1] bg-white p-[22px] transition-[border-color,box-shadow] motion-reduce:transition-none data-[open=true]:border-maple/40 data-[open=true]:shadow-[0_10px_30px_rgb(128_36_28/0.08)]", className)}>
-      <div className="flex w-full items-center justify-between">
-        {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
-        <img src={`/product-page/${feature.icon}.svg`} alt="" width={26} height={26} className="size-[26px]" />
-        <span data-feature-number className="text-[12px] leading-[18px] font-medium text-[#9b918a]">{String(number).padStart(2, "0")}</span>
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+      <img src={`/product-page/${feature.icon}.svg`} alt="" width={26} height={26} className="size-[26px]" />
       <h3 className="m-0 w-full text-[22px] leading-[1.5] font-medium text-[#3b3430]">
         {opens ? (
           <button type="button" data-feature-toggle aria-expanded={open} aria-controls={contentId} onClick={onToggle}
-            className="group/toggle flex w-full cursor-pointer items-center justify-between gap-3 rounded-[6px] border-0 bg-transparent p-0 text-left [font:inherit] text-inherit focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-maple">
+            className="group/toggle block w-full cursor-pointer rounded-[6px] border-0 bg-transparent p-0 text-left [font:inherit] text-inherit focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-maple">
             <span>{feature.title}</span>
-            <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-full bg-maple text-white transition-transform group-aria-expanded/toggle:rotate-45 motion-reduce:transition-none">
-              <Plus className="size-4" strokeWidth={2.25} />
+            <span data-feature-arrow aria-hidden="true" className="absolute top-[21px] right-[22px] grid size-7 place-items-center rounded-full bg-maple text-white transition-transform group-aria-expanded/toggle:rotate-180 motion-reduce:transition-none">
+              <ArrowUp className="size-4" strokeWidth={2.25} />
             </span>
           </button>
         ) : feature.title}

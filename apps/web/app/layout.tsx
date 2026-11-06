@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { preconnect } from "react-dom";
-import "@/styles/shopify-fonts.css";
-import "@fontsource/barlow/400.css";
-import "@fontsource/barlow/500.css";
-import "@fontsource/barlow/600.css";
-import "@fontsource/barlow/700.css";
-import "@fontsource/newsreader/300.css";
-// The collection listing's headings (Figma frame 1:1094) are Newsreader Bold.
-import "@fontsource/newsreader/700.css";
-import "@fontsource/pinyon-script/400.css";
+// "Maple / Typography" (Figma 180:639): DM Sans Medium for headings and labels, Red Hat Display for reading text.
+import "@fontsource-variable/dm-sans/opsz.css";
+import "@fontsource-variable/dm-sans/opsz-italic.css";
+import "@fontsource/red-hat-display/400.css";
+import "@fontsource/red-hat-display/400-italic.css";
+import "@fontsource/red-hat-display/500.css";
+import "@fontsource/red-hat-display/600.css";
+import "@fontsource/red-hat-display/700.css";
 import "./globals.css";
 import "@/styles/home-parity.css";
 import "@/styles/motion-rail.css";
@@ -28,6 +27,8 @@ import "@/styles/campaign-banners.css";
 import "@/styles/home-ticker.css";
 import "@/styles/home-rails.css";
 import "@/styles/home-impact.css";
+import "@/styles/home-cities.css";
+import "@/styles/home-newsletter.css";
 import "@/styles/home-slides.css";
 import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";

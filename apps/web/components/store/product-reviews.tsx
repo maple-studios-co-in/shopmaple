@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductReview } from "@shopmaple/contracts";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
+import { ReviewDialog, type ReviewPiece } from "./review-dialog";
 
 const pill = "inline-flex h-11 items-center gap-2 rounded-[30px] bg-white px-6 text-[14px] font-medium text-maple no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
 
@@ -86,22 +87,28 @@ function ReviewSlider({ items }: { items: ProductReview[] }) {
 /**
  * Frame 999:329 / 2:371 ("Hear From Them"): the burgundy band with the rating on the right, then the approved reviews
  * Keeri sent. Nothing is invented: with no reviews the band says so, and the rating is Keeri's own average and count
- * (or, for a product Keeri has no reviews for, the rating staff recorded from real reviews).
+ * (or, for a product Keeri has no reviews for, the rating staff recorded from real reviews). "Write a review" opens the
+ * form on the page (Figma 180:566), which joins the page on that first click (null until then) and keeps what the visitor
+ * wrote once closed; without script, or with no `piece` to review, the link leads to `writeHref`.
  */
-export function ProductReviews({ rating, writeHref, reviews: items = [] }: { rating: { value: number; count?: number } | null | undefined; writeHref: string; reviews?: ProductReview[] }) {
+export function ProductReviews({ rating, writeHref, reviews: items = [], piece }: { rating: { value: number; count?: number } | null | undefined; writeHref: string; reviews?: ProductReview[]; piece?: ReviewPiece }) {
+  const [writing, setWriting] = useState<boolean | null>(null);
+  const writeLink = useRef<HTMLAnchorElement>(null);
+  const stopWriting = () => { setWriting(false); writeLink.current?.focus(); };
   const reviews = rating?.count ? `${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : "";
   const summary = rating
     ? { score: rating.value.toFixed(1), filled: Math.round(rating.value), line: reviews || `Rated ${rating.value.toFixed(1)} out of 5`, label: `Rated ${rating.value.toFixed(1)} out of 5${reviews ? ` from ${reviews}` : ""}` }
     : null;
   return (
-    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-product text-white md:px-12 md:py-[91px]">
+    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-text text-white md:px-12 md:py-[91px]">
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col items-start gap-6">
           <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.2] font-medium md:text-[48px]">Hear From Them</h2>
           {summary
-            ? <p data-reviews-sub className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
-            : <p data-reviews-note className="m-0 max-w-[420px] text-[20px] leading-[1.3] font-medium md:text-[24px]">No reviews to show yet. Share your experience with this piece.</p>}
-          <Link data-write-review data-fill-button="light" href={writeHref} className={pill}>
+            ? <p data-reviews-sub className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
+            : <p data-reviews-note className="m-0 max-w-[420px] font-heading text-[20px] leading-[1.3] font-medium md:text-[24px]">No reviews to show yet. Share your experience with this piece.</p>}
+          <Link ref={writeLink} data-write-review data-fill-button="light" href={writeHref} className={pill}
+            onClick={piece ? (event) => { event.preventDefault(); setWriting(true); } : undefined}>
             Write a review
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px]" />
@@ -110,7 +117,7 @@ export function ProductReviews({ rating, writeHref, reviews: items = [] }: { rat
         {summary && (
           <div data-rating-summary role="group" aria-label={summary.label} className="flex flex-col gap-4 md:items-start">
             <div className="flex items-center gap-3">
-              <span aria-hidden="true" className="text-[28px] leading-[1.6] md:text-[35.6px]">{summary.score}</span>
+              <span aria-hidden="true" className="font-heading text-[28px] leading-[1.6] font-medium md:text-[35.6px]">{summary.score}</span>
               <span aria-hidden="true" className="flex gap-2.5">
                 {[0, 1, 2, 3, 4].map((i) => (
                   // eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon
@@ -119,11 +126,12 @@ export function ProductReviews({ rating, writeHref, reviews: items = [] }: { rat
               </span>
             </div>
             {" "}
-            <p className="m-0 text-[20px] leading-[1.2] font-medium md:text-[24px]">{summary.line}</p>
+            <p className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">{summary.line}</p>
           </div>
         )}
       </div>
       {items.length > 0 && <ReviewSlider items={items} />}
+      {piece && writing !== null && <ReviewDialog open={writing} onClose={stopWriting} piece={piece} />}
     </section>
   );
 }

@@ -16,6 +16,7 @@ import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-m
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagram-feed.js";
 import { saveEnquiry } from "./enquiries.js";
+import { registerReviewRoutes, type KeeriReviewsConfig } from "./reviews.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
   commerceHttpError,
@@ -38,6 +39,8 @@ export type AppConfig = {
   previewSecret?: string;
   catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
+  /** Where the product page's reviews go; null or absent keeps them in the admin's inbox until the credential is present. */
+  keeriReviews?: KeeriReviewsConfig | null;
   /** Transport for outbound staff replies; tests inject a local double. Defaults to global fetch. */
   outboundFetch?: typeof fetch;
   /** Accepted staff replies per actor per window; defaults to 20 per hour. Tests inject a smaller limit. */
@@ -76,6 +79,7 @@ export function createApp(
   );
   if (commerce) registerPaymentWebhook(app, commerce);
   registerMediaRoutes(app, db, config);
+  registerReviewRoutes(app, db, { webOrigin: config.webOrigin, keeri: config.keeriReviews, enquiryDelivery: config.enquiryDelivery });
   app.use("/api/admin/content", express.json({ limit: "128kb" }));
   app.use(express.json({ limit: "16kb" }));
   app.use("/api", (req, res, next) => {

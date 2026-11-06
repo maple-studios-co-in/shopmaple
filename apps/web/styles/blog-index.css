@@ -8,8 +8,7 @@
   margin: 0 0 40px;
   color: var(--burgundy);
   text-align: center;
-  font-family: Newsreader, Georgia, serif;
-  font-style: italic;
+  font-family: var(--font-heading);
   font-weight: 500;
   font-size: clamp(48.67px, 4vw, 56px);
   line-height: 1.4;
@@ -60,10 +59,10 @@
 .blog-index-copy h2 {
   margin: 12px 0 10px;
   color: var(--burgundy);
-  font-family: "Red Hat Display", Manrope, sans-serif;
+  font-family: var(--font-heading);
   font-size: 18px;
   line-height: 1.1;
-  font-weight: 700;
+  font-weight: 500;
 }
 .blog-index-copy p {
   margin: 16px 0 0;

@@ -171,7 +171,7 @@ const modelPageSchema = z.object({
       photos: z.array(z.object({
         id, url: z.string().regex(/^https:\/\/store\.maplefurnishers\.com\/media\/keeri-review\/[A-Za-z0-9_-]{1,64}\.webp$/),
         width: z.number().int().positive().max(20_000).nullable(), height: z.number().int().positive().max(20_000).nullable(),
-      }).strict()).max(4),
+      }).strict()).max(5),
     }).strict()).max(50),
   }).strict(),
 }).strict();

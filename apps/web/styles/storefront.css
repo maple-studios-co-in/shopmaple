@@ -18,7 +18,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-text);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -62,13 +62,12 @@ p {
 h1,
 h2,
 h3 {
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   font-weight: 500;
   line-height: 1.13;
 }
 h1 {
   font-size: 48px;
-  letter-spacing: -0.025em;
 }
 h2 {
   font-size: 36px;
@@ -319,7 +318,7 @@ textarea {
 }
 .category-tile h2 {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .category-tile p {
   font-size: 14px;
@@ -427,7 +426,7 @@ textarea {
   text-align: center;
 }
 .marquee p {
-  font-family: Newsreader, serif;
+  font-family: var(--font-heading);
   font-size: 40px;
   margin: 0;
 }
@@ -562,20 +561,20 @@ textarea {
   margin: auto;
 }
 .footer-brand {
-  font-family: Newsreader, serif;
+  font-family: var(--font-heading);
   color: var(--burgundy);
   font-size: 70px;
   line-height: 1;
 }
 .footer-brand span {
   display: block;
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-text);
   font-size: 10px;
   letter-spacing: 0.16em;
   padding-left: 64px;
 }
 .site-footer h2 {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-heading);
   font-size: 12px;
   letter-spacing: 0.08em;
   margin: 0 0 20px;

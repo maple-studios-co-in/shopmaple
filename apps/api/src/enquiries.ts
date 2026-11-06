@@ -11,11 +11,16 @@ export async function saveEnquiry(db:PrismaClient,raw:unknown,key:unknown,config
  const input=enquiryInputSchema.parse(raw);
  const payloadHash=hash(JSON.stringify(input));
  const receipt=(reference:string):EnquiryReceipt=>({reference,mode:"preview",notificationSent:false});
+ // One address is one newsletter signup, however often it is entered. The reply is the same either way, with a reference
+ // that names no row, so the form cannot be used to learn who has signed up.
+ if(input.kind==="newsletter"&&await db.enquiry.findFirst({where:{kind:"newsletter",email:input.email},select:{id:true}}))
+  return {created:true,receipt:receipt("enq_"+randomUUID())};
  try {
   const saved=await db.$transaction(async tx => {
    const contactId=await ensureContact(tx,input);
    const enquiry=await tx.enquiry.create({data:{id:"enq_"+randomUUID(),idempotencyHash,payloadHash,...input,contactId}});
-   if(config) await tx.enquiryDelivery.create({data:{enquiryId:enquiry.id,configurationHash:config.fingerprint,nextAttemptAt:new Date()}});
+   // A signup is a list entry rather than a person waiting for an answer: it does not email the team.
+   if(config&&input.kind!=="newsletter") await tx.enquiryDelivery.create({data:{enquiryId:enquiry.id,configurationHash:config.fingerprint,nextAttemptAt:new Date()}});
    return enquiry;
   });
   return {created:true,receipt:receipt(saved.id)};

@@ -11,7 +11,7 @@ const promises = [
 /** The Maple promise strip: four icons with a line each, on the cream panel (used under the mega menu, frame 1:1454). */
 export function MaplePromise({ className }: { className?: string }) {
   return (
-    <ul aria-label="The Maple promise" className={cx("m-0 grid list-none grid-cols-1 gap-6 rounded-[12px] bg-cream p-6 font-body sm:grid-cols-2 lg:grid-cols-4", className)}>
+    <ul aria-label="The Maple promise" className={cx("m-0 grid list-none grid-cols-1 gap-6 rounded-[12px] bg-cream p-6 font-text sm:grid-cols-2 lg:grid-cols-4", className)}>
       {promises.map((promise) => (
         <li key={promise.icon} data-promise className="flex items-start gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}

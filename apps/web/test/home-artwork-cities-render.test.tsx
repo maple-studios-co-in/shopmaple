@@ -56,8 +56,7 @@ async function render(body: unknown) {
     return new JSDOM(html).window.document;
   } finally { globalThis.fetch = previous; }
 }
-/** The city row as visitors see it: a drifting row draws its cities twice, the second pass hidden decoration. */
-const cityImages = "[data-marquee-group]:not([data-marquee-copy]) .home-city-track img";
+const cityImages = ".home-city-track img";
 const attrs = (doc: Document, selector: string, name: string) => [...doc.querySelectorAll(selector)].map(n => n.getAttribute(name));
 function assertOriginal(doc: Document) {
   assert.deepEqual(attrs(doc, ".home-difference img", "src"), difference.map(file => files + file));
@@ -80,7 +79,7 @@ test("homepage preserves original value icons and copy while showing the suggest
   assert.equal(doc.querySelector(".home-difference h2")?.textContent, "Every element is yours to reshape");
   assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");
   assert.equal(doc.querySelector(".home-cities h2")?.textContent, "20+ Cities");
-  assert.ok(doc.querySelector('.city-motion[aria-roledescription="carousel"][aria-label="Cities served"]'), "the cities drift by as one labelled row");
+  assert.ok(doc.querySelector('[data-cities-rail][aria-roledescription="carousel"][aria-label="Cities served"]'), "the cities are one labelled row");
 });
 
 function artworkOverrides() {
@@ -119,7 +118,7 @@ test("published reordered values and cities retain keyed artwork and hide disabl
     assert.deepEqual(attrs(doc, cityImages, "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
     assert.equal(doc.querySelector(".home-values img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : files + "Cover_Image_Maple_5.svg");
     assert.equal(doc.querySelector(".home-values h3")?.textContent, "Strength You Don’t See");
-    assert.ok(doc.querySelector('.city-motion[aria-label="Cities served"]'));
+    assert.ok(doc.querySelector('[data-cities-rail][aria-label="Cities served"]'));
   }
 });
 
@@ -127,7 +126,7 @@ test("hiding all cities omits the full section including its heading and carouse
   const doc = await render(published({ homeCitiesLayout: cities.map(([key]) => ({ key, enabled: false })) }));
   assert.equal(doc.querySelector(".home-cities"), null);
   assert.equal(doc.querySelector('[aria-label="Cities served"]'), null);
-  assert.equal(doc.querySelector(".city-motion"), null);
+  assert.equal(doc.querySelector("[data-cities-rail]"), null);
 });
 
 test("blank decorative alt is preserved and custom descriptions remain literal text", async () => {

@@ -17,7 +17,7 @@ export type HeroCover = NonNullable<CollectionFacets["cover"]> & { width?: numbe
  */
 export function CollectionHero({ title, crumb, intro, cover }: { title: string; crumb: string; intro: CollectionIntroCopy; cover: HeroCover | null | undefined }) {
   return (
-    <section data-store data-collection-hero aria-labelledby="collection-hero-title" className="relative isolate flex min-h-[420px] overflow-hidden bg-espresso font-product text-white lg:h-[500px]">
+    <section data-store data-collection-hero aria-labelledby="collection-hero-title" className="relative isolate flex min-h-[420px] overflow-hidden bg-espresso font-text text-white lg:h-[500px]">
       {cover && (
         <div data-hero-photo className={cx("absolute inset-y-0 right-0 -z-10 w-full [&_img]:object-cover [&_img]:[object-position:var(--hero-position)]", cover.width ? "[mask-image:linear-gradient(to_right,transparent,#000_24%)]" : undefined)}
           style={{ maxWidth: cover.width ? `${cover.width}px` : undefined, "--hero-position": cover.position ?? "center" } as CSSProperties}>
@@ -36,7 +36,7 @@ export function CollectionHero({ title, crumb, intro, cover }: { title: string; 
               <li aria-current="page">{crumb}</li>
             </ol>
           </nav>
-          <h1 id="collection-hero-title" className="m-0 text-[38px] leading-[1.15] font-semibold md:text-[48px] lg:text-[58px] lg:leading-[1.35]">{title}</h1>
+          <h1 id="collection-hero-title" className="m-0 text-[38px] leading-[1.15] font-medium md:text-[48px] lg:text-[58px] lg:leading-[1.35]">{title}</h1>
           <p data-hero-line className="m-0 text-[18px] leading-[1.35] font-medium md:text-[24px]">{intro.heading}</p>
         </div>
         {cover?.handle && (
@@ -45,7 +45,7 @@ export function CollectionHero({ title, crumb, intro, cover }: { title: string; 
             <span className="relative block size-[136px] overflow-hidden rounded-full [&_img]:object-cover">
               <ProductImage src={cover.image} alt={cover.title} fill sizes="136px" />
             </span>
-            <p className="m-0 w-full text-[20px] leading-[1.35] font-semibold">{cover.title}</p>
+            <p className="m-0 w-full font-heading text-[20px] leading-[1.35] font-medium">{cover.title}</p>
             {cover.pricePaise != null && <p className="m-0 text-[19px] leading-[1.35] font-medium">{cover.priceFrom ? "From " : ""}{shopMoney(cover.pricePaise)}</p>}
             <Link href={`/products/${cover.handle}`} className="text-[14px] leading-[1.35] font-medium text-white underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               Discover the {intro.noun} →

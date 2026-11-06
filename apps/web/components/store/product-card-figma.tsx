@@ -26,7 +26,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
   const href = "/products/" + product.handle;
   const discount = sale ? Math.round((1 - product.pricePaise! / product.compareAtPaise!) * 100) : 0;
   return (
-    <article data-store data-product-card data-card-surface={surface} className={["group/card flex flex-col overflow-hidden rounded-lg font-body text-espresso", surface === "outlined" ? "border border-sand bg-white" : "", className].filter(Boolean).join(" ")}>
+    <article data-store data-product-card data-card-surface={surface} className={["group/card flex flex-col overflow-hidden rounded-lg font-text text-espresso", surface === "outlined" ? "border border-sand bg-white" : "", className].filter(Boolean).join(" ")}>
       <div data-card-image className="relative aspect-square overflow-hidden rounded-xl bg-cream [&_[role=img]]:grid [&_[role=img]]:size-full [&_[role=img]]:place-content-center [&_[role=img]]:justify-items-center [&_[role=img]]:gap-2 [&_[role=img]]:text-meta [&_[role=img]]:text-[#5e574f]">
         <Link href={href} className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand">
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />

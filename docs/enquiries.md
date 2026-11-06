@@ -1,5 +1,7 @@
 # Preview enquiry persistence
 
+The inbox also holds the homepage newsletter's signups (kind `newsletter`: an email alone, one row per address, with no staff alert) and reviews Keeri could not take (kind `review`, see [product reviews](product-reviews.md)). Staff filter by kind in Admin → Enquiries.
+
 Contact, bulk and home/Nimbus project forms POST to `/api/enquiries` through the same-origin proxy. The API validates a bounded strict schema, requires the configured Origin, stores the enquiry in PostgreSQL, and returns only a reference with `mode: preview` and `notificationSent: false`. The UI reports that team notification is not confirmed. Email is disabled by default; explicit configuration can enqueue the metadata-only staff alert described in [enquiry delivery](enquiry-delivery.md). No public read endpoint exists.
 
 Each browser form generates an opaque UUID idempotency key. Retrying an unchanged submission, including after a lost response, reuses that key. Editing the payload creates a new key. The server stores a key hash and canonical payload hash; simultaneous identical requests return the same receipt, while a changed payload under the same key returns409 without changing the record. Form data remains in memory rather than localStorage. Keys are not durable across a full page reload, so this does not deduplicate independently submitted forms or multi-device enquiries.

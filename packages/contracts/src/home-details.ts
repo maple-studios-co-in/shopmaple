@@ -56,7 +56,8 @@ export const homeDetailsSchema = z.object({
     key: z.enum(["quiet-luxury", "real-living", "ages-beautifully", "strength"]),
     title: text(160), body: text(2000),
   }).strict()).length(4),
-  cities: z.object({ eyebrow: text(160), heading: text(160) }).strict(),
+  // The promise under the figure was added after the first published documents: absent there, and the storefront then uses its default.
+  cities: z.object({ eyebrow: text(160), heading: text(160), description: text(300).optional() }).strict(),
   project: z.object({
     heading: text(160), introBefore: text(1000), responseTime: text(80), introAfter: text(1000), body: text(2000),
   }).strict(),

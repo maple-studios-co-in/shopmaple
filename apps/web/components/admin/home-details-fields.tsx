@@ -76,7 +76,7 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
       <GroupedFields items={page.values} legend={item => valueNames[item.key]} onChange={values => update("values", values)}
         fields={item => [["title", `${valueNames[item.key]} title`, 160], ["body", `${valueNames[item.key]} body`, 2000, true]]} />
     </div>;
-    case "cities": return <TextFields value={page.cities} onChange={next => update("cities", next)} fields={[["eyebrow", "Cities eyebrow", 160], ["heading", "Cities heading", 160]]} />;
+    case "cities": return <TextFields value={page.cities} onChange={next => update("cities", next)} fields={[["eyebrow", "Cities eyebrow", 160], ["heading", "Cities heading", 160], ["description", "Cities description", 300, true]]} />;
     case "project": return <>
       <TextFields value={page.project} onChange={next => update("project", next)} fields={[
         ["heading", "Project heading", 160], ["responseTime", "Project response time", 80],

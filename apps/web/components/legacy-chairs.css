@@ -29,7 +29,7 @@
   align-items: end;
 }
 .legacy-chairs .legacy-chairs-hero-copy > p:first-child {
-  font-family: "Red Hat Display", sans-serif;
+  font-family: var(--font-heading);
   font-size: 14px;
   line-height: 1.1;
   text-transform: uppercase;
@@ -39,7 +39,7 @@
   grid-column: 1;
   font-size: 48px;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.1;
   margin: 0;
 }
@@ -84,7 +84,6 @@
 .legacy-chairs .legacy-chairs-offers h2 {
   margin: 0;
   font-size: clamp(28px, 3vw, 40px);
-  font-style: italic;
 }
 .legacy-chairs .legacy-chairs-rhythm {
   padding-block: 40px;
@@ -197,7 +196,6 @@
   font-size: clamp(30px, 3vw, 40px);
   text-align: center;
   margin: 0 0 24px;
-  font-style: italic;
 }
 .legacy-chairs .legacy-chairs-service-note {
   line-height: 1.6;

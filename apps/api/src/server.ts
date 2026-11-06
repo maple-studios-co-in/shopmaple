@@ -8,6 +8,7 @@ import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
 import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 import { installShutdown } from "./server-lifecycle.js";
 import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
+import { loadKeeriReviewsConfig } from "./reviews.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -46,6 +47,7 @@ const server = createApp(
     trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
     seoIndexing: process.env.SEO_INDEXING === "on",
     enquiryDelivery,
+    keeriReviews: loadKeeriReviewsConfig(process.env),
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
     instagramFeed,
