@@ -1,0 +1,134 @@
+/* The newsletter band, in the place the numbers band held (owner, 6 Nov 2026): burgundy from edge to edge, the brand's mark
+   faint at its top, the promise on the left and the signup on the right along its foot. */
+.home-newsletter {
+  position: relative;
+  margin: 80px 0 4px;
+  padding: clamp(48px, 5.4vw, 104px) 0 clamp(32px, 2.6vw, 50px);
+  overflow: hidden;
+  background: #741a14;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.home-newsletter .home-container {
+  position: relative;
+  max-width: none;
+  padding-inline: clamp(16px, 2.4vw, 46px) clamp(16px, 2.6vw, 50px);
+}
+.home-newsletter-mark {
+  display: flex;
+  justify-content: center;
+  margin-bottom: clamp(24px, 3.2vw, 62px);
+  pointer-events: none;
+}
+.home-newsletter-mark img {
+  display: block;
+  width: min(70vw, clamp(280px, 26vw, 500px));
+  height: auto;
+  opacity: 0.07;
+}
+.home-newsletter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.93fr);
+  align-items: end;
+  gap: clamp(32px, 6vw, 112px);
+}
+.home-newsletter-row > div {
+  min-width: 0;
+}
+.home-newsletter h2,
+.home-parity .home-newsletter h2 {
+  margin: 0 0 clamp(12px, 1.1vw, 20px);
+  max-width: 14em;
+  color: #fff;
+  font: 500 clamp(36px, 3.4vw, 64px) / 1.04 var(--font-heading);
+}
+.home-newsletter-row > div > p {
+  max-width: 23em;
+  margin: 0;
+  color: #fff;
+  font: 400 clamp(18px, 1.37vw, 26px) / 1.15 var(--font-text);
+}
+.home-newsletter h3 {
+  margin: 0 0 clamp(16px, 1.7vw, 32px);
+  color: #fff;
+  font: 500 clamp(14px, 0.95vw, 18px) / 1.3 var(--font-heading);
+  text-transform: uppercase;
+}
+.home-newsletter-form > div {
+  display: flex;
+  gap: 10px;
+}
+.home-newsletter-form input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: clamp(52px, 3.8vw, 72px);
+  padding: 0 clamp(16px, 1.9vw, 36px);
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #292622;
+  font: 400 clamp(16px, 1.16vw, 22px) / 1.2 var(--font-text);
+}
+.home-newsletter-form input::placeholder {
+  color: #55504b;
+  opacity: 1;
+}
+.home-newsletter-form input:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.home-newsletter-form .button,
+.home-newsletter-form .button:disabled {
+  flex: none;
+  height: clamp(52px, 3.8vw, 72px);
+  min-width: 0;
+  padding: 0 clamp(18px, 1.8vw, 34px);
+  border: 2px solid rgb(255 255 255 / 0.6);
+  border-radius: 4px;
+  background: transparent;
+  color: #fff;
+  font: 500 clamp(15px, 1.05vw, 20px) / 1 var(--font-heading);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.home-newsletter-form .button:hover:not(:disabled) {
+  background: #fff;
+  color: #741a14;
+}
+.home-newsletter-form .button:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+.home-newsletter-form .button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.home-newsletter-form p {
+  margin: 12px 0 0;
+  color: #fff;
+  font: 400 15px/1.4 var(--font-text);
+}
+@media (max-width: 899px) {
+  .home-newsletter {
+    margin-top: 48px;
+  }
+  .home-newsletter-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+@media (max-width: 479px) {
+  .home-newsletter-form input {
+    padding-inline: 14px;
+  }
+  .home-newsletter-form .button,
+  .home-newsletter-form .button:disabled {
+    padding-inline: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-newsletter-form .button {
+    transition: none;
+  }
+}

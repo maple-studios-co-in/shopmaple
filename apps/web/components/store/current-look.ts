@@ -1,5 +1,5 @@
 /*
- * Utilities for the storefront's current look (paper, ink, burgundy, Manrope), shared by the
+ * Utilities for the storefront's current look (paper, ink, burgundy, Red Hat Display), shared by the
  * pages re-skinned onto Tailwind without visual change: blog, policies, content pages, returns,
  * 404, error and cart. Each string restates what the legacy rules and the global element rules
  * gave, since the [data-store] base neutralises the latter.
@@ -18,10 +18,10 @@ export const iconButton =
 
 /** Page title in the serif (the global `h1` rule). */
 export const pageTitle =
-  "font-serif text-[48px] font-medium leading-[1.13] tracking-[-0.025em] max-[701px]:text-[36px]";
+  "font-heading text-[48px] font-medium leading-[1.13] max-[701px]:text-[36px]";
 
 /** Section heading in the serif (the global `h2` rule at the 30 px the drawer and empty states use). */
-export const panelTitle = "font-serif text-[30px] font-medium leading-[1.13]";
+export const panelTitle = "font-heading text-[30px] font-medium leading-[1.13]";
 
 /** A centred message with a call to action (legacy `.empty-state`); its paragraphs use `emptyCopy`. */
 export const emptyState =
@@ -32,7 +32,7 @@ export const emptyCopy = "my-2.5 max-w-[520px]";
 export const editorialPage =
   "mx-auto max-w-[1040px] px-7 pt-10 pb-20 max-[750px]:px-[18px] max-[750px]:pt-6 max-[750px]:pb-12";
 export const editorialTitle =
-  "my-7 font-serif text-[clamp(32px,4vw,54px)] font-medium leading-[1.15] tracking-[-0.025em] text-brand max-[750px]:text-[34px]";
+  "my-7 font-heading text-[clamp(32px,4vw,54px)] font-medium leading-[1.15] text-brand max-[750px]:text-[34px]";
 export const breadcrumbs = "flex flex-wrap gap-4 text-[13px] text-[#756d64]";
 export const textLink = "hover:underline hover:underline-offset-[5px]";
 
@@ -43,7 +43,7 @@ export const textLink = "hover:underline hover:underline-offset-[5px]";
  */
 export const storeProse = [
   "text-[16px] leading-[1.85] text-[#49423c] wrap-anywhere",
-  "[&_:is(h2,h3)]:mt-9 [&_:is(h2,h3)]:mb-4 [&_:is(h2,h3)]:font-serif [&_:is(h2,h3)]:font-medium [&_:is(h2,h3)]:leading-[1.2] [&_:is(h2,h3)]:text-brand",
+  "[&_:is(h2,h3)]:mt-9 [&_:is(h2,h3)]:mb-4 [&_:is(h2,h3)]:font-heading [&_:is(h2,h3)]:font-medium [&_:is(h2,h3)]:leading-[1.2] [&_:is(h2,h3)]:text-brand",
   "[&_h2]:text-[30px] [&_h3]:text-[24px]",
   "[&_h4]:my-[1.33em] [&_h4]:font-bold [&_h5]:my-[1.67em] [&_h5]:text-[0.83em] [&_h5]:font-bold [&_h6]:my-[2.33em] [&_h6]:text-[0.67em] [&_h6]:font-bold",
   "[&_p]:my-3.5 [&_li]:my-2",

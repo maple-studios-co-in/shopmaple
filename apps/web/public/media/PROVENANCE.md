@@ -35,3 +35,7 @@ Added for the owner's homepage notes of 2 November 2026.
 | `home/editorial-flip-aero.webp` | Aero Dining Chair | [Frame174.png](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455) |
 | `home/editorial-flip-varyn.webp` | Varyn Dining Table | [File_2026-05-27T11_29_17.560Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_29_17.560Z.webp?v=1780471840) |
 | `home/editorial-flip-seno.webp` | Seno Dining Table | [File_2026-05-27T11_09_10.656Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_09_10.656Z.webp?v=1780470231) |
+
+## Cities panel map
+
+`cities/dotted-world.svg` was drawn for the cities panel (Figma 177:1159) from the Natural Earth land outline (public domain), read from the `world-atlas` 2.0.2 package's `land-110m.json`. Nothing else from that package is used.

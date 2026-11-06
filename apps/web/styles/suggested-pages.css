@@ -25,7 +25,7 @@
 }
 .store-prose h2,
 .store-prose h3 {
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   color: #741a14;
   line-height: 1.2;
   margin: 36px 0 16px;
@@ -150,7 +150,7 @@
   align-items: center;
 }
 .cp-contact-eyebrow {
-  font-family: Manrope, sans-serif;
+  font-family: var(--font-heading);
   font-size: 12px;
   letter-spacing: 0.1em;
 }
@@ -336,7 +336,7 @@
   border-radius: 16px;
 }
 .suggested-story-hero .landing-story-title {
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   font-weight: 500;
   font-size: clamp(32px, 4.5vw, 64px);
   line-height: 1.1;
@@ -362,7 +362,7 @@
 }
 .suggested-story-hero .landing-promises span {
   min-width: 0;
-  font: 400 12px/1.5 Manrope, sans-serif;
+  font: 400 12px/1.5 var(--font-text);
   color: #292d28;
 }
 .suggested-story-hero .landing-promises img {
@@ -415,7 +415,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   font-weight: 500;
   line-height: 0.95;
   display: block;

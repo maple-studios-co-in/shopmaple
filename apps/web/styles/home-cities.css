@@ -1,0 +1,244 @@
+/* The cities panel (Figma 177:1159), the same wherever HomeCities appears: the eyebrow, figure and promise beside the
+   arches, which sit between two arrows over a faint dotted world. An arch is sized from the width of the row, so eight of
+   them show on a large screen however wide it is, and the rest wait behind the arrows. */
+.home-cities.home-container {
+  --cities-shown: 8;
+  --cities-gap: 20px;
+  --cities-inset: 50px;
+  display: grid;
+  grid-template-columns: 231px minmax(0, 1fr);
+  align-items: end;
+  width: calc(100% - 48px);
+  max-width: none;
+  margin: 24px auto;
+  padding: 60px 13px 60px var(--cities-inset);
+  border-radius: 22px;
+  background: url("/media/cities/dotted-world.svg") 12% 50% / auto 88% no-repeat, #f3efea;
+  box-shadow: 0 1px 2px rgb(41 37 31 / 0.04);
+}
+.home-cities header {
+  align-self: start;
+  min-width: 0;
+}
+.home-cities .home-eyebrow {
+  margin: 0 0 14px;
+  color: #80241c;
+  font: 500 14px/20px var(--font-heading);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.home-cities h2,
+.home-parity .home-cities h2 {
+  margin: 0;
+  color: #1c1a18;
+  font: 500 clamp(44px, 3.9vw, 72px) / 1.12 var(--font-heading);
+  overflow-wrap: anywhere;
+}
+.home-cities h2 span {
+  display: block;
+}
+/* The thin rule runs in from the panel's own edge and ends in two dots. */
+.home-cities-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 24px calc(-1 * var(--cities-inset));
+}
+.home-cities-rule::before {
+  content: "";
+  width: 91px;
+  height: 1px;
+  margin-right: -5px;
+  background: #d8c4b2;
+}
+.home-cities-rule i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #bb896d;
+}
+.home-cities-rule i + i {
+  width: 4px;
+  height: 4px;
+  background: #c9a48f;
+}
+.home-cities-description {
+  margin: 0;
+  max-width: 232px;
+  color: #55504b;
+  font: 400 15px/24px var(--font-text);
+}
+.home-cities-rail {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.home-cities-arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid #ead9cb;
+  border-radius: 50%;
+  background: #fff;
+  color: #80241c;
+  box-shadow: 0 6px 16px rgb(41 37 31 / 0.12);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.home-cities-arrow:hover {
+  background: #80241c;
+  color: #fff;
+}
+.home-cities-arrow[hidden] {
+  display: none;
+}
+.home-cities-arrow:focus-visible {
+  outline: 2px solid #80241c;
+  outline-offset: 2px;
+}
+.home-cities-arrow svg {
+  width: 22px;
+  height: 22px;
+}
+.home-cities-arrow[data-cities-prev] {
+  margin-right: 7px;
+}
+.home-cities-arrow[data-cities-next] {
+  margin-left: 24px;
+}
+.home-city-track {
+  flex: 1;
+  display: flex;
+  gap: var(--cities-gap);
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  border-radius: 2px;
+}
+.home-city-track::-webkit-scrollbar {
+  display: none;
+}
+.home-city-track:focus-visible {
+  outline: 2px solid #80241c;
+  outline-offset: 4px;
+}
+.home-city-card {
+  flex: 0 0 calc((100% - (var(--cities-shown) - 1) * var(--cities-gap)) / var(--cities-shown));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  aspect-ratio: 117 / 236;
+  margin: 0;
+  border: 1px solid #ebe2d9;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0.6) 100%);
+  text-align: center;
+  scroll-snap-align: start;
+}
+.home-city-artwork {
+  position: relative;
+  flex: none;
+  width: 77%;
+  aspect-ratio: 90 / 172;
+  margin-top: 8.5%;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e7dfd3;
+}
+.home-city-artwork img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-city-card figcaption {
+  margin-top: 12%;
+  color: #1c1a18;
+  font: 500 clamp(11px, 0.84vw, 15px) / 1.3 var(--font-heading);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.home-city-card figcaption::after {
+  content: "";
+  display: block;
+  width: 22px;
+  height: 2px;
+  margin: 8px auto 0;
+  background: #80241c;
+}
+
+/* As the screen narrows, fewer arches show at a size that still reads. */
+@media (max-width: 1499px) {
+  .home-cities.home-container { --cities-shown: 7; }
+}
+@media (max-width: 1349px) {
+  .home-cities.home-container { --cities-shown: 6; }
+}
+@media (max-width: 1199px) {
+  .home-cities.home-container { --cities-shown: 5; }
+}
+/* Below a laptop the heading stands over the row, the arches take the panel's width. */
+@media (max-width: 1023px) {
+  .home-cities.home-container {
+    --cities-shown: 6;
+    --cities-inset: 24px;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 28px;
+    width: calc(100% - 32px);
+    margin: 16px auto;
+    padding: 36px 20px 36px var(--cities-inset);
+    background-size: auto 70%;
+    background-position: 50% 20%;
+  }
+  .home-cities-description {
+    max-width: 420px;
+  }
+}
+@media (max-width: 899px) {
+  .home-cities.home-container { --cities-shown: 5; }
+}
+@media (max-width: 767px) {
+  .home-cities.home-container { --cities-shown: 4; }
+}
+/* On a phone the row is swiped, with the arrows resting on its edges. */
+@media (max-width: 639px) {
+  .home-cities.home-container {
+    --cities-shown: 3;
+    --cities-gap: 12px;
+    --cities-inset: 18px;
+    padding: 28px 16px 28px var(--cities-inset);
+  }
+  .home-cities h2,
+  .home-parity .home-cities h2 {
+    font-size: 44px;
+  }
+  .home-cities-rail {
+    position: relative;
+  }
+  .home-cities-arrow {
+    position: absolute;
+    top: 42%;
+    z-index: 1;
+    width: 40px;
+    height: 40px;
+    transform: translateY(-50%);
+  }
+  .home-cities-arrow[data-cities-prev] {
+    left: -10px;
+    margin: 0;
+  }
+  .home-cities-arrow[data-cities-next] {
+    right: -10px;
+    margin: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-cities-arrow {
+    transition: none;
+  }
+}

@@ -145,14 +145,13 @@ test("the showroom box gives the real address and leads to the store's page, wit
   });
 });
 
-test("Precision in Every Detail: four numbered cards around the piece, each showing a little and opening in place", async () => {
+test("Precision in Every Detail: four cards around the piece, each showing a little and opening in place", async () => {
   await mount(async (doc) => {
     const section = hook(doc, "data-features")!;
     assert.equal(text(section.querySelector("h2")), "Precision in Every Detail");
     assert.equal(text(section.querySelector("[data-features-intro]")), "Discover the finishes, textures and thoughtful details that make Aero Dining Chair your own.");
     const cards = [...section.querySelectorAll<HTMLElement>("[data-feature]")];
     assert.deepEqual(cards.map((c) => text(c.querySelector("h3"))), ["About Product", "Materials", "Specifications", "Material Care"]);
-    assert.deepEqual(cards.map((c) => text(c.querySelector("[data-feature-number]"))), ["01", "02", "03", "04"]);
     assert.equal(text(cards[0]!.querySelector("[data-feature-body]")), "Solid wood frame with a woven seat.");
     assert.deepEqual([...cards[1]!.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text)), [["Frame", "Oak with a walnut finish"], ["Seat", "Bouclé upholstery"]]);
     const specRows = () => [...cards[2]!.querySelectorAll<HTMLElement>("[data-feature-row]")];

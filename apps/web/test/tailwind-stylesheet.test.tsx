@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import postcss from "postcss";
 import tailwind from "@tailwindcss/postcss";
 
@@ -10,7 +11,7 @@ import tailwind from "@tailwindcss/postcss";
 // scoped base must stay below a class, and no utility may land on the class names the legacy
 // storefront markup and stylesheets still use. jsdom ignores importance and specificity, so the
 // cascade is checked on the compiled rules rather than through getComputedStyle.
-const web = new URL("..", import.meta.url).pathname;
+const web = fileURLToPath(new URL("..", import.meta.url));
 const compile = async (path: string) => {
   const file = web + path;
   const result = await postcss([tailwind({ base: web })]).process(readFileSync(file, "utf8"), { from: file });
@@ -55,7 +56,7 @@ test("the storefront base reaches redesigned markup only, without adding weight"
   assert.ok(base.length > 0, "The scoped base is present");
   for (const rule of base) assert.match(rule.selector, /^:where\(\[data-store\]\)( |$)/, `${rule.selector} is scoped to [data-store]`);
   const selectors = rules(shared).map((rule) => rule.selector);
-  assert.ok(selectors.indexOf(".font-body") > selectors.findLastIndex((selector) => selector.startsWith(":where([data-store])")), "Utilities follow the base");
+  assert.ok(selectors.indexOf(".font-text") > selectors.findLastIndex((selector) => selector.startsWith(":where([data-store])")), "Utilities follow the base");
 });
 
 test("dark: utilities stay off: admin and storefront are light only, whatever the OS setting", () => {
@@ -76,8 +77,8 @@ test("storefront tokens resolve to the design's values", () => {
   assert.equal(value("--color-taupe"), "#746c62");
   assert.equal(value("--color-sand"), "#e1d9d0");
   assert.equal(value("--color-brand"), "#741a14");
-  assert.match(value("--font-body") ?? "", /^"?Barlow/);
-  assert.match(value("--font-serif") ?? "", /^"?Newsreader/);
+  assert.match(value("--font-text") ?? "", /^"?Red Hat Display/);
+  assert.match(value("--font-heading") ?? "", /^"?DM Sans/);
 });
 
 test("no utility lands on a class name the legacy storefront still uses", () => {

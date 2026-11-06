@@ -21,37 +21,6 @@
 @source "../app/admin";
 @source "../lib/preview-request.tsx";
 
-/* Frame 999:3 sets its text in Medium and SemiBold; the storefront's Manrope has only 400 and 700. The product page uses this
-   copy of the same typeface, so no other page's text changes weight. */
-@font-face {
-  font-family: "Manrope Product";
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-400-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Manrope Product";
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-500-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Manrope Product";
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-600-normal.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Manrope Product";
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  src: url("../../../node_modules/@fontsource/manrope/files/manrope-latin-700-normal.woff2") format("woff2");
-}
-
 /* Light only. shadcn's components carry dark: classes; tie them to a .dark class nothing sets,
    so they never follow the visitor's OS colour scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -68,8 +37,9 @@
   --color-ink-soft: #5d605a;
   --color-rule: #dfded7;
   --color-forest: #294a34;
-  --font-manrope: "Manrope", sans-serif;
-  --font-redhat: "Red Hat Display", sans-serif;
+  /* "Maple / Typography" (Figma 180:639): DM Sans Medium for headings and labels, Red Hat Display for reading text. */
+  --font-heading: "DM Sans Variable", "DM Sans", sans-serif;
+  --font-text: "Red Hat Display", sans-serif;
 
   --color-brand: #741a14;
   --color-brand-deep: #5c140f;
@@ -79,8 +49,6 @@
   --color-taupe: #746c62;
   --color-sand: #e1d9d0;
   --color-leaf: #428445;
-  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: "Newsreader", Georgia, serif;
   /* Storefront type scale: 12 / 13 / 14 / 15 / 16 / 17 / 19 / 22 / 25 / 29 / 34 / 42 px */
   --text-label: 12px;
   --text-label--line-height: 1.45;
@@ -113,7 +81,6 @@
   --text-display--line-height: 1.1;
   /* Frame 999:3 ("1440w light"): its burgundy is a shade lighter than the brand's, and its ticker scrolls. */
   --color-maple: #80241c;
-  --font-product: "Manrope Product", "Manrope", sans-serif;
   --animate-pdp-ticker: pdp-ticker 48s linear infinite;
   /* Frame 2:602: the buy box's promise strip drifts on the same loop, faster for its short track. */
   --animate-pdp-strip: pdp-ticker 22s linear infinite;
@@ -208,7 +175,7 @@
   --admin-radius-s: initial; --admin-radius-m: initial; --admin-radius-l: initial;
   --admin-shadow-s: initial; --admin-shadow-m: initial; --admin-shadow-lift: initial; --admin-ease: initial;
 }
-:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; letter-spacing: inherit; }
+:where([data-store]) :is(h1, h2, h3, h4, h5, h6) { margin: 0; font: inherit; font-family: var(--font-heading); font-weight: 500; letter-spacing: inherit; }
 :where([data-store]) :is(p, ul, ol, figure, fieldset) { margin: 0; }
 :where([data-store]) :is(ul, ol) { padding: 0; list-style: none; }
 :where([data-store]) fieldset { min-width: 0; padding: 0; border: 0; }

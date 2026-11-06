@@ -1,7 +1,7 @@
 /*
  * Big screens (owner, 4 Nov 2026). The site is drawn at 1440px; from 1600px wide it now grows with the screen instead
  * of standing in a 1,300-1,500px column in the middle. Containers drop their cap and keep a gutter that widens with the
- * screen, and pieces drawn at fixed sizes (the editorial photos, the comparison card, the city arches, the product
+ * screen, and pieces drawn at fixed sizes (the editorial photos, the comparison card, the product
  * rails) grow in proportion. Text meant for reading keeps a measure. Below 1600px nothing here applies. The layout
  * imports this sheet last, so it wins over the rules it repeats.
  */
@@ -15,8 +15,6 @@
   .home-promo,
   .home-nimbus,
   .home-testimonial,
-  .home-newsletter,
-  .home-cities.home-container,
   [data-home-section="nimbus"] .home-nimbus-stage,
   .page-section,
   .site-footer,
@@ -69,15 +67,4 @@
     grid-auto-columns: max(246px, calc((100% - 5 * 20px) / 6));
   }
 
-  /* The cities: arches sized to the screen, so one pass of the row always outruns it and no gap opens at its end. */
-  [data-home-section="cities"] .home-city-card {
-    flex-basis: 7.8vw;
-    width: 7.8vw;
-  }
-  [data-home-section="cities"] .home-city-artwork {
-    height: 12.4vw;
-  }
-  [data-home-section="cities"] .home-city-card figcaption {
-    font-size: clamp(10px, 0.7vw, 16px);
-  }
 }

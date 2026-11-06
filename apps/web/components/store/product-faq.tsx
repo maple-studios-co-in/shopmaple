@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { ArrowUp } from "lucide-react";
 
 /**
  * Answers come from the store's published policies (shipping, refund and warranty). The frame's eight copies of
@@ -21,11 +22,11 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
   const asked = new Set(extra.map(([q]) => q.trim().toLowerCase()));
   const items = [...extra, ...questions.filter(([q]) => !asked.has(q.toLowerCase()))];
   return (
-    <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 py-12 font-product text-black md:px-12 md:py-[88px]">
+    <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 py-12 font-text text-black md:px-12 md:py-[88px]">
       <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">
         <div className="flex flex-col items-start gap-6 lg:order-2 lg:w-[452px] lg:shrink-0 wide:w-[30vw]">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
-          <p className="m-0 text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
+          <p className="m-0 font-heading text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
           <Link data-faq-contact href="/pages/contact" className="inline-flex h-11 items-center gap-2 rounded-[30px] bg-maple px-5 text-[14px] font-medium text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
             Contact us
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
@@ -40,7 +41,10 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
                 setOpen((current) => (opened ? i : current === i ? -1 : current));
               }}>
               <summary className="flex min-h-[93px] cursor-pointer list-none items-center gap-4 text-[18px] leading-[1.6] font-medium marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple [&::-webkit-details-marker]:hidden">
-                <span aria-hidden="true" className="relative grid size-[33px] shrink-0 place-items-center rounded-full bg-maple/8 before:absolute before:h-px before:w-3 before:bg-black group-not-open:after:absolute group-not-open:after:h-3 group-not-open:after:w-px group-not-open:after:bg-black" />
+                {/* Up while closed, down once the answer shows (owner, 6 Nov 2026). */}
+                <span data-faq-arrow aria-hidden="true" className="grid size-[33px] shrink-0 place-items-center rounded-full bg-maple/8 text-maple transition-transform group-open:rotate-180 motion-reduce:transition-none">
+                  <ArrowUp className="size-4" strokeWidth={2} />
+                </span>
                 {question}
               </summary>
               <p className="m-0 pb-6 pl-[49px] text-[14px] leading-[1.6]">{answer}</p>

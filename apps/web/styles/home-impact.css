@@ -7,10 +7,6 @@
   --impact-ink: #29251f;
   --impact-linen: #faf8f4;
   --impact-bento: #f9f7f5;
-  --impact-serif: Newsreader, Georgia, serif;
-  --impact-body: "Barlow", system-ui, sans-serif;
-  --impact-sans: "Red Hat Display", Manrope, system-ui, sans-serif;
-  --impact-script: "Pinyon Script", "Newsreader", Georgia, serif;
 }
 
 /* The homepage sits on white, as in the frame; the bento, bestsellers and enquiry bands are cream. */
@@ -57,7 +53,7 @@
 [data-home-section="hero"] .hero-introduction h2 {
   margin: 0 0 22px;
   color: #fff;
-  font: 300 38px/1.07 var(--impact-serif);
+  font: 500 38px/1.07 var(--font-heading);
   letter-spacing: 0;
 }
 [data-home-section="hero"] .hero-introduction > p {
@@ -65,7 +61,7 @@
   text-transform: none;
   letter-spacing: normal;
   max-width: 170px;
-  font: 400 13px/1.45 var(--impact-sans);
+  font: 400 13px/1.45 var(--font-text);
 }
 /* In the flow of the film's copy; relative (not static) so its fill from the pointer stays inside it. */
 [data-home-section="hero"] .hero-cta {
@@ -77,7 +73,7 @@
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 13px/1.2 var(--impact-sans);
+  font: 500 13px/1.2 var(--font-heading);
 }
 [data-home-section="hero"] .hero-categories {
   gap: 8px;
@@ -106,7 +102,7 @@
 [data-home-section="hero"] .category-tile h2 {
   margin: 0;
   color: var(--impact-ink);
-  font: 400 19px/1.2 var(--impact-serif);
+  font: 500 19px/1.2 var(--font-heading);
 }
 [data-home-section="hero"] .category-tile p {
   display: flex;
@@ -114,7 +110,7 @@
   gap: 5px;
   margin: 12px 0 0;
   color: #5b2a22;
-  font: 400 11px/1.2 var(--impact-sans);
+  font: 400 11px/1.2 var(--font-text);
 }
 
 /* ---- Announcement strip ("Always Together") -------------------------------------------- */
@@ -169,7 +165,7 @@
   transform: translateY(-50%);
   gap: 8px;
   color: var(--impact-ink);
-  font-family: var(--impact-body);
+  font-family: var(--font-text);
 }
 [data-campaign-layout="strip"] .campaign-copy:has(.campaign-label, .campaign-supporting, .campaign-eligibility) {
   top: 50%;
@@ -192,8 +188,7 @@
 }
 [data-campaign-layout="strip"] .campaign-copy h2 {
   color: var(--impact-ink);
-  font: 400 clamp(28px, 3.3cqw, 60px) / 1.1 var(--impact-serif);
-  letter-spacing: -0.012em;
+  font: 500 clamp(28px, 3.3cqw, 60px) / 1.1 var(--font-heading);
   color: #2a2420;
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-label {
@@ -204,7 +199,7 @@
 [data-campaign-layout="strip"] .campaign-copy .campaign-supporting,
 [data-campaign-layout="strip"] .campaign-copy .campaign-offer {
   color: #4a443c;
-  font: 400 clamp(13px, 1.11cqw, 19px) / 1.4 var(--impact-sans);
+  font: 400 clamp(13px, 1.11cqw, 19px) / 1.4 var(--font-text);
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-eligibility {
   color: #6a6258;
@@ -218,7 +213,7 @@
   border-radius: 3px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 500 clamp(13px, 1.11cqw, 19px) / 1.2 var(--impact-sans);
+  font: 500 clamp(13px, 1.11cqw, 19px) / 1.2 var(--font-heading);
 }
 [data-campaign-layout="strip"] .campaign-cta span {
   margin-left: 6px;
@@ -243,13 +238,13 @@
 [data-home-section="difference"] .home-eyebrow {
   margin: 0 0 6px;
   color: #1c1b19;
-  font: 500 15px/1.3 var(--impact-body);
+  font: 500 15px/1.3 var(--font-heading);
   letter-spacing: 0.02em;
 }
 [data-home-section="difference"] h2 {
   margin: 0 0 24px;
   color: var(--impact-burgundy);
-  font: 700 38px/1.15 var(--impact-serif);
+  font: 500 38px/1.15 var(--font-heading);
 }
 [data-home-section="difference"] [data-difference-link] {
   display: inline-flex;
@@ -260,7 +255,7 @@
   border: 0;
   background: none;
   color: var(--impact-burgundy);
-  font: 400 15px/1.3 var(--impact-body);
+  font: 400 15px/1.3 var(--font-text);
 }
 [data-home-section="difference"] .home-difference ul {
   grid-template-columns: repeat(4, 1fr);
@@ -285,7 +280,7 @@
 }
 [data-home-section="difference"] .home-difference li span {
   color: #4b4640;
-  font: 700 clamp(14px, 1.38vw, 19px) / 1.2 var(--impact-serif);
+  font: 500 clamp(14px, 1.38vw, 19px) / 1.2 var(--font-heading);
   font-style: normal;
 }
 
@@ -297,7 +292,7 @@
 [data-home-section="categories"] h2 {
   margin: 0;
   color: var(--impact-burgundy);
-  font: 400 40px/1.15 var(--impact-serif);
+  font: 500 40px/1.15 var(--font-heading);
   font-style: normal;
   text-align: center;
 }
@@ -335,7 +330,7 @@
 [data-home-section="categories"] .home-categories h3 {
   margin: 14px 0 0;
   color: #2c2a26;
-  font: 500 14px/1.3 var(--impact-sans);
+  font: 500 14px/1.3 var(--font-heading);
 }
 [data-category-arrow] {
   position: absolute;
@@ -359,12 +354,11 @@
   border-radius: 12px;
   background: var(--impact-burgundy);
   color: #f7e5da;
-  font: 300 clamp(24px, 2.7vw, 34px) / 1.25 var(--impact-serif);
+  font: 500 clamp(24px, 2.7vw, 34px) / 1.25 var(--font-heading);
   text-align: center;
 }
 [data-home-section="ticker"] .home-statement em {
-  font: 400 1.12em / 1 var(--impact-script);
-  font-style: normal;
+  font: 500 1em / 1 var(--font-heading);
   letter-spacing: 0.01em;
 }
 
@@ -416,7 +410,7 @@
   right: 0;
   margin: 0;
   color: #fff;
-  font: 600 clamp(20px, 2.2vw, 28px) / 1.2 var(--impact-body);
+  font: 500 clamp(20px, 2.2vw, 28px) / 1.2 var(--font-heading);
   text-align: center;
   text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
   transition: opacity 0.3s;
@@ -429,8 +423,7 @@
   right: 0;
   margin: 0;
   color: #fff;
-  font: 700 clamp(56px, 8.2vw, 100px) / 1 var(--impact-body);
-  letter-spacing: -0.01em;
+  font: 500 clamp(56px, 8.2vw, 100px) / 1 var(--font-heading);
   text-align: center;
   text-transform: uppercase;
   text-shadow: 0 2px 18px rgb(0 0 0 / 0.18);
@@ -450,7 +443,7 @@
   border-radius: 30px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 600 16px/1.2 var(--impact-body);
+  font: 500 16px/1.2 var(--font-heading);
   transition: opacity 0.3s;
 }
 /* The panel replaces the artwork while open, so the front-of-card lead and button step aside then. */
@@ -537,19 +530,19 @@
 [data-home-section] .home-products .home-eyebrow {
   margin: 0 0 14px;
   color: var(--impact-burgundy);
-  font: 600 12px/1.3 var(--impact-body);
+  font: 500 12px/1.3 var(--font-heading);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 [data-home-section] .home-products header h2 {
   color: var(--impact-ink);
-  font: 700 44px/1.1 var(--impact-serif);
+  font: 500 44px/1.1 var(--font-heading);
   font-style: normal;
 }
 [data-home-section] .home-products .home-rail-lede {
   margin: 22px 0 0;
   color: #6a6258;
-  font: 400 16px/1.4 var(--impact-body);
+  font: 400 16px/1.4 var(--font-text);
 }
 [data-home-section] .home-products header > a[data-rail-viewall] {
   min-width: 212px;
@@ -558,7 +551,7 @@
   border-radius: 4px;
   background: #fff;
   color: var(--impact-burgundy);
-  font: 600 14px/1.2 var(--impact-body);
+  font: 500 14px/1.2 var(--font-heading);
 }
 [data-home-section="bestsellers"] .home-product-rail,
 [data-home-section="chairs"] .home-product-rail {
@@ -584,13 +577,13 @@
 }
 [data-home-section] .home-products [data-card-name] {
   min-height: 0;
-  font: 600 14px/1.35 var(--impact-body);
+  font: 600 14px/1.35 var(--font-text);
   color: var(--impact-ink);
 }
 [data-home-section] .home-products [data-card-price] {
   align-items: center;
   gap: 4px 8px;
-  font: 700 15px/1.3 var(--impact-body);
+  font: 700 15px/1.3 var(--font-text);
 }
 [data-home-section] .home-products [data-card-price] > span:first-child { order: 1; }
 [data-home-section] .home-products [data-card-discount] { order: 2; }
@@ -602,75 +595,9 @@
 }
 [data-home-section="instagram"] .home-social h2 {
   color: var(--impact-ink);
-  font: 400 40px/1.2 var(--impact-serif);
+  font: 500 40px/1.2 var(--font-heading);
 }
 
-/* ---- Numbers band ---------------------------------------------------------------------- */
-.home-stat-band {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  margin: 80px 0 4px;
-  padding: 80px 48px;
-  background: var(--impact-burgundy);
-  color: #fff;
-  text-align: center;
-}
-.home-stat-band > div + div {
-  border-left: 1px solid rgb(255 255 255 / 0.18);
-}
-.home-stat-band p {
-  margin: 0;
-}
-.home-stat-value {
-  font: 700 clamp(88px, 11vw, 150px) / 1 var(--impact-body);
-  letter-spacing: -0.02em;
-}
-.home-stat-band .home-stat-label {
-  margin-top: 28px;
-  font: 600 clamp(20px, 2vw, 26px) / 1.2 var(--impact-body);
-}
-/* Cities: the frame's panel runs edge to edge with the arches alone; the admin's eyebrow and heading
-   stay in the page for screen readers, and the photo credits stay visible below the arches. */
-[data-home-section="cities"] .home-cities.home-container {
-  position: relative;
-  display: block;
-  width: auto;
-  max-width: none;
-  margin: 0;
-  padding: 40px 48px 44px;
-  border: 0;
-  border-radius: 0;
-  background: #f3efea;
-}
-[data-home-section="cities"] .home-cities header {
-  display: contents;
-}
-[data-home-section="cities"] .home-cities header .home-eyebrow,
-[data-home-section="cities"] .home-cities header h2 {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-[data-home-section="cities"] .home-cities .city-photo-credits {
-  position: absolute;
-  right: 48px;
-  bottom: 14px;
-  margin: 0;
-}
-[data-home-section="cities"] .city-motion {
-  padding-inline: 56px;
-}
-[data-home-section="cities"] .home-city-track {
-  min-width: 100%;
-  justify-content: center;
-}
 
 /* ---- Testimonial ----------------------------------------------------------------------- */
 [data-home-section="testimonial"] .home-testimonial {
@@ -697,7 +624,7 @@
   top: -22px;
   left: -78px;
   color: #e7e5e2;
-  font: italic 700 190px/1 var(--impact-serif);
+  font: 500 190px/1 var(--font-heading);
   pointer-events: none;
 }
 .home-quote blockquote {
@@ -707,8 +634,7 @@
 [data-home-section="testimonial"] .home-quote figcaption {
   margin: 0;
   color: #1b1a18;
-  font: 600 clamp(24px, 2.6vw, 32px) / 1.2 var(--impact-body);
-  letter-spacing: -0.01em;
+  font: 500 clamp(24px, 2.6vw, 32px) / 1.2 var(--font-heading);
 }
 [data-home-section="testimonial"] .home-quote figcaption {
   position: relative;
@@ -716,9 +642,8 @@
 [data-home-section="testimonial"] .home-quote blockquote h3 {
   margin: 0;
   color: #1b1a18;
-  font: 600 clamp(24px, 2.6vw, 32px) / 1.2 var(--impact-body);
+  font: 500 clamp(24px, 2.6vw, 32px) / 1.2 var(--font-heading);
   font-style: normal;
-  letter-spacing: -0.01em;
 }
 [data-home-section="testimonial"] .home-quote figcaption strong {
   font-weight: 600;
@@ -747,7 +672,7 @@
   max-width: 720px;
   margin: 24px 0 0;
   color: #4b4640;
-  font: 400 16px/1.7 var(--impact-body);
+  font: 400 16px/1.7 var(--font-text);
   letter-spacing: normal;
 }
 
@@ -765,20 +690,20 @@
   display: block;
   margin: 0 0 24px;
   color: var(--impact-burgundy);
-  font: 600 12px/1.2 var(--impact-body);
+  font: 500 12px/1.2 var(--font-heading);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 [data-home-section="project"] .home-project h2 {
   margin: 0 0 24px;
   color: var(--impact-ink);
-  font: 700 clamp(40px, 4.2vw, 52px) / 1.1 var(--impact-serif);
+  font: 500 clamp(40px, 4.2vw, 52px) / 1.1 var(--font-heading);
   font-style: normal;
 }
 [data-home-section="project"] .home-project > div > p {
   max-width: 480px;
   color: #29251f;
-  font: 400 17px/1.55 var(--impact-body);
+  font: 400 17px/1.55 var(--font-text);
 }
 [data-home-section="project"] .home-project .home-project-promise {
   display: flex;
@@ -811,7 +736,7 @@
   border: 1px solid #d9d4cc;
   border-radius: 4px;
   background: #fff;
-  font: 400 13px/1.4 var(--impact-body);
+  font: 400 13px/1.4 var(--font-text);
 }
 [data-home-section="project"] .home-project-form textarea {
   height: 44px;
@@ -826,7 +751,7 @@
   border-radius: 4px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 600 13px/1.2 var(--impact-body);
+  font: 500 13px/1.2 var(--font-heading);
 }
 
 /* ---- Values and the closing invitation ------------------------------------------------- */
@@ -842,16 +767,15 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font: 700 clamp(40px, 10.2vw, 170px) / 1.05 var(--impact-body);
+  font: 500 clamp(40px, 10.2vw, 170px) / 1.05 var(--font-heading);
   overflow-wrap: anywhere;
-  letter-spacing: -0.03em;
   text-align: center;
   user-select: none;
 }
 [data-home-section="values"] .home-values h3 {
   margin: 18px 0 14px;
   color: #4b4640;
-  font: 500 19px/1.2 var(--impact-body);
+  font: 500 19px/1.2 var(--font-heading);
 }
 [data-home-section="values"] .home-values div > p {
   color: #4b4640;
@@ -866,7 +790,7 @@
   border-radius: 30px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 600 16px/1.2 var(--impact-body);
+  font: 500 16px/1.2 var(--font-heading);
 }
 
 @media (max-width: 1000px) {
@@ -902,16 +826,11 @@
   [data-home-section="bestsellers"] .home-product-rail,
   [data-home-section="chairs"] .home-product-rail { grid-auto-columns: 72%; gap: 12px; }
   [data-home-section] .home-products header h2 { font-size: 34px; }
-  .home-stat-band { grid-auto-flow: row; padding: 48px 16px; row-gap: 40px; margin-top: 48px; }
-  .home-stat-band > div + div { border-left: 0; }
   [data-home-section="testimonial"] .home-testimonial { padding: 56px 16px; width: auto; }
   [data-home-section="testimonial"] .home-testimonial figure.home-quote { padding: 0; border-radius: 0; }
   .home-quote-mark { left: -6px; top: -26px; font-size: 110px; }
   [data-home-section="project"] .home-project { padding: 40px 16px 56px; gap: 28px; }
   [data-home-section="values"] .home-values { padding: 16px 16px 72px; }
-  [data-home-section="cities"] .home-cities.home-container { padding: 28px 12px 40px; }
-  [data-home-section="cities"] .city-motion { padding-inline: 44px; }
-  [data-home-section="cities"] .home-cities .city-photo-credits { right: 12px; padding: 8px; }
   [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
 }
 
@@ -1085,13 +1004,12 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 [data-home-section="nimbus"] .nimbus-stage-copy .nimbus-stage-word { color: #fff; }
 .nimbus-stage-tagline {
   margin: 0;
-  font: 700 clamp(18px, 2.5vw, 31.6px) / 1.6 var(--impact-body);
+  font: 500 clamp(18px, 2.5vw, 31.6px) / 1.6 var(--font-heading);
   text-shadow: 0 2px 22px rgb(0 0 0 / 0.22);
 }
 .nimbus-stage-word {
   margin: 0;
-  font: 700 clamp(52px, 7.5vw, 95px) / 1.1 var(--impact-body);
-  letter-spacing: -0.02em;
+  font: 500 clamp(52px, 7.5vw, 95px) / 1.1 var(--font-heading);
   text-transform: uppercase;
   text-shadow: 0 8px 44px rgb(0 0 0 / 0.16);
 }
@@ -1106,7 +1024,7 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   border-radius: 60px;
   background: var(--impact-burgundy);
   color: #fff;
-  font: 700 16px / 1 var(--impact-body);
+  font: 500 16px / 1 var(--font-heading);
   text-decoration: none;
   box-shadow: 0 14px 34px -14px rgb(116 26 20 / 0.75);
   transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.2, 0.65, 0.2, 1), box-shadow 0.3s ease;
@@ -1119,7 +1037,7 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 @keyframes stage-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes stage-word {
   from { opacity: 0; letter-spacing: 0.14em; filter: blur(7px); }
-  to { opacity: 1; letter-spacing: -0.02em; filter: blur(0); }
+  to { opacity: 1; letter-spacing: 0; filter: blur(0); }
 }
 
 /* The numbers: a faint ring each, and on the current one a white arc that fills; when it closes the next collection fades in. */
@@ -1142,7 +1060,7 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   border-radius: 50%;
   background: rgb(26 22 18 / 0.08);
   color: rgb(255 255 255 / 0.7);
-  font: 700 16px / 1 var(--impact-body);
+  font: 700 16px / 1 var(--font-text);
   cursor: pointer;
   transition: color 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
 }
@@ -1325,27 +1243,8 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 .home-social .instagram-motion .home-instagram-posts > a img { transition: transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1); }
 .home-social .instagram-motion .home-instagram-posts > a:hover img { transform: scale(1.06); }
 
-/* Cities drift on their own; the arrows the paging row needed are gone. */
-[data-home-section="cities"] .city-motion { padding-inline: 0; }
-.city-motion .home-city-track {
-  min-width: 0;
-  justify-content: flex-start;
-  gap: 22px;
-  padding-right: 22px;
-}
-[data-home-section="cities"] .home-city-card { flex: 0 0 112px; width: 112px; }
-[data-home-section="cities"] .home-city-artwork { height: 178px; box-shadow: 0 10px 26px -14px rgb(41 37 31 / 0.35); }
 [data-home-section="cities"] .home-marquee-toggle { top: auto; bottom: -38px; right: 50%; transform: translateX(50%); }
 
-/* ---- Numbers band: Figma 1:242, each figure counting up the first time it is seen ---- */
-.home-stat-value { font-variant-numeric: tabular-nums; font-size: clamp(88px, 11.4vw, 144px); }
-.home-stat-band .home-stat-label { margin-top: 22px; font-weight: 700; letter-spacing: -0.02em; }
-.home-stat-band .home-stat-description {
-  margin-top: 18px;
-  color: rgb(255 255 255 / 0.88);
-  font: 400 16px / 1.6 var(--impact-body);
-}
-.home-stat-band > div + div { border-left-color: rgb(255 255 255 / 0.1); }
 
 /* ---- Pull up a chair: the square photo flips through Maple's dining pieces, hard cuts, on and on ---- */
 [data-flipbook] [data-flip-frame] {
@@ -1361,8 +1260,7 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font: 700 clamp(48px, 11.9vw, 150px) / 1.28 var(--impact-body);
-  letter-spacing: -0.0256em;
+  font: 500 clamp(48px, 11.9vw, 150px) / 1.28 var(--font-heading);
 }
 [data-reveal] {
   transition: opacity 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 1.6s ease;
@@ -1385,9 +1283,6 @@ html[data-home-effects="live"] [data-reveal]:not([data-revealed]) {
   .instagram-motion .home-marquee-toggle { top: auto; bottom: -50px; right: 50%; transform: translateX(50%); }
   .home-social .instagram-motion .home-instagram-posts { gap: 12px; padding-right: 12px; }
   .home-social .instagram-motion .home-instagram-posts > a { flex-basis: 58vw; }
-  [data-home-section="cities"] .home-city-card { flex-basis: 98px; width: 98px; }
-  [data-home-section="cities"] .home-city-artwork { height: 152px; }
-  .home-stat-band .home-stat-description { font-size: 15px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import React, { act } from "react";
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { HomeNewsletter, HomeTestimonial } from "../components/home-sections";
 
@@ -92,36 +91,7 @@ test("published editorial copy names both regions and retains editable media wit
     assert.ok(doc.querySelector('.home-newsletter img[alt="Published Maple artwork"]')?.getAttribute("src")?.includes("editorial-logo.png"));
     assert.equal(doc.querySelector(".home-newsletter h3")?.textContent, "Join our list");
     const email = doc.querySelector<HTMLInputElement>('.home-newsletter input[type="email"]')!;
-    assert.equal(email.labels?.[0]?.textContent, "Email");
+    assert.equal(email.labels?.[0]?.textContent, "Email address");
     assert.ok(email.required);
   } finally { dom.window.close(); }
-});
-
-test("newsletter composition preserves unavailable notice and submission never sends or claims signup", async () => {
-  const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/" });
-  const previous = { window: globalThis.window, document: globalThis.document, HTMLElement: globalThis.HTMLElement, fetch: globalThis.fetch };
-  Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
-  const requests: unknown[] = [];
-  globalThis.fetch = async (...args) => { requests.push(args); throw new Error("Newsletter transport must remain inactive"); };
-  const container = document.getElementById("root")!;
-  const root = createRoot(container);
-  try {
-    await act(async () => root.render(<HomeNewsletter />));
-    assert.equal(container.querySelector("h2")?.textContent, "Soft presence. Strong craftsmanship.");
-    assert.ok(container.textContent?.includes("Furniture made for rooms that feel as good as they look."));
-    assert.equal(container.querySelector("h3")?.textContent, "New Collections. Early Access. No Noise.");
-    assert.equal(container.querySelector(".home-preview-detail")?.textContent, "Newsletter signup is not available yet.");
-    const email = container.querySelector<HTMLInputElement>('input[type="email"]')!;
-    email.value = "synthetic@example.invalid";
-    await act(async () => container.querySelector<HTMLFormElement>("form")!.requestSubmit());
-    const status = container.querySelector('[role="status"]')!;
-    assert.equal(status.textContent?.replace(/\s+/g, " ").trim(), "Contact Your email has not been submitted.");
-    assert.equal(status.querySelector("a")?.getAttribute("href"), "/pages/contact");
-    assert.deepEqual(requests, []);
-    assert.equal(email.value, "synthetic@example.invalid");
-  } finally {
-    await act(async () => root.unmount());
-    Object.assign(globalThis, previous);
-    dom.window.close();
-  }
 });

@@ -19,10 +19,8 @@ test("footer preserves its policy destinations behind the original disclosure", 
 
 test("city cards pair each editable image with its published destination label", () => {
   const doc = render(<HomeCities layout={[{key:"delhi",enabled:true},{key:"agra",enabled:false},{key:"mumbai",enabled:true}]} />);
-  // The drifting row draws its cities twice; the second pass is hidden decoration.
-  const cards = [...doc.querySelectorAll("[data-marquee-group]:not([data-marquee-copy]) .home-city-track figure")];
+  const cards = [...doc.querySelectorAll(".home-city-track figure")];
   assert.equal(cards.length, 2, "Enabled destinations should be distinct labeled city cards");
   assert.deepEqual(cards.map(card => card.querySelector("figcaption")?.textContent), ["Delhi", "Mumbai"]);
   assert.deepEqual(cards.map(card => card.querySelector("img")?.alt), ["Delhi", "Mumbai"]);
-  assert.equal(doc.querySelector("[data-marquee-copy]")?.getAttribute("aria-hidden"), "true");
 });

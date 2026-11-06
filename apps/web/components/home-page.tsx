@@ -23,7 +23,6 @@ import {
   HomeProject,
 } from "@/components/home-sections";
 import { getProductCards } from "@/lib/catalog";
-import { homeStats } from "@/lib/home-stats";
 import type { StorefrontDocument } from "@/lib/content";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
@@ -202,7 +201,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     newsletter: <HomeNewsletter content={details.newsletter} media={content.templateMedia} />,
     values: <HomeValues content={details.values} media={content.templateMedia} watermark />,
     cities: (
-      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} media={content.templateMedia} layout={content.homeCitiesLayout} stats={homeStats(details.difference.promises, details.cities.heading)} />
+      <HomeCities content={details.cities} autoplay={content.motion.autoplayCities} media={content.templateMedia} layout={content.homeCitiesLayout} />
     ),
     project: <HomeProject content={details.project} />,
   };

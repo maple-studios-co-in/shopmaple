@@ -350,7 +350,6 @@ test("sofas and beds follow the same Precision design as every piece: four cards
       const stage = doc.querySelector("[data-features-layout]")!;
       assert.equal(stage.getAttribute("data-features-layout"), "around", category);
       const cards = [...stage.querySelectorAll("[data-feature]")];
-      assert.deepEqual(cards.map((card) => text(card.querySelector("[data-feature-number]"))), ["01", "02", "03", "04"], category);
       assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care", "Delivery & Warranty"], category);
       assert.ok(stage.querySelector("[data-feature-photo] img"), "the piece's photo in the middle");
       const toggle = cards[1]!.querySelector<HTMLButtonElement>("button[data-feature-toggle]")!;

@@ -113,18 +113,18 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
   return (
     <dialog ref={dialog} data-store data-customise aria-labelledby="customise-title" onClose={onClose}
       onClick={(event) => { if (event.target === dialog.current) onClose(); }}
-      className="m-0 h-[100dvh] max-h-none w-full max-w-none overflow-hidden border-0 bg-white p-0 font-product text-[#1c1c1c] backdrop:bg-[#17171175] lg:m-auto lg:h-[min(950px,calc(100dvh-48px))] lg:w-[min(1152px,calc(100vw-48px))] lg:rounded-[20px] lg:shadow-[0_16px_60px_rgb(31_18_13/0.18)]">
+      className="m-0 h-[100dvh] max-h-none w-full max-w-none overflow-hidden border-0 bg-white p-0 font-text text-[#1c1c1c] backdrop:bg-[#17171175] lg:m-auto lg:h-[min(950px,calc(100dvh-48px))] lg:w-[min(1152px,calc(100vw-48px))] lg:rounded-[20px] lg:shadow-[0_16px_60px_rgb(31_18_13/0.18)]">
       <form onSubmit={submit} onChange={enquiry.clear} className="flex h-full min-h-0 flex-col lg:grid lg:grid-cols-[344px_minmax(0,1fr)]">
         {/* Desktop: the piece and the live selection (44:480). */}
         <aside className="hidden min-h-0 flex-col gap-6 overflow-y-auto bg-[#f7f3ee] p-8 lg:flex">
           <p className="m-0 text-[11px] leading-[15px] font-semibold tracking-[1.8px] text-maple">MADE AROUND YOU</p>
-          <h2 id="customise-title" className="m-0 text-[38px] leading-[43px] font-medium tracking-[-0.7px] text-maple">Make it unmistakably yours.</h2>
+          <h2 id="customise-title" className="m-0 text-[38px] leading-[43px] font-medium text-maple">Make it unmistakably yours.</h2>
           <p className="m-0 text-[15px] leading-[21px] text-[#756d68]">Your fabric. Your finish.<br />A piece that feels like you.</p>
           <span className="relative block h-[350px] min-h-[140px] w-full overflow-hidden rounded-[12px] bg-cream [&_img]:object-cover">
             <ProductImage src={product.image} alt={product.title} fill sizes="280px" />
           </span>
           <div className="flex flex-col gap-[5px]">
-            <p className="m-0 text-[21px] leading-[29px] font-medium">{product.title}</p>
+            <p className="m-0 font-heading text-[21px] leading-[29px] font-medium">{product.title}</p>
             {product.collection && <p className="m-0 text-[12px] leading-[17px] text-[#756d68]">{product.collection}</p>}
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-y-2.5 border-0 border-t border-solid border-[#e9e3de] pt-2.5 text-[13px] leading-[18px] text-[#756d68]">{selection}</div>
@@ -139,7 +139,7 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
           <div data-customise-scroll className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto overscroll-contain px-5 pt-5 pb-8 lg:gap-7 lg:p-9 lg:pb-4">
             {sent ? (
               <div data-customise-sent role="status" className="flex flex-1 flex-col items-start justify-center gap-4">
-                <p className="m-0 text-[26px] leading-9 font-medium">Thank you. Your request is with us.</p>
+                <p className="m-0 font-heading text-[26px] leading-9 font-medium">Thank you. Your request is with us.</p>
                 <p className="m-0 max-w-[520px] text-[15px] leading-[22px] text-[#756d68]">The Maple team will contact you about your {product.title} and confirm finishes, pricing and lead time. {enquiry.message.replace("Your enquiry has been saved. ", "")}</p>
                 <button type="button" onClick={onClose} className="h-12 cursor-pointer rounded-full border-0 bg-maple px-8 text-[15px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">Done</button>
               </div>
@@ -147,7 +147,7 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
               <>
                 <div className="hidden items-start justify-between gap-6 lg:flex">
                   <div className="flex flex-col gap-1">
-                    <p className="m-0 text-[26px] leading-9 font-medium">A few choices. All yours.</p>
+                    <p className="m-0 font-heading text-[26px] leading-9 font-medium">A few choices. All yours.</p>
                     <p className="m-0 text-[14px] leading-5 text-[#756d68]">Select your favourites, or share a completely different idea.</p>
                   </div>
                   {close("size-8")}
@@ -155,7 +155,7 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
                 {/* Phone: the introduction and the piece with its live selection (46:637, 46:641). */}
                 <div className="flex flex-col gap-3 lg:hidden">
                   <p className="m-0 text-[10px] leading-[15px] font-semibold tracking-[1.5px] text-maple">MADE AROUND YOU</p>
-                  <p className="m-0 text-[31px] leading-[37px] font-medium text-maple">Make it unmistakably yours.</p>
+                  <p className="m-0 font-heading text-[31px] leading-[37px] font-medium text-maple">Make it unmistakably yours.</p>
                   <p className="m-0 text-[14px] leading-5 text-[#756d68]">Choose your finishes, or share an idea of your own.</p>
                 </div>
                 <div className="flex items-center gap-3.5 rounded-[12px] bg-[#f7f3ee] p-3 lg:hidden">

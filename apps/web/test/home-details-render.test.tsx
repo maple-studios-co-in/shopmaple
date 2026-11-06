@@ -101,7 +101,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, ".home-values h3"), ["Lasting frames", "Better with time", "Everyday comfort", "Quiet details"]);
   assert.deepEqual(texts(doc, ".home-values p"), ["Built with care.", "Materials that mature.", "For every day.", "A calm room."]);
   assert.ok(doc.querySelector(".home-values img")?.getAttribute("src")?.includes("Cover_Image_Maple_5.svg"));
-  assert.deepEqual(texts(doc, ".home-cities header p, .home-cities h2"), ["Find us near you", "Across India"]);
+  assert.deepEqual(texts(doc, ".home-cities header .home-eyebrow, .home-cities h2"), ["Find us near you", "Across India"]);
   assert.equal(doc.querySelector(".home-project h2")?.textContent, "Tell us your idea");
   assert.deepEqual(texts(doc, ".home-project > div > p"), ["Our team replies in two working days with tailored ideas.", "Start with your room."]);
   assert.equal(doc.querySelector(".home-project strong")?.textContent, "two working days");

@@ -10,7 +10,7 @@ import type { StorefrontContent } from "@shopmaple/contracts";
 /** The "Maple / Impact Layout" frame's order. Its design has no newsletter band; it stays last, and staff can hide it in the section builder. */
 const homeSectionOrder: StorefrontContent["homeSections"][number]["key"][] = [
   "hero", "announcement", "difference", "categories", "ticker", "offers", "nimbus", "dining-banner", "instagram", "bestsellers",
-  "seating-banner", "chairs", "promos", "editorial", "cities", "compare", "testimonial", "project", "values", "newsletter",
+  "seating-banner", "chairs", "promos", "editorial", "newsletter", "cities", "compare", "testimonial", "project", "values",
 ];
 
 /**
@@ -18,7 +18,7 @@ const homeSectionOrder: StorefrontContent["homeSections"][number]["key"][] = [
  * ("Have a space in mind?") back on 4 November, just above the Maple Furnishers wordmark and its values. The two
  * stay in the section builder, switched off, for staff to turn back on.
  */
-const hiddenHomeSections = new Set<string>(["testimonial", "newsletter"]);
+const hiddenHomeSections = new Set<string>(["testimonial"]);
 
 // These placements originally scrolled to the product grid on their own collection page.
 const collectionCampaignDestinations: Partial<
