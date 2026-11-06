@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { z } from "zod";
-import { storefrontContentSchema, type StorefrontContent } from "@shopmaple/contracts";
+import { campaignDeals, storefrontContentSchema, type CampaignDeal, type StorefrontContent } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "./content-defaults";
+import { withDemoCampaignDeal } from "./demo-campaign-deal";
 const publishedSchema = z
   .object({
     version: z.number().int().min(1),
@@ -20,11 +21,11 @@ export async function readPublishedContent(transport: typeof fetch = fetch): Pro
     );
     if (response.ok) {
       const result = publishedSchema.safeParse(await response.json());
-      if (result.success) return { ...result.data.content, campaignsAvailable: true };
+      if (result.success) return withDemoCampaignDeal({ ...result.data.content, campaignsAvailable: true });
     } else if (response.status === 404) {
       const error = await response.json();
       if (error?.code === "CONTENT_NOT_PUBLISHED")
-        return { ...structuredClone(defaultStorefrontContent), campaignsAvailable: true };
+        return withDemoCampaignDeal({ ...structuredClone(defaultStorefrontContent), campaignsAvailable: true });
     }
   } catch {
     /* Original bundled public content remains available during an outage. */
@@ -32,3 +33,6 @@ export async function readPublishedContent(transport: typeof fetch = fetch): Pro
   return { ...structuredClone(defaultStorefrontContent), campaignsAvailable: false };
 }
 export const getPublishedContent = cache(() => readPublishedContent());
+/** The campaign offers a document may run. The bundled copy read during an API outage cannot vouch for any, like the banners. */
+export const documentDeals = (document: StorefrontDocument): CampaignDeal[] =>
+  document.campaignsAvailable === false ? [] : campaignDeals(document.campaigns);

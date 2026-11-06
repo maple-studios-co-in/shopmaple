@@ -18,7 +18,7 @@ import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
 import { CustomiseQuote } from "./customise-quote";
-import { DealTab, ProductDeal, dealLive } from "./product-deal";
+import { DealTab, ProductDeal, dealKey, useRunningDeal } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
 import { ProductFeatures, previewChars, type Feature } from "./product-features";
@@ -238,7 +238,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
-  const deal = dealLive(highlights.deal, openedAt) ? highlights.deal : undefined;
+  const deal = useRunningDeal(highlights, openedAt);
   return (
     <div data-store data-product-page className="bg-white font-product text-black">
       <ProductVisit handle={product.handle} />
@@ -288,7 +288,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               {highlightLines.map((line) => <li key={line} className="flex gap-2"><span aria-hidden="true" className="text-maple">✓</span>{line}</li>)}
             </ul>
           )}
-          {deal && <ProductDeal deal={deal} />}
+          {deal && <ProductDeal key={dealKey(deal)} deal={deal} />}
           {product.variants.length > 1 && (
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
@@ -402,7 +402,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
           </div>
         </div>
       </section>
-      {deal && <DealTab deal={deal} />}
+      {deal && <DealTab key={dealKey(deal)} deal={deal} />}
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
       <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} tagline={tagline} />
       <ProductBanner />
