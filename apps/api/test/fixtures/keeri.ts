@@ -17,7 +17,10 @@ export function keeriFixture() {
       variants: [{ id: "variant1", tenantId: "maple", modelId: "model1", sku: "CH-ZYRO-LGDWBN",
         variantName: "Linen / Walnut", status: "published", published: true,
         deletedAt: null, stockPolicy: "stocked", updatedAt: "2026-10-25T09:15:00Z",
-        prices: [{ kind: "mrp", amount: 1234567, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" }],
+        prices: [
+          { kind: "mrp", amount: 1046243, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+          { kind: "store_price", amount: 1234567, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+        ],
         media: [] }],
     }],
   };
