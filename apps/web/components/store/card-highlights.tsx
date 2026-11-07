@@ -9,15 +9,33 @@ export function CardNewBadge({ handle }: { handle: string }) {
   return extra?.isNew ? <span data-card-new className="rounded-[4px] bg-[#6b2fd6] px-2 py-1 text-2xs leading-none font-bold text-white">New</span> : null;
 }
 
-export function CardRating({ handle }: { handle: string }) {
-  const rating = useProductHighlights().product(handle)?.rating;
-  if (!rating) return null;
+export function CardLimitedBadge({ handle }: { handle: string }) {
+  const extra = useProductHighlights().product(handle);
+  return extra?.isLimited ? <span data-card-limited className="rounded-[4px] bg-[#b07a1f] px-2 py-1 text-2xs leading-none font-bold text-white">Limited</span> : null;
+}
+
+/**
+ * Every card carries its rating on the right of the name, as the score and one gold star ("4.6 ★"): the average of
+ * the piece's approved reviews in Keeri, which the card brings with it (owner, 4 Nov 2026). A piece without approved
+ * reviews shows a dash and an empty star in the same place ("– ☆", read out and shown on hover as "No reviews yet").
+ * Nothing typed, sampled or estimated stands in for a rating.
+ */
+export function CardRating({ rating }: { rating?: { value: number; count: number } | null }) {
+  if (!rating) {
+    return (
+      <span data-card-rating data-card-rating-empty role="img" aria-label="No reviews yet" title="No reviews yet"
+        className="inline-flex items-center gap-1 text-[14px] leading-none text-[#8a8178]">
+        <span aria-hidden="true">–</span>
+        <Star aria-hidden="true" strokeWidth={1.75} className="size-4 text-[#f5a623]" />
+      </span>
+    );
+  }
+  const label = `Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`;
   return (
-    <span data-card-rating role="img" aria-label={`Rated ${rating.value.toFixed(1)} out of 5 from ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`}
-      className="inline-flex items-center gap-1 text-espresso">
+    <span data-card-rating role="img" aria-label={label} title={label}
+      className="inline-flex items-center gap-1 text-[14px] leading-none text-[#3a352f]">
       <span aria-hidden="true">{rating.value.toFixed(1)}</span>
-      <Star aria-hidden="true" className="size-3.5 fill-[#f5a623] text-[#f5a623]" />
-      <span aria-hidden="true" className="text-[#5e574f]">({rating.count})</span>
+      <Star aria-hidden="true" className="size-4 fill-[#f5a623] text-[#f5a623]" />
     </span>
   );
 }

@@ -27,7 +27,7 @@ const product: Product = {
 const expected = {
   id: product.id, handle: product.handle, title: "Boundary Chair", image: "https://example.com/first.jpg",
   pricePaise: 25000, compareAtPaise: 30000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2,
-  category: null, optionNames: [] as string[],
+  category: null, optionNames: [] as string[], optionThumbs: [] as never[],
 };
 function find(node: ReactNode, component: unknown): ReactElement<Record<string, unknown>>[] {
   return Children.toArray(node).flatMap(child => {

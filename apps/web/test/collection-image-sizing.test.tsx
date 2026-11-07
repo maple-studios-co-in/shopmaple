@@ -9,7 +9,7 @@ import { CollectionListing } from "../components/collection-listing";
 import { ShopProvider } from "../components/shop-provider";
 import { collectionQuery } from "../lib/collections";
 
-test("changing collection density updates image slots while retaining product artwork and links", async () => {
+test("collection image slots follow the four-across grid while retaining product artwork and links", async () => {
   const dom = new JSDOM("<div id='root'></div>", { url: "http://localhost:3000/collections/all" });
   Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document,
     localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
@@ -25,15 +25,11 @@ test("changing collection density updates image slots while retaining product ar
       query={collectionQuery({})} products={[toProductCard(product)]} total={1} collectionTotal={1} limit={24}
       inStock={0} outOfStock={1} highestPrice={null} /></ShopProvider>));
     const image = document.querySelector<HTMLImageElement>(".collection-products img")!;
-    const standard = "(max-width:749px) calc((100vw - 44px) / 2), (max-width:1100px) calc((100vw - 274px) / 2), (max-width:1599px) calc((100vw - 356px) / 3), (min-width:1920px) 387px, calc((100vw - 372px) / 4)";
-    assert.equal(image.sizes, standard);
-    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Compact grid"]')!.click());
-    // Compact mobile retains its 8px gap even though it uses two columns.
-    assert.equal(image.sizes, "(max-width:749px) calc((100vw - 40px) / 2), (max-width:1100px) calc((100vw - 306px) / 5), (min-width:1920px) 309.6px, calc((100vw - 372px) / 5)");
+    // Two across on phones, three on tablets and beside the filters, then frame 1:1155's four 243px cards.
+    // From 1600px the grid grows with the screen, and from 1900px it holds six across (owner, 4 Nov 2026).
+    assert.equal(image.sizes, "(max-width:767px) calc((100vw - 44px) / 2), (max-width:1023px) calc((100vw - 96px) / 3), (max-width:1279px) calc((100vw - 452px) / 3), (min-width:1900px) calc((100vw - 468px) / 6), (min-width:1600px) calc((100vw - 436px) / 4), (min-width:1440px) 243px, calc((100vw - 468px) / 4)");
     assert.equal(image.getAttribute("src"), "https://example.com/chair.jpg");
     assert.equal(image.closest("a")?.getAttribute("href"), "/products/chair");
-    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Standard grid"]')!.click());
-    assert.equal(image.sizes, standard);
     assert.equal(document.querySelectorAll(".collection-products [data-product-card]").length, 1);
   } finally {
     await act(async () => root.unmount());

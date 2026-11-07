@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { productSchema } from "@shopmaple/contracts";
 import { planCatalogueUnion } from "./catalogue-union.js";
+import { reviewSummary } from "./review-summary.js";
 export async function syncCatalogueUnion(
   db: PrismaClient,
   shopify: unknown,
@@ -60,6 +61,8 @@ export async function syncCatalogueUnion(
         const data = {
           ...fields,
           pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull,
+          productPage: fields.productPage ?? Prisma.DbNull,
+          ...reviewSummary(fields.productPage),
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };
         await tx.product.upsert({
@@ -75,6 +78,7 @@ export async function syncCatalogueUnion(
             throw new Error("VARIANT_REPARENT_FORBIDDEN");
           const data = {
             ...variant,
+            productPage: variant.productPage ?? Prisma.DbNull,
             productId: product.id,
             published: true,
             leadTimeDays: variant.leadTimeDays ?? null,

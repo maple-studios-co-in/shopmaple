@@ -25,7 +25,12 @@ const product: Product = {
     { id: "taupe", title: "Desert Taupe", sku: "AERO-T", pricePaise: 2_360_000, compareAtPaise: 2_714_000, available: true, stockPolicy: "stocked" },
   ],
 };
-const highlights: ProductHighlights = { swatches: [], products: [{ handle: "aero-dining-chair", isNew: true, rating: { value: 4.6, count: 12 } }] };
+const highlights: ProductHighlights = { swatches: [], products: [{ handle: "aero-dining-chair", isNew: true, rating: null }] };
+// Keeri's product-page data holding nothing but approved reviews, the rating's only source (owner, 4 Nov 2026).
+const reviewed = (average: number, count: number): Product["productPage"] => ({
+  specs: { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, highlights: [], faq: [], assembly: null, customisation: null,
+  rooms: [], reviews: { average, count, items: [] }, media: [], bundles: [],
+});
 const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 type Mount = { highlights?: ProductHighlights; fetcher?: typeof fetch; push?: (href: string) => void; checkoutEnabled?: boolean };
 async function mount(check: (doc: Document) => void | Promise<void>, value: Product = product, options: Mount = {}) {
@@ -57,14 +62,29 @@ test("the buy box shows the title, price, discount, struck-out price, rating and
     assert.equal(text(info.querySelector("[data-rating]")), "4.6");
     assert.equal(text(info.querySelector("[data-chip='new']")), "New");
     assert.equal(info.querySelector("[data-description]")?.textContent, "A considered silhouette for a welcoming place at the table.");
-  }, product, { highlights });
+  }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
 });
 
-test("what the frame shows without data behind it is left out: vendor, countdown, code, stock, pickup, absent rating", async () => {
+test("Add to cart fills from the pointer like the owner's reference, and the enquiry button fills as an outline button", async () => {
+  await mount((doc) => {
+    const info = hook(doc, "data-product-info")!;
+    assert.equal(info.querySelector("[data-primary]")?.getAttribute("data-fill-button"), "", "the solid button");
+    assert.equal(info.querySelector("[data-enquire]")?.getAttribute("data-fill-button"), "outline");
+  });
+  await mount((doc) => {
+    assert.equal(hook(doc, "data-buy-now")?.getAttribute("data-fill-button"), "outline", "Buy it now, where checkout is open");
+  }, product, { checkoutEnabled: true });
+});
+
+test("what the frame shows without data behind it is left out: vendor, countdown, code, stock, pickup; an absent rating says so", async () => {
   await mount((doc) => {
     const page = hook(doc, "data-product-page")!;
     const info = hook(doc, "data-product-info")!;
-    assert.equal(info.querySelector("[data-rating]"), null, "No staff-entered rating, no number");
+    const rating = info.querySelector("[data-rating]")!;
+    assert.ok(rating.hasAttribute("data-rating-empty"), "No approved reviews in Keeri: it says so rather than leaving a gap");
+    assert.equal(rating.querySelectorAll("svg").length, 1, "ending on one empty star");
+    assert.equal(text(rating), "No reviews yet", "and no number");
+    assert.equal(rating.getAttribute("href"), "#product-reviews", "leading to the reviews band, where the first can be written");
     assert.equal(info.querySelector("[data-chip='new']"), null);
     for (const hookName of ["data-countdown", "data-stock", "data-pickup", "data-vendor"]) assert.equal(hook(doc, hookName), null, hookName);
     assert.doesNotMatch(page.textContent!, /in stock|Pickup available|SALE30|NEW20|ChicAura|Don.t miss the deal|\$\s?100/i);
@@ -151,35 +171,34 @@ test("the gallery keeps its thumbnails, status and previous / next controls at e
   });
 });
 
-test("Precision in Every Detail pairs three expandable cards with a second photo of the piece", async () => {
-  await mount(async (doc) => {
+test("Precision in Every Detail sets the catalogue's own text on its cards beside a second photo of the piece", async () => {
+  await mount((doc) => {
     const section = hook(doc, "data-features")!;
     assert.equal(text(section.querySelector("h2")), "Precision in Every Detail");
-    assert.equal(text(section.querySelector("[data-features-intro]")), "Crafted in Delhi, made to order and fully customisable.");
     const cards = [...section.querySelectorAll("[data-feature]")];
-    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specification", "Material & Care"]);
-    const toggles = cards.map((card) => card.querySelector<HTMLButtonElement>("button[aria-expanded]")!);
-    assert.deepEqual(toggles.map((toggle) => toggle.getAttribute("aria-expanded")), ["false", "false", "false"]);
+    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Materials", "Specifications", "Material Care"]);
     assert.equal(text(cards[0]!.querySelector("[data-feature-body]")), "Solid wood frame with a woven seat.");
-    assert.equal(cards[1]!.querySelector("[data-feature-body]")?.textContent, "Width 56 cm\nDepth 61 cm");
-    assert.equal(text(cards[2]!.querySelector("[data-feature-body]")), "Oak frame, boucle seat. Dust weekly.");
-    await act(async () => toggles[1]!.click());
-    assert.equal(toggles[1]!.getAttribute("aria-expanded"), "true");
-    assert.equal(cards[1]!.getAttribute("data-open"), "true");
-    assert.equal(cards[0]!.getAttribute("data-open"), "false", "Cards open independently");
+    assert.equal(text(cards[1]!.querySelector("[data-feature-body]")), "Oak frame, boucle seat.", "Text without labels stays a paragraph");
+    assert.deepEqual([...cards[2]!.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text)), [["Width", "56 cm"], ["Depth", "61 cm"]]);
+    assert.equal(text(cards[3]!.querySelector("[data-feature-body]")), "Dust weekly.");
     assert.equal(section.querySelector<HTMLImageElement>("[data-feature-photo] img")?.getAttribute("alt"), "Aero Dining Chair — detail view");
     assert.match(section.querySelector<HTMLImageElement>("[data-feature-photo] img")!.getAttribute("src")!, /aero-2\.jpg/, "The second photo of the piece");
   });
 });
 
-test("feature cards without catalogue text are left out, and the About card falls back to the description", async () => {
+test("every product shows the full set of cards: the About card falls back to the description, the rest to store-wide facts", async () => {
   await mount((doc) => {
     const cards = [...doc.querySelectorAll("[data-feature]")];
-    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product"]);
+    assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care", "Delivery & Warranty"]);
     assert.equal(text(cards[0]!.querySelector("[data-feature-body]")), "A considered silhouette for a welcoming place at the table.");
+    const rows = (card: Element) => [...card.querySelectorAll("[data-feature-row]")].map((row) => [...row.children].map(text));
+    assert.deepEqual(rows(cards[1]!).slice(-2), [["Measurements", "Shared on request"], ["Warranty", "36 months"]], "no measurements are invented");
+    assert.deepEqual(rows(cards[3]!), [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", "36 months"]]);
+    assert.equal(text(cards[2]!.querySelector("[data-feature-body]")), "Choose the fabric, finish and colour with Maple. Dust with a soft, dry cloth, blot spills at once, and keep it out of direct sun and away from heat.");
   }, { ...product, sourceDetails: null });
   await mount((doc) => {
-    assert.equal(hook(doc, "data-features"), null, "No text and no photos, no section");
+    assert.deepEqual([...doc.querySelectorAll("[data-feature] h3")].map(text), ["Specifications", "Material & Care", "Delivery & Warranty"], "No text and no photos: the store-wide cards still show");
+    assert.equal(doc.querySelector("[data-feature-photo]"), null);
   }, { ...product, description: "", sourceDetails: null, images: [] });
 });
 
@@ -187,8 +206,8 @@ test("the banner uses Maple's own static photo and the store's promises instead 
   await mount((doc) => {
     const banner = hook(doc, "data-banner")!;
     assert.match(banner.querySelector("img")!.getAttribute("src")!, /^\/product-page\/banner\.jpg/);
-    assert.equal(text(banner.querySelector("h2")), "Crafted in Delhi. Made to order.");
-    assert.equal(text(banner.querySelector("p")), "In our own workshop, and backed by our warranty.");
+    assert.equal(text(banner.querySelector("h2")), "Made for your space.");
+    assert.equal(text(banner.querySelector("p")), "Every Maple piece is made to order in our Delhi workshop, in the finish you choose.");
     assert.equal(banner.querySelector("button, video"), null, "The frame's play button has no video behind it");
   });
 });
@@ -213,7 +232,7 @@ test("Hear From Them shows the real rating and count, invites a review and shows
     assert.equal(text(write), "Write a review");
     assert.match(write.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
     assert.equal(band.querySelector("[data-review-card]"), null, "The catalogue holds no customer review text");
-  }, product, { highlights });
+  }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
   await mount((doc) => {
     assert.equal(text(hook(doc, "data-reviews-note")), "No reviews to show yet. Share your experience with this piece.");
   });
@@ -244,7 +263,7 @@ test("the FAQ answers from the store's published policies and opens one question
 test("the promise row keeps to promises the store can keep", async () => {
   await mount((doc) => {
     const row = hook(doc, "data-promises")!;
-    assert.deepEqual([...row.querySelectorAll("li")].map((item) => text(item.querySelector("strong"))), ["Delivery across India", "Defects and transit damage", "Customer service"]);
+    assert.deepEqual([...row.querySelectorAll("li")].map((item) => text(item.querySelector("strong"))), ["Delivery across India", "Defects and transit damage", "Made to order", "Customer service"]);
     assert.match(text(row)!, /Report within 24–48 hours of delivery/);
     assert.doesNotMatch(text(row)!, /secure checkout|free shipping|hassle/i);
   });
@@ -310,20 +329,35 @@ test("the warranty label reads well for short, self-describing and long catalogu
   assert.equal(warrantyLabel({ sourceDetails: null }), "36-month warranty");
 });
 
-test("the ticker can be paused, a photo without cards shows no feature section, and the warranty text sits in the Specification card", async () => {
-  await mount(async (doc) => {
-    const pause = doc.querySelector<HTMLButtonElement>("button[data-ticker-pause]")!;
-    assert.equal(pause.getAttribute("aria-pressed"), "false");
-    await act(async () => pause.click());
-    assert.equal(pause.getAttribute("aria-pressed"), "true");
-    assert.equal(hook(doc, "data-ticker-track")!.getAttribute("style")?.includes("paused"), true);
+test("the ticker shows no pause button (owner), a product without text still shows the store-wide cards, and the warranty text sits in the Specifications card", async () => {
+  await mount((doc) => {
+    assert.equal(doc.querySelector("button[data-ticker-pause]"), null);
+    assert.doesNotMatch(hook(doc, "data-ticker")!.textContent!, /scrolling text/i);
   });
-  await mount((doc) => assert.equal(hook(doc, "data-features"), null), { ...product, description: "", sourceDetails: null });
-  await mount(async (doc) => {
-    const spec = doc.querySelectorAll("[data-feature]")[1]!;
-    assert.equal(spec.querySelector("[data-feature-meta]"), null, "Collapsed, the card shows no extras");
-    await act(async () => spec.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
-    assert.equal(text(spec.querySelector("[data-feature-meta]")), "SKU: AERO-A · Warranty: Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use.");
+  await mount((doc) => assert.deepEqual([...doc.querySelectorAll("[data-feature] h3")].map(text), ["Specifications", "Material & Care", "Delivery & Warranty"]), { ...product, description: "", sourceDetails: null });
+  await mount((doc) => {
+    const spec = [...doc.querySelectorAll("[data-feature]")].find((card) => text(card.querySelector("h3")) === "Specifications")!;
+    const warranty = [...spec.querySelectorAll("[data-feature-row]")].at(-1)!;
+    assert.deepEqual([...warranty.children].map(text), ["Warranty", "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use."]);
+    assert.equal(warranty.getAttribute("data-feature-row"), "stacked", "A long value sits under its label");
     assert.equal(text(doc.querySelectorAll("[data-assurances] li")[2]), "Product warranty");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, warranty: "Covers the frame for five years and the upholstery for two, excluding wear and tear from daily use." } });
+});
+
+test("sofas and beds follow the same Precision design as every piece: four cards around the photo, opening in place (owner, 4 Nov 2026)", async () => {
+  for (const category of ["sofas", "beds", "chairs"] as const) {
+    await mount(async (doc) => {
+      const stage = doc.querySelector("[data-features-layout]")!;
+      assert.equal(stage.getAttribute("data-features-layout"), "around", category);
+      const cards = [...stage.querySelectorAll("[data-feature]")];
+      assert.deepEqual(cards.map((card) => text(card.querySelector("[data-feature-number]"))), ["01", "02", "03", "04"], category);
+      assert.deepEqual(cards.map((card) => text(card.querySelector("h3"))), ["About Product", "Specifications", "Material & Care", "Delivery & Warranty"], category);
+      assert.ok(stage.querySelector("[data-feature-photo] img"), "the piece's photo in the middle");
+      const toggle = cards[1]!.querySelector<HTMLButtonElement>("button[data-feature-toggle]")!;
+      await act(async () => toggle.click());
+      assert.equal(cards[1]!.getAttribute("data-open"), "true", "a card opens in place");
+      assert.equal(stage.querySelectorAll("[data-highlight-spot]").length, 0, `${category}: hotspots come only from highlights in Keeri`);
+      assert.equal(stage.querySelector("[data-features-lines]"), null, "the cards stand on their own, with no lines to the photo");
+    }, { ...product, category, sourceDetails: null });
+  }
 });

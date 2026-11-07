@@ -30,12 +30,12 @@ test("homepage islands retain exact default art and resolve partial overrides by
       "/media/home/hero-tables.webp", "/media/home/hero-beds.webp",
     ]);
     assert.equal(doc.querySelector('.category-tile[href="/pages/chairs"] img')?.getAttribute("alt"), media ? "Custom chair" : "");
-    assert.equal(doc.querySelector(".home-nimbus-media img")?.getAttribute("src"), media ? "/media/nimbus-wide.webp" : files + "Chairs_9.svg");
-    assert.equal(doc.querySelector(".home-nimbus-media source")?.getAttribute("srcset"), media ? "/media/nimbus-small.webp" : files + "Chairs_300_x_600_px.webp?width=900");
-    assert.equal(doc.querySelector(".home-nimbus-media img")?.getAttribute("alt"), media ? "Custom Nimbus" : "The Nimbus Collection — cloud-like upholstered furniture");
+    assert.equal(doc.querySelector(".nimbus-stage-media img")?.getAttribute("src"), media ? "/media/nimbus-wide.webp" : "/media/home/nimbus-clouds.webp");
+    assert.equal(doc.querySelector(".nimbus-stage-media source")?.getAttribute("srcset"), media ? "/media/nimbus-small.webp" : "/media/home/nimbus-clouds.webp");
+    assert.equal(doc.querySelector(".nimbus-stage-media img")?.getAttribute("alt"), media ? "Custom Nimbus" : "The Nimbus Collection — cloud-like upholstered furniture");
     assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
-    assert.equal(doc.querySelector(".home-nimbus h2")?.textContent, "The Nimbus Collection");
-    assert.equal(doc.querySelector(".home-nimbus-content a")?.getAttribute("href"), "/pages/nimbus-collection");
+    assert.equal(doc.querySelector("[data-nimbus-heading]")?.textContent, "The Nimbus Collection");
+    assert.equal(doc.querySelector("[data-nimbus-explore]")?.getAttribute("href"), "/pages/nimbus-collection");
   }
 });
 

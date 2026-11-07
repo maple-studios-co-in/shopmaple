@@ -4,10 +4,10 @@ import { z } from "zod";
 import {
   catalogueHandleSchema, cataloguePageSchema, catalogueCardResponseSchema, catalogueCardsResponseSchema,
   categories, relatedCatalogueCardsResponseSchema,
-  collectionQuery, filterCollection,
+  collectionQuery, filterCollection, facetCounts,
   toProductCard, canOrder, pricedVariants, sourceTaxonomySchema,
 } from "@shopmaple/contracts";
-import { collectionTitles, collectionMembers } from "@shopmaple/contracts/catalogue-registry";
+import { collectionTitles, collectionMembers, collectionCategories } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "./cart.js";
 
 const amount = z.string().regex(/^\d{1,8}(\.\d{1,2})?$/);
@@ -17,6 +17,10 @@ const collectionInput = z.object({
   availability: z.enum(["in", "out"]).optional(),
   min: amount.optional(), max: amount.optional(),
   category: z.enum(["sofas", "chairs", "tables", "beds", "storage", "outdoors"]).optional(),
+  material: z.string().regex(/^[a-z]+(?:,[a-z]+)*$/).max(100).optional(),
+  colour: z.string().regex(/^[a-z]+(?:,[a-z]+)*$/).max(100).optional(),
+  wmin: z.string().regex(/^[1-9]\d{0,2}$/).optional(), wmax: z.string().regex(/^[1-9]\d{0,2}$/).optional(),
+  dmin: z.string().regex(/^[1-9]\d{0,2}$/).optional(), dmax: z.string().regex(/^[1-9]\d{0,2}$/).optional(),
   page: z.string().regex(/^[1-9]\d{0,2}$/).optional(),
   limit: z.enum(["4", "24"]).optional(),
 }).strict();
@@ -27,14 +31,23 @@ const batchInput = z.object({
 }).strict();
 const relatedInput = z.object({ category: z.enum(categories) }).strict();
 const cardSelect = {
-  id: true, handle: true, title: true, images: true, category: true,
-  variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true, title: true } },
+  id: true, handle: true, title: true, images: true, category: true, reviewCount: true, reviewAverage: true,
+  variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true, title: true, images: true, slug: true } },
 } satisfies Prisma.ProductSelect;
 const collectionSelect = {
-  ...cardSelect, description: true, sourceTaxonomy: true,
+  ...cardSelect, description: true, sourceTaxonomy: true, sourceDetails: true,
   variants: { ...cardSelect.variants, select: { ...cardSelect.variants.select, available: true, stockPolicy: true } },
 } satisfies Prisma.ProductSelect;
 const cache = "public, max-age=30, s-maxage=60";
+// The two catalogue texts the listing's Material and Size filters read; anything else stored there is ignored.
+const catalogueText = z.object({ materials: z.string().nullable().optional(), dimensions: z.string().nullable().optional() }).nullable();
+/** The listing hero's photo and featured piece: the first member with its own https photo, in the collection's order. */
+function coverOf(members: Parameters<typeof toProductCard>[0][]) {
+  const first = members.find(product => product.images[0]?.startsWith("https://"));
+  if (!first) return null;
+  const card = toProductCard(first);
+  return { image: first.images[0]!, title: first.title, handle: first.handle, pricePaise: card.pricePaise, priceFrom: card.priceFrom };
+}
 
 function sendCatalogue<T>(res: Response, schema: z.ZodType<T>, value: unknown, extra: Record<string, unknown> = {}) {
   const result = schema.safeParse(value);
@@ -63,8 +76,9 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
     const limit = Number(input.limit ?? "24") as 4 | 24;
     // Membership and facets need the complete compact catalogue once, not one
     // full-record database read for each API page fetched by the web server.
-    const products = await db.product.findMany({ where: { published: true }, select: collectionSelect, orderBy: [{ title: "asc" }, { id: "asc" }] });
-    const members = collectionMembers(products.map(product => ({ ...product, sourceTaxonomy: sourceTaxonomySchema.nullable().catch(null).parse(product.sourceTaxonomy) })), handle);
+    const products = (await db.product.findMany({ where: { published: true }, select: collectionSelect, orderBy: [{ title: "asc" }, { id: "asc" }] }))
+      .map(product => ({ ...product, sourceTaxonomy: sourceTaxonomySchema.nullable().catch(null).parse(product.sourceTaxonomy), sourceDetails: catalogueText.catch(null).parse(product.sourceDetails) }));
+    const members = collectionMembers(products, handle);
     const filtered = filterCollection(members, query);
     const page = Math.min(query.page, Math.max(1, Math.ceil(filtered.length / limit)));
     const knownPrices = members.flatMap(product => pricedVariants(product).map(variant => variant.pricePaise));
@@ -74,6 +88,7 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
       inStock: members.filter(product => product.variants.some(canOrder)).length,
       outOfStock: members.filter(product => !product.variants.length || product.variants.some(variant => !canOrder(variant))).length,
       highestPrice: knownPrices.length ? Math.max(...knownPrices) : null,
+      facets: { ...facetCounts(members), categories: collectionCategories(products, handle), cover: coverOf(members) },
       limit, published: true, mode: "preview", checkoutEnabled: false,
     });
   });

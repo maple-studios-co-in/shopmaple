@@ -32,12 +32,12 @@ async function renderHome(edit?: (content: typeof defaultStorefrontContent) => v
 const section = (doc: Document, key: string) => doc.querySelector(`[data-home-section="${key}"]`)!;
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").replace(/\s+/g, " ").trim();
 
-test("Bestsellers has an eyebrow and a lede, and still no View all link", async () => {
+test("Bestsellers has an eyebrow, a lede and the View all bestsellers button", async () => {
   const bestsellers = section(await renderHome(), "bestsellers");
   assert.equal(text(bestsellers.querySelector("[data-rail-eyebrow]")), "Handpicked favourites");
   assert.equal(text(bestsellers.querySelector("h2")), "Bestsellers");
   assert.equal(text(bestsellers.querySelector("[data-rail-lede]")), "Discover the pieces that make a room feel complete.");
-  assert.equal(bestsellers.querySelector("[data-rail-viewall]"), null, "the owner removed it");
+  assert.equal(text(bestsellers.querySelector("[data-rail-viewall]")), "View all bestsellers →");
 });
 
 test("Chairs has the same eyebrow and a boxed link to every chair", async () => {
@@ -45,7 +45,7 @@ test("Chairs has the same eyebrow and a boxed link to every chair", async () => 
   assert.equal(text(chairs.querySelector("[data-rail-eyebrow]")), "Handpicked favourites");
   assert.equal(text(chairs.querySelector("h2")), "Chairs");
   const link = chairs.querySelector<HTMLAnchorElement>("[data-rail-viewall]")!;
-  assert.equal(link.getAttribute("href"), "/collections/chairs");
+  assert.equal(link.getAttribute("href"), "/collections/chairs?page=1", "the listing grid, not the editorial Chairs page");
   assert.match(text(link), /^View all chairs/);
   assert.equal(chairs.querySelector("[data-rail-lede]"), null, "the frame has no lede under Chairs");
 });

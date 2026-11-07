@@ -1,20 +1,9 @@
-import Link from "next/link";
-import { StoreContent } from "@/components/store-content";
+import { ContentPage } from "@/components/content-page";
 import type { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 
 type Policy = ReturnType<typeof resolveEditorialContent>["policies"][string];
 
-export function PolicyArticle({ policy }: { policy: Policy }) {
-  return (
-    <section className="editorial-page">
-      <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
-        <span>{policy.title}</span>
-      </nav>
-      <h1>{policy.title}</h1>
-      <article className="store-prose">
-        <StoreContent nodes={policy.content} />
-      </article>
-    </section>
-  );
+/** A policy is shown as a page built in the page editor: its title, then its rich text. */
+export function PolicyArticle({ policy, slug }: { policy: Policy; slug: string }) {
+  return <ContentPage page={{ slug, title: policy.title, description: "", body: "", content: policy.content, banner: null }} />;
 }

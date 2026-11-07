@@ -77,7 +77,7 @@ test("the highlights screen sits with Merchandising, explains itself and starts 
     assert.equal(names.indexOf("Product highlights"), names.indexOf("Merchandising") + 1, "listed right after Merchandising");
     await click("Product highlights");
     assert.equal(panel().querySelector("h2")?.textContent, "Product highlights");
-    assert.match(text(), /Colours, New badges and review ratings shown on the product page and its "More …" row\. Only what you set here is shown\./);
+    assert.match(text(), /Colours and New and Limited tags for the product cards across the store and the product page\. Ratings are not set here: each card and product page shows the average of the product's approved reviews in Keeri, and a product without any shows a dash and an empty star\./);
     assert.ok(panel().querySelector('[aria-label="Colours"] [data-empty]'), "colours empty state");
     assert.ok(panel().querySelector('[aria-label="Products"] [data-empty]'), "products empty state");
     assert.equal(button("Save draft").disabled, true, "opening the screen changes nothing");
@@ -150,49 +150,27 @@ test("option names from the catalogue without a colour can be added in one step"
   } finally { await app.close(); }
 });
 
-test("products: pick from the catalogue, set New and a complete rating, remove, and save", async () => {
+test("products: pick from the catalogue, set New, remove, and save; there are no rating fields, as ratings come from Keeri", async () => {
   const app = await setup();
   try {
     await click("Product highlights");
     await click("Add alpha to product highlights");
-    assert.match(text(), /Only enter the average and count of real customer reviews\./);
     assert.equal(button("Add alpha to product highlights").disabled, true, "a product is listed once");
     const table = panel().querySelector('table[aria-label="Product highlights"]');
     assert.ok(table, "products are a table");
     assert.match(table.textContent ?? "", /Product alpha/);
+    assert.equal(container.querySelector('[aria-label="Average rating for alpha"], [aria-label="Review count for alpha"]'), null, "no rating to type: Keeri's approved reviews give it");
     const isNew = button("New badge for alpha");
     assert.equal(isNew.getAttribute("role"), "switch");
     assert.equal(document.activeElement, isNew, "focus moves to the new row");
     assert.equal(isNew.getAttribute("aria-checked"), "false");
     await act(async () => isNew.click());
     assert.equal(button("New badge for alpha").getAttribute("aria-checked"), "true");
-
-    const help = document.getElementById(field("Average rating for alpha").getAttribute("aria-describedby")!.split(" ")[0]!);
-    assert.match(help?.textContent ?? "", /Only enter the average and count of real customer reviews/, "rating fields point at the help text");
-
-    await fill("Average rating for alpha", "4.6");
-    assert.match(errorFor("Review count for alpha"), /review count/i, "an average needs a count");
-    await click("Save draft");
-    assert.equal(app.saves(), 0, "a half-entered rating is never sent");
-    await fill("Review count for alpha", "12");
-    assert.equal(errorFor("Review count for alpha"), "");
-    assert.equal(errorFor("Average rating for alpha"), "");
-
     await click("Add bravo to product highlights");
-    await fill("Review count for bravo", "3");
-    assert.match(errorFor("Average rating for bravo"), /average/i, "a count needs an average");
-    await fill("Average rating for bravo", "5.5");
-    assert.match(errorFor("Average rating for bravo"), /1\.0 to 5\.0/);
-    await fill("Average rating for bravo", "4.25");
-    assert.match(errorFor("Average rating for bravo"), /one decimal/i);
-    await fill("Average rating for bravo", "");
-    await fill("Review count for bravo", "");
-    assert.equal(errorFor("Average rating for bravo"), "", "a rating is optional");
     await click("Remove bravo from product highlights");
-    assert.equal(container.querySelector('[aria-label="Average rating for bravo"]'), null);
-
+    assert.equal(container.querySelector('[aria-label="New badge for bravo"]'), null);
     await click("Save draft");
-    assert.deepEqual(app.saved().content.productHighlights, { swatches: [], products: [{ handle: "alpha", isNew: true, rating: { value: 4.6, count: 12 } }] });
+    assert.deepEqual(app.saved().content.productHighlights, { swatches: [], products: [{ handle: "alpha", isNew: true, rating: null }] });
   } finally { await app.close(); }
 });
 
@@ -200,8 +178,7 @@ test("saved highlights load into the table, and removing every entry stores empt
   const app = await setup({ highlights: { swatches: [{ name: "Olive", hex: "#556b2f" }], products: [{ handle: "charlie", isNew: false, rating: { value: 4, count: 7 } }] } });
   try {
     await click("Product highlights");
-    assert.equal(field("Average rating for charlie").value, "4.0", "the average shows one decimal");
-    assert.equal(field("Review count for charlie").value, "7");
+    assert.equal(container.querySelector('[aria-label="Average rating for charlie"]'), null, "a rating saved before Keeri's is kept, but neither shown nor edited");
     assert.equal(field("Colour 1 hex code").value, "#556b2f");
     await click("Remove charlie from product highlights");
     await click("Remove colour 1");
@@ -249,11 +226,47 @@ test("every highlights control is labelled and reachable from the keyboard", asy
       assert.ok(named, `${control.outerHTML.slice(0, 120)} has a name`);
       assert.notEqual(control.getAttribute("tabindex"), "-1", `${control.getAttribute("aria-label")} is in the tab order`);
     }
-    for (const label of ["Colour 1 option name", "Colour 1 colour", "Colour 1 hex code", "Average rating for alpha", "Review count for alpha"]) {
+    for (const label of ["Colour 1 option name", "Colour 1 colour", "Colour 1 hex code"]) {
       field(label).focus();
       assert.equal(document.activeElement, field(label));
     }
-    assert.equal(field("Average rating for alpha").getAttribute("inputmode"), "decimal");
-    assert.equal(field("Review count for alpha").getAttribute("inputmode"), "numeric");
+    assert.equal(button("New badge for alpha").getAttribute("role"), "switch", "the product row's own controls");
+  } finally { await app.close(); }
+});
+
+test("an offer for every product page: offer, code and end time, checked inline, saved, and removable", async () => {
+  const app = await setup();
+  try {
+    await click("Product highlights");
+    await click("Add an offer");
+    assert.match(errorFor("Offer"), /describe the offer/i);
+    assert.match(errorFor("Offer code"), /capital letters/i);
+    await click("Save draft");
+    assert.equal(app.saves(), 0, "a half-made offer is never sent");
+    await fill("Offer", "20% off");
+    await fill("Offer code", "sale 20");
+    assert.equal(field("Offer code").value, "SALE20", "codes are capitals without spaces");
+    assert.equal(errorFor("Offer code"), "");
+    await fill("Offer ends", "2099-01-31T18:30");
+    assert.equal(field("Offer ends").value, "2099-01-31T18:30");
+    await click("Save draft");
+    const deal = app.saved().content.productHighlights.deal;
+    assert.deepEqual(deal, { offer: "20% off", code: "SALE20", endsAt: new Date("2099-01-31T18:30").toISOString() }, "the end is the editor's local time, stored with its zone");
+    await fill("Offer ends", "2001-01-31T18:30");
+    assert.match(errorFor("Offer ends"), /has passed/i, "an ended offer says product pages no longer show it");
+    await click("Remove the offer");
+    await click("Save draft");
+    assert.equal("deal" in app.saved().content.productHighlights, false, "removing it leaves no field");
+  } finally { await app.close(); }
+});
+
+test("ratings can only be entered one product at a time: there is no tool that fills ratings in across the catalogue", async () => {
+  // A rating must be a product's own real customer rating. A list stamped across the catalogue in A-Z order would show
+  // made-up scores, so the admin offers no such control.
+  const app = await setup({ products: [product("alpha"), product("bravo")] });
+  try {
+    await click("Product highlights");
+    assert.equal(panel().querySelector('[aria-label="Ratings in catalogue order"]'), null);
+    assert.equal([...panel().querySelectorAll("button")].some((b) => /without a rating|applying ratings/i.test(b.textContent ?? "")), false);
   } finally { await app.close(); }
 });

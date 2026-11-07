@@ -206,7 +206,7 @@ export function planCatalogueUnion(
   }
   const named = nameAddresses([...products.values()], raw.models, existing);
   const handleAliases = named.flatMap((p) => p.alias ? [{ handle: p.alias, productId: p.product.id }] : []);
-  const result = named.map((p) => p.product);
+  const result = translateProductPages(named.map((p) => p.product), productBindings, variantBindings);
   const handles = new Set<string>();
   const variantIds = new Set<string>();
   for (const p of result) {
@@ -243,6 +243,37 @@ export function planCatalogueUnion(
 }
 
 /** A readable address segment: "Zyro Lounge" -> "zyro-lounge"; accents dropped, at most 80 characters. */
+/**
+ * Keeri's product-page data names Keeri ids; a merged listing keeps its Shopify product and variant ids.
+ * Point bundles, reviews and photos at the final store ids and addresses. A bundle with a piece the store
+ * does not list is left out rather than offered incomplete.
+ */
+function translateProductPages(products: Product[], productBindings: SourceBinding[], variantBindings: SourceBinding[]) {
+  const productTarget = new Map(productBindings.map((b) => [b.externalId, b.targetId]));
+  const variantTarget = new Map(variantBindings.map((b) => [b.externalId, b.targetId]));
+  const handles = new Map(products.map((p) => [p.id, p.handle]));
+  const variant = (value: string | null) => (value === null ? null : variantTarget.get(value) ?? null);
+  return products.map((p) => {
+    if (!p.productPage) return p;
+    const page = p.productPage;
+    return productSchema.parse({
+      ...p,
+      productPage: {
+        ...page,
+        media: page.media.filter((m) => approvedCatalogueImage(m.url)).map((m) => ({ ...m, variantId: variant(m.variantId) })),
+        reviews: { ...page.reviews, items: page.reviews.items.map((r) => ({ ...r, variantId: variant(r.variantId) })) },
+        bundles: page.bundles.flatMap((bundle) => {
+          const items = bundle.items.map((item) => {
+            const productId = productTarget.get(item.productId);
+            const handle = productId && handles.get(productId);
+            return handle ? { ...item, productId: productId!, handle, variantId: variant(item.variantId) } : null;
+          });
+          return items.every((item) => item !== null) ? [{ ...bundle, items }] : [];
+        }),
+      },
+    });
+  });
+}
 export function slugify(value: string) {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80).replace(/-+$/, "");

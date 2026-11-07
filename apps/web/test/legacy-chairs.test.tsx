@@ -109,7 +109,7 @@ const cards = (doc: Document) =>
   );
 test("query-driven chairs retain category membership, filters, sort and pagination", async () => {
   const first = await render({ sort: "title" });
-  assert.equal(first.querySelector("h1")?.textContent, "Chairs");
+  assert.equal(first.querySelector("h1")?.textContent, "Dining & Accent Chairs");
   assert.equal(cards(first).length, 24);
   assert.equal(cards(first)[0], "Chair 00");
   assert.ok(!cards(first).includes("Chair matching table"));
@@ -255,7 +255,7 @@ test("each explicit browsing parameter retains the grid while campaign tracking 
     const doc = await render(query);
     assert.equal(
       doc.querySelector("h1")?.textContent,
-      "Chairs",
+      "Dining & Accent Chairs",
       JSON.stringify(query),
     );
   }
@@ -284,12 +284,12 @@ test("all chair reset controls keep the unfiltered chair grid and other collecti
         false,
         url.pathname.split("/").at(-1),
       );
-      assert.equal(restored.querySelector("h1")?.textContent, "Chairs");
+      assert.equal(restored.querySelector("h1")?.textContent, "Dining & Accent Chairs");
       assert.equal(cards(restored).length, 24);
       assert.equal(cards(restored)[0], "Chair 00");
       assert.ok(!cards(restored).includes("Chair matching table"));
       assert.equal(
-        restored.querySelector<HTMLInputElement>('input[name="q"]')?.value,
+        restored.querySelector<HTMLInputElement>('input[name="q"]')?.value ?? "",
         "",
       );
       assert.equal(
@@ -353,10 +353,10 @@ test("editorial Chairs exposes the full category catalogue, honest prices and wo
     assert.ok(listing, "The editorial page must also expose the complete chair catalogue");
     assert.equal(doc.querySelectorAll("h1").length, 1);
     assert.equal(doc.querySelector("h1")?.textContent, "Our Newest Arrivals");
-    assert.equal(listing.querySelector("h2")?.textContent, "Chairs");
+    assert.equal(listing.querySelector("[data-results] h2")?.textContent, "All chairs");
     assert.ok(doc.querySelector('.legacy-chairs-hero a[href="#collection-products"]'), "Visitors can jump to the catalogue directly from the hero");
     assert.equal(listing.querySelectorAll("[data-product-card]").length, 24);
-    assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 items/);
+    assert.match(listing.querySelector(".collection-item-count")?.textContent ?? "", /^26 products/);
     assert.ok(!listing.textContent?.includes("Chair matching table"));
     const unpriced = [...listing.querySelectorAll("[data-product-card]")].find(card => card.querySelector("[data-card-name]")?.textContent === "Chair 23");
     assert.equal(unpriced?.querySelector("[data-card-price]")?.textContent, "Price on request");

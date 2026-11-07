@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { adaptKeeriExport } from "./keeri.js";
+import { reviewSummary } from "./review-summary.js";
 
 /** Only writes the Shop Maple read model; never connects to Keeri. */
 export async function syncKeeriExport(
@@ -52,14 +53,14 @@ export async function syncKeeriExport(
             "Variant identity belongs to another product or source",
           );
         const { variants, ...fields } = product;
-        const data = { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, sourceUpdatedAt: capturedAt };
+        const data = { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, productPage: fields.productPage ?? Prisma.DbNull, ...reviewSummary(fields.productPage), sourceUpdatedAt: capturedAt };
         await tx.product.upsert({
           where: { id: product.id },
           create: data,
           update: data,
         });
         for (const variant of variants) {
-          const data = { ...variant, productId: product.id, published: true };
+          const data = { ...variant, productPage: variant.productPage ?? Prisma.DbNull, productId: product.id, published: true };
           await tx.variant.upsert({
             where: { id: variant.id },
             create: data,

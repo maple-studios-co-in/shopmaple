@@ -59,6 +59,9 @@
 /* Storefront design tokens (the "Maple Website review" Figma file). Static, so every token is
    available to the storefront's own CSS as well as to utilities. */
 @theme static {
+  /* Big screens (owner, 4 Nov 2026), in rem so they sort after xl and 2xl: from 1600px and 1900px wide the page grows. */
+  --breakpoint-wide: 100rem;
+  --breakpoint-wider: 118.75rem;
   /* Tokens the product page design (Figma) uses, from the redesign sheet. */
   --color-paper: #f4f2ec;
   --color-ink: #292d28;
@@ -112,6 +115,8 @@
   --color-maple: #80241c;
   --font-product: "Manrope Product", "Manrope", sans-serif;
   --animate-pdp-ticker: pdp-ticker 48s linear infinite;
+  /* Frame 2:602: the buy box's promise strip drifts on the same loop, faster for its short track. */
+  --animate-pdp-strip: pdp-ticker 22s linear infinite;
   @keyframes pdp-ticker {
     to { transform: translateX(-50%); }
   }

@@ -69,7 +69,7 @@ export function HomepagePanel({ content, edit, focusedSection, onSelectSection, 
       <SectionRail content={content} edit={edit} selected={focusedSection} onSelect={onSelectSection} onInspect={onInspect} source={thumbnails} />
       <SectionHeading>Homepage copy</SectionHeading>
       <FieldGrid>{(Object.keys(copyLabels) as (keyof Copy)[]).map(copyField)}</FieldGrid>
-      <HomeDetailsFields value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} />
+      <HomeDetailsFields value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} session={session} onExpired={onExpired} />
       <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={(homeCitiesLayout) => edit({ ...content, homeCitiesLayout })} />
       <SectionHeading description="Visitors can pause motion. Their reduced-motion preference takes priority.">Motion</SectionHeading>
       <div className="grid gap-3">

@@ -4,9 +4,14 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   images: {
-    formats: ["image/avif", "image/webp"],
+    // WebP only: encoding AVIF on a cold cache took seconds per photo and made pages wait on images. Shopify's own photos
+    // skip this optimizer altogether (lib/image-loading.ts); what is left is cached for a week once made.
+    formats: ["image/webp"],
+    minimumCacheTTL: 604800,
     remotePatterns: [
       { protocol: "https", hostname: "store.maplefurnishers.com", pathname: "/media/keeri/*.webp", search: "" },
+      // Customer photos on approved reviews, served by the API only while the review is listed.
+      { protocol: "https", hostname: "store.maplefurnishers.com", pathname: "/media/keeri-review/*.webp", search: "" },
       {
         protocol: "https",
         hostname: "cdn.shopify.com",
@@ -22,6 +27,7 @@ const config: NextConfig = {
   async rewrites() {
     return [
       { source: "/media/keeri/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri/:filename" },
+      { source: "/media/keeri-review/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri-review/:filename" },
       { source: "/media/instagram-feed/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/instagram-feed/:filename" },
       {
         source: "/media/uploads/:filename",

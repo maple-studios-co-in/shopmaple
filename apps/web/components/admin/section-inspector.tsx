@@ -26,7 +26,7 @@ const copyFields: Partial<Record<HomeSectionKey, [keyof Copy, string, number][]>
   ticker: [["ticker", "Brand ticker", 600]],
   testimonial: [["testimonialHeading", "Testimonial heading", 160], ["testimonialSubheading", "Testimonial subheading", 300]],
 };
-const detailSections: readonly HomeSectionKey[] = ["hero", "difference", "nimbus", "testimonial", "newsletter", "values", "cities", "project"];
+const detailSections: readonly HomeSectionKey[] = ["hero", "difference", "nimbus", "testimonial", "newsletter", "values", "cities", "project", "editorial", "compare"];
 const merchandising: Partial<Record<HomeSectionKey, MerchandisingPart>> = { categories: "categories", offers: "offers", bestsellers: "bestsellers", chairs: "chairs" };
 const campaigns: Partial<Record<HomeSectionKey, string[]>> = {
   announcement: ["landing-announcement"], "dining-banner": ["landing-dining-table"],
@@ -78,7 +78,7 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
         ))}
       </FieldGrid>}
       {detailSections.includes(section) && <div className="grid gap-4">
-        <HomeDetailFields section={section as HomeDetailSection} value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} />
+        <HomeDetailFields section={section as HomeDetailSection} value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} session={session} onExpired={onExpired} />
       </div>}
       {merchandising[section] && <HomeMerchandisingFields only={merchandising[section]} embedded value={content.homeMerchandising}
         onChange={(homeMerchandising) => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />}

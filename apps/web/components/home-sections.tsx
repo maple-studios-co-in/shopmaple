@@ -2,14 +2,15 @@ import { InstagramRail, MovingCities } from "@/components/motion-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
-import { ArrowRight, Check, Instagram } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
 import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
-import type { HomeStat } from "@/lib/home-stats";
+import { countTarget, type HomeStat } from "@/lib/home-stats";
+import { statementParts } from "@/lib/home-statement";
 import { useId } from "react";
 
 export function HomeBanner({
@@ -57,12 +58,25 @@ export function HomeBanner({
   );
 }
 
-/** The burgundy statement band: the admin's line, centred, with its last word set in italic script. */
+/**
+ * The burgundy statement band: the admin's line, centred, with its last word set in italic script. The
+ * closing clause ("it is crafted.") is typed out over and over by the homepage's lazy effects; the whole
+ * line stays in the page for readers, and an invisible copy of the clause holds its width while it types.
+ */
 export function HomeStatementBand({ text }: { text: string }) {
-  const match = /^(.*?)([^\s.]+)(\.?)\s*$/s.exec(text);
+  const parts = statementParts(text);
+  if (!parts) return <p className="home-statement" data-statement-band>{text}</p>;
+  const clause = <>{parts.before}<em data-statement-accent>{parts.accent}</em>{parts.after}</>;
   return (
     <p className="home-statement" data-statement-band>
-      {match ? <>{match[1]}<em data-statement-accent>{match[2]}</em>{match[3]}</> : text}
+      <span className="sr-only" data-statement-text>{text}</span>
+      <span aria-hidden="true">
+        {parts.lead}
+        <span data-typed data-typed-before={parts.before} data-typed-accent={parts.accent} data-typed-after={parts.after}>
+          <span data-typed-ghost>{clause}</span>
+          <span data-typed-live>{clause}</span>
+        </span>
+      </span>
     </p>
   );
 }
@@ -113,13 +127,6 @@ export function HomeSocial({
       <h2>
         {heading ?? (second ? "See our social pressence" : "Our Social Proof")}
       </h2>
-      <a
-        href="https://www.instagram.com/maplefurnishers/"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <Instagram size={20} /> @maplefurnishers <ArrowRight size={18} />
-      </a>
       <InstagramRail posts={posts} autoplay={autoplay} />
     </section>
   );
@@ -215,7 +222,7 @@ export function HomeValues({
       className="home-values home-container"
       aria-label="Made for real living"
     >
-      {watermark && <div className="home-values-watermark" data-values-watermark aria-hidden="true">Maple Furnishers</div>}
+      {watermark && <div className="home-values-watermark" data-values-watermark data-reveal aria-hidden="true">Maple Furnishers</div>}
       {content.map(({ key, title, body }) => {
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
@@ -226,7 +233,7 @@ export function HomeValues({
           </div>
         );
       })}
-      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta>Experience Maple</Link>}
+      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
     </section>
   );
 }
@@ -251,29 +258,40 @@ export function HomeCities({
     <>
     {stats.length > 0 && (
       <div className="home-stat-band" data-stat-band>
-        {stats.map(({ value, label }) => (
-          <div key={label} data-stat>
-            <p className="home-stat-value" data-stat-value>{value}</p>
-            <p className="home-stat-label" data-stat-label>{label}</p>
-          </div>
-        ))}
+        {stats.map(({ value, label, description }) => {
+          // The figure is drawn finished; the lazy effects count it up from zero the first time it is seen.
+          const target = countTarget(value);
+          return (
+            <div key={label} data-stat>
+              <p className="home-stat-value" data-stat-value>
+                {target ? (
+                  <>
+                    <span className="sr-only" data-stat-figure>{value}</span>
+                    <span aria-hidden="true" data-count-to={target.to} data-count-suffix={target.suffix}>{value}</span>
+                  </>
+                ) : value}
+              </p>
+              <p className="home-stat-label" data-stat-label>{label}</p>
+              <p className="home-stat-description" data-stat-description>{description}</p>
+            </div>
+          );
+        })}
       </div>
     )}
     <section className="home-cities home-container">
       <header>
         <p className="home-eyebrow">{content.eyebrow}</p>
         <h2>{content.heading}</h2>
-        <a className="city-photo-credits" href="/media/cities/credits.html">Image credits</a>
       </header>
-      <MovingCities autoplay={autoplay}>
-        {cities.map(({ key }) => {
+      <MovingCities autoplay={autoplay} count={cities.length}>
+        {(copy) => cities.map(({ key }) => {
           const artwork = resolveTemplateMedia(`home-city-${key}`, media);
           return (
             <figure key={key} className="home-city-card">
               <div className="home-city-artwork">
                 <Image
                   src={artwork.image}
-                  alt={artwork.alt}
+                  alt={copy ? "" : artwork.alt}
                   width={400}
                   height={600}
                 />
