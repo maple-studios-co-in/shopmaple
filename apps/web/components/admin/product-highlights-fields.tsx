@@ -206,7 +206,7 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
     </section>
 
     <section aria-label="Product page offer" className="grid min-w-0 content-start gap-3">
-      <SectionHeading className="mt-0 mb-0" description="An offer every product page counts down to, with its code to copy, and names on a tab at the page's edge. It leaves the pages by itself when it ends. Add only an offer your team honours.">
+      <SectionHeading className="mt-0 mb-0" description="An offer every product page counts down to, with its code to copy, and names on a tab at the page's edge. It leaves the pages by itself when it ends. A running campaign’s timer offer takes its place. Add only an offer your team honours.">
         Product page offer
       </SectionHeading>
       {deal && dealProblems ? <div className={cn(rowCard, "grid gap-2 px-3 py-2.5")}>

@@ -1,11 +1,24 @@
 "use client";
 import { useEffect, useState } from "react";
-import type { ProductHighlights } from "@shopmaple/contracts";
+import { liveCampaignDeal, type CampaignDeal, type ProductHighlights } from "@shopmaple/contracts";
+import { useCampaignClock } from "../campaign-clock";
 
 export type Deal = NonNullable<ProductHighlights["deal"]>;
 
 /** Whether the store-wide offer is still running at `now`. */
 export const dealLive = (deal: Deal | undefined, now: number): deal is Deal => Boolean(deal && Date.parse(deal.endsAt) > now);
+
+/**
+ * The offer the page shows right now: a running campaign's, or else the one set by hand. Rechecked as each offer starts
+ * and ends, so an open page follows the campaign without a reload.
+ */
+export function useRunningDeal({ campaignDeals, deal: manual }: { campaignDeals: readonly CampaignDeal[]; deal?: Deal | undefined }, openedAt: number): Deal | undefined {
+  const now = useCampaignClock([...campaignDeals.flatMap((deal) => [deal.startsAt, deal.endsAt]), manual?.endsAt], openedAt);
+  return liveCampaignDeal(campaignDeals, now) ?? (dealLive(manual, now) ? manual : undefined);
+}
+
+/** One offer's identity: a different one starts the box and the tab afresh, which brings back a tab closed for the last. */
+export const dealKey = (deal: Deal) => `${deal.code}:${deal.endsAt}`;
 
 /** The clock, ticking once a second from mount; null on the server and the first paint, so the markup carries no time. */
 function useNow() {

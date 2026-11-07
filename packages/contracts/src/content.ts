@@ -173,6 +173,13 @@ export const homeMerchandisingSchema = z.object({
   categories: collectionRailSchema,
   offers: collectionRailSchema,
 }).strict();
+/** What an offer says to the shopper, however it is scheduled. */
+const dealOfferFields = {
+  offer: text(40).refine(offer => offer.trim().length > 0, "Describe the offer"),
+  code: z.string().regex(/^[A-Z0-9][A-Z0-9%-]{1,23}$/, "Use 2–24 capital letters, numbers, % or -"),
+};
+/** A campaign's offer on the product page's countdown. Its window is the campaign's own schedule, so it has no dates of its own. */
+export const campaignDealSchema = z.object(dealOfferFields).strict();
 /** Staff-entered card highlights: colours for option names, and per-product New and Limited flags and review ratings. */
 export const productHighlightsSchema = z.object({
   swatches: z.array(z.object({ name: text(80).refine(name => name.trim().length > 0, "A colour needs a name"), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }).strict()).max(200),
@@ -188,8 +195,7 @@ export const productHighlightsSchema = z.object({
   // A store-wide offer the product page counts down to ("Don't miss the deal") and names on its edge tab; shown only
   // until it ends, and optional so documents saved before it stay valid.
   deal: z.object({
-    offer: text(40).refine(offer => offer.trim().length > 0, "Describe the offer"),
-    code: z.string().regex(/^[A-Z0-9][A-Z0-9%-]{1,23}$/, "Use 2–24 capital letters, numbers, % or -"),
+    ...dealOfferFields,
     endsAt: z.iso.datetime({ offset: true }),
   }).strict().optional(),
 }).strict().superRefine((value, ctx) => {
@@ -216,6 +222,8 @@ export const campaignContentSchema = z
     cta: text(80),
     href: contentLinkSchema,
     schedule: campaignScheduleSchema.nullable().optional(),
+    // The product page counts down to this campaign's end while it runs; optional so campaigns saved before it stay valid.
+    deal: campaignDealSchema.optional(),
     artwork: z
       .object({
         desktopImage: contentImageSchema,
