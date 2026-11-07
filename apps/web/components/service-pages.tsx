@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Fragment } from "react";
-import Link from "next/link";
-import type { BulkPageContent, ContactPageContent, ReturnsPageContent } from "@shopmaple/contracts";
+import type { BulkPageContent, ContactPageContent, ReturnsPageContent, SiteChrome } from "@shopmaple/contracts";
 import { ArrowRight, Check } from "lucide-react";
 import {
   ContactForm,
@@ -9,6 +8,8 @@ import {
   type EnquiryContext,
 } from "@/components/contact-form";
 import { HomeCities } from "@/components/home-sections";
+import { helpChromeFrom } from "@/components/store/help-page";
+import { ReturnExchange } from "@/components/store/return-exchange";
 import { shopFile } from "@/lib/format";
 
 export const emptyEnquiryContext: EnquiryContext = { product: "", variant: "", sku: "", pincode: "" };
@@ -253,27 +254,7 @@ export function BulkEnquiry({ context, content }: { context: EnquiryContext; con
     </div>
   );
 }
-export function ReturnsPageContent({ content }: { content: ReturnsPageContent }) {
-  return (
-    <section className="editorial-page">
-      <h1>{content.heading}</h1>
-      <p>
-        <Link href="/policies/refund-policy">
-          {content.policyLabel}
-        </Link>
-      </p>
-      <p>
-        {content.intro}{" "}This form saves an enquiry; it does
-        not automatically approve a return or issue a refund.
-      </p>
-      <ContactForm
-        context={{
-          product: "Return & Exchange",
-          variant: "",
-          sku: "",
-          pincode: "",
-        }}
-      />
-    </section>
-  );
+/** Return & Exchange is the last of the Help pages (see components/store/return-exchange.tsx). */
+export function ReturnsPageContent({ content, footer }: { content: ReturnsPageContent; footer: SiteChrome["footer"] }) {
+  return <ReturnExchange content={content} chrome={helpChromeFrom(footer)} />;
 }

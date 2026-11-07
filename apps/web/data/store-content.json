@@ -11,59 +11,6 @@
           ]
         },
         {
-          "tag": "ul",
-          "children": [
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Privacy Focused"
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                "Your information is treated with care and responsibility."
-              ]
-            },
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Secure Handling"
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                "Industry-standard security practices are followed."
-              ]
-            },
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Transparent Policies"
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                "Clear communication about how your data is used."
-              ]
-            }
-          ]
-        },
-        {
           "tag": "h2",
           "children": [
             "Your Privacy Matters"
@@ -326,29 +273,21 @@
         {
           "tag": "p",
           "children": [
+            "Maple Furnishers",
             {
-              "tag": "strong",
-              "children": [
-                "Maple Furnishers"
-              ]
-            }
-          ]
-        },
-        {
-          "tag": "p",
-          "children": [
-            "Delhi, India"
-          ]
-        },
-        {
-          "tag": "p",
-          "children": [
-            "Email: contact@maplefurnishers.com"
-          ]
-        },
-        {
-          "tag": "p",
-          "children": [
+              "tag": "br",
+              "children": []
+            },
+            "Delhi, India",
+            {
+              "tag": "br",
+              "children": []
+            },
+            "Email: contact@maplefurnishers.com",
+            {
+              "tag": "br",
+              "children": []
+            },
             "Phone: +91 8796130252"
           ]
         }
@@ -358,68 +297,9 @@
       "title": "Refund policy",
       "content": [
         {
-          "tag": "h2",
-          "children": [
-            "Cancellation, Return & Refund Policy"
-          ]
-        },
-        {
           "tag": "p",
           "children": [
-            "Made-to-order furniture, crafted with care. Please review our policy terms below."
-          ]
-        },
-        {
-          "tag": "ul",
-          "children": [
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Custom Built "
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                " Every Maple piece is manufactured only after order confirmation."
-              ]
-            },
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Inspection Led "
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                " Claims are reviewed and approved after assessment by Maple Furnishers."
-              ]
-            },
-            {
-              "tag": "li",
-              "children": [
-                {
-                  "tag": "strong",
-                  "children": [
-                    "Report Quickly "
-                  ]
-                },
-                {
-                  "tag": "br",
-                  "children": []
-                },
-                " Issues should be reported within 24–48 hours of delivery."
-              ]
-            }
+            "Cancellation, Return & Refund Policy. Made-to-order furniture, crafted with care. Please review our policy terms below."
           ]
         },
         {
@@ -566,12 +446,11 @@
         {
           "tag": "p",
           "children": [
-            "Based on evaluation, we may offer:"
-          ]
-        },
-        {
-          "tag": "p",
-          "children": [
+            "Based on evaluation, we may offer:",
+            {
+              "tag": "br",
+              "children": []
+            },
             "Repair | Replacement | Partial correction"
           ]
         },
@@ -637,14 +516,8 @@
       ]
     },
     "shipping-policy": {
-      "title": "Shipping",
+      "title": "Shipping policy",
       "content": [
-        {
-          "tag": "h2",
-          "children": [
-            "Shipping & Delivery Policy"
-          ]
-        },
         {
           "tag": "p",
           "children": [
@@ -861,13 +734,12 @@
         {
           "tag": "p",
           "children": [
-            "“Company”, “we”, “us”, “our” refers to Maple Furnishers"
-          ]
-        },
-        {
-          "tag": "p",
-          "children": [
-            "“You”, “user”, “customer” refers to any individual accessing or purchasing from the website"
+            "“Company”, “we”, “us”, “our” refers to Maple Furnishers.",
+            {
+              "tag": "br",
+              "children": []
+            },
+            "“You”, “user”, “customer” refers to any individual accessing or purchasing from the website."
           ]
         },
         {
