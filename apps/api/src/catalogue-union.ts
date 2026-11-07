@@ -178,9 +178,9 @@ export function planCatalogueUnion(
         title: before?.title ?? v.title,
         // A merged listing filters Keeri photos to approved hosts rather than failing, as its gallery does.
         images: base ? (v.images ?? []).filter(approvedCatalogueImage) : v.images,
-        // The owner's rule (1 Nov 2026): the store shows Keeri's MRP, GST included, which is
-        // what its quote charges, with Keeri's compare-at. Shopify's price shows only where
-        // Keeri has no MRP, and such a variant is never purchasable.
+        // The owner's rule: the store shows Keeri's store price (its before-GST MRP plus GST,
+        // 7 Nov 2026), which is what its quote charges, with Keeri's compare-at. Shopify's price
+        // shows only where Keeri has no store price, and such a variant is never purchasable.
         pricePaise: v.pricePaise ?? before?.pricePaise ?? null,
         compareAtPaise: v.pricePaise != null ? (v.compareAtPaise ?? null) : (before?.compareAtPaise ?? null),
         available: v.available && v.pricePaise != null,

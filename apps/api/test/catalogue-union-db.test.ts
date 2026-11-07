@@ -135,7 +135,7 @@ test("complete Keeri snapshot revokes former price and approved images instead o
   );
 });
 
-test("scheduled refresh persists Keeri's MRP, falls back to Shopify's price only where Keeri has none", async () => {
+test("scheduled refresh persists Keeri's store price, falls back to Shopify's price only where Keeri has none", async () => {
   const { k } = fixtures();
   const s = shopifyPricedFixture();
   const price = async () => {
@@ -291,7 +291,10 @@ test("a sync stores Keeri's purchasable verdict and lead time, and a later refus
   const s = shopifyPricedFixture();
   Object.assign(k.models[0]!.variants[0]!, {
     stockPolicy: "made_to_order",
-    prices: [{ kind: "mrp", amount: 12345, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" }],
+    prices: [
+      { kind: "mrp", amount: 10462, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+      { kind: "store_price", amount: 12345, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+    ],
     fulfilment: { kind: "made_to_order", leadTimeDays: 28 },
     eligibility: { sellable: true, reasons: [] },
   });

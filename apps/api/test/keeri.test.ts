@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { adaptKeeriExport } from "../src/keeri.js";
 import { keeriFixture } from "./fixtures/keeri.js";
 
-test("Keeri MRP paise and stable source identities survive adaptation; stock remains unavailable", () => {
+test("Keeri store price paise and stable source identities survive adaptation; stock remains unavailable", () => {
   const result = adaptKeeriExport(keeriFixture(), "maple");
   assert.equal(result.source, "keeri:maple");
   assert.equal(result.products[0]?.id, "keeri:maple:model1");

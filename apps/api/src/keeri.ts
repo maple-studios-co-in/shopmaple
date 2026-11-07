@@ -130,13 +130,18 @@ const fulfilmentSchema = z
   })
   .strict()
   .nullable();
-const mrpOf = (v: { prices: { kind: string; amount: number }[] }) =>
-  v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ?? null;
-/** Keeri's struck-through store price, only where it is above the MRP it is struck against. */
+/**
+ * What the buyer pays, GST included, as Keeri works it out for the store and its
+ * quote. Keeri's `mrp` is before GST, so it is never a price to show: without a
+ * `store_price` (an older Keeri) the variant has no Keeri price at all.
+ */
+const storePriceOf = (v: { prices: { kind: string; amount: number }[] }) =>
+  v.prices.find((p) => p.kind === "store_price" && p.amount > 0)?.amount ?? null;
+/** Keeri's struck-through store price, only where it is above the store price it is struck against. */
 const compareAtOf = (v: { prices: { kind: string; amount: number }[] }) => {
-  const mrp = mrpOf(v);
+  const price = storePriceOf(v);
   const compareAt = v.prices.find((p) => p.kind === "compare_at")?.amount ?? null;
-  return mrp !== null && compareAt !== null && compareAt > mrp ? compareAt : null;
+  return price !== null && compareAt !== null && compareAt > price ? compareAt : null;
 };
 
 /** Keeri's own verdict on whether the variant can be quoted and held today, with reason codes. */
@@ -252,7 +257,7 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
 });
 /** Keeri's own verdict, taken only when it agrees with itself: a sellable
  * variant states a fulfilment matching its stock policy, a lead time exactly
- * when made to order, and an INR MRP (the price its quote will charge). */
+ * when made to order, and an INR MRP (the store price its quote charges is built from it). */
 function keeriSellable(v: object) {
   const x = v as {
     stockPolicy: string;
@@ -488,7 +493,7 @@ function adaptValidated(
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
           images: photos(v.media),
           sku: v.sku || null,
-          pricePaise: mrpOf(v),
+          pricePaise: storePriceOf(v),
           compareAtPaise: compareAtOf(v),
           available: data.schemaVersion === 2 && keeriSellable(v),
           stockPolicy: v.stockPolicy,

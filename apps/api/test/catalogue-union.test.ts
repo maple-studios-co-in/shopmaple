@@ -126,14 +126,14 @@ test("a reused SKU cannot override stable Shopify identifiers missing from the c
   }
 });
 
-test("a Keeri-only listing shows Keeri's MRP, GST included, as its price", () => {
+test("a Keeri-only listing shows Keeri's store price as its price", () => {
   const { s, k } = fixtures();
   s.products = [];
   const result = planCatalogueUnion(s, k, "maple");
   assert.equal(result.products[0]!.variants[0]!.pricePaise, 1234567);
 });
 
-test("Keeri's MRP replaces the Shopify price on every sync, and outlives Shopify's price list", () => {
+test("Keeri's store price replaces the Shopify price on every sync, and outlives Shopify's price list", () => {
   const { k } = fixtures();
   const s = shopifyPricedFixture();
   const first = planCatalogueUnion(s, k, "maple");
@@ -186,7 +186,7 @@ test("empty Shopify copy remains unchanged while current approved Keeri photos f
   assert.deepEqual(next.products[0]!.images, ["https://cdn.shopify.com/s/files/1/keeri.jpg"]);
 });
 
-test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct, each at Keeri's MRP", () => {
+test("mapped variant labels preserve Shopify copy while unmatched same-name variants remain distinct, each at Keeri's store price", () => {
   const { k } = fixtures();
   const extra = structuredClone(k.models[0]!.variants[0]!);
   extra.id = "variant2";
