@@ -1,0 +1,136 @@
+/*
+ * Homepage sliders: the hero tile's slides and the Nimbus collection slides. Both are a scroll-snap row that
+ * works with no script (swipe or scroll); the lazy slider script (lib/slider-behaviour.ts) only adds the
+ * current-dot state, autoplay and video control. Loaded after home-impact.css so these rules win ties.
+ */
+
+/* ---- Dots (shared) --------------------------------------------------------------------- */
+.slider-dots {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.slider-dots button {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* The dot itself is 8px; the button around it keeps a comfortable touch target. */
+.slider-dots button::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.5);
+  transition: background-color 0.2s, transform 0.2s;
+}
+.slider-dots button[aria-current="true"]::before {
+  background: #fff;
+}
+.slider-dots button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slider-dots button::before { transition: none; }
+}
+
+/* ---- Hero ------------------------------------------------------------------------------ */
+[data-home-section="hero"] .hero-slides {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+[data-home-section="hero"] .hero-slides::-webkit-scrollbar {
+  display: none;
+}
+[data-home-section="hero"] .hero-slide {
+  position: relative;
+  flex: 0 0 100%;
+  min-width: 0;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+[data-home-section="hero"] .hero-slide > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- Nimbus ---------------------------------------------------------------------------- */
+/* The stage takes over the card's frame (width, centring, rounded corners) so the dots can sit inside it. */
+[data-home-section="nimbus"] .home-nimbus-stage {
+  position: relative;
+  max-width: 1440px;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 14px;
+}
+[data-home-section="nimbus"] .home-nimbus-track {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+[data-home-section="nimbus"] .home-nimbus-track::-webkit-scrollbar {
+  display: none;
+}
+[data-home-section="nimbus"] .home-nimbus-track > .home-nimbus {
+  flex: 0 0 100%;
+  min-width: 0;
+  margin: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+/* The chevron points up to open the panel and down to close it. */
+[data-home-section="nimbus"] .home-nimbus-toggle svg {
+  transition: transform 0.3s;
+}
+[data-home-section="nimbus"] .home-nimbus.is-open .home-nimbus-toggle svg {
+  transform: rotate(180deg);
+}
+/* The dots sit on the artwork and on the white panel, so they carry a soft dark pill to stay visible on both. */
+[data-home-section="nimbus"] .slider-dots {
+  bottom: 10px;
+  left: 50%;
+  right: auto;
+  width: max-content;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(41 37 31 / 0.35);
+}
+/* The phone card puts its panel button at the bottom centre; lift it clear of the dots. */
+@media (max-width: 767px) {
+  [data-home-section="nimbus"] .home-nimbus-stage[data-slider-count]:not([data-slider-count="1"]) .home-nimbus:not(.is-open) .home-nimbus-toggle {
+    bottom: 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-home-section="nimbus"] .home-nimbus-toggle svg { transition: none; }
+}
+
+/* The dots only make sense once the slider's behaviour has attached; until then (or if it never does) the row is a plain swipe row. */
+[data-slider]:not([data-slider-ready]) .slider-dots {
+  display: none;
+}

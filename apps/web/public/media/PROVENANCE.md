@@ -20,3 +20,18 @@ Copied unchanged on 26 October 2026 from assets already loaded by the original S
 | `footer/phone-light.svg` | [icon.svg](https://shop.maplefurnishers.com/cdn/shop/files/icon.svg?v=1779434063&width=1200) |
 | `footer/mail-light.svg` | [icon_2.svg](https://shop.maplefurnishers.com/cdn/shop/files/icon_2.svg?v=1779434063&width=1200) |
 | `footer/amazon.avif` | [amazon_logo.avif](https://shop.maplefurnishers.com/cdn/shop/files/amazon_logo.avif?v=1778615085&width=1200) |
+
+## Homepage motion assets (2 November 2026)
+
+Added for the owner's homepage notes of 2 November 2026.
+
+- `home/nimbus-terra.webp` (1600 px wide) and `home/nimbus-terra-mobile.webp` (900 px wide) are the Terra slide's photo from the owner's Figma file "Maple-Website-Review" (`GJsFInfhys0crdNpQsbUUU`, node 1:1069, raw image 1920 x 878), exported through the Figma connector and re-encoded as WebP. Like the hero tiles above, it is a mock-up render from the owner's design file, not a Maple photograph; replace it in the Nimbus slide editor when a real Terra photo exists.
+- The editorial flipbook's pictures are Maple's own published product photos, resized to 800 x 800 (centre crop) and re-encoded as WebP:
+
+| Local file | Product | Public source |
+| --- | --- | --- |
+| `home/editorial-flip-arden.webp` | Arden Console Cabinet | [9D25AA03-….webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/9D25AA03-9581-46B1-B8BC-749AE7B9A95C.webp?v=1781938509) |
+| `home/editorial-flip-runo.webp` | Runo Dining Table | [File_2026-05-27T10_42_35.368Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T10_42_35.368Z.webp?v=1780469859) |
+| `home/editorial-flip-aero.webp` | Aero Dining Chair | [Frame174.png](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455) |
+| `home/editorial-flip-varyn.webp` | Varyn Dining Table | [File_2026-05-27T11_29_17.560Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_29_17.560Z.webp?v=1780471840) |
+| `home/editorial-flip-seno.webp` | Seno Dining Table | [File_2026-05-27T11_09_10.656Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_09_10.656Z.webp?v=1780470231) |

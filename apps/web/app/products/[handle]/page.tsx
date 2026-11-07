@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProduct, getRelatedProductCards } from "@/lib/catalog";
+import { getProduct, getProductCards, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
-import { otherPieces } from "@/lib/product-related";
+import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
@@ -29,9 +29,25 @@ export default async function ProductPage({
   // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
   const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
   if (moved) permanentRedirect(moved);
-  const related = product.category
-    ? await getRelatedProductCards(product.category)
-    : [];
+  // A bundle staff built in Keeri leads "Complete the look" and "Buy in Bundle", with Keeri's quantities. Without one,
+  // "Complete the look" draws from the rooms the piece is styled with, and a room that fails to load only leaves its
+  // pieces out; "You may also like" draws from the piece's own category.
+  const keeriBundle = product.productPage?.bundles[0];
+  const keeriHandles = (keeriBundle?.items ?? []).map((item) => item.handle).filter((h) => h !== product.handle);
+  const [related, keeriCards, ...rooms] = await Promise.all([
+    product.category ? getRelatedProductCards(product.category) : [],
+    keeriHandles.length ? getProductCards(keeriHandles).catch(() => []) : [],
+    ...(keeriHandles.length ? [] : completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => []))),
+  ]);
+  const keeriLook = keeriHandles.flatMap((h) => keeriCards.filter((card) => card.handle === h));
+  const look = keeriLook.length ? keeriLook : lookPieces(rooms, product);
+  // "Buy in Bundle" is the bundle staff built in Keeri and nothing else (Keeri's "Complete the look", described in its
+  // docs/shopmaple-product-page.md): its other pieces are read in full for their options, and one that fails to load is
+  // left out. A piece without a Keeri bundle shows none; the store never pairs pieces itself.
+  const bundle = (await Promise.all(keeriLook
+    .map((card) => getProduct(card.handle).catch(() => null))))
+    .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
+  const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
   const presentation =
     product.source === "shopify-preview"
       ? presentationData[handle as keyof typeof presentationData]
@@ -50,6 +66,9 @@ export default async function ProductPage({
           typeof query.variant === "string" ? query.variant : undefined
         }
         presentation={presentation}
+        completeLook={look}
+        bundle={bundle}
+        bundleQuantities={bundleQuantities}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>

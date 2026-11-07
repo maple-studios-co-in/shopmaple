@@ -61,7 +61,7 @@ test("legacy resolution restores original selections and every resolution isolat
   assert.deepEqual(legacy.chairs, ["caro", "ario", "nola", "tara", "arno", "rollo"]);
   assert.deepEqual(legacy.categories.map(item => item.collectionHandle), ["sofas", "dining-chair", "center-tables", "accent-chair", "beds", "dinings"]);
   assert.deepEqual(legacy.offers.map(item => item.collectionHandle), ["clearance-sale", "minimum-60-off", "best-buy-under-rs-50-000", "furniture-store-under-rs-25-000"]);
-  assert.equal(legacy.categories[0]?.image, "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.svg?v=1778649785");
+  assert.equal(legacy.categories[0]?.image, "/media/home/category-sofas.webp");
   assert.ok(legacy.categories.every(item => item.enabled && item.alt === item.title && item.key === item.collectionHandle));
   assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, homeMerchandising: legacy }).success, true);
   legacy.categories[0]!.title = "Local change";

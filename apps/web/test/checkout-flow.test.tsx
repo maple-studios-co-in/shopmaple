@@ -65,7 +65,8 @@ function fill(values: Record<string, string>) {
     element.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   }
 }
-const details = { name: "Test Buyer", email: "Buyer@Example.test", phone: "9876543210", "shipping.line1": "1 Test Street",
+// The form asks for first and last name (frame 30:492); the order keeps one name.
+const details = { firstName: "Test", lastName: "Buyer", email: "Buyer@Example.test", phone: "9876543210", "shipping.line1": "1 Test Street",
   "shipping.line2": "", "shipping.city": "Mumbai", "shipping.stateCode": "27", "shipping.pincode": "400001" };
 async function submitDetails() {
   fill(details);
@@ -336,7 +337,8 @@ test("the checkout is rebuilt storefront markup inside data-store", async () => 
   const { cleanup } = await mount(() => new Response(null, { status: 404 }));
   try {
     assert.ok(document.querySelector("[data-store][data-checkout] form"), "the form sits in the storefront scope");
-    assert.equal(document.querySelector(".checkout-layout, .checkout-form, .checkout-field"), null, "no legacy checkout classes remain");
+    // The approved Figma details form (frame 30:492) keeps .checkout-form, which styles/checkout.css styles it by.
+    assert.ok(!document.querySelector(".checkout-layout, .checkout-field"), "no legacy checkout layout classes remain");
   } finally { await cleanup(); }
 });
 

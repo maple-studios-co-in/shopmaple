@@ -5,12 +5,13 @@ import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
-const STAGE_SIZES = "(max-width:1023px) 100vw, (min-width:1440px) 720px, calc(100vw - 712px)";
+// The photo column: the window less the gutters, the gap, the buy box (at least 455 px, 32 % of the grid) and the thumbnail strip.
+const STAGE_SIZES = "(max-width:1023px) 100vw, calc(100vw - 257px - max(455px, (100vw - 96px) * 0.32))";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
 
-export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave }: {
+export function ProductGallery({ images, title, selected, onSelect, onZoom, saved, onSave, cutoutImage }: {
   images: string[];
   title: string;
   selected: number;
@@ -18,8 +19,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   onZoom: () => void;
   saved: boolean;
   onSave: () => void;
+  /** A white-background photo among `images`, drawn whole rather than cropped. It carries no hotspots (owner, 4 Nov 2026). */
+  cutoutImage?: string;
 }) {
   const src = images[selected];
+  const cutout = Boolean(cutoutImage) && src === cutoutImage;
   const initialSrc = useRef(src);
   const [settledSrc, setSettledSrc] = useState(src);
   const [readySrc, setReadySrc] = useState<string>();
@@ -97,11 +101,11 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className={cx("relative overflow-hidden rounded-[20px] bg-cream lg:rounded-[30px]", images.length > 1 && "lg:col-start-2")}>
+      <div className={cx("relative overflow-hidden rounded-[20px] border border-solid lg:rounded-[30px]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className="relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 bg-cream p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand [&_img]:object-cover"
+            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))]", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -140,6 +144,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                 alt={title + " — view " + (selected + 1)}
                 fill
                 sizes={STAGE_SIZES}
+                className={src === cutoutImage ? "object-contain" : "object-cover"}
                 preload={src === initialSrc.current}
                 onLoad={() => setReadySrc(src)}
                 onError={() => setReadySrc(src)}
@@ -147,12 +152,12 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             </span>
             {settledSrc && settledSrc !== src && (
               <span className="absolute inset-0" aria-hidden="true">
-                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} />
+                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === cutoutImage ? "object-contain" : "object-cover"} />
               </span>
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] w-full place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

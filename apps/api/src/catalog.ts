@@ -61,9 +61,10 @@ export async function listProducts(db: PrismaClient, input: unknown) {
     products: all
       .slice((q.page - 1) * q.limit, q.page * q.limit)
       .map((product) => {
-        const { pdpContent: _pdpContent, ...card } = serializeProduct(product);
+        // Lists carry cards; reviews, FAQ and bundles belong to the product page only.
+        const { pdpContent: _pdpContent, productPage: _productPage, ...card } = serializeProduct(product);
         // Variant photos and slugs belong to the detail response; lists stay lean.
-        return { ...card, variants: card.variants.map(({ images: _images, slug: _slug, ...variant }) => variant) };
+        return { ...card, variants: card.variants.map(({ images: _images, slug: _slug, productPage: _page, ...variant }) => variant) };
       }),
     total: all.length,
     page: q.page,

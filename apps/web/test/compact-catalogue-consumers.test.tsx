@@ -6,8 +6,8 @@ import { CollectionListing } from "../components/collection-listing";
 import { searchProducts, recentProduct } from "../lib/search-products";
 import { requestSavedProduct } from "../lib/saved-product-request";
 
-const card = { id: "oak", handle: "oak", title: "Oak Chair", image: null, pricePaise: 120000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] };
-const query = { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 };
+const card = { id: "oak", handle: "oak", title: "Oak Chair", image: null, pricePaise: 120000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[], optionThumbs: [] as never[] };
+const query = { q: "", sort: "title", availability: "", min: "", max: "", category: "", material: "", colour: "", wmin: "", wmax: "", dmin: "", dmax: "", page: 1 };
 const page = { handle: "all", query, products: [card], total: 1, collectionTotal: 539, inStock: 400, outOfStock: 200, highestPrice: 990000, limit: 24, published: true, mode: "preview", checkoutEnabled: false };
 const full = { id: "oak", handle: "oak", title: "Oak Chair", description: "Full description", images: [], category: "chairs", published: true, source: "fixture", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "oak-v", title: "Standard", sku: null, pricePaise: 120000, compareAtPaise: null, available: true, stockPolicy: "stocked" }] };
 let sequence = 0;
@@ -28,7 +28,9 @@ function listing(node: ReactNode): Record<string, unknown> | undefined {
 test("a normal collection makes one compact read and displays its authoritative page and facets", async () => {
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "all" }), searchParams: Promise.resolve({ q: " oak ", sort_by: "price-descending", page: "999" }) }))!;
-    assert.equal(requests.length, 1, "one collection page must not fetch the whole catalogue");
+    // The page, and the hero's featured piece (lib/collection-hero-photos), a one-product read the catalogue cache keeps.
+    assert.deepEqual(requests.map((request) => request.pathname), ["/api/catalogue/collections/all", "/api/catalogue/cards"], "one collection page must not fetch the whole catalogue");
+    assert.equal(requests[1]!.searchParams.get("handles"), "aria-5-seater-sofa");
     assert.equal(requests[0]!.pathname, "/api/catalogue/collections/all");
     assert.equal(requests[0]!.searchParams.get("limit"), "24");
     assert.equal(requests[0]!.searchParams.get("q"), "oak");

@@ -10,6 +10,8 @@ import { HomeCarousel } from "@/components/home-carousel";
 import { HomeScrollRail } from "@/components/home-scroll-rail";
 import { SectionReveal } from "@/components/section-reveal";
 import { HomeNimbus } from "@/components/home-nimbus";
+import { HomeCompare, HomeEditorial } from "@/components/home-editorial";
+import { HomeEffectsIsland } from "@/components/home-effects-island";
 import {
   HomeStatementBand,
   HomeDifference,
@@ -50,7 +52,7 @@ function CollectionTiles({
             />
           </div>
           {categories ? <h3 data-category-title>{item.title}</h3> : null}
-          <ArrowRight aria-hidden size={14} {...(categories ? { "data-category-arrow": "" } : { "data-offer-arrow": "" })} />
+          {categories && <ArrowRight aria-hidden size={14} data-category-arrow />}
         </Link>
       ))}
     </div>
@@ -71,7 +73,7 @@ async function HomeProducts({
   browseHref: string;
   /** A sentence under the heading. */
   lede?: string;
-  /** A plain row with a visible scrollbar: no arrows and no "View all" link (Bestsellers). */
+  /** A plain row: no arrows and no scrollbar, just dragging and touch (Bestsellers). */
   scrollbar?: boolean;
 }) {
   const products = await getProductCards(handles).catch(async () => {
@@ -90,7 +92,7 @@ async function HomeProducts({
             <h2>{heading}</h2>
             {lede && <p className="home-rail-lede" data-rail-lede>{lede}</p>}
           </div>
-          {!scrollbar && <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall>View all {heading.toLowerCase()} →</Link>}
+          <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall data-fill-button="outline">View all {heading.toLowerCase()} →</Link>
         </header>
       )}
       {products.length ? (
@@ -131,7 +133,14 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     categories: (
       <section className="home-category-section home-container">
         <h2>{copy.categoryHeading}</h2>
-        <span className="home-heading-ornament" data-heading-ornament aria-hidden="true" />
+        <span className="home-heading-ornament" data-heading-ornament aria-hidden="true">
+          <i data-ornament-line />
+          <svg data-ornament-flower viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => <ellipse key={angle} cx="12" cy="5.4" rx="2" ry="4.4" transform={`rotate(${angle} 12 12)`} />)}
+            <circle cx="12" cy="12" r="1.7" fill="#fff" />
+          </svg>
+          <i data-ornament-line />
+        </span>
         <CollectionTiles items={merchandising.categories} className="home-categories" />
       </section>
     ),
@@ -169,7 +178,8 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         handles={merchandising.chairs}
         heading={copy.chairsHeading ?? "Chairs"}
         label="Chair collection"
-        browseHref="/collections/chairs"
+        // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.
+        browseHref="/collections/chairs?page=1"
       />
     ),
     promos: (
@@ -179,6 +189,8 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
         <CampaignBanner campaign="landing-consoles" compact content={content} />
       </div>
     ),
+    editorial: <HomeEditorial content={details.editorial} />,
+    compare: <HomeCompare content={details.compare} />,
     testimonial: (
       <HomeTestimonial
         content={details.testimonial}
@@ -208,6 +220,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
             {sections[section.key]}
           </div>
         ))}
+      <HomeEffectsIsland />
     </SectionReveal>
   );
 }

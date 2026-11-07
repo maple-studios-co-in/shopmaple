@@ -1,0 +1,224 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { JSDOM } from "jsdom";
+import React, { act } from "react";
+import { createRoot } from "react-dom/client";
+import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import type { Cart, Product, ProductCard, ProductPage, ProductSpecs, VariantProductPage } from "@shopmaple/contracts";
+import { ProductDetail } from "../components/product-detail";
+import { ShopProvider } from "../components/shop-provider";
+import { specLines } from "../lib/product-page-data";
+import { productStructuredData, seoSettings } from "../lib/seo";
+
+// Keeri's product-page data on the page (Keeri docs/shopmaple-product-page.md). Synthetic test values only.
+const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3028/products/demo-chair" });
+Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, localStorage: dom.window.localStorage, HTMLElement: dom.window.HTMLElement, FormData: dom.window.FormData, IS_REACT_ACT_ENVIRONMENT: true });
+dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
+const photo = (name: string) => `https://store.maplefurnishers.com/media/keeri/${name}.webp`;
+const noSpecs: ProductSpecs = { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null };
+const variantPage = (batch: VariantProductPage["batch"], specs = noSpecs): VariantProductPage => ({ specs, copy: { description: null, details: null, materials: null, dimensions: null, careInstructions: null }, batch, options: [] });
+const page: ProductPage = {
+  specs: { widthCm: 52.5, depthCm: 56, heightCm: 81, seatHeightCm: 46, weightKg: 6.5 },
+  highlights: ["Solid wood frame", "Choose your fabric", "Hand-finished"],
+  faq: [{ question: "Can I choose a different fabric?", answer: "Yes, from the swatches on this page." }, { question: "What warranty do I get?", answer: "36 months, as for every Maple piece." }],
+  assembly: { required: true, minutes: 20 },
+  customisation: { options: ["fabric"], note: null },
+  rooms: [],
+  reviews: { average: 4.5, count: 2, items: [
+    { id: "r1", rating: 5, title: "Sturdy and comfortable", body: "Synthetic review text one.", reviewerName: "Asha", city: "Jaipur", reviewedAt: "2026-10-20", source: "online_order", verifiedBuyer: true, variantId: "grey", photos: [{ id: "p1", url: "https://store.maplefurnishers.com/media/keeri-review/p1.webp", width: 800, height: 600 }] },
+    { id: "r2", rating: 4, title: "Good finish", body: "Synthetic review text two.", reviewerName: "Ravi", city: null, reviewedAt: "2026-09-01", source: "showroom", verifiedBuyer: false, variantId: null, photos: [] },
+  ] },
+  media: [
+    { url: photo("grey-cutout"), variantId: "grey", role: "cutout", width: 1600, height: 1200, altText: "Demo chair in grey", realPhoto: false, hotspots: [
+      { x: 0.48, y: 0.31, label: "Fabric", text: "Ash Grey boucle, removable cover.", type: "fabric" },
+      { x: 0.31, y: 0.82, label: "Legs", text: "Solid oak, oil finish.", type: "material" },
+    ] },
+  ],
+  bundles: [{ id: "set", name: "Dining set", description: "A chair and its table.", items: [
+    { productId: "demo", handle: "demo-chair", variantId: null, quantity: 4 },
+    { productId: "table", handle: "demo-table", variantId: null, quantity: 1 },
+  ] }],
+};
+const demo: Product = {
+  id: "demo", handle: "demo-chair", title: "Demo Chair", description: "A demo chair.", category: "chairs", published: true, source: "keeri:maple", sourceUpdatedAt: "2026-11-01T00:00:00Z",
+  images: [photo("grey-cutout"), photo("grey-1"), photo("oak-1")],
+  sourceDetails: { details: "About the chair.", materials: null, dimensions: "Width 52 cm (free text)", careInstructions: null, warranty: null },
+  productPage: page,
+  variants: [
+    { id: "grey", title: "Ash Grey", sku: "G", pricePaise: 1_250_000, compareAtPaise: null, available: false, stockPolicy: "made_to_order", images: [photo("grey-1")], slug: "ash-grey", productPage: variantPage({ remaining: 3, showAtOrBelow: 5 }) },
+    { id: "oak", title: "Natural Oak", sku: "O", pricePaise: 1_300_000, compareAtPaise: null, available: false, stockPolicy: "made_to_order", images: [photo("oak-1")], slug: "natural-oak", productPage: variantPage({ remaining: 9, showAtOrBelow: 5 }, { ...noSpecs, widthCm: 60 }) },
+  ],
+};
+const table: ProductCard = { id: "table", handle: "demo-table", title: "Demo Table", image: photo("table"), pricePaise: 4_500_000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: "tables", optionNames: [], optionThumbs: [] };
+const tableProduct: Product = { id: "table", handle: "demo-table", title: "Demo Table", description: "", category: "tables", published: true, source: "keeri:maple", sourceUpdatedAt: "2026-11-01T00:00:00Z", images: [photo("table")],
+  variants: [{ id: "table-oak", title: "Oak", sku: "T", pricePaise: 4_500_000, compareAtPaise: null, available: false, stockPolicy: "made_to_order" }] };
+// What the route passes for a Keeri bundle: its other pieces as cards and in full, with Keeri's quantities.
+const keeriBundle: { completeLook: ProductCard[]; bundle: Product[]; bundleQuantities: Record<string, number> } = { completeLook: [table], bundle: [tableProduct], bundleQuantities: { "demo-chair": 4, "demo-table": 1 } };
+
+async function mount(check: (doc: Document) => void | Promise<void>, value: Product = demo, pieces: typeof keeriBundle = keeriBundle, variant = "ash-grey") {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json(empty);
+  const root = createRoot(document.getElementById("root")!);
+  const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
+  window.history.replaceState(null, "", `/products/demo-chair?variant=${variant}`);
+  try {
+    await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider><ProductDetail product={value} initialVariant={variant} {...pieces} /></ShopProvider></AppRouterContext.Provider>));
+    await check(document);
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous;
+  }
+}
+const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
+const click = (element: Element) => act(async () => { (element as HTMLElement).click(); });
+
+test("the finish's white-background photo from Keeri leads the gallery, whole and without hotspots (owner, 4 Nov 2026)", async () => {
+  await mount(async (doc) => {
+    assert.match(decodeURIComponent(doc.querySelector("[data-main-image] img")!.getAttribute("src")!), /grey-cutout\.webp/);
+    assert.equal(doc.querySelector("[data-hotspots]"), null, "Keeri's photo hotspots stay off the hero photo");
+  });
+});
+
+test("Keeri's average and count rate the piece, and each approved review shows, verified only when Keeri says so", async () => {
+  await mount((doc) => {
+    assert.match(text(doc.querySelector("[data-price-block] [data-rating]"))!, /^4\.5/);
+    assert.match(text(doc.querySelector("[data-rating-summary]"))!, /4\.5.*2 reviews/);
+    const cards = [...doc.querySelectorAll("[data-review]")];
+    assert.equal(cards.length, 2);
+    assert.match(text(cards[0])!, /Sturdy and comfortable.*Synthetic review text one\..*Asha, Jaipur.*Verified buyer.*October 2026/);
+    assert.equal(cards[1]!.querySelector("[data-verified]"), null);
+    assert.match(decodeURIComponent(cards[0]!.querySelector("img")!.getAttribute("src")!), /keeri-review\/p1\.webp/);
+  });
+});
+
+test("a product nobody has reviewed in Keeri says so, with no cards and no invented rating", async () => {
+  await mount((doc) => {
+    assert.equal(text(doc.querySelector("[data-rating-empty]")), "No reviews yet");
+    assert.equal(doc.querySelectorAll("[data-review]").length, 0);
+    assert.ok(doc.querySelector("[data-reviews-note]"));
+  }, { ...demo, productPage: { ...page, reviews: { average: null, count: 0, items: [] } } });
+});
+
+test("'Only N left' shows for a batch at or below its threshold, and not for one above it", async () => {
+  await mount((doc) => assert.equal(text(doc.querySelector("[data-batch] p")), "Only 3 left in this batch"));
+  await mount((doc) => assert.equal(doc.querySelector("[data-batch]"), null), demo, keeriBundle, "natural-oak");
+});
+
+test("measured specifications replace the free-text dimensions, using this finish's own measurement first", () => {
+  assert.deepEqual(specLines(demo, demo.variants[0]), ['Width: 52.5 cm (≈ 20.7")', 'Depth: 56 cm (≈ 22")', 'Height: 81 cm (≈ 31.9")', 'Seat height: 46 cm (≈ 18.1")', "Weight: 6.5 kg", "Assembly: needed, about 20 min"]);
+  assert.equal(specLines(demo, demo.variants[1])[0], 'Width: 60 cm (≈ 23.6")');
+  assert.deepEqual(specLines({ ...demo, productPage: null }, demo.variants[0]), []);
+});
+
+test("the product's own questions lead the FAQ, and a general question it repeats appears once", async () => {
+  await mount((doc) => {
+    const questions = [...doc.querySelectorAll("[data-faq-item] summary")].map(text);
+    assert.equal(questions[0], "Can I choose a different fabric?");
+    assert.equal(questions[1], "What warranty do I get?");
+    assert.equal(questions.filter((q) => q === "What warranty do I get?").length, 1);
+  });
+});
+
+test("a Keeri bundle fills Complete the look and Buy in Bundle, totalled with Keeri's quantities and no discount", async () => {
+  await mount((doc) => {
+    assert.match(text(doc.querySelector("[data-complete-look]"))!, /Complete the look.*Demo Table/);
+    assert.equal(doc.querySelector("[data-complete-look] [data-look-view]")!.getAttribute("href"), "/products/demo-table");
+    assert.equal(doc.querySelectorAll("[data-bundle-piece]").length, 2);
+    assert.deepEqual([...doc.querySelectorAll("[data-bundle-role]")].map(text), ["Current product · Quantity 4", "Paired product · Quantity 1"]);
+    // 4 chairs at Rs. 12,500 and 1 table at Rs. 45,000.
+    assert.equal(text(doc.querySelector("[data-bundle-total]")), "Rs. 95,000.00");
+  });
+  await mount((doc) => assert.equal(doc.querySelector("[data-bundle]"), null, "no bundle without paired pieces"), demo, { completeLook: [], bundle: [], bundleQuantities: {} });
+});
+
+test("a Keeri bundle with a piece priced on request still shows whole, without a total, as an enquiry", async () => {
+  const onRequest: Product = { ...tableProduct, variants: [{ ...tableProduct.variants[0]!, pricePaise: null }] };
+  await mount((doc) => {
+    assert.deepEqual([...doc.querySelectorAll("[data-bundle-price]")].map(text), ["Rs. 12,500.00", "Price on request"]);
+    assert.equal(doc.querySelector("[data-bundle-total]"), null, "a total that left a piece out would mislead");
+    assert.ok(doc.querySelector("[data-bundle-on-request]"));
+    assert.equal(doc.querySelector("button[data-bundle-add]"), null);
+    assert.equal(new URL(doc.querySelector("[data-bundle-enquire]")!.getAttribute("href")!, "http://x").searchParams.get("product"), "4 Demo Chair + 1 Demo Table");
+  }, demo, { ...keeriBundle, bundle: [onRequest] });
+});
+
+test("View real images opens the photos staff marked as real, on the finish being viewed, grouped by finish", async () => {
+  const real = (name: string, variantId: string | null, altText: string | null) => ({ url: photo(name), variantId, role: "detail", width: 1200, height: 1200, altText, realPhoto: true, hotspots: [] });
+  const marked: Product = { ...demo, productPage: { ...page, media: [...page.media,
+    real("piece-real", null, "The demo chair in the workshop"),
+    real("grey-real", "grey", "Ash Grey seat, close up"),
+    real("oak-real", "oak", null),
+    real("gone-real", "a-finish-the-store-does-not-list", "Left out"),
+    { ...real("rendered", "grey", "A rendering"), realPhoto: false },
+  ] } };
+  await mount(async (doc) => {
+    assert.equal(text(doc.querySelector("button[data-real-images]")), "View real images (3)");
+    await click(doc.querySelector("button[data-real-images]")!);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-finish]")].map((b) => [text(b), b.getAttribute("aria-pressed")]),
+      [["The piece", "false"], ["Ash Grey", "true"], ["Natural Oak", "false"]]);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-photo] img")].map((img) => img.getAttribute("alt")), ["Ash Grey seat, close up"]);
+    await click([...doc.querySelectorAll("[data-real-finish]")][2]!);
+    assert.deepEqual([...doc.querySelectorAll("[data-real-photo] img")].map((img) => img.getAttribute("alt")), ["Demo Chair, real photograph"]);
+  }, marked);
+  await mount((doc) => assert.equal(doc.querySelector("[data-real-images]"), null, "nothing marked: no button, rather than other pictures under that name"));
+});
+
+test("search engines get Keeri's real rating and reviews, and nothing for a product without any", () => {
+  const settings = seoSettings({ SEO_INDEXING: "on" } as never);
+  const rated = productStructuredData(settings, demo) as { aggregateRating?: { ratingValue: number; reviewCount: number }; review?: unknown[] };
+  assert.deepEqual([rated.aggregateRating?.ratingValue, rated.aggregateRating?.reviewCount, rated.review?.length], [4.5, 2, 2]);
+  const unrated = productStructuredData(settings, { ...demo, productPage: null }) as Record<string, unknown>;
+  assert.equal("aggregateRating" in unrated, false);
+});
+
+test("Keeri's highlights sit on the Precision photo as hotspots, each opening a chip with its line, one at a time", async () => {
+  await mount(async (doc) => {
+    const photo = doc.querySelector("[data-features] [data-feature-photo]")!;
+    const spots = [...photo.querySelectorAll<HTMLButtonElement>("button[data-highlight-spot]")];
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-label")), ["Highlight 1 of 3", "Highlight 2 of 3", "Highlight 3 of 3"]);
+    assert.match(photo.querySelector("img")!.getAttribute("src")!, /grey-cutout/, "on the finish's white-background photo, the piece whole under its hotspots");
+    assert.equal(doc.querySelectorAll("[data-features] [data-highlight-spot]").length, 3, "the hotspots are the highlights alone, apart from the four cards");
+    assert.equal(doc.querySelector("[data-features-lines]"), null, "and no line joins a card to the photo");
+    const chips = () => [...photo.querySelectorAll<HTMLElement>("[data-highlight-chip]")];
+    assert.deepEqual(chips().map((chip) => chip.textContent), ["Solid wood frame", "Choose your fabric", "Hand-finished"], "Keeri's own lines, in order");
+    assert.deepEqual(spots.map((spot) => spot.getAttribute("aria-describedby")), chips().map((chip) => chip.id), "each line describes its hotspot");
+    assert.ok(chips().every((chip) => chip.hidden), "closed until a hotspot is opened");
+    await act(async () => spots[1]!.click());
+    assert.equal(spots[1]!.getAttribute("aria-expanded"), "true");
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, false, true]);
+    await act(async () => spots[2]!.click());
+    assert.deepEqual(chips().map((chip) => chip.hidden), [true, true, false], "one chip at a time");
+    await act(async () => spots[2]!.click());
+    assert.ok(chips().every((chip) => chip.hidden), "the same hotspot closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "Escape closes it");
+    await act(async () => spots[0]!.click());
+    await act(async () => { doc.body.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+    assert.ok(chips().every((chip) => chip.hidden), "and so does a tap anywhere else");
+  });
+});
+
+test("the reviews slide: arrows for the previous and next review, the one with nothing behind it hidden", async () => {
+  await mount(async (doc) => {
+    const slider = doc.querySelector("[data-reviews] [data-review-slider]")!;
+    const prev = slider.querySelector<HTMLButtonElement>("button[data-review-prev]")!;
+    const next = slider.querySelector<HTMLButtonElement>("button[data-review-next]")!;
+    assert.deepEqual([prev, next].map((button) => button.getAttribute("aria-label")), ["Previous review", "Next review"]);
+    assert.equal(prev.disabled, true, "nothing before the first review");
+    assert.match(prev.className, /invisible/);
+    // A browser lays the row out wider than its window; measure it so here and slide a review along.
+    const list = slider.querySelector<HTMLElement>("[data-review-list]")!;
+    Object.defineProperties(list, { scrollWidth: { value: 1400, configurable: true }, clientWidth: { value: 700, configurable: true } });
+    const moves: ScrollToOptions[] = [];
+    list.scrollBy = ((options: ScrollToOptions) => { moves.push(options); }) as typeof list.scrollBy;
+    await act(async () => { list.dispatchEvent(new dom.window.Event("scroll")); });
+    assert.equal(next.disabled, false, "more reviews to the right");
+    assert.match(next.className, /group-hover\/slider:opacity-100/, "showing while the pointer is over the row");
+    await act(async () => next.click());
+    assert.equal(moves.length, 1);
+    assert.equal(moves[0]!.behavior, "smooth");
+    assert.ok((moves[0]!.left ?? 0) > 0, "one review on");
+  });
+});

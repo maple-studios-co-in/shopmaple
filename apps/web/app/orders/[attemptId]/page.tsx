@@ -10,7 +10,7 @@ export default async function OrderPage({ params }: { params: Promise<{ attemptI
   const { attemptId } = await params;
   if (!uuid.test(attemptId)) notFound();
   return (
-    <section data-store className="mx-auto min-h-[60vh] max-w-[820px] px-10 py-12 max-[1001px]:px-6 max-[1001px]:py-9 max-[701px]:px-4 max-[701px]:py-8">
+    <section data-store className="mx-auto min-h-[60vh] max-w-[820px] px-10 font-product py-12 max-[1001px]:px-6 max-[1001px]:py-9 max-[701px]:px-4 max-[701px]:py-8">
       <h1 className={`${pageTitle} mb-8`}>Your order</h1>
       <OrderStatus attemptId={attemptId} />
     </section>

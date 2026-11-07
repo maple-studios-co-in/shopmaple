@@ -1,0 +1,82 @@
+/* Buttons that fill from the pointer, after the owner's reference (the Athora theme's Add to cart, 3 November
+   2026). A circle in a tone of the button's own colour (its ::before) grows on a spring from where the mouse came
+   in until it covers the button, and shrinks back there when the mouse leaves; the button leans up to 6px toward
+   the pointer. lib/button-effects sets --fill-x, --fill-y, --fill-scale, --magnet-x, --magnet-y and
+   [data-fill-on]; everything moves here, on the compositor. Keyboard focus fills from the middle. Without the
+   script (touch, reduced motion, before it loads) the buttons take their fill colour as a plain hover.
+
+   Each button says which colours it fills with: --fill for the circle (and the border once it is covered) and
+   --fill-ink for the text over it. Solid burgundy buttons fill a lighter burgundy, as the reference fills a
+   lighter tone of its own colour; outline buttons fade to the same and turn their text white, as the
+   reference's outlined button does; light buttons on dark grounds fill a warm cream. #975350 keeps white
+   text at 5.7:1. */
+:root {
+  /* Motion's default spring (stiffness 100, damping 10, mass 1), the reference's, sampled over 1.2s for CSS:
+     it overshoots by 16% at 0.36s and settles. */
+  --fill-spring: linear(0, 0.041, 0.145, 0.288, 0.449, 0.61, 0.76, 0.89, 0.994, 1.072, 1.124, 1.153, 1.163, 1.158,
+    1.141, 1.118, 1.092, 1.066, 1.041, 1.02, 1.002, 0.989, 0.98, 0.975, 0.973, 0.974, 0.977, 0.98, 0.985, 0.989,
+    0.993, 0.996, 0.999, 1.002, 1.003, 1.004, 1.004, 1.004, 1.004, 1.003, 1);
+}
+@supports not (transition-timing-function: linear(0, 1)) {
+  :root { --fill-spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
+}
+
+:is(.button, [data-fill-button]) {
+  --fill: #975350;
+  --fill-ink: #fff;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  translate: var(--magnet-x, 0px) var(--magnet-y, 0px);
+  transition: translate 0.9s var(--fill-spring), color 0.3s ease, border-color 0.3s ease, background-color 0.2s ease;
+}
+:is(.button, [data-fill-button])::before {
+  content: "";
+  position: absolute;
+  top: var(--fill-y, 50%);
+  left: var(--fill-x, 50%);
+  z-index: -1;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--fill);
+  pointer-events: none;
+  translate: -50% -50%;
+  scale: 0;
+  transition: scale 1.2s var(--fill-spring);
+}
+:is(.button, [data-fill-button])[data-fill-on]::before { scale: var(--fill-scale, 60); }
+:is(.button, [data-fill-button]):focus-visible::before { scale: 60; }
+/* While the fill shows, its ink and edge win over any section's own colours for that button (some set them with
+   long selectors), or burgundy text would sit on the burgundy fill. */
+html[data-button-fill] :is(.button, [data-fill-button]):is([data-fill-on], :focus-visible),
+html:not([data-button-fill]) :is(.button, [data-fill-button]):hover {
+  border-color: var(--fill) !important;
+  color: var(--fill-ink) !important;
+}
+/* Before the script, and wherever it stays away, the fill colour is simply the hover colour. */
+html:not([data-button-fill]) :is(.button, [data-fill-button]):hover { background-color: var(--fill); }
+
+/* Outline buttons fade to the fill instead, as the reference's outlined "Buy it now" does (0.2s, ease-in-out,
+   standing still): a circle growing under them would carry their white text across the white ground first. */
+:is(.button.secondary, .button-outline, [data-fill-button="outline"])::before { content: none; }
+:is(.button.secondary, .button-outline, [data-fill-button="outline"]) {
+  translate: none;
+  transition: color 0.2s ease-in-out, border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+html[data-button-fill] :is(.button.secondary, .button-outline, [data-fill-button="outline"]):is([data-fill-on], :focus-visible) {
+  background-color: var(--fill) !important;
+}
+
+/* Light buttons on burgundy or photographs: a warm cream, the text staying burgundy. */
+:is(.button.light, [data-fill-button="light"]) { --fill: #f1e2da; --fill-ink: var(--burgundy, #741a14); }
+/* Campaign buttons outlined in cream over a photograph fill with that cream. */
+.campaign-cta[data-fill-button] { --fill: #fff3dc; --fill-ink: #741a14; }
+/* On the homepage the announcement's button is solid burgundy, and the banners' are solid cream. */
+[data-campaign-layout="strip"] .campaign-cta[data-fill-button] { --fill: #975350; --fill-ink: #fff; }
+[data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-cta[data-fill-button] { --fill: #ead8c6; --fill-ink: #741a14; }
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.button, [data-fill-button]) { translate: none; transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
+  :is(.button, [data-fill-button])::before { display: none; }
+}

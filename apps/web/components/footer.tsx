@@ -147,6 +147,8 @@ export function Footer({
       <div className="maple-footer-bottom">
         <span>
           © {new Date().getFullYear()} {footer.copyrightName}
+          {/* The city photos are CC BY-SA, which asks for their credits within reach; the owner took the line off the cities row. */}
+          <a className="maple-footer-credits" href="/media/cities/credits.html">Image credits</a>
         </span>
         {footer.policyLinks.some((link) => link.enabled) && (
           <DismissibleDetails className="maple-footer-policies">

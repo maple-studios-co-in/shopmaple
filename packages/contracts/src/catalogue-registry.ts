@@ -1,5 +1,6 @@
 // Server catalogue membership. Import this explicit subpath only where the complete registry is needed.
-import { categoryNames, type CollectionProduct } from "./catalogue-collections";
+import { categoryNames, type CollectionFacets, type CollectionProduct } from "./catalogue-collections";
+import { categories } from "./catalogue-cards";
 import oldMembership from "../data/collection-membership.json";
 import sourceCollections from "../data/source-collections.json";
 export { sourceCollections };
@@ -90,4 +91,30 @@ export function collectionMembers<T extends CollectionProduct>(products: T[], ha
     return [...new Map(combined.map(product => [product.handle, product])).values()];
   }
   return products.filter((product) => product.category === handle);
+}
+
+// The listing's Category filter (frame 1:1139: "Dining chairs +", "Accent chairs +"): the collections a category's
+// pieces are split into, each opened in turn.
+const familyCollections: Record<string, string[]> = {
+  chairs: ["dining-chair", "accent-chair", "arm-chair", "lounge-wing-chair", "rocking-chair"],
+  tables: ["dining", "dinings", "center-tables", "side-table", "console-tables", "tv-media-units"],
+  sofas: ["3-seater-sofa", "5-seater-sofa", "7-seater-sofa", "l-shape-sofa", "fabric-sofas", "wooden-sofas"],
+  beds: ["king-size-beds", "queen-size-beds", "fabric-beds", "solid-wood-beds"],
+};
+/**
+ * A collection whose pieces all share one category lists that category's collections, with how many pieces each holds
+ * and which one is open. A mixed collection (all furniture, an offer) lists the categories to filter it by instead.
+ */
+export function collectionCategories<T extends CollectionProduct>(products: T[], handle: string): CollectionFacets["categories"] {
+  const members = collectionMembers(products, handle);
+  const found = [...new Set(members.map((product) => product.category).filter((category): category is string => Boolean(category)))];
+  if (found.length === 1) {
+    return (familyCollections[found[0]!] ?? [])
+      .filter((family) => Object.hasOwn(collectionTitles, family))
+      .map((family) => ({ handle: family, title: collectionTitles[family]!, count: collectionMembers(products, family).length, current: family === handle, kind: "collection" as const }))
+      .filter((family) => family.count > 0);
+  }
+  return categories
+    .map((category) => ({ handle: category, title: categoryNames[category]!, count: members.filter((product) => product.category === category).length, current: false, kind: "filter" as const }))
+    .filter((category) => category.count > 0);
 }

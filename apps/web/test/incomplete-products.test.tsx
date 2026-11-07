@@ -113,7 +113,7 @@ test("unknown prices do not advertise a zero-price collection maximum", async ()
   await mount(<CollectionListing handle="all" title="All Furniture" query={collectionQuery({})} products={[toProductCard(model)]} total={1} collectionTotal={1} limit={24} inStock={0} outOfStock={1} highestPrice={null} />, () => {
     assert.match(document.querySelector(".collection-price-caption")!.textContent!, /Prices available on request/);
     assert.equal(document.querySelector<HTMLInputElement>('input[name="max"]')!.placeholder, "Any price");
-    assert.match(document.querySelector(".collection-filter-form")!.textContent!, /Enquiry only/);
+    assert.match(document.querySelector(".collection-filter-form")!.textContent!, /Made to order/, "pieces that cannot be ordered online are made to order");
   });
 });
 test("new catalogue members use their known category without requiring dated preview membership", () => {

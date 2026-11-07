@@ -7,6 +7,7 @@ import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
 import { shopFile } from "@/lib/format";
 import { ProductCard } from "@/components/product-card";
+import { CardRating } from "@/components/store/card-highlights";
 import { HomeCarousel } from "@/components/home-carousel";
 import { CategoryIntroduction } from "@/components/category-controls";
 import type { CategoryPageSlug } from "@shopmaple/contracts";
@@ -90,9 +91,12 @@ function SourceProductCard({ product }: { product: SourceProduct }) {
           />
         </a>
       </div>
-      <a data-card-name className="product-card-name" href={href}>
-        {product.title}
-      </a>
+      <div data-card-heading className="product-card-heading">
+        <a data-card-name className="product-card-name" href={href}>
+          {product.title}
+        </a>
+        <span data-card-rating-slot className="product-card-rating"><CardRating /></span>
+      </div>
       <p data-card-price className="product-card-price">
         <span>Price on request</span>
       </p>

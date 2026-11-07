@@ -13,10 +13,9 @@ import {
   type CheckoutAttempt,
   type CheckoutOptions,
 } from "@/app/checkout/checkout-client";
-import { indiaStates } from "@/app/checkout/india-states";
 import { openHostedPayment } from "@/app/checkout/razorpay";
-import { pageTitle } from "./current-look";
-import { buttonRow, errorText, field, heading, label, muted, outline, panel, QuoteLines, QuoteTotals, solid } from "./checkout-parts";
+import { CheckoutDetails } from "./checkout-details";
+import { buttonRow, errorText, heading, muted, outline, panel, QuoteLines, QuoteTotals, solid } from "./checkout-parts";
 
 type Stage =
   | { kind: "details" }
@@ -88,56 +87,12 @@ function readForm(form: HTMLFormElement, sameBilling: boolean) {
   });
   const shipping = address("shipping");
   return {
-    customer: { name: read("name"), email: read("email"), phone: read("phone").replace(/[\s-]/g, "") },
+    // The form asks for first and last name (frame 30:492); the order keeps one name.
+    customer: { name: [read("firstName"), read("lastName")].filter(Boolean).join(" "), email: read("email"), phone: read("phone").replace(/[\s-]/g, "") },
     shippingAddress: shipping,
     billingAddress: sameBilling ? shipping : address("billing"),
     deliveryMethodId: read("deliveryMethodId"),
   };
-}
-function Fieldset({ legend, children }: { legend: string; children: ReactNode }) {
-  return (
-    <fieldset className="m-0 grid min-w-0 gap-4 border-0 p-0">
-      <legend className={cx(heading, "mb-4 p-0")}>{legend}</legend>
-      {children}
-    </fieldset>
-  );
-}
-function AddressFields({ prefix, id, defaults }: { prefix: "shipping" | "billing"; id: string; defaults?: CheckoutInput["shippingAddress"] }) {
-  return (
-    <>
-      <label className={label}>
-        <span>Address</span>
-        <input className={field} name={`${prefix}.line1`} autoComplete={`${prefix} address-line1`} required maxLength={200} defaultValue={defaults?.line1} id={`${id}-${prefix}-line1`} />
-      </label>
-      <label className={label}>
-        <span>Address line 2 (optional)</span>
-        <input className={field} name={`${prefix}.line2`} autoComplete={`${prefix} address-line2`} maxLength={200} defaultValue={defaults?.line2} />
-      </label>
-      <div className="grid grid-cols-3 gap-4 max-[701px]:grid-cols-1">
-        <label className={label}>
-          <span>City</span>
-          <input className={field} name={`${prefix}.city`} autoComplete={`${prefix} address-level2`} required maxLength={100} defaultValue={defaults?.city} />
-        </label>
-        <label className={label}>
-          <span>State</span>
-          <select className={field} name={`${prefix}.stateCode`} autoComplete={`${prefix} address-level1`} required defaultValue={defaults?.stateCode ?? ""}>
-            <option value="" disabled>
-              Select a state
-            </option>
-            {indiaStates.map(([code, name]) => (
-              <option key={code} value={code}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={label}>
-          <span>Pincode</span>
-          <input className={field} name={`${prefix}.pincode`} autoComplete={`${prefix} postal-code`} inputMode="numeric" required pattern="[1-9][0-9]{5}" maxLength={6} defaultValue={defaults?.pincode} />
-        </label>
-      </div>
-    </>
-  );
 }
 /** A full-width message state: confirmation, review, waiting. */
 function Notice({ title, children }: { title?: string; children: ReactNode }) {
@@ -154,15 +109,6 @@ const orderLink = (id: string) => (
   </Link>
 );
 
-/** The checkout page frame: title and width, matching the cart page. */
-export function CheckoutSection({ children }: { children: ReactNode }) {
-  return (
-    <section data-store className="mx-auto min-h-[60vh] max-w-[1100px] px-10 py-12 max-[1001px]:px-6 max-[1001px]:py-9 max-[701px]:px-4 max-[701px]:py-8">
-      <h1 className={`${pageTitle} mb-8`}>Checkout</h1>
-      {children}
-    </section>
-  );
-}
 type FlowProps = {
   options: CheckoutOptions;
   pollIntervalMs?: number;
@@ -172,7 +118,7 @@ type FlowProps = {
 export function CheckoutFlow(props: FlowProps) {
   const top = useRef<HTMLDivElement>(null);
   return (
-    <div ref={top} data-store data-checkout className="scroll-mt-6 font-body">
+    <div ref={top} data-store data-checkout className="scroll-mt-6 font-product">
       <CheckoutStages {...props} top={top} />
     </div>
   );
@@ -637,103 +583,7 @@ function CheckoutStages({
       product: cart.items.map((item) => `${item.title} (${item.variantTitle}) × ${item.quantity}`).join("; ").slice(0, 500),
     });
   return (
-    <div className={layout}>
-      <form className="grid min-w-0 content-start gap-10" onSubmit={(event) => void submit(event)} noValidate aria-describedby={`${id}-note`}>
-        <Fieldset legend="Contact details">
-          <label className={label}>
-            <span>Name</span>
-            <input className={field} name="name" autoComplete="name" required maxLength={120} defaultValue={input?.customer.name} />
-          </label>
-          <div className="grid grid-cols-2 gap-4 max-[701px]:grid-cols-1">
-            <label className={label}>
-              <span>Email</span>
-              <input className={field} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} required maxLength={254} defaultValue={input?.customer.email} />
-            </label>
-            <label className={label}>
-              <span>Mobile number</span>
-              <input className={field} name="phone" type="tel" autoComplete="tel" inputMode="tel" required maxLength={16} placeholder="10-digit mobile" defaultValue={input?.customer.phone} />
-            </label>
-          </div>
-        </Fieldset>
-        <Fieldset legend="Delivery address">
-          <AddressFields prefix="shipping" id={id} defaults={input?.shippingAddress} />
-        </Fieldset>
-        <Fieldset legend="Delivery method">
-          {options.deliveryMethods.map((method) => (
-            <label key={method.id} className="flex cursor-pointer items-center gap-3 text-ui text-espresso">
-              <input className="size-[18px] accent-brand" type="radio" name="deliveryMethodId" value={method.id} checked={deliveryMethodId === method.id} onChange={() => setDeliveryMethodId(method.id)} />
-              <span>{method.label}</span>
-            </label>
-          ))}
-          <p className={muted}>Delivery is priced by our courier partner for your pincode. Charges and GST are confirmed on the next step before you pay.</p>
-        </Fieldset>
-        <Fieldset legend="Billing address">
-          <label className="flex cursor-pointer items-center gap-3 text-ui text-espresso">
-            <input className="size-[18px] accent-brand" type="checkbox" name="sameBilling" checked={sameBilling} onChange={(event) => setSameBilling(event.currentTarget.checked)} />
-            <span>Same as delivery address</span>
-          </label>
-          {!sameBilling && <AddressFields prefix="billing" id={id} defaults={input?.billingAddress} />}
-        </Fieldset>
-        {problems.length > 0 && (
-          <p className={errorText} role="alert">
-            Please check: {problems.join(", ")}.
-          </p>
-        )}
-        {notice && (
-          <p className={errorText} role="alert">
-            {notice}
-          </p>
-        )}
-        <div className={buttonRow}>
-          {unpriced && (
-            <Link data-checkout-enquiry className={solid} href={enquiryHref}>
-              Ask for a delivery quote
-            </Link>
-          )}
-          <button className={unpriced ? outline : solid} type="submit" disabled={busy || !cartReady}>
-            {busy ? "Confirming prices…" : unpriced ? "Try another address" : "Continue to review"}
-          </button>
-          <Link className={outline} href="/cart">
-            Return to cart
-          </Link>
-        </div>
-        <p id={`${id}-note`} className={muted}>
-          Your details are used only to quote delivery, raise your order and contact you about it. No payment is taken on this step.
-        </p>
-      </form>
-      <aside className={panel} aria-live="polite">
-        <h3 className="text-subhead font-bold text-espresso">Your cart</h3>
-        {cartReady ? (
-          <>
-            <p className="text-ui text-espresso">
-              {cart.itemCount} {cart.itemCount === 1 ? "item" : "items"} in your cart
-            </p>
-            <ul className="m-0 grid list-none gap-3 p-0">
-              {cart.items.map((item) => (
-                <li key={item.variantId} className="flex items-start justify-between gap-4 text-ui text-espresso">
-                  <span className="grid gap-0.5">
-                    <strong>{item.title}</strong>
-                    <span className={muted}>
-                      {item.variantTitle} × {item.quantity}
-                    </span>
-                    {item.stockPolicy === "made_to_order" && item.leadTimeDays ? (
-                      <span data-lead-time className={muted}>Made to order: allow {item.leadTimeDays} days for making</span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 tabular-nums">{money(item.lineTotalPaise)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="m-0 flex justify-between border-0 border-t border-solid border-sand pt-3 text-ui font-bold text-espresso">
-              <dt>Subtotal</dt>
-              <dd className="m-0 tabular-nums">{money(cart.subtotalPaise)}</dd>
-            </dl>
-            <p className={muted}>Delivery and GST are confirmed in the next step.</p>
-          </>
-        ) : (
-          <p className={muted}>Loading your saved cart…</p>
-        )}
-      </aside>
-    </div>
+    <CheckoutDetails id={id} input={input} options={options} deliveryMethodId={deliveryMethodId} onDeliveryMethod={setDeliveryMethodId}
+      sameBilling={sameBilling} onSameBilling={setSameBilling} problems={problems} notice={notice} busy={busy} enquiryHref={unpriced ? enquiryHref : null} onSubmit={(event) => void submit(event)} />
   );
 }

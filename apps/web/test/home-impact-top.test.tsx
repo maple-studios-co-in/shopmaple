@@ -91,22 +91,19 @@ test("categories show round photos with an arrow badge under a heading with an o
   }
 });
 
-test("the statement band is static burgundy text with the last word set apart", async () => {
+test("the statement band is burgundy text with the last word set apart, typed in place rather than scrolled", async () => {
   const band = section(await renderHome((content) => { content.homeCopy.ticker = "Elegance isn't found. At Maple, it is crafted."; }), "ticker").querySelector("[data-statement-band]")!;
   assert.ok(band, "band");
-  assert.equal(text(band), "Elegance isn't found. At Maple, it is crafted.");
-  assert.equal(text(band.querySelector("[data-statement-accent]")), "crafted");
+  assert.equal(text(band.querySelector("[data-statement-text]")), "Elegance isn't found. At Maple, it is crafted.", "the whole line, for readers");
+  assert.equal(text(band.querySelector("[data-typed-live] [data-statement-accent]")), "crafted");
   assert.equal(band.querySelector("button"), null, "no scrolling, so no pause control");
 });
 
-test("offers are four light cards with an arrow badge", async () => {
+test("offers are four cards of artwork", async () => {
   const offers = section(await renderHome(), "offers");
   const tiles = [...offers.querySelectorAll<HTMLAnchorElement>("[data-offer-tile]")];
   assert.equal(tiles.length, 4);
-  for (const tile of tiles) {
-    assert.ok(tile.querySelector("img"), "artwork");
-    assert.ok(tile.querySelector("[data-offer-arrow]"), "arrow badge");
-  }
+  for (const tile of tiles) assert.ok(tile.querySelector("img"), "artwork");
 });
 
 test("the hero tiles default to the frame's pale tile photos, served from this repo", async () => {

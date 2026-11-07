@@ -19,6 +19,9 @@ export function warrantyLabel(product: Pick<Product, "sourceDetails">) {
  */
 export const assurances = { delivery: "Delivery across India", cover: "Defects and transit damage" } as const;
 
+/** The showroom the contact page maps (Kirti Nagar, New Delhi), in place of the frame's pickup times, which the store has not published. */
+export const showroom = { title: "Visit the Maple Furnishers showroom", address: "A-2/56 - 57, W.H.S, Kirti Nagar, New Delhi 110015", href: "/pages/contact" } as const;
+
 /** "13%OFF" style discount from the variant's own prices; empty when it is not a real reduction. */
 export function discountPercent(pricePaise: number | null | undefined, compareAtPaise: number | null | undefined) {
   if (pricePaise == null || !compareAtPaise || compareAtPaise <= pricePaise) return 0;
@@ -32,4 +35,14 @@ export function enquiryLink(product: Pick<Product, "title">, variant?: { title: 
     ...(variant ? { variant: variant.title } : {}),
     ...(variant?.sku ? { sku: variant.sku } : {}),
   });
+}
+
+/**
+ * The finish the page opens on when none is chosen: the cheapest priced finish that has its own photo (the first of equals),
+ * else the cheapest priced one. When the cheapest finish has no photo the page opens on a dearer one with a photo, so the
+ * price can differ from the card's "From" price; a priced finish is never passed over for an unpriced one.
+ */
+export function cheapestPriced<T extends { id: string; pricePaise: number | null }>(variants: T[], hasPhoto: (id: string) => unknown): T | undefined {
+  const cheapest = (list: T[]) => list.reduce<T | undefined>((best, v) => (v.pricePaise === null ? best : best === undefined || v.pricePaise < best.pricePaise! ? v : best), undefined);
+  return cheapest(variants.filter((v) => hasPhoto(v.id))) ?? cheapest(variants);
 }

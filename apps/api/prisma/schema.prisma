@@ -17,6 +17,12 @@ model Product {
   source String
   sourceTaxonomy Json?
   sourceDetails Json?
+  /// Keeri's product-page data: specs, highlights, FAQ, reviews, photo details and bundles.
+  productPage Json?
+  /// Keeri's approved reviews, kept from productPage at each sync so cards carry a rating without reading the page:
+  /// how many there are (0 when none) and their average to one decimal (null when none).
+  reviewCount Int @default(0)
+  reviewAverage Float?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]
@@ -41,6 +47,8 @@ model Variant {
   images String[] @default([])
   /// The readable ?variant= value, unique within its product.
   slug String?
+  /// Keeri's product-page data for this variant: measurements, copy, batch count and options.
+  productPage Json?
   cartItems CartItem[]
   identities VariantSourceIdentity[]
 }

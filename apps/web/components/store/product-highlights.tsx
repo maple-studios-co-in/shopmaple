@@ -5,6 +5,8 @@ import type { ProductHighlights } from "@shopmaple/contracts";
 type Lookup = {
   swatch: (name: string) => string | undefined;
   product: (handle: string) => ProductHighlights["products"][number] | undefined;
+  /** The store-wide offer the product page counts down to, while it runs. */
+  deal?: ProductHighlights["deal"];
 };
 
 const empty: Lookup = { swatch: () => undefined, product: () => undefined };
@@ -16,7 +18,7 @@ export function ProductHighlightsProvider({ value, children }: { value?: Product
     if (!value) return empty;
     const swatches = new Map(value.swatches.map((swatch) => [swatch.name.trim().toLowerCase(), swatch.hex]));
     const products = new Map(value.products.map((product) => [product.handle, product]));
-    return { swatch: (name) => swatches.get(name.trim().toLowerCase()), product: (handle) => products.get(handle) };
+    return { swatch: (name) => swatches.get(name.trim().toLowerCase()), product: (handle) => products.get(handle), deal: value.deal };
   }, [value]);
   return <Context.Provider value={lookup}>{children}</Context.Provider>;
 }

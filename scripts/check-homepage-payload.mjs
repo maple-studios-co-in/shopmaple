@@ -28,4 +28,7 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // PR42 baseline: 248,961 raw / 75,604 gzip bytes. Leave room for compact-query
 // validation and accessibility fixes, while rejecting the measured registry leak.
 assert.ok(totalRaw <= 270_000, `Initial homepage JavaScript exceeds the 270,000-byte raw budget: ${totalRaw}`);
-assert.ok(totalGzip <= 79_500, `Initial homepage JavaScript exceeds the 79,500-byte gzip budget: ${totalGzip}`);
+// 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
+// card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
+// registry-leak check above is unchanged and still the main guard.
+assert.ok(totalGzip <= 80_500, `Initial homepage JavaScript exceeds the 80,500-byte gzip budget: ${totalGzip}`);

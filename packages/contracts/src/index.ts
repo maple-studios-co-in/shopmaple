@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { productPdpContentSchema } from "./product-pdp-content";
 import { categories } from "./catalogue-cards";
+import { productPageSchema, variantProductPageSchema } from "./product-page";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
@@ -54,6 +55,8 @@ export const variantSchema = z.object({
   images: z.array(httpsUrl).optional(),
   /** The readable `?variant=` value on the product address, unique within its product. */
   slug: addressPart.nullable().optional(),
+  /** Keeri's product-page data for this variant (measurements, copy, batch count, options). */
+  productPage: variantProductPageSchema.nullable().optional(),
 });
 export const sourceTaxonomySchema = z.object({
   productType: z.string().max(200),
@@ -76,6 +79,8 @@ export const productSchema = z.object({
   sourceStatus: z.string().max(80).nullable().optional(),
   sourceTaxonomy: sourceTaxonomySchema.nullable().optional(),
   sourceDetails: sourceDetailsSchema.nullable().optional(),
+  /** Keeri's product-page data: specs, highlights, FAQ, reviews, photo details and bundles. */
+  productPage: productPageSchema.nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });
@@ -229,6 +234,7 @@ export * from "./site-chrome";
 export { previewTokenPattern } from "./admin-preview";
 
 export * from "./catalogue-cards";
+export * from "./product-page";
 export * from "./cart-eligibility";
 export * from "./catalogue-collections";
 

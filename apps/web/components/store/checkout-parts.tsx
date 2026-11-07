@@ -2,19 +2,16 @@ import type { CheckoutAttempt } from "@/app/checkout/checkout-client";
 import { cx } from "@/lib/cx";
 import { money } from "@/lib/format";
 
-// Shared by checkout and the order-status page. Checkout is not in the Figma
-// designs, so it keeps the storefront's existing button, field and type tokens.
-export const button =
-  "inline-flex items-center justify-center gap-2 rounded-[6px] px-[18px] text-ui font-bold no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60";
-export const solid = cx(button, "h-12 cursor-pointer border-0 bg-brand text-white hover:bg-brand-deep");
-export const outline = cx(button, "h-12 cursor-pointer border border-solid border-sand bg-white text-brand hover:bg-cream");
-export const field =
-  "block h-[52px] w-full rounded-[6px] border border-solid border-sand bg-white px-[14px] font-body text-ui text-espresso transition-colors placeholder:text-taupe placeholder:opacity-100 hover:border-taupe focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-export const label = "grid min-w-0 gap-1.5 text-meta font-bold text-espresso";
-export const muted = "text-meta text-taupe";
-export const errorText = "text-meta text-danger";
-export const heading = "font-serif text-h3 text-espresso";
-export const panel = "grid content-start gap-4 rounded-[6px] bg-cream p-6 max-[701px]:p-4";
+// Shared by checkout and the order-status page. These carry the look of the details form (frame 30:492) on to the
+// steps the Figma does not draw: review, waiting, confirmation and order status.
+const button =
+  "inline-flex items-center justify-center gap-2 rounded-[28px] px-6 text-[15px] leading-[22px] font-semibold no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-not-allowed disabled:opacity-60";
+export const solid = cx(button, "h-12 cursor-pointer border-0 bg-maple text-white hover:opacity-90");
+export const outline = cx(button, "h-12 cursor-pointer border border-solid border-maple bg-white text-maple hover:bg-[#f5ece9]");
+export const muted = "text-[12px] leading-[17px] text-[#756d68]";
+export const errorText = "text-[13px] font-medium text-maple";
+export const heading = "m-0 text-[22px] leading-8 font-medium text-[#1c1c1c]";
+export const panel = "grid content-start gap-4 rounded-[16px] bg-[#f8f6f2] p-6 max-[701px]:p-4";
 export const buttonRow = "flex flex-wrap gap-3";
 
 type Quote = NonNullable<CheckoutAttempt["quote"]>;

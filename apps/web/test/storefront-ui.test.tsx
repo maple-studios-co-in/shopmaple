@@ -1,3 +1,4 @@
+import { defaultHomeDetails } from "../lib/home-details-defaults";
 import { toProductCard } from "../lib/product-card-model";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -258,7 +259,7 @@ test("hero keeps product discovery clear and plays the latest shop film on its o
     } },
   });
   try {
-    await mount(<Hero />, async () => {
+    await mount(<Hero content={{ ...defaultHomeDetails.hero, slides: [{ kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0", poster: "https://shop.maplefurnishers.com/cdn/shop/files/poster.jpg", alt: "Workshop", headline: "Timeless Craftsmanship for Modern Living", intro: "Handcrafted." }] }} />, async () => {
       await act(async () => new Promise((resolve) => setTimeout(resolve, 1700)));
       const video = document.querySelector("video")!;
       assert.equal(

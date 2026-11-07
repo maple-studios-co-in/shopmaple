@@ -5,14 +5,15 @@ export type CatalogueMediaConfig={origin:string;token:string;fetch?:typeof fetch
 const unavailable=()=>new HttpError(404,'MEDIA_NOT_FOUND','This image is unavailable.');
 export function registerCatalogueMedia(app:Express,db:PrismaClient,config?:CatalogueMediaConfig){
  let active=0;const queue:Array<()=>void>=[];
- app.get('/media/keeri/:filename',async(req,res)=>{
+ /** One proxied picture kind: its public path, Keeri's server-only path, and whether the store lists it. */
+ const route=(prefix:string,upstream:string,listed:(id:string,image:string)=>Promise<boolean>)=>app.get(`/media/${prefix}/:filename`,async(req,res)=>{
   res.set('Cache-Control','no-store');
   const match=/^([A-Za-z0-9_-]{1,64})\.webp$/.exec(String(req.params.filename));
   if(!match||Object.keys(req.query).length||!config)throw unavailable();
   const origin=new URL(config.origin);
   if(origin.protocol!=='https:'||origin.href!==`${origin.origin}/`||origin.username||origin.password||!config.token)throw unavailable();
-  const image=`https://store.maplefurnishers.com/media/keeri/${match[1]}.webp`;
-  if(!await db.product.findFirst({where:{published:true,images:{has:image}},select:{id:true}}))throw unavailable();
+  const image=`https://store.maplefurnishers.com/media/${prefix}/${match[1]}.webp`;
+  if(!await listed(match[1]!,image))throw unavailable();
   if(queue.length>=48)throw new HttpError(503,'MEDIA_BUSY','Please try this image again.');
   if(active>=2)await new Promise<void>((resolve,reject)=>{
    const resume=()=>{clearTimeout(timer);resolve()};
@@ -26,7 +27,7 @@ export function registerCatalogueMedia(app:Express,db:PrismaClient,config?:Catal
   const deadline=new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>{reject(unavailable());controller.abort();void reader?.cancel().catch(()=>{})},Math.min(15000,Math.max(1,config.timeoutMs??15000)))});
   const mediaConfig=config;const assetId=match[1];
   async function read(){
-   const response=await (mediaConfig.fetch??fetch)(`${origin.origin}/api/storefront/media/${assetId}`,{redirect:'error',headers:{Authorization:`Bearer ${mediaConfig.token}`,Accept:'image/webp'},signal:controller.signal});
+   const response=await (mediaConfig.fetch??fetch)(`${origin.origin}${upstream}${assetId}`,{redirect:'error',headers:{Authorization:`Bearer ${mediaConfig.token}`,Accept:'image/webp'},signal:controller.signal});
    if(controller.signal.aborted){void response.body?.cancel().catch(()=>{});throw unavailable()}
    if(response.status!==200||response.redirected||response.headers.get('content-type')!=='image/webp'||!response.body)throw unavailable();
    const length=response.headers.get('content-length');
@@ -41,5 +42,12 @@ export function registerCatalogueMedia(app:Express,db:PrismaClient,config?:Catal
    const bytes=await Promise.race([read(),deadline]);
    res.set({'Content-Type':'image/webp','Cache-Control':'public, max-age=60','X-Content-Type-Options':'nosniff'}).send(bytes);
   }catch{throw unavailable()}finally{clearTimeout(timer);controller.abort();void reader?.cancel().catch(()=>{});active--;queue.shift()?.()}
+ });
+ route('keeri','/api/storefront/media/',async(_id,image)=>Boolean(await db.product.findFirst({where:{published:true,images:{has:image}},select:{id:true}})));
+ // A customer's review photo, only while it belongs to an approved review on a listed product (Keeri checks again).
+ route('keeri-review','/api/storefront/review-photos/',async(id)=>{
+  const shape=JSON.stringify({reviews:{items:[{photos:[{id}]}]}});
+  const rows=await db.$queryRaw<{one:number}[]>`SELECT 1 AS one FROM "Product" WHERE "published" AND "productPage" @> ${shape}::jsonb LIMIT 1`;
+  return rows.length>0;
  });
 }

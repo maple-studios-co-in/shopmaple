@@ -5,12 +5,12 @@ import type { ProductCardModel } from "@/lib/product-card-model";
 import { categoryNames, shopMoney } from "@/lib/format";
 import { ProductImage } from "./product-image";
 import { SaveButton } from "./save-button";
-import { CardNewBadge, CardRating, CardSwatches } from "./card-highlights";
+import { CardLimitedBadge, CardNewBadge, CardRating, CardSwatches } from "./card-highlights";
 
 /**
- * The storefront's product card ("MF / product" in the design): image, sale and New badges, save, name,
- * category, rating, price with its discount, and colour dots. Ratings, New and colours come from the
- * admin's product highlights and appear only where staff set them.
+ * The storefront's product card ("MF / product" in the design): image, Sale, New and Limited tags, save,
+ * name with its rating on the right, category, price with its discount, and colour dots. New, Limited,
+ * ratings and colours come from the admin's product highlights; a piece with no reviews shows empty stars.
  * It renders on the server; only the save button and the highlights are client components, which keeps
  * cards out of the homepage's first-load JavaScript.
  * Two surfaces, as in "Maple / PDF Review / UI Components": `outlined` (the 243 px cards: white with a
@@ -31,20 +31,21 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
         <Link href={href} className="absolute inset-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand">
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />
         </Link>
-        <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
+        <div data-card-badges className="pointer-events-none absolute top-3 left-3 flex flex-col items-start gap-1.5">
           {sale ? <span data-card-sale className="bg-brand px-1.5 py-1 text-2xs leading-none font-bold tracking-[0.04em] text-white uppercase">Sale</span> : null}
           <CardNewBadge handle={product.handle} />
+          <CardLimitedBadge handle={product.handle} />
         </div>
         <SaveButton handle={product.handle} title={product.title} />
       </div>
       <div className="flex flex-1 flex-col gap-1.5 px-3.5 pt-4 pb-3.5">
-        <Link data-card-name href={href} className="line-clamp-2 min-h-[2.9em] text-card font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-          {product.title}
-        </Link>
-        <div className="flex items-center justify-between gap-2 text-meta text-[#5e574f] empty:hidden">
-          {product.category ? <span data-card-category>{categoryNames[product.category]}</span> : null}
-          <CardRating handle={product.handle} />
+        <div data-card-heading className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+          <Link data-card-name href={href} className="line-clamp-2 min-h-[2.9em] min-w-0 flex-[1_1_8.5rem] text-card font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            {product.title}
+          </Link>
+          <span data-card-rating-slot className="shrink-0 pt-[3px] whitespace-nowrap"><CardRating rating={product.rating} /></span>
         </div>
+        {product.category ? <p data-card-category className="m-0 text-meta text-[#5e574f]">{categoryNames[product.category]}</p> : null}
         <div data-card-price className="grid gap-0.5">
           <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-price font-bold text-brand">
             <span>

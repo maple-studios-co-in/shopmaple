@@ -88,3 +88,16 @@ test("catalogue listing omits full PDP documents while product detail retains th
   assert.equal(detail.status, 200);
   assert.deepEqual(detail.body.pdpContent.details, tree);
 });
+test("Keeri's product-page data reaches the product detail but never the catalogue listing", async () => {
+  const page = { specs: { widthCm: 52, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, highlights: [], faq: [{ question: "Can I choose a fabric?", answer: "Yes." }], assembly: null, customisation: null, rooms: [], reviews: { average: null, count: 0, items: [] }, media: [], bundles: [] };
+  const variantPage = { specs: { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, copy: { description: null, details: null, materials: null, dimensions: null, careInstructions: null }, batch: { remaining: 3, showAtOrBelow: 5 }, options: [] };
+  await db.product.create({ data: { id: "page-product", handle: "page-product", title: "Chair", description: "", images: [], published: true, source: "keeri:maple", sourceUpdatedAt: new Date(), productPage: page,
+    variants: { create: [{ id: "page-variant", title: "Oak", sku: null, productPage: variantPage }] } } });
+  const listing = await request(app).get("/api/products");
+  const card = listing.body.products.find((p: { handle: string }) => p.handle === "page-product");
+  assert.equal(Object.hasOwn(card, "productPage"), false);
+  assert.equal(Object.hasOwn(card.variants[0], "productPage"), false);
+  const detail = await request(app).get("/api/products/page-product");
+  assert.deepEqual(detail.body.productPage, page);
+  assert.deepEqual(detail.body.variants[0].productPage, variantPage);
+});

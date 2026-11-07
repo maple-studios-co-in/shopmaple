@@ -1,5 +1,8 @@
 import type { HomeDetails } from "@shopmaple/contracts";
 
+/** Details with the parts added after the first published documents filled in. */
+export type ResolvedHomeDetails = HomeDetails & Required<Pick<HomeDetails, "editorial" | "compare">>;
+
 /** Original rendered homepage copy, including spaces around the emphasized response time. */
 export const defaultHomeDetails: HomeDetails = {
   hero: {
@@ -16,8 +19,15 @@ export const defaultHomeDetails: HomeDetails = {
     promises: ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"],
   },
   nimbus: {
-    heading: "The Nimbus Collection", tagline: "Comfort Shaped Like Clouds",
-    features: ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"], cta: "Shop Now",
+    heading: "The Nimbus Collection", tagline: "Soft presence. Strong craftsmanship.",
+    features: ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"], cta: "Explore",
+    // The frame's second collection (Figma 1:1069), photographed in a sunlit travertine lobby.
+    slides: [{
+      heading: "The Terra Collection", tagline: "Soft presence. Strong craftsmanship.",
+      features: ["Earthy Textures", "Organic Curves", "Warm Woods", "Grounded Comfort"], cta: "Explore", href: "/collections/sofas",
+      image: "/media/home/nimbus-terra.webp", mobileImage: "/media/home/nimbus-terra-mobile.webp",
+      alt: "A curved olive sofa with floral cushions and a round walnut table in a sunlit travertine lobby",
+    }],
   },
   testimonial: {
     title: "Getting our sofa made by Maple was a completely hassle-free experience.",
@@ -48,8 +58,19 @@ export const defaultHomeDetails: HomeDetails = {
     introAfter: " with options, pricing, and a clear timeline.",
     body: "Whether the brief is a single statement chair or a complete room, the process starts the same way: with a conversation.",
   },
+  editorial: {
+    title: "Pull up a chair", text: "There's always something worth staying for.", cta: "Shop Dining", href: "/collections/dinings",
+    leftImage: "/media/home/editorial-left.webp", leftAlt: "A marble dining table on a fluted pedestal beside a tall window",
+    rightImage: "/media/home/editorial-right.webp", rightAlt: "A woman pouring coffee at a dining table with sunflowers, cream upholstered chairs and a pug",
+  },
+  compare: {
+    eyebrow: "Find your feel", heading: "Two ways to unwind",
+    lede: "Explore distinct silhouettes and choose the one that feels at home in your space.",
+    left: { handle: "aera-swivel-lounge-chair", label: "Aera" }, right: { handle: "caro", label: "Caro" },
+  },
 };
 
-export function resolveHomeDetails(value?: HomeDetails): HomeDetails {
-  return structuredClone(value ?? defaultHomeDetails);
+export function resolveHomeDetails(value?: HomeDetails): ResolvedHomeDetails {
+  // Documents published before the editorial and compare sections carry neither: they start from the defaults.
+  return structuredClone({ ...defaultHomeDetails, ...value } as ResolvedHomeDetails);
 }

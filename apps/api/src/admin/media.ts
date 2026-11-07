@@ -161,6 +161,11 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   for (const item of list(rail)) image(record(item).image);
  // All template slots are published references, including artwork in hidden sections.
  for (const item of list(document.templateMedia)) { image(record(item).image); image(record(item).mobileImage); }
+ // Pictures chosen in the homepage details: hero slides, extra Nimbus cards and the editorial block.
+ const details = record(document.homeDetails);
+ for (const slide of list(record(details.hero).slides)) { image(record(slide).src); image(record(slide).poster); }
+ for (const slide of list(record(details.nimbus).slides)) { image(record(slide).image); image(record(slide).mobileImage); }
+ image(record(details.editorial).leftImage); image(record(details.editorial).rightImage);
  for (const item of list(document.authoredArticles)) {
   const article = record(item);
   image(record(article.cover).src);
