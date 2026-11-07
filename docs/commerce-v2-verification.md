@@ -30,6 +30,8 @@ This deployment is an explicitly checkout-disabled public catalogue/enquiry prev
 
 The user selected Shiprocket-calculated delivery charges. No existing Shiprocket implementation was found in the checked Keeri or Maple backend source. Connect its authenticated serviceability/rate API, reviewed pickup/package data and eligible courier selection to Keeri's quote authority before activation. The temporary reviewed fixed-policy contract is not approval to invent live flat shipping rates.
 
+Update 2026-11-01: Shiprocket-priced quotes (Keeri #789), made-to-order eligibility (Keeri #788), opt-in composition (#55), customer checkout and order-status screens, browser-callback verification, paid-hold-lapse handling, order emails and the recovery procedure are now built; the remaining gates are the account and evidence steps in the launch checklist in `docs/store-deployment.md`. The paragraph below is the original 26 October list.
+
 Remaining activation work: Shiprocket integration and actual shipping/account configuration; approved catalogue selection/metadata; production Keeri scoped credentials; matching Razorpay merchant configuration and sandbox verification; customer checkout/status UI and opt-in server/worker composition; paid-hold expiry/recovery and refunds/reconciliation procedures. Shopify overlapping scarce stock still requires protected allocation or verified reconciliation. Existing Shopify remains at shop.maplefurnishers.com.
 
 Enquiries are persisted in the shop database, with explicit receipt that no notification was sent. They are not yet automatically routed to Keeri staff. The live preview must not imply that staff delivery or an order/payment occurred.

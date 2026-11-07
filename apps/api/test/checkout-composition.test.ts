@@ -16,6 +16,7 @@ const token = "f".repeat(64);
 const cookie = `maple_cart=${token}`;
 const webhookSecret = "composition-webhook-secret";
 const keeriToken = "k".repeat(40);
+const resendTestKey = "re_test_test";
 const fullEnv = {
   CHECKOUT_ENABLED: "true",
   KEERI_ORIGIN: "https://keeri.example.test",
@@ -26,6 +27,11 @@ const fullEnv = {
   RAZORPAY_KEY_SECRET: "composition-key-secret",
   RAZORPAY_WEBHOOK_SECRET: webhookSecret,
   CHECKOUT_DELIVERY_METHODS: JSON.stringify([{ id: "standard", label: "Standard delivery" }]),
+  // Order emails reuse the enquiry sender unless ORDER_* overrides are set.
+  ENQUIRY_RESEND_API_KEY: resendTestKey,
+  ENQUIRY_MAIL_FROM: "orders@maple.example.com",
+  ENQUIRY_MAIL_TO: "staff@maple.example.com",
+  WEB_ORIGIN: origin,
 };
 const address = { line1: "1 Test Street", line2: "", city: "Mumbai", stateCode: "27", pincode: "400001", country: "IN" };
 const input = {
@@ -53,6 +59,8 @@ const fake = {
   paymentCaptured: true,
   keeriCalls: [] as string[],
   razorpayCalls: [] as string[],
+  emails: [] as Array<{ key: string; to: string[]; subject: string; text: string }>,
+  emailStatus: 200,
 };
 async function transport(target: string | URL, init: RequestInit): Promise<Response> {
   const u = new URL(String(target));
@@ -70,9 +78,11 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
           items: body.items.map((item: { variantId: string; quantity: number }) => ({
             variantId: item.variantId, productId: "keeri:maple:comp-chair", title: "Composition Chair", variantTitle: "Oak",
             sku: "COMP-CHAIR", quantity: item.quantity, unitPricePaise: 150000, lineTotalPaise: 150000 * item.quantity,
-            hsn: "9401", taxRateBps: 1800,
+            hsn: "9401", taxRateBps: 1800, fulfilment: { kind: "stocked", leadTimeDays: null },
           })),
           subtotalPaise: 0, shippingPaise: 25000, taxPaise: 0, totalPaise: 0,
+          delivery: { source: "carrier", carrierPriced: true, fallbackReason: null,
+            carrier: { provider: "shiprocket", courierId: 51, courierName: "Delhivery Surface", estimatedDays: 6, chargeWeightGrams: 30000 } },
         };
         snapshot.subtotalPaise = snapshot.items.reduce((n: number, i: { lineTotalPaise: number }) => n + i.lineTotalPaise, 0);
         snapshot.taxPaise = Math.round((snapshot.subtotalPaise + snapshot.shippingPaise) * 0.18);
@@ -106,6 +116,14 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
     return Response.json({ entity: "payment", id: u.pathname.split("/").at(-1), order_id: "order_comp1", amount: 383500,
       currency: "INR", status: fake.paymentCaptured ? "captured" : "authorized", captured: fake.paymentCaptured,
       amount_refunded: 0, refund_status: null });
+  }
+  if (u.host === "api.resend.com") {
+    assert.equal(new Headers(init.headers).get("authorization"), `Bearer ${resendTestKey}`);
+    if (fake.emailStatus === 409) return Response.json({ name: "invalid_idempotent_request" }, { status: 409 });
+    if (fake.emailStatus !== 200) return new Response("provider detail", { status: fake.emailStatus });
+    const body = JSON.parse(String(init.body));
+    fake.emails.push({ key: new Headers(init.headers).get("idempotency-key")!, to: body.to, subject: body.subject, text: body.text });
+    return Response.json({ id: "00000000-0000-4000-8000-" + String(fake.emails.length).padStart(12, "0") });
   }
   throw new Error("No live network allowed in tests");
 }
@@ -143,7 +161,8 @@ before(async () => { await db.$connect(); });
 beforeEach(async () => {
   clock = new Date("2030-01-01T10:00:00Z");
   Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", quoteStatus: 200, reservationStatus: 200, releaseStatus: 200,
-    razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [] });
+    razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [], emails: [], emailStatus: 200 });
+  await db.orderNotification.deleteMany();
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
   await db.checkoutAttempt.deleteMany();
@@ -154,7 +173,7 @@ beforeEach(async () => {
     id: "keeri:maple:comp-chair", handle: "composition-chair", title: "Composition Chair", description: "", category: "chairs",
     images: [], published: true, source: "keeri:maple", sourceUpdatedAt: clock,
     identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair" } },
-    variants: { create: { id: "keeri:maple:comp-chair-v", title: "Oak", pricePaise: 140000, published: true, available: true, stockPolicy: "stocked",
+    variants: { create: { id: "keeri:maple:comp-chair-v", title: "Oak", pricePaise: 150000, published: true, available: true, stockPolicy: "stocked",
       identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair-v" } } } },
   } });
   await db.cart.create({ data: { id: "composition-cart", tokenHash: createHash("sha256").update(token).digest("hex"),
@@ -374,4 +393,176 @@ test("a forged webhook is rejected and an uncaptured payment never confirms an o
   assert.equal(current.body.state, "awaiting_payment");
   assert.equal(await db.orderOutbox.count(), 0);
   assert.ok(!fake.keeriCalls.includes("/api/storefront/orders"));
+});
+
+function callback(app: ReturnType<typeof createApp>, id: string, secret = fullEnv.RAZORPAY_KEY_SECRET, paymentId = "pay_comp1") {
+  return request(app).post(`/api/checkout/${id}/payment-callback`).set("Origin", origin).set("Cookie", cookie).send({
+    razorpay_order_id: "order_comp1",
+    razorpay_payment_id: paymentId,
+    razorpay_signature: createHmac("sha256", secret).update(`order_comp1|${paymentId}`).digest("hex"),
+  });
+}
+async function settle(runWorkers: () => Promise<unknown>) {
+  for (let i = 0; i < 4; i++) await runWorkers();
+}
+
+test("the payment window is told to close before the Keeri hold lapses", async () => {
+  const { app } = checkoutApp();
+  const frozen = await freeze(app);
+  const created = await paymentOrder(app, frozen.body.id);
+  // Hold expires 10:30; the buyer gets two minutes less, so a payment cannot outlive the hold.
+  assert.equal(created.body.payBy, "2030-01-01T10:28:00.000Z");
+});
+
+test("the browser's signed payment callback starts verification without waiting for the webhook; a forged one is refused", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  const forged = await callback(app, frozen.body.id, "wrong-secret");
+  assert.equal(forged.status, 401);
+  assert.equal(await db.paymentWebhookInbox.count(), 0);
+  const accepted = await callback(app, frozen.body.id);
+  assert.equal(accepted.status, 202);
+  assert.equal(accepted.body.paid, false, "a callback alone never claims payment");
+  assert.equal((await callback(app, frozen.body.id)).status, 202, "a repeated callback is idempotent");
+  assert.equal(await db.paymentWebhookInbox.count(), 1);
+  await settle(runWorkers);
+  const paid = await status(app, frozen.body.id);
+  assert.equal(paid.body.state, "captured");
+  assert.equal(paid.body.fulfillmentStatus, "confirmed");
+  assert.deepEqual(fake.razorpayCalls.filter((c) => c.startsWith("GET")), ["GET /v1/payments/pay_comp1"], "capture is verified with Razorpay, not trusted from the browser");
+  // The webhook for the same payment arriving later changes nothing.
+  assert.equal((await webhook(app)).status, 202);
+  await settle(runWorkers);
+  assert.equal(await db.orderOutbox.count({ where: { kind: "keeri.order.captured.v2" } }), 1);
+  assert.equal((await db.paymentWebhookInbox.findMany()).every((row) => row.state === "processed"), true);
+});
+
+test("a payment that lands after the Keeri hold lapsed is kept as paid, empties the cart and goes to staff and the buyer", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  assert.equal((await webhook(app)).status, 202);
+  clock = new Date("2030-01-01T10:31:00Z");
+  await settle(runWorkers);
+  const current = await status(app, frozen.body.id);
+  assert.equal(current.body.paid, true, "the buyer is never told an actual payment did not happen");
+  assert.equal(current.body.state, "paid_hold_lapsed");
+  assert.equal(current.body.fulfillmentStatus, "review_required");
+  assert.equal(current.body.orderReference, null);
+  assert.ok(!fake.keeriCalls.includes("/api/storefront/orders"), "no Keeri order is placed against a lapsed hold");
+  assert.deepEqual((await cartOf(app)).body.items, []);
+  assert.equal((await freeze(app, "after-lapse")).status, 409, "the paid goods cannot be paid for twice");
+  const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
+  assert.match(staff.subject, /needs attention/i);
+  assert.match(staff.text, new RegExp(frozen.body.id));
+  assert.match(staff.text, /pay_comp1/);
+  assert.match(staff.text, /refund/i);
+  const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
+  assert.match(buyer.subject, /received your payment/i);
+  assert.match(buyer.text, /Rs\. 3,835\.00/);
+  assert.match(buyer.text, /refund in full/i);
+  assert.doesNotMatch(buyer.text, /pay_comp1|PAID_HOLD_LAPSED|reservation/i);
+});
+
+test("a confirmed order emails the buyer once with the Keeri reference and alerts staff", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "confirmed");
+  assert.equal(fake.emails.length, 2);
+  const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
+  assert.match(buyer.subject, /SO-1001/);
+  for (const expected of [/Composition Chair/, /Oak/, /× 2/, /Rs\. 3,835\.00/, /Delhivery Surface/, /about 6 days/, /1 Test Street/])
+    assert.match(buyer.text, expected);
+  const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
+  assert.match(staff.subject, /New online order SO-1001/);
+  assert.match(staff.text, /9876543210/);
+  assert.notEqual(buyer.key, staff.key);
+  await settle(runWorkers);
+  assert.equal(fake.emails.length, 2, "nothing is sent twice");
+});
+
+test("an email provider outage is retried with the same idempotency key and never blocks the order", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  fake.emailStatus = 503;
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "confirmed");
+  assert.equal(fake.emails.length, 0);
+  fake.emailStatus = 200;
+  clock = new Date("2030-01-01T10:20:00Z");
+  await settle(runWorkers);
+  assert.equal(fake.emails.length, 2);
+  const rows = await db.orderNotification.findMany();
+  assert.equal(rows.every((r) => r.state === "sent" && r.providerId), true);
+  assert.equal(new Set(fake.emails.map((e) => e.key)).size, 2);
+});
+
+test("a payment that lands after the buyer walked away from the attempt is verified, kept as paid and sent to staff", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  assert.equal((await release(app, frozen.body.id)).body.state, "abandoned");
+  assert.equal((await webhook(app)).status, 202);
+  await settle(runWorkers);
+  const current = await status(app, frozen.body.id);
+  assert.equal(current.body.paid, true, "a released attempt that was paid after all is never shown as unpaid");
+  assert.equal(current.body.state, "paid_hold_lapsed");
+  assert.ok(fake.razorpayCalls.includes("GET /v1/payments/pay_comp1"), "the capture is verified with Razorpay first");
+  const staff = fake.emails.filter((e) => e.to.includes("staff@maple.example.com"));
+  assert.equal(staff.length, 1);
+  assert.match(staff[0]!.text, /PAID/);
+  assert.match(staff[0]!.text, /pay_comp1/);
+  assert.ok(fake.emails.some((e) => e.to.includes("buyer@example.test") && /received your payment/i.test(e.subject)));
+});
+
+test("a payment after a release-uncertain alert still raises a paid alert naming the payment", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  fake.releaseStatus = 503;
+  assert.equal((await release(app, frozen.body.id)).status, 409);
+  await settle(runWorkers);
+  assert.equal(fake.emails.length, 1, "staff hear about the uncertain release");
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.paid, true);
+  const paidAlert = fake.emails.slice(1).find((e) => e.to.includes("staff@maple.example.com"))!;
+  assert.match(paidAlert.text, /pay_comp1/);
+  assert.match(paidAlert.text, /PAID/);
+  assert.ok(fake.emails.some((e) => e.to.includes("buyer@example.test")));
+});
+
+test("a second payment for a confirmed order tells staff exactly which payment to refund", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.orderReference, "SO-1001");
+  await webhook(app, webhookSecret, "pay_comp2");
+  await settle(runWorkers);
+  const alert = fake.emails.find((e) => /needs attention/i.test(e.subject))!;
+  assert.match(alert.text, /pay_comp2/);
+  assert.match(alert.text, /PAYMENT_ID_CONFLICT/);
+  assert.match(alert.text, /refund/i);
+  assert.doesNotMatch(alert.text, /Keeri did not accept/);
+  assert.equal((await status(app, frozen.body.id)).body.orderReference, "SO-1001", "the confirmed order is untouched");
+});
+
+test("an email Resend already accepted under its key is recorded as sent, not failed", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  fake.emailStatus = 409;
+  await settle(runWorkers);
+  const rows = await db.orderNotification.findMany();
+  assert.equal(rows.length, 2);
+  assert.equal(rows.every((r) => r.state === "sent"), true);
 });

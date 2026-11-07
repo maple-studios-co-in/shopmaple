@@ -60,7 +60,7 @@ const pickup = (methodLabel: string) => /pick ?up|store|showroom/i.test(methodLa
  * The frame's promo code, newsletter box and account sign-in have nothing behind them on this store yet, so they are
  * left out; payment is Razorpay's hosted window, opened after the total is confirmed on the next step.
  */
-export function CheckoutDetails({ id, input, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, problems, notice, busy, onSubmit }: {
+export function CheckoutDetails({ id, input, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, problems, notice, busy, enquiryHref, onSubmit }: {
   id: string;
   input: CheckoutInput | null;
   options: CheckoutOptions;
@@ -71,12 +71,14 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
   problems: string[];
   notice: string;
   busy: boolean;
+  /** Set when the courier could not price this pincode: the buyer may ask for a quote or try another address. */
+  enquiryHref?: string | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const { cart, cartReady, setQuantity } = useShop();
   const [first, ...rest] = (input?.customer.name ?? "").split(" ");
   return (
-    <div data-store data-checkout className="mx-auto grid max-w-[1176px] wide:max-w-[75vw] gap-12 font-product lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
+    <div className="mx-auto grid max-w-[1176px] wide:max-w-[75vw] gap-12 font-product lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
       <form className="checkout-form flex min-w-0 flex-col gap-8" onSubmit={onSubmit} noValidate aria-describedby={`${id}-note`}>
         <Section number="01" title="Contact details">
           <p className="m-0 text-[13px] leading-[19px] text-[#756d68]">Checkout as a guest</p>
@@ -161,9 +163,16 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
           </p>
           {problems.length > 0 && <p className="m-0 text-[13px] font-medium text-maple" role="alert">Please check: {problems.join(", ")}.</p>}
           {notice && <p className="m-0 text-[13px] font-medium text-maple" role="alert">{notice}</p>}
-          <button type="submit" data-fill-button="" disabled={busy || !cartReady}
-            className="w-full cursor-pointer rounded-[28px] border-0 bg-maple px-5 py-4 text-[15px] leading-[22px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-            {busy ? "Confirming prices…" : "Continue to secure payment →"}
+          {enquiryHref && (
+            <Link data-checkout-enquiry href={enquiryHref} data-fill-button=""
+              className="block w-full rounded-[28px] bg-maple px-5 py-4 text-center text-[15px] leading-[22px] font-semibold text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+              Ask for a delivery quote
+            </Link>
+          )}
+          <button type="submit" data-fill-button={enquiryHref ? "outline" : ""} disabled={busy || !cartReady}
+            className={cx("w-full cursor-pointer rounded-[28px] px-5 py-4 text-[15px] leading-[22px] font-semibold disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple",
+              enquiryHref ? "border border-solid border-maple bg-white text-maple" : "border-0 bg-maple text-white")}>
+            {busy ? "Confirming prices…" : enquiryHref ? "Try another address" : "Continue to secure payment →"}
           </button>
           <p className={muted}>
             By continuing, you agree to our <Link href="/policies/terms-of-service" className="text-[#756d68] underline">Terms of Service</Link> and <Link href="/policies/privacy-policy" className="text-[#756d68] underline">Privacy Policy</Link>.
@@ -188,6 +197,7 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
                     <span className="flex min-w-0 flex-1 flex-col gap-2">
                       <span className="text-[18px] leading-[26px] font-medium text-[#1c1c1c]">{item.title}</span>
                       {item.variantTitle && item.variantTitle !== "Default Title" && <span className="text-[12px] leading-[17px] text-[#756d68]">{item.variantTitle}</span>}
+                      {item.stockPolicy === "made_to_order" && item.leadTimeDays ? <span data-lead-time className="text-[12px] leading-[17px] text-[#756d68]">Made to order: allow {item.leadTimeDays} days for making</span> : null}
                       <span className="text-[16px] leading-[23px] font-semibold text-maple">{shopMoney(item.pricePaise)}</span>
                       <span className="flex items-center justify-between gap-3">
                         <span className="inline-flex h-7 items-center gap-1 rounded-full border border-solid border-maple/8 px-1 text-[12px] text-maple">

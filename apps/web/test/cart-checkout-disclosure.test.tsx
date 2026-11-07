@@ -38,3 +38,15 @@ test("the cart stops disclaiming online payment once the API reports live checko
     assert.match(document.querySelector(".cart-summary")!.textContent!, /Online payment is not available yet/);
   } finally { await cleanup(); }
 });
+
+test("a made-to-order line in the cart states its making time; a stocked line states none", async () => {
+  Object.assign(line, { stockPolicy: "made_to_order", leadTimeDays: 28 });
+  let cleanup = await mount(true);
+  try {
+    assert.match(document.querySelector("[data-lead-time]")!.textContent!, /Made to order: allow 28 days for making/);
+  } finally { await cleanup(); Object.assign(line, { stockPolicy: "stocked", leadTimeDays: undefined }); }
+  cleanup = await mount(true);
+  try {
+    assert.equal(document.querySelector("[data-lead-time]"), null);
+  } finally { await cleanup(); }
+});

@@ -34,7 +34,7 @@
     "version": 2,
     "quoteId": "example_quote",
     "expiresAt": "2026-11-01T12:15:00.000Z",
-    "snapshotSha256": "5c7557c5604c3c3f555fcb05654bd8d726c369446f66198344a88725ba061d9a",
+    "snapshotSha256": "e8963331aec773cbf4fe888cf1f6093927de27c7925cb2d5ed97cb644c442828",
     "snapshot": {
       "version": 2,
       "currency": "INR",
@@ -75,13 +75,23 @@
           "unitPricePaise": 100000,
           "lineTotalPaise": 200000,
           "hsn": "9403",
-          "taxRateBps": 1800
+          "taxRateBps": 1800,
+          "fulfilment": {
+            "kind": "made_to_order",
+            "leadTimeDays": 28
+          }
         }
       ],
       "subtotalPaise": 200000,
       "shippingPaise": 10000,
       "taxPaise": 36000,
-      "totalPaise": 246000
+      "totalPaise": 246000,
+      "delivery": {
+        "source": "policy",
+        "carrierPriced": false,
+        "fallbackReason": null,
+        "carrier": null
+      }
     }
   }
 }

@@ -119,7 +119,7 @@ export function CartContents() {
               </Link>
               <p className="muted">{item.variantTitle}</p>
               <p>{money(item.pricePaise)}</p>
-              {item.stockPolicy === "made_to_order" && <p className="muted">Made to order</p>}
+              {item.stockPolicy === "made_to_order" && <p data-lead-time className="muted">Made to order{item.leadTimeDays ? `: allow ${item.leadTimeDays} days for making` : ""}</p>}
               {!item.cartable && (
                 <p className="error-text">
                   Please contact us to confirm price and availability.

@@ -81,7 +81,7 @@ export async function syncCatalogueUnion(
             productPage: variant.productPage ?? Prisma.DbNull,
             productId: product.id,
             published: true,
-            available: false,
+            leadTimeDays: variant.leadTimeDays ?? null,
           };
           await tx.variant.upsert({
             where: { id: variant.id },

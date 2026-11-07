@@ -5,6 +5,7 @@ import type { CheckoutOptions } from "./checkout-client";
 import { CheckoutShell } from "@/components/store/checkout-shell";
 // Availability is read from the API on every request; it must never be baked in at build time.
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
 /**
  * Local development only: `/checkout?preview=design` shows the details step with sample delivery methods while the API
