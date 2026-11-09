@@ -81,6 +81,12 @@
   --text-display--line-height: 1.1;
   /* Frame 999:3 ("1440w light"): its burgundy is a shade lighter than the brand's, and its ticker scrolls. */
   --color-maple: #80241c;
+  /* The Help pages (frames 150:2569 to 150:4558: the policies and Return & Exchange): their ink, grey, hairline
+     and page colour, each a shade off the storefront's espresso, taupe, sand and linen. */
+  --color-help-ink: #262320;
+  --color-help-muted: #74706b;
+  --color-help-rule: #dfdad2;
+  --color-help-page: #fcfbf8;
   --animate-pdp-ticker: pdp-ticker 48s linear infinite;
   /* Frame 2:602: the buy box's promise strip drifts on the same loop, faster for its short track. */
   --animate-pdp-strip: pdp-ticker 22s linear infinite;

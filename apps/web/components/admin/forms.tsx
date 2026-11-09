@@ -9,6 +9,7 @@ import { StoreContent } from "@/components/store-content";
 import { pageDocument } from "@/lib/page-document";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
+import { CampaignDealFields } from "./campaign-deal-fields";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
 import { Field } from "./field";
 import { EmptyState } from "./crm-primitives";
@@ -76,6 +77,7 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
             <Field label="Campaign destination" value={campaign.href} maxLength={500} onChange={(href) => update({ href })} />
           </FieldGrid>
           <CampaignScheduleFields key={campaign.key} value={campaign.schedule} onChange={(schedule) => update({ schedule })} onEditingChange={setScheduleEditing} />
+          <CampaignDealFields value={campaign.deal} endsAt={campaign.schedule?.endsAt} onChange={(deal) => update({ deal })} />
           {media && <>
             <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes.">Artwork</SectionHeading>
             {campaign.artwork ? (

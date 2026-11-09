@@ -58,9 +58,9 @@ test("source service routes retain forms, help, operational notices, media and a
     assert.equal(bulk.querySelector("textarea"), null);
     const returns = await renderPage("returns");
     assert.equal(returns.querySelector("h1")?.textContent, "Return & Exchange");
-    assert.equal(returns.querySelector("a")?.getAttribute("href"), "/policies/refund-policy");
+    assert.equal(returns.querySelector("[data-return-guidance] a")?.getAttribute("href"), "/policies/refund-policy");
     assert.ok(returns.body.textContent?.includes(fixedWarning));
-    assert.equal(returns.querySelector(".cp-enquiry-context strong")?.textContent, "Return & Exchange");
+    assert.ok(returns.querySelector("form[data-return-lookup]"));
     for (const doc of [contact, bulk, returns]) {
       assert.equal(doc.querySelectorAll("h1").length, 1);
       assert.equal(doc.querySelectorAll("form").length, 1);
@@ -162,10 +162,11 @@ test("published service copy, order and metadata reach public routes with immuta
     assert.equal((await generateMetadata({ params: Promise.resolve({ slug: "bulk-enquiry" }) })).title, "Maple for businesses");
     const returns = await renderPage("returns");
     assert.equal(returns.querySelector("h1")?.textContent, "Help with your order");
-    assert.equal(returns.querySelector("a")?.textContent, "Read our return policy");
-    assert.equal(returns.querySelector("a")?.getAttribute("href"), "/policies/refund-policy");
-    assert.ok(returns.body.textContent?.includes(`Share your order details. ${fixedWarning}`));
-    assert.equal(returns.querySelector(".cp-enquiry-context strong")?.textContent, "Return & Exchange");
+    assert.equal(returns.querySelector("[data-return-guidance] a")?.textContent, "Read our return policy");
+    assert.equal(returns.querySelector("[data-return-guidance] a")?.getAttribute("href"), "/policies/refund-policy");
+    assert.equal(returns.querySelector("[data-help-opening]")?.textContent, "Share your order details.");
+    assert.ok(returns.body.textContent?.includes(fixedWarning));
+    assert.ok(returns.querySelector("form[data-return-lookup]"));
     const metadata = "generateMetadata" in returnsRoute
       ? await (returnsRoute.generateMetadata as () => Promise<{ title: string }>)()
       : (returnsRoute as unknown as { metadata: { title: string } }).metadata;

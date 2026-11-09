@@ -7,11 +7,14 @@ export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-co
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
 export type { CampaignSchedule } from "./campaign-schedule";
+export { campaignDeals, liveCampaignDeal } from "./campaign-deal";
+export type { CampaignDeal } from "./campaign-deal";
 export {
   storefrontContentSchema,
   homeSectionKeys,
   campaignKeys,
   campaignContentSchema,
+  campaignDealSchema,
   contentPageSchema,
   contentLinkSchema,
   contentImageSchema,

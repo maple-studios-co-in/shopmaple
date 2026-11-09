@@ -19,7 +19,7 @@ import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
 import { CustomiseQuote } from "./customise-quote";
-import { DealTab, ProductDeal, dealLive } from "./product-deal";
+import { DealTab, ProductDeal, dealKey, useRunningDeal } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
 import { ProductFeatures, previewChars, type Feature } from "./product-features";
@@ -57,10 +57,12 @@ const textCard = (value: string | null | undefined): ReactNode => value?.trim() 
  * `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. `completeLook`
  * holds pieces from the rooms this piece is styled with, for the buy box's "Complete the look"; `bundle` holds two of
  * them in full, for "Buy in Bundle" above the related row. When staff built a Keeri bundle for this piece, the page passes
- * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each.
+ * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each. `serverNow` is
+ * the server's clock when it rendered the page, which the offer timer starts from.
  */
-export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, children }: {
+export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, serverNow, children }: {
   product: Product;
+  serverNow?: number;
   initialVariant?: string;
   presentation?: Presentation;
   completeLook?: ProductCard[];
@@ -119,8 +121,9 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [shared, setShared] = useState(""),
-    // When the page opened: whether the store's offer is still running is read once, the same way on server and browser.
-    [openedAt] = useState(Date.now);
+    // When the page opened, by the server's clock when the page passes it: whether an offer is running is then read the
+    // same way on server and browser, so a campaign starting or ending as the page loads cannot split the two renders.
+    [openedAt] = useState(() => serverNow ?? Date.now());
   if (urlVariant !== initial) {
     setUrlVariant(initial);
     // History navigation changes the option without remounting the enquiry.
@@ -239,7 +242,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
-  const deal = dealLive(highlights.deal, openedAt) ? highlights.deal : undefined;
+  const deal = useRunningDeal(highlights, openedAt);
   return (
     <div data-store data-product-page className="bg-white font-text text-black">
       <ProductVisit handle={product.handle} />
@@ -289,7 +292,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               {highlightLines.map((line) => <li key={line} className="flex gap-2"><span aria-hidden="true" className="text-maple">✓</span>{line}</li>)}
             </ul>
           )}
-          {deal && <ProductDeal deal={deal} />}
+          {deal && <ProductDeal key={dealKey(deal)} deal={deal} />}
           {product.variants.length > 1 && (
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
@@ -404,7 +407,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
           </div>
         </div>
       </section>
-      {deal && <DealTab deal={deal} />}
+      {deal && <DealTab key={dealKey(deal)} deal={deal} />}
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
       <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} tagline={tagline} />
       <ProductBanner />
