@@ -194,3 +194,116 @@ test("shared Keeri producer fixture passes the quote transport unchanged and cro
  await assert.rejects(client.quote({...fixture.request,items:[{variantId:"keeri:other:variant",quantity:1}]}),{code:"INVALID_REQUEST"});
  await assert.rejects(createKeeriCommerce({...base,fetch:async()=>Response.json({accepted:true},{status:202})}).request("orders",{}),{code:"UPSTREAM_REJECTED"});
 });
+
+const restart = () => new Response("<html>502 Bad Gateway</html>", { status: 502, headers: { "content-type": "text/html" } });
+const refused = () => {
+  throw new TypeError("fetch failed");
+};
+/** A transport that answers from `script` in order, then repeats the last entry. */
+function scripted(script: Array<() => Response>) {
+  const bodies: string[] = [];
+  const fetch = async (_url: unknown, options?: RequestInit) => {
+    bodies.push(String(options?.body));
+    return script[Math.min(bodies.length, script.length) - 1]!();
+  };
+  return { fetch: fetch as typeof globalThis.fetch, bodies };
+}
+const replies: Record<string, unknown> = {
+  quotes: { ok: true },
+  reservations: { ok: true },
+  "reservations/verify": { verified: true },
+  "reservations/release": { released: true },
+};
+
+test("a Keeri restart's 502s, 504s and refused connections are retried for quotes and holds", async () => {
+  const gatewayTimeout = () => new Response("<html>504 Gateway Time-out</html>", { status: 504 });
+  for (const [path, reply] of Object.entries(replies)) {
+    const keeri = scripted([restart, refused, gatewayTimeout, () => Response.json(reply)]);
+    const client = createKeeriCommerce({ ...base, retryDelaysMs: [0, 0, 0, 0], fetch: keeri.fetch });
+    assert.deepEqual(await client.request(path, { attemptId: "attempt" }), reply, path);
+    assert.equal(keeri.bodies.length, 4, path);
+  }
+});
+
+test("a retried hold sends the same attemptId and snapshot, so Keeri returns the hold it already made", async () => {
+  const binding = { attemptId: "3e234cd2-1111-4222-8333-123456789012", snapshotSha256: "f".repeat(64) };
+  const keeri = scripted([
+    restart,
+    () => Response.json({ ...binding, reservationId: "hold_one", verified: true, expiresAt: "2026-11-01T12:00:00.000Z" }),
+  ]);
+  const client = createKeeriCommerce({ ...base, retryDelaysMs: [0], fetch: keeri.fetch });
+  const hold = await client.reservations.reserve({ ...binding, snapshot: { version: 2 } as any });
+  assert.equal(hold.reservationId, "hold_one");
+  assert.equal(keeri.bodies.length, 2);
+  assert.equal(keeri.bodies[0], keeri.bodies[1]);
+});
+
+test("Keeri's own errors, refusals, bad responses and timeouts are final, and order delivery is left to the outbox", async () => {
+  const final: Array<[string, () => Response | Promise<Response>, string]> = [
+    ["quotes", () => new Response("no", { status: 422 }), "UPSTREAM_REJECTED"],
+    ["quotes", () => Response.json({ error: "COMMERCE_POLICY_UNAVAILABLE" }, { status: 503 }), "UPSTREAM_UNAVAILABLE"],
+    ["reservations", () => Response.json({ error: "Something went wrong" }, { status: 500 }), "UPSTREAM_UNAVAILABLE"],
+    ["reservations", () => new Response("gone", { status: 409 }), "UPSTREAM_REJECTED"],
+    ["quotes", () => new Response("<html>", { headers: { "content-type": "text/html" } }), "INVALID_RESPONSE"],
+    ["quotes", () => new Promise<Response>(() => {}), "TRANSPORT_TIMEOUT"],
+    ["orders", restart, "UPSTREAM_UNAVAILABLE"],
+    ["orders", refused, "TRANSPORT_UNAVAILABLE"],
+  ];
+  for (const [path, reply, code] of final) {
+    let calls = 0;
+    const client = createKeeriCommerce({
+      ...base,
+      timeoutMs: 50,
+      retryDelaysMs: [0, 0, 0, 0],
+      fetch: async () => {
+        calls++;
+        return reply();
+      },
+    });
+    await assert.rejects(client.request(path, {}), { code }, `${path} ${code}`);
+    assert.equal(calls, 1, `${path} ${code}`);
+  }
+});
+
+test("an outage longer than the retries still fails as unavailable, after one try per delay", async () => {
+  const keeri = scripted([restart]);
+  const client = createKeeriCommerce({ ...base, retryDelaysMs: [0, 0, 0, 0], fetch: keeri.fetch });
+  await assert.rejects(client.request("quotes", {}), { code: "UPSTREAM_UNAVAILABLE" });
+  assert.equal(keeri.bodies.length, 5);
+});
+
+test("retries stop once another wait would run past the call's timeout", async () => {
+  let calls = 0;
+  const client = createKeeriCommerce({
+    ...base,
+    timeoutMs: 250,
+    retryDelaysMs: [0, 0, 0, 0],
+    fetch: async () => {
+      calls++;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return restart();
+    },
+  });
+  await assert.rejects(client.request("quotes", {}), { code: "UPSTREAM_UNAVAILABLE" });
+  assert.equal(calls, 2, "the second slow failure ends past 250 ms, so there is no third try");
+});
+
+test("bad retry schedules are refused before any request", () => {
+  for (const retryDelaysMs of [[-1], [1.5], [5_001], [0, 0, 0, 0, 0, 0]])
+    assert.throws(() => createKeeriCommerce({ ...base, retryDelaysMs }), { code: "INVALID_CONFIGURATION" }, String(retryDelaysMs));
+  assert.doesNotThrow(() => createKeeriCommerce({ ...base, retryDelaysMs: [] }));
+});
+
+test("the default schedule rides out a five-second Keeri restart", async () => {
+  const down = Date.now() + 5_000;
+  let calls = 0;
+  const client = createKeeriCommerce({
+    ...base,
+    fetch: async () => {
+      calls++;
+      return Date.now() < down ? restart() : Response.json({ verified: true });
+    },
+  });
+  assert.deepEqual(await client.request("reservations/verify", {}), { verified: true });
+  assert.equal(calls, 5, "tries at about 0, 0.5, 1.5, 3.5 and 6 s");
+});

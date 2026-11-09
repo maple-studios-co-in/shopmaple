@@ -132,14 +132,18 @@ export interface ComposedCommerce {
 export function composeCommerce(
   db: PrismaClient,
   config: CommerceConfig,
-  options: { fetch?: Transport; now?: () => Date } = {},
+  options: { fetch?: Transport; now?: () => Date; keeriRetryDelaysMs?: readonly number[] } = {},
 ): ComposedCommerce {
   const transport = options.fetch;
   const keeriFetch: typeof fetch | undefined = transport
     ? (input, init) =>
         transport(input instanceof Request ? input.url : input, init ?? {})
     : undefined;
-  const keeri = createKeeriCommerce({ ...config.keeri, fetch: keeriFetch });
+  const keeri = createKeeriCommerce({
+    ...config.keeri,
+    fetch: keeriFetch,
+    retryDelaysMs: options.keeriRetryDelaysMs,
+  });
   const gateway = createRazorpayGateway(config.razorpay, {
     fetch: transport ? (url, init) => transport(url, init) : undefined,
   });
@@ -156,8 +160,9 @@ export function composeCommerce(
     payments: orders,
     keeri,
     now: options.now,
-    // One payment verification can take the Keeri verify timeout (10 s) plus the
-    // Razorpay fetch timeout (10 s) plus the capture transaction; the lease must outlive it.
+    // One payment verification can take the Keeri verify call (10 s, about 20 s with its
+    // outage retries) plus the Razorpay fetch timeout (10 s) plus the capture transaction;
+    // the lease must outlive it.
     leaseMs: 90_000,
     // Backoff 5 s doubling: eight tries span about ten minutes, inside Keeri's
     // fifteen-minute hold, so a short Keeri outage after a payment still lands the order.
