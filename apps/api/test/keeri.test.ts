@@ -15,6 +15,7 @@ test("Keeri MRP paise and stable source identities survive adaptation; stock rem
     compareAtPaise: null,
     available: false,
     stockPolicy: "stocked",
+    leadTimeDays: null,
     images: [],
   });
   assert.deepEqual(result.products[0]?.images, [

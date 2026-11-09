@@ -5,6 +5,8 @@ import { createKeeriCommerce } from "./keeri-commerce.js";
 import { createOrderService } from "./orders/service.js";
 import { createOrderWorkers } from "./orders/workers.js";
 import { createRazorpayGateway } from "./payments/razorpay.js";
+import { createOrderNotifications } from "./orders/notifications.js";
+import { loadEnquiryDeliveryConfig, type EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 
 /** Every key below must be present and valid once CHECKOUT_ENABLED=true. Values are never logged. */
 export const commerceEnvKeys = [
@@ -17,6 +19,32 @@ export const commerceEnvKeys = [
   "RAZORPAY_WEBHOOK_SECRET",
   "CHECKOUT_DELIVERY_METHODS",
 ] as const;
+/** Order emails: each ORDER_* key falls back to the enquiry sender's key. */
+const emailKeys = [
+  ["ORDER_RESEND_API_KEY", "ENQUIRY_RESEND_API_KEY"],
+  ["ORDER_MAIL_FROM", "ENQUIRY_MAIL_FROM"],
+  ["ORDER_MAIL_TO", "ENQUIRY_MAIL_TO"],
+] as const;
+function loadOrderEmail(env: Record<string, string | undefined>): EnquiryDeliveryConfig {
+  const pick = ([own, shared]: readonly [string, string]) => env[own]?.trim() || env[shared]?.trim() || "";
+  const missing = emailKeys.filter((pair) => !pick(pair)).map(([own, shared]) => `${shared} (or ${own})`);
+  if (!env.WEB_ORIGIN) missing.push("WEB_ORIGIN");
+  if (missing.length) throw new Error(`CHECKOUT_ENABLED=true requires valid values for: ${missing.sort().join(", ")}`);
+  try {
+    const config = loadEnquiryDeliveryConfig({
+      ENQUIRY_DELIVERY_ENABLED: "true",
+      ENQUIRY_RESEND_API_KEY: pick(emailKeys[0]),
+      ENQUIRY_MAIL_FROM: pick(emailKeys[1]),
+      ENQUIRY_MAIL_TO: pick(emailKeys[2]),
+      WEB_ORIGIN: env.WEB_ORIGIN,
+      NODE_ENV: env.NODE_ENV,
+    });
+    if (!config) throw new Error();
+    return config;
+  } catch {
+    throw new Error("CHECKOUT_ENABLED=true requires valid values for: ENQUIRY_MAIL_FROM, ENQUIRY_MAIL_TO, ENQUIRY_RESEND_API_KEY (or their ORDER_* overrides), WEB_ORIGIN");
+  }
+}
 const deliveryMethodsSchema = z
   .array(
     z
@@ -53,6 +81,7 @@ export interface CommerceConfig {
   keeri: { origin: string; token: string; tenantId: string; merchantScope: string };
   razorpay: { keyId: string; keySecret: string; webhookSecret: string };
   deliveryMethods: Array<{ id: string; label: string }>;
+  email: EnquiryDeliveryConfig;
 }
 /** Returns null unless checkout is explicitly enabled; then fails loudly naming
  * any missing or invalid key, so a half-configured deployment never half-works. */
@@ -70,6 +99,7 @@ export function loadCommerceConfig(
     );
   }
   const v = parsed.data;
+  const email = loadOrderEmail(env);
   return {
     keeri: {
       origin: v.KEERI_ORIGIN,
@@ -83,6 +113,7 @@ export function loadCommerceConfig(
       webhookSecret: v.RAZORPAY_WEBHOOK_SECRET,
     },
     deliveryMethods: v.CHECKOUT_DELIVERY_METHODS,
+    email,
   };
 }
 type Transport = (url: string | URL, init: RequestInit) => Promise<Response>;
@@ -93,6 +124,7 @@ export interface ComposedCommerce {
   runWorkers(): Promise<{
     payments: Awaited<ReturnType<ReturnType<typeof createOrderWorkers>["runPaymentBatch"]>>;
     keeri: Awaited<ReturnType<ReturnType<typeof createOrderWorkers>["runKeeriBatch"]>>;
+    emails: Awaited<ReturnType<ReturnType<typeof createOrderNotifications>["runBatch"]>>;
   }>;
 }
 /** The only place the Keeri commerce client, gateway, order service and workers
@@ -127,6 +159,15 @@ export function composeCommerce(
     // One payment verification can take the Keeri verify timeout (10 s) plus the
     // Razorpay fetch timeout (10 s) plus the capture transaction; the lease must outlive it.
     leaseMs: 90_000,
+    // Backoff 5 s doubling: eight tries span about ten minutes, inside Keeri's
+    // fifteen-minute hold, so a short Keeri outage after a payment still lands the order.
+    maxAttempts: 8,
+  });
+  const notifications = createOrderNotifications(db, {
+    merchantScope: config.keeri.merchantScope,
+    email: config.email,
+    fetch: transport ? (url, init) => transport(url instanceof Request ? url.url : url, init ?? {}) : undefined,
+    now: options.now,
   });
   return {
     commerce: orders,
@@ -137,7 +178,10 @@ export function composeCommerce(
     async runWorkers() {
       const payments = await workers.runPaymentBatch();
       const delivered = await workers.runKeeriBatch();
-      return { payments, keeri: delivered };
+      // Email never gates an order: a sweep or send failure is retried next cycle.
+      await notifications.sweep();
+      const emails = await notifications.runBatch();
+      return { payments, keeri: delivered, emails };
     },
   };
 }

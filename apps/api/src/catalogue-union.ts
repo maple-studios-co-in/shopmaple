@@ -179,7 +179,10 @@ export function planCatalogueUnion(
         // V2 MRP has no reliable tax/market basis. Keep it in Keeri, never label it a buyer price.
         pricePaise: before?.pricePaise ?? null,
         compareAtPaise: before?.compareAtPaise ?? null,
-        available: false,
+        // Purchasable only when Keeri sells it AND the shown price is exactly the
+        // MRP its quote will charge; a Keeri-only listing has no shown price.
+        available: v.available && before?.pricePaise != null && before.pricePaise === v.pricePaise,
+        leadTimeDays: v.leadTimeDays ?? null,
       });
       variantBindings.push({ source, externalId: v.id, targetId: variantId });
     }

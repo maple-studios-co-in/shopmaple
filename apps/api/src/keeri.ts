@@ -241,6 +241,25 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
   /** Complete-the-look sets, only at the product-page level. */
   bundles: z.array(bundleSchema).max(500).optional(),
 });
+/** Keeri's own verdict, taken only when it agrees with itself: a sellable
+ * variant states a fulfilment matching its stock policy, a lead time exactly
+ * when made to order, and an INR MRP (the price its quote will charge). */
+function keeriSellable(v: object) {
+  const x = v as {
+    stockPolicy: string;
+    prices: { kind: string; amount: number }[];
+    fulfilment?: { kind: string; leadTimeDays: number | null } | null;
+    eligibility?: { sellable: boolean };
+  };
+  const f = x.fulfilment;
+  return (
+    x.eligibility?.sellable === true &&
+    !!f &&
+    f.kind === x.stockPolicy &&
+    (f.kind === "made_to_order") === (f.leadTimeDays !== null) &&
+    x.prices.some((p) => p.kind === "mrp" && p.amount > 0)
+  );
+}
 export function adaptKeeriExportV2(input: unknown, expectedTenantId: string) {
   return adaptValidated(keeriExportV2Schema.parse(input), expectedTenantId);
 }
@@ -464,8 +483,9 @@ function adaptValidated(
             v.prices.find((p) => p.kind === "mrp" && p.amount > 0)?.amount ??
             null,
           compareAtPaise: null,
-          available: false,
+          available: data.schemaVersion === 2 && keeriSellable(v),
           stockPolicy: v.stockPolicy,
+          leadTimeDays: "fulfilment" in v && v.fulfilment?.kind === "made_to_order" ? v.fulfilment.leadTimeDays : null,
           ...("productPage" in v && v.productPage ? { productPage: {
             ...v.productPage,
             options: ((v as V2Variant).attributes ?? [])
