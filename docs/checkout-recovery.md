@@ -10,6 +10,8 @@ Never refund or re-raise an order from the email alone. Confirm the payment in t
 2. "Pay" asks Keeri to hold the stock for **15 minutes**, then creates the Razorpay order. The Razorpay window closes itself **2 minutes before** the hold lapses (`payBy`).
 3. Razorpay confirms the payment two ways: the buyer's browser posts the signed callback, and Razorpay sends the `payment.captured` / `order.paid` webhook. Either one queues a check; the worker then fetches the payment from Razorpay and only a `captured` payment of the exact amount counts.
 4. The worker marks the attempt `captured`, empties the buyer's cart and hands the order to Keeri (retried with backoff for about ten minutes, inside the hold). Keeri's reply carries the sales-order reference.
+
+Keeri restarts now and then (a deploy, or its memory limit), and is unreachable for a few seconds when it does. The quote, hold, hold check and hold release calls each retry nginx's 502/504 or a failed connection for about six seconds before giving up. Keeri's own errors are not retried. So a restart during "Pay" no longer leaves a `RESERVATION_UNCERTAIN` attempt behind. A longer outage still fails as before.
 5. The buyer gets "Your Maple Furnishers order SO-… is confirmed"; staff get "New online order SO-…".
 
 ## Cases that need staff

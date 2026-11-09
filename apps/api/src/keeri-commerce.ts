@@ -10,7 +10,11 @@ import type {
   KeeriDeliveryAcknowledgement,
 } from "./orders/workers.js";
 export class KeeriCommerceError extends Error {
-  constructor(public readonly code: string) {
+  constructor(
+    public readonly code: string,
+    /** Keeri itself was unreachable (restarting), not refusing or failing this request. */
+    public readonly unreachable = false,
+  ) {
     super(code);
     this.name = "KeeriCommerceError";
   }
@@ -23,6 +27,8 @@ interface Options {
   fetch?: typeof fetch;
   timeoutMs?: number;
   maxBytes?: number;
+  /** Waits before each retry of a brief Keeri outage; tests pass zeros. */
+  retryDelaysMs?: readonly number[];
 }
 const paths = new Set([
   "quotes",
@@ -31,10 +37,24 @@ const paths = new Set([
   "reservations/release",
   "orders",
 ]);
+// Keeri can safely see these twice: a hold is keyed by attemptId (a repeat returns the
+// same hold), verify and release repeat harmlessly, and an unused quote just expires.
+// Order delivery is left out because the outbox worker already retries it with backoff.
+const repeatable = new Set([
+  "quotes",
+  "reservations",
+  "reservations/verify",
+  "reservations/release",
+]);
+// A Keeri restart (a deploy, or PM2's memory limit) takes about 1-5 s. Meanwhile nginx
+// answers 502 (or 504), or the connection fails. Keeri's own 500 or 503 (for example a
+// missing quote policy) won't clear in seconds, and refusals and timeouts are final too.
+const defaultRetryDelaysMs = [500, 1000, 2000, 2500];
 /** Server-only, fixed-origin machine transport. Each domain consumer validates its response schema. */
 export function createKeeriCommerce(options: Options) {
   const timeoutMs = options.timeoutMs ?? 10_000,
-    maxBytes = options.maxBytes ?? 256 * 1024;
+    maxBytes = options.maxBytes ?? 256 * 1024,
+    retryDelaysMs = options.retryDelaysMs ?? defaultRetryDelaysMs;
   let origin: URL;
   try {
     origin = new URL(options.origin);
@@ -51,7 +71,10 @@ export function createKeeriCommerce(options: Options) {
       timeoutMs > 30_000 ||
       !Number.isInteger(maxBytes) ||
       maxBytes < 1 ||
-      maxBytes > 1024 * 1024
+      maxBytes > 1024 * 1024 ||
+      !Array.isArray(retryDelaysMs) ||
+      retryDelaysMs.length > 5 ||
+      retryDelaysMs.some((d) => !Number.isInteger(d) || d < 0 || d > 5_000)
     )
       throw Error();
   } catch {
@@ -67,6 +90,26 @@ export function createKeeriCommerce(options: Options) {
     } catch {
       throw new KeeriCommerceError("INVALID_REQUEST");
     }
+    // Retries stay inside one timeout's worth of time, so a slow failure isn't repeated
+    // until the buyer gives up. The worst case is about two timeouts.
+    const started = Date.now();
+    for (let retry = 0; ; retry++) {
+      try {
+        return await send(path, serialized);
+      } catch (error) {
+        const delay = retryDelaysMs[retry];
+        if (
+          delay === undefined ||
+          !repeatable.has(path) ||
+          !(error instanceof KeeriCommerceError && error.unreachable) ||
+          Date.now() - started + delay > timeoutMs
+        )
+          throw error;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  async function send(path: string, serialized: string): Promise<unknown> {
     const controller = new AbortController();
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -98,9 +141,11 @@ export function createKeeriCommerce(options: Options) {
       }
       if (response.status !== 200 || response.redirected) {
         void response.body?.cancel().catch(() => {});
-        // 5xx is a Keeri outage worth retrying; anything else is a refusal of this request.
+        // 5xx is a Keeri outage; anything else is a refusal of this request. Only nginx's
+        // 502/504 mean Keeri is not running at all, which `request` retries.
         throw new KeeriCommerceError(
           response.status >= 500 ? "UPSTREAM_UNAVAILABLE" : "UPSTREAM_REJECTED",
+          response.status === 502 || response.status === 504,
         );
       }
       if (
@@ -146,11 +191,9 @@ export function createKeeriCommerce(options: Options) {
       return await Promise.race([read(), deadline]);
     } catch (e) {
       if (e instanceof KeeriCommerceError) throw e;
-      throw new KeeriCommerceError(
-        controller.signal.aborted
-          ? "TRANSPORT_TIMEOUT"
-          : "TRANSPORT_UNAVAILABLE",
-      );
+      if (controller.signal.aborted)
+        throw new KeeriCommerceError("TRANSPORT_TIMEOUT");
+      throw new KeeriCommerceError("TRANSPORT_UNAVAILABLE", true);
     } finally {
       clearTimeout(timer);
       controller.abort();

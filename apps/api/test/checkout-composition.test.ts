@@ -61,12 +61,18 @@ const fake = {
   razorpayCalls: [] as string[],
   emails: [] as Array<{ key: string; to: string[]; subject: string; text: string }>,
   emailStatus: 200,
+  /** The next N Keeri calls get nginx's 502, as during a Keeri restart. */
+  keeriRestartCalls: 0,
 };
 async function transport(target: string | URL, init: RequestInit): Promise<Response> {
   const u = new URL(String(target));
   if (u.host === "keeri.example.test") {
     fake.keeriCalls.push(u.pathname);
     assert.equal(new Headers(init.headers).get("authorization"), `Bearer ${keeriToken}`);
+    if (fake.keeriRestartCalls > 0) {
+      fake.keeriRestartCalls--;
+      return new Response("<html>502 Bad Gateway</html>", { status: 502, headers: { "content-type": "text/html" } });
+    }
     const body = JSON.parse(String(init.body));
     switch (u.pathname) {
       case "/api/storefront/quotes": {
@@ -130,7 +136,8 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
 function compose() {
   const config = loadCommerceConfig(fullEnv);
   assert.ok(config);
-  return composeCommerce(db, config, { fetch: transport, now: () => clock });
+  // No waits between Keeri outage retries, so the tests that hold Keeri at 503 stay fast.
+  return composeCommerce(db, config, { fetch: transport, now: () => clock, keeriRetryDelaysMs: [0, 0, 0, 0] });
 }
 function checkoutApp() {
   const composed = compose();
@@ -161,7 +168,8 @@ before(async () => { await db.$connect(); });
 beforeEach(async () => {
   clock = new Date("2030-01-01T10:00:00Z");
   Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", quoteStatus: 200, reservationStatus: 200, releaseStatus: 200,
-    razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [], emails: [], emailStatus: 200 });
+    razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [], emails: [], emailStatus: 200,
+    keeriRestartCalls: 0 });
   await db.orderNotification.deleteMany();
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
@@ -338,6 +346,24 @@ test("an order Keeri refuses to quote is a buyer problem, while a Keeri outage i
   assert.equal(outage.status, 503);
   assert.equal(outage.body.code, "QUOTE_UNAVAILABLE");
   assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("a Keeri restart while quoting and paying is retried, and the buyer still reaches payment", async () => {
+  const { app } = checkoutApp();
+  fake.keeriRestartCalls = 1;
+  const frozen = await freeze(app);
+  assert.equal(frozen.status, 200);
+  fake.keeriRestartCalls = 2;
+  const created = await paymentOrder(app, frozen.body.id);
+  assert.equal(created.status, 200);
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.equal(attempt.state, "awaiting_payment");
+  assert.equal(attempt.reservationId, `hold-${frozen.body.id}`, "the retry carries the same attemptId, so it is one hold");
+  assert.deepEqual(fake.keeriCalls, [
+    "/api/storefront/quotes", "/api/storefront/quotes",
+    "/api/storefront/reservations", "/api/storefront/reservations", "/api/storefront/reservations",
+  ]);
+  assert.deepEqual(fake.razorpayCalls, ["POST /v1/orders"]);
 });
 
 test("a refused Keeri hold leaves the attempt in reconciliation without a provider order", async () => {
