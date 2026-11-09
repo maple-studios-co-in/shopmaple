@@ -96,7 +96,6 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
       case "origin":
         return (
           <>
-            <div className="home-divider home-divider-short" />
             <section className="landing-media-content landing-nimbus-origin">
               <Image src={origin.image} alt={origin.alt} width={1200} height={1200} sizes="(max-width:749px) 100vw, 50vw" />
               <div>
@@ -110,7 +109,6 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
       case "principles":
         return (
           <>
-            <div className="home-divider" />
             <section className="landing-nimbus-principles">
               <h2>{page.principles.heading}</h2>
               <CategoryValues items={page.principles.items.map(item => ({
@@ -123,7 +121,6 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
       case "rooms-slideshow":
         return (
           <>
-            <div className="home-divider" />
             <CategorySlideshow slides={page.roomSlides.map(item => {
               const artwork = resolveTemplateMedia(`nimbus-slide-${item.key}`, media, item.label);
               return { key: item.key, alt: artwork.alt, desktop: artwork.image, mobile: artwork.mobileImage! };
@@ -152,7 +149,7 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
           </section>
         );
       case "promises":
-        return <><div className="home-divider" /><MaplePromises items={page.promises} /></>;
+        return <MaplePromises items={page.promises} />;
     }
   }
   return (

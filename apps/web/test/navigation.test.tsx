@@ -114,7 +114,8 @@ test("mobile drawer drills down, goes back, closes on Escape and restores scroll
     await act(async () =>
       document.querySelector<HTMLButtonElement>(".maple-drawer-back")!.click(),
     );
-    assert.equal(document.querySelectorAll(".maple-drawer-main > *").length, 5);
+    // The rooms, then Collections, Custom Furniture and Sale (Figma 256:3836); Contact is in the footer.
+    assert.equal(document.querySelectorAll(".maple-drawer-main > *").length, 7);
     assert.equal(document.querySelectorAll(".maple-menu-product").length, 4);
     assert.ok(
       document.querySelector('dialog a[href="/favourites"]'),
@@ -149,16 +150,13 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
       panel.querySelector("img"),
       "menu should include a real furniture discovery image",
     );
-    const custom = panel.querySelector<HTMLAnchorElement>(
-      'a[aria-label="Enquire about custom furniture"]',
-    );
+    // Figma 256:3836: a custom-size card under the first group opens an enquiry about it.
+    const custom = panel.querySelector<HTMLAnchorElement>("a[data-mega-custom]");
     assert.ok(custom, "menu should expose custom furniture enquiries");
-    assert.match(custom.href, /\/pages\/contact/);
-    assert.ok(panel.querySelector('a[href="/collections/all"]'));
-    // Frame 1:1454: the Maple promise and the invitation to consult run under the columns.
-    const footer = panel.querySelector("[data-mega-footer]")!;
-    assert.deepEqual([...footer.querySelectorAll("[data-promise] strong")].map((title) => title.textContent), ["Fully customisable", "Crafted in Delhi", "36-month warranty", "Delivery across India"]);
-    assert.equal(footer.querySelector("p:last-child")?.textContent, "Your space. Your choices. Consult with Maple on colour, material, finish, and size.");
+    assert.match(custom.href, /\/pages\/contact\?product=Custom\+size$/);
+    assert.deepEqual([...panel.querySelectorAll(".maple-mega-discovery a strong")].map((title) => title.textContent), ["New Arrivals", "Bestsellers", "Complete the Look"]);
+    // The promise strip that ran under the columns (frame 1:1454) is not in the new menu.
+    assert.equal(panel.querySelector("[data-mega-footer]"), null);
   } finally {
     await act(async () => root.unmount());
   }

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Plus } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
@@ -62,7 +62,7 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
   if (!cards.length) return null;
   const toggle = (key: string) => setOpen((shown) => (shown.includes(key) ? shown.filter((item) => item !== key) : [...shown, key]));
   return (
-    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 pt-14 pb-14 font-text text-black md:px-12 md:pt-[60px] md:pb-[100px]">
+    <section data-store data-features aria-labelledby="product-features-title" className="bg-white px-4 font-text text-black md:px-12">
       <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-2 text-center">
         <h2 id="product-features-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[46px] md:leading-[1.5]">Precision in Every Detail</h2>
         <p data-features-intro className="m-0 text-[15px] leading-[26px] text-[#756d68] md:text-[17px]">Discover the finishes, textures and thoughtful details that make {title} your own.</p>
@@ -72,22 +72,20 @@ export function ProductFeatures({ features, highlights = [], photo, title, tagli
           <figure className="m-0 flex flex-col items-center md:col-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2 xl:row-start-1">
             <div data-feature-photo className="relative aspect-[640/508] w-full max-w-[640px] wide:max-w-none">
               {/* A cut-out sits on the same soft panel as a photograph, its white blended into it. */}
-              <div className={cx("absolute inset-0 overflow-hidden rounded-[20px]", contain ? "bg-[#f7f3ee] [&_img]:object-contain [&_img]:mix-blend-multiply" : "bg-cream [&_img]:object-cover")}>
+              <div data-feature-photo-frame className={cx("absolute inset-0 overflow-hidden rounded-[20px] bg-transparent", contain ? "[&_img]:object-contain [&_img]:mix-blend-multiply" : "[&_img]:object-cover")}>
                 <ProductImage src={photo} alt={`${title} — detail view`} fill sizes="(max-width:767px) 92vw, (min-width:1600px) 50vw, 640px" />
               </div>
               {notes.map((line, i) => {
                 const [x, y] = noteSpots[i]!, shown = shownNote === i, chipId = `${chipBase}-highlight-${i}`;
                 return (
-                  // A zero-size anchor at the point itself: the arrow centres on it, and a chip opens 30px to either side of it.
+                  // A zero-size anchor at the point itself: the plus centres on it, and a chip opens 30px to either side of it.
                   <div key={i} data-highlight={i} className={cx("absolute size-0", shown ? "z-[4]" : "z-[3]")} style={{ left: `${x}%`, top: `${y}%` }}>
                     <button type="button" data-highlight-spot aria-label={`Highlight ${i + 1} of ${notes.length}`} aria-expanded={shown} aria-controls={chipId} aria-describedby={chipId}
                       onClick={() => setShownNote(shown ? null : i)}
                       className="group/spot relative grid size-[46px] -translate-1/2 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design halo */}
-                      <img src="/product-page/hotspot-halo.svg" alt="" width={46} height={46} className="absolute inset-0 size-[46px]" />
-                      {/* Up while closed, down once its chip is open (owner, 6 Nov 2026). */}
-                      <span data-highlight-arrow aria-hidden="true" className="relative grid size-8 place-items-center rounded-full bg-maple text-white transition-transform group-aria-expanded/spot:rotate-180 motion-reduce:transition-none">
-                        <ArrowUp className="size-4" strokeWidth={2.25} />
+                      {/* A dark plus on a light disc, turning to a cross while its chip is open (owner, 9 Nov 2026). */}
+                      <span data-highlight-plus aria-hidden="true" className="relative grid size-8 place-items-center rounded-full bg-[#f6e8e5] text-maple shadow-[0_2px_10px_rgb(128_36_28/0.18)] transition-transform group-aria-expanded/spot:rotate-45 motion-reduce:transition-none">
+                        <Plus className="size-4" strokeWidth={2.5} />
                       </span>
                     </button>
                     <p id={chipId} data-highlight-chip hidden={!shown}

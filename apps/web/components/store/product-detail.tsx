@@ -244,9 +244,10 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const category = product.category ? categoryNames[product.category] : undefined;
   const deal = useRunningDeal(highlights, openedAt);
   return (
-    <div data-store data-product-page className="bg-white font-text text-black">
+    // 30px between the sections (owner, 9 Nov 2026).
+    <div data-store data-product-page className="flex flex-col gap-[30px] bg-white font-text text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
         {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
         <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}

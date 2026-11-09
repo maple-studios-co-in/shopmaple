@@ -15,14 +15,16 @@ const dateFormat = new Intl.DateTimeFormat("en-IN", { month: "long", year: "nume
 function ReviewCard({ review }: { review: ProductReview }) {
   const photo = review.photos[0];
   return (
-    <li data-review className="flex w-[min(86vw,680px)] shrink-0 snap-start overflow-hidden rounded-[14px] bg-white text-black">
-      <div className="flex min-w-0 flex-1 flex-col gap-3 p-6 md:p-8">
-        <p aria-label={`Rated ${review.rating} out of 5`} className="m-0 text-[16px] tracking-[2px] text-[#FFB74A]">
-          {"★".repeat(review.rating)}<span className="text-[#d9d3cc]">{"★".repeat(5 - review.rating)}</span>
+    <li data-review className="flex w-[min(86vw,680px)] shrink-0 snap-start overflow-hidden rounded-[14px] bg-white text-black md:h-full">
+      {/* Sized to the card, so styles/review-cards.css can drop the review's last lines when the card is short. */}
+      <div data-review-text className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-6 md:p-7">
+        <p aria-label={`Rated ${review.rating} out of 5`} className="m-0 flex shrink-0 items-center gap-2 text-[16px] leading-6 text-[#FFB74A]">
+          <span aria-hidden="true" className="tracking-[2px]">{"★".repeat(review.rating)}<span className="text-[#d9d3cc]">{"★".repeat(5 - review.rating)}</span></span>
+          <span data-review-score aria-hidden="true" className="font-heading text-[14px] leading-none font-medium text-[#1c1c1c]">{review.rating.toFixed(1)}</span>
         </p>
-        <h3 className="m-0 text-[22px] leading-[1.2] font-medium text-maple md:text-[26px]">{review.title}</h3>
-        <p className="m-0 text-[14px] leading-[1.6] whitespace-pre-line">{review.body}</p>
-        <div className="mt-auto pt-2">
+        <h3 data-review-title className="m-0 line-clamp-2 shrink-0 text-[22px] leading-[1.2] font-medium text-maple md:text-[24px]">{review.title}</h3>
+        <p data-review-body className="m-0 line-clamp-5 shrink-0 text-[14px] leading-[1.6] whitespace-pre-line">{review.body}</p>
+        <div className="mt-auto shrink-0 pt-2">
           <p className="m-0 text-[14px] font-medium">{review.reviewerName}{review.city ? `, ${review.city}` : ""}</p>
           <p className="m-0 text-[12px] text-[#5e574f]">
             {review.verifiedBuyer && <span data-verified className="mr-2 font-medium text-[#2f6b32]">✓ Verified buyer</span>}
@@ -66,8 +68,8 @@ function ReviewSlider({ items }: { items: ProductReview[] }) {
     if (row && card) row.scrollBy?.({ left: direction * (card.offsetWidth + 24), behavior: "smooth" });
   };
   return (
-    <div data-review-slider className="group/slider relative mt-10 md:mt-14">
-      <ul ref={track} data-review-list aria-label="Customer reviews" className="m-0 flex snap-x snap-mandatory list-none gap-6 overflow-x-auto p-0 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div data-review-slider className="group/slider relative mt-8 md:mt-6 md:min-h-0 md:flex-1">
+      <ul ref={track} data-review-list aria-label="Customer reviews" className="m-0 flex snap-x snap-mandatory list-none gap-6 overflow-x-auto p-0 pb-2 [scrollbar-width:none] md:h-full md:pb-0 [&::-webkit-scrollbar]:hidden">
         {items.map((review) => <ReviewCard key={review.id} review={review} />)}
       </ul>
       {items.length > 1 && (
@@ -97,12 +99,13 @@ export function ProductReviews({ rating, writeHref, reviews: items = [], piece }
   const stopWriting = () => { setWriting(false); writeLink.current?.focus(); };
   const reviews = rating?.count ? `${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : "";
   const summary = rating
-    ? { score: rating.value.toFixed(1), filled: Math.round(rating.value), line: reviews || `Rated ${rating.value.toFixed(1)} out of 5`, label: `Rated ${rating.value.toFixed(1)} out of 5${reviews ? ` from ${reviews}` : ""}` }
+    ? { score: rating.value.toFixed(1), filled: Math.round(rating.value), label: `Rated ${rating.value.toFixed(1)} out of 5${reviews ? ` from ${reviews}` : ""}` }
     : null;
   return (
-    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-12 font-text text-white md:px-12 md:py-[91px]">
+    // Three quarters of the screen on a computer (owner, 9 Nov 2026): the cards take what the heading leaves.
+    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-10 font-text text-white md:flex md:h-[75svh] md:min-h-[540px] md:flex-col md:px-12 md:py-10">
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col items-start gap-6">
+        <div className="flex flex-col items-start gap-6 md:gap-4">
           <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.2] font-medium md:text-[48px]">Hear From Them</h2>
           {summary
             ? <p data-reviews-sub className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
@@ -125,8 +128,6 @@ export function ProductReviews({ rating, writeHref, reviews: items = [], piece }
                 ))}
               </span>
             </div>
-            {" "}
-            <p className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">{summary.line}</p>
           </div>
         )}
       </div>

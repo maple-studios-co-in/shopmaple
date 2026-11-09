@@ -226,7 +226,9 @@ test("Hear From Them shows the real rating and count, invites a review and shows
     const band = hook(doc, "data-reviews")!;
     assert.equal(band.id, "product-reviews");
     assert.equal(text(band.querySelector("h2")), "Hear From Them");
-    assert.equal(text(band.querySelector("[data-rating-summary]")), "4.6 12 reviews");
+    // The count is no longer written under the figure (owner, 9 Nov 2026); a screen reader still hears it.
+    assert.equal(text(band.querySelector("[data-rating-summary]")), "4.6");
+    assert.equal(band.querySelector("[data-rating-summary]")!.getAttribute("aria-label"), "Rated 4.6 out of 5 from 12 reviews");
     assert.equal(band.querySelectorAll("[data-rating-summary] [data-star]").length, 5);
     const write = band.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
     assert.equal(text(write), "Write a review");

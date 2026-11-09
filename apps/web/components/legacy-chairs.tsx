@@ -1,5 +1,5 @@
 import type { ProductCardModel } from "@/lib/product-card-model";
-import Image from "next/image";
+import { ContentImage as Image } from "@/components/content-image";
 import Link from "next/link";
 import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
 import { ProductCard } from "./product-card";
@@ -261,7 +261,6 @@ export function LegacyChairs({ products }: { products: ProductCardModel[] }) {
           label="Accent Chair"
         />
       </section>
-      <div className="home-divider" />
       <section
         className="legacy-chairs-faq home-container"
         aria-label="Frequently asked questions"

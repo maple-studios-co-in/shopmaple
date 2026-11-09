@@ -1,18 +1,56 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
+import { ContentImage as Image } from "@/components/content-image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, ChevronRight, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, ChevronDown, ChevronRight, X } from "lucide-react";
 import type { ChromeNavigationLink, SiteChrome } from "@shopmaple/contracts";
 import { defaultSiteChrome, chromeHref } from "../lib/site-chrome-defaults";
 import products from "../data/navigation-products.json";
-import { shopFile, shopMoney } from "../lib/format";
+import { shopMoney } from "../lib/format";
 import { recentProduct } from "../lib/search-products";
 import type { ProductCardModel } from "../lib/product-card-model";
-import dynamic from "next/dynamic";
-// The promise strip shows only inside an open mega menu, so it loads then rather than with every page.
-const MegaMenuFooter = dynamic(() => import("./store/mega-menu-footer").then((m) => m.MegaMenuFooter));
+
+/** The room's card at the start of its mega menu (Figma 256:3836). */
+const megaFeatures = {
+  living: {
+    heading: "Designed for every moment.",
+    body: "Timeless silhouettes, premium materials and comfort that feels like home.",
+    // A furnished room, as in the design, rather than a piece on its own.
+    image: "/media/home/category-sofas.webp",
+    alt: "A living room with a cream sofa, a wooden coffee table and plants",
+  },
+  bedroom: {
+    heading: "Rest, beautifully made.",
+    body: "Beds and bedside pieces made for calm, unhurried rooms.",
+    image: "/media/home/category-beds.webp",
+    alt: "A bedroom with an upholstered green bed and wooden bedside tables",
+  },
+} as const;
+/** The photo beside each discovery link, by the link's id; a link the admin adds without one is shown as words alone. */
+const discoveryImages: Record<string, string> = {
+  new: "/media/home/hero-sofas.webp",
+  bestsellers: "/media/home/editorial-flip-runo.webp",
+  look: "/media/home/strip-always-together.webp",
+};
+const iconPaths = {
+  sofa: "M4 11V8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5V11M3 11.5A1.5 1.5 0 0 1 4.5 10h0A1.5 1.5 0 0 1 6 11.5V13h12v-1.5a1.5 1.5 0 0 1 3 0V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM5 17v2M19 17v2",
+  chair: "M7 10V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V10M5 12.5A1.5 1.5 0 0 1 6.5 11h11a1.5 1.5 0 0 1 1.5 1.5V15H5zM6.5 15l-.5 5M17.5 15l.5 5",
+  table: "M3 7h18M5 7l-1 13M19 7l1 13M7 7v4h10V7",
+  tv: "M3 6h18v11H3zM8 20h8M12 17v3M9.5 9.5l2 2 3-3",
+  bed: "M3 18V8M3 14h18v4M21 18v-3a3 3 0 0 0-3-3h-7v2M6.5 12.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3",
+  measure: "M4 9.5C4 7 7.6 5 12 5s8 2 8 4.5v5C20 17 16.4 19 12 19s-8-2-8-4.5zM4 9.5C4 12 7.6 14 12 14s8-2 8-4.5M12 14v-2.5M8.5 13.5v-2M15.5 13.5v-2",
+} as const;
+/** A thin line icon in the brand's colour, as the frame draws beside each column's name. */
+function MenuIcon({ name }: { name: keyof typeof iconPaths }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" data-menu-icon={name}>
+      <path d={iconPaths[name]} />
+    </svg>
+  );
+}
+const columnIcon = (label: string): keyof typeof iconPaths | null =>
+  /sofa/i.test(label) ? "sofa" : /chair/i.test(label) ? "chair" : /table/i.test(label) ? "table" : /tv|media/i.test(label) ? "tv" : /bed|size/i.test(label) ? "bed" : null;
 function CategoryLink({
   item,
   onNavigate,
@@ -23,6 +61,7 @@ function CategoryLink({
   const href = chromeHref(item);
   // The page you are on stays marked in red in the menu.
   const current = usePathname() === href.split(/[?#]/)[0];
+  const icon = item.parent ? columnIcon(item.label) : null;
   return (
     <Link
       href={href}
@@ -30,6 +69,7 @@ function CategoryLink({
       className={item.parent ? "maple-menu-parent" : "maple-menu-link"}
       aria-current={current ? "page" : undefined}
     >
+      {icon && <MenuIcon name={icon} />}
       {item.label}
     </Link>
   );
@@ -127,6 +167,7 @@ export function DesktopNavigation({
               }}
             >
               {item.label}
+              <ChevronDown aria-hidden="true" size={14} strokeWidth={2} data-menu-chevron />
             </button>
             {active === item.id && (
               <div
@@ -137,24 +178,17 @@ export function DesktopNavigation({
                 {item.feature !== "none" && (
                   <div className="maple-mega-feature">
                     <Image
-                      src={shopFile(
-                        item.feature === "bedroom"
-                          ? "engaged_9_1.jpg?v=1767448207"
-                          : "engaged_5.jpg?v=1767435623",
-                      )}
-                      alt={
-                        item.feature === "bedroom"
-                          ? "Upholstered bed"
-                          : "A thoughtfully furnished living room"
-                      }
+                      src={megaFeatures[item.feature].image}
+                      alt={megaFeatures[item.feature].alt}
                       width={320}
-                      height={260}
-                      sizes="220px"
+                      height={330}
+                      sizes="240px"
                     />
-                    <span>{item.label}</span>
-                    <h2>{item.label}</h2>
+                    <span data-mega-room>{item.label}</span>
+                    <h2>{megaFeatures[item.feature].heading}</h2>
+                    <p>{megaFeatures[item.feature].body}</p>
                     <Link href={item.href} onClick={() => setActive(null)}>
-                      View all <ArrowUpRight size={15} />
+                      Explore {item.label} <ArrowRight aria-hidden="true" size={14} />
                     </Link>
                   </div>
                 )}
@@ -163,7 +197,7 @@ export function DesktopNavigation({
                     .filter((column) =>
                       column.links.some((link) => link.enabled),
                     )
-                    .map((column) => (
+                    .map((column, columnIndex) => (
                       <div className="maple-mega-column" key={column.id}>
                         {column.links
                           .filter((link) => link.enabled)
@@ -174,6 +208,21 @@ export function DesktopNavigation({
                               onNavigate={() => setActive(null)}
                             />
                           ))}
+                        {columnIndex === 0 && (
+                          <Link
+                            className="maple-mega-custom"
+                            data-mega-custom
+                            href={`/pages/contact?${new URLSearchParams({ product: "Custom size" })}`}
+                            onClick={() => setActive(null)}
+                          >
+                            <MenuIcon name="measure" />
+                            <strong>Need a custom size?</strong>
+                            <span>We’ll build it around your space.</span>
+                            <em>
+                              Start Customizing <ArrowRight aria-hidden="true" size={13} />
+                            </em>
+                          </Link>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -194,22 +243,26 @@ export function DesktopNavigation({
                           }
                           onClick={() => setActive(null)}
                         >
-                          <strong>{link.label}</strong>
+                          {discoveryImages[link.id] && (
+                            <Image src={discoveryImages[link.id]!} alt="" width={160} height={160} sizes="80px" />
+                          )}
                           <span>
-                            {link.cta} <ArrowUpRight size={15} />
+                            <strong>{link.label}</strong>
+                            <span>{link.cta}</span>
+                            <ArrowRight aria-hidden="true" size={15} />
                           </span>
                         </Link>
                       ))}
                   </div>
                 )}
-                <MegaMenuFooter />
               </div>
             )}
           </div>
         ) : (
           <Link
             key={item.id}
-            href={item.href}
+            href={chromeHref(item)}
+            data-nav-sale={item.href === "/collections/sale" ? "" : undefined}
             aria-current={pathname === item.href ? "page" : undefined}
             onPointerEnter={() => setActive(null)}
             onFocus={() => setActive(null)}
@@ -500,7 +553,7 @@ export function MobileNavigation({
                       <ChevronRight size={18} />
                     </button>
                   ) : (
-                    <Link key={item.id} href={item.href} onClick={onClose}>
+                    <Link key={item.id} href={chromeHref(item)} onClick={onClose}>
                       {item.label}
                     </Link>
                   ),
@@ -528,6 +581,18 @@ export function MobileNavigation({
                       onClick={onClose}
                     >
                       {link.label} <ArrowUpRight size={16} />
+                    </Link>
+                  ))}
+              </nav>
+            )}
+            {/* The one-row header has no room for these (Figma 256:3836); on a phone they sit with the quick links. */}
+            {siteChrome.utilityLinks.some((link) => link.enabled) && (
+              <nav className="maple-drawer-utility-links utility-links" aria-label="About Maple">
+                {siteChrome.utilityLinks
+                  .filter((link) => link.enabled)
+                  .map((link) => (
+                    <Link key={link.id} href={chromeHref(link)} onClick={onClose}>
+                      {link.label}<ArrowUpRight aria-hidden size={16} />
                     </Link>
                   ))}
               </nav>

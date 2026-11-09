@@ -13,9 +13,12 @@ function ArtworkLayer({
   artwork,
   mobile,
   framed = false,
+  eager = false,
 }: {
   artwork: Artwork;
   mobile: boolean;
+  /** Load the pictures at once: the page's first banner, in view as it opens. */
+  eager?: boolean;
   /** Keep the slices in one frame at the artwork's own proportions (the strip shows a crop of it, not a squeezed copy). */
   framed?: boolean;
 }) {
@@ -33,7 +36,7 @@ function ArtworkLayer({
         height: `${(layer.height / height) * 100}%`,
       }}
     >
-      <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} />
+      <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} {...(eager ? { loading: "eager" as const } : {})} />
     </div>
   ));
   return (
@@ -53,6 +56,7 @@ export async function CampaignBanner({
   compact = false,
   layout,
   content: supplied,
+  eager = false,
 }: {
   campaign: CampaignKey;
   compact?: boolean;
@@ -60,6 +64,8 @@ export async function CampaignBanner({
   layout?: "strip";
   /** A specific content document (for example a staff draft); defaults to the published snapshot. */
   content?: StorefrontDocument;
+  /** The page's first banner, in view as it opens: its wide-screen pictures load at once. */
+  eager?: boolean;
 }) {
   const content = supplied ?? await getPublishedContent();
   if (!content.campaignsAvailable) return null;
@@ -114,7 +120,7 @@ export async function CampaignBanner({
           </>
         ) : (
           <>
-            <ArtworkLayer artwork={data.desktop} mobile={false} framed={layout === "strip"} />
+            <ArtworkLayer artwork={data.desktop} mobile={false} framed={layout === "strip"} eager={eager} />
             <ArtworkLayer artwork={data.mobile} mobile />
           </>
         )}

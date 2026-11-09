@@ -1,0 +1,42 @@
+/* The review cards on a computer (owner, 9 Nov 2026). The band is three quarters of the screen, so a card is only as
+   tall as that leaves, and nothing in it may be cut through. Each card's text column is measured (a size container),
+   and whole lines give way as it gets shorter: first the title's second line, then the review's last lines, which end
+   in an ellipsis. The stars, the title's first line and the reviewer's name always stay.
+
+   Heights are the column's content box, measured on the page: stars 24px, three 12px gaps, the name and date 49.6px
+   (109.6px in all), a title line 28.8px and a review line 22.4px. Two title lines and five review lines need 279.2px. */
+@media (min-width: 768px) {
+  [data-review] [data-review-text] {
+    container-type: size;
+  }
+}
+@container (max-height: 280px) {
+  [data-review] [data-review-title] {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}
+@container (max-height: 251px) {
+  [data-review] [data-review-body] {
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}
+@container (max-height: 228.5px) {
+  [data-review] [data-review-body] {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+@container (max-height: 206px) {
+  [data-review] [data-review-body] {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+@container (max-height: 184px) {
+  [data-review] [data-review-body] {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+}

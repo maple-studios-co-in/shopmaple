@@ -1,5 +1,5 @@
 import { ContentImage as Image } from "@/components/content-image";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -118,6 +118,11 @@ async function HomeProducts({
   );
 }
 
+/** A product rail's place while its cards are read: the band it will fill, so nothing below it jumps when it arrives. */
+function RailPlaceholder({ label }: { label: string }) {
+  return <section className="home-products home-container" aria-label={label} aria-busy="true" data-rail-placeholder />;
+}
+
 /** The homepage assembled from one content document: the published snapshot for visitors, a draft for staff previews. */
 export function HomePage({ content }: { content: StorefrontDocument }) {
   const copy = content.homeCopy;
@@ -127,7 +132,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     hero: <Hero content={details.hero} media={content.templateMedia?.filter(item =>
       item.key === "home-workshop-poster" || item.key.startsWith("home-hero-")
     )} />,
-    announcement: <CampaignBanner campaign="landing-announcement" layout="strip" content={content} />,
+    announcement: <CampaignBanner campaign="landing-announcement" layout="strip" content={content} eager />,
     difference: <HomeDifference content={details.difference} media={content.templateMedia} />,
     categories: (
       <section className="home-category-section home-container">
@@ -162,24 +167,28 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
       />
     ),
     bestsellers: (
-      <HomeProducts
-        handles={merchandising.bestsellers}
-        heading={copy.bestsellersHeading}
-        label="Bestsellers"
-        browseHref="/collections/all"
-        lede="Discover the pieces that make a room feel complete."
-        scrollbar
-      />
+      <Suspense fallback={<RailPlaceholder label="Bestsellers" />}>
+        <HomeProducts
+          handles={merchandising.bestsellers}
+          heading={copy.bestsellersHeading}
+          label="Bestsellers"
+          browseHref="/collections/all"
+          lede="Discover the pieces that make a room feel complete."
+          scrollbar
+        />
+      </Suspense>
     ),
     "seating-banner": <CampaignBanner campaign="landing-sofa-accent-chair" content={content} />,
     chairs: (
-      <HomeProducts
-        handles={merchandising.chairs}
-        heading={copy.chairsHeading ?? "Chairs"}
-        label="Chair collection"
-        // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.
-        browseHref="/collections/chairs?page=1"
-      />
+      <Suspense fallback={<RailPlaceholder label="Chair collection" />}>
+        <HomeProducts
+          handles={merchandising.chairs}
+          heading={copy.chairsHeading ?? "Chairs"}
+          label="Chair collection"
+          // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.
+          browseHref="/collections/chairs?page=1"
+        />
+      </Suspense>
     ),
     promos: (
       <div className="campaign-promo-grid home-container">
@@ -189,7 +198,11 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
       </div>
     ),
     editorial: <HomeEditorial content={details.editorial} />,
-    compare: <HomeCompare content={details.compare} />,
+    compare: (
+      <Suspense fallback={<section className="home-compare home-container" aria-label={details.compare.heading} aria-busy="true" data-compare-placeholder />}>
+        <HomeCompare content={details.compare} />
+      </Suspense>
+    ),
     testimonial: (
       <HomeTestimonial
         content={details.testimonial}

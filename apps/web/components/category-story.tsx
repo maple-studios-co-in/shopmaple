@@ -80,9 +80,7 @@ export function StoryLanding({ content, media }: { content?: StoryPageContent; m
     ),
     cities: (
       <div data-story-section="cities">
-        <div className="home-divider" />
         <HomeCities />
-        <div className="home-divider" />
       </div>
     ),
   };

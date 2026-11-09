@@ -85,10 +85,8 @@ export function Contact({ context, content }: { context: EnquiryContext; content
   return (
     <div className="cp-page">
       {!visible.some(section => section.key === "intro") && <h1 className="sr-only">{content.heading}</h1>}
-      {visible.map((section, index) => (
+      {visible.map((section) => (
         <Fragment key={section.key}>
-          {index === 0 && section.key === "intro" && <div className="cp-divider cp-divider-top" />}
-          {index > 0 && visible[index - 1]?.key === "intro" && <div className="cp-divider" />}
           {sections[section.key]}
         </Fragment>
       ))}
@@ -241,16 +239,11 @@ export function BulkEnquiry({ context, content }: { context: EnquiryContext; con
   return (
     <div className="cp-page cp-bulk-page">
       {!visible.some(section => section.key === "hero") && <h1 className="sr-only">{content.heading}</h1>}
-      {visible.map((section, index) => {
-        const previous = visible[index - 1]?.key;
-        return (
-          <Fragment key={section.key}>
-            {previous === "trust" && <div className="cp-divider cp-divider-inset" />}
-            {(previous === "process" || previous === "business") && <div className="cp-divider" />}
-            {sections[section.key]}
-          </Fragment>
-        );
-      })}
+      {visible.map((section) => (
+        <Fragment key={section.key}>
+          {sections[section.key]}
+        </Fragment>
+      ))}
     </div>
   );
 }

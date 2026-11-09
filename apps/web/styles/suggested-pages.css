@@ -273,11 +273,6 @@
   gap: 24px;
   padding-block: 28px 40px;
 }
-.landing-categories > a > div {
-  border-radius: 50%;
-  overflow: hidden;
-  border: 5px solid #eee6dc;
-}
 .landing-categories h2 {
   font-size: 13px;
   font-weight: 500;

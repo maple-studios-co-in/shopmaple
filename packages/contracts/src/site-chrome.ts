@@ -23,7 +23,8 @@ const navigationColumnSchema = z.object({
 const navigationItemSchema = z.object({
   id, label: text(120), href: destination, enabled: z.boolean(), feature: z.enum(["living", "bedroom", "none"]),
   columns: z.array(navigationColumnSchema).max(4).refine(uniqueIds, "Column identities must be unique"),
-}).strict();
+  enquirySubject: text(160).optional(),
+}).strict().superRefine(contactSubject);
 const actionLinkSchema = z.object({ ...linkFields, cta: text(80) }).strict().superRefine(contactSubject);
 const phone = z.string().regex(/^\+[1-9][0-9]{7,14}$/, "Use a canonical international phone number");
 const email = z.email().max(254).refine(value => !/[\u0000-\u001f\u007f-\u009f]/.test(value), "Use a mailbox without control characters");
