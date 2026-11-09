@@ -52,6 +52,6 @@ test("the map embed does not send the visitor's page address (with product and p
 });
 
 test("the staff preview frame shows the draft's own card highlights on every page", () => {
-  assert.match(source("../app/admin/preview-frame/[...page]/page.tsx"), /<ProductHighlightsProvider value=\{content\.productHighlights\}>/);
+  assert.match(source("../app/admin/preview-frame/[...page]/page.tsx"), /<ProductHighlightsProvider value=\{content\.productHighlights\}[\s>]/);
 });
 

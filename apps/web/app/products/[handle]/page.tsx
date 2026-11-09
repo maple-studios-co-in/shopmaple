@@ -69,6 +69,7 @@ export default async function ProductPage({
         completeLook={look}
         bundle={bundle}
         bundleQuantities={bundleQuantities}
+        serverNow={Date.now()}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>

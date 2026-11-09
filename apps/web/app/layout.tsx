@@ -40,7 +40,7 @@ import "@/styles/tailwind.css";
 import { ButtonEffectsIsland } from "@/components/button-effects-island";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
-import { getPublishedContent } from "@/lib/content";
+import { documentDeals, getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 import { JsonLd } from "@/components/store/json-ld";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
@@ -55,7 +55,8 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const { siteChrome, productHighlights } = await getPublishedContent();
+  const content = await getPublishedContent();
+  const { siteChrome, productHighlights } = content;
   const seo = seoSettings(process.env);
   // Catalogue photos come straight from Shopify's edge: open the connection while the page is still arriving.
   preconnect("https://cdn.shopify.com");
@@ -64,7 +65,7 @@ export default async function Layout({
       <body>
         <JsonLd data={[organizationStructuredData(seo, resolveSiteChrome(siteChrome)), websiteStructuredData(seo)]} />
         <ShopProvider>
-          <ProductHighlightsProvider value={productHighlights}>
+          <ProductHighlightsProvider value={productHighlights} deals={documentDeals(content)}>
             <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
           </ProductHighlightsProvider>
         </ShopProvider>
