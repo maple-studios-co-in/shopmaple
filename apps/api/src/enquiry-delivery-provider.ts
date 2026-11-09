@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { isIP } from "node:net";
+import { enquiryKinds } from "@shopmaple/contracts";
 import { z } from "zod";
 
 export interface EnquiryDeliveryConfig {
@@ -13,7 +14,7 @@ export interface EnquiryDeliveryConfig {
 export interface EnquiryAlert {
   jobId: string;
   enquiryId: string;
-  kind: "contact" | "project" | "bulk";
+  kind: (typeof enquiryKinds)[number];
   createdAt: Date;
 }
 
@@ -53,7 +54,7 @@ export function loadEnquiryDeliveryConfig(env: Record<string, string | undefined
 const alertSchema = z.object({
   jobId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
   enquiryId: z.string().regex(/^enq_[a-f0-9-]{36}$/),
-  kind: z.enum(["contact", "project", "bulk"]),
+  kind: z.enum(enquiryKinds),
   createdAt: z.date(),
 });
 const acceptedSchema = z.object({ id: z.uuid() }).strict();

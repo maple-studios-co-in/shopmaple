@@ -55,12 +55,11 @@ test("saved receipt retains preview reference without claiming the asynchronous 
 });
 
 
-test("project preview notice leaves asynchronous notification unconfirmed and preserves newsletter availability", () => {
+test("project preview notice leaves asynchronous notification unconfirmed", () => {
  const dom = new JSDOM(renderToStaticMarkup(<><HomeProjectForm /><HomeNewsletterForm /></>));
  try {
   const notice = dom.window.document.querySelector(".home-project-form .home-preview-detail")?.textContent ?? "";
   assert.equal(notice, "");
   assert.doesNotMatch(notice, /saved locally|notifications are not connected|has not been sent to our team/);
-  assert.equal(dom.window.document.querySelector(".home-newsletter-form .home-preview-detail")?.textContent, "Newsletter signup is not available yet.");
  } finally { dom.window.close(); }
 });

@@ -1,4 +1,5 @@
-import { InstagramRail, MovingCities } from "@/components/motion-rail";
+import { InstagramRail } from "@/components/motion-rail";
+import { CityRail } from "@/components/city-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
@@ -9,9 +10,8 @@ import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } f
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
-import { countTarget, type HomeStat } from "@/lib/home-stats";
 import { statementParts } from "@/lib/home-statement";
-import { useId } from "react";
+import { Fragment, useId } from "react";
 
 export function HomeBanner({
   desktop,
@@ -183,6 +183,16 @@ export function HomeNewsletter({
   const headingId = useId();
   return (
     <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>
+      <div className="home-newsletter-mark" data-newsletter-mark>
+        <Image
+          src={artwork.image}
+          alt={artwork.alt}
+          width={1080}
+          height={500}
+          sizes="(max-width:749px) 70vw, 26vw"
+          style={bundledArtwork ? { filter: "brightness(0) invert(1)" } : undefined}
+        />
+      </div>
       <div className="home-container">
         <div className="home-newsletter-row">
           <div>
@@ -190,14 +200,6 @@ export function HomeNewsletter({
             <p>{content.body}</p>
           </div>
           <div className="home-newsletter-signup">
-            <Image
-              src={artwork.image}
-              alt={artwork.alt}
-              width={1080}
-              height={500}
-              sizes="(max-width:749px) 75vw, 35vw"
-              style={bundledArtwork ? { filter: "brightness(0) invert(1)" } : undefined}
-            />
             <h3>{content.signupHeading}</h3>
             <HomeNewsletterForm />
           </div>
@@ -238,15 +240,20 @@ export function HomeValues({
   );
 }
 
+/** A heading drawn on two lines, its first word over the rest ("20+" over "Cities"), still one heading to read. */
+function headingLines(heading: string) {
+  const space = heading.search(/\s/);
+  const lines = space < 0 ? [heading] : [heading.slice(0, space), heading.slice(space).trim()];
+  return lines.map((line, index) => <Fragment key={index}>{index > 0 && " "}<span>{line}</span></Fragment>);
+}
+
+/** Figma 177:1159: the panel with its eyebrow, figure and promise beside the arches, between two arrows. */
 export function HomeCities({
   content = defaultHomeDetails.cities,
   autoplay = true,
   media,
   layout = defaultHomeCitiesLayout,
-  stats = [],
 }: {
-  /** Figures for the numbers band above the rail; the homepage reads them from the admin's own words. */
-  stats?: HomeStat[];
   content?: HomeDetails["cities"];
   autoplay?: boolean;
   media?: TemplateMedia;
@@ -255,43 +262,22 @@ export function HomeCities({
   const cities = layout.filter(city => city.enabled);
   if (!cities.length) return null;
   return (
-    <>
-    {stats.length > 0 && (
-      <div className="home-stat-band" data-stat-band>
-        {stats.map(({ value, label, description }) => {
-          // The figure is drawn finished; the lazy effects count it up from zero the first time it is seen.
-          const target = countTarget(value);
-          return (
-            <div key={label} data-stat>
-              <p className="home-stat-value" data-stat-value>
-                {target ? (
-                  <>
-                    <span className="sr-only" data-stat-figure>{value}</span>
-                    <span aria-hidden="true" data-count-to={target.to} data-count-suffix={target.suffix}>{value}</span>
-                  </>
-                ) : value}
-              </p>
-              <p className="home-stat-label" data-stat-label>{label}</p>
-              <p className="home-stat-description" data-stat-description>{description}</p>
-            </div>
-          );
-        })}
-      </div>
-    )}
     <section className="home-cities home-container">
       <header>
         <p className="home-eyebrow">{content.eyebrow}</p>
-        <h2>{content.heading}</h2>
+        <h2>{headingLines(content.heading)}</h2>
+        <span className="home-cities-rule" data-cities-rule aria-hidden="true"><i /><i /></span>
+        <p className="home-cities-description" data-cities-description>{content.description ?? defaultHomeDetails.cities.description}</p>
       </header>
-      <MovingCities autoplay={autoplay} count={cities.length}>
-        {(copy) => cities.map(({ key }) => {
+      <CityRail autoplay={autoplay}>
+        {cities.map(({ key }) => {
           const artwork = resolveTemplateMedia(`home-city-${key}`, media);
           return (
             <figure key={key} className="home-city-card">
               <div className="home-city-artwork">
                 <Image
                   src={artwork.image}
-                  alt={copy ? "" : artwork.alt}
+                  alt={artwork.alt}
                   width={400}
                   height={600}
                 />
@@ -300,9 +286,8 @@ export function HomeCities({
             </figure>
           );
         })}
-      </MovingCities>
+      </CityRail>
     </section>
-    </>
   );
 }
 

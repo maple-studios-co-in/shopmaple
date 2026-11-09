@@ -61,7 +61,7 @@ export const productReviewSchema = z.object({
     url: reviewPhotoUrl,
     width: z.number().int().positive().max(20_000).nullable(),
     height: z.number().int().positive().max(20_000).nullable(),
-  }).strict()).max(4),
+  }).strict()).max(5),
 }).strict();
 export type ProductReview = z.infer<typeof productReviewSchema>;
 

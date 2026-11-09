@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { ContentImage as Image } from "@/components/content-image";
 import { Instagram } from "lucide-react";
 import { HomeMarquee } from "./home-marquee";
@@ -21,17 +20,5 @@ export function InstagramRail({ posts, autoplay = true }: {
           ))}
         </div>
       )} />
-  );
-}
-
-/** The cities served, drifting by without end; `children` draws the row (twice: the second pass is decoration). */
-export function MovingCities({ children, autoplay = true, count }: {
-  children: (copy: boolean) => ReactNode;
-  autoplay?: boolean;
-  count: number;
-}) {
-  return (
-    <HomeMarquee label="Cities served" autoplay={autoplay} toggle={false} className="city-motion" seconds={Math.max(20, count * 4)}
-      items={(copy) => <div className="home-city-track">{children(copy)}</div>} />
   );
 }

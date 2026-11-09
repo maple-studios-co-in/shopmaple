@@ -6,14 +6,13 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import type { ProductHighlights } from "@shopmaple/contracts";
 import { HomeNimbus } from "../components/home-nimbus";
-import { HomeStatementBand, HomeCities } from "../components/home-sections";
+import { HomeStatementBand } from "../components/home-sections";
 import { HomeEditorial, editorialFlipFrames } from "../components/home-editorial";
 import { HomeMarquee } from "../components/home-marquee";
 import { ProductCard } from "../components/product-card";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
-import { countAt, flipIntervalMs, mountFlipbook, mountStage, typedSlice } from "../lib/home-effects";
-import { countTarget, homeStats } from "../lib/home-stats";
+import { flipIntervalMs, mountFlipbook, mountStage, typedSlice } from "../lib/home-effects";
 import { statementParts } from "../lib/home-statement";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultHomeDetails, resolveHomeDetails } from "../lib/home-details-defaults";
@@ -44,31 +43,6 @@ test("typing shows the clause a character at a time across its plain words, acce
   assert.deepEqual(typedSlice(runs, 9), { before: "it is ", accent: "cus", after: "" });
   assert.deepEqual(typedSlice(runs, 19), runs);
   assert.deepEqual(typedSlice(runs, 99), runs);
-});
-
-test("the figures count up from zero and land exactly on the number the admin wrote", () => {
-  assert.equal(countAt(36, 0), 0);
-  assert.equal(countAt(36, 1800), 36);
-  assert.equal(countAt(36, 9999), 36);
-  const steps = [0, 300, 600, 900, 1200, 1500, 1800].map((ms) => countAt(20, ms));
-  assert.deepEqual(steps, [...steps].sort((a, b) => a - b), "never counts backwards");
-  assert.deepEqual(countTarget("20+"), { to: 20, suffix: "+" });
-  assert.deepEqual(countTarget("36"), { to: 36, suffix: "" });
-  assert.equal(countTarget("Twenty"), null);
-  assert.deepEqual(homeStats(["36-Month Warranty"], "20+ Cities"), [
-    { value: "36", label: "Month warranty", description: "Built with lasting structure and care." },
-    { value: "20+", label: "Cities served", description: "Delivery across India." },
-  ]);
-  assert.equal(homeStats([], "12 Cities served")[0]!.label, "Cities served", "a heading that already says served is kept");
-});
-
-test("the numbers band keeps the finished figure for readers and counts a hidden copy", () => {
-  const page = doc(<HomeCities stats={homeStats(["36-Month Warranty"], "20+ Cities")} />);
-  const figures = all(page, "[data-stat-value]");
-  assert.deepEqual(figures.map((figure) => figure.querySelector(".sr-only")?.textContent), ["36", "20+"]);
-  assert.deepEqual(all(page, "[data-count-to]").map((figure) => [figure.dataset.countTo, figure.dataset.countSuffix, figure.getAttribute("aria-hidden")]),
-    [["36", "", "true"], ["20", "+", "true"]]);
-  assert.deepEqual(all(page, "[data-stat-description]").map((line) => line.textContent), ["Built with lasting structure and care.", "Delivery across India."]);
 });
 
 test("the stage shows Nimbus then Terra by default: one live slide, the other inert, a numbered ring each", () => {
@@ -253,10 +227,10 @@ test("a drifting row draws its items twice, the second pass hidden and out of th
   assert.equal(still.querySelector("[data-marquee-toggle]"), null);
 });
 
-test("the homepage closes on the enquiry form and the wordmark: testimonial and newsletter are off but still in the builder", () => {
+test("the homepage closes on the enquiry form and the wordmark: the testimonial is off but still in the builder", () => {
   const sections = defaultStorefrontContent.homeSections;
-  assert.deepEqual(sections.filter((section) => !section.enabled).map((section) => section.key), ["testimonial", "newsletter"]);
-  assert.deepEqual(sections.filter((section) => section.enabled).slice(-5).map((section) => section.key), ["editorial", "cities", "compare", "project", "values"]);
+  assert.deepEqual(sections.filter((section) => !section.enabled).map((section) => section.key), ["testimonial"]);
+  assert.deepEqual(sections.filter((section) => section.enabled).slice(-6).map((section) => section.key), ["editorial", "newsletter", "cities", "compare", "project", "values"]);
   assert.equal(defaultStorefrontContent.homeCopy.ticker, "Elegance isn’t found. At Maple, it is custom-built.");
 });
 

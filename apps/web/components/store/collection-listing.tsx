@@ -174,11 +174,11 @@ export function CollectionListing(props: Props) {
   const filtered = chips.length > 0;
   const name = /^all\b/i.test(title) ? title : `All ${title.toLowerCase()}`;
   return (
-    <section id="collection-products" data-store aria-label={title} className="bg-linen px-4 py-10 font-body text-espresso md:px-8 lg:px-16 lg:py-16">
+    <section id="collection-products" data-store aria-label={title} className="bg-linen px-4 py-10 font-text text-espresso md:px-8 lg:px-16 lg:py-16">
       <div className="mx-auto grid max-w-[1312px] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start wide:max-w-none">
         <aside data-filters aria-label="Collection filters" className="hidden rounded-[12px] bg-white p-[22px] lg:block">
           <div className="mb-[22px] flex items-baseline gap-5">
-            <h2 className="m-0 text-subhead font-bold text-espresso">Filters</h2>
+            <h2 className="m-0 text-subhead font-medium text-espresso">Filters</h2>
             <Link data-clear-filters href={resetHref(handle)} className="text-subhead font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">Clear all</Link>
           </div>
           <FilterFields {...props} id="desktop" />
@@ -230,7 +230,7 @@ export function CollectionListing(props: Props) {
             </div>
           ) : (
             <div className="rounded-[12px] bg-white p-8 text-center">
-              <h2 className="m-0 font-serif text-h3 font-bold text-espresso">{filtered ? "No matching pieces" : "More pieces are on their way"}</h2>
+              <h2 className="m-0 font-heading text-h3 font-medium text-espresso">{filtered ? "No matching pieces" : "More pieces are on their way"}</h2>
               <p className="m-0 mt-2 text-ui text-taupe">{filtered ? "Try different filters, or clear them." : "This collection has no products in the current preview."}</p>
               <Link className="mt-4 inline-flex rounded-[6px] bg-brand px-5 py-3 text-ui font-bold text-white no-underline" href={filtered ? resetHref(handle) : "/collections/all"}>
                 {filtered ? "Clear filters" : "Browse all furniture"}
@@ -245,7 +245,7 @@ export function CollectionListing(props: Props) {
             </nav>
           )}
           <div data-custom-order className="flex flex-col items-start gap-5 bg-cream p-6 md:flex-row md:items-center md:justify-between md:gap-8">
-            <h2 className="m-0 font-serif text-h3 font-bold text-espresso">Can’t find what you’re looking for?</h2>
+            <h2 className="m-0 font-heading text-h3 font-medium text-espresso">Can’t find what you’re looking for?</h2>
             <Link href="/pages/contact" className="inline-flex min-w-[260px] shrink-0 items-center justify-center rounded-[6px] border border-solid border-sand bg-white p-[14px] text-ui font-bold text-brand no-underline hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
               Request custom order →
             </Link>
@@ -253,10 +253,10 @@ export function CollectionListing(props: Props) {
           <p className="collection-preview-note m-0 text-label text-taupe">A selection from our catalogue. Prices and availability are from the preview snapshot.</p>
         </div>
       </div>
-      <dialog ref={dialog} aria-labelledby={dialogTitle} className="m-0 ml-auto h-dvh max-h-none w-[min(360px,100vw)] max-w-none overflow-y-auto border-0 bg-white p-[22px] font-body text-espresso backdrop:bg-espresso/40"
+      <dialog ref={dialog} aria-labelledby={dialogTitle} className="m-0 ml-auto h-dvh max-h-none w-[min(360px,100vw)] max-w-none overflow-y-auto border-0 bg-white p-[22px] font-text text-espresso backdrop:bg-espresso/40"
         onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
         <div className="mb-[22px] flex items-center justify-between gap-4">
-          <h2 id={dialogTitle} className="m-0 text-subhead font-bold">Filters</h2>
+          <h2 id={dialogTitle} className="m-0 text-subhead font-medium">Filters</h2>
           <div className="flex items-center gap-4">
             <Link href={resetHref(handle)} className="text-ui font-bold text-espresso">Clear all</Link>
             <button type="button" aria-label="Close filters" onClick={() => dialog.current?.close()} className="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-cream p-0">

@@ -136,7 +136,7 @@ test("published service copy, order and metadata reach public routes with immuta
     assert.equal(contact.querySelector(".cp-contact-eyebrow")?.textContent, "LET’S TALK");
     assert.deepEqual([...contact.querySelectorAll("[data-service-section]")].map(n => n.getAttribute("data-service-section")), ["cities", "help", "intro"]);
     assert.deepEqual(texts(contact, ".cp-section-title p, .cp-section-title h2"), ["Support topics", "Find an answer"]);
-    assert.deepEqual(texts(contact, ".home-cities header p, .home-cities h2"), ["Near you", "Across the country"]);
+    assert.deepEqual(texts(contact, ".home-cities header .home-eyebrow, .home-cities h2"), ["Near you", "Across the country"]);
     assert.equal(contact.querySelector(".cp-help-categories strong")?.textContent, "Topic 1");
     assert.equal(contact.querySelector(".cp-help-answers summary")?.textContent, "Question 1.1");
     assert.equal(contact.querySelector(".cp-help-answers details p")?.textContent, "Answer 1.1");

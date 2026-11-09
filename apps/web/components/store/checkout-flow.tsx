@@ -118,7 +118,7 @@ type FlowProps = {
 export function CheckoutFlow(props: FlowProps) {
   const top = useRef<HTMLDivElement>(null);
   return (
-    <div ref={top} data-store data-checkout className="scroll-mt-6 font-product">
+    <div ref={top} data-store data-checkout className="scroll-mt-6 font-text">
       <CheckoutStages {...props} top={top} />
     </div>
   );

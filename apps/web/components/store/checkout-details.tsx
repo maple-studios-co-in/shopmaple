@@ -19,7 +19,7 @@ function Section({ number, title, children }: { number: string; title: string; c
     <fieldset className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0">
       <legend className="mb-5 flex items-center gap-3 p-0">
         <span aria-hidden="true" className="grid size-7 place-items-center rounded-full bg-[#f5ece9] text-[12px] leading-[17px] font-semibold text-maple">{number}</span>
-        <span className="text-[22px] leading-8 font-medium text-[#1c1c1c]">{title}</span>
+        <span className="font-heading text-[22px] leading-8 font-medium text-[#1c1c1c]">{title}</span>
       </legend>
       {children}
     </fieldset>
@@ -78,7 +78,7 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
   const { cart, cartReady, setQuantity } = useShop();
   const [first, ...rest] = (input?.customer.name ?? "").split(" ");
   return (
-    <div className="mx-auto grid max-w-[1176px] wide:max-w-[75vw] gap-12 font-product lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
+    <div className="mx-auto grid max-w-[1176px] wide:max-w-[75vw] gap-12 font-text lg:grid-cols-[minmax(0,668px)_minmax(0,444px)] lg:justify-between lg:gap-16">
       <form className="checkout-form flex min-w-0 flex-col gap-8" onSubmit={onSubmit} noValidate aria-describedby={`${id}-note`}>
         <Section number="01" title="Contact details">
           <p className="m-0 text-[13px] leading-[19px] text-[#756d68]">Checkout as a guest</p>
@@ -218,8 +218,8 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
               </dl>
               <hr className="m-0 h-px border-0 bg-[#e5dfda]" />
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[20px] leading-[29px] font-medium text-[#1c1c1c]">Total</span>
-                <span className="text-[24px] leading-[35px] font-semibold text-maple">{shopMoney(cart.subtotalPaise)}</span>
+                <span className="font-heading text-[20px] leading-[29px] font-medium text-[#1c1c1c]">Total</span>
+                <span className="font-heading text-[24px] leading-[35px] font-medium text-maple">{shopMoney(cart.subtotalPaise)}</span>
               </div>
               <p className={muted}>Before delivery and GST, which are confirmed on the next step before payment.</p>
             </>

@@ -51,10 +51,10 @@ export function ProductBundle({ product, variant, paired, quantities }: { produc
     setCartOpen(true);
   }
   return (
-    <section data-store data-bundle aria-labelledby="product-bundle-title" className="bg-white px-4 py-12 font-product md:px-12 md:py-16">
+    <section data-store data-bundle aria-labelledby="product-bundle-title" className="bg-white px-4 py-12 font-text md:px-12 md:py-16">
       <div className="mx-auto flex max-w-[1336px] flex-col gap-7 wide:max-w-none">
         <div className="flex flex-col gap-2.5">
-          <h2 id="product-bundle-title" className="m-0 text-[34px] leading-[1.35] font-semibold text-maple md:text-[48px]">Buy in Bundle</h2>
+          <h2 id="product-bundle-title" className="m-0 text-[34px] leading-[1.35] font-medium text-maple md:text-[48px]">Buy in Bundle</h2>
           <p data-bundle-lede className="m-0 text-[16px] leading-[1.35] text-[#756d68] md:text-[18px]">Thoughtfully paired. Beautifully together.</p>
         </div>
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
@@ -84,7 +84,7 @@ export function ProductBundle({ product, variant, paired, quantities }: { produc
             ) : (
               <div className="flex flex-col gap-1.5">
                 <p className="m-0 text-[14px] leading-[1.35] text-[#756d68]">Bundle total</p>
-                <p data-bundle-total className="m-0 text-[30px] leading-[1.35] font-semibold text-maple">{shopMoney(total)}</p>
+                <p data-bundle-total className="m-0 font-heading text-[30px] leading-[1.35] font-medium text-maple">{shopMoney(total)}</p>
               </div>
             )}
             <ul className="m-0 list-none p-0 text-[14px] leading-[1.35] text-[#756d68]">

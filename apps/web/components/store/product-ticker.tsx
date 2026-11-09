@@ -18,7 +18,7 @@ export function ProductTicker({ warranty }: { warranty: string }) {
     </ul>
   );
   return (
-    <section data-store data-ticker aria-label="Maple promises" className="overflow-hidden bg-white py-10 font-product text-[44px] leading-[1.2] font-medium text-maple md:py-[68px] md:text-[86px]">
+    <section data-store data-ticker aria-label="Maple promises" className="overflow-hidden bg-white py-10 font-heading text-[44px] leading-[1.2] font-medium text-maple md:py-[68px] md:text-[86px]">
       <p data-ticker-copy className="sr-only">{items.join(". ")}.</p>
       <div data-ticker-track aria-hidden="true" className="flex w-max animate-pdp-ticker hover:[animation-play-state:paused] motion-reduce:hidden">
         {row()}

@@ -48,7 +48,7 @@ export function HelpPage({ chrome: { links, care }, current, title, opening, pho
   const here = links.find(link => pathOf(link.href) === current);
   const name = here?.label ?? title;
   return (
-    <div data-store data-help-page className="bg-help-page font-product text-help-ink">
+    <div data-store data-help-page className="bg-help-page font-text text-help-ink">
       <div className="mx-auto w-full max-w-[1432px] px-6 pt-6 lg:px-20">
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center text-[12px] leading-[19px] text-help-muted">

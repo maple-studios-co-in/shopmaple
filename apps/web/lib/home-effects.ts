@@ -8,7 +8,6 @@
  *                        [data-stage-next] arrow whose ring fills alongside; when the ring closes the next
  *                        slide fades in. With a mouse the arrow is the pointer over the photo.
  *   [data-typed]         the statement band's closing words: typed, held, erased and typed again
- *   [data-count-to]      a figure that counts up from zero the first time it is seen
  *   [data-flipbook]      the editorial photo: its [data-flip-frame] pictures cut every 800 ms, on and
  *                        on, while it is in view
  *   [data-reveal]        an element that fades in once it scrolls into view (`data-revealed`)
@@ -24,15 +23,6 @@ const accentTypeMs = 95;
 const eraseMs = 32;
 const holdMs = 2400;
 const restMs = 550;
-const countMs = 1800;
-
-/** Ease-out cubic: quick at first, settling gently on the final figure. */
-export const easeOutCubic = (t: number) => 1 - (1 - Math.min(1, Math.max(0, t))) ** 3;
-
-/** The figure a count-up shows at `elapsed` ms of `duration`, always a whole number that ends exactly on `to`. */
-export function countAt(to: number, elapsed: number, duration = countMs) {
-  return Math.round(to * easeOutCubic(elapsed / duration));
-}
 
 /** The three runs of the typed clause: plain words, the script accent, then whatever follows it. */
 export type TypedRuns = { before: string; accent: string; after: string };
@@ -263,33 +253,6 @@ export function mountTyped(host: HTMLElement): () => void {
   };
 }
 
-export function mountCount(element: HTMLElement): () => void {
-  const to = Number(element.dataset.countTo);
-  const suffix = element.dataset.countSuffix ?? "";
-  const finished = element.textContent ?? "";
-  if (!Number.isFinite(to) || to <= 0) return () => {};
-  let frame = 0, done = false;
-  element.textContent = "0";
-  const run = () => {
-    const start = performance.now();
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      element.textContent = elapsed >= countMs ? `${to}${suffix}` : String(countAt(to, elapsed));
-      if (elapsed < countMs) frame = requestAnimationFrame(tick);
-      else done = true;
-    };
-    frame = requestAnimationFrame(tick);
-  };
-  const stopWatching = watchVisibility(element, 0.6, (seen) => {
-    if (seen && !done && !frame) run();
-  });
-  return () => {
-    stopWatching();
-    cancelAnimationFrame(frame);
-    element.textContent = finished;
-  };
-}
-
 /** The flipbook cuts to its next picture every 800 ms, on and on, while it is in view, pointed at or not. */
 export function mountFlipbook(root: HTMLElement): () => void {
   const frames = [...root.querySelectorAll<HTMLElement>("[data-flip-frame]")];
@@ -323,7 +286,6 @@ export function mountHomeEffects(root: ParentNode = document): () => void {
   for (const stage of root.querySelectorAll<HTMLElement>("[data-stage]")) stops.push(mountStage(stage, reduced));
   if (!reduced) {
     for (const host of root.querySelectorAll<HTMLElement>("[data-typed]")) stops.push(mountTyped(host));
-    for (const figure of root.querySelectorAll<HTMLElement>("[data-count-to]")) stops.push(mountCount(figure));
     for (const book of root.querySelectorAll<HTMLElement>("[data-flipbook]")) stops.push(mountFlipbook(book));
     for (const element of root.querySelectorAll<HTMLElement>("[data-reveal]")) stops.push(mountReveal(element));
   }

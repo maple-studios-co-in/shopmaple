@@ -244,7 +244,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const category = product.category ? categoryNames[product.category] : undefined;
   const deal = useRunningDeal(highlights, openedAt);
   return (
-    <div data-store data-product-page className="bg-white font-product text-black">
+    <div data-store data-product-page className="bg-white font-text text-black">
       <ProductVisit handle={product.handle} />
       <section aria-label={product.title} className="grid gap-8 px-4 pt-6 pb-10 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
         {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
@@ -269,7 +269,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
           )}
           <div data-price-block className="grid gap-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <strong data-price className="text-[20px] leading-[1.2] font-medium text-maple">{shopMoney(variant?.pricePaise ?? null)}</strong>
+              <strong data-price className="font-heading text-[20px] leading-[1.2] font-medium text-maple">{shopMoney(variant?.pricePaise ?? null)}</strong>
               {discount >= 1 && <span data-discount className="inline-flex h-[27px] items-center rounded-[5px] bg-[rgba(66,132,69,0.1)] px-2 text-[12px] leading-[1.6] font-medium text-[#2f6b32]">{discount}%OFF</span>}
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -412,7 +412,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} tagline={tagline} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
-      <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)} />
+      <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)}
+        piece={{ handle: product.handle, title: product.title, image: images[0], collection: category, variantId: variant?.id }} />
       <ProductBundle product={product} variant={variant} paired={bundle} quantities={bundleQuantities} />
       {customising !== null && (
         <CustomiseQuote open={customising} onClose={stopCustomising} product={{ title: product.title, image: images[0], collection: category }}

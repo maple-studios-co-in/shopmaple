@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { productPdpContentSchema } from "./product-pdp-content";
 import { categories } from "./catalogue-cards";
+import { enquiryKinds } from "./enquiry-admin";
 import { productPageSchema, variantProductPageSchema } from "./product-page";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
@@ -179,7 +180,7 @@ const enquiryContextSchema = z
   .strict();
 export const enquiryInputSchema = z
   .object({
-    kind: z.enum(["contact", "project", "bulk"]),
+    kind: z.enum(enquiryKinds),
     name: z.string().trim().max(100).default(""),
     email: z
       .email()

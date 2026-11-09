@@ -47,6 +47,7 @@ The API composes live checkout only when `CHECKOUT_ENABLED=true` **and** every k
 | --- | --- |
 | `CHECKOUT_ENABLED` | Final activation switch. Set it last, only after every gate below is recorded. |
 | `KEERI_ORIGIN` | Keeri storefront service origin (HTTPS only). Shared with the catalogue media reader. |
+| `KEERI_REVIEWS_TOKEN` | Optional. Keeri service credential allowed to write reviews. With it and `KEERI_ORIGIN`, reviews from the product page go to Keeri; without it they are kept in Admin → Enquiries. See [product reviews](product-reviews.md). |
 | `KEERI_COMMERCE_TOKEN` | Keeri service credential with `quotes:write`, `reservations:write` and `orders:write` scopes. The existing catalogue-only token does not qualify. |
 | `KEERI_TENANT_ID` | Keeri tenant whose catalogue identities the stored bindings reference. |
 | `KEERI_MERCHANT_SCOPE` | Merchant scope bound to the commerce credential and to the reviewed Keeri `STOREFRONT_COMMERCE_POLICIES` entry. Also namespaces attempts, webhooks and outbox rows. |

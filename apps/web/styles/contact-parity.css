@@ -34,9 +34,9 @@
 }
 .cp-contact-eyebrow {
   color: #741a14;
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
   margin: 0;
 }
@@ -147,8 +147,7 @@
 .cp-section-title h2 {
   color: #741a14;
   font-size: 48px;
-  font-weight: 700;
-  font-style: italic;
+  font-weight: 500;
   margin: 0;
 }
 .cp-help {
@@ -253,7 +252,7 @@
 }
 .cp-bulk-hero {
   padding: 40px 20px;
-  font-family: "Red Hat Display", Manrope, sans-serif;
+  font-family: var(--font-text);
 }
 .cp-bulk-scene {
   max-width: 1800px;
@@ -296,7 +295,7 @@
 }
 .cp-bulk-card h1 {
   font-size: 48px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0;
   color: #741a14;
@@ -343,7 +342,7 @@
   text-align: center;
   color: #741a14;
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 500;
 }
 .cp-bulk-proof {
   padding-top: 48px;
@@ -360,7 +359,7 @@
   gap: 16px;
 }
 .cp-bulk-proof strong {
-  font-family: Newsreader, Georgia, serif;
+  font-family: var(--font-heading);
   font-size: 64px;
   font-weight: 500;
   color: #741a14;
@@ -446,8 +445,7 @@
 }
 .cp-indiamart h2 {
   font-size: 48px;
-  font-weight: 700;
-  font-style: italic;
+  font-weight: 500;
   color: #741a14;
 }
 .cp-indiamart-copy > p:not(.cp-business-badge) {

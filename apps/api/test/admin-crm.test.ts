@@ -234,6 +234,9 @@ test("dashboard summary counts stages, overdue and due-today tasks and enquiries
   const before = await read();
   const fresh = await submit({ email: `summary-fresh-${suffix}@example.invalid` });
   const old = await submit({ email: `summary-old-${suffix}@example.invalid` });
+  // In the window, but a list entry rather than someone waiting on the team: the counts below leave it out.
+  const signup = await submit({ kind: "newsletter", email: `summary-signup-${suffix}@example.invalid` });
+  await db.enquiry.update({ where: { id: signup.id }, data: { createdAt: new Date("2030-06-08T18:30:00Z") } });
   // 00:00 and 23:59:59 Asia/Kolkata on 9 and 8 June respectively.
   await db.enquiry.update({ where: { id: fresh.id }, data: { createdAt: new Date("2030-06-08T18:30:00Z") } });
   await db.enquiry.update({ where: { id: old.id }, data: { createdAt: new Date("2030-06-08T18:29:59Z") } });

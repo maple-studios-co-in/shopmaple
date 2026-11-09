@@ -178,12 +178,14 @@ export function registerCrmRoutes(app: Express, db: PrismaClient, secure: boolea
       const { today } = crmSummaryQuerySchema.parse(req.query);
       // Task due dates are plain calendar dates; the seven-day window is Asia/Kolkata calendar days like the list filters.
       const start = utcDate(today), end = kolkataDayAfter(today), weekStart = new Date(kolkataDayStart(today).getTime() - 6 * 86_400_000);
-      const grouped = await tx.enquiry.groupBy({ by: ["status"], _count: { _all: true } });
+      // The dashboard counts people waiting on the team; a newsletter signup is a list entry, seen under its own kind in the inbox.
+      const waiting = { kind: { not: "newsletter" } };
+      const grouped = await tx.enquiry.groupBy({ by: ["status"], where: waiting, _count: { _all: true } });
       const stages = Object.fromEntries(enquiryStages.map(stage => [stage, 0])) as Record<EnquiryStage, number>;
       for (const group of grouped) if (group.status in stages) stages[group.status as EnquiryStage] = group._count._all;
       const overdueTasks = await tx.followUpTask.count({ where: { done: false, dueOn: { lt: start } } });
       const dueTodayTasks = await tx.followUpTask.count({ where: { done: false, dueOn: start } });
-      const newLastSevenDays = await tx.enquiry.count({ where: { createdAt: { gte: weekStart, lt: end } } });
+      const newLastSevenDays = await tx.enquiry.count({ where: { ...waiting, createdAt: { gte: weekStart, lt: end } } });
       return { stages, overdueTasks, dueTodayTasks, newLastSevenDays };
     });
     res.json(result);
