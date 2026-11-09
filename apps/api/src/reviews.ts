@@ -24,13 +24,17 @@ export function loadKeeriReviewsConfig(env: Record<string, string | undefined>):
 
 const invalidPhoto = () => new HttpError(400, "REVIEW_PHOTO_INVALID", "One of your photos could not be read. Please choose a JPG or PNG.");
 
+// The browser sends no photo over 2000 px on its longer side (review-client.ts), so 4 MP; a little over that is allowed.
+// Kept tight because a decoded photo is held whole in memory: a 24 MP limit let one request hold gigabytes.
+const photoPixelLimit = 4_200_000;
+
 /**
  * A customer's photo made anew: checked to really be a JPEG or PNG, turned upright, bounded in size and written as WebP,
  * the format Keeri serves review photos in. Nothing of the original file's metadata (location, camera) is carried over.
  */
 async function remadePhoto(encoded: string) {
   try {
-    const decoder = sharp(Buffer.from(encoded, "base64"), { limitInputPixels: 24_000_000, failOn: "warning" });
+    const decoder = sharp(Buffer.from(encoded, "base64"), { limitInputPixels: photoPixelLimit, failOn: "warning" });
     const { format } = await decoder.metadata();
     if (format !== "jpeg" && format !== "png") throw invalidPhoto();
     const { data, info } = await decoder.rotate().resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true }).webp({ quality: 82 }).toBuffer({ resolveWithObject: true });
@@ -107,7 +111,9 @@ export function registerReviewRoutes(app: Express, db: PrismaClient, config: Rev
         },
       });
       if (!product) throw new HttpError(404, "PRODUCT_NOT_FOUND", "We couldn't find that product.");
-      const photos = await Promise.all(input.photos.map(remadePhoto));
+      // One photo at a time, so a request holds a single decoded photo in memory rather than all five.
+      const photos = [];
+      for (const encoded of input.photos) photos.push(await remadePhoto(encoded));
       const variant = product.variants.find((item) => item.id === input.variantId);
       const model = product.identities.find((identity) => identity.source.startsWith("keeri:"));
       const finish = model && variant?.identities.find((identity) => identity.source === model.source);

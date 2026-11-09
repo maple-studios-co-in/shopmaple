@@ -88,7 +88,8 @@ test("a review of a piece Keeri knows goes to Keeri, once, with Keeri's own ids 
 test("photos are re-made as plain WebP before they leave: size bounded, location and camera data gone", async () => {
   const { db } = stubDb();
   const keeri = fakeKeeri();
-  const original = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: "#80241c" } })
+  // The largest the browser sends: 2000 px on the longer side.
+  const original = await sharp({ create: { width: 2000, height: 1500, channels: 3, background: "#80241c" } })
     .withExif({ IFD3: { GPSLatitude: "28/1 36/1 0/1", GPSLongitude: "77/1 12/1 0/1" }, IFD0: { Make: "Secret Camera" } })
     .jpeg().toBuffer();
   assert.ok((await sharp(original).metadata()).exif, "the test photo really carries metadata");
@@ -114,6 +115,11 @@ test("what is not a real picture is refused in words, before anything is sent", 
   const gif = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#000" } }).gif().toBuffer();
   const wrongType = await post(http, review({ photos: [gif.toString("base64")] }));
   assert.equal(wrongType.status, 400);
+  // Larger than the browser ever sends: decoding it whole would hold far more memory than a review needs.
+  const huge = await sharp({ create: { width: 3000, height: 2000, channels: 3, background: "#fff" } }).png({ compressionLevel: 9 }).toBuffer();
+  const oversized = await post(http, review({ photos: [huge.toString("base64")] }));
+  assert.equal(oversized.status, 400);
+  assert.equal(oversized.body.code, "REVIEW_PHOTO_INVALID");
   assert.equal(keeri.calls.length, 0);
   assert.equal(enquiries.length, 0);
 });
