@@ -61,8 +61,9 @@ export const defaultServicePages: ServicePagesContent = {
   returns: {
     title: "Return & Exchange",
     heading: "Return & Exchange",
-    policyLabel: "Cancellation, Return & Refund Policy",
-    intro: "Contact our team about your order.",
+    // The Return & Exchange frame (Figma 150:3952): its line under the title and its link to the refund policy.
+    policyLabel: "Read the Refund Policy",
+    intro: "Enter your order number and the email you ordered with, and our care team will get back to you about a return or exchange.",
   },
 };
 

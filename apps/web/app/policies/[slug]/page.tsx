@@ -3,6 +3,7 @@ import { PolicyArticle } from "@/components/policy-page";
 import source from "@/data/store-content.json";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
+import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 export async function generateMetadata({
   params,
 }: {
@@ -33,5 +34,5 @@ export default async function PolicyPage({
   const { policies } = resolveEditorialContent(content.editorialContent);
   const policy = policies[slug];
   if (!policy) notFound();
-  return <PolicyArticle policy={policy} slug={slug} />;
+  return <PolicyArticle policy={policy} slug={slug} footer={resolveSiteChrome(content.siteChrome).footer} />;
 }
