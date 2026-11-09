@@ -33,6 +33,7 @@ test("each section gets a readable address of its own, even when headings repeat
     h2("Contact Us"),
     h2("Contact  ", { tag: "em", children: ["Us"] }),
     h2("Main"),
+    h2("Customer care"),
   ]);
   assert.deepEqual(sections.map(({ id, title }) => [id, title]), [
     ["cookies-and-tracking", "Cookies & Tracking"],
@@ -41,6 +42,8 @@ test("each section gets a readable address of its own, even when headings repeat
     ["contact-us-2", "Contact Us"],
     // The store already uses id="main" for the page's main landmark.
     ["main-2", "Main"],
+    // The Help pages' care block is labelled by id="customer-care-title".
+    ["customer-care-2", "Customer care"],
   ]);
 });
 

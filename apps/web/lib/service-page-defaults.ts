@@ -63,7 +63,7 @@ export const defaultServicePages: ServicePagesContent = {
     heading: "Return & Exchange",
     // The Return & Exchange frame (Figma 150:3952): its line under the title and its link to the refund policy.
     policyLabel: "Read the Refund Policy",
-    intro: "Enter your order number and Email or Phone to find your order.",
+    intro: "Enter your order number and the email you ordered with, and our care team will get back to you about a return or exchange.",
   },
 };
 

@@ -20,8 +20,9 @@ const address = (title: string) =>
 export function policyOutline(nodes: readonly EditorialNode[]): PolicyOutline {
   const intro: EditorialNode[] = [];
   const sections: PolicySection[] = [];
-  // The store's main landmark is id="main"; a section must never take an id already on the page.
-  const taken = new Map<string, number>([["main", 1]]);
+  // A section must never take an id already on the page: the store's main landmark is id="main", and the Help
+  // pages' care block is labelled by id="customer-care-title", which a section titled "Customer care" would also make.
+  const taken = new Map<string, number>([["main", 1], ["customer-care", 1]]);
   for (const node of nodes) {
     if (typeof node === "string" && !node.trim()) continue;
     if (typeof node !== "string" && node.tag === "h2") {

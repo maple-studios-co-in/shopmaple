@@ -125,7 +125,7 @@ test("service fallback preserves original page copy and returns isolated editabl
   assert.equal(fallback.bulk.trust.metricValue, "100+");
   assert.equal(fallback.bulk.process.steps[2]!.body, "Relax while we handle the rest — from crafting to installation. Shop directly from your design and watch your dream home come alive.");
   assert.equal(fallback.bulk.business.cta, "Request Bulk Quote");
-  assert.equal(fallback.returns.intro, "Enter your order number and Email or Phone to find your order.");
+  assert.equal(fallback.returns.intro, "Enter your order number and the email you ordered with, and our care team will get back to you about a return or exchange.");
   fallback.contact.categories[0]!.questions[0]!.answer = "Private edit";
   fallback.bulk.sections[0]!.enabled = false;
   assert.equal(defaultServicePages.contact.categories[0]!.questions[0]!.answer, "Contact our team with your order number or the phone number you ordered with, and we will tell you where your order is.");
