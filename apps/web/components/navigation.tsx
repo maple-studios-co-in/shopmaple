@@ -262,7 +262,7 @@ export function DesktopNavigation({
           <Link
             key={item.id}
             href={chromeHref(item)}
-            data-nav-sale={item.href === "/collections/sale" ? "" : undefined}
+            data-nav-sale={item.id === "nav-sale" ? "" : undefined}
             aria-current={pathname === item.href ? "page" : undefined}
             onPointerEnter={() => setActive(null)}
             onFocus={() => setActive(null)}

@@ -19,6 +19,7 @@ import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { chromeHref, defaultSiteChrome } from "../lib/site-chrome-defaults";
+import { collectionTitles } from "../lib/collections";
 
 // The owner's ten fixes of 9 Nov 2026: the main menu (Figma 256:3836), the room pages' banners and circles, the hotspots,
 // 30px between sections, no faint rules, the reviews band, the bundle card, photos that load sooner, the cities panel
@@ -110,14 +111,23 @@ test("the main menu runs the rooms, then Collections, Custom Furniture and Sale,
   assert.deepEqual(labels.slice(-3), ["Collections", "Custom Furniture", "Sale"]);
   const custom = defaultSiteChrome.navigation.find((item) => item.label === "Custom Furniture")!;
   assert.equal(chromeHref(custom), "/pages/contact?product=Custom+furniture", "Custom Furniture opens an enquiry already about it");
-  assert.equal(defaultSiteChrome.navigation.find((item) => item.label === "Sale")!.href, "/collections/sale");
+  // Sale opens the store's real sale collection; there is no /collections/sale, and the publish check refuses it.
+  assert.equal(defaultSiteChrome.navigation.find((item) => item.label === "Sale")!.href, "/collections/clearance-sale");
   assert.deepEqual(defaultSiteChrome.desktopDiscovery.map((link) => link.label), ["New Arrivals", "Bestsellers", "Complete the Look"]);
+});
+
+test("every collection the default menu links to is one the store has, so no menu link lands on a not-found page", () => {
+  const { navigation, desktopDiscovery, mobileQuickLinks } = defaultSiteChrome;
+  const links = [...navigation, ...navigation.flatMap((item) => item.columns.flatMap((column) => column.links)), ...desktopDiscovery, ...mobileQuickLinks];
+  const missing = links.map((link) => link.href.split(/[?#]/)[0]!).filter((href) => href.startsWith("/collections/"))
+    .map((href) => href.slice("/collections/".length)).filter((handle) => !Object.hasOwn(collectionTitles, handle));
+  assert.deepEqual(missing, []);
 });
 
 test("the open menu shows the room's card, the groups with their icons, the custom-size card and the discovery panel", async () => {
   await mount(<DesktopNavigation />, async (host) => {
     const sale = host.querySelector<HTMLAnchorElement>("a[data-nav-sale]");
-    assert.equal(sale?.getAttribute("href"), "/collections/sale");
+    assert.equal(sale?.getAttribute("href"), "/collections/clearance-sale");
     const living = [...host.querySelectorAll("button")].find((button) => button.textContent === "Living Room")!;
     assert.ok(living.querySelector("[data-menu-chevron]"), "a room that opens a menu carries a chevron");
     await act(async () => living.click());

@@ -57,12 +57,13 @@ export const defaultSiteChrome: SiteChrome = {
   })),
     { id: "nav-collections", label: "Collections", enabled: true, href: "/collections/all", feature: "none" as const, columns: [] },
     { id: "nav-custom", label: "Custom Furniture", enabled: true, href: "/pages/contact", enquirySubject: "Custom furniture", feature: "none" as const, columns: [] },
-    { id: "nav-sale", label: "Sale", enabled: true, href: "/collections/sale", feature: "none" as const, columns: [] },
+    { id: "nav-sale", label: "Sale", enabled: true, href: "/collections/clearance-sale", feature: "none" as const, columns: [] },
   ],
   // The mega menu's right-hand list: each link's `cta` is the line under its name.
+  // The store has no new-arrivals or bestsellers collection yet, so these open the nearest real ones (10 Nov 2026).
   desktopDiscovery: [
-    { ...link("new", "New Arrivals", "/collections/new-arrivals"), cta: "Explore what’s new and trendy." },
-    { ...link("bestsellers", "Bestsellers", "/collections/bestsellers"), cta: "Loved by our customers." },
+    { ...link("new", "New Arrivals", "/collections/all"), cta: "Explore what’s new and trendy." },
+    { ...link("bestsellers", "Bestsellers", "/collections/bestseller-chairs"), cta: "Loved by our customers." },
     { ...link("look", "Complete the Look", "/collections/sofas-and-chairs"), cta: "Curated combinations for your space." },
   ],
   mobileQuickLinks: [
