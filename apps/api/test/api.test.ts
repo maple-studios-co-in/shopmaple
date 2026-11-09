@@ -335,7 +335,7 @@ test("concurrent Keeri snapshots cannot restore older catalogue data", async () 
   await db.catalogueSyncState.deleteMany();
   const older = keeriFixture();
   const newer = keeriFixture(); newer.capturedAt = "2026-10-25T11:00:00Z";
-  newer.models[0]!.variants[0]!.prices[0]!.amount = 222222;
+  newer.models[0]!.variants[0]!.prices[1]!.amount = 222222;
   const results = await Promise.allSettled([
     syncKeeriExport(db, newer, "maple"), syncKeeriExport(db, older, "maple"),
   ]);
