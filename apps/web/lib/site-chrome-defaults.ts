@@ -18,6 +18,9 @@ const utility = [
   link("bulk", "Bulk Enquiry", "/pages/bulk-enquiry"),
   link("help", "Help Center", "/pages/contact"),
 ];
+// The main menu (Figma 256:3836, 9 Nov 2026): the rooms, then Collections, Custom Furniture and Sale. The old store's
+// Contact item is in the footer and the phone menu.
+const sourceItems = sourceNavigation.filter((item) => item.title !== "Contact");
 export const defaultSiteChrome: SiteChrome = {
   announcement: {
     text: "LUXURY FURNITURE. FACTORY PRICES.",
@@ -25,7 +28,7 @@ export const defaultSiteChrome: SiteChrome = {
     enabled: true,
   },
   utilityLinks: structuredClone(utility),
-  navigation: sourceNavigation.map((item, index) => ({
+  navigation: [...sourceItems.map((item, index): SiteChrome["navigation"][number] => ({
     id: `nav-${index + 1}`,
     label: item.title,
     enabled: true,
@@ -52,14 +55,16 @@ export const defaultSiteChrome: SiteChrome = {
       }),
     })),
   })),
+    { id: "nav-collections", label: "Collections", enabled: true, href: "/collections/all", feature: "none" as const, columns: [] },
+    { id: "nav-custom", label: "Custom Furniture", enabled: true, href: "/pages/contact", enquirySubject: "Custom furniture", feature: "none" as const, columns: [] },
+    { id: "nav-sale", label: "Sale", enabled: true, href: "/collections/clearance-sale", feature: "none" as const, columns: [] },
+  ],
+  // The mega menu's right-hand list: each link's `cta` is the line under its name.
+  // The store has no new-arrivals or bestsellers collection yet, so these open the nearest real ones (10 Nov 2026).
   desktopDiscovery: [
-    { ...link("all", "All furniture", "/collections/all"), cta: "View all" },
-    { ...link("story", "Our Story", "/pages/our-story"), cta: "Read More" },
-    {
-      ...link("custom", "Fully Customizable", "/pages/contact"),
-      enquirySubject: "Custom furniture",
-      cta: "Contact",
-    },
+    { ...link("new", "New Arrivals", "/collections/all"), cta: "Explore what’s new and trendy." },
+    { ...link("bestsellers", "Bestsellers", "/collections/bestseller-chairs"), cta: "Loved by our customers." },
+    { ...link("look", "Complete the Look", "/collections/sofas-and-chairs"), cta: "Curated combinations for your space." },
   ],
   mobileQuickLinks: [
     link("all", "All furniture", "/collections/all"),

@@ -80,7 +80,7 @@ test("Nimbus defaults preserve Shopify copy, element order, media and enquiry-on
     assert.match(doc.querySelector(".landing-nimbus-origin")?.textContent ?? "", /cloud\.\n\nNimbus was shaped/);
     assert.equal(doc.querySelector(".landing-nimbus-principles h2")?.textContent, "THE NIMBUS PRINCIPLES");
     assert.deepEqual([...doc.querySelectorAll(".landing-values h3")].map(n => n.textContent), ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"]);
-    assert.deepEqual(regions(doc), ["sr-only", "landing-video landing-nimbus-hero", "landing-nimbus-intro home-container", "landing-nimbus-bento", "home-divider home-divider-short", "landing-media-content landing-nimbus-origin", "home-divider", "landing-nimbus-principles", "home-divider", "landing-slideshow", "landing-series home-container", "landing-products home-products home-container", "landing-project home-container", "home-divider", "landing-promises home-container"]);
+    assert.deepEqual(regions(doc), ["sr-only", "landing-video landing-nimbus-hero", "landing-nimbus-intro home-container", "landing-nimbus-bento", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-slideshow", "landing-series home-container", "landing-products home-products home-container", "landing-project home-container", "landing-promises home-container"]);
     assert.equal(doc.querySelectorAll(".landing-source-product").length, 12);
     assert.equal(doc.querySelector('.landing-source-product a[href^="/products/"]'), null);
     assert.ok(doc.querySelector('.landing-source-product a[href^="/pages/contact?product="]'));
@@ -114,7 +114,7 @@ test("published Nimbus copy renders safely with selected order and stable artwor
     assert.deepEqual(tiles.map(n => n.querySelector("h3")?.textContent), ["Gather here", "Rest here", "Unwind here", undefined]);
     assert.deepEqual(tiles.map(n => n.querySelector("img")?.getAttribute("src")?.split("/").at(-1)), ["Chairs.svg", "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Untitled_design_6.svg", "Chairs_1.png"]);
     assert.match(tiles[3]!.querySelector("source")?.getAttribute("srcset") ?? "", /Chairs_3\.png/);
-    assert.deepEqual(regions(doc), ["sr-only", "landing-project home-container", "landing-nimbus-intro home-container", "home-divider home-divider-short", "landing-media-content landing-nimbus-origin", "home-divider", "landing-nimbus-principles", "landing-nimbus-bento", "home-divider", "landing-slideshow", "home-divider", "landing-promises home-container", "landing-series home-container", "landing-products home-products home-container"]);
+    assert.deepEqual(regions(doc), ["sr-only", "landing-project home-container", "landing-nimbus-intro home-container", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-nimbus-bento", "landing-slideshow", "landing-promises home-container", "landing-series home-container", "landing-products home-products home-container"]);
     assert.equal((await metadata()).title, "Nimbus for your home");
   });
 });

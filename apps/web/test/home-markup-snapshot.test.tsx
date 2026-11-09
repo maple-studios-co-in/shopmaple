@@ -20,7 +20,9 @@ async function renderPublicHome() {
       ? Response.json({ version: 2, content: structuredClone(defaultStorefrontContent) })
       : new Response(null, { status: 404 });
   try {
-    const stream = await renderToReadableStream(<ShopProvider><Home /></ShopProvider>);
+    const stream = await renderToReadableStream(<ShopProvider><Home /></ShopProvider>, { progressiveChunkSize: Number.POSITIVE_INFINITY });
+    // The product rails stream in after the rest of the page (9 Nov 2026); read the finished page in one piece, as a crawler gets it.
+    await stream.allReady;
     return await new Response(stream).text();
   } finally {
     globalThis.fetch = previous;

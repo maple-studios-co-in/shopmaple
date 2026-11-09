@@ -7,13 +7,12 @@ import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { SearchDialog } from "./search-dialog";
 import dynamic from "next/dynamic";
-import { shopFile } from "@/lib/format";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
 import type { SiteChrome } from "@shopmaple/contracts";
 
 // The wishlist list (with its product cards) loads on demand, keeping cards out of every page's first-load JavaScript.
 const Favourites = dynamic(() => import("./favourites").then((module) => module.Favourites));
-import { defaultSiteChrome, chromeHref } from "@/lib/site-chrome-defaults";
+import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
 export function Header({
   siteChrome = defaultSiteChrome,
 }: { siteChrome?: SiteChrome } = {}) {
@@ -34,19 +33,10 @@ export function Header({
           </Link>
         </div>
       )}
+      {/* One row (Figma 256:3836): the logo, the menu and the shopping actions; Our Story, Bulk Enquiry and Help Center
+          are in the footer and, on a phone, in the menu. */}
       <header className="site-header">
         <div className="header-main">
-          {siteChrome.utilityLinks.some((link) => link.enabled) && (
-            <div className="utility-links">
-              {siteChrome.utilityLinks
-                .filter((link) => link.enabled)
-                .map((link) => (
-                  <Link key={link.id} href={chromeHref(link)}>
-                    {link.label}
-                  </Link>
-                ))}
-            </div>
-          )}
           <button
             className="icon-button mobile-menu-button"
             aria-label="Open navigation"
@@ -57,14 +47,17 @@ export function Header({
             <Menu />
           </button>
           <Link href="/" className="brand" aria-label="Maple Furnishers home">
+            {/* The logo artwork as a ready-made file: it skips the image resizer, so it paints with the page. */}
             <Image
-              src={shopFile("Cover_Image_Maple_1.png?v=1752647999")}
-              width={200}
-              height={100}
+              src="/media/footer/maple-logo.webp"
+              width={1080}
+              height={500}
               alt="Maple Furnishers"
+              unoptimized
               preload
             />
           </Link>
+          <DesktopNavigation siteChrome={siteChrome} />
           <div className="header-actions">
             <button
               className="icon-button"
@@ -102,7 +95,6 @@ export function Header({
             </button>
           </div>
         </div>
-        <DesktopNavigation siteChrome={siteChrome} />
       </header>
       {search && <SearchDialog onClose={() => setSearch(false)} />}
       <Modal

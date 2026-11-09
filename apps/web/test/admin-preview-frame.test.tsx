@@ -66,11 +66,16 @@ test("storefront links inside the frame reopen on the draft with the same token;
 test("every link of a real draft page renders inside the navigation wrapper", async () => {
   const route = renderStorefrontRoute(["home"], { ...content, campaignsAvailable: true });
   assert.ok(route);
-  const html = await new Response(await renderToReadableStream(
+  const stream = await renderToReadableStream(
     <ShopProvider>
       <PreviewFrameDocument token={token} version={7} path={route.path} siteChrome={content.siteChrome}>{route.node}</PreviewFrameDocument>
     </ShopProvider>,
-  )).text();
+    { progressiveChunkSize: Number.POSITIVE_INFINITY },
+  );
+  // The product rails stream in after the rest of the page (9 Nov 2026). In the frame React's own inline script moves
+  // them into place; this reads the page once everything has arrived, as it stands after that.
+  await stream.allReady;
+  const html = await new Response(stream).text();
   const page = new JSDOM(html).window.document;
   const anchors = [...page.querySelectorAll("a[href]")];
   assert.ok(anchors.length > 20, `Expected the homepage chrome and sections to render links, got ${anchors.length}`);

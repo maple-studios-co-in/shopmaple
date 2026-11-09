@@ -83,7 +83,11 @@ export default async function Collection({
     <>
       {showChairEditorial && <LegacyChairs products={editorialProducts} />}
       {!showChairEditorial && <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />}
-      {campaign && <CampaignBanner campaign={campaign} />}
+      {campaign && (
+        <div className="landing-banner-frame" data-landing-banner="hero">
+          <CampaignBanner campaign={campaign} eager />
+        </div>
+      )}
       <CollectionListing
         handle={handle}
         title={collectionTitles[handle]!}
@@ -98,7 +102,11 @@ export default async function Collection({
         highestPrice={result.highestPrice}
         facets={result.facets}
       />
-      {handle === "beds" && <CampaignBanner campaign="beds-sale" />}
+      {handle === "beds" && (
+        <div className="landing-banner-frame home-container" data-landing-banner="inset">
+          <CampaignBanner campaign="beds-sale" />
+        </div>
+      )}
     </>
   );
 }

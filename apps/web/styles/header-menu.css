@@ -1,0 +1,414 @@
+/* The main menu (Figma 256:3836, 9 Nov 2026). One row on white: the logo on the left, the rooms and links in the middle,
+   the shopping actions on the right. A room's mega menu opens under the row as a rounded white panel: the room's card,
+   its columns (each named with a line icon), a "custom size" card and the discovery list. Loaded after the older
+   header sheets, so the rules here win where they meet. Below 1100px the row has no room for the links: the menu
+   button opens the drawer instead. */
+.site-header {
+  position: relative;
+  z-index: 40;
+  background: #fff;
+}
+.header-main {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 40px);
+  height: auto;
+  min-height: 96px;
+  padding: 10px clamp(20px, 2.9vw, 46px);
+  border-bottom: 0;
+}
+.header-main .brand {
+  position: static;
+  flex: none;
+  width: clamp(110px, 8vw, 128px);
+  height: auto;
+  transform: none;
+}
+.header-main .brand img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.header-main .header-actions {
+  flex: none;
+  gap: clamp(14px, 2vw, 32px);
+  margin-left: 0;
+}
+.header-main .icon-button {
+  width: 30px;
+  height: 36px;
+  color: #262626;
+}
+.header-main .icon-button svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+}
+.header-main .icon-button:hover {
+  color: var(--burgundy);
+}
+.header-main .count {
+  top: -2px;
+  right: -6px;
+  min-width: 17px;
+  height: 17px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  font: 600 10px/17px var(--font-text);
+}
+
+.maple-desktop-nav {
+  position: static;
+  z-index: auto;
+  flex: 1;
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(22px, 3.2vw, 54px);
+  height: 76px;
+  margin: 0;
+  /* The old two-row header ruled the menu off; the Figma header is one clean row. */
+  border: 0;
+  font: 500 15px/1.4 var(--font-text);
+  color: #262626;
+}
+.maple-menu-trigger-wrap {
+  position: static;
+}
+.maple-menu-trigger,
+.maple-desktop-nav > a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: none;
+}
+.maple-menu-trigger svg[data-menu-chevron] {
+  transition: transform 0.2s ease;
+}
+.maple-menu-trigger[aria-expanded="true"] svg[data-menu-chevron] {
+  transform: rotate(180deg);
+}
+/* The open room, and the page you are on, carry the frame's short red rule under the word. */
+.maple-menu-trigger::after,
+.maple-desktop-nav > a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  width: min(72px, 70%);
+  height: 2px;
+  background: var(--burgundy);
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.2s ease;
+}
+.maple-menu-trigger[aria-expanded="true"]::after,
+.maple-desktop-nav > a[aria-current="page"]::after {
+  transform: translateX(-50%) scaleX(1);
+}
+.maple-menu-trigger:hover,
+.maple-menu-trigger[aria-expanded="true"],
+.maple-desktop-nav > a:hover,
+.maple-desktop-nav > a[aria-current="page"],
+.maple-desktop-nav > a[data-nav-sale] {
+  color: var(--burgundy);
+}
+
+/* ---- The mega menu ---- */
+.maple-mega,
+.maple-mega:not(:has(.maple-mega-feature)),
+.maple-mega:not(:has(.maple-mega-discovery)),
+.maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: clamp(16px, 2.3vw, 36px);
+  right: clamp(16px, 2.3vw, 36px);
+  width: auto;
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 280px);
+  gap: 24px;
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid #f0eeeb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px -12px rgb(41 37 31 / 0.16);
+  font-family: var(--font-text);
+}
+.maple-mega:not(:has(.maple-mega-feature)) {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+}
+.maple-mega:not(:has(.maple-mega-discovery)) {
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+}
+.maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.maple-mega-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #f5f2ee;
+}
+.maple-mega-feature img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 236 / 240;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.maple-mega-feature > span {
+  margin-top: 14px;
+  color: var(--burgundy);
+  font: 500 11px/1.4 var(--font-heading);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.maple-mega-feature h2 {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e4ddd5;
+  color: #1d1b19;
+  font: 500 clamp(24px, 2vw, 30px) / 1.15 var(--font-heading);
+}
+.maple-mega-feature p {
+  margin: 0;
+  color: #4b4743;
+  font: 400 13px/1.55 var(--font-text);
+}
+.maple-mega-feature a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: var(--burgundy);
+  color: #fff;
+  font: 500 13px/1.3 var(--font-heading);
+  text-decoration: none;
+}
+.maple-mega-feature a:hover {
+  background: #5c140f;
+  color: #fff;
+}
+
+/* One equal column per group, however many the room has (the old sheet fixed six, leaving two empty). */
+.maple-mega-grid {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 8px 0;
+}
+.maple-mega-column,
+.maple-mega-column:not(:first-child) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 clamp(14px, 1.6vw, 24px);
+}
+.maple-mega-column:not(:first-child) {
+  border-left: 1px solid #efebe7;
+}
+/* Long names may wrap between words, but a short one like "Sofas" is never split. */
+.maple-mega .maple-menu-parent,
+.maple-mega .maple-menu-link {
+  overflow-wrap: break-word;
+}
+.maple-mega-column::after,
+.maple-mega-column:not(:last-child)::after {
+  content: none;
+}
+.maple-menu-parent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 0;
+  color: #262626;
+  font: 500 17px/1.3 var(--font-text);
+  text-decoration: none;
+}
+.maple-menu-parent svg {
+  flex: none;
+  color: var(--burgundy);
+}
+.maple-menu-link {
+  display: block;
+  padding: 8px 0;
+  color: #3a3835;
+  font: 400 14px/1.45 var(--font-text);
+  text-decoration: none;
+}
+.maple-menu-link:hover,
+.maple-menu-parent:hover,
+.maple-menu-link[aria-current="page"],
+.maple-menu-parent[aria-current="page"] {
+  color: var(--burgundy);
+}
+.maple-mega-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+  padding: 16px;
+  border: 1px solid #f1ece6;
+  border-radius: 12px;
+  background: #fbfaf8;
+  color: #4b4743;
+  font: 400 12px/1.5 var(--font-text);
+  text-decoration: none;
+}
+.maple-mega-column > .maple-mega-custom {
+  margin-top: 28px;
+}
+.maple-mega-custom svg {
+  margin-bottom: 8px;
+  color: var(--burgundy);
+}
+.maple-mega-custom strong {
+  color: #1d1b19;
+  font: 500 13px/1.4 var(--font-heading);
+}
+.maple-mega-custom em {
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--burgundy);
+  font: 500 12px/1.4 var(--font-heading);
+  font-style: normal;
+}
+.maple-mega-custom:hover strong {
+  color: var(--burgundy);
+}
+
+.maple-mega-discovery {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 32px;
+  padding: 28px 20px;
+  text-align: left;
+  border: 0;
+  border-radius: 14px;
+  background: #f7f7f7;
+}
+.maple-mega-discovery a,
+.maple-mega-discovery a:last-child {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.maple-mega-discovery a:not(:has(img)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.maple-mega-discovery img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+/* The older sheet centred every span in this panel; the design reads from the left, under each name. */
+.maple-mega-discovery a > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+}
+.maple-mega-discovery strong {
+  color: #1d1b19;
+  font: 500 13px/1.4 var(--font-heading);
+}
+.maple-mega-discovery a > span > span {
+  display: block;
+  color: #5d5853;
+  font: 400 12px/1.5 var(--font-text);
+}
+.maple-mega-discovery svg {
+  margin-top: 6px;
+  color: var(--burgundy);
+  transition: transform 0.2s ease;
+}
+.maple-mega-discovery a:hover strong {
+  color: var(--burgundy);
+}
+.maple-mega-discovery a:hover svg {
+  transform: translateX(3px);
+}
+
+/* Below a laptop the links move into the drawer the menu button opens. */
+@media (max-width: 1099px) {
+  .maple-desktop-nav {
+    display: none;
+  }
+  .header-main .mobile-menu-button {
+    display: inline-flex;
+  }
+  .header-main {
+    justify-content: space-between;
+    min-height: 76px;
+  }
+  .header-main .header-actions {
+    margin-left: auto;
+  }
+}
+@media (max-width: 749px) {
+  .header-main {
+    gap: 8px;
+    min-height: 68px;
+    padding: 6px 14px;
+  }
+  .header-main .brand {
+    width: 104px;
+    margin-right: auto;
+  }
+  .header-main .header-actions {
+    gap: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .maple-menu-trigger svg[data-menu-chevron],
+  .maple-menu-trigger::after,
+  .maple-desktop-nav > a::after,
+  .maple-mega-discovery svg {
+    transition: none;
+  }
+}
+
+/* The utility links' place on a phone now the header is one row (Figma 256:3836): set like the quick links above them. */
+.maple-drawer-utility-links {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 18px 0;
+}
+.maple-drawer-utility-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--burgundy);
+}

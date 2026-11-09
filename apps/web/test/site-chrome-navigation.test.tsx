@@ -50,7 +50,7 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
     await act(async () => trigger.click());
     assert.match(
       document.querySelector(".maple-mega-feature img")!.getAttribute("src")!,
-      /engaged_5/,
+      /category-sofas/,
     );
     assert.equal(
       document.querySelector(".maple-mega-feature a")?.getAttribute("href"),
@@ -60,7 +60,9 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
       document.querySelector(".maple-mega-grid a")?.textContent,
       "New seating",
     );
-    assert.equal(document.querySelectorAll(".maple-mega-grid a").length, 1);
+    // The CMS links, beside the menu's own custom-size card (Figma 256:3836).
+    assert.equal(document.querySelectorAll(".maple-mega-grid a:not([data-mega-custom])").length, 1);
+    assert.equal(document.querySelectorAll(".maple-mega-grid a[data-mega-custom]").length, 1);
     const discovery = document.querySelector<HTMLAnchorElement>(
       ".maple-mega-discovery a",
     )!;
@@ -81,10 +83,9 @@ test("renamed desktop menu retains preset artwork, stable selection and Escape f
         ?.getAttribute("aria-expanded"),
       "true",
     );
-    assert.equal(
-      document.querySelector(".maple-mega h2")?.textContent,
-      "Relax",
-    );
+    // Figma 256:3836: the room is named over the card's heading, and in its Explore link.
+    assert.equal(document.querySelector(".maple-mega-feature [data-mega-room]")?.textContent, "Relax");
+    assert.equal(document.querySelector(".maple-mega-feature a")?.textContent, "Explore Relax ");
     const link = document.querySelector<HTMLAnchorElement>(".maple-mega a")!;
     await act(async () => {
       link.focus();

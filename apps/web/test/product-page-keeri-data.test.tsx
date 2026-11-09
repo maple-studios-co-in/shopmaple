@@ -83,7 +83,9 @@ test("the finish's white-background photo from Keeri leads the gallery, whole an
 test("Keeri's average and count rate the piece, and each approved review shows, verified only when Keeri says so", async () => {
   await mount((doc) => {
     assert.match(text(doc.querySelector("[data-price-block] [data-rating]"))!, /^4\.5/);
-    assert.match(text(doc.querySelector("[data-rating-summary]"))!, /4\.5.*2 reviews/);
+    // The figure and its stars; the count is no longer written under it (owner, 9 Nov 2026), but is still read out.
+    assert.equal(text(doc.querySelector("[data-rating-summary]")), "4.5");
+    assert.equal(doc.querySelector("[data-rating-summary]")!.getAttribute("aria-label"), "Rated 4.5 out of 5 from 2 reviews");
     const cards = [...doc.querySelectorAll("[data-review]")];
     assert.equal(cards.length, 2);
     assert.match(text(cards[0])!, /Sturdy and comfortable.*Synthetic review text one\..*Asha, Jaipur.*Verified buyer.*October 2026/);

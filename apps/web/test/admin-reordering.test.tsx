@@ -162,7 +162,8 @@ test("navigation items and footer columns drag and save", async () => {
     await tab("Navigation & footer section", "Footer");
     await drag("footer care", "ArrowUp", 2);
     const content = await app.save();
-    assert.deepEqual(content.siteChrome!.navigation.map(item => item.id), ["nav-1", "nav-2", "nav-3", "nav-5", "nav-4"]);
+    // The fifth item is now Collections (Figma 256:3836: Contact left the menu for the footer).
+    assert.deepEqual(content.siteChrome!.navigation.map(item => item.id), ["nav-1", "nav-2", "nav-3", "nav-collections", "nav-4", "nav-custom", "nav-sale"]);
     assert.deepEqual(content.siteChrome!.footer.columns.map(column => column.key), ["care", "shop", "help"]);
   } finally { await app.close(); }
 });

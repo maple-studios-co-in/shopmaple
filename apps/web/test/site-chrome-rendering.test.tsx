@@ -25,7 +25,8 @@ test("absent published chrome retains approved contacts and original navigation"
   );
   assert.deepEqual(
     [...doc.querySelectorAll(".desktop-nav > *")].map((e) => e.textContent),
-    ["Living Room", "Bedroom", "Storage", "Outdoors", "Contact"],
+    // Figma 256:3836: Collections, Custom Furniture and Sale follow the rooms; Contact is in the footer.
+    ["Living Room", "Bedroom", "Storage", "Outdoors", "Collections", "Custom Furniture", "Sale"],
   );
   assert.equal(
     doc.querySelector(".maple-footer-care a")?.getAttribute("href"),

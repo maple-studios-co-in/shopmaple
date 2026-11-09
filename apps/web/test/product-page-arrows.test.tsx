@@ -53,16 +53,19 @@ test("the cards carry an arrow where their numbers were, up when closed and down
   });
 });
 
-test("the hotspots on the photo use the same arrow and carry no plus sign", async () => {
+// The owner's later note (9 Nov 2026): the hotspots are a plus again, dark on a light disc, while the cards keep their arrows.
+test("the hotspots on the photo are a dark plus on a light disc that turns to a cross while open", async () => {
   await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} title="Nola Accent Chair" tagline="Your choice of finish." photo="https://example.com/nola.jpg" />, async (host) => {
     const spots = [...host.querySelectorAll<HTMLButtonElement>("button[data-highlight-spot]")];
     assert.equal(spots.length, 2);
     for (const spot of spots) {
-      assert.equal(spot.textContent, "", "no + in the hotspot");
-      const arrow = spot.querySelector<HTMLElement>("[data-highlight-arrow]")!;
-      assert.ok(isUpArrow(arrow.querySelector("svg")));
-      assert.match(arrow.className, /group-aria-expanded\/spot:rotate-180/);
-      assert.doesNotMatch(arrow.className, /rotate-45/);
+      assert.equal(spot.textContent, "", "the plus is drawn, not typed");
+      const plus = spot.querySelector<HTMLElement>("[data-highlight-plus]")!;
+      assert.ok(plus.querySelector("svg")?.classList.contains("lucide-plus"));
+      assert.match(plus.className, /bg-\[#f6e8e5\]/);
+      assert.match(plus.className, /text-maple/);
+      assert.match(plus.className, /group-aria-expanded\/spot:rotate-45/);
+      assert.equal(spot.querySelector("[data-highlight-arrow]"), null);
     }
     await act(async () => spots[0]!.click());
     assert.equal(spots[0]!.getAttribute("aria-expanded"), "true");

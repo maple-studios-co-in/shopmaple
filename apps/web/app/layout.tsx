@@ -36,6 +36,11 @@ import "@/styles/checkout.css";
 import "@/styles/button-fill.css";
 // Big screens: the page grows with the screen from 1600px (owner, 4 Nov 2026); after the sheets it repeats.
 import "@/styles/wide-screens.css";
+// The header and its menu (Figma 256:3836), 30px between sections everywhere, and review cards that show whole lines
+// only (owner, 9 Nov 2026).
+import "@/styles/header-menu.css";
+import "@/styles/section-rhythm.css";
+import "@/styles/review-cards.css";
 // Last, so a utility beats the legacy storefront rules it replaces.
 import "@/styles/tailwind.css";
 import { ButtonEffectsIsland } from "@/components/button-effects-island";

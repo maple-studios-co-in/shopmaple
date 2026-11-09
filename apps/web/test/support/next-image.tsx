@@ -1,8 +1,10 @@
 import type { ImgHTMLAttributes } from "react";
 
-export function getImageProps(props: ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean }) {
-  const { unoptimized, ...rest } = props;
-  return { props: unoptimized ? { ...rest, "data-unoptimized": "" } : rest };
+// As the real one does, a loader is used rather than passed on to the <img>; the stand-in marks it like TestImage below.
+export function getImageProps(props: ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean; loader?: unknown }) {
+  const { unoptimized, loader, ...rest } = props;
+  if (unoptimized) return { props: { ...rest, "data-unoptimized": "" } };
+  return { props: typeof loader === "function" ? { ...rest, "data-loader": "custom" } : rest };
 }
 
 // Node's ESM loader exposes next/image differently from Next's bundler.

@@ -1,8 +1,9 @@
 import type { ProductCard as ProductCardModel } from "@shopmaple/contracts";
-import Image, { getImageProps } from "next/image";
+import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
 import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
-import { type CSSProperties } from "react";
+import { ArrowRight } from "lucide-react";
+import { Fragment, Suspense, type CSSProperties } from "react";
 import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
 import { shopFile } from "@/lib/format";
@@ -43,7 +44,7 @@ export function CategoryBanner({
   height: number;
   eager?: boolean;
 }) {
-  const image = getImageProps({
+  const image = getContentImageProps({
     src: shopFile(desktop),
     alt,
     width,
@@ -53,7 +54,7 @@ export function CategoryBanner({
     loading: eager ? "eager" : "lazy",
     fetchPriority: eager ? "high" : "auto",
   }).props;
-  const small = getImageProps({
+  const small = getContentImageProps({
     src: shopFile(mobile),
     alt,
     width: 4796,
@@ -64,7 +65,7 @@ export function CategoryBanner({
     fetchPriority: eager ? "high" : "auto",
   }).props;
   return (
-    <div className="landing-banner home-container">
+    <div className="landing-banner">
       <picture>
         <source
           media="(max-width: 768px)"
@@ -208,31 +209,36 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
       )}
       {data.sections.map((section) => {
         if (section.type === "banner") {
+          const hero = section.key === "hero";
           const campaign =
             section.key === "hero" || section.key === "sale"
               ? (`${slug}-${section.key}` as const)
               : null;
+          // The owner's sizes (9 Nov 2026): the hero runs edge to edge at 350px; every other banner is 200px tall,
+          // inside the page's side margins with the product cards' rounded corners.
           return (
-            <div key={section.key}>
-              {campaign ? (
-                <CampaignBanner campaign={campaign} content={content} />
-              ) : (
-                <CategoryBanner
-                  desktop={section.desktop!}
-                  mobile={section.mobile!}
-                  width={section.width!}
-                  height={section.height!}
-                  eager={section.key === "hero"}
-                  alt={`${data.title} — ${section.key === "hero" ? "furniture for every occasion" : "find furniture for your space"}`}
-                />
-              )}
-              {section.key === "hero" && (
+            <Fragment key={section.key}>
+              <div className={hero ? "landing-banner-frame" : "landing-banner-frame home-container"} data-landing-banner={hero ? "hero" : "inset"}>
+                {campaign ? (
+                  <CampaignBanner campaign={campaign} content={content} eager={hero} />
+                ) : (
+                  <CategoryBanner
+                    desktop={section.desktop!}
+                    mobile={section.mobile!}
+                    width={section.width!}
+                    height={section.height!}
+                    eager={hero}
+                    alt={`${data.title} — ${hero ? "furniture for every occasion" : "find furniture for your space"}`}
+                  />
+                )}
+              </div>
+              {hero && (
                 <CategoryIntroduction
                   title={data.title}
                   description={data.description}
                 />
               )}
-            </div>
+            </Fragment>
           );
         }
         if (section.type === "categories")
@@ -244,7 +250,7 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
               aria-label={`${data.title} categories`}
             >
               {section.items!.map((item) => (
-                <Link href={landingCollectionHref(item.href!)} key={item.href}>
+                <Link href={landingCollectionHref(item.href!)} key={item.href} data-landing-category>
                   <div>
                     <Image
                       src={item.image}
@@ -254,23 +260,28 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
                     />
                   </div>
                   <h2>{item.title}</h2>
+                  <ArrowRight aria-hidden size={14} data-category-arrow />
                 </Link>
               ))}
             </nav>
           );
         if (section.type === "products")
+          // The banners and circles above are sent first; a rail streams in once its cards are read.
           return (
-            <CategoryProducts
+            <Suspense
               key={section.key}
-              handles={section.handles!}
-              catalogue={catalogue}
-              heading={section.heading}
-              collection={section.collection}
-              viewAll={section.viewAll}
-            />
+              fallback={<section className="landing-products home-products home-container" aria-label={section.heading || "Products"} aria-busy="true" data-rail-placeholder />}
+            >
+              <CategoryProducts
+                handles={section.handles!}
+                catalogue={catalogue}
+                heading={section.heading}
+                collection={section.collection}
+                viewAll={section.viewAll}
+              />
+            </Suspense>
           );
-        if (section.type === "divider")
-          return <div key={section.key} className="home-divider" />;
+        if (section.type === "divider") return null;
         if (section.type === "heading")
           return (
             <header

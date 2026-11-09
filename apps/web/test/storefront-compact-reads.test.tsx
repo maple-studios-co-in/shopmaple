@@ -62,7 +62,10 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
   }
 }
 async function documentFor(node: ReactNode) {
-  return new JSDOM(await new Response(await renderToReadableStream(<ShopProvider>{node}</ShopProvider>)).text()).window.document;
+  const stream = await renderToReadableStream(<ShopProvider>{node}</ShopProvider>, { progressiveChunkSize: Number.POSITIVE_INFINITY });
+  // Product rails stream in after the rest of the page (9 Nov 2026); read the finished page in one piece, as a crawler gets it.
+  await stream.allReady;
+  return new JSDOM(await new Response(stream).text()).window.document;
 }
 function propsOf(node: ReactNode, type: unknown): Record<string, unknown>[] {
   return Children.toArray(node).flatMap(child => !isValidElement<Record<string, unknown>>(child) ? [] : child.type === type ? [child.props] : propsOf(child.props.children as ReactNode, type));
