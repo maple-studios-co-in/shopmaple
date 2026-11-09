@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import {
   campaignContentSchema, campaignDeals, liveCampaignDeal, storefrontContentSchema,
@@ -154,6 +155,32 @@ function holdTheClock(t: TestContext) {
   t.mock.timers.enable({ apis: ["setTimeout", "setInterval", "Date"], now: openedAt });
   return (ms: number) => act(async () => t.mock.timers.tick(ms));
 }
+
+test("the page hydrates on the server's clock, so a shopper whose clock runs ahead of a campaign's start sees no mismatch", async (t) => {
+  const pass = holdTheClock(t);
+  const deals = [liveDeal({ startsAt: at(2 * MINUTE), endsAt: at(DAY) })];
+  const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
+  const page = (serverNow: number) => <AppRouterContext.Provider value={router}><ProductHighlightsProvider value={{ swatches: [], products: [] }} deals={deals}><ShopProvider>
+    <ProductDetail product={product} serverNow={serverNow} />
+  </ShopProvider></ProductHighlightsProvider></AppRouterContext.Provider>;
+  const container = document.getElementById("root")!;
+  container.innerHTML = renderToString(page(openedAt));
+  assert.equal(box(document), null, "the server rendered before the campaign started");
+  await pass(3 * MINUTE); // the shopper's device is three minutes ahead, past the start
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json(emptyCart);
+  const errors: unknown[] = [];
+  let root: ReturnType<typeof hydrateRoot> | undefined;
+  try {
+    await act(async () => { root = hydrateRoot(container, page(openedAt), { onRecoverableError: (error) => errors.push(error) }); });
+    assert.deepEqual(errors, [], "hydration matched the server's markup");
+    assert.equal(code(document), "SOFA30", "then the open page caught up with the browser's clock");
+  } finally {
+    await act(async () => root?.unmount());
+    globalThis.fetch = previous;
+    window.sessionStorage.clear();
+  }
+});
 
 test("a campaign that starts while the page is open brings the timer in without a reload", async (t) => {
   const pass = holdTheClock(t);

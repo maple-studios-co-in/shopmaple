@@ -56,10 +56,12 @@ const textCard = (value: string | null | undefined): ReactNode => value?.trim() 
  * `children` render between the reviews band and the FAQ: the page passes the "You may also like" row. `completeLook`
  * holds pieces from the rooms this piece is styled with, for the buy box's "Complete the look"; `bundle` holds two of
  * them in full, for "Buy in Bundle" above the related row. When staff built a Keeri bundle for this piece, the page passes
- * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each.
+ * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each. `serverNow` is
+ * the server's clock when it rendered the page, which the offer timer starts from.
  */
-export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, children }: {
+export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, serverNow, children }: {
   product: Product;
+  serverNow?: number;
   initialVariant?: string;
   presentation?: Presentation;
   completeLook?: ProductCard[];
@@ -118,8 +120,9 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     [quantity, setQuantityValue] = useState(1),
     [zoom, setZoom] = useState(false),
     [shared, setShared] = useState(""),
-    // When the page opened: whether the store's offer is still running is read once, the same way on server and browser.
-    [openedAt] = useState(Date.now);
+    // When the page opened, by the server's clock when the page passes it: whether an offer is running is then read the
+    // same way on server and browser, so a campaign starting or ending as the page loads cannot split the two renders.
+    [openedAt] = useState(() => serverNow ?? Date.now());
   if (urlVariant !== initial) {
     setUrlVariant(initial);
     // History navigation changes the option without remounting the enquiry.
