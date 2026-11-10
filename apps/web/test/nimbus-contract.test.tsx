@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
-import { defaultNimbusPage, resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
+import { defaultNimbusPage, legacyNimbusPage, resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
 
 const nimbusEdit = () => ({
   title: "Nimbus for your home",
@@ -66,9 +66,8 @@ test("Nimbus bounds all text and refuses executable, route, media and commerce f
   for (const nimbusPage of invalid) assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, nimbusPage }).success, false);
 });
 
-test("Nimbus starting draft preserves original Shopify copy and the source origin paragraph break", () => {
-  const page = defaultStorefrontContent.nimbusPage;
-  assert.ok(page, "the explicit starting draft must include original Nimbus content");
+test("the original template's copy is kept, with its source origin paragraph break, to recognise older revisions", () => {
+  const page = legacyNimbusPage;
   assert.equal(page.title, "The Nimbus Collection");
   assert.deepEqual(page.sections.map(item => item.key), ["hero", "intro", "rooms-grid", "origin", "principles", "rooms-slideshow", "series", "project", "promises"]);
   assert.ok(page.sections.every(item => item.enabled));
@@ -88,6 +87,15 @@ test("Nimbus starting draft preserves original Shopify copy and the source origi
   assert.deepEqual(page.series, { eyebrow: "Inspired by floating forms and quiet modern living.", heading: "Nimbus Series" });
   assert.deepEqual(page.project, { heading: "If the project sounds good", body: "Whether you have a question about our products, custom orders, or collaborations — our team is here to help." });
   assert.deepEqual(page.promises.map(item => item.title), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
+  assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, nimbusPage: page }).success, true);
+});
+
+test("the starting draft is the redesign's copy (Figma 311:548, 10 Nov 2026)", () => {
+  const page = defaultStorefrontContent.nimbusPage;
+  assert.ok(page && "hero" in page, "the explicit starting draft holds the redesign's words");
+  assert.equal(page.title, "The Nimbus Collection");
+  assert.deepEqual(page.sections.map(item => item.key), ["hero", "room-nav", "philosophy", "origin", "feeling", "material", "browse", "pieces", "consultation", "promise"]);
+  assert.equal(page.hero.heading, "A softer way\nto come home.");
   assert.equal(storefrontContentSchema.safeParse(defaultStorefrontContent).success, true);
 });
 
@@ -116,16 +124,16 @@ test("Nimbus text limits apply at every nested copy field without rewriting lite
 
 test("Nimbus fallback and edited resolutions are isolated copies without mutating later drafts", () => {
   const fallback = resolveNimbusPageContent();
-  fallback.intro.heading = "Unpublished temporary edit";
+  fallback.philosophy.heading = "Unpublished temporary edit";
   fallback.sections[0]!.enabled = false;
-  fallback.principles.items[0]!.title = "Temporary principle";
-  assert.equal(resolveNimbusPageContent().intro.heading, "Introducing nimbus");
+  fallback.feeling.items[0]!.title = "Temporary feeling";
+  assert.equal(resolveNimbusPageContent().philosophy.heading, "Comfort is\nthe starting point.");
   assert.equal(defaultNimbusPage.sections[0]!.enabled, true);
-  assert.equal(defaultNimbusPage.principles.items[0]!.title, "Cloud Like Comfort");
+  assert.equal(defaultNimbusPage.feeling.items[0]!.title, "Cloud-like comfort");
   const edited = storefrontContentSchema.parse({ ...defaultStorefrontContent, nimbusPage: nimbusEdit() }).nimbusPage!;
   const resolved = resolveNimbusPageContent(edited);
-  resolved.roomTiles[0]!.title = "Temporary room";
-  assert.equal(edited.roomTiles[0]!.title, "Our dining");
+  resolved.roomNav[0]!.label = "Temporary room";
+  assert.equal((edited as ReturnType<typeof nimbusEdit>).roomTiles[0]!.title, "Our dining");
   assert.equal(resolved.title, "Nimbus for your home");
 });
 

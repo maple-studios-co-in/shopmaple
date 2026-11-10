@@ -128,9 +128,10 @@ test("Nimbus page sections drag and save", async () => {
   const app = await setup();
   try {
     await click("Existing pages"); await select("Existing page", "nimbus");
-    await drag("Nimbus Hero film", "ArrowDown", 1);
+    // The Nimbus redesign's regions (Figma 311:548, owner 10 Nov 2026).
+    await drag("Nimbus Opening", "ArrowDown", 1);
     const content = await app.save();
-    assert.deepEqual(content.nimbusPage!.sections.slice(0, 3).map(section => section.key), ["intro", "hero", "rooms-grid"]);
+    assert.deepEqual(content.nimbusPage!.sections.slice(0, 3).map(section => section.key), ["room-nav", "hero", "philosophy"]);
   } finally { await app.close(); }
 });
 

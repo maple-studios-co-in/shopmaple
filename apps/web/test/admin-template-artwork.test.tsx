@@ -69,7 +69,7 @@ test("legacy Artwork browsing shows grouped original placements without creating
   try {
     assert.equal(button("Save draft").disabled, true, "Existing clean drafts remain clean");
     await click("Artwork");
-    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry"]);
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra"]);
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 8);
     await select("Artwork placement", "home-nimbus");
     assert.equal(input("Desktop image URL").value, originalDesktop);
@@ -78,7 +78,11 @@ test("legacy Artwork browsing shows grouped original placements without creating
     const group = container.querySelector<HTMLSelectElement>('select[aria-label="Artwork group"]')!;
     group.focus();
     await select("Artwork group", "Nimbus");
-    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 11);
+    // The Nimbus redesign (Figma 311:548, owner 10 Nov 2026): the opening, origin and details photos and four collection cards;
+    // the old room slideshow's photos stay, as the homepage hero shows them.
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent),
+      ["Opening photo", "Origin photo", "Details photo", "Sofas & sectionals photo", "Accent chairs photo", "Tables & consoles photo", "Beds & benches photo",
+        "Living room slideshow image", "Bedroom slideshow image", "Dining room slideshow image"]);
     assert.ok(document.activeElement === container.querySelector('select[aria-label="Artwork group"]'), "changing the group keeps keyboard focus on it");
     await select("Artwork group", "Our Story");
     // The opening and belief photos and one per journey chapter (Our Story redesign, 10 Nov 2026).
@@ -90,6 +94,14 @@ test("legacy Artwork browsing shows grouped original placements without creating
     await select("Artwork group", "Bulk Enquiry");
     assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent),
       ["Opening photo", "Meet your designer photo", "Refine every detail photo", "Bring it home photo", "Proposal photo"]);
+    // The Terra Collection (Figma 311:921, owner 10 Nov 2026): its photos in page order.
+    await select("Artwork group", "Terra");
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent), [
+      "Opening photo", "Origin photo", "Room 1 photo (the lobby)", "Room 2 photo (the bedroom)", "Room 3 photo (the terrace)", "Material detail photo",
+      "Collection card 1 photo (lounge seating)", "Collection card 2 photo (bedroom)", "Collection card 3 photo (tables)", "Collection card 4 photo (outdoor)",
+      "Concept 1 photo (sofa)", "Concept 2 photo (lounge chair)", "Concept 3 photo (bed)", "Concept 4 photo (terrace chair)",
+    ]);
+    assert.equal(input("Desktop image URL").value, "/media/terra-collection/hero.webp");
     assert.equal(button("Save draft").disabled, true);
     await click("Homepage"); await fill("Category heading", "Sibling text"); await click("Save draft");
     assert.equal(app.saved().content.templateMedia, undefined);

@@ -23,10 +23,11 @@ export const defaultHomeDetails: HomeDetails = {
   nimbus: {
     heading: "The Nimbus Collection", tagline: "Soft presence. Strong craftsmanship.",
     features: ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"], cta: "Explore",
-    // The frame's second collection (Figma 1:1069), photographed in a sunlit travertine lobby.
+    // The frame's second collection (Figma 1:1069), photographed in a sunlit travertine lobby. It opens the Terra page
+    // (Figma 311:921, 10 Nov 2026).
     slides: [{
       heading: "The Terra Collection", tagline: "Soft presence. Strong craftsmanship.",
-      features: ["Earthy Textures", "Organic Curves", "Warm Woods", "Grounded Comfort"], cta: "Explore", href: "/collections/sofas",
+      features: ["Earthy Textures", "Organic Curves", "Warm Woods", "Grounded Comfort"], cta: "Explore", href: "/terra-collection",
       image: "/media/home/nimbus-terra.webp", mobileImage: "/media/home/nimbus-terra-mobile.webp",
       alt: "A curved olive sofa with floral cushions and a round walnut table in a sunlit travertine lobby",
     }],

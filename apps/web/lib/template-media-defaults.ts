@@ -4,11 +4,9 @@ import story from "@/data/landing-story.json";
 import { homeTemplateMedia } from "@/lib/home-template-media";
 import { shopFile } from "@/lib/format";
 
-const nimbusSection = (key: string) => nimbus.sections.find(item => item.key === key)!;
 const storySection = (key: string) => story.sections.find(item => item.key === key)!;
-const rooms = nimbusSection("slideshow_PnGjbg");
-const hero = nimbusSection("hero_section_pfEKq3");
-type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" };
+const rooms = nimbus.sections.find(item => item.key === "slideshow_PnGjbg")!;
+type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" };
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
@@ -20,17 +18,19 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { ...homeTemplateMedia["home-nimbus"], label: "Nimbus collection feature", group: "Homepage" },
   { key: "home-newsletter", label: "Newsletter image", group: "Homepage", image: shopFile("Cover_Image_Maple_1.png"), alt: "Maple Furnishers" },
   { key: "home-testimonial-poster", label: "Customer testimonial video poster", group: "Homepage", image: shopFile("preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960"), alt: "Maple customer testimonial" },
-  { key: "nimbus-room-bedroom", label: "Bedroom room tile", group: "Nimbus", image: shopFile("ChatGPT_Image_Apr_24_2026_03_29_31_AM.png"), alt: "Bedroom" },
-  { key: "nimbus-room-living", label: "Living room tile", group: "Nimbus", image: shopFile("Untitled_design_6.svg"), alt: "Living Room" },
-  { key: "nimbus-room-dining", label: "Dining room tile", group: "Nimbus", image: shopFile("Chairs.svg"), alt: "Dining Room" },
-  { key: "nimbus-room-collection", label: "Collection room tile", group: "Nimbus", image: shopFile("Chairs_1.png"), mobileImage: shopFile("Chairs_3.png"), alt: "Nimbus collection" },
-  { key: "nimbus-origin", label: "Collection origin image", group: "Nimbus", image: nimbusSection("media_with_content_JLVGCA").images[0]!, alt: "Nimbus sculptural lounge furniture" },
+  // The Nimbus redesign (Figma 311:548, owner 10 Nov 2026): the design file's renders, to replace with Maple's own. Each photo
+  // keeps the original template's slot whose role it took; the project photo is retired (its key stays valid for older
+  // revisions). The room slideshow's photos stay: the homepage hero shows them until staff add slides.
+  { key: "nimbus-hero-poster", label: "Opening photo", group: "Nimbus", image: "/media/nimbus-collection/hero.webp", mobileImage: "/media/nimbus-collection/hero-mobile.webp", alt: "A cream sofa, bouclé lounge chairs and a marble nesting table set on a bank of soft cloud" },
+  { key: "nimbus-origin", label: "Origin photo", group: "Nimbus", image: "/media/nimbus-collection/origin.webp", alt: "A travertine archway opening onto a sea of cloud at sunrise" },
+  { key: "nimbus-craft-poster", label: "Details photo", group: "Nimbus", image: "/media/nimbus-collection/detail.webp", alt: "The piped arm of a cream bouclé armchair, close up" },
+  { key: "nimbus-room-living", label: "Sofas & sectionals photo", group: "Nimbus", image: "/media/nimbus-collection/sofas.webp", alt: "A cream modular sectional around a round travertine table in a sunlit room above the clouds" },
+  { key: "nimbus-room-collection", label: "Accent chairs photo", group: "Nimbus", image: "/media/nimbus-collection/accent-chairs.webp", mobileImage: "/media/nimbus-collection/accent-chairs.webp", alt: "A cream bouclé accent chair on walnut legs beside a bronze side table" },
+  { key: "nimbus-room-dining", label: "Tables & consoles photo", group: "Nimbus", image: "/media/nimbus-collection/tables.webp", alt: "Two fluted travertine nesting tables on a woven rug, a walnut console behind them" },
+  { key: "nimbus-room-bedroom", label: "Beds & benches photo", group: "Nimbus", image: "/media/nimbus-collection/beds.webp", alt: "A cream upholstered bed and bench in a bedroom whose arches open onto the clouds" },
   { key: "nimbus-slide-living", label: "Living room slideshow image", group: "Nimbus", image: rooms.images[1]!, mobileImage: rooms.images[0]!, alt: "Living room" },
   { key: "nimbus-slide-bedroom", label: "Bedroom slideshow image", group: "Nimbus", image: rooms.images[3]!, mobileImage: rooms.images[2]!, alt: "Bedroom" },
   { key: "nimbus-slide-dining", label: "Dining room slideshow image", group: "Nimbus", image: rooms.images[5]!, mobileImage: rooms.images[4]!, alt: "Dining room" },
-  { key: "nimbus-project", label: "Project enquiry image", group: "Nimbus", image: nimbusSection("section_PYMfcR").images[0]!, alt: "Maple furniture design details" },
-  { key: "nimbus-hero-poster", label: "Collection hero video poster", group: "Nimbus", image: hero.videos[0]!.poster, mobileImage: hero.videos[1]!.poster, alt: "Nimbus collection film" },
-  { key: "nimbus-craft-poster", label: "Craftsmanship video poster", group: "Nimbus", image: nimbusSection("blocks_6WyRMx").videos[0]!.poster, alt: "Nimbus furniture craftsmanship" },
   // Our Story's redesign (Figma 293:1093, owner 10 Nov 2026). The opening and belief photos are Maple's own (the belief
   // one is the old film's poster frame); the chapter pictures are the design file's renders, to replace when real ones exist.
   { key: "story-hero", label: "Story hero image", group: "Our Story", image: storySection("media_with_content_be4kK3").images[0]!, alt: "A hand resting on the bouclé seat of a Maple armchair" },
@@ -51,6 +51,22 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "bulk-step-design", label: "Refine every detail photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/step-design.webp", alt: "A designer pointing out a 3D render of a living room to a client beside wood and fabric samples" },
   { key: "bulk-step-deliver", label: "Bring it home photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/step-deliver.webp", alt: "Maple’s team unpacking, hanging art and arranging cushions in a client’s living room" },
   { key: "bulk-proposal", label: "Proposal photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/proposal.webp", alt: "Upholstery fabrics, walnut, travertine and a floor plan laid out for a project" },
+  // The Terra Collection (Figma 311:921, owner 10 Nov 2026): the design file's renders, to replace with Maple's own. Rooms,
+  // collection cards and concepts follow the page's order, so a photo stays with its card when staff rename it.
+  { key: "terra-hero", label: "Opening photo", group: "Terra", image: "/media/terra-collection/hero.webp", mobileImage: "/media/terra-collection/hero-mobile.webp", alt: "A curved olive sofa, a round travertine table and a walnut lounge chair in a sunlit lobby open to an olive garden" },
+  { key: "terra-origin", label: "Origin photo", group: "Terra", image: "/media/terra-collection/origin.webp", alt: "An old olive tree and weathered limestone boulders in a sunlit stone courtyard" },
+  { key: "terra-room-1", label: "Room 1 photo (the lobby)", group: "Terra", image: "/media/terra-collection/room-lobby.webp", alt: "A curved olive sofa, two timber-ringed lounge chairs and a round walnut table in a travertine lobby" },
+  { key: "terra-room-2", label: "Room 2 photo (the bedroom)", group: "Terra", image: "/media/terra-collection/room-bedroom.webp", alt: "A low leather bed with white linen and sculpted timber bedside tables, a garden beyond the glass" },
+  { key: "terra-room-3", label: "Room 3 photo (the terrace)", group: "Terra", image: "/media/terra-collection/room-terrace.webp", alt: "Olive woven armchairs, a cream sofa and a round rope coffee table on a shaded poolside terrace" },
+  { key: "terra-detail", label: "Material detail photo", group: "Terra", image: "/media/terra-collection/detail.webp", alt: "A walnut armrest wrapped in olive woven cord beside a travertine side table" },
+  { key: "terra-browse-1", label: "Collection card 1 photo (lounge seating)", group: "Terra", image: "/media/terra-collection/browse-lounge.webp", alt: "A curved olive sofa, a round walnut table and a timber-ringed lounge chair under travertine arches" },
+  { key: "terra-browse-2", label: "Collection card 2 photo (bedroom)", group: "Terra", image: "/media/terra-collection/browse-bedroom.webp", alt: "A leather bed with cream linen beside a carved walnut bedside table" },
+  { key: "terra-browse-3", label: "Collection card 3 photo (tables)", group: "Terra", image: "/media/terra-collection/browse-tables.webp", alt: "A round walnut coffee table with a stone bowl beside a travertine side table" },
+  { key: "terra-browse-4", label: "Collection card 4 photo (outdoor)", group: "Terra", image: "/media/terra-collection/browse-outdoor.webp", alt: "Woven olive armchairs and a cream sofa around a rope table beside a pool, olive trees beyond" },
+  { key: "terra-piece-1", label: "Concept 1 photo (sofa)", group: "Terra", image: "/media/terra-collection/concept-sofa.webp", alt: "A curved three-seat sofa in olive bouclé" },
+  { key: "terra-piece-2", label: "Concept 2 photo (lounge chair)", group: "Terra", image: "/media/terra-collection/concept-chair.webp", alt: "A lounge chair with walnut ring arms and leaf-print upholstery" },
+  { key: "terra-piece-3", label: "Concept 3 photo (bed)", group: "Terra", image: "/media/terra-collection/concept-bed.webp", alt: "A low tan leather bed made up with cream linen" },
+  { key: "terra-piece-4", label: "Concept 4 photo (terrace chair)", group: "Terra", image: "/media/terra-collection/concept-terrace-chair.webp", alt: "An armchair woven in olive cord on a teak frame, with cream cushions" },
   { key: "home-difference-1", label: "Difference promise 1", group: "Homepage icons", image: shopFile("Custom_F.svg"), alt: "" },
   { key: "home-difference-2", label: "Difference promise 2", group: "Homepage icons", image: shopFile("Del_mf.svg"), alt: "" },
   { key: "home-difference-3", label: "Difference promise 3", group: "Homepage icons", image: shopFile("Icon_homepage.svg"), alt: "" },

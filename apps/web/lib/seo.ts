@@ -39,7 +39,7 @@ export const robotsMeta = (settings: SeoSettings) => ({ index: settings.indexing
 
 /** Pages that always exist, beside products, content pages, policies and articles. */
 const fixedPages = ["/", "/collections/all", ...categories.map((category) => `/collections/${category}`),
-  "/sofas", "/tables", "/chairs", "/our-story", "/nimbus-collection",
+  "/sofas", "/tables", "/chairs", "/our-story", "/nimbus-collection", "/terra-collection",
   "/contact", "/bulk-enquiry", "/returns", "/blogs/recent-stories"];
 export function sitemapEntries(settings: SeoSettings, input: {
   products: Product[]; pages: string[]; policies: string[]; articles: { blog: string; handle: string }[];

@@ -223,6 +223,7 @@ export type { CheckoutInput, QuoteRequest, QuoteSnapshot } from "./checkout";
 
 export * from "./category-content";
 export * from "./story-content";
+export * from "./collection-landing";
 export * from "./nimbus-content";
 export * from "./enquiry-admin";
 
