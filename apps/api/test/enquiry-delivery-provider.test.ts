@@ -180,3 +180,20 @@ test("one bounded deadline covers both headers and the entire response body", as
   assert.ok(signals.every(signal => signal.aborted), "timeout aborts pending transports");
   assert.equal(cancelled, true, "timeout cancels pending body reads");
 });
+
+// Catches linking staff to the wrong place, or letting the Keeri link carry anything but a lead path.
+test("the alert links the Keeri lead when the worker found one, and the store admin otherwise", async () => {
+  const config = loadEnquiryDeliveryConfig(env)!;
+  const texts: string[] = [];
+  const transport: typeof fetch = async (_url, options) => { texts.push(JSON.parse(String(options?.body)).text); return jsonResponse(200, { id: providerId }); };
+  assert.deepEqual(await sendEnquiryAlert(config, { ...alert, keeriLeadUrl: "https://maplefurnishers.keeri.in/leads/lead_42" }, transport), { status: "accepted", providerId });
+  await sendEnquiryAlert(config, alert, transport);
+  assert.equal(texts[0], "Reference: enq_01234567-89ab-cdef-0123-456789abcdef\nKind: project\nCreated: 2026-10-26T01:02:03.000Z\n\nOpen the lead in Keeri: https://maplefurnishers.keeri.in/leads/lead_42");
+  assert.equal(texts[1], "Reference: enq_01234567-89ab-cdef-0123-456789abcdef\nKind: project\nCreated: 2026-10-26T01:02:03.000Z\n\nOpen the staff inbox: https://shop.example.com/admin");
+  let calls = 0;
+  const counting: typeof fetch = async () => { calls++; return jsonResponse(200, { id: providerId }); };
+  for (const keeriLeadUrl of ["http://maplefurnishers.keeri.in/leads/1", "https://maplefurnishers.keeri.in/admin", "https://maplefurnishers.keeri.in/leads/1?x=visitor@example.invalid", "https://maplefurnishers.keeri.in/leads/1\nBcc: x"]) {
+    assert.deepEqual(await sendEnquiryAlert(config, { ...alert, keeriLeadUrl }, counting), { status: "failed", code: "provider_rejected" }, keeriLeadUrl);
+  }
+  assert.equal(calls, 0);
+});

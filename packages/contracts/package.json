@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./catalogue-registry": "./src/catalogue-registry.ts",
-    "./reviews": "./src/reviews.ts"
+    "./reviews": "./src/reviews.ts",
+    "./enquiry-delivery": "./src/enquiry-delivery.ts"
   },
   "dependencies": {
     "zod": "^4.1.12"

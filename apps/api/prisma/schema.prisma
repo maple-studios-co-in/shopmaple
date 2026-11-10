@@ -131,7 +131,8 @@ model Enquiry {
   status String @default("new")
   lostReason String?
   version Int @default(0)
-  delivery EnquiryDelivery?
+  /// One outbox row per target: the staff email and, when enabled, the Keeri lead.
+  deliveries EnquiryDelivery[]
   reviews EnquiryReviewAudit[]
   assignedToId String?
   assignedTo ShopAdmin? @relation("AssignedEnquiries", fields: [assignedToId], references: [id], onDelete: Restrict)
@@ -403,8 +404,10 @@ model ShopArticlePublication {
 
 model EnquiryDelivery {
   id String @id @default(cuid())
-  enquiryId String @unique
+  enquiryId String
   enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  /// "email" (the staff alert) or "keeri" (the lead sent to Keeri).
+  target String @default("email")
   configurationHash String
   status String @default("queued")
   version Int @default(0)
@@ -414,11 +417,16 @@ model EnquiryDelivery {
   acceptedAt DateTime?
   errorCode String?
   providerId String?
+  /// Keeri's answer for a "keeri" row once accepted: its lead id, "created" or "matched", and the admin path.
+  keeriLeadId String?
+  keeriOutcome String?
+  keeriLeadPath String?
   leaseToken String?
   leaseExpiresAt DateTime?
   createdAt DateTime @default(now())
   retries EnquiryDeliveryRetryAudit[]
-  @@index([status, nextAttemptAt])
+  @@unique([enquiryId, target])
+  @@index([target, status, nextAttemptAt])
 }
 
 model EnquiryDeliveryRetryAudit {

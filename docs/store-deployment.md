@@ -48,7 +48,7 @@ The API composes live checkout only when `CHECKOUT_ENABLED=true` **and** every k
 | `CHECKOUT_ENABLED` | Final activation switch. Set it last, only after every gate below is recorded. |
 | `KEERI_ORIGIN` | Keeri storefront service origin (HTTPS only). Shared with the catalogue media reader. |
 | `KEERI_REVIEWS_TOKEN` | Optional. Keeri service credential allowed to write reviews. With it and `KEERI_ORIGIN`, reviews from the product page go to Keeri; without it they are kept in Admin → Enquiries. See [product reviews](product-reviews.md). |
-| `KEERI_COMMERCE_TOKEN` | Keeri service credential with `quotes:write`, `reservations:write` and `orders:write` scopes. The existing catalogue-only token does not qualify. |
+| `KEERI_COMMERCE_TOKEN` | Keeri service credential with `quotes:write`, `reservations:write` and `orders:write` scopes (and `leads:write` once enquiries go to Keeri). The existing catalogue-only token does not qualify. |
 | `KEERI_TENANT_ID` | Keeri tenant whose catalogue identities the stored bindings reference. |
 | `KEERI_MERCHANT_SCOPE` | Merchant scope bound to the commerce credential and to the reviewed Keeri `STOREFRONT_COMMERCE_POLICIES` entry. Also namespaces attempts, webhooks and outbox rows. |
 | `RAZORPAY_KEY_ID` | Gateway merchant and mode (test or live). The only payment value the browser receives. |
@@ -69,6 +69,10 @@ Gates before `CHECKOUT_ENABLED=true` on the VPS, in order:
 A merged pull request, a passing local suite or a green CI run is none of these gates.
 
 Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker cycles, stops accepting connections, then waits for any in-flight enquiry or order cycle to finish before disconnecting the database and exiting, so a PM2 restart drains a whole cycle (bounded by the Keeri and Razorpay timeouts, about 30 s worst case; `kill_timeout` is 10 s, so PM2 may SIGKILL first). A hard kill is still safe: every inbox and outbox row is processed under a 90-second lease and a killed worker's lease simply expires, after which the next cycle retries the row. Paid goods are removed from the guest cart inside the capture transaction, and a cart with a payable attempt cannot be quoted again until that attempt is released, so a retry never produces a second order for the same payment.
+
+## Sending enquiries to Keeri as leads
+
+Independent of checkout. With `KEERI_LEADS_ENABLED=true`, contact, project and bulk enquiries are also queued as Keeri leads and sent to `POST {KEERI_ORIGIN}/api/storefront/leads` with `KEERI_COMMERCE_TOKEN`; the staff email keeps going and links the Keeri lead when there is one. The flag needs valid `KEERI_ORIGIN` and `KEERI_COMMERCE_TOKEN`, or startup fails naming the key. `KEERI_ADMIN_ORIGIN` is optional (defaults to `KEERI_ORIGIN`; production `https://maplefurnishers.keeri.in`). Order: Keeri's leads endpoint and the credential's `leads:write` scope first, then the store with the flag. Rollback is `KEERI_LEADS_ENABLED=false` and a restart. Details in [Keeri leads](keeri-leads.md).
 
 ## Launch checklist (online checkout)
 

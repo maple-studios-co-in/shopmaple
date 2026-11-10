@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { enquiryDeliveryResponseSchema, type EnquiryDeliveryResponse } from "@shopmaple/contracts";
+import { ExternalLink } from "lucide-react";
+import { enquiryDeliveryResponseSchema, type EnquiryDeliveryResponse, type EnquiryDeliveryTarget } from "@shopmaple/contracts/enquiry-delivery";
 import { Button } from "@/components/ui/button";
 import { Notice, Skeleton, writeOptions } from "./crm-primitives";
 import { isDenied, type CrmViewProps } from "./crm-tasks";
@@ -9,9 +10,12 @@ import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
 const labels = { queued: "Queued for the provider.", sending: "Sending to the provider.", retry_wait: "Waiting to retry with the provider.", accepted: "Accepted by the email provider.",
   failed: "Needs attention. Automatic attempts have stopped; ask an operator to review.", uncertain: "Outcome uncertain. Operator reconciliation is required before further action." };
+const leadLabels = { pending: "Pending: not yet in Keeri.", created: "Lead created in Keeri.", matched: "Matched an existing Keeri lead.",
+  failed: "Not sent to Keeri. Automatic attempts have stopped; the enquiry stays here." };
+const pendingLabels: Partial<Record<string, string>> = { sending: "Pending: sending to Keeri.", retry_wait: "Pending: waiting to retry with Keeri." };
 const at = (value: string) => <time dateTime={value}>{new Date(value).toLocaleString()}</time>;
 
-/** The staff alert for one enquiry; key it per enquiry. onEnabled says whether email is configured, so replies can refuse up front. */
+/** The staff alert and, when enabled, the Keeri lead for one enquiry; key it per enquiry. onEnabled says whether email is configured, so replies can refuse up front. */
 export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onEnabled }: Pick<CrmViewProps, "session" | "onDenied"> & {
   enquiryId: string; onBusy: (busy: boolean) => void; onEnabled?: (enabled: boolean) => void;
 }) {
@@ -22,14 +26,17 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
   const callbacks = useLatest({ onDenied, onBusy, onEnabled });
   const path = `/api/admin/enquiries/${encodeURIComponent(enquiryId)}/delivery`;
   const job = value?.delivery, canRetry = !!value?.enabled && job?.status === "retry_wait" && job.canRetry;
-  async function run(retry = false, notify = true) {
-    if (pending.current || !active.current || (retry && !canRetry)) return;
+  const keeri = value?.keeri, lead = keeri?.delivery, canRetryLead = !!keeri?.enabled && lead?.status === "retry_wait" && lead.canRetry;
+  async function run(retry?: EnquiryDeliveryTarget, notify = true) {
+    if (pending.current || !active.current || (retry === "email" && !canRetry) || (retry === "keeri" && !canRetryLead)) return;
     pending.current = true;
     const current = ++sequence.current, isCurrent = () => active.current && current === sequence.current;
     setBusy(true); setError("");
     if (notify) callbacks.current.onBusy(true);
     async function read(post: boolean) {
-      const init = post ? writeOptions(session.csrfToken, { expectedVersion: job!.version }) : { cache: "no-store", credentials: "same-origin" } as const;
+      // The email retry body stays exactly as before; only a Keeri retry names its target.
+      const init = post ? writeOptions(session.csrfToken, retry === "keeri" ? { expectedVersion: lead!.version, target: "keeri" } : { expectedVersion: job!.version })
+        : { cache: "no-store", credentials: "same-origin" } as const;
       const response = await request(post ? `${path}/retry` : path, init);
       if (!isCurrent()) return null;
       if (isDenied(response.status)) { active.current = false; sequence.current++; setValue(null); callbacks.current.onDenied(response.status); return null; }
@@ -40,7 +47,7 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
       return parsed;
     }
     try {
-      const result = await read(retry);
+      const result = await read(!!retry);
       // The worker may already have advanced beyond the retry response.
       const refreshed = result && retry && isCurrent() ? await read(false) : result;
       if (refreshed && isCurrent()) { setValue(refreshed); callbacks.current.onEnabled?.(refreshed.enabled); }
@@ -52,10 +59,10 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
     } finally { if (isCurrent()) { pending.current = false; setBusy(false); if (notify) callbacks.current.onBusy(false); } }
   }
   useEffect(() => {
-    active.current = true; pending.current = false; void run(false, false);
+    active.current = true; pending.current = false; void run(undefined, false);
     return () => { active.current = false; sequence.current++; };
   }, [request, path]);
-  return <Subsection title="Enquiry notification" aria-label="Enquiry notification" aria-busy={busy}
+  return <><Subsection title="Enquiry notification" aria-label="Enquiry notification" aria-busy={busy}
     description="Provider acceptance does not confirm inbox delivery. This alert does not send a customer reply.">
     {busy && !value && !error && <Skeleton rows={1} />}
     {value && (!value.enabled || !job) && <p className="text-sm text-foreground">{value.enabled ? "No notification was queued for this enquiry." : "Enquiry notifications are disabled."}</p>}
@@ -67,7 +74,19 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
     {error && <Notice tone="error">{error}</Notice>}
     {busy && <p role="status" className="text-xs text-muted-foreground">Loading notification status…</p>}
     <div className="flex flex-wrap gap-2">
-      {canRetry && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void run(true)}>Retry notification</Button>}
+      {canRetry && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void run("email")}>Retry notification</Button>}
       <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void run()}>Reload notification</Button></div>
-  </Subsection>;
+  </Subsection>
+  {keeri && <Subsection title="Keeri lead" aria-label="Keeri lead" aria-busy={busy} className="mt-6"
+    description="Contact, project and bulk enquiries are also sent to the Keeri CRM. This enquiry stays here either way.">
+    {!lead ? <p className="text-sm text-foreground">Not sent to Keeri: newsletter signups and reviews stay in the store.</p>
+      : <div className="grid gap-1 rounded-lg border border-line-soft bg-surface px-3.5 py-3 text-xs text-muted-foreground">
+        <p className="text-sm font-semibold text-foreground">{lead.state === "pending" ? pendingLabels[lead.status] ?? leadLabels.pending : leadLabels[lead.state]}</p>
+        <p className="tabular-nums">Attempts: {lead.attempts} of 5.</p>
+        {lead.nextAttemptAt && <p>Next attempt: {at(lead.nextAttemptAt)}.</p>}{lead.acceptedAt && <p>Keeri answered: {at(lead.acceptedAt)}.</p>}
+        {lead.errorCode && <p>Last status code: {lead.errorCode}.</p>}</div>}
+    <div className="flex flex-wrap gap-2">
+      {lead?.leadUrl && <Button asChild size="sm" variant="outline"><a href={lead.leadUrl} target="_blank" rel="noopener noreferrer">Open in Keeri<ExternalLink aria-hidden="true" strokeWidth={1.5} /></a></Button>}
+      {canRetryLead && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void run("keeri")}>Retry Keeri lead</Button>}</div>
+  </Subsection>}</>;
 }
