@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { beforeEach, after, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { syncCatalogueUnion } from "../src/catalogue-union-sync.js";
+import { resolveCatalogueBindings } from "../src/orders/catalogue-bindings.js";
 import {
   shopifyFixture,
   shopifyPricedFixture,
@@ -53,6 +54,18 @@ test("atomic union preserves cart references, identity bindings and handles acro
   assert.equal((await syncCatalogueUnion(db, s, k, "maple")).totalProducts, 1);
   assert.equal(await db.productSourceIdentity.count(), 2);
   assert.equal(await db.variantSourceIdentity.count(), 2);
+});
+test("checkout resolves the Keeri link exactly as the union recorded it", async () => {
+  // The union writes Keeri identities under `keeri:<tenant>`; checkout once looked for a bare
+  // "keeri" source, found nothing and refused every live checkout as CATALOGUE_BINDING_REQUIRED.
+  const { s, k } = fixtures();
+  await syncCatalogueUnion(db, s, k, "maple");
+  await db.variant.update({ where: { id: "preview-201" }, data: { available: true, stockPolicy: "stocked" } });
+  const bindings = await resolveCatalogueBindings(db as never, ["preview-201"], "maple");
+  assert.equal(bindings.items.length, 1);
+  assert.match(bindings.items[0]!.sourceVariantId, /^keeri:maple:/);
+  assert.match(bindings.items[0]!.sourceProductId, /^keeri:maple:/);
+  await assert.rejects(resolveCatalogueBindings(db as never, ["preview-201"], "other"), { code: "CATALOGUE_BINDING_REQUIRED" });
 });
 test("source opt-out removes Keeri-only items while Shopify union membership stays and stale payloads cannot restore", async () => {
   const { s, k } = fixtures();
