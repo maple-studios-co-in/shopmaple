@@ -32,7 +32,9 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // for that; the gzip budget below is unchanged and the registry-leak check stays the main guard.
 // 9 Nov 2026: 273,609 raw after the new main menu (Figma 256:3836): each room's card, six line icons, the custom-size card
 // and the discovery list live in the header's menu, which every page loads. Raised by 2,500 bytes for that.
-assert.ok(totalRaw <= 274_500, `Initial homepage JavaScript exceeds the 274,500-byte raw budget: ${totalRaw}`);
+// 10 Nov 2026: 274,519 raw after the product page's pinned header (in the header every page loads), the floating
+// "Contact us" button and the offer cards' arrows. Raised by 500 bytes for that.
+assert.ok(totalRaw <= 275_000, `Initial homepage JavaScript exceeds the 275,000-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.

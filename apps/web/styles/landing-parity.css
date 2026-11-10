@@ -2,6 +2,26 @@
 .landing-parity {
   overflow-x: clip;
 }
+/* A room's banners scale their words with the artwork, which left the offer at 9px and the button at 7px on a small
+   laptop or tablet (750px to 1300px); they now keep a readable floor and still fit the artwork (owner, 10 Nov 2026).
+   Phones draw the square artwork with sizes of their own. */
+@container (min-width: 750px) {
+  .landing-banner-frame .campaign-copy .campaign-supporting,
+  .landing-banner-frame .campaign-copy .campaign-offer {
+    font-size: max(12px, 0.947368cqw);
+    line-height: max(16px, 1.315789cqw);
+  }
+  .landing-banner-frame .campaign-copy .campaign-label,
+  .landing-banner-frame .campaign-copy .campaign-eligibility {
+    font-size: max(10px, 0.631579cqw);
+    line-height: max(14px, 0.894737cqw);
+  }
+  .landing-banner-frame .campaign-cta {
+    padding: max(6px, 0.526316cqw) max(11px, 0.947368cqw);
+    font-size: max(11px, 0.684211cqw);
+    line-height: max(15px, 1.052632cqw);
+  }
+}
 .landing-banner {
   margin-block: 24px;
 }
@@ -152,6 +172,8 @@
   line-height: 1.2;
   margin: 0;
 }
+/* The rooms grid is as tall as its four tiles at the artwork's own 3:2, so a tile's words ("Living Room", the Nimbus
+   wordmark) are never cropped as the window narrows; the film beside them takes the same height (owner, 10 Nov 2026). */
 .landing-nimbus-bento {
   max-width: 1600px;
   margin: 20px auto;
@@ -159,7 +181,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  height: 500px;
 }
 .landing-nimbus-bento > .landing-video,
 .landing-nimbus-tiles a {
@@ -175,6 +196,7 @@
   display: block;
   position: relative;
   overflow: hidden;
+  aspect-ratio: 3 / 2;
 }
 .landing-nimbus-tiles picture,
 .landing-nimbus-tiles img {
@@ -246,15 +268,35 @@
 .landing-nimbus-principles .landing-values h3 {
   font-size: 32px;
 }
+/* The principles' cream words and line icons sit on the burgundy band in fine-ruled frames; the room pages' pale cards
+   (styles/suggested-pages.css) had turned them cream on cream, blank at every width. */
+.landing-nimbus-principles .landing-values > div {
+  background: transparent;
+  border: 1px solid rgb(244 242 236 / 0.24);
+}
+/* A tablet (750px to 1023px): the rooms grid's film above its four tiles, and the values two by two, so no name runs
+   out of its card ("Soft Silhouettes" at 128px wide). */
+@media (min-width: 750px) and (max-width: 1023px) {
+  .landing-nimbus-bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .landing-nimbus-bento > .landing-video {
+    aspect-ratio: 3 / 2;
+  }
+  .landing-parity .landing-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .landing-slideshow > picture,
 .landing-slideshow img {
   display: block;
   width: 100%;
 }
+/* A slide's words are part of its picture, so it is shown whole at every width (a 65%-of-the-window crop cut "Detailed
+   to perfection" in half on a tablet). */
 .landing-slideshow img {
-  height: 65svh;
-  min-height: 400px;
-  object-fit: cover;
+  height: auto;
+  min-height: 0;
 }
 .landing-slideshow-controls {
   display: flex;

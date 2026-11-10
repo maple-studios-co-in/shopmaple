@@ -221,7 +221,7 @@ const features: Feature[] = [
 ];
 
 test("the hotspots are a dark plus on a light disc, over a photo with nothing behind it", async () => {
-  await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} contain title="Nola Accent Chair" tagline="Your choice of finish." photo="https://example.com/nola.png" />, async (host) => {
+  await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} contain title="Nola Accent Chair" photo="https://example.com/nola.png" />, async (host) => {
     const frame = host.querySelector("[data-feature-photo-frame]")!;
     assert.ok(classes(frame).includes("bg-transparent"));
     assert.equal(classes(frame).some((name) => /^bg-(cream|\[#f7f3ee\])$/.test(name)), false, "no panel colour behind the photo");
@@ -337,9 +337,10 @@ test("the product page's banner is a third smaller than its 751px frame", () => 
 
 test("the bundle's summary card stands as tall as the pieces beside it", () => {
   const bundle = source("../components/store/product-bundle.tsx");
-  assert.match(bundle, /xl:flex-row xl:items-stretch/);
+  // Side by side from 1024px, so a laptop at 125% keeps the summary beside the pieces (owner, 10 Nov 2026).
+  assert.match(bundle, /lg:flex-row lg:items-stretch/);
   assert.match(bundle, /<article data-bundle-piece className="flex h-full /);
-  assert.match(bundle, /data-bundle-summary[^>]*xl:self-stretch/);
+  assert.match(bundle, /data-bundle-summary[^>]*lg:self-stretch/);
 });
 
 // ---- 8. Photos that load sooner ----
@@ -398,7 +399,8 @@ test("the questions sit on the right of a heading that stays in place until the 
     const heading = host.querySelector("[data-faq-heading]")!;
     const questions = host.querySelector("[data-faq-questions]")!;
     assert.equal(heading.compareDocumentPosition(questions) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING, "the heading comes first, on the left");
-    for (const name of ["lg:sticky", "lg:top-8", "lg:self-start"]) assert.ok(classes(heading).includes(name), name);
+    // 32px under the header, which stays pinned on product pages (owner, 10 Nov 2026).
+    for (const name of ["lg:sticky", "lg:top-[calc(var(--site-header-offset,0px)+32px)]", "lg:self-start"]) assert.ok(classes(heading).includes(name), name);
     // About one question's height under it, so it lets go as the last question comes level with it (owner, 9 Nov 2026).
     assert.ok(classes(heading).includes("lg:mb-24"), "the heading lets go before the next section closes in");
     assert.equal([...classes(heading), ...classes(questions)].some((name) => name.startsWith("lg:order-")), false, "no reordering puts the heading on the right");

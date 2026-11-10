@@ -236,7 +236,8 @@ test("Hear From Them shows the real rating and count, invites a review and shows
     assert.equal(band.querySelector("[data-review-card]"), null, "The catalogue holds no customer review text");
   }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
   await mount((doc) => {
-    assert.equal(text(hook(doc, "data-reviews-note")), "No reviews to show yet. Share your experience with this piece.");
+    // Before the first review the band invites one (owner, 10 Nov 2026).
+    assert.equal(text(hook(doc, "data-reviews-note")), "The Aero Dining Chair is waiting for its first review.");
   });
 });
 

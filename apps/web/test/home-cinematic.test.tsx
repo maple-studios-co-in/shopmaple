@@ -213,7 +213,7 @@ test("the editorial photo cuts through Maple's dining pieces every 800 ms on and
   }
 });
 
-test("a drifting row draws its items twice, the second pass hidden and out of the tab order, with a pause switch", () => {
+test("a drifting row draws its items twice, the second pass hidden and out of the tab order, with no pause switch (owner, 10 Nov 2026)", () => {
   const items = (copy: boolean) => <a href="/x" tabIndex={copy ? -1 : undefined}>Post</a>;
   const page = doc(<HomeMarquee label="Instagram posts" seconds={30} items={items} />);
   const groups = all(page, "[data-marquee-group]");
@@ -221,7 +221,7 @@ test("a drifting row draws its items twice, the second pass hidden and out of th
   assert.equal(groups[1]!.getAttribute("aria-hidden"), "true");
   assert.equal(groups[1]!.querySelector("a")?.getAttribute("tabindex"), "-1");
   assert.equal(groups[0]!.querySelector("a")?.hasAttribute("tabindex"), false);
-  assert.ok(page.querySelector("[data-marquee-toggle] input[type=checkbox]"));
+  assert.equal(page.querySelector("input, button, [data-marquee-toggle]"), null, "the pointer and keyboard focus hold it instead");
   const still = doc(<HomeMarquee label="Instagram posts" seconds={30} autoplay={false} items={items} />);
   assert.equal(still.querySelectorAll("[data-marquee-group]").length, 1, "without motion there is one plain row");
   assert.equal(still.querySelector("[data-marquee-toggle]"), null);

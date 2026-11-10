@@ -100,6 +100,10 @@ export const templateMediaKeys = [
   "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining", "nimbus-room-collection",
   "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project",
   "nimbus-hero-poster", "nimbus-craft-poster", "story-hero", "story-film-poster",
+  // Our Story's redesign (owner, 10 Nov 2026): the belief photo and one per journey chapter. The film poster above stays
+  // valid for older revisions, though the page no longer shows the film.
+  "story-belief", "story-chapter-1", "story-chapter-2", "story-chapter-3", "story-chapter-4", "story-chapter-5",
+  "story-chapter-6", "story-chapter-7",
   "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
   "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
   "home-city-delhi", "home-city-kolkata", "home-city-hyderabad", "home-city-varanasi", "home-city-mumbai",

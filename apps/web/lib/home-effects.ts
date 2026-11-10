@@ -11,6 +11,8 @@
  *   [data-flipbook]      the editorial photo: its [data-flip-frame] pictures cut every 800 ms, on and
  *                        on, while it is in view
  *   [data-reveal]        an element that fades in once it scrolls into view (`data-revealed`)
+ *   [data-marquee]       the Social Proof row: its [data-marquee-track]'s drift eases to rest under the mouse or
+ *                        keyboard focus and back when they leave (`data-marquee-eased` while this is in charge)
  *
  * Under reduced motion nothing moves: every element keeps its finished, server-drawn state, and the
  * stage's numbers still switch collections.
@@ -274,6 +276,82 @@ export function mountFlipbook(root: HTMLElement): () => void {
   };
 }
 
+/** How long the drifting row takes to come to rest under the pointer, and to gather its full speed again. */
+export const marqueeStopMs = 650;
+export const marqueeStartMs = 1100;
+/** Slowing: most of the speed goes at once, the last of it softly (close to the site's cubic-bezier(.22,1,.36,1)). */
+const easeOut = (p: number) => 1 - (1 - p) ** 4;
+/** Gathering speed: gently away from rest and gently into the drift. */
+const easeInOut = (p: number) => (1 - Math.cos(Math.PI * p)) / 2;
+
+/**
+ * The Social Proof row (owner, 10 Nov 2026): the mouse over it, or keyboard focus inside it, holds it. Its drift is a
+ * CSS animation; this eases that animation's speed to rest and back (the playback rate keeps the row where it is,
+ * so nothing jumps), where the stylesheet alone would stop it dead. A finger is left alone, as the row is swiped
+ * past on the way down the page. Without a drift to ease (reduced motion) the stylesheet stays in charge.
+ */
+export function mountMarquee(root: HTMLElement, reduced = reducedMotion()): () => void {
+  const drift = reduced ? undefined : root.querySelector<HTMLElement>("[data-marquee-track]")?.getAnimations?.()[0];
+  if (!drift) return () => {};
+  const view = root.ownerDocument;
+  let pointer = false, focused = false, frameId = 0;
+  let tween: { from: number; to: number; ms: number; start?: number } | undefined;
+  const setRate = (rate: number) => { drift.playbackRate = rate; };
+  const step = (now: number) => {
+    frameId = 0;
+    if (!tween) return;
+    tween.start ??= now;
+    const progress = Math.min(1, (now - tween.start) / tween.ms);
+    const eased = tween.to < tween.from ? easeOut(progress) : easeInOut(progress);
+    setRate(progress < 1 ? tween.from + (tween.to - tween.from) * eased : tween.to);
+    if (progress < 1) frameId = requestAnimationFrame(step);
+    else tween = undefined;
+  };
+  const aim = () => {
+    const to = pointer || focused ? 0 : 1;
+    if (tween ? tween.to === to : drift.playbackRate === to) return;
+    const from = drift.playbackRate;
+    // A change of mind halfway carries on from the speed the row has, over the part of the way that is left.
+    tween = { from, to, ms: Math.max(1, (to === 0 ? marqueeStopMs : marqueeStartMs) * Math.abs(to - from)) };
+    if (!frameId) frameId = requestAnimationFrame(step);
+  };
+  const keyboardFocus = () => {
+    try { return root.querySelector(":focus-visible") !== null; } catch { return root.contains(view.activeElement); }
+  };
+  const onEnter = (event: Event) => {
+    if ((event as PointerEvent).pointerType === "touch") return;
+    pointer = true;
+    aim();
+  };
+  const onLeave = (event: Event) => {
+    if ((event as PointerEvent).pointerType === "touch") return;
+    pointer = false;
+    aim();
+  };
+  const onFocusIn = () => { focused = keyboardFocus(); aim(); };
+  const onFocusOut = (event: FocusEvent) => {
+    if (!(event.relatedTarget instanceof Node) || !root.contains(event.relatedTarget)) { focused = false; aim(); }
+  };
+  // Already under the mouse as this loads: the stylesheet has it held, so it stays held as the stylesheet steps aside.
+  try { pointer = root.matches(":hover"); } catch { pointer = false; }
+  focused = keyboardFocus();
+  if (pointer || focused) setRate(0);
+  root.addEventListener("pointerenter", onEnter);
+  root.addEventListener("pointerleave", onLeave);
+  root.addEventListener("focusin", onFocusIn);
+  root.addEventListener("focusout", onFocusOut);
+  root.setAttribute("data-marquee-eased", "");
+  return () => {
+    cancelAnimationFrame(frameId);
+    root.removeEventListener("pointerenter", onEnter);
+    root.removeEventListener("pointerleave", onLeave);
+    root.removeEventListener("focusin", onFocusIn);
+    root.removeEventListener("focusout", onFocusOut);
+    root.removeAttribute("data-marquee-eased");
+    setRate(1);
+  };
+}
+
 export function mountReveal(element: HTMLElement): () => void {
   const stopWatching = watchVisibility(element, 0.2, (seen) => { if (seen) element.setAttribute("data-revealed", ""); });
   return () => { stopWatching(); element.setAttribute("data-revealed", ""); };
@@ -288,6 +366,7 @@ export function mountHomeEffects(root: ParentNode = document): () => void {
     for (const host of root.querySelectorAll<HTMLElement>("[data-typed]")) stops.push(mountTyped(host));
     for (const book of root.querySelectorAll<HTMLElement>("[data-flipbook]")) stops.push(mountFlipbook(book));
     for (const element of root.querySelectorAll<HTMLElement>("[data-reveal]")) stops.push(mountReveal(element));
+    for (const row of root.querySelectorAll<HTMLElement>("[data-marquee]")) stops.push(mountMarquee(row));
   }
   const html = document.documentElement;
   html.setAttribute("data-home-effects", reduced ? "still" : "live");

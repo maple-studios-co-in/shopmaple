@@ -64,13 +64,21 @@
   flex: 1;
   justify-content: center;
   align-items: stretch;
-  gap: clamp(22px, 3.2vw, 54px);
+  /* The words close up as the window narrows, so at 1100px (a laptop at 125%) all seven still sit on the row with
+     room either side; from about 1680px they are the frame's 54px apart (owner, 10 Nov 2026). */
+  gap: clamp(18px, 6.4vw - 48px, 54px);
   height: 76px;
   margin: 0;
   /* The old two-row header ruled the menu off; the Figma header is one clean row. */
   border: 0;
   font: 500 15px/1.4 var(--font-text);
   color: #262626;
+}
+/* The icons close up with them: 32px apart on a big screen, 11px at 1100px, never pushed off the right edge. */
+@media (min-width: 1100px) {
+  .site-header .header-main .header-actions {
+    gap: clamp(8px, 3.4vw - 26px, 32px);
+  }
 }
 .maple-menu-trigger-wrap {
   position: static;
@@ -118,21 +126,28 @@
 }
 
 /* ---- The mega menu ---- */
+/* The room's card and the discovery list narrow with the window, so the groups between them keep their width on a
+   laptop; the panel stops above the window's bottom edge (the header ends about 140px down), scrolling inside only if
+   it must (owner, 10 Nov 2026). */
 .maple-mega,
 .maple-mega:not(:has(.maple-mega-feature)),
 .maple-mega:not(:has(.maple-mega-discovery)),
 .maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
+  --mega-feature: clamp(184px, 17vw, 260px);
+  --mega-discovery: clamp(200px, 18vw, 280px);
   position: absolute;
   top: calc(100% - 4px);
   left: clamp(16px, 2.3vw, 36px);
   right: clamp(16px, 2.3vw, 36px);
   width: auto;
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 280px);
-  gap: 24px;
-  max-height: calc(100dvh - 120px);
+  grid-template-columns: var(--mega-feature) minmax(0, 1fr) var(--mega-discovery);
+  gap: clamp(16px, 1.6vw, 24px);
+  /* --mega-offset: where the header ends at the top of the page (a taller header can set its own). */
+  max-height: calc(100dvh - var(--mega-offset, 150px));
   overflow-y: auto;
-  padding: 24px;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 1.6vw, 24px);
   border: 1px solid #f0eeeb;
   border-radius: 16px;
   background: #fff;
@@ -140,10 +155,10 @@
   font-family: var(--font-text);
 }
 .maple-mega:not(:has(.maple-mega-feature)) {
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+  grid-template-columns: minmax(0, 1fr) var(--mega-discovery);
 }
 .maple-mega:not(:has(.maple-mega-discovery)) {
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: var(--mega-feature) minmax(0, 1fr);
 }
 .maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
   grid-template-columns: minmax(0, 1fr);
@@ -281,15 +296,22 @@
   color: #1d1b19;
   font: 500 13px/1.4 var(--font-heading);
 }
+/* Words and arrow on one line where there is room; in a narrow column the arrow follows the last word down. */
+.maple-mega-custom strong,
 .maple-mega-custom em {
-  display: inline-flex;
-  white-space: nowrap;
-  align-items: center;
-  gap: 4px;
+  text-wrap: balance;
+}
+.maple-mega-custom em {
+  display: block;
   margin-top: 8px;
   color: var(--burgundy);
   font: 500 12px/1.4 var(--font-heading);
   font-style: normal;
+}
+.maple-mega-custom em svg {
+  display: inline;
+  margin: 0 0 0 4px;
+  vertical-align: -2px;
 }
 .maple-mega-custom:hover strong {
   color: var(--burgundy);
@@ -358,6 +380,102 @@
   transform: translateX(3px);
 }
 
+/* A laptop at 125% (1100px to 1199px): the discovery list moves under the groups as one row, so four groups still
+   have about 200px each beside the room's card. */
+@media (max-width: 1199px) {
+  .maple-mega {
+    --mega-feature: 200px;
+  }
+  .maple-mega:has(.maple-mega-feature):has(.maple-mega-discovery) {
+    grid-template-columns: var(--mega-feature) minmax(0, 1fr);
+  }
+  /* The room's card at 200px: its heading on two lines and its button on one. */
+  .maple-mega-feature {
+    padding: 14px;
+  }
+  .maple-mega-feature h2 {
+    font-size: 22px;
+  }
+  .maple-mega-feature a {
+    padding: 9px 11px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .maple-mega:not(:has(.maple-mega-feature)):has(.maple-mega-discovery) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .maple-mega:has(.maple-mega-discovery) > .maple-mega-feature {
+    grid-row: span 2;
+  }
+  .maple-mega-discovery {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+  }
+  .maple-mega-discovery a,
+  .maple-mega-discovery a:last-child {
+    flex: 1 1 0;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .maple-mega-discovery img {
+    width: 56px;
+    height: 56px;
+  }
+}
+/* A short window (a laptop's 620px to 760px): tighter rows and a shorter photo, so the open room fits without
+   scrolling; the photo is a room scene, cropped from its centre rather than squeezed. */
+@media (min-width: 1100px) and (max-height: 760px) {
+  .maple-menu-parent {
+    margin-bottom: 8px;
+  }
+  .maple-menu-link {
+    padding-block: 6px;
+  }
+  .maple-mega-column > .maple-mega-custom {
+    margin-top: 14px;
+    padding: 12px 14px;
+  }
+  .maple-mega-custom svg,
+  .maple-mega-custom > span {
+    display: none;
+  }
+  .maple-mega-custom em {
+    margin-top: 4px;
+  }
+  .maple-mega-feature {
+    gap: 8px;
+    padding: 14px;
+  }
+  .maple-mega-feature img {
+    max-height: clamp(96px, 100dvh - 520px, 260px);
+  }
+  .maple-mega-feature > span {
+    margin-top: 6px;
+  }
+  .maple-mega-feature h2 {
+    padding-bottom: 10px;
+  }
+  .maple-mega-feature a {
+    margin-top: 4px;
+  }
+}
+@media (min-width: 1200px) and (max-height: 760px) {
+  .maple-mega-discovery {
+    gap: 20px;
+    padding-block: 20px;
+  }
+  .maple-mega-discovery a,
+  .maple-mega-discovery a:last-child {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .maple-mega-discovery img {
+    width: 64px;
+    height: 64px;
+  }
+}
+
 /* Below a laptop the links move into the drawer the menu button opens. */
 @media (max-width: 1099px) {
   .maple-desktop-nav {
@@ -401,6 +519,11 @@
 .maple-drawer-utility-links {
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+  /* The links also carry the old header's .utility-links, whose width cap (half the row less the logo) squeezed them
+     to 75px on a phone, one word a line. */
+  max-width: none;
   margin: 8px 18px 0;
 }
 .maple-drawer-utility-links a {
@@ -409,6 +532,10 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  font-size: 14px;
+  font: 400 14px/1.4 var(--font-text);
   color: var(--burgundy);
+}
+/* On a tablet the drawer is a side panel, not the whole screen (owner, 10 Nov 2026). */
+.maple-mobile-drawer {
+  width: min(440px, calc(100% - 20px));
 }

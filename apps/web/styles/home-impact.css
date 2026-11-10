@@ -63,9 +63,11 @@
   max-width: 170px;
   font: 400 13px/1.45 var(--font-text);
 }
-/* In the flow of the film's copy; relative (not static) so its fill from the pointer stays inside it. */
+/* In the flow of the film's copy, lined up under the headline as in the frame; relative (not static) so its fill from
+   the pointer stays inside it, with the legacy button's corner offsets cleared (they nudged it 20px right and up). */
 [data-home-section="hero"] .hero-cta {
   position: relative;
+  inset: auto;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -154,6 +156,11 @@
   height: 100%;
   transform: translateX(-50%);
 }
+/* The slices meet on fractional pixels, which drew pale hairlines between them; each now reaches 1px under the next. */
+[data-campaign-layout="strip"] .campaign-art-tile {
+  box-sizing: content-box;
+  padding-right: 1px;
+}
 [data-campaign-layout="strip"] .campaign-shade,
 [data-campaign-layout="strip"] .campaign-bottom-shade {
   display: none;
@@ -161,6 +168,7 @@
 [data-campaign-layout="strip"] .campaign-copy {
   top: 50%;
   left: 57.2%;
+  z-index: 1;
   width: 38%;
   transform: translateY(-50%);
   gap: 8px;
@@ -357,8 +365,9 @@
   font: 500 clamp(24px, 2.7vw, 34px) / 1.25 var(--font-heading);
   text-align: center;
 }
+/* The closing word in the heading face's own italic, as before the 6 Nov type change (owner, 10 Nov 2026). */
 [data-home-section="ticker"] .home-statement em {
-  font: 500 1em / 1 var(--font-heading);
+  font: italic 500 1em / 1 var(--font-heading);
   letter-spacing: 0.01em;
 }
 
@@ -372,6 +381,7 @@
   padding: 0;
 }
 [data-home-section="offers"] .home-offer-tiles a {
+  position: relative;
   display: block;
   padding: 0;
   border: 0;
@@ -385,6 +395,42 @@
 }
 [data-home-section="offers"] .home-offer-tiles img {
   object-fit: cover;
+}
+/* The categories' arrow on every offer (owner, 10 Nov 2026): at its bottom left, a white circle with a dark maple
+   arrow. Pointing at the card trades the colours and nudges it on, as the category circles' arrows do. */
+[data-offer-arrow] {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 34px;
+  height: 34px;
+  padding: 9px;
+  border-radius: 50%;
+  background: #fff;
+  color: #80241c;
+  box-shadow: 0 4px 12px rgb(41 37 31 / 0.18);
+  transition: transform 0.35s cubic-bezier(0.2, 0.65, 0.2, 1), box-shadow 0.35s ease, background-color 0.35s ease, color 0.35s ease;
+}
+[data-home-section="offers"] .home-offer-tiles a:hover [data-offer-arrow],
+[data-home-section="offers"] .home-offer-tiles a:focus-visible [data-offer-arrow] {
+  background: #80241c;
+  color: #fff;
+  box-shadow: 0 10px 22px rgb(128 36 28 / 0.42);
+  transform: translateX(3px);
+}
+@media (max-width: 749px) {
+  [data-offer-arrow] {
+    left: 10px;
+    bottom: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-offer-arrow] {
+    transition: none;
+  }
 }
 
 /* ---- Nimbus ---------------------------------------------------------------------------- */
@@ -507,6 +553,26 @@
 }
 [data-home-section="promos"] .campaign-copy .campaign-cta {
   margin-top: auto;
+}
+/* The banners scale their words with the artwork, which left the offer near 9px on a small laptop or tablet (750px to
+   1300px wide); they keep a readable floor that still fits the artwork, as the room pages' banners do (owner, 10 Nov 2026). */
+@container (min-width: 750px) {
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-supporting,
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-offer {
+    font-size: max(12px, 0.947368cqw);
+    line-height: max(16px, 1.315789cqw);
+  }
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-label,
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-eligibility {
+    font-size: max(10px, 0.631579cqw);
+    line-height: max(14px, 0.894737cqw);
+  }
+}
+/* A promo card draws the square artwork, whose offer line is 3% of the card: 9px on a 300px card. */
+[data-home-section="promos"] .campaign-copy .campaign-supporting,
+[data-home-section="promos"] .campaign-copy .campaign-offer {
+  font-size: max(12px, 3cqw);
+  line-height: max(16px, 4cqw);
 }
 
 /* ---- Product bands (Bestsellers, Chairs) ----------------------------------------------- */
@@ -796,8 +862,30 @@
 @media (max-width: 1000px) {
   /* A fixed ratio with a minimum height would widen the strip past the window; use a height instead. */
   [data-campaign-layout="strip"] .campaign-scene { aspect-ratio: auto; height: clamp(150px, 22vw, 200px); }
+  [data-campaign-layout="strip"] .campaign-scene::after { width: 12%; }
   [data-home-section="hero"] .hero-film { height: clamp(430px, 54vw, 500px); }
   [data-home-section="difference"] .home-difference { padding-inline: 30px; }
+}
+/* Tablets and narrow windows (owner's zoom bar, 10 Nov 2026): two cramped columns of enquiry become one, the four offer
+   tiles pair up so the words in their pictures can be read, and the three promos become a row to swipe, two at a
+   time, rather than three squares too small for their copy. */
+@media (max-width: 899px) {
+  [data-home-section="project"] .home-project { grid-template-columns: minmax(0, 1fr); }
+  [data-home-section="project"] .home-project > div > p { max-width: 560px; }
+}
+@media (min-width: 750px) and (max-width: 899px) {
+  [data-home-section="offers"] .home-offer-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-home-section="promos"] .campaign-promo-grid {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 35px;
+    scrollbar-width: none;
+  }
+  [data-home-section="promos"] .campaign-promo-grid::-webkit-scrollbar { display: none; }
+  [data-home-section="promos"] .campaign-promo-grid .campaign-banner { flex: 0 0 calc((100% - 16px) / 2.15); scroll-snap-align: start; }
 }
 @media (max-width: 749px) {
   [data-home-section="hero"] .hero-grid { padding: 12px 16px 8px; grid-template-columns: 1fr; }
@@ -831,7 +919,7 @@
   .home-quote-mark { left: -6px; top: -26px; font-size: 110px; }
   [data-home-section="project"] .home-project { padding: 40px 16px 56px; gap: 28px; }
   [data-home-section="values"] .home-values { padding: 16px 16px 72px; }
-  [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; }
+  [data-home-section="promos"] .campaign-promo-grid { padding-inline: 16px; scroll-padding-inline: 16px; }
 }
 
 /* ======================================================================================== */
@@ -1162,7 +1250,7 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
   [data-stage-ready] .nimbus-stage-next:focus-visible { opacity: 1; scale: 1; }
 }
 
-/* ---- Drifting rows (Social proof, Cities): continuous, each card sharp to the last, slipping out of sight at the margins ---- */
+/* ---- Drifting rows (Social proof): continuous, each card sharp to the last, slipping out of sight at the margins ---- */
 .home-marquee { position: relative; overflow: visible; }
 .home-marquee-viewport { overflow: hidden; }
 .home-marquee-viewport:focus-visible { outline: 2px solid var(--impact-burgundy, #741a14); outline-offset: 6px; }
@@ -1173,51 +1261,10 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 }
 .home-marquee:not([data-marquee]) .home-marquee-track { animation: none; }
 .home-marquee-group { display: flex; flex: none; }
-.home-marquee:hover .home-marquee-track,
-.home-marquee:focus-within .home-marquee-track,
-.home-marquee:has([data-marquee-pause]:checked) .home-marquee-track { animation-play-state: paused; }
+/* The pointer or keyboard focus holds the row; there is no pause button (owner, 10 Nov 2026). Until the homepage's
+   effects load, the stylesheet holds it at once; from then on lib/home-effects eases it to a stop and back. */
+.home-marquee:not([data-marquee-eased]):is(:hover, :focus-within) .home-marquee-track { animation-play-state: paused; }
 @keyframes home-marquee { to { transform: translateX(-50%); } }
-
-/* The pause switch: two bars while the row drifts, a play triangle once paused. */
-.home-marquee-toggle {
-  position: absolute;
-  top: -50px;
-  right: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid #e3d8cd;
-  border-radius: 50%;
-  background: #fff;
-  color: var(--impact-burgundy, #741a14);
-  cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-.home-marquee-toggle input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.home-marquee-toggle::before {
-  content: "";
-  width: 9px;
-  height: 11px;
-  border-inline: 3px solid currentColor;
-}
-.home-marquee-toggle:has(input:checked)::before {
-  width: 0;
-  height: 0;
-  border-block: 6px solid transparent;
-  border-inline: 10px solid currentColor;
-  border-inline-end: 0;
-  margin-left: 3px;
-}
-.home-marquee-toggle:hover { background: var(--impact-burgundy, #741a14); color: #fff; }
-.home-marquee-toggle:has(input:focus-visible) { outline: 2px solid var(--impact-burgundy, #741a14); outline-offset: 3px; }
 
 /* Social proof sits within the page's 48px margins, like the bands above it. */
 [data-home-section="instagram"] .home-social {
@@ -1243,7 +1290,6 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 .home-social .instagram-motion .home-instagram-posts > a img { transition: transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1); }
 .home-social .instagram-motion .home-instagram-posts > a:hover img { transform: scale(1.06); }
 
-[data-home-section="cities"] .home-marquee-toggle { top: auto; bottom: -38px; right: 50%; transform: translateX(50%); }
 
 
 /* ---- Pull up a chair: the square photo flips through Maple's dining pieces, hard cuts, on and on ---- */
@@ -1255,12 +1301,16 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 [data-flipbook] [data-flip-frame][data-active] { opacity: 1; }
 
 /* ---- Closing wordmark: Figma 1:253, fading in as it scrolls into view ---- */
+/* One line at every width, sized from the row beneath it (the name is about 7.25 times as wide as it is tall): at 125%
+   zoom it had broken into "Maple" over "Furnishers", two giant lines (owner, 10 Nov 2026). */
+[data-home-section="values"] .home-values { container-type: inline-size; }
 [data-home-section="values"] .home-values .home-values-watermark {
   background: linear-gradient(180deg, rgb(116 26 20 / 0.2) 0%, rgb(116 26 20 / 0) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font: 500 clamp(48px, 11.9vw, 150px) / 1.28 var(--font-heading);
+  font: 500 min(150px, 13cqw) / 1.28 var(--font-heading);
+  white-space: nowrap;
 }
 [data-reveal] {
   transition: opacity 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1), filter 1.6s ease;
@@ -1279,8 +1329,7 @@ html[data-home-effects="live"] [data-reveal]:not([data-revealed]) {
   .nimbus-stage-dots { right: 18px; bottom: 18px; }
   .nimbus-stage-next { top: auto; right: auto; bottom: 18px; left: 18px; width: 40px; height: 40px; transform: none; }
   .nimbus-stage-next-arrow { width: 20px; height: 20px; }
-  [data-home-section="instagram"] .home-social { padding-inline: 16px; padding-bottom: 96px; }
-  .instagram-motion .home-marquee-toggle { top: auto; bottom: -50px; right: 50%; transform: translateX(50%); }
+  [data-home-section="instagram"] .home-social { padding-inline: 16px; }
   .home-social .instagram-motion .home-instagram-posts { gap: 12px; padding-right: 12px; }
   .home-social .instagram-motion .home-instagram-posts > a { flex-basis: 58vw; }
 }
@@ -1300,8 +1349,7 @@ html[data-home-effects="live"] [data-reveal]:not([data-revealed]) {
   [data-stage-ready] .nimbus-stage-next [data-next-progress] { animation: none; }
   .home-marquee-track { animation: none; }
   .home-marquee-viewport { overflow-x: auto; }
-  .home-marquee-group[data-marquee-copy],
-  .home-marquee-toggle { display: none; }
+  .home-marquee-group[data-marquee-copy] { display: none; }
   @media (hover: hover) {
     [data-home-section] .category-tile:hover img,
     [data-home-section] a:hover img,

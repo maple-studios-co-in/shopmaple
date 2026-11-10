@@ -2,6 +2,8 @@
    Scoped to their [data-home-section] wrappers. Widths follow the frame at 1265px. */
 
 /* ---- Pull up a chair: a square photo with its caption, beside one large photo ------------------ */
+/* Held to 1226px below 1600px: the owner preferred its photos at this size (10 Nov 2026). From 1600px wide-screens.css
+   lets it grow with the page. */
 [data-home-section="editorial"] [data-editorial] {
   display: grid;
   grid-template-columns: minmax(0, 386fr) minmax(0, 720fr);

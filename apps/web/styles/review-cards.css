@@ -40,3 +40,46 @@
     line-clamp: 1;
   }
 }
+
+/* Before the first review (owner, 10 Nov 2026): the band is Maple's own red, #80241C, flat — no light, shading or grain
+   over it — with a large quotation mark standing quietly behind the heading. It is painted behind the words (the
+   section isolates them), and it does not move. */
+/* The mark is a classic curly quote: the storefront's sans-serif draws it as two straight strokes. */
+[data-reviews-empty]::before {
+  content: "\201C";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 50%;
+  translate: -50% -4%;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(280px, 30vw, 460px);
+  line-height: 1;
+  color: rgb(255 255 255 / 0.055);
+  pointer-events: none;
+}
+
+/* The stars that open the form already rated: pointing at one, or tabbing to it, fills it and those before it in the
+   warm gold of the review cards' stars, as the form's own stars do. */
+[data-rate] [data-rate-star] svg {
+  transition: fill 0.3s cubic-bezier(0.22, 1, 0.36, 1), color 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-rate]:has([data-rate-star]:is(:hover, :focus-visible)) [data-rate-star] svg {
+  fill: currentColor;
+  color: #ffb74a;
+}
+[data-rate] [data-rate-star]:is(:hover, :focus-visible) ~ [data-rate-star] svg {
+  fill: transparent;
+  color: rgb(255 255 255 / 0.7);
+}
+[data-rate] [data-rate-star]:is(:hover, :focus-visible) svg {
+  transform: scale(1.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-rate] [data-rate-star] svg {
+    transition: none;
+  }
+  [data-rate] [data-rate-star]:is(:hover, :focus-visible) svg {
+    transform: none;
+  }
+}

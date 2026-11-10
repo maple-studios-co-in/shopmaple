@@ -1,0 +1,516 @@
+/* Our Story (Figma 293:1093, its journey slider 293:1434; owner, 10 Nov 2026). Drawn at the design's 1440px: every size
+   below is the design's value at 1440 written as a share of the screen (value / 14.4 vw), so the page keeps its
+   proportions as the screen narrows, down to a floor that still reads, and grows in proportion on big screens, to a
+   third larger at 1920. Regions fold to one column by the page's own width (container queries). The design's maple red
+   is a shade lighter than the brand burgundy; it stays as drawn. */
+.story-page {
+  --story-maple: #80241c;
+  --story-ink: #292622;
+  --story-muted: #77716c;
+  --story-paper: #fcfbf8;
+  --story-sand: #f2eee6;
+  --story-rule: #d8d1c7;
+  --story-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --story-gutter: clamp(20px, 5.556vw, 107px);
+  --story-text: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+  container: story / inline-size;
+  overflow-x: clip;
+  background: var(--story-paper);
+  color: var(--story-ink);
+  font-family: var(--font-text);
+}
+.story-page p {
+  margin: 0;
+}
+
+/* The small capital labels ("OUR STORY / MADE IN DELHI"), 13px; a chapter's date keeps its own case ("STORY / Today"). */
+.story-page .story-eyebrow {
+  margin: 0;
+  color: var(--story-muted);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.385 var(--font-text);
+  text-transform: uppercase;
+}
+.story-page .story-eyebrow-slash {
+  margin-inline: 0.15em;
+}
+.story-page .story-eyebrow-date {
+  text-transform: none;
+}
+
+/* The buttons: as wide as the design's (14.875em) for its words, wider only for longer ones; they fill from the pointer
+   like every button on the site (styles/button-fill.css). */
+.story-page .story-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14.875em;
+  padding: 1em;
+  border-radius: 0.3125em;
+  background: var(--story-maple);
+  color: #fff;
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  text-align: center;
+  text-decoration: none;
+}
+.story-page .story-button-light {
+  background: var(--story-paper);
+  color: var(--story-maple);
+}
+
+/* ---- The opening: the words beside Maple's own photo ---- */
+.story-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 577.674fr) minmax(0, 627.907fr);
+  align-items: center;
+  column-gap: clamp(32px, 4.651vw, 89px);
+  padding: clamp(40px, min(5.556vw, 10svh), 107px) clamp(20px, 5.833vw, 112px);
+  background: var(--story-paper);
+}
+.story-hero-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.599vw, 31px);
+  min-width: 0;
+}
+.story-page .story-hero .story-eyebrow {
+  font-size: clamp(12px, 0.945vw, 18.1px);
+}
+.story-page .story-hero-title {
+  margin: 0;
+  color: var(--story-maple);
+  font: 500 clamp(40px, 4.651vw, 89px) / 1.40625 var(--font-heading);
+}
+.story-page .story-hero-tagline {
+  max-width: 20.9em;
+  color: var(--story-ink);
+  font: 500 clamp(19px, 1.744vw, 33.5px) / 1.417 var(--font-heading);
+}
+.story-page .story-hero-body {
+  max-width: 25.6em;
+  color: var(--story-muted);
+  font: 400 clamp(16px, 1.308vw, 25.1px) / 1.389 var(--font-text);
+}
+.story-page .story-hero-cta {
+  font-size: clamp(15px, 1.163vw, 22.3px);
+  line-height: 1.433;
+}
+.story-hero-media {
+  aspect-ratio: 627.907 / 586.047;
+  overflow: hidden;
+  border-radius: clamp(8px, 0.727vw, 14px);
+  background: #efe9e1;
+}
+.story-hero-media img,
+.story-belief-media img,
+.story-chapter-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* A short laptop screen (a 1536px laptop at 125%, 1229 x 620): the words start at the top of the photo rather than
+   its middle, so the button shows on arrival. */
+@media (max-height: 760px) {
+  .story-hero {
+    align-items: start;
+  }
+}
+
+/* ---- Three principles on a band of sand ---- */
+.story-principles {
+  padding: clamp(28px, 3.333vw, 64px) var(--story-gutter);
+  background: var(--story-sand);
+}
+.story-page .story-principles-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.667vw, 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.story-principle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 0.833vw, 16px);
+  min-height: clamp(180px, 17.361vw, 333px);
+  padding: 24px 20px;
+  border: 1px solid var(--story-rule);
+  border-radius: clamp(10px, 0.833vw, 16px);
+  text-align: center;
+}
+.story-principle img {
+  flex: none;
+  width: clamp(56px, 5.556vw, 107px);
+  height: auto;
+}
+.story-principle > div {
+  display: grid;
+  gap: clamp(8px, 0.833vw, 16px);
+  min-width: 0;
+}
+.story-page .story-principle h3 {
+  margin: 0;
+  color: var(--story-ink);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.417 var(--font-heading);
+}
+.story-page .story-principle p {
+  color: var(--story-muted);
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+}
+
+/* ---- The belief: the woven seat beside two paragraphs, the first darker ---- */
+.story-belief {
+  display: grid;
+  grid-template-columns: minmax(0, 540fr) minmax(0, 660fr);
+  align-items: center;
+  column-gap: clamp(32px, 5.556vw, 107px);
+  padding: clamp(48px, 5.556vw, 107px) var(--story-gutter);
+  background: var(--story-paper);
+}
+.story-belief-media {
+  aspect-ratio: 540 / 610;
+  overflow: hidden;
+  border-radius: clamp(8px, 0.694vw, 13.3px);
+  background: #e9e1d6;
+}
+.story-belief-copy,
+.story-chapter-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+  min-width: 0;
+}
+.story-page .story-belief-title,
+.story-page .story-chapter-title {
+  margin: 0;
+  color: var(--story-maple);
+  font: 500 clamp(30px, 3.056vw, 58.7px) / 1.409 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.story-page .story-belief-title {
+  max-width: 93.94%;
+}
+.story-belief-body {
+  display: grid;
+  gap: clamp(16px, 1.667vw, 32px);
+  max-width: 90.91%;
+}
+.story-page .story-belief-body p {
+  color: var(--story-muted);
+  font: var(--story-text);
+}
+.story-page .story-belief-body p:first-child {
+  color: var(--story-ink);
+}
+
+/* ---- The journey: one chapter at a time, the years and arrows under it ---- */
+.story-journey {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 2.778vw, 53px);
+  padding: clamp(44px, 4.444vw, 85px) var(--story-gutter);
+  background: #fff;
+}
+.story-page .story-journey-title {
+  margin: 0;
+  color: var(--story-maple);
+  font: 500 clamp(28px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
+}
+.story-timeline {
+  --story-slide-gap: clamp(32px, 5.556vw, 107px);
+  --story-dot: clamp(12px, 0.972vw, 18.7px);
+  --story-glide: calc(560ms + var(--story-distance, 1) * 90ms);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 2.5vw, 48px);
+  min-width: 0;
+}
+.story-timeline-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+  transition: height 0.6s var(--story-ease);
+}
+.story-timeline-track {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--story-slide-gap);
+  transform: translate3d(calc(var(--story-index, 0) * (-100% - var(--story-slide-gap)) + var(--story-drag, 0px)), 0, 0);
+  transition: transform var(--story-glide) var(--story-ease);
+}
+.story-timeline[data-dragging] .story-timeline-track {
+  transition: none;
+}
+.story-timeline[data-dragging] .story-timeline-viewport {
+  cursor: grabbing;
+  user-select: none;
+}
+.story-timeline-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  opacity: 0.3;
+  transition: opacity 0.7s var(--story-ease);
+}
+.story-timeline-slide[data-active] {
+  opacity: 1;
+}
+.story-chapter {
+  display: grid;
+  grid-template-columns: minmax(0, 560fr) minmax(0, 640fr);
+  align-items: start;
+  column-gap: clamp(32px, 5.556vw, 107px);
+}
+.story-chapter-media {
+  aspect-ratio: 560 / 540;
+  overflow: hidden;
+  border-radius: clamp(8px, 0.694vw, 13.3px);
+  background: #efe9e1;
+  user-select: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .story-chapter-media {
+    cursor: grab;
+  }
+}
+.story-chapter-media img {
+  -webkit-user-drag: none;
+}
+.story-page .story-chapter-title {
+  max-width: 93.75%;
+}
+.story-chapter-body {
+  max-width: 92.19%;
+}
+.story-page .story-chapter-body p {
+  color: var(--story-ink);
+  font: var(--story-text);
+}
+.story-page .story-chapter-body p + p {
+  margin-top: 1.389em;
+}
+
+/* The years: seven equal places across the design's 1120px, a single dot gliding to the chosen one. */
+.story-timeline-nav {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+}
+.story-timeline-years {
+  --story-year-w: calc(100% / var(--story-count, 7));
+  position: relative;
+  display: grid;
+  flex: 0 1 87.5%;
+  grid-template-columns: repeat(var(--story-count, 7), minmax(0, 1fr));
+  min-width: 0;
+}
+.story-timeline-dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--story-year-w);
+  height: var(--story-dot);
+  transform: translateX(calc(var(--story-index, 0) * 100%));
+  transition: transform var(--story-glide) var(--story-ease);
+  pointer-events: none;
+}
+.story-timeline-dot img {
+  display: block;
+  width: var(--story-dot);
+  height: var(--story-dot);
+}
+.story-page .story-timeline-year {
+  min-width: 0;
+  margin: 0;
+  padding: calc(var(--story-dot) * 2) 0 0;
+  border: 0;
+  background: none;
+  color: var(--story-muted);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.4286 var(--font-text);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.3s var(--story-ease);
+}
+.story-page .story-timeline-year[aria-selected="true"] {
+  color: var(--story-maple);
+}
+.story-timeline-arrows {
+  display: flex;
+  flex: none;
+  gap: clamp(16px, 1.667vw, 32px);
+}
+.story-page .story-timeline-arrow {
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 3.472vw, 66.7px);
+  height: clamp(44px, 3.472vw, 66.7px);
+  margin: 0;
+  padding: 0;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.3s var(--story-ease), background-color 0.3s var(--story-ease), opacity 0.3s var(--story-ease), transform 0.3s var(--story-ease);
+}
+.story-timeline-arrow img {
+  width: clamp(22px, 1.667vw, 32px);
+  height: auto;
+}
+/* Spent at either end: faded, though it keeps focus. */
+.story-page .story-timeline-arrow[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: default;
+}
+@media (hover: hover) {
+  .story-page .story-timeline-year:hover {
+    color: var(--story-ink);
+  }
+  .story-page .story-timeline-year[aria-selected="true"]:hover {
+    color: var(--story-maple);
+  }
+  .story-page .story-timeline-arrow:not([aria-disabled="true"]):hover {
+    border-color: var(--story-rule);
+    background: var(--story-paper);
+  }
+}
+.story-page .story-timeline-arrow:not([aria-disabled="true"]):active {
+  transform: scale(0.95);
+}
+
+/* ---- The cities served, as on the homepage ---- */
+.story-cities {
+  display: flow-root;
+  background: var(--story-paper);
+}
+
+/* ---- The invitation on maple red ---- */
+.story-invitation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px clamp(32px, 5.556vw, 107px);
+  padding: clamp(48px, 5.556vw, 107px) var(--story-gutter);
+  background: var(--story-maple);
+  color: #fff;
+}
+.story-invitation-copy {
+  display: grid;
+  flex: 1 1 520px;
+  gap: clamp(8px, 0.833vw, 16px);
+  max-width: 71.875%;
+  min-width: 0;
+}
+.story-page .story-invitation h2 {
+  margin: 0;
+  color: #fff;
+  font: 500 clamp(28px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
+}
+.story-page .story-invitation p {
+  color: #fff;
+  font: var(--story-text);
+}
+.story-page .story-invitation .story-button {
+  flex: none;
+  font-size: clamp(15px, 1.111vw, 21.3px);
+}
+
+/* ---- Below a laptop: the opening stacks, its words first ---- */
+@container story (max-width: 899px) {
+  .story-hero {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+  }
+  .story-invitation-copy {
+    max-width: none;
+  }
+}
+/* Side by side, the journey is as tall as its tallest chapter, so the years never move. */
+@container story (min-width: 700px) {
+  .story-timeline-viewport {
+    height: auto !important;
+  }
+}
+/* ---- A phone or a narrow window: one column throughout ---- */
+@container story (max-width: 699px) {
+  .story-belief {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 28px;
+  }
+  .story-belief-media {
+    width: min(100%, 520px);
+  }
+  .story-page .story-belief-title,
+  .story-belief-body,
+  .story-page .story-chapter-title,
+  .story-chapter-body {
+    max-width: none;
+  }
+  .story-chapter {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 24px;
+  }
+  /* The years become a strip that scrolls, the chosen one brought to its middle; the arrows stay beside it. */
+  .story-timeline-nav {
+    align-items: center;
+    gap: 12px;
+  }
+  .story-timeline-years {
+    --story-year-w: 104px;
+    flex: 1 1 auto;
+    grid-template-columns: repeat(var(--story-count, 7), var(--story-year-w));
+    padding-right: 32px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  }
+  .story-timeline-years::-webkit-scrollbar {
+    display: none;
+  }
+  .story-page .story-timeline-year:focus-visible {
+    outline-offset: -2px;
+  }
+  .story-timeline-arrows {
+    gap: 8px;
+  }
+}
+@container story (max-width: 639px) {
+  .story-page .story-principles-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .story-principle {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 18px;
+    min-height: 0;
+    padding: 18px 20px;
+    text-align: left;
+  }
+  .story-principle img {
+    width: 56px;
+  }
+  .story-principle > div {
+    gap: 2px;
+  }
+}
+@container story (max-width: 559px) {
+  .story-page .story-invitation .story-button {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-timeline-viewport,
+  .story-timeline-track,
+  .story-timeline-slide,
+  .story-timeline-dot,
+  .story-page .story-timeline-year,
+  .story-page .story-timeline-arrow {
+    transition: none;
+  }
+}

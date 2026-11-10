@@ -1,6 +1,7 @@
 /* The cities panel (Figma 177:1159), the same wherever HomeCities appears: the eyebrow, figure and promise beside the
-   arches, which sit between two arrows over a faint dotted world. An arch is sized from the width of the row, so eight of
-   them show on a large screen however wide it is, and the rest wait behind the arrows. */
+   arches, which sit between two arrows on a clean warm surface (the dotted world read as grain and is gone, owner,
+   10 Nov 2026). An arch is sized from the width of the row, so eight of them show on a large screen however wide it is,
+   and the rest wait behind the arrows. */
 .home-cities.home-container {
   --cities-shown: 8;
   --cities-gap: 20px;
@@ -14,11 +15,7 @@
   padding: 60px 13px 60px var(--cities-inset);
   border: 1px solid rgb(255 255 255 / 0.8);
   border-radius: 22px;
-  /* The map sits under a veil of the panel's own colour, so it reads as faintly as in the design. */
-  background:
-    linear-gradient(rgb(243 239 234 / 0.45), rgb(243 239 234 / 0.45)) 0 0 / 100% 100% no-repeat,
-    url("/media/cities/dotted-world.svg") 12% 50% / auto 88% no-repeat,
-    linear-gradient(180deg, #f0ebe6 0%, #f5f1ec 100%) 0 0 / 100% 100% no-repeat;
+  background: linear-gradient(180deg, #f0ebe6 0%, #f5f1ec 100%);
   box-shadow: 0 1px 2px rgb(41 37 31 / 0.04), 0 18px 40px -26px rgb(87 63 45 / 0.24);
 }
 .home-cities header {
@@ -204,8 +201,6 @@
     width: calc(100% - 32px);
     margin: 16px auto;
     padding: 36px 20px 36px var(--cities-inset);
-    background-size: 100% 100%, auto 70%, 100% 100%;
-    background-position: 0 0, 50% 20%, 0 0;
   }
   .home-cities-description {
     max-width: 420px;
@@ -217,7 +212,8 @@
 @media (max-width: 767px) {
   .home-cities.home-container { --cities-shown: 4; }
 }
-/* On a phone the row is swiped, with the arrows resting on its edges. */
+/* On a phone the row is swiped, with the two arrows side by side beneath it: resting on its edges they covered the
+   end photos (10 Nov 2026). */
 @media (max-width: 639px) {
   .home-cities.home-container {
     --cities-shown: 3;
@@ -230,22 +226,18 @@
     font-size: 44px;
   }
   .home-cities-rail {
-    position: relative;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px 14px;
   }
-  .home-cities-arrow {
-    position: absolute;
-    top: 42%;
-    z-index: 1;
-    width: 40px;
-    height: 40px;
-    transform: translateY(-50%);
+  .home-city-track {
+    order: -1;
+    flex: 0 0 100%;
   }
-  .home-cities-arrow[data-cities-prev] {
-    left: -10px;
-    margin: 0;
-  }
+  .home-cities-arrow[data-cities-prev],
   .home-cities-arrow[data-cities-next] {
-    right: -10px;
+    width: 44px;
+    height: 44px;
     margin: 0;
   }
 }

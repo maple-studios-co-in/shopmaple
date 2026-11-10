@@ -116,7 +116,8 @@ function HelpMenu({ links, current, name }: { links: readonly HelpLink[]; curren
   return (
     <nav aria-label="Help pages" className="pt-5 pb-4 lg:hidden">
       <details data-help-menu className="group">
-        <summary className="flex w-fit cursor-pointer list-none items-center text-[14px] leading-[22px] font-medium text-maple after:ml-[17px] after:content-['↓'] group-open:after:content-['↑'] [&::-webkit-details-marker]:hidden">
+        {/* The arrow points down while closed and turns up once open (owner, 10 Nov 2026). */}
+        <summary className="flex w-fit cursor-pointer list-none items-center text-[14px] leading-[22px] font-medium text-maple after:ml-[17px] after:inline-block after:content-['↓'] after:transition-transform after:duration-500 after:ease-[cubic-bezier(.22,1,.36,1)] group-open:after:rotate-180 motion-reduce:after:transition-none [&::-webkit-details-marker]:hidden">
           <span className="uppercase">Help</span> <span className="mx-2">/</span> {name}
         </summary>
         <ul className="mt-3 flex flex-col gap-2.5 border-l border-help-rule pl-4">

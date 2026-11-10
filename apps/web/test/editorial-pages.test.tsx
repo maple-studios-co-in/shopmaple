@@ -1,23 +1,26 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
-import { renderToStaticMarkup } from "react-dom/server";
 import PolicyPage, { generateMetadata as policyMetadata } from "../app/policies/[slug]/page";
 import BlogPage, { generateMetadata as blogMetadata } from "../app/blogs/[blog]/page";
 import ArticlePage, { generateMetadata as articleMetadata } from "../app/blogs/[blog]/[article]/page";
 import type { ContentNode } from "../components/store-content";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { isCatalogueRead, renderSettled, storyLinks } from "./support/blog-fixtures";
 
 const articleHandle = "how-to-measure-furniture-before-ordering-online";
 const policyProps = (slug = "privacy-policy") => ({ params: Promise.resolve({ slug }) });
 const blogProps = (blog = "recent-stories") => ({ params: Promise.resolve({ blog }) });
 const articleProps = (article = articleHandle, blog = "recent-stories") => ({ params: Promise.resolve({ blog, article }) });
-const documentFor = async (element: ReturnType<typeof PolicyPage>) => new JSDOM(renderToStaticMarkup(await element)).window.document;
+// Pages render settled, as a crawler reads them, so no async part keeps reading after its test has ended.
+const documentFor = async (element: ReturnType<typeof PolicyPage>) => renderSettled(await element);
 
 async function withResponse(body: unknown, run: () => Promise<void>) {
   const previous = globalThis.fetch;
   const requests: string[] = [];
   globalThis.fetch = async (input, init) => {
+    // The blog pages' product bands read the public catalogue, never content; it is unavailable here.
+    if (isCatalogueRead(String(input))) return Response.json({ code: "NOT_FOUND" }, { status: 404 });
     requests.push(String(input));
     if (!String(input).endsWith("/api/content/storefront")) {
       return Response.json({ version: 99, draft: { title: "Private draft" } });
@@ -49,8 +52,8 @@ test("legacy editorial routes retain source copy, semantic body and original met
     assert.equal((await policyMetadata(policyProps())).title, "Privacy policy");
     const blog = await documentFor(BlogPage(blogProps()));
     assert.equal(blog.querySelector("h1")?.textContent, "Recent Stories");
-    assert.equal(blog.querySelectorAll("article").length, 10);
-    assert.equal(blog.querySelector("article p")?.textContent?.replace(/\s+/g, " ").trim(), "A furniture piece can look perfectly sized on a website and still feel completely wrong once it arrives. The most common mistake is checking whether the furniture fits the room,...");
+    assert.equal(storyLinks(blog).length, 10);
+    assert.equal(blog.querySelector("[data-slide-excerpt]")?.textContent?.replace(/\s+/g, " ").trim(), "A furniture piece can look perfectly sized on a website and still feel completely wrong once it arrives. The most common mistake is checking whether the furniture fits the room,...");
     assert.equal((await blogMetadata(blogProps())).title, "Recent Stories");
     const article = await documentFor(ArticlePage(articleProps()));
     assert.equal(article.querySelector("h1")?.textContent, "How to Measure Furniture Before Ordering Online");
@@ -103,10 +106,10 @@ test("published blog title and article excerpt reach cards while routes and artw
     const blog = await documentFor(BlogPage(blogProps()));
     assert.equal(blog.querySelector("h1")?.textContent, "Stories from Maple");
     assert.equal(blog.querySelector("article h2")?.textContent, "Measure for your home");
-    assert.equal(blog.querySelector("article p")?.textContent, "Published measuring advice for your next room.");
+    assert.equal(blog.querySelector("[data-slide-excerpt]")?.textContent, "Published measuring advice for your next room.");
     assert.equal(blog.querySelector("article h2 a")?.getAttribute("href"), `/blogs/recent-stories/${articleHandle}`);
-    assert.equal(blog.querySelector("article img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/articles/unnamed_15.png?v=1783929571");
-    assert.equal(blog.querySelectorAll("article").length, 10);
+    assert.ok(decodeURIComponent(blog.querySelector("article img")?.getAttribute("src") ?? "").includes("/blog/art/how-to-measure-furniture-before-ordering-online.webp"));
+    assert.equal(storyLinks(blog).length, 10);
     assert.equal((await blogMetadata(blogProps())).title, "Stories from Maple");
     const empty = await documentFor(BlogPage(blogProps("news")));
     assert.equal(empty.querySelector("h1")?.textContent, "Maple news");
@@ -122,12 +125,14 @@ test("published article title, body and metadata preserve its source date and im
     assert.equal(article.querySelector("article h2")?.textContent, "Before you measure");
     assert.equal(article.querySelector("article p")?.textContent, "Allow room to move comfortably.");
     assert.equal(article.querySelector("article ol li")?.textContent, "Measure the doorway.");
-    assert.equal(article.querySelector('nav a[href="/blogs/recent-stories"]')?.textContent, "Stories from Maple");
+    const trail = [...article.querySelectorAll('script[type="application/ld+json"]')].flatMap((data) => [JSON.parse(data.textContent ?? "null")].flat())
+      .find((data) => data?.["@type"] === "BreadcrumbList");
+    assert.equal(trail?.itemListElement?.[1]?.name, "Stories from Maple");
     assert.equal(article.querySelector("time")?.getAttribute("datetime"), "2026-07-13T07:57:33Z");
-    assert.equal(article.querySelector("time")?.textContent, "July 13, 2026");
-    assert.equal(article.querySelector("section > img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/articles/unnamed_15.png?v=1783929571");
-    assert.equal(article.querySelector("section > img")?.getAttribute("width"), "482");
-    assert.equal(article.querySelector("section > img")?.getAttribute("height"), "322");
+    assert.equal(article.querySelector("time")?.textContent, "Jul 13, 2026");
+    assert.ok(decodeURIComponent(article.querySelector("img[data-article-hero]")?.getAttribute("src") ?? "").includes("/blog/art/how-to-measure-furniture-before-ordering-online.webp"));
+    assert.equal(article.querySelector("img[data-article-hero]")?.getAttribute("width"), "1600", "the sharpened copy, 1600px wide");
+    assert.equal(article.querySelector("img[data-article-hero]")?.getAttribute("height"), "1069");
     assert.equal((await articleMetadata(articleProps())).title, "Measure for your home");
   });
 });
@@ -145,7 +150,7 @@ test("published editorial text is escaped instead of interpreted as HTML", async
     for (const element of [PolicyPage(policyProps()), BlogPage(blogProps()), ArticlePage(articleProps())]) {
       const doc = await documentFor(element);
       assert.equal(doc.querySelector("h1")?.textContent, literal);
-      assert.ok(doc.querySelector("article p")?.textContent?.includes(literal));
+      assert.ok((doc.querySelector("[data-slide-excerpt]") ?? doc.querySelector("article p"))?.textContent?.includes(literal));
       assert.equal(doc.querySelectorAll('script:not([type="application/ld+json"]), [onerror], img[src=x]').length, 0);
       // The only scripts are inert structured data for search engines, with nothing that could end the tag.
       for (const data of doc.querySelectorAll('script[type="application/ld+json"]')) { assert.ok(!/[<>]/.test(data.textContent ?? "")); JSON.parse(data.textContent ?? ""); }
