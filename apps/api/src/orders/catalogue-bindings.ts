@@ -23,11 +23,14 @@ export async function resolveCatalogueBindings(
   variantIds: string[],
   tenantId: string,
 ): Promise<CatalogueBindings> {
+  // The catalogue union records Keeri links under the tenant's own source, `keeri:<tenantId>`
+  // (adaptKeeriExportV2), so that is the only source read here.
+  const source = `keeri:${tenantId}`;
   const variants = await tx.variant.findMany({
     where: { id: { in: variantIds } },
     include: {
-      identities: { where: { source: "keeri" } },
-      product: { include: { identities: { where: { source: "keeri" } } } },
+      identities: { where: { source } },
+      product: { include: { identities: { where: { source } } } },
     },
     orderBy: { id: "asc" },
   });

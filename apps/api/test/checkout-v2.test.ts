@@ -149,11 +149,11 @@ beforeEach(async () => {
       published: true,
       source: "keeri:maple",
       sourceUpdatedAt: now,
-      identities: { create: { source: "keeri", externalId: "keeri:maple:chair" } },
+      identities: { create: { source: "keeri:maple", externalId: "keeri:maple:chair" } },
       variants: {
         create: {
           id: "keeri:maple:chair-v",
-          identities: { create: { source: "keeri", externalId: "keeri:maple:chair-v" } },
+          identities: { create: { source: "keeri:maple", externalId: "keeri:maple:chair-v" } },
           title: "Cream",
           pricePaise: 10000,
           available: true,
@@ -348,7 +348,7 @@ test("quote binding compares variant sets consistently across database and produ
   await db.variant.create({
     data: {
       id: "keeri:maple:Chair-V",
-      identities: { create: { source: "keeri", externalId: "keeri:maple:Chair-V" } },
+      identities: { create: { source: "keeri:maple", externalId: "keeri:maple:Chair-V" } },
       productId: "keeri:maple:chair",
       title: "Oak",
       pricePaise: 10000,
@@ -450,21 +450,26 @@ test("merged preview cart quotes and reserves persisted Keeri identities while r
 test("missing and wrong-tenant persisted identities refuse quotation even when local IDs look authoritative", async () => {
   let quotes = 0;
   const flow = service(async (r) => { quotes++; return quotation(r); });
-  await db.variantSourceIdentity.deleteMany({ where: { source: "keeri" } });
+  await db.variantSourceIdentity.deleteMany({ where: { source: "keeri:maple" } });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
   assert.equal(quotes, 0);
-  await db.variantSourceIdentity.create({ data: { source: "keeri", externalId: "keeri:other:chair-v", variantId: "keeri:maple:chair-v" } });
+  await db.variantSourceIdentity.create({ data: { source: "keeri:maple", externalId: "keeri:other:chair-v", variantId: "keeri:maple:chair-v" } });
+  await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
+  assert.equal(quotes, 0);
+  // Another tenant's source is not this tenant's link, even with this tenant's ID in it.
+  await db.variantSourceIdentity.deleteMany({ where: { variantId: "keeri:maple:chair-v" } });
+  await db.variantSourceIdentity.create({ data: { source: "keeri:other", externalId: "keeri:maple:chair-v", variantId: "keeri:maple:chair-v" } });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
   assert.equal(quotes, 0);
 });
 test("quote cannot substitute the product parent associated with a persisted variant", async () => {
-  await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:different-parent" } });
+  await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri:maple", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:different-parent" } });
   await assert.rejects(freeze(service()), { code: "QUOTE_INVALID" });
   assert.equal(await db.checkoutAttempt.count(), 0);
 });
 test("product identity changing while quote is in flight cannot freeze stale bindings", async () => {
   const flow = service(async (r) => {
-    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:changed-parent" } });
+    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri:maple", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:changed-parent" } });
     return quotation(r);
   });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });
@@ -472,7 +477,7 @@ test("product identity changing while quote is in flight cannot freeze stale bin
 });
 test("changed binding after quote refuses replay and provider creation without payment transport", async () => {
   const flow = service(); const frozen = await freeze(flow);
-  await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
+  await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri:maple", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });
   await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "CATALOGUE_BINDING_CHANGED" });
   assert.equal(providerPosts.length, 0);
@@ -480,7 +485,7 @@ test("changed binding after quote refuses replay and provider creation without p
 test("mapping change during remote reservation blocks provider order and records reconciliation", async () => {
   const flow = service(); const frozen = await freeze(flow);
   reserveHook = async () => {
-    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:replacement-parent" } });
+    await db.productSourceIdentity.update({ where: { source_productId: { source: "keeri:maple", productId: "keeri:maple:chair" } }, data: { externalId: "keeri:maple:replacement-parent" } });
   };
   await assert.rejects(flow.createProviderOrder(token, frozen.id), { code: "CATALOGUE_BINDING_CHANGED" });
   assert.equal(providerPosts.length, 0);
@@ -509,9 +514,9 @@ test("persisted catalogue bindings cannot be rewritten on an existing checkout a
 test("missing or cross-tenant product identities never reach quote or payment transport", async () => {
   let quotes = 0;
   const flow = service(async (r) => { quotes++; return quotation(r); });
-  await db.productSourceIdentity.deleteMany({ where: { source: "keeri", productId: "keeri:maple:chair" } });
+  await db.productSourceIdentity.deleteMany({ where: { source: "keeri:maple", productId: "keeri:maple:chair" } });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
-  await db.productSourceIdentity.create({ data: { source: "keeri", externalId: "keeri:maple-other:chair", productId: "keeri:maple:chair" } });
+  await db.productSourceIdentity.create({ data: { source: "keeri:maple", externalId: "keeri:maple-other:chair", productId: "keeri:maple:chair" } });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_REQUIRED" });
   assert.equal(quotes, 0);
   assert.equal(providerPosts.length, 0);
@@ -519,7 +524,7 @@ test("missing or cross-tenant product identities never reach quote or payment tr
 
 test("variant remapping while a quote is in flight refuses the original quote", async () => {
   const flow = service(async (r) => {
-    await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
+    await db.variantSourceIdentity.update({ where: { source_variantId: { source: "keeri:maple", variantId: "keeri:maple:chair-v" } }, data: { externalId: "keeri:maple:replacement-v" } });
     return quotation(r);
   });
   await assert.rejects(freeze(flow), { code: "CATALOGUE_BINDING_CHANGED" });

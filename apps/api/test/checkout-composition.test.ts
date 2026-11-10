@@ -180,9 +180,9 @@ beforeEach(async () => {
   await db.product.create({ data: {
     id: "keeri:maple:comp-chair", handle: "composition-chair", title: "Composition Chair", description: "", category: "chairs",
     images: [], published: true, source: "keeri:maple", sourceUpdatedAt: clock,
-    identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair" } },
+    identities: { create: { source: "keeri:maple", externalId: "keeri:maple:comp-chair" } },
     variants: { create: { id: "keeri:maple:comp-chair-v", title: "Oak", pricePaise: 150000, published: true, available: true, stockPolicy: "stocked",
-      identities: { create: { source: "keeri", externalId: "keeri:maple:comp-chair-v" } } } },
+      identities: { create: { source: "keeri:maple", externalId: "keeri:maple:comp-chair-v" } } } },
   } });
   await db.cart.create({ data: { id: "composition-cart", tokenHash: createHash("sha256").update(token).digest("hex"),
     expiresAt: new Date("2031-01-01"), items: { create: { variantId: "keeri:maple:comp-chair-v", quantity: 2 } } } });
