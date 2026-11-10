@@ -43,7 +43,7 @@ test("footer policies, editorial content and returns stay on this storefront", (
     "/policies/privacy-policy",
     "/policies/refund-policy",
     "/blogs/recent-stories",
-    "/pages/returns",
+    "/returns",
   ])
     assert.ok(doc.querySelector(`a[href="${href}"]`), href);
 });

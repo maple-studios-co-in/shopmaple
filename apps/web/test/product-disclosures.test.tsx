@@ -101,12 +101,12 @@ test("source paragraphs, emphasis, newlines, headings and ordered and unordered 
 test("approved links keep source text and owned Shopify links navigate locally", async () => {
   await mount(captured({ type: "root", children: [{ type: "paragraph", children: [
     { type: "link", url: "https://shop.maplefurnishers.com/pages/contact?product=chair#delivery", children: [{ type: "text", value: "Delivery help" }] },
-    { type: "link", url: "/pages/care", title: null, target: null, children: [{ type: "text", value: "Care" }] },
+    { type: "link", url: "/care", title: null, target: null, children: [{ type: "text", value: "Care" }] },
     { type: "link", url: "https://example.com/care", target: "_blank", title: "Care guide", children: [{ type: "text", value: "External guide" }] },
     { type: "link", url: "mailto:care@example.com", children: [{ type: "text", value: "Email care" }] },
   ] }] }), () => {
     const links = [...disclosure("Details").querySelectorAll("[data-feature-body] a")] as HTMLAnchorElement[];
-    assert.deepEqual(links.map(a => a.getAttribute("href")), ["/pages/contact?product=chair#delivery", "/pages/care", "https://example.com/care", "mailto:care@example.com"]);
+    assert.deepEqual(links.map(a => a.getAttribute("href")), ["/contact?product=chair#delivery", "/care", "https://example.com/care", "mailto:care@example.com"]);
     assert.deepEqual(links.map(a => a.textContent), ["Delivery help", "Care", "External guide", "Email care"]);
     assert.equal(links[2]?.target, "_blank");
     assert.match(links[2]?.rel ?? "", /noopener/);

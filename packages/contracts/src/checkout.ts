@@ -21,6 +21,12 @@ export const checkoutAddressSchema = z
     country: z.literal("IN"),
   })
   .strict();
+/** A ShopMaple offer code as Keeri matches it: trimmed and uppercased, 3-24 capital letters and digits. */
+export const promoCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{3,24}$/);
 export const checkoutInputSchema = z
   .object({
     customer: z
@@ -39,6 +45,9 @@ export const checkoutInputSchema = z
     billingAddress: checkoutAddressSchema,
     shippingAddress: checkoutAddressSchema,
     deliveryMethodId: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
+    // Optional and additive: without it the quote is exactly what it always was. It is part of the
+    // input, so a different code is a different quote (idempotency key, replay, CHECKOUT_INPUT_CHANGED).
+    promoCode: promoCodeSchema.optional(),
   })
   .strict();
 const identity = z
@@ -94,7 +103,17 @@ const deliverySchema = z
       .nullable(),
   })
   .strict();
+/** The offer a promo code applied; Keeri adds it, and the per-item discount fields, only when one did. */
+export const promotionSchema = z
+  .object({
+    code: z.string().regex(/^[A-Z0-9]{3,24}$/),
+    label: text(40),
+    discountPaise: money.min(1),
+  })
+  .strict();
+// Keeri names the applied code in `promotion`; the snapshot never echoes the request's promoCode.
 export const quoteSnapshotSchema = checkoutInputSchema
+  .omit({ promoCode: true })
   .extend({
     version: z.literal(2),
     currency: z.literal("INR"),
@@ -118,6 +137,10 @@ export const quoteSnapshotSchema = checkoutInputSchema
             taxRateBps: z.number().int().min(0).max(10000),
             // Keeri states it on every new quote; absent only on attempts frozen before it did.
             fulfilment: fulfilmentSchema.optional(),
+            // Present on every item, and only, when a code applied: the line's whole discount (0 where
+            // the offer does not reach) and the unit price before it. unitPricePaise is after it.
+            discountPaise: money.optional(),
+            undiscountedUnitPricePaise: money.optional(),
           })
           .strict(),
       )
@@ -129,6 +152,7 @@ export const quoteSnapshotSchema = checkoutInputSchema
     totalPaise: money.min(100),
     /** How Keeri priced `shippingPaise`; absent only on quotes issued before carrier pricing. */
     delivery: deliverySchema.optional(),
+    promotion: promotionSchema.optional(),
   })
   .strict();
 export const quoteResponseSchema = z
@@ -144,3 +168,4 @@ export type CheckoutInput = z.infer<typeof checkoutInputSchema>;
 export type QuoteRequest = z.infer<typeof quoteRequestSchema>;
 export type QuoteSnapshot = z.infer<typeof quoteSnapshotSchema>;
 export type Fulfilment = z.infer<typeof fulfilmentSchema>;
+export type Promotion = z.infer<typeof promotionSchema>;

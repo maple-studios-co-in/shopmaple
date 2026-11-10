@@ -57,10 +57,11 @@ const pickup = (methodLabel: string) => /pick ?up|store|showroom/i.test(methodLa
 
 /**
  * The checkout's details step after frame 30:492: contact, delivery and payment on the left, the order on the right.
- * The frame's promo code, newsletter box and account sign-in have nothing behind them on this store yet, so they are
- * left out; payment is Razorpay's hosted window, opened after the total is confirmed on the next step.
+ * The frame's promo code sits in the order, as drawn: Keeri checks it with the quote, which needs the details, so it is
+ * applied on the next step. The newsletter box and account sign-in have nothing behind them on this store yet, so they
+ * are left out; payment is Razorpay's hosted window, opened after the total is confirmed on the next step.
  */
-export function CheckoutDetails({ id, input, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, problems, notice, busy, enquiryHref, onSubmit }: {
+export function CheckoutDetails({ id, input, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, problems, notice, busy, enquiryHref, promoCode, onPromoCode, promoError, onSubmit }: {
   id: string;
   input: CheckoutInput | null;
   options: CheckoutOptions;
@@ -73,6 +74,10 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
   busy: boolean;
   /** Set when the courier could not price this pincode: the buyer may ask for a quote or try another address. */
   enquiryHref?: string | null;
+  /** The code as typed, and Keeri's refusal of it (or the shape it must have) to show beside it. */
+  promoCode: string;
+  onPromoCode: (code: string) => void;
+  promoError: string;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const { cart, cartReady, setQuantity } = useShop();
@@ -212,6 +217,24 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
                 ))}
               </ul>
               <hr className="m-0 h-px border-0 bg-[#e5dfda]" />
+              <div data-promo className="flex flex-col gap-2">
+                <label htmlFor={`${id}-promo`} className="text-[14px] leading-5 font-medium text-[#1c1c1c]">Have a code?</label>
+                <div className="flex gap-2">
+                  <input id={`${id}-promo`} name="promoCode" className={cx(control, "uppercase placeholder:normal-case")} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                    maxLength={30} placeholder="Promo code" value={promoCode} onChange={(event) => onPromoCode(event.currentTarget.value)}
+                    aria-invalid={promoError ? true : undefined} aria-describedby={`${id}-promo-note`} />
+                  {promoCode && (
+                    <button type="button" onClick={() => onPromoCode("")}
+                      className="h-[50px] shrink-0 cursor-pointer rounded-[8px] border border-solid border-maple bg-white px-4 text-[13px] font-semibold text-maple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+                      Remove code
+                    </button>
+                  )}
+                </div>
+                {promoError
+                  ? <p id={`${id}-promo-note`} data-promo-error role="alert" className="m-0 text-[13px] font-medium text-maple">{promoError}</p>
+                  : <p id={`${id}-promo-note`} className={muted}>Your discount is applied with your total on the next step.</p>}
+              </div>
+              <hr className="m-0 h-px border-0 bg-[#e5dfda]" />
               <dl className="m-0 flex flex-col gap-3.5 text-[14px] leading-5">
                 <div className="flex justify-between gap-4"><dt className="text-[#756d68]">Subtotal</dt><dd className="m-0 font-medium text-[#1c1c1c]">{shopMoney(cart.subtotalPaise)}</dd></div>
                 <div className="flex justify-between gap-4"><dt className="text-[#756d68]">Delivery</dt><dd className="m-0 font-medium text-[#1c1c1c]">Confirmed with your PIN</dd></div>
@@ -244,7 +267,7 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
           <img src="/checkout/chat.svg" alt="" width={24} height={24} className="size-6 shrink-0" />
           <span className="flex flex-col gap-1">
             <span className="text-[14px] leading-5 font-medium text-[#1c1c1c]">A little help before you decide?</span>
-            <Link href="/pages/contact" className="text-[13px] leading-[19px] font-medium text-maple underline">Speak with the Maple team ↗</Link>
+            <Link href="/contact" className="text-[13px] leading-[19px] font-medium text-maple underline">Speak with the Maple team ↗</Link>
           </span>
         </div>
       </aside>

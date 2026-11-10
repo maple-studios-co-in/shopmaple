@@ -133,11 +133,16 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       staffOutcome: string | null;
     },
   ): { to: string; subject: string; text: string } | null {
+    // With a code, each line reads at its price before the discount and the discount follows as
+    // one line, so the email adds up to what was charged.
     const lines = quote
-      ? quote.items.map((i) => {
-          const making = i.fulfilment?.kind === "made_to_order" ? ` (made to order: allow ${i.fulfilment.leadTimeDays} days for making)` : "";
-          return `- ${i.title}, ${i.variantTitle} × ${i.quantity}: ${rupees(i.lineTotalPaise)}${making}`;
-        })
+      ? [
+          ...quote.items.map((i) => {
+            const making = i.fulfilment?.kind === "made_to_order" ? ` (made to order: allow ${i.fulfilment.leadTimeDays} days for making)` : "";
+            return `- ${i.title}, ${i.variantTitle} × ${i.quantity}: ${rupees(i.lineTotalPaise + (i.discountPaise ?? 0))}${making}`;
+          }),
+          ...(quote.promotion ? [`Discount (${quote.promotion.code}): -${rupees(quote.promotion.discountPaise)}`] : []),
+        ]
       : [];
     const courier = quote?.delivery?.carrier;
     const deliveryLine = courier
@@ -149,7 +154,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       ? [quote.shippingAddress.line1, quote.shippingAddress.line2, `${quote.shippingAddress.city} ${quote.shippingAddress.pincode}`].filter(Boolean).join(", ")
       : "";
     const total = attempt ? rupees(attempt.amountPaise) : "";
-    const contact = `Questions? Reply to this email or contact us at ${email.adminOrigin}/pages/contact.`;
+    const contact = `Questions? Reply to this email or contact us at ${email.adminOrigin}/contact.`;
     if (kind === "customer_confirmed" && attempt && quote && reference)
       return {
         to: quote.customer.email,

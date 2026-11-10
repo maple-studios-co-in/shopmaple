@@ -3,6 +3,7 @@ import { BlogIndex } from "@/components/blog-index";
 import source from "@/data/store-content.json";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
+import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
 export async function generateMetadata({
   params,
 }: {
@@ -31,5 +32,6 @@ export default async function BlogPage({
   const content = await getPublishedContent();
   const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
   const record = blogs.find((item) => item.handle === blog)!;
-  return <BlogIndex blog={blog} title={record.title} articles={record.articles} />;
+  // Shop Bestsellers under the stories shows the homepage's bestsellers, as staff pick them.
+  return <BlogIndex blog={blog} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} />;
 }

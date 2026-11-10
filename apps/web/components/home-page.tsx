@@ -28,6 +28,9 @@ import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
 import { rasterShopifyArtwork } from "@/lib/shopify-artwork";
 
+/** The bundled offer artwork (public/media/home/offer-*.webp) draws its own arrow; staff uploads do not. */
+const bundledOffer = (src: string) => src.startsWith("/media/home/offer-");
+
 function CollectionTiles({
   items,
   className,
@@ -52,6 +55,9 @@ function CollectionTiles({
           </div>
           {categories ? <h3 data-category-title>{item.title}</h3> : null}
           {categories && <ArrowRight aria-hidden size={14} data-category-arrow />}
+          {/* Each offer carries the categories' arrow too, in Maple's dark red (owner, 10 Nov 2026), except the bundled
+              artwork, which draws its own. */}
+          {!categories && !bundledOffer(item.image) && <ArrowRight aria-hidden size={16} data-offer-arrow />}
         </Link>
       ))}
     </div>

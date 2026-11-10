@@ -54,7 +54,7 @@ test("the sitemap lists every public page once, with readable product addresses,
   });
   const urls = entries.map((entry) => entry.url);
   assert.equal(new Set(urls).size, urls.length, "no duplicates");
-  for (const path of ["/", "/collections/all", "/collections/chairs", "/pages/our-story", "/pages/contact", "/pages/delivery-faq", "/policies/privacy-policy", "/blogs/recent-stories", "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online", "/products/arix"])
+  for (const path of ["/", "/collections/all", "/collections/chairs", "/our-story", "/contact", "/delivery-faq", "/policies/privacy-policy", "/blogs/recent-stories", "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online", "/products/arix"])
     assert.ok(urls.includes(site + path), `${path} is listed`);
   assert.ok(!urls.some((url) => url.includes("hidden")), "unpublished products are not listed");
   const arix = entries.find((entry) => entry.url === `${site}/products/arix`)!;

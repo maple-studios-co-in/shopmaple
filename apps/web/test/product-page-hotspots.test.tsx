@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,6 +9,7 @@ import type { Cart, Product } from "@shopmaple/contracts";
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { hotspotNote } from "../lib/product-hotspots";
+import { labelledRows } from "../lib/product-detail-text";
 
 // The owner asked for a white-background photo with hotspots about fabric and material that changes with the finish
 // (2026-11-01). Cut-outs and hotspot positions are presentation data; every note is read from the product's own text.
@@ -101,6 +103,161 @@ test("a finish whose only photo is the white-background one does not claim its p
     assert.match(mainSrc(doc), /plain\.jpg/);
   }, aero,
   { variantImages: {}, reviewLabel: null, cutouts: { plain: { image: "/product-page/cutouts/plain.jpg", hotspots: [] } } });
+});
+
+// ---- "Precision in Every Detail" (owner, 10 Nov 2026): a card opens a floating chip popup; the card itself stays put ----
+const features = (doc: Document) => doc.querySelector<HTMLElement>("[data-features]")!;
+const card = (doc: Document, key: string) => doc.querySelector<HTMLElement>(`[data-feature="${key}"]`)!;
+const toggleOf = (doc: Document, key: string) => card(doc, key).querySelector<HTMLButtonElement>("button[data-feature-toggle]")!;
+const popOf = (doc: Document, key: string) => doc.getElementById(toggleOf(doc, key).getAttribute("aria-controls")!)!;
+// The card as drawn, apart from its arrow's open state.
+const drawn = (doc: Document, key: string) => card(doc, key).querySelector("[data-feature-surface]")!.outerHTML.replace(/ aria-expanded="(true|false)"/, "");
+/** A window of the given width: from 1024px a popup floats beside its card, towards the photo; below, it is a bottom sheet. */
+async function sized(run: () => Promise<void>, { width = 1280 } = {}) {
+  const view = dom.window as unknown as { matchMedia?: unknown };
+  const previous = view.matchMedia;
+  view.matchMedia = (query: string) => {
+    const min = /min-width: (\d+)px/.exec(query);
+    return { matches: min ? width >= Number(min[1]) : false, media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false };
+  };
+  try { await run(); } finally { view.matchMedia = previous; }
+}
+
+// The owner turned down a photo set inside a blurred copy of itself ("card inside card", 10 Nov 2026): a photograph
+// fills its frame, as the product page's Figma draws it; only a white-background cut-out is shown whole on the page.
+test("the section's photograph fills its frame, and no photo on the page sits inside a blurred copy of itself", async () => {
+  await mount((doc) => {
+    const frame = features(doc).querySelector("[data-feature-photo-frame]")!;
+    const images = [...frame.querySelectorAll<HTMLImageElement>("img")];
+    assert.equal(images.length, 1, "one photo, no second copy of it on the page");
+    assert.match(images[0]!.getAttribute("alt")!, /detail view/);
+    assert.match(frame.className, /\[&_img\]:object-cover/, "the photograph fills its frame");
+    assert.equal(doc.querySelector("[data-photo-ambient]"), null, "no card inside a card anywhere on the page");
+    for (const thumbnail of doc.querySelectorAll("[data-thumbnails] button")) assert.match(thumbnail.className, /\[&_img\]:object-cover/, "thumbnails fill their tiles");
+  });
+});
+
+test("under the photo only the piece's name, set bolder: no line beneath it, for any piece (owner, 10 Nov 2026)", async () => {
+  for (const materials of [aero.sourceDetails!.materials, "Frame: Solid sheesham wood\nTop: Marble"]) {
+    await mount((doc) => {
+      const caption = features(doc).querySelector("[data-features-caption]")!;
+      assert.deepEqual([...caption.children].map(text), ["Aero Dining Chair"]);
+      assert.match(caption.firstElementChild!.className, /\bfont-bold\b/, "the name is set bolder");
+      assert.doesNotMatch(text(features(doc))!, /Your choice of/, "no fabric-and-finish line under it");
+    }, { ...aero, sourceDetails: { ...aero.sourceDetails!, materials } });
+  }
+});
+
+test("a card stays exactly as it is when opened: its whole story floats in a chip popup beside it, towards the photo (owner, 10 Nov 2026)", async () => {
+  await sized(async () => {
+    await mount(async (doc) => {
+      const keys = [...features(doc).querySelectorAll<HTMLElement>("[data-feature]")].map((element) => element.dataset.feature!);
+      assert.deepEqual(keys, ["about", "materials", "specification", "delivery"]);
+      const before = keys.map((key) => drawn(doc, key));
+      const pop = popOf(doc, "about");
+      assert.ok(pop.hasAttribute("data-feature-pop"));
+      assert.equal(pop.hidden, true, "closed until asked for");
+      await act(async () => toggleOf(doc, "about").click());
+      assert.equal(toggleOf(doc, "about").getAttribute("aria-expanded"), "true");
+      assert.equal(card(doc, "about").dataset.open, "true");
+      assert.equal(pop.hidden, false, "the popup opens");
+      assert.deepEqual(keys.map((key) => drawn(doc, key)), before, "and every card, the opened one included, is drawn exactly as before");
+      assert.equal(pop.getAttribute("role"), "dialog");
+      assert.equal(text(doc.getElementById(pop.getAttribute("aria-labelledby")!)), "About Product", "named by its card's title");
+      assert.equal(pop.dataset.mode, "beside", "beside its card on a desktop");
+      assert.equal(pop.dataset.side, "right", "the first card stands left of the photo, so its popup opens to its right, over the photo");
+      assert.ok(pop.querySelector("[data-pop-caret]"), "a caret points back to its card");
+      assert.equal(text(pop.querySelector("[data-pop-body]")), "Details.", "About Product is told as text");
+      assert.equal(text(pop.querySelector("a[data-pop-link]")), "Explore finishes with Maple");
+      assert.ok(pop.querySelector("button[data-pop-close]"), "with a close button");
+      await act(async () => toggleOf(doc, "materials").click());
+      assert.equal(popOf(doc, "materials").dataset.side, "left", "a card right of the photo opens its popup to its left");
+    });
+  });
+});
+
+test("the popup is chips: Specifications as pills, materials and care as pill rows, the rest as text", async () => {
+  await sized(async () => {
+    await mount(async (doc) => {
+      await act(async () => toggleOf(doc, "specification").click());
+      const spec = popOf(doc, "specification");
+      const chips = [...spec.querySelectorAll<HTMLElement>("[data-pop-chip]")];
+      assert.deepEqual(chips.map((chip) => [...chip.children].map(text)), [["Width", '22" (≈ 56 cm)'], ["Depth", '24" (≈ 61 cm)'], ["Height", '34" (≈ 86 cm)']], "every measurement, the bullets kept out of the labels");
+      for (const chip of chips) assert.match(chip.className, /\brounded-full\b/, "each one a pill");
+      const rows = () => [...card(doc, "specification").querySelectorAll<HTMLElement>("[data-feature-row]")];
+      assert.deepEqual(rows().map((row) => row.hidden), [false, false, true], "the card keeps its two-row preview");
+      await act(async () => toggleOf(doc, "materials").click());
+      const materials = popOf(doc, "materials");
+      assert.deepEqual([...materials.querySelectorAll("[data-pop-row]")].map((row) => [...row.children].map(text)),
+        [["Frame & Legs", "Solid wood, dark walnut and natural oak finishes"], ["Upholstery", "Velvet and Boucle over high-resilience foam"]], "each bullet a pill row, its label set apart");
+      assert.equal(text(materials.querySelector("[data-pop-heading]")), "The Beauty of Natural Materials");
+      assert.equal(text(materials.querySelector("[data-pop-text]")), "Slight variations are part of its character.");
+      await act(async () => toggleOf(doc, "delivery").click());
+      assert.deepEqual([...popOf(doc, "delivery").querySelectorAll("[data-pop-row]")].map((row) => [...row.children].map(text)),
+        [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", "36 months"]]);
+    });
+  });
+});
+
+test("one popup at a time; its close button, Escape or a click outside closes it, back to the card's arrow", async () => {
+  await sized(async () => {
+    await mount(async (doc) => {
+      await act(async () => toggleOf(doc, "about").click());
+      await act(async () => toggleOf(doc, "specification").click());
+      assert.equal(popOf(doc, "about").hidden, true, "one at a time");
+      assert.equal(toggleOf(doc, "about").getAttribute("aria-expanded"), "false");
+      await act(async () => popOf(doc, "specification").querySelector<HTMLButtonElement>("button[data-pop-close]")!.click());
+      assert.equal(popOf(doc, "specification").hidden, true, "the close button closes it");
+      assert.ok(doc.activeElement === toggleOf(doc, "specification"), "and returns to its arrow");
+      await act(async () => toggleOf(doc, "materials").click());
+      await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+      assert.equal(popOf(doc, "materials").hidden, true, "Escape closes it");
+      assert.ok(doc.activeElement === toggleOf(doc, "materials"));
+      await act(async () => toggleOf(doc, "delivery").click());
+      await act(async () => popOf(doc, "delivery").querySelector<HTMLElement>("[data-pop-content]")!.click());
+      assert.equal(popOf(doc, "delivery").hidden, false, "a click inside the popup leaves it open");
+      await act(async () => { doc.body.click(); });
+      assert.equal(popOf(doc, "delivery").hidden, true, "a click anywhere else closes it");
+      assert.ok(doc.activeElement === toggleOf(doc, "delivery"));
+    });
+  });
+});
+
+test("below 1024px the popup is a bottom sheet over a soft backdrop, so no card is ever pushed", async () => {
+  for (const width of [390, 768]) {
+    await sized(async () => {
+      await mount(async (doc) => {
+        const before = drawn(doc, "about");
+        await act(async () => toggleOf(doc, "about").click());
+        const sheet = popOf(doc, "about");
+        assert.equal(sheet.dataset.mode, "sheet", `${width}px`);
+        assert.equal(sheet.getAttribute("aria-modal"), "true");
+        assert.equal(drawn(doc, "about"), before, "the card stays as it is");
+        const backdrop = card(doc, "about").closest("[data-feature-slot]")!.querySelector<HTMLElement>("[data-pop-backdrop]")!;
+        assert.equal(backdrop.hidden, false);
+        await act(async () => backdrop.click());
+        assert.equal(sheet.hidden, true, "a tap on the backdrop closes it");
+      });
+    }, { width });
+  }
+});
+
+test("the popup pops on the calm curve, and everything keeps still for reduced motion", () => {
+  const css = readFileSync(new URL("../styles/product-parity.css", import.meta.url), "utf8");
+  assert.match(css, /@starting-style \{\s*\[data-features\] \[data-feature-pop\]/, "the popup fades and rises in rather than appearing");
+  assert.match(css, /\[data-features\] \[data-feature-pop\]\[data-mode="beside"\] \{[^}]*border-radius: 20px;/, "a 20px panel");
+  assert.match(css, /@starting-style \{\s*\[data-features\] \[data-highlight-chip\]/, "a hotspot's line fades in too");
+  assert.match(css, /cubic-bezier\(0\.22, 1, 0\.36, 1\)/);
+  assert.doesNotMatch(css, /data-floating|data-feature-surface\]\[data-floating/, "no card grows or floats any more");
+  const still = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(css.slice(css.indexOf("[data-features]")))?.[1] ?? "";
+  for (const part of ["[data-feature-pop]", "[data-pop-backdrop]", "[data-highlight-chip]", "[data-highlight-plus]::before"])
+    assert.ok(still.includes(part), `${part} keeps still for reduced motion`);
+});
+
+test("Keeri's one-line measurements become one chip each, as the colon lines do", () => {
+  assert.deepEqual(labelledRows("Width (in) - 25 | Depth (in) - 24 | Height (in) - 32"), [["Width (in)", "25"], ["Depth (in)", "24"], ["Height (in)", "32"]]);
+  assert.deepEqual(labelledRows(' • Width: 22" (≈ 56 cm)\n • Depth: 24" (≈ 61 cm)'), [["Width", '22" (≈ 56 cm)'], ["Depth", '24" (≈ 61 cm)']]);
+  assert.equal(labelledRows("Made by hand in Delhi, with care"), null, "prose stays prose");
 });
 
 test("hotspot notes keep to the labelled facts: no headings, hyphenated labels kept, bullets on one line split, a label with no value hidden", () => {

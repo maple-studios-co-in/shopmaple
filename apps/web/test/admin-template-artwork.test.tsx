@@ -81,7 +81,8 @@ test("legacy Artwork browsing shows grouped original placements without creating
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 11);
     assert.ok(document.activeElement === container.querySelector('select[aria-label="Artwork group"]'), "changing the group keeps keyboard focus on it");
     await select("Artwork group", "Our Story");
-    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 2);
+    // The opening and belief photos and one per journey chapter (Our Story redesign, 10 Nov 2026).
+    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 9);
     assert.equal(button("Save draft").disabled, true);
     await click("Homepage"); await fill("Category heading", "Sibling text"); await click("Save draft");
     assert.equal(app.saved().content.templateMedia, undefined);

@@ -8,7 +8,7 @@ import { ShopProvider } from "../components/shop-provider";
 
 // Captured from the placeholder page before live checkout existed. The closed state must not drift.
 const closedMarkup =
-  '<section class="empty-state checkout-state"><h1>Checkout is not open in this preview</h1><p>Your cart is saved. We’re preparing online payments and confirming delivery and stock before opening checkout.</p><p>No payment has been taken and no order has been placed.</p><div class="button-row"><a class="button" href="/cart">Return to cart</a><a class="button secondary" href="/pages/contact">Contact our team</a></div></section>';
+  '<section class="empty-state checkout-state"><h1>Checkout is not open in this preview</h1><p>Your cart is saved. We’re preparing online payments and confirming delivery and stock before opening checkout.</p><p>No payment has been taken and no order has been placed.</p><div class="button-row"><a class="button" href="/cart">Return to cart</a><a class="button secondary" href="/contact">Contact our team</a></div></section>';
 const options = { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_page" };
 async function render(responder: (path: string) => Response | Promise<Response>, searchParams?: Record<string, string>) {
   const previous = globalThis.fetch;

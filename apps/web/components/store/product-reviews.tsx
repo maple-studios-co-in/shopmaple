@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ProductReview } from "@shopmaple/contracts";
@@ -87,31 +87,119 @@ function ReviewSlider({ items }: { items: ProductReview[] }) {
 }
 
 /**
+ * The invitation rises into place the first time it scrolls into view: each part a little after the last, on the site's
+ * ease-out curve. Content is never hidden outside the animation (it is drawn whole before the script and when already
+ * on screen), and nothing moves for shoppers who ask for less motion.
+ */
+function useEntrance(stage: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const node = stage.current;
+    if (!node || typeof IntersectionObserver !== "function" || typeof node.animate !== "function" || typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || node.getBoundingClientRect().top < window.innerHeight) return;
+    const animations: Animation[] = [];
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      node.querySelectorAll<HTMLElement>("[data-entrance]").forEach((part, index) => animations.push(part.animate(
+        [{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "translateY(0)" }],
+        { duration: 900, delay: index * 110, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards" })));
+    }, { threshold: 0.2 });
+    observer.observe(node);
+    return () => { observer.disconnect(); animations.forEach((animation) => animation.cancel()); };
+  }, [stage]);
+}
+
+const starPath = "m12 2.6 2.75 6.25 6.8.7-5.1 4.55 1.45 6.7L12 17.35 6.1 20.8l1.45-6.7-5.1-4.55 6.8-.7z";
+// A dash in a title ("Console Table with Mirror – Black Glass Top") stays at the end of a line, never the start of one.
+const subject = (title: string | undefined) => !title ? "This piece" : (/^the\s/i.test(title) ? title : `The ${title}`).replace(/ ([–—]) /g, "\u00a0$1 ");
+
+/**
+ * Before the first review (owner, 10 Nov 2026: "redesign it as per the ambience of the website"): not a three-quarter
+ * screen of empty burgundy, but an invitation sized to what it says, lit like a stage (styles/review-cards.css). It names
+ * the piece, offers five stars that open the form already rated, and leads with Write the first review. Nothing is
+ * invented: no score, no sample review, and the promise under it is the one the form keeps (approval before it shows).
+ */
+function FirstReview({ piece, writeHref, writeLink, onWrite }: {
+  piece?: ReviewPiece; writeHref: string; writeLink: RefObject<HTMLAnchorElement | null>; onWrite: (from: HTMLElement, rating?: number) => void;
+}) {
+  const stage = useRef<HTMLElement>(null);
+  const label = useId();
+  useEntrance(stage);
+  return (
+    <section ref={stage} id="product-reviews" data-store data-reviews data-reviews-empty aria-labelledby="product-reviews-title"
+      className="relative isolate overflow-hidden bg-maple px-4 py-10 font-text text-white md:px-12">
+      <div className="relative mx-auto flex max-w-[760px] flex-col items-center gap-5 text-center md:gap-6 md:py-4">
+        <div data-entrance className="flex flex-col items-center gap-3">
+          <p data-reviews-eyebrow className="m-0 flex items-center gap-3 font-heading text-[12px] leading-none font-medium tracking-[0.22em] text-white/75 uppercase">
+            <span aria-hidden="true" className="h-px w-7 bg-white/35 md:w-10" />Be the first<span aria-hidden="true" className="h-px w-7 bg-white/35 md:w-10" />
+          </p>
+          <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.15] font-medium tracking-[-0.01em] md:text-[48px]">Hear From Them</h2>
+        </div>
+        <div data-entrance className="flex flex-col items-center gap-2">
+          <p data-reviews-note className="m-0 font-heading text-[20px] leading-[1.35] font-medium text-balance md:text-[24px]">{subject(piece?.title)} is waiting for its first review.</p>
+          <p className="m-0 text-[15px] leading-[1.6] text-white/75 md:text-[16px]">Own one? Tell us how it lives in your home.</p>
+        </div>
+        <div data-entrance className="flex w-full max-w-[360px] flex-col items-stretch gap-3 pt-1 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-4">
+          {piece && (
+            <div data-rate role="group" aria-labelledby={label} className="inline-flex h-12 items-center justify-center gap-3 rounded-[30px] border border-solid border-white/25 bg-white/[0.06] pr-5 pl-3">
+              <span id={label} className="sr-only">Rate the {piece.title}</span>
+              <span className="flex items-center">
+                {[1, 2, 3, 4, 5].map((stars) => (
+                  <button key={stars} type="button" data-rate-star aria-label={`${stars} ${stars === 1 ? "star" : "stars"}`} onClick={(event) => onWrite(event.currentTarget, stars)}
+                    className="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-transparent p-0 text-white/70 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" className="size-[22px]"><path d={starPath} /></svg>
+                  </button>
+                ))}
+              </span>
+              <span aria-hidden="true" className="font-heading text-[14px] leading-none font-medium whitespace-nowrap text-white/85">Rate it</span>
+            </div>
+          )}
+          <Link ref={writeLink} data-write-review data-fill-button="light" href={writeHref}
+            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-[30px] bg-white px-7 font-heading text-[15px] font-medium whitespace-nowrap text-maple no-underline shadow-[0_12px_32px_rgb(31_6_3/0.28)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            onClick={piece ? (event) => { event.preventDefault(); onWrite(event.currentTarget); } : undefined}>
+            Write the first review
+            {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+            <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px]" />
+          </Link>
+        </div>
+        <p data-entrance className="m-0 text-[13px] leading-[1.5] text-white/60">Every review is read by the Maple team before it appears.</p>
+      </div>
+    </section>
+  );
+}
+
+/**
  * Frame 999:329 / 2:371 ("Hear From Them"): the burgundy band with the rating on the right, then the approved reviews
- * Keeri sent. Nothing is invented: with no reviews the band says so, and the rating is Keeri's own average and count
- * (or, for a product Keeri has no reviews for, the rating staff recorded from real reviews). "Write a review" opens the
- * form on the page (Figma 180:566), which joins the page on that first click (null until then) and keeps what the visitor
- * wrote once closed; without script, or with no `piece` to review, the link leads to `writeHref`.
+ * Keeri sent. Nothing is invented: before the first review the band invites one (FirstReview), and the rating is Keeri's
+ * own average and count. Only review cards take three quarters of the screen on a computer (owner, 9 Nov 2026); a rating
+ * without written reviews keeps the band to its heading. "Write a review" opens the form on the page (Figma 180:566),
+ * which joins the page on that first click (null until then) and keeps what the visitor wrote once closed; without
+ * script, or with no `piece` to review, the link leads to `writeHref`.
  */
 export function ProductReviews({ rating, writeHref, reviews: items = [], piece }: { rating: { value: number; count?: number } | null | undefined; writeHref: string; reviews?: ProductReview[]; piece?: ReviewPiece }) {
   const [writing, setWriting] = useState<boolean | null>(null);
+  // A star chosen in the band, applied once as the form opens; the link opens it as the visitor left it.
+  const [chosen, setChosen] = useState<{ rating: number } | null>(null);
   const writeLink = useRef<HTMLAnchorElement>(null);
-  const stopWriting = () => { setWriting(false); writeLink.current?.focus(); };
+  const opener = useRef<HTMLElement | null>(null);
+  const write = (from: HTMLElement, stars?: number) => { opener.current = from; setChosen(stars ? { rating: stars } : null); setWriting(true); };
+  const stopWriting = () => { setWriting(false); (opener.current ?? writeLink.current)?.focus(); };
   const reviews = rating?.count ? `${rating.count} ${rating.count === 1 ? "review" : "reviews"}` : "";
   const summary = rating
     ? { score: rating.value.toFixed(1), filled: Math.round(rating.value), label: `Rated ${rating.value.toFixed(1)} out of 5${reviews ? ` from ${reviews}` : ""}` }
     : null;
+  const dialog = piece && writing !== null && <ReviewDialog open={writing} onClose={stopWriting} piece={piece} chosen={chosen} />;
+  if (!summary && items.length === 0) return <><FirstReview piece={piece} writeHref={writeHref} writeLink={writeLink} onWrite={write} />{dialog}</>;
   return (
     // Three quarters of the screen on a computer (owner, 9 Nov 2026): the cards take what the heading leaves.
-    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title" className="bg-maple px-4 py-10 font-text text-white md:flex md:h-[75svh] md:min-h-[540px] md:flex-col md:px-12 md:py-10">
+    <section id="product-reviews" data-store data-reviews aria-labelledby="product-reviews-title"
+      className={cx("bg-maple px-4 py-10 font-text text-white md:px-12 md:py-10", items.length > 0 && "md:flex md:h-[75svh] md:min-h-[540px] md:flex-col")}>
       <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col items-start gap-6 md:gap-4">
           <h2 id="product-reviews-title" className="m-0 text-[36px] leading-[1.2] font-medium md:text-[48px]">Hear From Them</h2>
-          {summary
-            ? <p data-reviews-sub className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
-            : <p data-reviews-note className="m-0 max-w-[420px] font-heading text-[20px] leading-[1.3] font-medium md:text-[24px]">No reviews to show yet. Share your experience with this piece.</p>}
+          <p data-reviews-sub className="m-0 font-heading text-[20px] leading-[1.2] font-medium md:text-[24px]">Share your experience with this piece.</p>
           <Link ref={writeLink} data-write-review data-fill-button="light" href={writeHref} className={pill}
-            onClick={piece ? (event) => { event.preventDefault(); setWriting(true); } : undefined}>
+            onClick={piece ? (event) => { event.preventDefault(); write(event.currentTarget); } : undefined}>
             Write a review
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px]" />
@@ -132,7 +220,7 @@ export function ProductReviews({ rating, writeHref, reviews: items = [], piece }
         )}
       </div>
       {items.length > 0 && <ReviewSlider items={items} />}
-      {piece && writing !== null && <ReviewDialog open={writing} onClose={stopWriting} piece={piece} />}
+      {dialog}
     </section>
   );
 }

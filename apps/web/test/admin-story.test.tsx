@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { ContentEditor } from "../components/admin/editor";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { storyPageContentSchema } from "@shopmaple/contracts";
 
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
 Object.assign(globalThis, {
@@ -49,13 +50,22 @@ test("staff edit the existing Our Story template and save a typed unpublished dr
       initialContent={defaultStorefrontContent} onExpired={() => assert.fail("Unexpected expiry")} />));
     await act(async () => button("Existing pages").click());
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Our Story page title"]')?.value, "Our Story");
-    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Our Story hero heading"]')?.value, "MADE DIFFERENT,\nBY DESIGN");
+    // The redesign's copy (Figma 293:1093) is what an untouched page shows and the editor starts from.
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Our Story hero heading"]')?.value, "Made different,\nby design.");
+    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Our Story hero eyebrow"]')?.value, "Our Story / Made in Delhi");
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Our Story chapter 2 title"]')?.value, "Learning from\nIndian homes.");
+    assert.equal(container.querySelector('[aria-label="Our Story film heading"]'), null, "the film left the page, so its heading is not offered");
     await fill("Our Story page title", "Our story, revisited");
     await fill("Our Story hero heading", "Our workshop\nYour home");
+    await fill("Our Story hero eyebrow", "Our story / Since 2015");
+    await fill("Our Story hero button", "See how we got here");
+    await fill("Our Story principle 2 title", "Drawn for you");
     await fill("Our Story belief body", "<img src=x onerror=alert(1)> Built with care.");
+    await fill("Our Story journey eyebrow", "Our timeline");
     await fill("Our Story chapter 1 date", "2014");
-    await fill("Our Story chapter 1 title", "A new beginning");
+    await fill("Our Story chapter 1 title", "A new\nbeginning");
     await fill("Our Story chapter 1 body", "A personal journey.");
+    await fill("Our Story invitation button", "Write to us");
     const move = button("Move Our Story Journey up");
     move.focus();
     await act(async () => move.click());
@@ -66,15 +76,21 @@ test("staff edit the existing Our Story template and save a typed unpublished dr
     assert.equal(saved.expectedVersion, 4);
     assert.equal(saved.content.storyPage.title, "Our story, revisited");
     assert.deepEqual(saved.content.storyPage.heroHeading, ["Our workshop", "Your home"]);
+    assert.equal(saved.content.storyPage.heroEyebrow, "Our story / Since 2015");
+    assert.equal(saved.content.storyPage.heroCta, "See how we got here");
+    assert.deepEqual(saved.content.storyPage.principles[1], { key: "unique-designs", title: "Drawn for you", body: "Considered for everyday living." });
     assert.equal(saved.content.storyPage.beliefBody, "<img src=x onerror=alert(1)> Built with care.");
+    assert.equal(saved.content.storyPage.journeyEyebrow, "Our timeline");
+    assert.equal(saved.content.storyPage.invitationCta, "Write to us");
     assert.deepEqual(saved.content.storyPage.sections, [
-      { key: "hero", enabled: true }, { key: "journey", enabled: true },
-      { key: "belief-film", enabled: true }, { key: "cities", enabled: false },
+      { key: "hero", enabled: true }, { key: "principles", enabled: true }, { key: "journey", enabled: true },
+      { key: "belief-film", enabled: true }, { key: "cities", enabled: false }, { key: "invitation", enabled: true },
     ]);
     assert.deepEqual(saved.content.storyPage.timeline[0], {
-      key: "chapter-1", date: "2014", title: "A new beginning", body: "A personal journey.",
+      key: "chapter-1", date: "2014", title: "A new\nbeginning", body: "A personal journey.",
     });
     assert.equal(saved.content.storyPage.timeline.length, 7);
+    assert.equal(storyPageContentSchema.safeParse(saved.content.storyPage).success, true, "the saved draft is valid story content");
     assert.match(container.textContent ?? "", /Draft saved/);
     assert.match(container.textContent ?? "", /Published version 2/);
     assert.equal([...container.querySelectorAll("button")].some(b => b.textContent === "Publish draft"), false);

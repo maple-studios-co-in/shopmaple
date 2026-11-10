@@ -9,7 +9,7 @@ import { CardRating } from "../components/store/card-highlights";
 // The product page design keeps the card with highlights; the rest of the store uses the classic card.
 import { ProductCard } from "../components/store/product-card-figma";
 import { defaultStorefrontContent } from "../lib/content-defaults";
-import { contactCategories } from "../app/pages/contact-content";
+import { contactCategories } from "../lib/contact-content";
 
 const source = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const doc = (markup: string) => new JSDOM(markup).window.document;

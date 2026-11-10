@@ -97,14 +97,14 @@ test('authored changes keep editor, origin, CSRF, authentication and optimistic 
 });
 
 test('same-snapshot authored pages and articles, existing routes, and actual catalogue links publish', async () => {
-  const hrefs = ['/', '/#intro', '/pages/contact', '/pages/bulk-enquiry', '/pages/chairs', '/pages/tables', '/pages/sofas', '/pages/nimbus-collection', '/pages/our-story', '/pages/returns', '/pages/new-room', '/policies/privacy-policy', '/policies/refund-policy', '/blogs/life-culture', '/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes', '/blogs/news/new-linked-story', '/collections/all', '/collections/chairs', '/collections/beds', '/collections/frontpage', '/products/article-chair#details'];
+  const hrefs = ['/', '/#intro', '/contact', '/bulk-enquiry', '/chairs', '/tables', '/sofas', '/nimbus-collection', '/our-story', '/returns', '/new-room', '/policies/privacy-policy', '/policies/refund-policy', '/blogs/life-culture', '/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes', '/blogs/news/new-linked-story', '/collections/all', '/collections/chairs', '/collections/beds', '/collections/frontpage', '/products/article-chair#details'];
   const content = { ...fixture(), pages: [{ slug: 'new-room', title: 'New room', description: '', body: 'Hello', banner: null }], authoredArticles: [{ ...article('linked-story'), blocks: hrefs.map((href, i) => ({ id: `link-${i}`, type: 'link', text: 'Read', href })) }, article('new-linked-story')] };
   assert.equal((await publish((await save(content)).version)).status, 200);
   assert.equal((await publicContent()).body.content.authoredArticles.length, 2);
 });
 
 test('missing article/page/policy/blog/product/collection targets reject publication without any writes', async () => {
-  for (const href of ['/pages/new-room', '/blogs/news/new-linked-story', '/pages/does-not-exist', '/blogs/news/does-not-exist', '/blogs/not-a-blog', '/policies/no-policy', '/products/no-product', '/products/article-hidden-chair', '/collections/not-a-collection']) {
+  for (const href of ['/new-room', '/blogs/news/new-linked-story', '/does-not-exist', '/blogs/news/does-not-exist', '/blogs/not-a-blog', '/policies/no-policy', '/products/no-product', '/products/article-hidden-chair', '/collections/not-a-collection']) {
     const saved = await save({ ...fixture(), authoredArticles: [{ ...article('missing-target'), blocks: [{ id: 'link', type: 'link', text: 'Read', href }] }] });
     const before = await snapshot(); const response = await publish(saved.version);
     assert.equal(response.status, 400, href); assert.equal(response.body.code, 'ARTICLE_LINK_TARGET_MISSING');
@@ -162,10 +162,10 @@ test('malformed authored data and route collisions reject saves without changing
 });
 
 test('legacy page links retain existing publication behavior', async () => {
-  const saved = await save({ ...fixture(), pages: [{ slug: 'legacy-links', title: 'Legacy', description: '', body: '', banner: { desktopImage: '/media/a.webp', mobileImage: '/media/b.webp', alt: 'Art', href: '/pages/legacy-unavailable', label: 'Read' } }] });
+  const saved = await save({ ...fixture(), pages: [{ slug: 'legacy-links', title: 'Legacy', description: '', body: '', banner: { desktopImage: '/media/a.webp', mobileImage: '/media/b.webp', alt: 'Art', href: '/legacy-unavailable', label: 'Read' } }] });
   const result = await publish(saved.version);
   assert.equal(result.status, 200);
-  assert.equal((await publicContent()).body.content.pages[0].banner.href, '/pages/legacy-unavailable');
+  assert.equal((await publicContent()).body.content.pages[0].banner.href, '/legacy-unavailable');
 });
 
 test('server publication metadata cannot overflow article bounds or commit a partial ledger', async () => {

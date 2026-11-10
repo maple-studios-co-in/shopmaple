@@ -63,6 +63,10 @@ const fake = {
   emailStatus: 200,
   /** The next N Keeri calls get nginx's 502, as during a Keeri restart. */
   keeriRestartCalls: 0,
+  /** Keeri's 422 refusal of the hold for the quote's promo code, when set. */
+  reservationRefusal: "",
+  /** What Razorpay reports the captured payment was for. */
+  paymentAmount: 383500,
 };
 async function transport(target: string | URL, init: RequestInit): Promise<Response> {
   const u = new URL(String(target));
@@ -77,14 +81,18 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
     switch (u.pathname) {
       case "/api/storefront/quotes": {
         if (fake.quoteStatus !== 200) return new Response("policy detail", { status: fake.quoteStatus });
+        // Keeri knows one offer, DIWALI15: 15% off each unit of the chair.
+        if ("promoCode" in body && body.promoCode !== "DIWALI15") return Response.json({ error: "PROMO_NOT_FOUND" }, { status: 422 });
+        const off = body.promoCode ? 22500 : 0;
         const snapshot = {
           version: 2, currency: "INR", policyId: "reviewed-composition-v1", quoteId: "quote_composition",
           expiresAt: fake.quoteExpiresAt, customer: body.customer, billingAddress: body.billingAddress,
           shippingAddress: body.shippingAddress, deliveryMethodId: body.deliveryMethodId, gstMode: "excluded",
           items: body.items.map((item: { variantId: string; quantity: number }) => ({
             variantId: item.variantId, productId: "keeri:maple:comp-chair", title: "Composition Chair", variantTitle: "Oak",
-            sku: "COMP-CHAIR", quantity: item.quantity, unitPricePaise: 150000, lineTotalPaise: 150000 * item.quantity,
+            sku: "COMP-CHAIR", quantity: item.quantity, unitPricePaise: 150000 - off, lineTotalPaise: (150000 - off) * item.quantity,
             hsn: "9401", taxRateBps: 1800, fulfilment: { kind: "stocked", leadTimeDays: null },
+            ...(off ? { discountPaise: off * item.quantity, undiscountedUnitPricePaise: 150000 } : {}),
           })),
           subtotalPaise: 0, shippingPaise: 25000, taxPaise: 0, totalPaise: 0,
           delivery: { source: "carrier", carrierPriced: true, fallbackReason: null,
@@ -93,11 +101,14 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
         snapshot.subtotalPaise = snapshot.items.reduce((n: number, i: { lineTotalPaise: number }) => n + i.lineTotalPaise, 0);
         snapshot.taxPaise = Math.round((snapshot.subtotalPaise + snapshot.shippingPaise) * 0.18);
         snapshot.totalPaise = snapshot.subtotalPaise + snapshot.shippingPaise + snapshot.taxPaise;
+        if (off) Object.assign(snapshot, { promotion: { code: "DIWALI15", label: "15% off",
+          discountPaise: snapshot.items.reduce((n: number, i: { discountPaise: number }) => n + i.discountPaise, 0) } });
         return Response.json({ version: 2, quoteId: snapshot.quoteId, expiresAt: snapshot.expiresAt,
           snapshotSha256: createHash("sha256").update(canonical(snapshot)).digest("hex"), snapshot });
       }
       case "/api/storefront/reservations":
         if (fake.reservationStatus !== 200) return new Response("stock problem", { status: fake.reservationStatus });
+        if (fake.reservationRefusal) return Response.json({ error: fake.reservationRefusal }, { status: 422 });
         return Response.json({ attemptId: body.attemptId, snapshotSha256: body.snapshotSha256,
           reservationId: `hold-${body.attemptId}`, verified: true, expiresAt: "2030-01-01T10:30:00.000Z" });
       case "/api/storefront/reservations/verify":
@@ -119,7 +130,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
       const body = JSON.parse(String(init.body));
       return Response.json({ entity: "order", id: "order_comp1", ...body, status: "created", amount_paid: 0, amount_due: body.amount });
     }
-    return Response.json({ entity: "payment", id: u.pathname.split("/").at(-1), order_id: "order_comp1", amount: 383500,
+    return Response.json({ entity: "payment", id: u.pathname.split("/").at(-1), order_id: "order_comp1", amount: fake.paymentAmount,
       currency: "INR", status: fake.paymentCaptured ? "captured" : "authorized", captured: fake.paymentCaptured,
       amount_refunded: 0, refund_status: null });
   }
@@ -169,7 +180,7 @@ beforeEach(async () => {
   clock = new Date("2030-01-01T10:00:00Z");
   Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", quoteStatus: 200, reservationStatus: 200, releaseStatus: 200,
     razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [], emails: [], emailStatus: 200,
-    keeriRestartCalls: 0 });
+    keeriRestartCalls: 0, reservationRefusal: "", paymentAmount: 383500 });
   await db.orderNotification.deleteMany();
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
@@ -591,4 +602,56 @@ test("an email Resend already accepted under its key is recorded as sent, not fa
   const rows = await db.orderNotification.findMany();
   assert.equal(rows.length, 2);
   assert.equal(rows.every((r) => r.state === "sent"), true);
+});
+
+test("a promo code is quoted by Keeri, charged at the discounted total and named in both order emails", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app, "composition-promo-1", { ...input, promoCode: "diwali15" });
+  assert.equal(frozen.status, 200);
+  assert.deepEqual(frozen.body.quote.promotion, { code: "DIWALI15", label: "15% off", discountPaise: 45000 });
+  assert.equal(frozen.body.amountPaise, 330400);
+  fake.paymentAmount = 330400;
+  const payable = await paymentOrder(app, frozen.body.id);
+  assert.equal(payable.body.amountPaise, 330400);
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "confirmed");
+  const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
+  const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
+  for (const text of [buyer.text, staff.text]) {
+    assert.match(text, /Composition Chair, Oak × 2: Rs\. 3,000\.00/, "the lines before the discount");
+    assert.match(text, /Discount \(DIWALI15\): -Rs\. 450\.00/);
+  }
+  assert.match(buyer.text, /Total paid: Rs\. 3,304\.00/);
+  assert.match(staff.text, /Total: Rs\. 3,304\.00/);
+});
+
+test("an order without a code has no discount line in its emails", async () => {
+  const { app, runWorkers } = checkoutApp();
+  const frozen = await freeze(app);
+  await paymentOrder(app, frozen.body.id);
+  await webhook(app);
+  await settle(runWorkers);
+  assert.equal(fake.emails.length, 2);
+  for (const email of fake.emails) assert.doesNotMatch(email.text, /Discount/);
+});
+
+test("Keeri's refusals of a code reach the buyer as its message, at the quote and at the hold", async () => {
+  const { app } = checkoutApp();
+  const unknown = await freeze(app, "composition-promo-unknown", { ...input, promoCode: "NOPE99" });
+  assert.equal(unknown.status, 422);
+  assert.deepEqual([unknown.body.code, unknown.body.message], ["PROMO_NOT_FOUND", "We don't recognise that code. No payment has been taken."]);
+  const frozen = await freeze(app, "composition-promo-hold", { ...input, promoCode: "DIWALI15" });
+  fake.reservationRefusal = "PROMO_ALREADY_USED";
+  const refused = await paymentOrder(app, frozen.body.id);
+  assert.equal(refused.status, 422);
+  assert.equal(refused.body.code, "PROMO_ALREADY_USED");
+  assert.deepEqual(fake.razorpayCalls, []);
+  const attempt = (await status(app, frozen.body.id)).body;
+  assert.equal(attempt.state, "abandoned");
+  assert.equal(attempt.fulfillmentStatus, "pending", "not sent to staff review");
+  fake.reservationRefusal = "";
+  const again = await freeze(app, "composition-promo-removed");
+  assert.equal(again.status, 200, "removing the code continues the checkout");
+  assert.equal((await paymentOrder(app, again.body.id)).status, 200);
 });

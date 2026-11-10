@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PreviewFrameDocument, SectionThumbnailDocument } from "@/components/admin/preview-shell";
-import { documentDeals, getPublishedContent } from "@/lib/content";
+import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 import { previewMediaContent } from "@/lib/draft-preview";
 import { readThumbnailSection } from "@/lib/live-preview";
@@ -8,6 +8,10 @@ import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
 import { thumbnailContent } from "@/lib/section-thumbnails";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
 import "@/styles/admin.css";
+// A blog page previews with its own styles, as the storefront's blog route loads them.
+import "@/styles/blog.css";
+// So does Our Story (owner, 10 Nov 2026).
+import "@/styles/our-story.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -54,7 +58,7 @@ export default async function PreviewFrame({ params, searchParams }: {
   }
   return (
     <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} view={published ? "published" : "draft"}>
-      <ProductHighlightsProvider value={content.productHighlights} deals={documentDeals(content)}>{route.node}</ProductHighlightsProvider>
+      <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
     </PreviewFrameDocument>
   );
 }

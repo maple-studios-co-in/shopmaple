@@ -145,8 +145,8 @@ export function SiteChromeFields({ value, onChange }: { value?: SiteChrome; onCh
         onClick={() => { focus.focusAfter("heading"); onChange(undefined); }}>Restore original navigation &amp; footer</ActionButton>}
     />
     <Prose className="-mt-3 mb-6 text-xs">
-      Destinations must be local storefront paths (for example /collections/all or /pages/contact). Enquiry subjects are optional and only work with
-      /pages/contact. Labels: up to 120 characters; enquiry subjects: up to 160.
+      Destinations must be local storefront paths (for example /collections/all or /contact). Enquiry subjects are optional and only work with
+      /contact. Labels: up to 120 characters; enquiry subjects: up to 160.
     </Prose>
     <Tabs value={section} onValueChange={next => setSection(next as Section)} className="gap-6">
       <TabsList aria-label="Navigation & footer section" className="max-w-full flex-wrap justify-start group-data-[orientation=horizontal]/tabs:h-auto">

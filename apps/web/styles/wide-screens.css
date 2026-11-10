@@ -28,6 +28,11 @@
     max-width: none;
     padding-inline: var(--wide-gutter);
   }
+  /* The cart is a list to read, not a page to fill: it keeps its 820px column, centred, on a big screen too (the
+     rule above had stretched its lines across the whole window; owner, 10 Nov 2026). */
+  .page-section.cart-page {
+    max-width: calc(820px + 2 * var(--wide-gutter));
+  }
   .cp-help,
   .cp-bulk-scene,
   .landing-nimbus-bento {

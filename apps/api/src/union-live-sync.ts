@@ -35,28 +35,34 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     )
       throw new Error("ISOLATED_DATABASE_APPROVAL_REQUIRED");
   }
-  const request = (includeAttributes: boolean, includeProductPage = includeAttributes) => fetchKeeriExport({
-    endpoint: `${options.origin}/api/storefront/catalogue/v2`,
-    trustedOrigin: options.origin,
-    token: options.token,
-    tenantId: options.tenantId,
-    schemaVersion: 2,
-    includeTaxonomy: true,
-    includeContent: true,
-    includeAttributes,
-    includeProductPage,
-    fetch: options.fetch,
-  });
-  // Each richer level needs a Keeri release that offers it; an older Keeri steps the catalogue down a level.
-  const snapshot = await request(true).catch((error: unknown) => {
-    if (error instanceof KeeriFetchError && error.code === "PRODUCT_PAGE_UNSUPPORTED")
-      return request(true, false).catch((inner: unknown) => {
-        if (inner instanceof KeeriFetchError && inner.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
-        throw inner;
+  // The richest level first. Each needs a Keeri release that offers it; an older Keeri refuses it
+  // with 400 and the sync steps down a level (offers, product page, variant options, plain).
+  const levels = [
+    { includeAttributes: true, includeProductPage: true, includeOffers: true },
+    { includeAttributes: true, includeProductPage: true, includeOffers: false },
+    { includeAttributes: true, includeProductPage: false, includeOffers: false },
+    { includeAttributes: false, includeProductPage: false, includeOffers: false },
+  ];
+  const unsupported = new Set(["OFFERS_UNSUPPORTED", "PRODUCT_PAGE_UNSUPPORTED", "ATTRIBUTES_UNSUPPORTED"]);
+  const request = async (level: number): Promise<Awaited<ReturnType<typeof fetchKeeriExport>>> => {
+    try {
+      return await fetchKeeriExport({
+        endpoint: `${options.origin}/api/storefront/catalogue/v2`,
+        trustedOrigin: options.origin,
+        token: options.token,
+        tenantId: options.tenantId,
+        schemaVersion: 2,
+        includeTaxonomy: true,
+        includeContent: true,
+        ...levels[level]!,
+        fetch: options.fetch,
       });
-    if (error instanceof KeeriFetchError && error.code === "ATTRIBUTES_UNSUPPORTED") return request(false);
-    throw error;
-  });
+    } catch (error) {
+      if (error instanceof KeeriFetchError && unsupported.has(error.code) && level + 1 < levels.length) return request(level + 1);
+      throw error;
+    }
+  };
+  const snapshot = await request(0);
   const age =
     (options.now ?? new Date()).getTime() - Date.parse(snapshot.capturedAt);
   if (age > 900000 || age < -60000) throw new Error("STALE_OR_FUTURE_SNAPSHOT");

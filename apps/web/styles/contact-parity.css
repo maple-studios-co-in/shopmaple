@@ -254,10 +254,12 @@
   padding: 40px 20px;
   font-family: var(--font-text);
 }
+/* The hero is as tall as the window allows, up to 720px, so its form and button are in view at a laptop's 620px to
+   800px; the room photo fills it in its own proportions, never stretched to the box (owner, 10 Nov 2026). */
 .cp-bulk-scene {
   max-width: 1800px;
   margin-inline: auto;
-  min-height: 720px;
+  min-height: clamp(520px, 100svh - 190px, 720px);
   position: relative;
   display: flex;
   align-items: center;
@@ -270,8 +272,8 @@
   inset: 0;
 }
 .cp-bulk-image img {
-  object-fit: fill;
-  object-position: bottom center;
+  object-fit: cover;
+  object-position: center 65%;
 }
 .cp-bulk-shade {
   background: linear-gradient(90deg, #00000059, #00000014);
@@ -515,23 +517,72 @@
     gap: 32px;
   }
 }
+/* A short laptop window (620px to 820px tall): a tighter card, so the whole form sits in the first screen. */
+@media (min-width: 991px) and (max-height: 820px) {
+  .cp-bulk-hero {
+    padding-block: 16px 24px;
+  }
+  .cp-bulk-scene {
+    min-height: clamp(440px, 100svh - 170px, 720px);
+  }
+  .cp-bulk-content {
+    padding-block: 20px;
+  }
+  .cp-bulk-card {
+    padding: 26px 28px;
+  }
+  .cp-bulk-eyebrow {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .cp-bulk-card h1 {
+    font-size: 40px;
+    margin-bottom: 8px;
+  }
+  .cp-bulk-subtitle {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .cp-bulk-rule {
+    margin-bottom: 16px;
+  }
+  .cp-form-bulk,
+  .cp-form-bulk .cp-form-pair {
+    gap: 10px;
+  }
+  .cp-form-bulk input {
+    padding-block: 12px;
+  }
+  .cp-form-bulk > .button {
+    padding-block: 14px;
+  }
+}
+/* Tablets and phones: the room photo whole across the top of the card, then the heading and the form beneath it on
+   white, where the burgundy heading reads clearly (it sat on the dark photo, over an empty grey band). */
 @media (max-width: 990px) {
   .cp-bulk-hero {
     padding: 14px;
   }
   .cp-bulk-scene {
-    min-height: 520px;
-    align-items: flex-end;
+    display: block;
+    min-height: 0;
+    border: 1px solid #eee8e0;
+    border-radius: 20px;
+    background: #fff;
+  }
+  .cp-bulk-image {
+    position: relative;
+    inset: auto;
+    aspect-ratio: 5 / 3;
   }
   .cp-bulk-image img {
-    object-fit: contain;
-    object-position: bottom center;
+    object-position: center;
   }
   .cp-bulk-shade {
-    background: linear-gradient(0deg, #0009, #00000014);
+    display: none;
   }
   .cp-bulk-content {
-    padding: 28px 16px 20px;
+    padding: clamp(20px, 4vw, 32px);
   }
   .cp-bulk-card {
     width: 100%;
@@ -539,22 +590,25 @@
     padding: 0;
   }
   .cp-bulk-eyebrow {
-    color: var(--burgundy);
+    color: #292d28;
     font-size: 16px;
   }
   .cp-bulk-card h1 {
     color: var(--burgundy);
-    font-size: 32px;
+    font-size: clamp(30px, 5vw, 40px);
   }
-  .cp-bulk-subtitle,
+  .cp-bulk-subtitle {
+    font-size: 16px;
+    margin-bottom: 18px;
+  }
   .cp-bulk-rule {
     display: none;
   }
   .cp-bulk-form-wrap {
-    padding: 20px;
-    margin-top: 18px;
-    background: #f4f2ec;
-    border-radius: 20px;
+    padding: 0;
+    margin-top: 0;
+    background: transparent;
+    border-radius: 0;
   }
   .cp-help {
     grid-template-columns: 1fr;

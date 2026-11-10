@@ -3,17 +3,11 @@
   .maple-footer-main {
     grid-template-columns: var(--chrome-footer-columns);
   }
+}
+/* The contact band's four columns need about 1200px; below that its heading and contacts sit two by two. */
+@media (min-width: 1200px) {
   .maple-footer-contact {
     grid-template-columns: var(--chrome-contact-columns);
-  }
-  .maple-mega:not(:has(.maple-mega-feature)) {
-    grid-template-columns: minmax(0, 1fr) 190px;
-  }
-  .maple-mega:not(:has(.maple-mega-discovery)) {
-    grid-template-columns: 210px minmax(0, 1fr);
-  }
-  .maple-mega:not(:has(.maple-mega-feature)):not(:has(.maple-mega-discovery)) {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (min-width: 768px) and (max-width: 1100px) {
@@ -21,11 +15,7 @@
     grid-template-columns: var(--chrome-footer-medium-columns);
   }
 }
-@media (min-width: 750px) and (max-width: 1100px) {
-  .maple-mega:not(:has(.maple-mega-feature)) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+/* The open menu's columns are laid out in styles/header-menu.css alone. */
 .maple-footer-main > *,
 .maple-footer-contact > * {
   min-width: 0;
@@ -115,3 +105,32 @@
 /* The city photos' credits, kept within reach beside the copyright (CC BY-SA). */
 .maple-footer-credits { margin-left: 16px; color: inherit; font-size: inherit; text-decoration: none; opacity: 0.85; }
 .maple-footer-credits:hover, .maple-footer-credits:focus-visible { text-decoration: underline; opacity: 1; }
+
+/*
+ * The footer at laptop zoom and on tablets (owner, 10 Nov 2026). A column is never narrower than its longest link or
+ * its phone and email lines, which no longer break mid-word ("contact@maplefurnishers / .com") or run into the window's
+ * edge; the logo's column and the gaps give way instead. Below 900px the logo takes a row of its own above the three
+ * columns, and the contact band's four columns wait for 1200px.
+ */
+@media (min-width: 750px) {
+  .maple-footer-main > nav,
+  .maple-footer-care,
+  .maple-footer-contact > div { min-width: auto; }
+  .maple-footer-main nav > a,
+  .maple-footer-care a,
+  .maple-footer-contact a { white-space: nowrap; }
+}
+/* An address that must wrap breaks into even lines, never leaving "Nagar," alone. */
+.maple-footer-care p > span { text-wrap: balance; }
+@media (min-width: 750px) and (max-width: 899px) {
+  .maple-footer-main { grid-template-columns: repeat(3, auto); gap: 28px; min-height: 0; }
+  .maple-footer-logo { grid-column: 1 / -1; width: min(200px, 100%); margin: 0; }
+  .maple-footer-care { grid-column: auto; }
+}
+@media (min-width: 750px) and (max-width: 1199px) {
+  .maple-footer-contact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; }
+}
+@media (min-width: 1200px) {
+  .maple-footer-contact { gap: clamp(32px, 4.2vw - 12px, 64px); }
+  .maple-footer-contact h2 { font-size: clamp(36px, 3.6vw, 48px); }
+}

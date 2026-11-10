@@ -46,12 +46,13 @@ function destination(href: string) {
       url.hostname === "shop.maplefurnishers.com" ||
       url.hostname === "store.maplefurnishers.com"
     )
-      return url.pathname + url.search + url.hash;
+      // The old shop's /pages/<slug> is /<slug> here.
+      return url.pathname.replace(/^\/pages\//, "/") + url.search + url.hash;
     if (
       url.hostname.endsWith(".myshopify.com") ||
       url.hostname === "checkout.shopify.com"
     )
-      return "/pages/contact";
+      return "/contact";
     return ["https:", "mailto:", "tel:"].includes(url.protocol)
       ? href
       : undefined;

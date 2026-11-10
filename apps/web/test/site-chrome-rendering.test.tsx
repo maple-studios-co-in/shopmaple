@@ -48,7 +48,7 @@ test("published chrome overrides text, targets, ordering and visibility across p
   );
   assert.equal(
     doc.querySelector(".announcement a")?.getAttribute("href"),
-    "/pages/our-story",
+    "/our-story",
   );
   assert.deepEqual(
     [...doc.querySelectorAll(".utility-links a")].map((e) => e.textContent),
@@ -89,8 +89,9 @@ test("published chrome overrides text, targets, ordering and visibility across p
     doc.querySelector(".whatsapp-support")?.getAttribute("href"),
     "https://wa.me/919876543212",
   );
+  // The button reads "Contact us" (owner, 10 Nov 2026); the staff's WhatsApp label is its hover hint.
   assert.equal(
-    doc.querySelector(".whatsapp-support")?.getAttribute("aria-label"),
+    doc.querySelector(".whatsapp-support")?.getAttribute("title"),
     "Ask Maple on WhatsApp",
   );
   assert.doesNotMatch(doc.body.textContent!, /Hidden/);

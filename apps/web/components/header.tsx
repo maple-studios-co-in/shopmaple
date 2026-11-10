@@ -15,7 +15,8 @@ const Favourites = dynamic(() => import("./favourites").then((module) => module.
 import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
 export function Header({
   siteChrome = defaultSiteChrome,
-}: { siteChrome?: SiteChrome } = {}) {
+  sticky = false,
+}: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean } = {}) {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
     [account, setAccount] = useState(false),
@@ -35,7 +36,7 @@ export function Header({
       )}
       {/* One row (Figma 256:3836): the logo, the menu and the shopping actions; Our Story, Bulk Enquiry and Help Center
           are in the footer and, on a phone, in the menu. */}
-      <header className="site-header">
+      <header className="site-header" data-sticky={sticky ? "" : undefined}>
         <div className="header-main">
           <button
             className="icon-button mobile-menu-button"
@@ -111,7 +112,7 @@ export function Header({
             Wishlist <span>View your saved items →</span>
           </Link>
           <Link
-            href="/pages/contact?product=Order%20support"
+            href="/contact?product=Order%20support"
             onClick={() => setAccount(false)}
           >
             Help Center <span>Contact support →</span>

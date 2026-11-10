@@ -13,7 +13,6 @@ import { ActionButton, PanelHeader, RemoveButton, SectionHeading, rowCard, usePe
 import { ProductName, ProductSearch } from "./product-search";
 
 type Swatch = ProductHighlights["swatches"][number];
-type Deal = NonNullable<ProductHighlights["deal"]>;
 type Highlight = ProductHighlights["products"][number];
 
 const swatchLimit = 200, productLimit = 300, suggestionLimit = 24;
@@ -22,9 +21,12 @@ const hexPattern = /^#[0-9a-fA-F]{6}$/;
 const nameKey = (name: string) => name.trim().toLowerCase();
 
 /** The message the editor shows when a save is blocked by this screen's fields. */
-export const highlightsSaveMessage = "Check product highlights: fix the colours or offer marked on the Product highlights screen, then save again.";
+export const highlightsSaveMessage = "Check product highlights: fix the colours marked on the Product highlights screen, then save again.";
 
 /*
+ * No offer is set here either: since 10 Nov 2026 the product page shows only the product's own Keeri offer, whose code
+ * checkout takes. A store-wide offer saved here before then stays in the content, unread.
+ *
  * Ratings are not set here: every card and product page shows the average and count of the product's approved reviews
  * in Keeri (owner, 4 Nov 2026). A rating saved here before then stays in the content, unread.
  */
@@ -35,23 +37,6 @@ function nameError(swatches: Swatch[], index: number) {
   return first < index ? `${swatches[index]!.name.trim()} already has a colour in row ${first + 1}.` : "";
 }
 const hexError = (hex: string) => hexPattern.test(hex) ? "" : "Use a hex colour such as #1f4e5f.";
-
-/** The editor's local date and time for a datetime-local field ("2026-11-09T18:00"); empty without a valid time. */
-function localTime(iso: string) {
-  const at = new Date(iso);
-  if (!iso || Number.isNaN(at.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
-}
-/** What the offer's fields still need. An ended offer can be saved; the message says product pages no longer show it. */
-function dealErrors(deal: Deal, now: number) {
-  const ends = Date.parse(deal.endsAt);
-  return {
-    offer: deal.offer.trim() ? "" : "Describe the offer, such as 20% off.",
-    code: /^[A-Z0-9][A-Z0-9%-]{1,23}$/.test(deal.code) ? "" : "Use 2–24 capital letters, numbers, % or -, such as SALE20.",
-    endsAt: Number.isNaN(ends) ? "Choose when the offer ends." : ends <= now ? "This time has passed, so product pages no longer show the offer." : "",
-  };
-}
 
 function Count({ value, limit }: { value: number; limit: number }) {
   return <Badge variant="secondary" className="ml-2 rounded-md border-0 bg-neutral-bg align-middle font-semibold text-neutral tabular-nums">{value}/{limit}</Badge>;
@@ -80,17 +65,10 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
   /** Titles of products seen in catalogue results, so table rows can show more than a handle. */
   const [titles, setTitles] = useState<Record<string, string>>({});
   const focus = usePendingFocus<string>(current);
-  // When the screen opened, for telling an offer that has already ended.
-  const [openedAt] = useState(Date.now);
   function update(next: Partial<ProductHighlights>, target?: string) {
     focus.focusAfter(target ?? null);
     onChange({ ...current, ...next });
   }
-  const deal = current.deal;
-  const dealProblems = deal ? dealErrors(deal, openedAt) : null;
-  const patchDeal = (patch: Partial<Deal>) => { if (deal) update({ deal: { ...deal, ...patch } }); };
-  // A new offer starts a week out, on the hour, for the editor to adjust.
-  const addDeal = () => update({ deal: { offer: "", code: "", endsAt: new Date(Math.ceil((Date.now() + 7 * 86_400_000) / 3_600_000) * 3_600_000).toISOString() } }, "deal-offer");
   function heard(list: ProductList | null) {
     setResults(list);
     if (list?.products.length) setTitles((known) => ({ ...known, ...Object.fromEntries(list.products.map((product) => [product.handle, product.title])) }));
@@ -205,37 +183,5 @@ export function ProductHighlightsFields({ value, onChange, onExpired }: {
       }} />
     </section>
 
-    <section aria-label="Product page offer" className="grid min-w-0 content-start gap-3">
-      <SectionHeading className="mt-0 mb-0" description="An offer every product page counts down to, with its code to copy, and names on a tab at the page's edge. It leaves the pages by itself when it ends. A running campaign’s timer offer takes its place. Add only an offer your team honours.">
-        Product page offer
-      </SectionHeading>
-      {deal && dealProblems ? <div className={cn(rowCard, "grid gap-2 px-3 py-2.5")}>
-        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-          <RowField label="Offer" className="flex-1 basis-40">
-            <Input aria-label="Offer" ref={focus.track("deal-offer")} placeholder="20% off" maxLength={40} value={deal.offer}
-              {...invalidProps(`${id}-deal-offer`, dealProblems.offer)} className="h-9 bg-card text-sm"
-              onChange={(event) => patchDeal({ offer: event.currentTarget.value })} />
-          </RowField>
-          <RowField label="Code">
-            <Input aria-label="Offer code" placeholder="SALE20" maxLength={24} spellCheck={false} value={deal.code}
-              {...invalidProps(`${id}-deal-code`, dealProblems.code)} className="h-9 w-36 bg-card font-mono text-sm"
-              onChange={(event) => patchDeal({ code: event.currentTarget.value.toUpperCase().replace(/\s+/g, "") })} />
-          </RowField>
-          <RowField label="Ends">
-            <Input type="datetime-local" aria-label="Offer ends" value={localTime(deal.endsAt)}
-              {...invalidProps(`${id}-deal-ends`, dealProblems.endsAt)} className="h-9 w-56 bg-card text-sm"
-              onChange={(event) => patchDeal({ endsAt: event.currentTarget.value ? new Date(event.currentTarget.value).toISOString() : "" })} />
-          </RowField>
-          <RemoveButton label="Remove the offer" className="mb-0.5" onClick={() => update({ deal: undefined }, "add-deal")} />
-        </div>
-        {(dealProblems.offer || dealProblems.code || dealProblems.endsAt) && <div className="grid gap-1">
-          <FieldError id={`${id}-deal-offer`}>{dealProblems.offer}</FieldError>
-          <FieldError id={`${id}-deal-code`}>{dealProblems.code}</FieldError>
-          <FieldError id={`${id}-deal-ends`}>{dealProblems.endsAt}</FieldError>
-        </div>}
-      </div> : <div>
-        <ActionButton icon={Plus} ref={focus.track("add-deal")} onClick={addDeal}>Add an offer</ActionButton>
-      </div>}
-    </section>
   </section>;
 }

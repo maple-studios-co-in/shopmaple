@@ -2,15 +2,16 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import { createRoot } from "react-dom/client";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { ShopProvider } from "../components/shop-provider";
-import { CheckoutFlow } from "../app/checkout/checkout-flow";
 
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3000/checkout" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document,
   localStorage: dom.window.localStorage, sessionStorage: dom.window.sessionStorage,
   HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, IS_REACT_ACT_ENVIRONMENT: true });
+// React DOM loads after the window exists, so it sees the browser's input events (the promo code field is controlled).
+const { createRoot } = await import("react-dom/client");
+const { ShopProvider } = await import("../components/shop-provider");
+const { CheckoutFlow } = await import("../app/checkout/checkout-flow");
 const options = { deliveryMethods: [{ id: "standard", label: "Standard delivery" }, { id: "white-glove", label: "White glove delivery" }], paymentKeyId: "rzp_test_flow" };
 const attemptId = "0b8e1c3a-5d2f-4a6b-9c8d-7e6f5a4b3c2d";
 const line = { variantId: "keeri:maple:chair-v", handle: "oak-chair", title: "Oak Chair", variantTitle: "Natural", image: "",
@@ -394,7 +395,7 @@ test("a delivery Shiprocket cannot price offers an enquiry instead of payment", 
     await submitDetails();
     assert.match(text(), /can't price delivery to this pincode/);
     const enquiry = document.querySelector<HTMLAnchorElement>("[data-checkout-enquiry]")!;
-    assert.match(enquiry.href, /\/pages\/contact\?/);
+    assert.match(enquiry.href, /\/contact\?/);
     assert.match(decodeURIComponent(enquiry.href), /400001/);
     assert.ok(!button("Pay ₹3,835"));
   } finally { await cleanup(); }
@@ -463,4 +464,121 @@ test("each new checkout step brings the buyer back to the top of the checkout", 
     (window.HTMLElement.prototype as any).scrollIntoView = original;
     await cleanup();
   }
+});
+
+/* ── Promo codes ─────────────────────────────────────────────────────────────── */
+
+// Keeri's quote with DIWALI15 (15% off) on the two chairs: each 150000 -> 127500, shipping never discounted.
+const promotedQuote = {
+  ...quote,
+  items: [{ ...quote.items[0]!, unitPricePaise: 127500, lineTotalPaise: 255000, discountPaise: 45000, undiscountedUnitPricePaise: 150000 }],
+  subtotalPaise: 255000, taxPaise: 50400, totalPaise: 330400,
+  promotion: { code: "DIWALI15", label: "15% off", discountPaise: 45000 },
+};
+const promotedAttempt = (extra: Record<string, unknown> = {}) => attempt({ amountPaise: 330400, quote: promotedQuote, ...extra });
+const promoError = () => document.querySelector("[data-promo-error]")?.textContent ?? "";
+// The code field is controlled: React renders what was typed before the form is sent, as a browser would.
+const typeCode = (value: string) => act(async () => fill({ promoCode: value }));
+const quoteRequests = (calls: Call[]) => calls.filter((c) => c.path === "/api/checkout" && c.method === "POST");
+
+test("a code entered with the details is sent with the quote, and the review shows the discount and the discounted total", async () => {
+  const { calls, cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(promotedAttempt()) : new Response(null, { status: 404 }));
+  try {
+    assert.match(text(), /Have a code\?/);
+    await typeCode(" diwali15 ");
+    await submitDetails();
+    assert.equal(quoteRequests(calls)[0]!.body.promoCode, "DIWALI15");
+    const totals = document.querySelector("[data-checkout-review] dl")!.textContent!;
+    assert.match(totals, /Subtotal₹3,000/, "the lines before the discount");
+    assert.match(totals, /Discount \(DIWALI15\)−₹450/);
+    assert.match(totals, /Total₹3,304/);
+    assert.ok(button("Pay ₹3,304"), "the buyer pays the discounted total");
+  } finally { await cleanup(); }
+});
+
+test("without a code the quote request carries none and the review has no discount line", async () => {
+  const { calls, cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    assert.equal("promoCode" in quoteRequests(calls)[0]!.body, false);
+    assert.doesNotMatch(text(), /Discount/);
+  } finally { await cleanup(); }
+});
+
+test("removing an applied code quotes again without it, under a new key", async () => {
+  const { calls, cleanup } = await mount((call) => call.path === "/api/checkout"
+    ? Response.json(call.body.promoCode ? promotedAttempt() : attempt({ id: "1b8e1c3a-5d2f-4a6b-9c8d-7e6f5a4b3c2d" }))
+    : new Response(null, { status: 404 }));
+  try {
+    await typeCode("DIWALI15");
+    await submitDetails();
+    assert.ok(button("Pay ₹3,304"));
+    await act(async () => button("Remove code")!.click());
+    await settle();
+    const [first, second] = quoteRequests(calls);
+    assert.equal("promoCode" in second!.body, false);
+    assert.notEqual(second!.headers.get("Idempotency-Key"), first!.headers.get("Idempotency-Key"));
+    assert.ok(button("Pay ₹3,835"), "back to the full price");
+    assert.doesNotMatch(text(), /Discount/);
+  } finally { await cleanup(); }
+});
+
+test("a code Keeri refuses is explained next to the field, and the buyer can remove it and continue", async () => {
+  const { calls, cleanup } = await mount((call) => {
+    if (call.path !== "/api/checkout") return new Response(null, { status: 404 });
+    return call.body.promoCode
+      ? Response.json({ code: "PROMO_NOT_FOUND", message: "We don't recognise that code. No payment has been taken." }, { status: 422 })
+      : Response.json(attempt());
+  });
+  try {
+    await typeCode("NOPE99");
+    await submitDetails();
+    assert.equal(promoError(), "We don't recognise that code. No payment has been taken.");
+    assert.ok(document.querySelector("form"), "still on the details step");
+    await act(async () => button("Remove code")!.click());
+    assert.equal(field("promoCode").value, "");
+    assert.equal(promoError(), "");
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    assert.equal("promoCode" in quoteRequests(calls).at(-1)!.body, false);
+    assert.ok(button("Pay ₹3,835"));
+  } finally { await cleanup(); }
+});
+
+test("a code that is not a code shape is caught before any request", async () => {
+  const { calls, cleanup } = await mount(() => Response.json(attempt()));
+  try {
+    await typeCode("SALE-20");
+    await submitDetails();
+    assert.equal(quoteRequests(calls).length, 0);
+    assert.match(promoError(), /3 to 24 letters and numbers/);
+  } finally { await cleanup(); }
+});
+
+test("a hold refused for the code brings the buyer back to the details with its message, without opening payment", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(promotedAttempt());
+    if (call.path === `/api/checkout/${attemptId}/payment-order`)
+      return Response.json({ code: "PROMO_ALREADY_USED", message: "That code has already been used with this phone number or email. No payment has been taken." }, { status: 422 });
+    return new Response(null, { status: 404 });
+  });
+  try {
+    await typeCode("DIWALI15");
+    await submitDetails();
+    await act(async () => button("Pay ₹3,304")!.click());
+    assert.equal(razorpay, null);
+    assert.ok(document.querySelector("form"), "back on the details step");
+    assert.equal(promoError(), "That code has already been used with this phone number or email. No payment has been taken.");
+    assert.equal(field("promoCode").value, "DIWALI15", "the code stays for the buyer to change or remove");
+    assert.equal(sessionStorage.getItem(storageKey), null, "the refused attempt is not resumed");
+  } finally { await cleanup(); }
+});
+
+test("an item that can no longer be bought online is explained instead of a review", async () => {
+  const message = "An item in your cart can no longer be bought online. Remove it or send us an enquiry. No payment has been taken.";
+  const { cleanup } = await mount(() => Response.json({ code: "ITEM_NOT_BUYABLE", message }, { status: 422 }));
+  try {
+    await submitDetails();
+    assert.match(text(), /can no longer be bought online/);
+    assert.doesNotMatch(text(), /requires review/);
+  } finally { await cleanup(); }
 });

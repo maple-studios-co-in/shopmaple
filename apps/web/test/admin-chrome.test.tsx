@@ -28,7 +28,7 @@ test("admin and nested admin pages render their content without customer shoppin
     );
     assert.ok(
       !document.querySelector(
-        '[aria-label="Chat with Maple Furnishers on WhatsApp"]',
+        '[aria-label="Contact us on WhatsApp"]',
       ),
     );
     assert.ok(!document.querySelector('nav[aria-label="Help and policies"]'));
@@ -37,12 +37,12 @@ test("admin and nested admin pages render their content without customer shoppin
   }
 });
 test("storefront and admin-like public slugs preserve real shopping navigation and support", () => {
-  for (const path of ["/", "/pages/care-guide", "/administrator"]) {
+  for (const path of ["/", "/care-guide", "/administrator"]) {
     const document = render(path);
     assert.ok(document.querySelector('[aria-label="Open cart (0 items)"]'));
     assert.ok(
       document.querySelector(
-        '[aria-label="Chat with Maple Furnishers on WhatsApp"]',
+        '[aria-label="Contact us on WhatsApp"]',
       ),
     );
     assert.ok(document.querySelector('nav[aria-label="Help and policies"]'));
@@ -54,7 +54,7 @@ test("storefront and admin-like public slugs preserve real shopping navigation a
   }
 });
 test("public pages have no floating development-preview announcement", () => {
-  for (const path of ["/", "/pages/care-guide", "/collections/all", "/products/example"]) {
+  for (const path of ["/", "/care-guide", "/collections/all", "/products/example"]) {
     const document = render(path);
     assert.equal(
       document.querySelector('[aria-label="Preview status"]'),

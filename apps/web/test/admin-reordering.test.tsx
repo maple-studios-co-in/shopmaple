@@ -140,7 +140,7 @@ test("Our Story sections drag and save", async () => {
     await click("Existing pages");
     await drag("Our Story Journey", "ArrowUp", 1);
     const content = await app.save();
-    assert.deepEqual(content.storyPage!.sections.map(section => section.key), ["hero", "journey", "belief-film", "cities"]);
+    assert.deepEqual(content.storyPage!.sections.map(section => section.key), ["hero", "principles", "journey", "belief-film", "cities", "invitation"]);
   } finally { await app.close(); }
 });
 

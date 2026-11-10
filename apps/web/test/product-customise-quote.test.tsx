@@ -52,7 +52,7 @@ async function pick(dialog: HTMLDialogElement, name: string, value: string) {
 test("Customisation available opens the panel: the piece, four steps and a live selection, with Get a quote outside the scrolling part", async () => {
   await mount(async (doc) => {
     assert.equal(panel(doc), null, "the panel joins the page only when asked for");
-    assert.match(doc.querySelector("a[data-customization]")!.getAttribute("href")!, /^\/pages\/contact\?/, "without script the link still leads to an enquiry");
+    assert.match(doc.querySelector("a[data-customization]")!.getAttribute("href")!, /^\/contact\?/, "without script the link still leads to an enquiry");
     const dialog = await open(doc);
     assert.equal(dialog.open, true);
     assert.equal(dialog.getAttribute("aria-labelledby"), "customise-title");
@@ -159,7 +159,7 @@ test("a piece with a single option offers customisation too, and the gallery sta
     assert.equal(dialog.open, true);
     assert.match(text(dialog)!, /Aero Dining Chair/);
     const photo = doc.querySelector<HTMLElement>("[data-main-image]")!;
-    assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026), less what sits under it");
+    assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)-var\(--site-header-offset,0px\)\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026), less what sits under it and the pinned header (10 Nov 2026)");
     assert.ok(photo.closest(".lg\\:sticky"), "and pinned while the buy box scrolls past");
   }, { ...product, variants: product.variants.slice(0, 1) });
 });

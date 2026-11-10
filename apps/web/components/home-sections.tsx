@@ -90,7 +90,7 @@ export function HomeDifference({
     <section className="home-difference home-container">
       <p className="home-eyebrow" data-difference-eyebrow>{content.eyebrow}</p>
       <h2>{content.heading}</h2>
-      <Link href="/pages/contact" data-difference-link>
+      <Link href="/contact" data-difference-link>
         {content.cta} <ArrowRight size={16} aria-hidden />
       </Link>
       <ul>
@@ -235,7 +235,7 @@ export function HomeValues({
           </div>
         );
       })}
-      {watermark && <Link className="home-values-cta" href="/pages/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
+      {watermark && <Link className="home-values-cta" href="/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
     </section>
   );
 }

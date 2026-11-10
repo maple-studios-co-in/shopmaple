@@ -53,7 +53,7 @@ test("the stage shows Nimbus then Terra by default: one live slide, the other in
   assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-title] .sr-only")?.textContent), ["The Nimbus Collection", "The Terra Collection"]);
   assert.deepEqual(slides.map((slide) => slide.hasAttribute("data-active")), [true, false]);
   assert.deepEqual(slides.map((slide) => slide.hasAttribute("inert")), [false, true]);
-  assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/pages/nimbus-collection", "/collections/sofas"]);
+  assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/nimbus-collection", "/collections/sofas"]);
   assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.textContent), ["Explore", "Explore"]);
   const dots = all(page, "[data-stage-dot]");
   assert.deepEqual(dots.map((dot) => [dot.tagName, dot.textContent, dot.getAttribute("aria-current")]), [["BUTTON", "1", "true"], ["BUTTON", "2", null]]);
@@ -213,7 +213,7 @@ test("the editorial photo cuts through Maple's dining pieces every 800 ms on and
   }
 });
 
-test("a drifting row draws its items twice, the second pass hidden and out of the tab order, with a pause switch", () => {
+test("a drifting row draws its items twice, the second pass hidden and out of the tab order, with no pause switch (owner, 10 Nov 2026)", () => {
   const items = (copy: boolean) => <a href="/x" tabIndex={copy ? -1 : undefined}>Post</a>;
   const page = doc(<HomeMarquee label="Instagram posts" seconds={30} items={items} />);
   const groups = all(page, "[data-marquee-group]");
@@ -221,7 +221,7 @@ test("a drifting row draws its items twice, the second pass hidden and out of th
   assert.equal(groups[1]!.getAttribute("aria-hidden"), "true");
   assert.equal(groups[1]!.querySelector("a")?.getAttribute("tabindex"), "-1");
   assert.equal(groups[0]!.querySelector("a")?.hasAttribute("tabindex"), false);
-  assert.ok(page.querySelector("[data-marquee-toggle] input[type=checkbox]"));
+  assert.equal(page.querySelector("input, button, [data-marquee-toggle]"), null, "the pointer and keyboard focus hold it instead");
   const still = doc(<HomeMarquee label="Instagram posts" seconds={30} autoplay={false} items={items} />);
   assert.equal(still.querySelectorAll("[data-marquee-group]").length, 1, "without motion there is one plain row");
   assert.equal(still.querySelector("[data-marquee-toggle]"), null);

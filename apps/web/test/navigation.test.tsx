@@ -40,7 +40,7 @@ function configureMobileBrowser() {
   dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
 }
 test("menu destinations stay local and avoid dead source anchors", () => {
-  assert.equal(navigationHref("/pages/sofas", "Sofas"), "/pages/sofas");
+  assert.equal(navigationHref("/sofas", "Sofas"), "/sofas");
   assert.equal(
     navigationHref("/collections/arm-chair", "Arm Chairs"),
     "/collections/arm-chair",
@@ -50,7 +50,7 @@ test("menu destinations stay local and avoid dead source anchors", () => {
     "/collections/recliners",
   );
   assert.equal(navigationHref("#", "Dining Table"), "/collections/dining");
-  assert.match(navigationHref("#", "Kids Beds"), /^\/pages\/contact\?product=/);
+  assert.match(navigationHref("#", "Kids Beds"), /^\/contact\?product=/);
 });
 test("desktop menu switches full groups, closes on outside click and Escape, and restores focus", async () => {
   const root = createRoot(document.getElementById("root")!);
@@ -153,7 +153,7 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
     // Figma 256:3836: a custom-size card under the first group opens an enquiry about it.
     const custom = panel.querySelector<HTMLAnchorElement>("a[data-mega-custom]");
     assert.ok(custom, "menu should expose custom furniture enquiries");
-    assert.match(custom.href, /\/pages\/contact\?product=Custom\+size$/);
+    assert.match(custom.href, /\/contact\?product=Custom\+size$/);
     assert.deepEqual([...panel.querySelectorAll(".maple-mega-discovery a strong")].map((title) => title.textContent), ["New Arrivals", "Bestsellers", "Complete the Look"]);
     // The promise strip that ran under the columns (frame 1:1454) is not in the new menu.
     assert.equal(panel.querySelector("[data-mega-footer]"), null);

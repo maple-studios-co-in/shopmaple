@@ -42,6 +42,7 @@ const fieldLabels: Record<string, string> = {
   "billingAddress.pincode": "Billing pincode",
   deliveryMethodId: "Delivery method",
 };
+const promoShape = "Codes are 3 to 24 letters and numbers, such as DIWALI15.";
 const defaultConfirmationWindowMs = 150_000;
 /** Below this much of the hold left, the buyer gets a fresh quote instead of a payment window. */
 const minimumPayWindowMs = 60_000;
@@ -137,6 +138,9 @@ function CheckoutStages({
   const [sameBilling, setSameBilling] = useState(true);
   const [deliveryMethodId, setDeliveryMethodId] = useState(options.deliveryMethods[0]?.id ?? "");
   const [problems, setProblems] = useState<string[]>([]);
+  // The code as typed, and why it was refused; both live beside the code field on the details step.
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState("");
   const [notice, setNotice] = useState("");
   // Shiprocket could not price delivery to the entered pincode: offer an enquiry instead.
   const [unpriced, setUnpriced] = useState(false);
@@ -157,6 +161,10 @@ function CheckoutStages({
   function fail(error: unknown) {
     if (error instanceof CheckoutClientError && error.kind === "closed") {
       setStage({ kind: "closed" });
+      return;
+    }
+    if (error instanceof CheckoutClientError && error.kind === "promo") {
+      setPromoError(error.message);
       return;
     }
     setUnpriced(error instanceof CheckoutClientError && error.kind === "unpriced");
@@ -181,6 +189,7 @@ function CheckoutStages({
   async function requestQuote(data: CheckoutInput, fresh: boolean) {
     setBusy(true);
     setNotice("");
+    setPromoError("");
     setUnpriced(false);
     setRequote(false);
     try {
@@ -195,9 +204,12 @@ function CheckoutStages({
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const parsed = checkoutInputSchema.safeParse(readForm(event.currentTarget, sameBilling));
+    const code = promoCode.trim();
+    const parsed = checkoutInputSchema.safeParse({ ...readForm(event.currentTarget, sameBilling), ...(code ? { promoCode: code } : {}) });
     if (!parsed.success) {
-      setProblems([...new Set(parsed.error.issues.map((issue) => fieldLabels[issue.path.join(".")] ?? "Your details"))]);
+      const issues = parsed.error.issues.filter((issue) => issue.path[0] !== "promoCode");
+      setProblems([...new Set(issues.map((issue) => fieldLabels[issue.path.join(".")] ?? "Your details"))]);
+      setPromoError(issues.length < parsed.error.issues.length ? promoShape : "");
       return;
     }
     setProblems([]);
@@ -252,12 +264,30 @@ function CheckoutStages({
         },
       });
     } catch (error) {
+      // Keeri refused the hold for the code (the offer stopped, or this customer used it meanwhile). Nothing is held
+      // and the attempt is over: back to the details, with the reason beside the code to change or remove.
+      if (error instanceof CheckoutClientError && error.kind === "promo") {
+        setStage({ kind: "details" });
+        setPromoError(error.message);
+        void leaveAttempt(attempt);
+        return;
+      }
       setStage((current) => (current.kind === "paying" ? { kind: "quote", attempt } : current));
       if (error instanceof CheckoutClientError) fail(error);
       else setNotice("The payment window couldn't be opened. Please try again. No payment has been taken.");
     } finally {
       setBusy(false);
     }
+  }
+  /** Quote again without the code: the old attempt is left (its hold freed) and the next quote gets a new key. */
+  function removeCode(previous: CheckoutAttempt) {
+    if (!input) return;
+    const rest = { ...input };
+    delete rest.promoCode;
+    setPromoCode("");
+    setInput(rest);
+    setStage({ kind: "details" });
+    void leaveAttempt(previous).then(() => requestQuote(rest, true));
   }
   // A new step replaces the form the buyer was at the bottom of; start them at its top.
   const shown = useRef(stage.kind);
@@ -278,6 +308,7 @@ function CheckoutStages({
     if (!stored) return;
     let cancelled = false;
     setInput(stored.input);
+    setPromoCode(stored.input.promoCode ?? "");
     setStage({ kind: "resuming" });
     void (async () => {
       try {
@@ -438,7 +469,7 @@ function CheckoutStages({
         </p>
         <div className={buttonRow}>
           {submitted && orderLink(stage.attempt.id)}
-          <Link className={solid} href="/pages/contact">
+          <Link className={solid} href="/contact">
             Contact our team
           </Link>
           <Link className={outline} href="/cart">
@@ -475,6 +506,17 @@ function CheckoutStages({
             <>
               <QuoteLines items={quote.items} />
               <QuoteTotals quote={quote} totalPaise={stage.attempt.amountPaise} methodLabel={method?.label} />
+              {quote.promotion && (
+                <p data-promo-applied className={cx(muted, "flex flex-wrap items-center gap-x-3 gap-y-1")}>
+                  <span>
+                    Code <strong className="font-semibold text-[#1c1c1c]">{quote.promotion.code}</strong> applied: {quote.promotion.label}.
+                  </span>
+                  <button type="button" disabled={busy} onClick={() => removeCode(stage.attempt)}
+                    className="cursor-pointer border-0 bg-transparent p-0 text-[12px] leading-[17px] font-medium text-maple underline disabled:cursor-not-allowed disabled:opacity-60">
+                    Remove code
+                  </button>
+                </p>
+              )}
               <p className={muted}>
                 {expired
                   ? "This quote has expired. Get a new quote to continue; prices and delivery will be confirmed again."
@@ -569,14 +611,14 @@ function CheckoutStages({
           <Link href="/cart" className={solid}>
             Review your cart
           </Link>
-          <Link href="/pages/contact" className={outline}>
+          <Link href="/contact" className={outline}>
             Ask about these items
           </Link>
         </div>
       </Notice>
     );
   const enquiryHref =
-    "/pages/contact?" +
+    "/contact?" +
     new URLSearchParams({
       topic: "Delivery quote",
       ...(input ? { pincode: input.shippingAddress.pincode } : {}),
@@ -584,6 +626,7 @@ function CheckoutStages({
     });
   return (
     <CheckoutDetails id={id} input={input} options={options} deliveryMethodId={deliveryMethodId} onDeliveryMethod={setDeliveryMethodId}
-      sameBilling={sameBilling} onSameBilling={setSameBilling} problems={problems} notice={notice} busy={busy} enquiryHref={unpriced ? enquiryHref : null} onSubmit={(event) => void submit(event)} />
+      sameBilling={sameBilling} onSameBilling={setSameBilling} problems={problems} notice={notice} busy={busy} enquiryHref={unpriced ? enquiryHref : null}
+      promoCode={promoCode} onPromoCode={(code) => { setPromoCode(code); setPromoError(""); }} promoError={promoError} onSubmit={(event) => void submit(event)} />
   );
 }

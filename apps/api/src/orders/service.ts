@@ -60,6 +60,7 @@ export interface ReservationPort {
   ): Promise<boolean>;
 }
 import { OrderFlowError } from "./errors.js";
+import { KeeriCommerceError, promoRefusalCodes } from "../keeri-commerce.js";
 import { sellablePolicy } from "./eligibility.js";
 export { OrderFlowError } from "./errors.js";
 import { resolveCatalogueBindings, sameCatalogueBindings, storedCatalogueBindings, revalidateCatalogueBindings } from "./catalogue-bindings.js";
@@ -83,6 +84,24 @@ interface Options {
 function consistentFulfilment(f: QuoteSnapshot["items"][number]["fulfilment"]) {
   return f !== undefined && (f.kind === "stocked" ? f.leadTimeDays === null : f.leadTimeDays !== null);
 }
+/** Keeri's promo arithmetic, which the store checks rather than trusts: with a promotion every line
+ * states its discount as exactly what its unit price lost times the quantity, and the promotion is
+ * their sum; without one no line states any. */
+function consistentPromotion(s: QuoteSnapshot) {
+  if (!s.promotion) return s.items.every((i) => i.discountPaise === undefined && i.undiscountedUnitPricePaise === undefined);
+  let sum = 0;
+  for (const i of s.items) {
+    if (i.discountPaise === undefined || i.undiscountedUnitPricePaise === undefined ||
+        i.undiscountedUnitPricePaise < i.unitPricePaise ||
+        i.discountPaise !== (i.undiscountedUnitPricePaise - i.unitPricePaise) * i.quantity)
+      return false;
+    sum += i.discountPaise;
+  }
+  return s.promotion.discountPaise === sum;
+}
+/** Keeri refused a hold for its promo code: a definite no, so nothing is held for the attempt. */
+const promoRefusal = (error: unknown) =>
+  error instanceof KeeriCommerceError && (promoRefusalCodes as readonly string[]).includes(error.code) ? error.code : null;
 const hash = (input: string) =>
   createHash("sha256").update(input).digest("hex");
 function canonical(value: unknown): string {
@@ -318,6 +337,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
         billingAddress: s.billingAddress,
         shippingAddress: s.shippingAddress,
         deliveryMethodId: s.deliveryMethodId,
+        // Keeri applied exactly the requested code, or the quote was refused.
+        ...(s.promotion ? { promoCode: s.promotion.code } : {}),
       };
     }
     async function replay(
@@ -377,14 +398,16 @@ export function createOrderService(db: PrismaClient, options: Options) {
         s.subtotalPaise +
           s.shippingPaise +
           (s.gstMode === "excluded" ? s.taxPaise : 0) ||
-      s.items.some((i) => !consistentFulfilment(i.fulfilment))
+      s.items.some((i) => !consistentFulfilment(i.fulfilment)) ||
+      !consistentPromotion(s)
     )
       throw new OrderFlowError("QUOTE_INVALID");
     // The buyer pays the price the store showed: a quoted unit price that moved
-    // since the catalogue sync is refused rather than silently charged.
+    // since the catalogue sync is refused rather than silently charged. A code's
+    // discount comes off that price, so the price before it is what must match.
     if (s.items.some((i) => {
       const local = initial.bindings.items.find((b) => b.sourceVariantId === i.variantId)?.localVariantId;
-      return initial.rows.find((r) => r.variantId === local)?.variant.pricePaise !== i.unitPricePaise;
+      return initial.rows.find((r) => r.variantId === local)?.variant.pricePaise !== (i.undiscountedUnitPricePaise ?? i.unitPricePaise);
     }))
       throw new OrderFlowError("PRICE_CHANGED");
     // The owner's rule: only a delivery charge Shiprocket priced may be paid. A
@@ -509,6 +532,17 @@ export function createOrderService(db: PrismaClient, options: Options) {
         });
       });
     } catch (error) {
+      // Keeri refused the hold for the code (the offer stopped, or the customer used it
+      // meanwhile): nothing is held, so the attempt is simply over and the buyer may
+      // quote again, with another code or none.
+      const refused = promoRefusal(error);
+      if (refused) {
+        await db.checkoutAttempt.updateMany({
+          where: { id: attempt.id, merchantScope, state: "reserving" },
+          data: { state: "abandoned", failureCode: refused },
+        });
+        throw new OrderFlowError(refused);
+      }
       const code =
         error instanceof OrderFlowError ? error.code : "RESERVATION_UNCERTAIN";
       await db.checkoutAttempt.update({

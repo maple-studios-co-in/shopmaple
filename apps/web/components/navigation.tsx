@@ -212,7 +212,7 @@ export function DesktopNavigation({
                           <Link
                             className="maple-mega-custom"
                             data-mega-custom
-                            href={`/pages/contact?${new URLSearchParams({ product: "Custom size" })}`}
+                            href={`/contact?${new URLSearchParams({ product: "Custom size" })}`}
                             onClick={() => setActive(null)}
                           >
                             <MenuIcon name="measure" />
@@ -446,7 +446,9 @@ export function MobileNavigation({
     element.showModal();
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const wide = window.matchMedia("(min-width: 750px)");
+    // Closes once the header has room for the full menu (1100px, styles/header-menu.css), not before: a tablet or a
+    // phone turned sideways still has only the menu button (owner, 10 Nov 2026).
+    const wide = window.matchMedia("(min-width: 1100px)");
     const resize = () => {
       if (wide.matches) closeRef.current();
     };

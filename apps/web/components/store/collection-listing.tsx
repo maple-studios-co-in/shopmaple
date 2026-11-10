@@ -246,7 +246,7 @@ export function CollectionListing(props: Props) {
           )}
           <div data-custom-order className="flex flex-col items-start gap-5 bg-cream p-6 md:flex-row md:items-center md:justify-between md:gap-8">
             <h2 className="m-0 font-heading text-h3 font-medium text-espresso">Can’t find what you’re looking for?</h2>
-            <Link href="/pages/contact" className="inline-flex min-w-[260px] shrink-0 items-center justify-center rounded-[6px] border border-solid border-sand bg-white p-[14px] text-ui font-bold text-brand no-underline hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            <Link href="/contact" className="inline-flex min-w-[260px] shrink-0 items-center justify-center rounded-[6px] border border-solid border-sand bg-white p-[14px] text-ui font-bold text-brand no-underline hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
               Request custom order →
             </Link>
           </div>

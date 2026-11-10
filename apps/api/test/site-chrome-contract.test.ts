@@ -11,9 +11,9 @@ test('legacy snapshots preserve omitted chrome and valid chrome survives the con
   if (parsed.success) assert.deepEqual((parsed.data as unknown as { siteChrome: unknown }).siteChrome, chrome);
 });
 test('only canonical local destinations and contact-only enquiry subjects are accepted', () => {
-  for (const href of ['/', '/account', '/favourites', '/pages/contact', '/products/chair#details', '/blogs/news/new-story', '/collections/all'])
+  for (const href of ['/', '/account', '/favourites', '/contact', '/products/chair#details', '/blogs/news/new-story', '/collections/all'])
     assert.equal(parse({ ...chromeFixture(), utilityLinks: [chromeLink('link', href)] }).success, true, href);
-  for (const href of ['javascript:alert(1)', 'https://evil.invalid', '//evil.invalid', '/admin', '/api/content', '#details', '/account?x=y', '/pages/contact?product=chair', '/pages/%63ontact', '/pages/../contact', '/pages//contact', '/pages/contact\n'])
+  for (const href of ['javascript:alert(1)', 'https://evil.invalid', '//evil.invalid', '/admin', '/api/content', '#details', '/account?x=y', '/contact?product=chair', '/%63ontact', '/../contact', '//contact', '/contact\n'])
     assert.equal(parse({ ...chromeFixture(), utilityLinks: [chromeLink('link', href)] }).success, false, href);
   assert.equal(parse({ ...chromeFixture(), utilityLinks: [{ ...chromeLink(), enquirySubject: 'Care & repair' }] }).success, true);
   for (const value of [{ ...chromeLink('home', '/'), enquirySubject: 'Hello' }, { ...chromeLink(), enquirySubject: ' ' }, { ...chromeLink(), enquirySubject: 'x'.repeat(161) }])

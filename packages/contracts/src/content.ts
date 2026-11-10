@@ -60,15 +60,19 @@ const cleanUrl = (value: string) =>
   !/[\s\\%\u0000-\u001f\u007f]/.test(value) &&
   !value.split(/[/?#]/).some(segment => segment === "." || segment === "..") &&
   !value.replace(/^https:\/\//i, "").split(/[?#]/)[0]!.includes("//");
+/** The store's own top-level routes. A page slug can never be one of them, and a one-segment store link is a page only
+ *  when it is not one of them (pages moved from /pages/<slug> to /<slug>, 10 Nov 2026). */
+export const storeRouteNames = ["account", "admin", "api", "blogs", "cart", "checkout", "collections", "favourites", "home", "media", "orders", "pages", "policies", "products"] as const;
+const pageSegment = `(?!(?:${storeRouteNames.join("|")})(?:#|$))[a-z0-9-]+`;
+const storeLinkPattern = new RegExp(
+  `^\\/(?:collections\\/[a-z0-9-]+|products\\/[a-z0-9-]+|${pageSegment}|pages\\/[a-z0-9-]+|blogs\\/[a-z0-9-]+(?:\\/[a-z0-9-]+)?|policies\\/[a-z0-9-]+)?(?:#[a-z0-9-]+)?$`,
+);
 export const contentLinkSchema = z
   .string()
   .max(500)
   .refine(
     (value) =>
-      cleanUrl(value) &&
-      /^\/(?:collections\/[a-z0-9-]+|products\/[a-z0-9-]+|pages\/[a-z0-9-]+|blogs\/[a-z0-9-]+(?:\/[a-z0-9-]+)?|policies\/[a-z0-9-]+)?(?:#[a-z0-9-]+)?$/.test(
-        value,
-      ),
+      cleanUrl(value) && storeLinkPattern.test(value),
     "Use a canonical store link",
   );
 export const contentImageSchema = z
@@ -100,6 +104,10 @@ export const templateMediaKeys = [
   "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining", "nimbus-room-collection",
   "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project",
   "nimbus-hero-poster", "nimbus-craft-poster", "story-hero", "story-film-poster",
+  // Our Story's redesign (owner, 10 Nov 2026): the belief photo and one per journey chapter. The film poster above stays
+  // valid for older revisions, though the page no longer shows the film.
+  "story-belief", "story-chapter-1", "story-chapter-2", "story-chapter-3", "story-chapter-4", "story-chapter-5",
+  "story-chapter-6", "story-chapter-7",
   "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
   "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
   "home-city-delhi", "home-city-kolkata", "home-city-hyderabad", "home-city-varanasi", "home-city-mumbai",
@@ -178,7 +186,10 @@ const dealOfferFields = {
   offer: text(40).refine(offer => offer.trim().length > 0, "Describe the offer"),
   code: z.string().regex(/^[A-Z0-9][A-Z0-9%-]{1,23}$/, "Use 2–24 capital letters, numbers, % or -"),
 };
-/** A campaign's offer on the product page's countdown. Its window is the campaign's own schedule, so it has no dates of its own. */
+/**
+ * Legacy: a campaign's offer for the product page's countdown, which no longer reads it (10 Nov 2026: the page shows only
+ * the product's own Keeri offer, whose code checkout takes). Kept so content saved with one still parses; nothing edits it.
+ */
 export const campaignDealSchema = z.object(dealOfferFields).strict();
 /** Staff-entered card highlights: colours for option names, and per-product New and Limited flags and review ratings. */
 export const productHighlightsSchema = z.object({
@@ -192,8 +203,8 @@ export const productHighlightsSchema = z.object({
     // The review count is optional: the owner may hold a piece's real rating without the count behind it.
     rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(100_000).optional() }).strict().nullable(),
   }).strict()).max(300),
-  // A store-wide offer the product page counts down to ("Don't miss the deal") and names on its edge tab; shown only
-  // until it ends, and optional so documents saved before it stay valid.
+  // Legacy and unread since 10 Nov 2026: a store-wide offer the product page used to count down to. The page now shows
+  // only the product's own Keeri offer, whose code checkout takes. Kept so documents saved with one still parse.
   deal: z.object({
     ...dealOfferFields,
     endsAt: z.iso.datetime({ offset: true }),
@@ -222,7 +233,7 @@ export const campaignContentSchema = z
     cta: text(80),
     href: contentLinkSchema,
     schedule: campaignScheduleSchema.nullable().optional(),
-    // The product page counts down to this campaign's end while it runs; optional so campaigns saved before it stay valid.
+    // Legacy and unread (see campaignDealSchema); campaigns saved with one stay valid.
     deal: campaignDealSchema.optional(),
     artwork: z
       .object({
@@ -256,6 +267,8 @@ export const contentPageSchema = z
             "account",
             "cart",
             "checkout",
+            // Pages live at /<slug> (10 Nov 2026), beside the store's own top-level routes.
+            ...storeRouteNames,
           ].includes(s),
         "This page route is reserved",
       ),

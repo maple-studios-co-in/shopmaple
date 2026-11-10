@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { CategoryIntroduction } from "../components/category-controls";
 import categories from "../data/landing-categories.json";
 
-const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/pages/sofas" });
+const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/sofas" });
 Object.assign(globalThis, {
   window: dom.window,
   document: dom.window.document,

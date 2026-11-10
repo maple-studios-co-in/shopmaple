@@ -1,74 +1,133 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { JSDOM } from "jsdom";
-import { renderToStaticMarkup } from "react-dom/server";
 import BlogPage from "../app/blogs/[blog]/page";
 import source from "../data/store-content.json";
+import index from "../data/blog-index.json";
+import { defaultHomeMerchandising } from "../lib/home-merchandising-defaults";
+import { blogFetch, normalize, renderBlogPage } from "./support/blog-fixtures";
 
-async function render(blog = "recent-stories") {
-  const previous = globalThis.fetch;
-  globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
-  try {
-    return new JSDOM(renderToStaticMarkup(await BlogPage({ params: Promise.resolve({ blog }) }))).window.document;
-  } finally { globalThis.fetch = previous; }
-}
-function normalize(value: string | null | undefined) {
-  return (value ?? "").replace(/\s+/g, " ").trim();
-}
+// The blog listing as Figma 268:4185 draws it (owner, 10 Nov 2026): the title, a slider of the newest stories, two
+// columns of cards with Load more, then Shop Bestsellers.
+const newest = [
+  "how-to-measure-furniture-before-ordering-online",
+  "what-should-be-finalised-first-furniture-flooring-or-lighting",
+  "furniture-delivery-access-guide-will-your-furniture-actually-fit-through-the-door",
+  "best-wood-for-furniture-in-indian-climate-humidity-heat-and-maintenance",
+  "standard-dining-table-size-guide-for-indian-homes",
+  "why-every-successful-cafe-has-three-types-of-seating",
+  "how-luxury-hotels-design-seating-that-makes-guests-stay-longer",
+  "luxury-furniture-trends-2026-what-defined-the-first-half-of-the-year-and-what-will-shape-the-months-ahead",
+  "how-to-identify-quality-furniture-before-you-buy",
+  "space-saving-furniture-ideas-for-small-homes",
+];
+const href = (handle: string) => `/blogs/recent-stories/${handle}`;
+// Four imported articles sign off with their author; the store signs the rest.
+const signedBy: Record<string, string> = {
+  "how-to-measure-furniture-before-ordering-online": "Rezaa Modasiya",
+  "furniture-delivery-access-guide-will-your-furniture-actually-fit-through-the-door": "Rezaa Modasiya",
+  "luxury-furniture-trends-2026-what-defined-the-first-half-of-the-year-and-what-will-shape-the-months-ahead": "Rezaa Modasiya",
+  "space-saving-furniture-ideas-for-small-homes": "Abhigna Ghosh",
+};
+const authorOf = (handle: string) => signedBy[handle] ?? "Maple Furnishers";
+const presentation = (index as Record<string, Record<string, { excerpt: string; image: { src: string; width: number; height: number } }>>)["recent-stories"]!;
+let api = 0;
+const render = async (blog = "recent-stories") =>
+  renderBlogPage(await BlogPage({ params: Promise.resolve({ blog }) }), blogFetch(), `http://blog-index-${++api}.invalid`);
 
-test("blog index keeps article discovery internal and empty blogs truthful", async () => {
+test("the listing opens with its title and a slider of the three newest stories", async () => {
   const document = await render();
+  assert.equal(document.querySelectorAll("h1").length, 1);
   assert.equal(document.querySelector("h1")?.textContent, "Recent Stories");
-  assert.equal(document.querySelectorAll("article").length, 10);
-  for (const link of document.querySelectorAll<HTMLAnchorElement>("article a")) {
+  const slider = document.querySelector("[data-blog-featured]")!;
+  assert.equal(slider.getAttribute("role"), "group");
+  assert.equal(slider.getAttribute("aria-roledescription"), "carousel");
+  const slides = [...slider.querySelectorAll("article[data-blog-slide]")];
+  assert.deepEqual(slides.map((slide) => slide.querySelector("h2 a")?.getAttribute("href")), newest.slice(0, 3).map(href));
+  const first = slides[0]!;
+  assert.equal(first.querySelector("time")?.getAttribute("datetime"), "2026-07-13T07:57:33Z");
+  assert.equal(first.querySelector("time")?.textContent, "July 13, 2026");
+  assert.equal(first.querySelector("[data-blog-author]")?.textContent, "Rezaa Modasiya", "the author the article signs off with");
+  assert.equal(normalize(first.querySelector("[data-slide-excerpt]")?.textContent), normalize(presentation[newest[0]!]!.excerpt));
+  const read = first.querySelector<HTMLAnchorElement>("a[data-slide-read]")!;
+  assert.equal(read.textContent, "Read more");
+  assert.equal(read.getAttribute("href"), href(newest[0]!));
+  const dots = [...slider.querySelectorAll<HTMLButtonElement>("button[data-slide-dot]")];
+  assert.equal(dots.length, 3);
+  assert.deepEqual(dots.map((dot) => dot.getAttribute("aria-current")), ["true", null, null]);
+  assert.equal(slider.querySelector<HTMLButtonElement>("button[data-slide-prev]")?.disabled, true, "the first story has nothing before it");
+  assert.equal(slider.querySelector<HTMLButtonElement>("button[data-slide-next]")?.disabled, false);
+});
+
+test("cards list every story after the newest, six at a time, with Load more for the rest", async () => {
+  const document = await render();
+  const cards = [...document.querySelectorAll<HTMLElement>("[data-blog-cards] > article[data-blog-card]")];
+  assert.deepEqual(cards.map((card) => card.querySelector("h2 a")?.getAttribute("href")), newest.slice(1).map(href));
+  assert.deepEqual(cards.map((card) => card.hidden), [false, false, false, false, false, false, true, true, true]);
+  assert.equal(document.querySelector("button[data-load-more]")?.textContent, "Load more");
+  // Without script every card shows and the button steps aside.
+  assert.match(document.querySelector("noscript")?.textContent ?? "", /\[data-blog-card\]\[hidden\][\s\S]*display/);
+});
+
+test("each card shows its date, title, original excerpt, its author (else Maple Furnishers) and a named arrow link, all within the store", async () => {
+  const document = await render();
+  assert.equal(document.querySelectorAll("article[data-blog-card]").length, 9);
+  for (const card of document.querySelectorAll("article[data-blog-card]")) {
+    const title = card.querySelector("h2 a")!;
+    const handle = title.getAttribute("href")!.split("/").at(-1)!;
+    assert.equal(card.querySelector("[data-card-date] img")?.getAttribute("src"), "/blog/calendar.svg");
+    assert.match(card.querySelector("[data-card-date] time")?.getAttribute("datetime") ?? "", /^2026-/);
+    assert.equal(normalize(card.querySelector("[data-card-excerpt]")?.textContent), normalize(presentation[handle]!.excerpt), handle);
+    assert.equal(card.querySelector("[data-blog-author]")?.textContent, authorOf(handle), handle);
+    const arrow = card.querySelector<HTMLAnchorElement>("a[data-card-arrow]")!;
+    assert.equal(arrow.getAttribute("aria-label"), `Read ${title.textContent}`);
+    assert.equal(arrow.getAttribute("href"), title.getAttribute("href"));
+    assert.equal(arrow.querySelector("img")?.getAttribute("src"), "/blog/card-arrow.svg");
+  }
+  for (const link of document.querySelectorAll("[data-blog-featured] a, article[data-blog-card] a"))
     assert.match(link.getAttribute("href")!, /^\/blogs\/recent-stories\/[a-z0-9-]+$/);
+});
+
+test("story pictures keep their source artwork and reserved sizes, and only the first loads at once", async () => {
+  const document = await render();
+  const images = [...document.querySelectorAll<HTMLImageElement>("[data-blog-featured] article img, article[data-blog-card] a[data-card-image] img")];
+  assert.equal(images.length, 12, "three slides and nine cards");
+  for (const image of images) {
+    const handle = image.closest("article")!.querySelector("h2 a")!.getAttribute("href")!.split("/").at(-1)!;
+    const art = presentation[handle]!.image;
+    assert.equal(image.getAttribute("src"), art.src);
+    assert.equal(image.getAttribute("width"), String(art.width));
+    assert.equal(image.getAttribute("height"), String(art.height));
   }
-  const empty = await render("news");
-  assert.match(empty.body.textContent!, /No articles published yet\./);
-  assert.equal(empty.querySelectorAll("article").length, 0);
+  assert.equal(images[0]!.getAttribute("loading"), "eager");
+  assert.equal(images[0]!.getAttribute("fetchPriority"), "high");
+  assert.equal(images.slice(1).filter((image) => image.getAttribute("loading") === "lazy").length, 11);
 });
 
-test("recent stories lists newest publications first without reordering imported article data", async () => {
-  const before = source.blogs.find((blog) => blog.handle === "recent-stories")!.articles.map((article) => article.handle);
-  const document = await render();
-  assert.deepEqual([...document.querySelectorAll("article h2 a")].map((link) => link.getAttribute("href")), [
-    "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online",
-    "/blogs/recent-stories/what-should-be-finalised-first-furniture-flooring-or-lighting",
-    "/blogs/recent-stories/furniture-delivery-access-guide-will-your-furniture-actually-fit-through-the-door",
-    "/blogs/recent-stories/best-wood-for-furniture-in-indian-climate-humidity-heat-and-maintenance",
-    "/blogs/recent-stories/standard-dining-table-size-guide-for-indian-homes",
-    "/blogs/recent-stories/why-every-successful-cafe-has-three-types-of-seating",
-    "/blogs/recent-stories/how-luxury-hotels-design-seating-that-makes-guests-stay-longer",
-    "/blogs/recent-stories/luxury-furniture-trends-2026-what-defined-the-first-half-of-the-year-and-what-will-shape-the-months-ahead",
-    "/blogs/recent-stories/how-to-identify-quality-furniture-before-you-buy",
-    "/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes",
-  ]);
-  assert.deepEqual(source.blogs.find((blog) => blog.handle === "recent-stories")!.articles.map((article) => article.handle), before);
+test("an empty blog says so truthfully, with no slider, cards or Load more", async () => {
+  const document = await render("news");
+  assert.match(document.body.textContent!, /No articles published yet\./);
+  assert.equal(document.querySelector("[data-blog-featured]"), null);
+  assert.equal(document.querySelectorAll("article[data-blog-card]").length, 0);
+  assert.equal(document.querySelector("[data-load-more]"), null);
 });
 
-test("index presents the original excerpt and a named local read action for each article", async () => {
+test("Shop Bestsellers closes the listing with a Maple picture tile and the bestseller cards", async () => {
   const document = await render();
-  const cards = [...document.querySelectorAll("article")];
-  const measure = cards.find((card) => card.querySelector("h2")?.textContent === "How to Measure Furniture Before Ordering Online")!;
-  assert.equal(normalize(measure.querySelector("p")?.textContent), "A furniture piece can look perfectly sized on a website and still feel completely wrong once it arrives. The most common mistake is checking whether the furniture fits the room,...");
-  const quality = cards.find((card) => card.querySelector("h2")?.textContent === "How to Identify Quality Furniture Before You Buy")!;
-  assert.equal(normalize(quality.querySelector("p")?.textContent), "Quality isn't always obvious at first glance — and that's exactly what furniture sellers count on.Buying furniture isn't something most people do often, which is why it's important to choose...");
-  for (const card of cards) {
-    assert.ok(normalize(card.querySelector("p")?.textContent).length > 30, "every imported article has its verified source excerpt");
-    const action = card.querySelector<HTMLAnchorElement>('a[aria-label^="Read "]')!;
-    assert.equal(action?.getAttribute("href"), card.querySelector("h2 a")?.getAttribute("href"));
-    assert.equal(action?.textContent, "Read more...");
-  }
+  const band = document.querySelector<HTMLElement>("section[data-blog-bestsellers]")!;
+  assert.equal(band.querySelector("h2")?.textContent, "Shop Bestsellers");
+  const tile = band.querySelector<HTMLAnchorElement>("a[data-bestsellers-promo]")!;
+  assert.equal(tile.getAttribute("href"), "/collections/bestsellers");
+  assert.equal(tile.querySelector("img")?.getAttribute("src"), "/media/home/editorial-left.webp");
+  assert.equal(normalize(tile.textContent), "Maple");
+  assert.deepEqual([...band.querySelectorAll("[data-blog-rail] article[data-product-card] a[href^='/products/']")]
+    .map((link) => link.getAttribute("href")).filter((value, at, all) => all.indexOf(value) === at),
+  defaultHomeMerchandising.bestsellers.map((handle) => `/products/${handle}`));
+  const cards = document.querySelector("[data-blog-cards]")!;
+  assert.ok(cards.compareDocumentPosition(band) & 4, "after the stories");
 });
 
-test("index uses verified source artwork with reserved dimensions and no eager image collection", async () => {
-  const document = await render();
-  const images = [...document.querySelectorAll<HTMLImageElement>("article img")];
-  assert.equal(images.length, 10);
-  const measure = images.find((image) => image.alt === "How to Measure Furniture Before Ordering Online")!;
-  assert.equal(measure?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/articles/unnamed_15.png?v=1783929571");
-  assert.equal(measure?.getAttribute("width"), "482");
-  assert.equal(measure?.getAttribute("height"), "322");
-  assert.equal(images.filter((image) => image.getAttribute("loading") === "eager").length, 1);
-  assert.equal(images.filter((image) => image.getAttribute("loading") === "lazy").length, 9);
+test("the source articles stay as imported", () => {
+  const before = JSON.stringify(source.blogs.find((blog) => blog.handle === "recent-stories")!.articles.map((article) => article.handle));
+  assert.equal(before, JSON.stringify(JSON.parse(readFileSync(new URL("../data/store-content.json", import.meta.url), "utf8")).blogs.find((blog: { handle: string }) => blog.handle === "recent-stories").articles.map((article: { handle: string }) => article.handle)));
 });

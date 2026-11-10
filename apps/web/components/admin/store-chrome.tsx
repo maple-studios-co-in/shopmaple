@@ -31,9 +31,11 @@ export function StoreChromeView({
   if (path?.startsWith("/admin/preview-frame/")) return <>{children}</>;
   if (path === "/admin" || path?.startsWith("/admin/"))
     return <main id="main">{children}</main>;
+  // Product pages keep the header pinned to the top (owner, 10 Nov 2026).
+  const product = Boolean(path?.startsWith("/products/"));
   return (
     <>
-      <Header siteChrome={siteChrome} />
+      <Header siteChrome={siteChrome} sticky={product} />
       <main id="main">{children}</main>
       <Footer siteChrome={siteChrome} />
       <CartDrawerOnDemand />

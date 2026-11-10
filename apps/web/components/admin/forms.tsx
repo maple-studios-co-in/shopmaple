@@ -9,7 +9,6 @@ import { StoreContent } from "@/components/store-content";
 import { pageDocument } from "@/lib/page-document";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
-import { CampaignDealFields } from "./campaign-deal-fields";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
 import { Field } from "./field";
 import { EmptyState } from "./crm-primitives";
@@ -77,7 +76,6 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
             <Field label="Campaign destination" value={campaign.href} maxLength={500} onChange={(href) => update({ href })} />
           </FieldGrid>
           <CampaignScheduleFields key={campaign.key} value={campaign.schedule} onChange={(schedule) => update({ schedule })} onEditingChange={setScheduleEditing} />
-          <CampaignDealFields value={campaign.deal} endsAt={campaign.schedule?.endsAt} onChange={(deal) => update({ deal })} />
           {media && <>
             <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes.">Artwork</SectionHeading>
             {campaign.artwork ? (
@@ -181,7 +179,7 @@ export function PageFields(props: Props) {
   const addPageButton = <ActionButton icon={Plus} variant="default" size="default" disabled={pages.length >= 20} onClick={addPage}>Add page</ActionButton>;
   return <section aria-label="Informational pages editor">
     <PanelHeader title="Informational pages" actions={pages.length > 0 && tally(pages.length, 20, "pages", addPageButton)}
-      description="Create a simple informational page at /pages/your-slug. Existing storefront and enquiry routes are reserved." />
+      description="Create a simple informational page at /your-slug. Existing storefront and enquiry routes are reserved." />
     {pages.length > 0 && (
       <SelectField label="Page" className="mb-6 max-w-sm" value={selected} onChange={(event) => selectPage(Number(event.target.value))}>
         {pages.map((value, index) => <NativeSelectOption key={index} value={index}>{value.title || "Untitled page"}</NativeSelectOption>)}
@@ -230,7 +228,7 @@ export function PageFields(props: Props) {
           </DangerZone>
         </div>
         <PreviewPanel aria-label="Page preview" eyebrow="Local page preview"
-          footnote={<>Local preview · /pages/{page.slug || "your-slug"}</>}>
+          footnote={<>Local preview · /{page.slug || "your-slug"}</>}>
           <PreviewTitle>{page.title || "Untitled page"}</PreviewTitle>
           {page.description && <p className="text-muted-foreground">{page.description}</p>}
           <div className="store-prose [overflow-wrap:anywhere]"><StoreContent nodes={pageDocument(page)} previewUploads /></div>

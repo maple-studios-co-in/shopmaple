@@ -110,7 +110,7 @@ test("custom pages reserve functional routes and reject unsafe banner destinatio
     "//evil.invalid",
     "https://shop.maplefurnishers.com/",
     "/\\evil.invalid",
-    "/pages/%2f%2fevil.invalid",
+    "/%2f%2fevil.invalid",
     "javascript:alert(1)",
   ]) {
     assert.equal(
@@ -166,7 +166,7 @@ test("legacy content normalizes new page and artwork fields without losing copy"
         offer: [],
         eligibility: "",
         cta: "Explore",
-        href: "/pages/sofas",
+        href: "/sofas",
       },
     ],
   };
@@ -184,7 +184,7 @@ test("campaign artwork accepts managed images and rejects remote executable artw
     offer: [],
     eligibility: "",
     cta: "Explore",
-    href: "/pages/sofas",
+    href: "/sofas",
     artwork: {
       desktopImage: "/media/uploads/" + "a".repeat(64) + ".webp",
       mobileImage: "/media/uploads/" + "b".repeat(64) + ".webp",

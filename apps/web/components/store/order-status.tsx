@@ -52,7 +52,7 @@ export function OrderStatus({ attemptId, pollIntervalMs = 5000 }: { attemptId: s
   }, [attemptId, client, pollIntervalMs]);
 
   const contact = (
-    <Link className={outline} href="/pages/contact">
+    <Link className={outline} href="/contact">
       Contact our team
     </Link>
   );

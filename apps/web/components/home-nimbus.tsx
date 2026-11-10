@@ -27,7 +27,7 @@ export function HomeNimbus({
   // The bundled photo has no lettering, so the name is live text; staff artwork keeps whatever it carries.
   const liveWord = artwork.image === homeTemplateMedia["home-nimbus"].image;
   const cards: Card[] = [
-    { id: "nimbus", heading: content.heading, tagline: content.tagline, cta: content.cta, href: "/pages/nimbus-collection", image: artwork.image, mobileImage: artwork.mobileImage, alt: artwork.alt, word: liveWord ? collectionWord(content.heading) : null },
+    { id: "nimbus", heading: content.heading, tagline: content.tagline, cta: content.cta, href: "/nimbus-collection", image: artwork.image, mobileImage: artwork.mobileImage, alt: artwork.alt, word: liveWord ? collectionWord(content.heading) : null },
     // An extra slide with no artwork yet (a draft in the editor) has nothing to show, so it is left out.
     ...(content.slides ?? []).filter(slide => slide.image).map((slide, i): Card => ({
       id: `nimbus-${i + 2}`, heading: slide.heading, tagline: slide.tagline, cta: slide.cta, href: slide.href,

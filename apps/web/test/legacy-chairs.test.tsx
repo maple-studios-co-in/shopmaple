@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { renderToReadableStream } from "react-dom/server";
 import type { Product } from "@shopmaple/contracts";
 import Collection from "../app/collections/[handle]/page";
-import ChairsPage from "../app/pages/chairs/page";
+import ChairsPage from "../app/chairs/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 const products: Product[] = Array.from({ length: 26 }, (_, i) => ({
@@ -319,7 +319,7 @@ test("rooms retain their source product cards as honest enquiries when the owned
     for (const card of room.querySelectorAll("[data-product-card]")) {
       assert.match(
         card.querySelector("[data-card-name]")?.getAttribute("href") ?? "",
-        /^\/pages\/contact\?product=/,
+        /^\/contact\?product=/,
       );
       assert.equal(
         card.querySelector("[data-card-price]")?.textContent,

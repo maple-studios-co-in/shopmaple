@@ -30,7 +30,7 @@ test("storefront links inside the frame reopen on the draft with the same token;
   try {
     await act(async () => root.render(
       <ShopProvider>
-        <PreviewFrameDocument token={token} version={7} path="/pages/sofas" siteChrome={content.siteChrome} navigate={(url) => assigned.push(url)}>
+        <PreviewFrameDocument token={token} version={7} path="/sofas" siteChrome={content.siteChrome} navigate={(url) => assigned.push(url)}>
           <a href="/">Home link</a>
           <a href="/collections/all">Shop all</a>
           <a href="https://example.com/outside">Outside</a>
@@ -92,7 +92,7 @@ test("links followed inside the published view stay on the published view", asyn
   try {
     await act(async () => root.render(
       <ShopProvider>
-        <PreviewFrameDocument token={token} version={2} path="/pages/sofas" siteChrome={content.siteChrome} view="published" navigate={(url) => assigned.push(url)}>
+        <PreviewFrameDocument token={token} version={2} path="/sofas" siteChrome={content.siteChrome} view="published" navigate={(url) => assigned.push(url)}>
           <a href="/collections/all">Shop all</a>
         </PreviewFrameDocument>
       </ShopProvider>,

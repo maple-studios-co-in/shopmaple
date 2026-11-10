@@ -45,6 +45,8 @@
 .home-newsletter-row > div > p {
   max-width: 23em;
   margin: 0;
+  /* No word left alone on the last line ("look."), whatever the width (10 Nov 2026). */
+  text-wrap: pretty;
   color: #fff;
   font: 400 clamp(18px, 1.37vw, 26px) / 1.15 var(--font-text);
 }

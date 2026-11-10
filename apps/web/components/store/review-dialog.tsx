@@ -22,19 +22,26 @@ type Chosen = { file: File; preview: string };
  * appears on the page only once approved, as the thank-you says. The frame draws no chosen photos or sent state, so the
  * thumbnails and the thank-you are made from its own type and colours.
  */
-export function ReviewDialog({ open, onClose, piece, encode = encodePhoto }: {
+export function ReviewDialog({ open, onClose, piece, chosen, encode = encodePhoto }: {
   open: boolean;
   onClose: () => void;
   piece: ReviewPiece;
+  /** A rating chosen before the form opened (a star in the reviews band); each new choice is applied once, as it opens. */
+  chosen?: { rating: number } | null;
   /** Makes a chosen photo small enough to send. */
   encode?: (file: File) => Promise<string>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const firstStar = useRef<HTMLInputElement>(null);
   const sender = useRef<ReturnType<typeof createReviewSender> | null>(null);
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(chosen?.rating ?? 0);
   const [hovered, setHovered] = useState(0);
   const [ratingMissing, setRatingMissing] = useState(false);
+  useEffect(() => {
+    if (!open || !chosen) return;
+    setRating(chosen.rating);
+    setRatingMissing(false);
+  }, [open, chosen]);
   const [photos, setPhotos] = useState<Chosen[]>([]);
   const [photoProblem, setPhotoProblem] = useState("");
   const [pending, setPending] = useState(false);

@@ -13,7 +13,7 @@ import { mountStage } from "../lib/home-effects";
 // the lazy effects fade one into the next when the ring round its number closes.
 const extras: NonNullable<HomeDetails["nimbus"]["slides"]> = [
   { heading: "The Terra Collection", tagline: "Earthy and warm", features: ["Warm tones", "Grounded forms", "Natural fibres", "Calm rooms"], cta: "Shop Terra", href: "/collections/terra", image: "/media/uploads/" + "d".repeat(64) + ".webp", mobileImage: "/media/uploads/" + "e".repeat(64) + ".webp", alt: "Terra sofa" },
-  { heading: "The Olive Collection", tagline: "Quietly green", features: ["Soft green", "Deep seats", "Easy care", "Light frames"], cta: "Shop Olive", href: "/pages/olive", image: "/media/uploads/" + "f".repeat(64) + ".webp", alt: "Olive armchair" },
+  { heading: "The Olive Collection", tagline: "Quietly green", features: ["Soft green", "Deep seats", "Easy care", "Light frames"], cta: "Shop Olive", href: "/olive", image: "/media/uploads/" + "f".repeat(64) + ".webp", alt: "Olive armchair" },
 ];
 const content = (slides?: HomeDetails["nimbus"]["slides"]): HomeDetails["nimbus"] => ({ ...defaultHomeDetails.nimbus, slides });
 const doc = (node: React.ReactElement) => new JSDOM(renderToStaticMarkup(node)).window.document;
@@ -26,7 +26,7 @@ test("without extra slides it is the single Nimbus card, with no numbers", () =>
   assert.equal(page.querySelector("[data-nimbus-heading]")?.textContent, "The Nimbus Collection");
   assert.equal(page.querySelector("[data-nimbus-word]")?.textContent, "Nimbus");
   assert.equal(page.querySelector("[data-nimbus-lead]")?.textContent, "Soft presence. Strong craftsmanship.");
-  assert.equal(page.querySelector("[data-nimbus-explore]")?.getAttribute("href"), "/pages/nimbus-collection");
+  assert.equal(page.querySelector("[data-nimbus-explore]")?.getAttribute("href"), "/nimbus-collection");
   assert.equal(all(page, "[data-stage-dot]").length, 0);
   assert.equal(page.querySelector("section")?.getAttribute("aria-label"), "The Nimbus Collection");
 });
@@ -38,7 +38,7 @@ test("extra collections follow the base card, each with its own words, artwork a
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-heading]")?.textContent), ["The Nimbus Collection", "The Terra Collection", "The Olive Collection"]);
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-word]")?.textContent), ["Nimbus", "Terra", "Olive"]);
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-lead]")?.textContent), ["Soft presence. Strong craftsmanship.", "Earthy and warm", "Quietly green"]);
-  assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/pages/nimbus-collection", "/collections/terra", "/pages/olive"]);
+  assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/nimbus-collection", "/collections/terra", "/olive"]);
   assert.deepEqual(rendered.map(card => card.querySelector("[data-nimbus-explore]")?.textContent), ["Explore", "Shop Terra", "Shop Olive"]);
   const terra = rendered[1]!.querySelector("picture")!;
   assert.equal(terra.querySelector("img")?.getAttribute("src"), extras[0]!.image);

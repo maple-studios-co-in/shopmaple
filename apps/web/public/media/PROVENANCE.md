@@ -36,6 +36,15 @@ Added for the owner's homepage notes of 2 November 2026.
 | `home/editorial-flip-varyn.webp` | Varyn Dining Table | [File_2026-05-27T11_29_17.560Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_29_17.560Z.webp?v=1780471840) |
 | `home/editorial-flip-seno.webp` | Seno Dining Table | [File_2026-05-27T11_09_10.656Z.webp](https://cdn.shopify.com/s/files/1/0691/8651/9229/files/File_2026-05-27T11_09_10.656Z.webp?v=1780470231) |
 
-## Cities panel map
+## Our Story (10 November 2026)
 
-`cities/dotted-world.svg` was drawn for the cities panel (Figma 177:1159) from the Natural Earth land outline (public domain), read from the `world-atlas` 2.0.2 package's `land-110m.json`. Nothing else from that package is used.
+From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), page node 293:1093 and its journey slider 293:1434, exported through the Figma connector on 10 November 2026:
+
+- `our-story/chapter-1.webp` to `chapter-7.webp`: the slider's seven editorial images (raw images 1024 x 1024 PNG), re-encoded as WebP at the same size. Like the homepage hero tiles, they are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Our Story, when real ones exist.
+- `our-story/handmade.svg`, `unique-designs.svg`, `bespoke-pieces.svg`: the principles' line drawings; `previous.svg`, `next.svg` and `journey-dot.svg`: the slider's chevrons and year marker. Unchanged SVG exports.
+
+The opening and belief photos are Maple's own, still referenced at their Shopify CDN addresses (`Frame129.png` and the workshop film's poster frame).
+
+## Blog article pictures, sharpened (10 November 2026)
+
+`/blog/art/<article>.webp` (in `apps/web/public/blog/art/`) are seven imported articles’ own pictures from Shopify (`shop.maplefurnishers.com/cdn/shop/articles/…`), which are only 482px wide. Each was enlarged four times with ESRGAN (the `@upscalerjs/esrgan-thick` 1.0.0 4x model, run locally in the browser) and saved at 1600px wide, so the article’s 1200px banner is sharp. The three articles whose pictures were already 1536px wide keep their Shopify addresses.

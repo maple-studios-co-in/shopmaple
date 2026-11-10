@@ -14,7 +14,7 @@ import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { collectionQuery } from "../lib/collections";
 import { Footer } from "../components/footer";
-import ContactPage from "../app/pages/[slug]/page";
+import ContactPage from "../app/[slug]/page";
 
 const dom = new JSDOM("<!doctype html><div id='root'></div>", {
   url: "http://localhost:3000",

@@ -69,7 +69,7 @@ test('structured page drafts stay private and publication exposes only the commi
 
 test('page-only missing targets fail atomically even when authored articles are absent or empty', async () => {
   for (const authored of [{}, { authoredArticles: [] }]) {
-    for (const href of ['/pages/missing', '/blogs/news/missing', '/blogs/missing', '/policies/missing', '/products/missing', '/products/page-hidden-chair', '/collections/missing']) {
+    for (const href of ['/missing', '/blogs/news/missing', '/blogs/missing', '/policies/missing', '/products/missing', '/products/page-hidden-chair', '/collections/missing']) {
       const saved = await save({ ...fixture(), ...authored, pages: [page([{ id: 'link', type: 'link', text: 'Read', href }])] });
       const before = await snapshot();
       const response = await publish(saved.version);
@@ -83,7 +83,7 @@ test('page-only missing targets fail atomically even when authored articles are 
 test('links written in a rich-text page are checked like block links before publishing', async () => {
   const rich = (href: string) => ({ slug: 'studio', title: 'Studio', description: '', body: 'Recovery copy', banner: null,
     content: [{ tag: 'p', children: ['See ', { tag: 'strong', children: [{ tag: 'a', href, children: ['this'] }] }] }] });
-  for (const href of ['/pages/missing', '/products/missing', '/collections/missing#top']) {
+  for (const href of ['/missing', '/products/missing', '/collections/missing#top']) {
     const saved = await save({ ...fixture(), pages: [rich(href)] });
     const before = await snapshot();
     const response = await publish(saved.version);
@@ -96,7 +96,7 @@ test('links written in a rich-text page are checked like block links before publ
 });
 
 test('page links accept candidate pages and articles plus real catalogue and source destinations', async () => {
-  const hrefs = ['/', '/#intro', '/pages/studio#intro', '/pages/new-room', '/blogs/news/new-linked-story', '/products/page-chair#details', '/collections/chairs', '/collections/frontpage', '/policies/privacy-policy', '/blogs/life-culture', '/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes', '/pages/our-story'];
+  const hrefs = ['/', '/#intro', '/studio#intro', '/new-room', '/blogs/news/new-linked-story', '/products/page-chair#details', '/collections/chairs', '/collections/frontpage', '/policies/privacy-policy', '/blogs/life-culture', '/blogs/recent-stories/space-saving-furniture-ideas-for-small-homes', '/our-story'];
   const content = { ...fixture(), pages: [page(hrefs.map((href, i) => ({ id: `link-${i}`, type: 'link', text: 'Read', href }))), { slug: 'new-room', title: 'Room', description: '', body: 'Hello', banner: null }], authoredArticles: [article('new-linked-story')] };
   assert.equal((await publish((await save(content)).version)).status, 200);
   // Previously published destinations removed from the candidate snapshot are not valid.
@@ -155,7 +155,7 @@ test('structured pages retain authentication, editor authority, CSRF, origin and
 });
 
 test('rollback restores page blocks only to a draft and revalidates missing destinations at publication', async () => {
-  const content = { ...fixture(), pages: [page([{ id: 'link', type: 'link', text: 'Read', href: '/pages/missing-rollback' }])] };
+  const content = { ...fixture(), pages: [page([{ id: 'link', type: 'link', text: 'Read', href: '/missing-rollback' }])] };
   let saved = await save(content);
   const revision = await db.shopContentRevision.findFirstOrThrow({ where: { version: saved.version } });
   saved = await save({ ...fixture(), pages: [page()] });
@@ -199,9 +199,9 @@ test('unsafe page paths and oversized blocks reject saves and persisted aliases 
 });
 
 test('legacy page banners and article-specific missing-link errors retain their behavior alongside blocks', async () => {
-  const banner = { desktopImage: '/media/a.webp', mobileImage: '/media/b.webp', alt: 'Art', href: '/pages/legacy-unavailable', label: 'Read' };
+  const banner = { desktopImage: '/media/a.webp', mobileImage: '/media/b.webp', alt: 'Art', href: '/legacy-unavailable', label: 'Read' };
   assert.equal((await publish((await save({ ...fixture(), pages: [{ ...page(), banner }] })).version)).status, 200);
-  const saved = await save({ ...fixture(), pages: [page()], authoredArticles: [{ ...article(), blocks: [{ id: 'link', type: 'link', text: 'Read', href: '/pages/no-article-destination' }] }] });
+  const saved = await save({ ...fixture(), pages: [page()], authoredArticles: [{ ...article(), blocks: [{ id: 'link', type: 'link', text: 'Read', href: '/no-article-destination' }] }] });
   const before = await snapshot();
   const response = await publish(saved.version);
   assert.equal(response.status, 400);

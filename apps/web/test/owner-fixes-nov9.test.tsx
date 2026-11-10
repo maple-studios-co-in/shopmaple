@@ -110,7 +110,7 @@ test("the main menu runs the rooms, then Collections, Custom Furniture and Sale,
   assert.equal(labels.includes("Contact"), false);
   assert.deepEqual(labels.slice(-3), ["Collections", "Custom Furniture", "Sale"]);
   const custom = defaultSiteChrome.navigation.find((item) => item.label === "Custom Furniture")!;
-  assert.equal(chromeHref(custom), "/pages/contact?product=Custom+furniture", "Custom Furniture opens an enquiry already about it");
+  assert.equal(chromeHref(custom), "/contact?product=Custom+furniture", "Custom Furniture opens an enquiry already about it");
   // Sale opens the store's real sale collection; there is no /collections/sale, and the publish check refuses it.
   assert.equal(defaultSiteChrome.navigation.find((item) => item.label === "Sale")!.href, "/collections/clearance-sale");
   assert.deepEqual(defaultSiteChrome.desktopDiscovery.map((link) => link.label), ["New Arrivals", "Bestsellers", "Complete the Look"]);
@@ -136,7 +136,7 @@ test("the open menu shows the room's card, the groups with their icons, the cust
     assert.ok(panel.querySelector('a[href="/collections/sofas"]')?.textContent?.startsWith("Explore Living Room"));
     assert.ok(panel.querySelectorAll("[data-menu-icon]").length >= 3, "each group's first link has its icon");
     const customSize = panel.querySelector<HTMLAnchorElement>("a[data-mega-custom]")!;
-    assert.equal(customSize.getAttribute("href"), "/pages/contact?product=Custom+size");
+    assert.equal(customSize.getAttribute("href"), "/contact?product=Custom+size");
     assert.match(customSize.textContent ?? "", /Need a custom size\?.*Start Customizing/);
     assert.equal(panel.querySelectorAll(".maple-mega-discovery img").length, 3);
     assert.equal(panel.querySelector("[data-mega-footer]"), null, "the old promise strip under the columns is gone");
@@ -221,7 +221,7 @@ const features: Feature[] = [
 ];
 
 test("the hotspots are a dark plus on a light disc, over a photo with nothing behind it", async () => {
-  await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} contain title="Nola Accent Chair" tagline="Your choice of finish." photo="https://example.com/nola.png" />, async (host) => {
+  await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} contain title="Nola Accent Chair" photo="https://example.com/nola.png" />, async (host) => {
     const frame = host.querySelector("[data-feature-photo-frame]")!;
     assert.ok(classes(frame).includes("bg-transparent"));
     assert.equal(classes(frame).some((name) => /^bg-(cream|\[#f7f3ee\])$/.test(name)), false, "no panel colour behind the photo");
@@ -297,7 +297,7 @@ test("the reviews band takes three quarters of the screen, drops the count under
   const review = (id: string, rating: number, title: string) =>
     ({ id, rating, title, body: "Made beautifully.", reviewerName: "Asha", city: "Jaipur", reviewedAt: "2026-10-12", source: "online_order" as const, verifiedBuyer: false, variantId: null, photos: [] });
   const reviews = [review("r1", 5, "Sturdy and gorgeous"), review("r2", 4, "Worth the wait")];
-  await mount(<ProductReviews rating={{ value: 4.5, count: 6 }} writeHref="/pages/contact" reviews={reviews} />, (host) => {
+  await mount(<ProductReviews rating={{ value: 4.5, count: 6 }} writeHref="/contact" reviews={reviews} />, (host) => {
     const band = host.querySelector("[data-reviews]")!;
     assert.ok(classes(band).includes("md:h-[75svh]"));
     const summary = band.querySelector("[data-rating-summary]")!;
@@ -337,9 +337,10 @@ test("the product page's banner is a third smaller than its 751px frame", () => 
 
 test("the bundle's summary card stands as tall as the pieces beside it", () => {
   const bundle = source("../components/store/product-bundle.tsx");
-  assert.match(bundle, /xl:flex-row xl:items-stretch/);
+  // Side by side from 1024px, so a laptop at 125% keeps the summary beside the pieces (owner, 10 Nov 2026).
+  assert.match(bundle, /lg:flex-row lg:items-stretch/);
   assert.match(bundle, /<article data-bundle-piece className="flex h-full /);
-  assert.match(bundle, /data-bundle-summary[^>]*xl:self-stretch/);
+  assert.match(bundle, /data-bundle-summary[^>]*lg:self-stretch/);
 });
 
 // ---- 8. Photos that load sooner ----
@@ -398,7 +399,8 @@ test("the questions sit on the right of a heading that stays in place until the 
     const heading = host.querySelector("[data-faq-heading]")!;
     const questions = host.querySelector("[data-faq-questions]")!;
     assert.equal(heading.compareDocumentPosition(questions) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING, dom.window.Node.DOCUMENT_POSITION_FOLLOWING, "the heading comes first, on the left");
-    for (const name of ["lg:sticky", "lg:top-8", "lg:self-start"]) assert.ok(classes(heading).includes(name), name);
+    // 32px under the header, which stays pinned on product pages (owner, 10 Nov 2026).
+    for (const name of ["lg:sticky", "lg:top-[calc(var(--site-header-offset,0px)+32px)]", "lg:self-start"]) assert.ok(classes(heading).includes(name), name);
     // About one question's height under it, so it lets go as the last question comes level with it (owner, 9 Nov 2026).
     assert.ok(classes(heading).includes("lg:mb-24"), "the heading lets go before the next section closes in");
     assert.equal([...classes(heading), ...classes(questions)].some((name) => name.startsWith("lg:order-")), false, "no reordering puts the heading on the right");
