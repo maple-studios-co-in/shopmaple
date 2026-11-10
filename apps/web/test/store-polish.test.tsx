@@ -6,7 +6,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {JSDOM} from 'jsdom';
 import {Footer} from '../components/footer';
 import {HomeCarousel} from '../components/home-carousel';
-import Loading from '../app/loading';
+import Loading from '../app/products/[handle]/loading';
 
 test('footer policy popover dismisses outside and on Escape without dismissing an inside click',async()=>{
  const dom=new JSDOM('<button id="outside">Outside</button><div id="root"></div>',{url:'http://localhost'});
