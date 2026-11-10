@@ -28,7 +28,7 @@ test("admin and nested admin pages render their content without customer shoppin
     );
     assert.ok(
       !document.querySelector(
-        '[aria-label="Chat with Maple Furnishers on WhatsApp"]',
+        '[aria-label="Contact us on WhatsApp"]',
       ),
     );
     assert.ok(!document.querySelector('nav[aria-label="Help and policies"]'));
@@ -42,7 +42,7 @@ test("storefront and admin-like public slugs preserve real shopping navigation a
     assert.ok(document.querySelector('[aria-label="Open cart (0 items)"]'));
     assert.ok(
       document.querySelector(
-        '[aria-label="Chat with Maple Furnishers on WhatsApp"]',
+        '[aria-label="Contact us on WhatsApp"]',
       ),
     );
     assert.ok(document.querySelector('nav[aria-label="Help and policies"]'));

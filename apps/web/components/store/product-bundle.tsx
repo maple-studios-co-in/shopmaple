@@ -57,14 +57,14 @@ export function ProductBundle({ product, variant, paired, quantities }: { produc
           <h2 id="product-bundle-title" className="m-0 text-[34px] leading-[1.35] font-medium text-maple md:text-[48px]">Buy in Bundle</h2>
           <p data-bundle-lede className="m-0 text-[16px] leading-[1.35] text-[#756d68] md:text-[18px]">Thoughtfully paired. Beautifully together.</p>
         </div>
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-stretch">
-          <ol className="m-0 flex list-none snap-x items-stretch gap-3 overflow-x-auto p-0 pb-1 [scrollbar-width:none] md:gap-4 xl:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+          <ol className="m-0 flex list-none snap-x items-stretch gap-3 overflow-x-auto p-0 pb-1 [scrollbar-width:none] md:gap-4 lg:min-w-0 lg:pb-0 [&::-webkit-scrollbar]:hidden">
             {pieces.map((piece, i) => {
               const photo = piece.variant.images?.[0] ?? piece.product.images[0];
               return (
                 <li key={piece.product.id} className="flex shrink-0 snap-start items-stretch gap-3 md:gap-4">
                   {i > 0 && <span data-bundle-plus aria-hidden="true" className="w-6 self-center text-center text-[30px] leading-[1.35] text-maple">+</span>}
-                  <article data-bundle-piece className="flex h-full w-[240px] flex-col gap-3 rounded-[12px] bg-[#f9f7f3] p-4 md:w-[280px] wide:w-[15vw]">
+                  <article data-bundle-piece className="flex h-full w-[240px] flex-col gap-3 rounded-[12px] bg-[#f9f7f3] p-4 md:w-[clamp(220px,20vw,280px)] wide:w-[15vw]">
                     <Link href={`/products/${piece.product.handle}`} className="relative block aspect-[248/242] overflow-hidden rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple [&_img]:object-contain">
                       <ProductImage src={photo} alt={piece.product.title} fill sizes="(max-width:767px) 208px, 248px" />
                     </Link>
@@ -76,7 +76,7 @@ export function ProductBundle({ product, variant, paired, quantities }: { produc
               );
             })}
           </ol>
-          <aside data-bundle-summary aria-label="Your paired selection" className="flex flex-col gap-5 rounded-[12px] bg-[#f9f7f3] p-6 md:p-8 xl:w-[368px] xl:shrink-0 xl:self-stretch wide:w-[22vw]">
+          <aside data-bundle-summary aria-label="Your paired selection" className="flex flex-col gap-5 rounded-[12px] bg-[#f9f7f3] p-6 md:p-8 lg:w-[clamp(300px,28vw,368px)] lg:shrink-0 lg:self-stretch wide:w-[22vw]">
             <h3 className="m-0 text-[24px] leading-[1.35] font-medium text-maple">Your paired selection</h3>
             <p data-bundle-count className="m-0 text-[15px] leading-[1.35] text-[#756d68]">{pieces.reduce((n, piece) => n + piece.quantity, 0)} pieces · 1 considered space</p>
             {total === null ? (

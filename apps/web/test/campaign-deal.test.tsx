@@ -3,7 +3,7 @@ import { test, type TestContext } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act, useState } from "react";
 import { createRoot, hydrateRoot } from "react-dom/client";
-import { renderToString } from "react-dom/server";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { AppRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import {
   campaignContentSchema, campaignDeals, liveCampaignDeal, storefrontContentSchema,
@@ -13,6 +13,7 @@ import { CampaignFields } from "../components/admin/forms";
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
+import { ProductDeal } from "../components/store/product-deal";
 import { documentDeals, readPublishedContent } from "../lib/content";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { withDemoCampaignDeal } from "../lib/demo-campaign-deal";
@@ -227,6 +228,64 @@ test("the countdown ticks down on an open page", async (t) => {
   }, { deals: [liveDeal({ endsAt: at(2 * MINUTE) })] });
 });
 
+/* ── Ticking smoothly, honestly (owner, 10 Nov 2026) ──────────────────────────── */
+
+const digits = (doc: Document, unit: number) => [...box(doc)!.querySelectorAll("[data-countdown-unit]")[unit]!.querySelectorAll("[data-countdown-digit]")];
+
+test("the box's first markup already shows the time left by the server's clock, and the browser takes over without a mismatch", async (t) => {
+  const pass = holdTheClock(t);
+  const deals = [liveDeal({ endsAt: at(2 * DAY + 3 * HOUR + 4 * MINUTE + 5_000) })];
+  const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch: async () => {} };
+  const page = (serverNow: number) => <AppRouterContext.Provider value={router}><ProductHighlightsProvider value={{ swatches: [], products: [] }} deals={deals}><ShopProvider>
+    <ProductDetail product={product} serverNow={serverNow} />
+  </ShopProvider></ProductHighlightsProvider></AppRouterContext.Provider>;
+  const container = document.getElementById("root")!;
+  container.innerHTML = renderToString(page(openedAt));
+  assert.deepEqual(units(document), ["02 Days", "03 Hours", "04 Mins", "05 Secs"], "real numbers before any script runs: no dashes, nothing to jump");
+  await pass(2000); // the page reaches the shopper two seconds after the server drew it
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json(emptyCart);
+  const errors: unknown[] = [];
+  let root: ReturnType<typeof hydrateRoot> | undefined;
+  try {
+    await act(async () => { root = hydrateRoot(container, page(openedAt), { onRecoverableError: (error) => errors.push(error) }); });
+    assert.deepEqual(errors, [], "hydration matched the server's markup");
+    assert.deepEqual(units(document), ["02 Days", "03 Hours", "04 Mins", "03 Secs"], "then it counts from the browser's clock");
+  } finally {
+    await act(async () => root?.unmount());
+    globalThis.fetch = previous;
+    window.sessionStorage.clear();
+  }
+});
+
+test("the seconds change on the deadline's own second boundaries, and only the digit that changes is redrawn", async (t) => {
+  const pass = holdTheClock(t);
+  await productPage(async (doc) => {
+    assert.deepEqual(units(doc), ["00 Days", "00 Hours", "02 Mins", "01 Sec"], "two minutes and 0.4s read 2:01: never less than is left");
+    await pass(399);
+    assert.deepEqual(units(doc).slice(2), ["02 Mins", "01 Sec"]);
+    await pass(1);
+    assert.deepEqual(units(doc).slice(2), ["02 Mins", "00 Secs"], "the very moment the second passes, not a second after the page opened");
+    await pass(1000);
+    assert.deepEqual(units(doc).slice(2), ["01 Min", "59 Secs"]);
+    const [tens, ones] = digits(doc, 3);
+    const minutes = digits(doc, 2);
+    await pass(1000);
+    assert.deepEqual(units(doc).slice(2), ["01 Min", "58 Secs"]);
+    const [tensAfter, onesAfter] = digits(doc, 3);
+    assert.equal(tensAfter, tens, "the 5 stays put");
+    assert.notEqual(onesAfter, ones, "the 9 gives way to the 8, which rolls in");
+    assert.deepEqual(digits(doc, 2), minutes, "the minutes did not change, so they are not redrawn");
+  }, { deals: [liveDeal({ endsAt: at(2 * MINUTE + 400) })] });
+});
+
+test("a deadline that has passed, or cannot be read, never shows a timer: no zeros, no negative numbers", () => {
+  const now = Date.parse("2026-11-10T00:00:00.000Z");
+  for (const endsAt of ["2026-11-09T23:59:59.000Z", "2026-11-10T00:00:00.000Z", "soon"])
+    assert.equal(renderToStaticMarkup(<ProductDeal deal={{ offer: "10% off", code: "SALE10", endsAt }} openedAt={now} />), "", endsAt);
+  assert.match(renderToStaticMarkup(<ProductDeal deal={{ offer: "10% off", code: "SALE10", endsAt: "2027-02-18T00:00:00.000Z" }} openedAt={now} />).replace(/<[^>]+>/g, ""), /100 Days00 Hours00 Mins00 Secs/, "a hundred days and more still fit");
+});
+
 /* ── The placeholder ─────────────────────────────────────────────────────────── */
 
 test("the placeholder offer stays out unless it is explicitly switched on", () => {
@@ -336,6 +395,18 @@ test("with an end on the schedule the form names it, in India's time", async () 
   try {
     assert.match(text(ui.section())!, /Counts down to 14 February 2027, 12:00 am IST/);
     assert.doesNotMatch(text(ui.section())!, /Add an end time/);
+  } finally {
+    await ui.dispose();
+  }
+});
+
+test("the form says when the schedule's end has passed, so staff know why the pages show no timer", async () => {
+  const initial = structuredClone(defaultStorefrontContent);
+  initial.campaigns[0] = { ...initial.campaigns[0]!, deal: { offer: "30% off", code: "SALE30" }, schedule: { startsAt: null, endsAt: "2026-01-01T00:00:00.000Z" } };
+  const ui = await campaignEditor(initial);
+  try {
+    assert.match(text(ui.section())!, /This end has passed, so product pages show no timer\. Move the end in the schedule above to run it again\./);
+    assert.doesNotMatch(text(ui.section())!, /Counts down to/);
   } finally {
     await ui.dispose();
   }

@@ -46,10 +46,14 @@ test("the classic homepage's own variables point at the same two faces", () => {
 
 test("nothing draws a heading in a weight or slant the sheet does not have", () => {
   const headingShorthand = /font:\s*(?:italic\s+)?(\d{3})\s+[^;]*var\(--font-heading\)/g;
+  // A slanted heading uses DM Sans's own italic, which the layout loads, never a slant the browser fakes. The owner
+  // asked for the statement band's "custom-built" in italic again (10 Nov 2026).
+  const italicLoaded = read("app/layout.tsx").includes("@fontsource-variable/dm-sans/opsz-italic.css");
   for (const path of sheets) {
     for (const match of read(path).matchAll(headingShorthand)) assert.equal(match[1], "500", `${path}: ${match[0]}`);
-    assert.doesNotMatch(read(path), /font:\s*italic[^;]*var\(--font-heading\)/, `${path} slants a heading`);
+    if (!italicLoaded) assert.doesNotMatch(read(path), /font:\s*italic[^;]*var\(--font-heading\)/, `${path} slants a heading`);
   }
+  assert.ok(italicLoaded, "DM Sans's italic is loaded for the headings that use it");
 });
 
 test("the layout loads the two faces with the weights the sheet uses, and no others", () => {

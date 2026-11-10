@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
@@ -75,7 +76,9 @@ test("a live deal counts down to its end in days, hours, minutes and seconds, wi
     assert.equal(text(box.querySelector("[data-deal-code]")), "PREVIEW10");
     const units = [...box.querySelectorAll("[data-countdown-unit]")].map(text);
     assert.deepEqual(units.slice(0, 3), ["02 Days", "03 Hours", "04 Mins"]);
-    assert.match(units[3]!, /^(30|29) Secs$/);
+    // 30.5s were left when the file loaded, read rounded up so the box never shows less time than there is (owner,
+    // 10 Nov 2026); a slow machine may take a few seconds to get here.
+    assert.match(units[3]!, /^(2[4-9]|3[01]) Secs$/);
     assert.match(text(box.querySelector(".sr-only"))!, /^Offer ends /, "the ticking numbers are hidden from screen readers; the end date is read once");
     await act(async () => box.querySelector<HTMLButtonElement>("button[data-deal-copy]")!.click());
     assert.deepEqual(copied, ["PREVIEW10"]);
@@ -160,32 +163,35 @@ test("Precision in Every Detail: four cards around the piece, each showing a lit
     // Closed, a card shows a little (two lines, two rows) and keeps its link for when it opens (owner, 4 Nov 2026).
     const toggles = cards.map((c) => c.querySelector<HTMLButtonElement>("h3 button[data-feature-toggle]"));
     assert.deepEqual(toggles.map((toggle) => toggle?.getAttribute("aria-expanded") ?? null), ["false", "false", "false", null], "a card with nothing more to show has no toggle");
-    assert.deepEqual(toggles.slice(0, 3).map((toggle) => toggle!.getAttribute("aria-controls")), cards.slice(0, 3).map((c) => c.querySelector("[data-feature-content]")!.id));
+    // Each card opens a floating chip popup and stays as it is (owner, 10 Nov 2026).
+    const pops = toggles.slice(0, 3).map((toggle) => doc.getElementById(toggle!.getAttribute("aria-controls")!)!);
+    assert.ok(pops.every((pop) => pop.hasAttribute("data-feature-pop") && pop.hidden), "each arrow controls its card's popup, closed until asked for");
     assert.deepEqual(specRows().map((row) => row.hidden), [false, false, true], "two rows while closed");
     assert.match(specRows()[2]!.className, /(^| )hidden( |$)/, "and really hidden: no display class overrides it");
-    const link = cards[0]!.querySelector<HTMLAnchorElement>("a[data-feature-link]")!;
-    assert.equal(link.hidden, true, "the link waits for the card to open");
     await act(async () => toggles[0]!.click());
     assert.equal(toggles[0]!.getAttribute("aria-expanded"), "true");
     assert.equal(cards[0]!.getAttribute("data-open"), "true");
-    assert.equal(link.hidden, false);
+    const link = pops[0]!.querySelector<HTMLAnchorElement>("a[data-pop-link]")!;
+    assert.equal(pops[0]!.hidden, false);
     assert.equal(text(link), "Explore finishes with Maple");
     assert.match(link.getAttribute("href")!, /^\/contact\?product=Aero\+Dining\+Chair/);
     await act(async () => toggles[2]!.click());
-    assert.deepEqual(specRows().map((row) => row.hidden), [false, false, false], "open, the card shows every row");
-    assert.equal(cards[1]!.getAttribute("data-open"), "false", "each card opens on its own");
-    await act(async () => toggles[0]!.click());
-    assert.equal(link.hidden, true, "and closes again");
+    assert.deepEqual([...pops[2]!.querySelectorAll("[data-pop-chip]")].map((chip) => [...chip.children].map(text)), [["Width", "28\" (≈ 71 cm)"], ["Depth", "61 cm"], ["Warranty", "36 Months"]], "the popup shows every row");
+    assert.deepEqual(specRows().map((row) => row.hidden), [false, false, true], "while the card keeps its preview");
+    assert.deepEqual(cards.map((c) => c.getAttribute("data-open")), ["false", "false", "true", "false"], "one card is open at a time");
+    assert.equal(pops[0]!.hidden, true, "the first popup closed as the next one opened");
+    await act(async () => toggles[2]!.click());
+    assert.equal(pops[2]!.hidden, true, "and the open one closes again");
     // The hotspots carry Keeri's highlights alone, and the cards stand apart from them: no line joins a card to the photo.
     assert.equal(section.querySelectorAll("[data-highlight-spot]").length, 0, "no highlights in Keeri: no hotspots, nothing invented");
     assert.equal(section.querySelector("[data-features-lines]"), null);
     const caption = section.querySelector("[data-features-caption]")!;
-    assert.deepEqual([...caption.children].map(text), ["Aero Dining Chair", "Your choice of fabric. Your choice of finish."]);
+    assert.deepEqual([...caption.children].map(text), ["Aero Dining Chair"], "under the photo, the piece's name alone (owner, 10 Nov 2026)");
     assert.match(section.querySelector<HTMLImageElement>("[data-feature-photo] img")!.getAttribute("src")!, /aero-2\.jpg/, "the second photo of the piece");
   });
 });
 
-test("a long card shows two lines until it is opened, and a piece without upholstery is offered finish and size", async () => {
+test("a long card shows two lines until it is opened, and a piece without upholstery gets no line under its name either", async () => {
   const long = "A barrel-back accent chair with a generously cushioned seat, a softly curved backrest and an exposed wooden arm structure that flows into splayed legs. ".repeat(2).trim();
   await mount(async (doc) => {
     const about = doc.querySelector("[data-feature]")!;
@@ -193,11 +199,12 @@ test("a long card shows two lines until it is opened, and a piece without uphols
     const body = about.querySelector("[data-feature-body]")!;
     assert.equal(text(body), long, "the whole text is on the page");
     assert.match(body.className, /line-clamp-2/, "two lines show while the card is closed");
-    assert.equal(about.querySelector("[data-feature-more]"), null, "the card itself opens: no separate Read more");
+    assert.equal(about.querySelector("[data-feature-more]"), null, "the card's own arrow opens it: no separate Read more");
     await act(async () => toggle.click());
-    assert.doesNotMatch(body.className, /line-clamp/);
     assert.equal(toggle.getAttribute("aria-expanded"), "true");
-    assert.equal(text(hook(doc, "data-features-caption")?.lastElementChild), "Your choice of finish. Your choice of size.");
+    assert.match(body.className, /line-clamp-2/, "the card stays as it is (owner, 10 Nov 2026)");
+    assert.equal(text(doc.getElementById(toggle.getAttribute("aria-controls")!)!.querySelector("[data-pop-body]")), long, "and its popup tells the whole of it");
+    assert.deepEqual([...hook(doc, "data-features-caption")!.children].map(text), ["Aero Dining Chair"], "the finish-and-size line is gone (owner, 10 Nov 2026)");
   }, { ...product, sourceDetails: { ...product.sourceDetails!, details: long, materials: "Frame: Solid sheesham wood\nTop: Marble" } });
 });
 
@@ -274,4 +281,50 @@ test("the rating is Keeri's: one typed into the highlights is not shown, and the
     assert.equal(text(rating), "No reviews yet");
     assert.equal(hook(doc, "data-rating-summary"), null, "and the reviews band shows no score either");
   }, product, { highlights: { swatches: [], products: [{ handle: "aero-dining-chair", isNew: false, rating: { value: 4.3 } }] } });
+});
+
+// ---- Hear From Them before the first review (owner, 10 Nov 2026): an invitation, not an empty burgundy band ----------
+const bandClasses = (doc: Document) => (hook(doc, "data-reviews")?.getAttribute("class") ?? "").split(/\s+/);
+
+test("with no reviews yet, Hear From Them invites the first one: sized to its content, with a clear Write a review and a one-tap rating", async () => {
+  await mount((doc) => {
+    const band = hook(doc, "data-reviews")!;
+    assert.ok(band.hasAttribute("data-reviews-empty"), "the empty band has its own composition");
+    assert.deepEqual(bandClasses(doc).filter((name) => /h-\[75svh\]|min-h-\[540px\]|flex-1/.test(name)), [], "no three-quarter-screen band around nothing");
+    assert.ok(bandClasses(doc).includes("py-10"), "40px inside the band, as every band on the page");
+    assert.equal(text(band.querySelector("h2")), "Hear From Them");
+    assert.equal(text(hook(doc, "data-reviews-note")), "The Aero Dining Chair is waiting for its first review.", "named, and honest: no review is invented");
+    const write = band.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
+    assert.equal(text(write), "Write the first review");
+    assert.equal(write.getAttribute("data-fill-button"), "light", "white on burgundy, filling from the pointer");
+    assert.match(write.getAttribute("href")!, /^\/contact\?product=Aero\+Dining\+Chair/, "without script the link still leads to the team");
+    const rate = band.querySelector("[data-rate]")!;
+    assert.equal(rate.getAttribute("role"), "group");
+    assert.equal(text(doc.getElementById(rate.getAttribute("aria-labelledby")!)), "Rate the Aero Dining Chair");
+    assert.deepEqual([...rate.querySelectorAll("button[data-rate-star]")].map((star) => star.getAttribute("aria-label")), ["1 star", "2 stars", "3 stars", "4 stars", "5 stars"]);
+    assert.equal(band.querySelector("[data-review-slider]"), null, "no cards");
+    assert.equal(band.querySelector("[data-rating-summary]"), null, "and no score");
+  });
+});
+
+test("a rating without written reviews keeps the band to its content; only review cards take three quarters of the screen", async () => {
+  const rated: Product["productPage"] = {
+    specs: { widthCm: null, depthCm: null, heightCm: null, seatHeightCm: null, weightKg: null }, highlights: [], faq: [], assembly: null, customisation: null,
+    rooms: [], reviews: { average: 4.6, count: 12, items: [] }, media: [], bundles: [],
+  };
+  await mount((doc) => {
+    assert.equal(hook(doc, "data-reviews")!.hasAttribute("data-reviews-empty"), false, "a rated piece is not waiting for its first review");
+    assert.equal(text(hook(doc, "data-rating-summary")), "4.6");
+    assert.equal(text(hook(doc, "data-write-review")), "Write a review");
+    assert.deepEqual(bandClasses(doc).filter((name) => /h-\[75svh\]|min-h-\[540px\]/.test(name)), [], "nothing below the heading to fill");
+  }, { ...product, productPage: rated });
+});
+
+// The owner asked for the band in Maple's own red, #80241C (10 Nov 2026): one flat colour, with no light, shading or grain over it.
+test("the invitation band is flat maple red #80241C, with no light, shading or grain painted over it", () => {
+  const css = readFileSync(new URL("../styles/review-cards.css", import.meta.url), "utf8");
+  const tailwind = readFileSync(new URL("../styles/tailwind.css", import.meta.url), "utf8");
+  assert.match(tailwind, /--color-maple: #80241c;/i, "bg-maple is #80241C");
+  assert.doesNotMatch(css, /\[data-reviews-empty\]\s*\{[^}]*gradient/, "no light or darkened edges");
+  assert.doesNotMatch(css, /\[data-reviews-empty\]::after/, "no grain");
 });

@@ -85,7 +85,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   return (
     <div
       data-gallery
-      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[114px_minmax(0,1fr)] lg:items-start lg:gap-3")}
+      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[clamp(84px,7.5vw,114px)_minmax(0,1fr)] lg:items-start lg:gap-3")}
       role="group"
       aria-label="Product images"
       tabIndex={images.length > 1 ? 0 : undefined}
@@ -105,7 +105,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         {images.length ? (
           <button
             data-main-image
-            className={cx("relative block aspect-[4/5] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))]", cutout ? "bg-white" : "bg-cream")}
+            className={cx("relative block aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -157,7 +157,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

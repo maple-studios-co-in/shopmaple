@@ -185,6 +185,7 @@
   width: 28px;
   height: 28px;
   flex-basis: 28px;
+  object-fit: contain;
 }
 .cp-location-map {
   height: 180px;
@@ -224,9 +225,12 @@
   padding: 19px 16px;
   gap: 12px;
 }
+/* The icons at their own 36px square: the older sheet's 52px basis drew them 52 by 36, stretched. */
 .cp-help-categories button > img {
+  flex: 0 0 36px;
   width: 36px;
   height: 36px;
+  object-fit: contain;
 }
 .cp-help-categories button.is-active {
   background: #eee1d9;
@@ -265,6 +269,7 @@
   margin: 4px 0 0;
 }
 .cp-account-note .button {
+  flex: none;
   font-size: 12px;
   min-height: 40px;
   white-space: nowrap;
@@ -469,11 +474,22 @@
   .landing-journey ol {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .cp-help {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
   .suggested-story-hero .landing-promises {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* The help categories beside their answers keep two-line names on a small laptop (240px set them on three); below
+   991px the answers open in a dialog, so the categories take the whole width instead of a 240px strip beside an
+   empty column (owner, 10 Nov 2026). */
+@media (min-width: 991px) and (max-width: 1100px) {
+  .cp-help {
+    grid-template-columns: 272px minmax(0, 1fr);
+  }
+}
+@media (min-width: 750px) and (max-width: 990px) {
+  .cp-help {
+    display: block;
+    padding-inline: 40px;
   }
 }
 @media (max-width: 749px) {

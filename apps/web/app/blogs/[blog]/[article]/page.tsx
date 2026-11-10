@@ -3,7 +3,7 @@ import { BlogArticle } from "@/components/blog-article";
 import { getPublishedContent } from "@/lib/content";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
 import { JsonLd } from "@/components/store/json-ld";
-import { articleStructuredData, breadcrumbStructuredData, pageDescription, seoSettings } from "@/lib/seo";
+import { absolute, articleStructuredData, breadcrumbStructuredData, pageDescription, seoSettings } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -45,6 +45,6 @@ export default async function ArticlePage({
       articleStructuredData(seo, { title: post.title, excerpt: post.excerpt, path, image: post.cover?.src, published: post.publishedAt ?? undefined }),
       breadcrumbStructuredData(seo, [["Home", "/"], [record.title, `/blogs/${blog}`], [post.title, path]]),
     ]} />
-    <BlogArticle blog={blog} record={record!} article={article} post={post} />
+    <BlogArticle blog={blog} record={record!} post={post} shareUrl={absolute(seo, path)} />
   </>;
 }

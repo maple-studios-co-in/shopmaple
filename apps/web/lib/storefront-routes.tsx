@@ -13,6 +13,8 @@ import source from "@/data/store-content.json";
 import type { StorefrontDocument } from "@/lib/content";
 import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
+import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
+import { absolute, seoSettings } from "@/lib/seo";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 import { resolveServicePages } from "@/lib/service-page-defaults";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
@@ -58,9 +60,9 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
     const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
     const record = blogs.find((item) => item.handle === second);
     if (!record) return null;
-    if (third === undefined) return { title: record.title, path: `/blogs/${second}`, node: <BlogIndex blog={second} title={record.title} articles={record.articles} /> };
+    if (third === undefined) return { title: record.title, path: `/blogs/${second}`, node: <BlogIndex blog={second} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} /> };
     const post = record.articles.find((item) => item.handle === third);
-    return post ? { title: post.title, path: `/blogs/${second}/${third}`, node: <BlogArticle blog={second} record={record} article={third} post={post} /> } : null;
+    return post ? { title: post.title, path: `/blogs/${second}/${third}`, node: <BlogArticle blog={second} record={record} post={post} shareUrl={absolute(seoSettings(process.env), `/blogs/${second}/${third}`)} /> } : null;
   }
   return null;
 }

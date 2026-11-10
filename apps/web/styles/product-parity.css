@@ -30,3 +30,302 @@
 
 /* Large galleries: thumbnails outside the strip's viewport mount on intersection. */
 /* Option tiles without photos stay compact instead of framing an empty placeholder. */
+
+/* ---- Product pages keep the header pinned to the top (owner, 10 Nov 2026) ---- */
+/* It stays above the page (z-index 40, styles/header-menu.css), its menu opening under it as before. Once the page
+   scrolls it lifts off it on a soft shadow, tied to the scroll where the browser can do that without a script. */
+.site-header[data-sticky] {
+  position: sticky;
+  top: 0;
+}
+@supports (animation-timeline: scroll()) {
+  .site-header[data-sticky] {
+    animation: pdp-header-lift linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 140px;
+  }
+}
+@keyframes pdp-header-lift {
+  to {
+    box-shadow: 0 1px 0 rgb(41 37 31 / 0.05), 0 16px 32px -26px rgb(41 37 31 / 0.4);
+  }
+}
+/* What sticks under the header (the photos beside the buy box, the questions' heading) stops below it: at the header's
+   usual heights until the product page measures it (components/store/product-detail.tsx). */
+.site-header[data-sticky] ~ main {
+  --site-header-offset: 96px;
+}
+@media (max-width: 1099px) {
+  .site-header[data-sticky] ~ main {
+    --site-header-offset: 76px;
+  }
+}
+@media (max-width: 749px) {
+  .site-header[data-sticky] ~ main {
+    --site-header-offset: 68px;
+  }
+}
+/* A link to a part of the page lands under the header, not behind it. */
+[data-product-page] [id] {
+  scroll-margin-top: calc(var(--site-header-offset, 0px) + 24px);
+}
+
+/* ---- "Precision in Every Detail" (owner, 10 Nov 2026): a card opens like a chip ---- */
+/* The card stays as it is (components/store/product-features.tsx). It lifts a little under the pointer and, while its
+   popup is open, wears a soft red ring for the popup's caret to point at. */
+[data-features] [data-feature-surface] {
+  transition: border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  [data-features] [data-feature][data-open="false"] [data-feature-surface]:hover {
+    translate: 0 -2px;
+    border-color: rgb(128 36 28 / 0.22);
+    box-shadow: 0 18px 40px -26px rgb(74 30 20 / 0.4);
+  }
+}
+[data-features] [data-feature][data-open="true"] [data-feature-surface] {
+  border-color: rgb(128 36 28 / 0.32);
+  box-shadow: 0 0 0 4px rgb(128 36 28 / 0.05), 0 18px 40px -28px rgb(74 30 20 / 0.4);
+}
+/* The popup: a white panel on a soft, layered shadow, its content scrolling inside it when long. */
+[data-features] [data-feature-pop]:not([hidden]) {
+  display: flex;
+}
+[data-features] [data-feature-pop] {
+  flex-direction: column;
+  gap: 18px;
+  background: #fff;
+  border: 1px solid rgb(128 36 28 / 0.1);
+  box-shadow: 0 1px 2px rgb(41 37 31 / 0.06), 0 14px 32px -14px rgb(41 37 31 / 0.2), 0 44px 90px -36px rgb(74 30 20 / 0.34);
+  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), display 0.5s allow-discrete;
+}
+[data-features] [data-pop-content] {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+/* From 1024px it floats beside its card, towards the photo, its caret on the card's arrow, and grows out of the caret. */
+[data-features] [data-feature-pop][data-mode="beside"] {
+  position: absolute;
+  top: var(--pop-top, -10px);
+  z-index: 8;
+  width: clamp(340px, 28vw, 420px);
+  max-height: min(560px, calc(100svh - var(--site-header-offset, 0px) - 40px));
+  padding: 22px 22px 24px;
+  border-radius: 20px;
+}
+[data-features] [data-feature-pop][data-mode="beside"][data-side="right"] {
+  left: calc(100% + 18px);
+  transform-origin: 0 var(--caret-y, 36px);
+}
+[data-features] [data-feature-pop][data-mode="beside"][data-side="left"] {
+  right: calc(100% + 18px);
+  transform-origin: 100% var(--caret-y, 36px);
+}
+[data-features] [data-pop-caret] {
+  position: absolute;
+  top: calc(var(--caret-y, 36px) - 8px);
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgb(128 36 28 / 0.1);
+  background: #fff;
+  rotate: 45deg;
+}
+[data-features] [data-side="right"] > [data-pop-caret] {
+  left: -8.5px;
+  border-top-color: transparent;
+  border-right-color: transparent;
+}
+[data-features] [data-side="left"] > [data-pop-caret] {
+  right: -8.5px;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+[data-features] [data-feature-pop][data-mode="beside"][hidden] {
+  opacity: 0;
+  transform: translate(-10px, 6px) scale(0.96);
+}
+[data-features] [data-feature-pop][data-mode="beside"][data-side="left"][hidden] {
+  transform: translate(10px, 6px) scale(0.96);
+}
+@media (min-width: 1024px) {
+  [data-features] [data-feature-slot][data-open="true"] {
+    z-index: 6;
+  }
+}
+/* Below 1024px it is a sheet rising from the bottom of the screen over a soft backdrop: nothing on the page moves. */
+[data-features] [data-feature-pop][data-mode="sheet"] {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 71;
+  width: 100%;
+  max-width: 560px;
+  max-height: min(82svh, 680px);
+  margin-inline: auto;
+  padding: 30px 22px calc(26px + env(safe-area-inset-bottom));
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+}
+[data-features] [data-feature-pop][data-mode="sheet"]::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgb(41 37 31 / 0.14);
+  translate: -50% 0;
+}
+[data-features] [data-feature-pop][data-mode="sheet"][hidden] {
+  transform: translateY(100%);
+}
+[data-features] [data-pop-backdrop] {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgb(28 20 16 / 0.36);
+  transition: opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1), display 0.4s allow-discrete;
+}
+[data-features] [data-pop-backdrop][hidden] {
+  opacity: 0;
+}
+@starting-style {
+  [data-features] [data-feature-pop][data-mode="beside"] {
+    opacity: 0;
+    transform: translate(-10px, 6px) scale(0.96);
+  }
+  [data-features] [data-feature-pop][data-mode="beside"][data-side="left"] {
+    transform: translate(10px, 6px) scale(0.96);
+  }
+  [data-features] [data-feature-pop][data-mode="sheet"] {
+    transform: translateY(100%);
+  }
+  [data-features] [data-pop-backdrop] {
+    opacity: 0;
+  }
+}
+/* Its chips and rows rise into place one after another; a row's label is set apart by a dot. */
+@keyframes pdp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+[data-features] [data-feature-pop]:not([hidden]) :is([data-pop-chip], [data-pop-row]) {
+  animation: pdp-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(120ms + var(--i, 0) * 45ms);
+}
+[data-features] [data-pop-label]::after {
+  content: "\00B7";
+  margin-inline: 0.45em;
+  color: rgb(128 36 28 / 0.55);
+}
+/* Captured rich text: its lists read as the same pill rows. */
+[data-features] [data-pop-body] :is(ul, ol) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 0;
+  list-style: none;
+}
+[data-features] [data-pop-body] li {
+  padding: 10px 16px;
+  border: 1px solid rgb(128 36 28 / 0.1);
+  border-radius: 18px;
+  background: #faf6f3;
+  font-size: 13.5px;
+  line-height: 20px;
+}
+/* The hotspots: a faint ring breathes round each small plus until its line is open. */
+[data-features] [data-highlight-plus]::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px solid rgb(128 36 28 / 0.4);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: pdp-spot-ring 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation-delay: calc(var(--spot, 0) * 0.45s);
+}
+@keyframes pdp-spot-ring {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    scale: 1.6;
+  }
+}
+[data-features] [aria-expanded="true"] > [data-highlight-plus]::before {
+  animation: none;
+}
+/* A hotspot's line fades in beside it, drifting a few pixels out from the plus, and back as it closes. */
+[data-features] [data-highlight-chip] {
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), display 0.45s allow-discrete;
+}
+[data-features] [data-highlight-chip][hidden] {
+  opacity: 0;
+  transform: translateX(-8px) scale(0.97);
+}
+[data-features] [data-highlight-chip][data-side="left"][hidden] {
+  transform: translateX(8px) scale(0.97);
+}
+@starting-style {
+  [data-features] [data-highlight-chip] {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.97);
+  }
+  [data-features] [data-highlight-chip][data-side="left"] {
+    transform: translateX(8px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-features] [data-feature-surface],
+  [data-features] [data-feature-pop],
+  [data-features] [data-feature-pop] :is([data-pop-chip], [data-pop-row]),
+  [data-features] [data-pop-backdrop],
+  [data-features] [data-highlight-chip],
+  [data-features] [data-highlight-plus]::before {
+    transition: none;
+    animation: none;
+  }
+  [data-features] [data-feature][data-open="false"] [data-feature-surface]:hover {
+    translate: none;
+  }
+}
+
+/* ---- The questions (owner, 10 Nov 2026): an answer eases open and rises into place ---- */
+[data-faq] details[open] > [data-faq-answer] {
+  animation: pdp-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@supports (interpolate-size: allow-keywords) {
+  [data-faq] details {
+    interpolate-size: allow-keywords;
+  }
+  [data-faq] details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 0.5s cubic-bezier(0.22, 1, 0.36, 1), content-visibility 0.5s allow-discrete;
+  }
+  [data-faq] details[open]::details-content {
+    block-size: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-faq] details[open] > [data-faq-answer] {
+    animation: none;
+  }
+  [data-faq] details::details-content {
+    transition: none;
+  }
+}

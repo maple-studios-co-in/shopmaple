@@ -16,9 +16,10 @@ export function CompleteTheLook({ pieces }: { pieces: ProductCard[] }) {
       <h2 id="complete-look-title" className="m-0 text-[20px] leading-7 font-medium text-[#1c1c1c]">Complete the look</h2>
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {pieces.map((piece) => (
-          <li key={piece.id} data-look-item className="flex h-[112px] w-full items-center gap-3 rounded-[6px] border border-solid border-[#e6e2df] bg-white p-3">
-            <span className="relative h-[88px] w-16 shrink-0 overflow-hidden rounded-[4px] bg-cream [&_img]:object-cover">
-              <ProductImage src={piece.image ?? undefined} alt="" fill sizes="64px" />
+          <li key={piece.id} data-look-item className="flex h-[112px] w-full items-center gap-3 rounded-[10px] border border-solid border-[#e6e2df] bg-white p-3 transition-[border-color,box-shadow] duration-500 ease-[cubic-bezier(.22,1,.36,1)] hover:border-maple/20 hover:shadow-[0_14px_30px_-22px_rgb(74_30_20/0.4)]">
+            {/* The piece whole, never cut to the box (owner's standing rule). */}
+            <span className="relative size-[88px] shrink-0 overflow-hidden rounded-[8px] bg-[#f7f4f1] [&_img]:object-contain">
+              <ProductImage src={piece.image ?? undefined} alt="" fill sizes="88px" />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-1.5">
               <span data-look-name className="line-clamp-2 text-[14px] leading-5 font-semibold text-[#1c1c1c]">{piece.title}</span>

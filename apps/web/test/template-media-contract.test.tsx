@@ -57,6 +57,7 @@ test("template fallback resolution preserves original assets and caller labels w
   assert.deepEqual(selected, { key: "home-newsletter", image: "/media/override.webp", alt: "Updated room" });
   selected.alt = "Mutated";
   assert.equal(override[0]!.alt, "Updated room");
-  assert.equal(templateMediaSlots.length, 47);
+  // Our Story's redesign (10 Nov 2026) traded the film poster for the belief photo and added seven chapter photos.
+  assert.equal(templateMediaSlots.length, 54);
   assert.equal(parse(templateMediaSlots.map(({ label: _label, group: _group, ...asset }) => asset)).success, true);
 });

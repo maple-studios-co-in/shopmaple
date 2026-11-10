@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { JSDOM } from "jsdom";
-import { renderToStaticMarkup } from "react-dom/server";
 import { resolveEditorialContent } from "../lib/editorial-content-defaults";
 import source from "../data/store-content.json";
 import BlogPage from "../app/blogs/[blog]/page";
 import ArticlePage, { generateMetadata } from "../app/blogs/[blog]/[article]/page";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { isCatalogueRead, renderSettled, storyLinks } from "./support/blog-fixtures";
 
 const cover = `/media/uploads/${"a".repeat(64)}.webp`;
 const bodyImage = `/media/uploads/${"b".repeat(64)}.webp`;
@@ -25,10 +24,12 @@ const article = {
   ],
 };
 const params = (handle = article.handle, blog = "recent-stories") => ({ params: Promise.resolve({ blog, article: handle }) });
-const documentFor = (element: Parameters<typeof renderToStaticMarkup>[0]) => new JSDOM(renderToStaticMarkup(element)).window.document;
+const documentFor = (element: Parameters<typeof renderSettled>[0]) => renderSettled(element);
 async function withResponse(body: unknown, run: () => Promise<void>) {
   const previous = globalThis.fetch;
   globalThis.fetch = async (url) => {
+    // The product bands read the public catalogue, which is unavailable here.
+    if (isCatalogueRead(String(url))) return Response.json({ code: "NOT_FOUND" }, { status: 404 });
     assert.ok(String(url).endsWith("/api/content/storefront"), "public render must only read published endpoint");
     if (body === "offline") throw Error("offline");
     return body === null ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json(body);
@@ -53,15 +54,15 @@ test("resolver preserves every imported article while appending published author
 
 test("published new article is discoverable in its blog with its cover and date order", async () => {
   await withResponse(published([article, { ...article, blog: "news", handle: "news-chair" }]), async () => {
-    const doc = documentFor(await BlogPage({ params: Promise.resolve({ blog: "recent-stories" }) }));
-    assert.equal(doc.querySelectorAll("article").length, 11);
+    const doc = await documentFor(await BlogPage({ params: Promise.resolve({ blog: "recent-stories" }) }));
+    assert.equal(storyLinks(doc).length, 11);
     assert.equal(doc.querySelector("article h2 a")?.getAttribute("href"), "/blogs/recent-stories/a-room-for-reading");
-    assert.equal(doc.querySelector("article p")?.textContent, "Make space for a quiet moment.");
+    assert.equal(doc.querySelector("[data-slide-excerpt]")?.textContent, "Make space for a quiet moment.");
     assert.equal(doc.querySelector("article img")?.getAttribute("src"), cover);
     assert.equal(doc.querySelector("article img")?.getAttribute("alt"), "An oak reading chair");
     assert.equal(doc.querySelector('[href="/blogs/recent-stories/news-chair"]'), null);
-    const news = documentFor(await BlogPage({ params: Promise.resolve({ blog: "news" }) }));
-    assert.equal(news.querySelectorAll("article").length, 1);
+    const news = await documentFor(await BlogPage({ params: Promise.resolve({ blog: "news" }) }));
+    assert.equal(storyLinks(news).length, 1);
     assert.equal(news.querySelector("article h2 a")?.getAttribute("href"), "/blogs/news/news-chair");
   });
 });
@@ -71,16 +72,16 @@ test("published authored article renders all structured blocks safely and suppli
     // Exposes route creation as an assertion failure, rather than treating Next's 404 as setup failure.
     const page = await ArticlePage(params()).catch(() => null);
     assert.notEqual(page, null, "published authored article must have a public route");
-    const doc = documentFor(page);
+    const doc = await documentFor(page);
     assert.equal(doc.querySelector("h1")?.textContent, "A room for reading");
     assert.equal(doc.querySelector("time")?.getAttribute("datetime"), "2026-10-26T00:00:00.000Z");
-    assert.equal(doc.querySelector("section > img")?.getAttribute("src"), cover);
+    assert.equal(doc.querySelector("img[data-article-hero]")?.getAttribute("src"), cover);
     assert.equal(doc.querySelector("article p")?.textContent, 'Read <script>alert("x")</script> as text.');
     assert.equal(doc.querySelector("article h2")?.textContent, "Choose a corner");
     assert.equal(doc.querySelector("article h3")?.textContent, "Consider the light");
     assert.equal(doc.querySelector("blockquote")?.textContent, "A quiet place matters.");
-    assert.deepEqual([...doc.querySelectorAll("ol li")].map(item => item.textContent), ["Measure your space", "Try the chair"]);
-    assert.deepEqual([...doc.querySelectorAll("ul li")].map(item => item.textContent), ["Natural light", "A side table"]);
+    assert.deepEqual([...doc.querySelectorAll("article ol li")].map(item => item.textContent), ["Measure your space", "Try the chair"]);
+    assert.deepEqual([...doc.querySelectorAll("article ul li")].map(item => item.textContent), ["Natural light", "A side table"]);
     assert.equal(doc.querySelector("article a")?.getAttribute("href"), "/collections/chairs");
     assert.equal(doc.querySelector("article img")?.getAttribute("src"), bodyImage);
     assert.equal(doc.querySelector("article img")?.getAttribute("alt"), 'Reading nook <img src=x onerror="bad()">');
@@ -95,8 +96,8 @@ test("draft, missing date, malformed and unavailable articles cannot create publ
   for (const body of [null, "offline", { version: 2, draft: published().content }, published([{ ...article, publishedAt: null }]), published([{ ...article, blocks: [{ id: "unsafe", type: "link", text: "Unsafe", href: "javascript:alert(1)" }] }])]) {
     await withResponse(body, async () => {
       await assert.rejects(() => ArticlePage(params()), /NEXT_HTTP_ERROR_FALLBACK;404/);
-      const doc = documentFor(await BlogPage({ params: Promise.resolve({ blog: "recent-stories" }) }));
-      assert.equal(doc.querySelectorAll("article").length, 10);
+      const doc = await documentFor(await BlogPage({ params: Promise.resolve({ blog: "recent-stories" }) }));
+      assert.equal(storyLinks(doc).length, 10);
       assert.equal(doc.querySelector("article h2")?.textContent, "How to Measure Furniture Before Ordering Online");
     });
   }

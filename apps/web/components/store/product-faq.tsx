@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUp } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
 /**
  * Answers come from the store's published policies (shipping, refund and warranty). The frame's eight copies of
@@ -24,9 +24,10 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
   return (
     <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 font-text text-black md:px-12">
       <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">
-        {/* Sticky beside the questions (owner, 9 Nov 2026). Its bottom margin is about one question's height, so it lets go
-            as the last question comes level with it and then scrolls with the page: the next section never closes in on it. */}
-        <div data-faq-heading className="flex flex-col items-start gap-6 lg:sticky lg:top-8 lg:mb-24 lg:w-[452px] lg:shrink-0 lg:self-start wide:w-[30vw]">
+        {/* Sticky beside the questions (owner, 9 Nov 2026), 32px under the pinned header (10 Nov 2026). Its bottom margin is
+            about one question's height, so it lets go as the last question comes level with it and then scrolls with the
+            page: the next section never closes in on it. */}
+        <div data-faq-heading className="flex flex-col items-start gap-6 lg:sticky lg:top-[calc(var(--site-header-offset,0px)+32px)] lg:mb-24 lg:w-[clamp(340px,36vw,452px)] lg:shrink-0 lg:self-start wide:w-[30vw]">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
           <p className="m-0 font-heading text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
           <Link data-faq-contact href="/contact" className="inline-flex h-11 items-center gap-2 rounded-[30px] bg-maple px-5 text-[14px] font-medium text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
@@ -35,21 +36,21 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px] rounded-full bg-white p-1" />
           </Link>
         </div>
-        <div data-faq-questions className="max-w-[452px] lg:w-[452px] lg:shrink-0 wide:w-[44vw] wide:max-w-none">
+        <div data-faq-questions className="max-w-[452px] lg:w-[clamp(400px,44vw,452px)] lg:shrink-0 wide:w-[44vw] wide:max-w-none">
           {items.map(([question, answer], i) => (
             <details key={question} data-faq-item open={open === i} className="group border-0 border-b border-solid border-maple/8"
               onToggle={(event) => {
                 const opened = event.currentTarget.open;
                 setOpen((current) => (opened ? i : current === i ? -1 : current));
               }}>
-              <summary className="flex min-h-[93px] cursor-pointer list-none items-center gap-4 text-[18px] leading-[1.6] font-medium marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple [&::-webkit-details-marker]:hidden">
-                {/* Up while closed, down once the answer shows (owner, 6 Nov 2026). */}
-                <span data-faq-arrow aria-hidden="true" className="grid size-[33px] shrink-0 place-items-center rounded-full bg-maple/8 text-maple transition-transform group-open:rotate-180 motion-reduce:transition-none">
-                  <ArrowUp className="size-4" strokeWidth={2} />
+              <summary className="group/question flex min-h-[93px] cursor-pointer list-none items-center gap-4 py-3 text-[18px] leading-[1.6] font-medium marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple [&::-webkit-details-marker]:hidden">
+                {/* Down while closed, turning up once the answer shows (owner, 10 Nov 2026). */}
+                <span data-faq-arrow aria-hidden="true" className="grid size-[33px] shrink-0 place-items-center rounded-full bg-maple/8 text-maple transition-transform duration-500 ease-[cubic-bezier(.22,1,.36,1)] group-open:rotate-180 group-hover/question:scale-110 motion-reduce:transition-none">
+                  <ArrowDown className="size-4" strokeWidth={2} />
                 </span>
                 {question}
               </summary>
-              <p className="m-0 pb-6 pl-[49px] text-[14px] leading-[1.6]">{answer}</p>
+              <p data-faq-answer className="m-0 pb-6 pl-[49px] text-[14px] leading-[1.6]">{answer}</p>
             </details>
           ))}
         </div>

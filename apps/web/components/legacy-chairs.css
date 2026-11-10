@@ -156,7 +156,9 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
-.legacy-chairs .legacy-chairs-room-products > .product-card {
+/* Every card in a room's rail keeps its width, the redesigned cards too: they carry data-product-card, not the old
+   .product-card class, and were squeezed to 67px each, their names clipped (owner, 10 Nov 2026). */
+.legacy-chairs .legacy-chairs-room-products > [data-product-card] {
   flex: 0 0 250px;
   min-width: 0;
   scroll-snap-align: start;
@@ -210,6 +212,32 @@
   cursor: pointer;
   font-weight: 600;
   line-height: 1.5;
+  list-style: none;
+}
+.legacy-chairs .legacy-chairs-faq summary::-webkit-details-marker {
+  display: none;
+}
+/* Where the browser's sideways triangle was, an arrow pointing down while closed that turns up once open (owner, 10 Nov 2026). */
+.legacy-chairs .legacy-chairs-faq summary::before {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  margin: 0 0.8em 0.22em 0.12em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  vertical-align: middle;
+  rotate: 45deg;
+  transition: rotate 0.5s cubic-bezier(0.22, 1, 0.36, 1), translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.legacy-chairs .legacy-chairs-faq details[open] > summary::before {
+  rotate: 225deg;
+  translate: 0 0.2em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .legacy-chairs .legacy-chairs-faq summary::before {
+    transition: none;
+  }
 }
 .legacy-chairs .legacy-chairs-faq details p {
   line-height: 1.7;
@@ -234,7 +262,7 @@
   .legacy-chairs .legacy-chairs-room {
     grid-template-columns: 1fr;
   }
-  .legacy-chairs .legacy-chairs-room-products > .product-card {
+  .legacy-chairs .legacy-chairs-room-products > [data-product-card] {
     flex-basis: clamp(150px, calc(50% - 10px), 250px);
   }
 }
@@ -279,7 +307,7 @@
   .legacy-chairs .legacy-chairs-room-products {
     gap: 16px;
   }
-  .legacy-chairs .legacy-chairs-room-products > .product-card {
+  .legacy-chairs .legacy-chairs-room-products > [data-product-card] {
     flex-basis: 192px;
   }
   .legacy-chairs .legacy-chairs-room-image > div {

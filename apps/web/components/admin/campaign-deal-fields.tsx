@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { campaignDealSchema, type CampaignContent } from "@shopmaple/contracts";
 import { Plus } from "lucide-react";
 import { endsLabel } from "@/components/store/product-deal";
@@ -18,6 +19,8 @@ export function CampaignDealFields({ value, endsAt, onChange }: {
   // The control that was clicked goes away with the click, so focus moves on to what replaced it.
   const focus = usePendingFocus<"fields" | "add">(value === undefined);
   const change = (deal: Deal | undefined, target: "fields" | "add") => { focus.focusAfter(target); onChange(deal); };
+  // When the screen opened, for telling an end that has already passed (owner, 10 Nov 2026: "it is not coming").
+  const [openedAt] = useState(Date.now);
   return (
     <section aria-label="Product page timer" className="mt-8 grid gap-4 rounded-lg border border-line-soft bg-surface p-4 sm:p-5">
       <div className="flex items-start justify-between gap-4">
@@ -35,9 +38,11 @@ export function CampaignDealFields({ value, endsAt, onChange }: {
             </FieldGrid>
           </div>
           {problems(value).map((message) => <p key={message} data-field-error className="text-xs font-medium text-danger">{message}</p>)}
-          {endsAt
-            ? <p className="text-xs text-muted-foreground">Counts down to {endsLabel(endsAt)}.</p>
-            : <Notice tone="info">Add an end time to the campaign schedule. The timer needs a deadline, and stays hidden until it has one.</Notice>}
+          {!endsAt
+            ? <Notice tone="info">Add an end time to the campaign schedule. The timer needs a deadline, and stays hidden until it has one.</Notice>
+            : Date.parse(endsAt) > openedAt
+              ? <p className="text-xs text-muted-foreground">Counts down to {endsLabel(endsAt)}.</p>
+              : <Notice tone="info">This end has passed, so product pages show no timer. Move the end in the schedule above to run it again.</Notice>}
         </>
       ) : (
         <div><ActionButton icon={Plus} ref={focus.track("add")} onClick={() => change({ offer: "", code: "" }, "fields")}>Add a timer offer</ActionButton></div>

@@ -32,7 +32,7 @@ import { VariantSelector } from "./variant-selector";
 import { selectedVariant, variantGallery } from "@/lib/product-address";
 import { resolveHotspots, type Cutout } from "@/lib/product-hotspots";
 import { cutoutOf, productFaq, productHighlightLines, productRating, productReviews, realPhotoGroups, specLines } from "@/lib/product-page-data";
-import { choiceLine, labelledRows, richPlain } from "@/lib/product-detail-text";
+import { labelledRows, richPlain } from "@/lib/product-detail-text";
 
 type Presentation = {
   variantImages: Record<string, string>;
@@ -187,6 +187,20 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     const timer = window.setTimeout(() => setShared(""), 4000);
     return () => window.clearTimeout(timer);
   }, [shared]);
+  // The header stays pinned on product pages (owner, 10 Nov 2026): its height, measured, is where the page's own sticky
+  // parts stop. Until this runs, styles/product-parity.css gives the header's usual heights.
+  const page = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>(".site-header[data-sticky]");
+    const root = page.current;
+    if (!header || !root) return;
+    const measure = () => root.style.setProperty("--site-header-offset", `${Math.round(header.getBoundingClientRect().height)}px`);
+    measure();
+    if (typeof ResizeObserver !== "function") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   async function share() {
     const url = window.location.href;
     try {
@@ -218,7 +232,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const dimensionRows = measured.length ? measured : labelledRows(dimensions);
   const ownWarranty = source?.warranty?.trim();
   // No item code: the owner asked for it off the page (2 Nov 2026); enquiries still carry the SKU.
-  if (dimensions || measured.length) features.push({ key: "specification", title: "Specifications", icon: "detail-spec", body: dimensionRows ? undefined : dimensions,
+  // Specifications open as a popup of chips, one per measurement (owner, 10 Nov 2026).
+  if (dimensions || measured.length) features.push({ key: "specification", title: "Specifications", icon: "detail-spec", body: dimensionRows ? undefined : dimensions, chips: true,
     rows: [...(dimensionRows ?? []), ...(ownWarranty ? [["Warranty", ownWarranty] as [string, string]] : [])] });
   const care = capturedCare ? undefined : source?.careInstructions?.trim();
   if (care) features.push({ key: "care", title: "Material Care", icon: "detail-care", body: care, long: care.length > previewChars });
@@ -229,7 +244,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   // cover and warranty); it never invents a specification.
   const storeWarranty = ownWarranty || "36 months";
   if (!features.some((feature) => feature.key === "specification"))
-    features.push({ key: "specification", title: "Specifications", icon: "detail-spec", rows: [
+    features.push({ key: "specification", title: "Specifications", icon: "detail-spec", chips: true, rows: [
       ...(variant?.stockPolicy === "made_to_order" ? [["Made", "To order, in our Delhi workshop"] as [string, string]] : []),
       ["Measurements", "Shared on request"], ["Warranty", storeWarranty]], link: { label: "Ask Maple for exact dimensions", href: enquiryHref } });
   if (!features.some((feature) => feature.key === "materials"))
@@ -239,17 +254,17 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     features.push({ key: "delivery", title: "Delivery & Warranty", icon: "feature-about", rows: [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", storeWarranty]] });
   // Keeri's highlights have no position: they stand on the finish's white-background photo, the piece whole in the middle.
   const highlightPhoto = highlightLines.length ? cutoutFor(variantId)?.image : undefined;
-  const tagline = choiceLine([materials, richPlain(captured?.materialsCare)].join(" "));
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
   const deal = useRunningDeal(highlights, openedAt);
   return (
     // 30px between the sections (owner, 9 Nov 2026).
-    <div data-store data-product-page className="flex flex-col gap-[30px] bg-white font-text text-black">
+    <div ref={page} data-store data-product-page className="flex flex-col gap-[30px] bg-white font-text text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(455px,32%)] lg:gap-[35px]">
-        {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window. */}
-        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(clamp(400px,40vw,455px),32%)] lg:gap-[clamp(24px,2.4vw,35px)]">
+        {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window.
+            It stops 24px under the pinned header (owner, 10 Nov 2026). */}
+        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[calc(var(--site-header-offset,0px)+24px)] lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             cutoutImage={cutoutFor(variantId)?.image}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
@@ -293,7 +308,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               {highlightLines.map((line) => <li key={line} className="flex gap-2"><span aria-hidden="true" className="text-maple">✓</span>{line}</li>)}
             </ul>
           )}
-          {deal && <ProductDeal key={dealKey(deal)} deal={deal} />}
+          {deal && <ProductDeal key={dealKey(deal)} deal={deal} openedAt={openedAt} />}
           {product.variants.length > 1 && (
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
@@ -410,7 +425,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       </section>
       {deal && <DealTab key={dealKey(deal)} deal={deal} />}
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
-      <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} tagline={tagline} />
+      <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} />
       <ProductBanner />
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)}
