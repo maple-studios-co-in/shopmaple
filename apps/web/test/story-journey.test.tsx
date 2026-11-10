@@ -6,7 +6,7 @@ import { JSDOM } from "jsdom";
 import { StoryJourneySlider } from "../components/story-journey";
 
 // The Maple journey's timeline slider (Figma 293:1434): the years and arrows choose a chapter; keys, swipes and drags move.
-const dom = new JSDOM('<!doctype html><button id="before">Before</button><div id="root"></div>', { url: "http://localhost:3100/pages/our-story" });
+const dom = new JSDOM('<!doctype html><button id="before">Before</button><div id="root"></div>', { url: "http://localhost:3100/our-story" });
 const { window } = dom;
 Object.assign(globalThis, { window, document: window.document, HTMLElement: window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 let reduced = false;

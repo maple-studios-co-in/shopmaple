@@ -20,18 +20,12 @@ test("contact page titles allow the root layout to add the brand once", async ()
     );
   } finally { globalThis.fetch = previous; }
 });
-import React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { ContactHelp } from "../components/contact-form";
-import { contactCategories } from "../lib/contact-content";
-test("source help copy is accompanied by truthful account availability", () => {
-  const markup = renderToStaticMarkup(
-    <ContactHelp categories={contactCategories} />,
-  );
-  assert.match(
-    markup,
-    /Account sign-in and order tracking are not available on this storefront yet/,
-  );
+import { resolveContactPage } from "../lib/contact-page-content";
+import { defaultServicePages } from "../lib/service-page-defaults";
+test("the contact page's help is truthful about accounts: none to sign in to, and no order page to send customers to", () => {
+  const answers = resolveContactPage(defaultServicePages.contact).categories.flatMap(category => category.questions.map(question => question.answer)).join("\n");
+  assert.match(answers, /Customer accounts arrive with online checkout/);
+  assert.doesNotMatch(answers, /My Orders|signup link|sign up through Gmail/i);
 });
 
 import * as collectionPage from "../app/collections/[handle]/page";

@@ -55,10 +55,11 @@ export default async function ContactPage({
         ? query.pincode
         : "",
   };
-  const content = resolveServicePages((await getPublishedContent()).servicePages);
+  const site = await getPublishedContent();
+  const content = resolveServicePages(site.servicePages);
   return slug === "bulk-enquiry" ? (
-    <BulkEnquiry context={context} content={content.bulk} />
+    <BulkEnquiry context={context} content={content.bulk} site={site} />
   ) : (
-    <Contact context={context} content={content.contact} />
+    <Contact context={context} content={content.contact} site={site} />
   );
 }

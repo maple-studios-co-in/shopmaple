@@ -44,8 +44,8 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
       return { title: resolveNimbusPageContent(content.nimbusPage).title, path, node: <NimbusLanding content={content.nimbusPage} media={content.templateMedia} /> };
     }
     const services = resolveServicePages(content.servicePages);
-    if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} /> };
-    if (second === "bulk-enquiry") return { title: services.bulk.title, path, node: <BulkEnquiry context={emptyEnquiryContext} content={services.bulk} /> };
+    if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} site={content} /> };
+    if (second === "bulk-enquiry") return { title: services.bulk.title, path, node: <BulkEnquiry context={emptyEnquiryContext} content={services.bulk} site={content} /> };
     if (second === "returns") return { title: services.returns.title, path, node: <ReturnsPageContent content={services.returns} footer={resolveSiteChrome(content.siteChrome).footer} /> };
     const page = content.pages.find((page) => page.slug === second);
     return page ? { title: page.title, path, node: <ContentPage page={page} /> } : null;

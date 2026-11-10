@@ -13,7 +13,7 @@ import { Field } from "./field";
 import { ActionButton, FieldGrid, PanelHeader, Prose, SectionHeading, SelectField } from "./kit";
 import { MediaPicker } from "./media-picker";
 
-const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"] as const;
+const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry"] as const;
 type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
 
 /** The Artwork screen: every page's artwork, chosen by group and placement. */

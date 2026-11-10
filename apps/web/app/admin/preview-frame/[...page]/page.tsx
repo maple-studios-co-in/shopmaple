@@ -12,6 +12,10 @@ import "@/styles/admin.css";
 import "@/styles/blog.css";
 // So does Our Story (owner, 10 Nov 2026).
 import "@/styles/our-story.css";
+// And the contact page (Figma 298:511, owner 10 Nov 2026).
+import "@/styles/contact-page.css";
+// And Bulk Enquiry (Figma 298:924, owner 10 Nov 2026).
+import "@/styles/bulk-enquiry.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {

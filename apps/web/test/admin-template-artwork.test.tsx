@@ -69,7 +69,7 @@ test("legacy Artwork browsing shows grouped original placements without creating
   try {
     assert.equal(button("Save draft").disabled, true, "Existing clean drafts remain clean");
     await click("Artwork");
-    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story"]);
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry"]);
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 8);
     await select("Artwork placement", "home-nimbus");
     assert.equal(input("Desktop image URL").value, originalDesktop);
@@ -83,6 +83,13 @@ test("legacy Artwork browsing shows grouped original placements without creating
     await select("Artwork group", "Our Story");
     // The opening and belief photos and one per journey chapter (Our Story redesign, 10 Nov 2026).
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 9);
+    // The contact page's redesign (Figma 298:511, owner 10 Nov 2026): its opening photo and the Delhi workshop.
+    await select("Artwork group", "Contact");
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent), ["Introduction photo", "Delhi workshop photo"]);
+    // The Bulk Enquiry redesign (owner, 10 Nov 2026): the opening, one photo per step and the proposal's.
+    await select("Artwork group", "Bulk Enquiry");
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent),
+      ["Opening photo", "Meet your designer photo", "Refine every detail photo", "Bring it home photo", "Proposal photo"]);
     assert.equal(button("Save draft").disabled, true);
     await click("Homepage"); await fill("Category heading", "Sibling text"); await click("Save draft");
     assert.equal(app.saved().content.templateMedia, undefined);

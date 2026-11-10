@@ -3,6 +3,7 @@ import { test } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
+import { storefrontContentSchema } from "@shopmaple/contracts";
 import { ContentEditor } from "../components/admin/editor";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 const dom=new JSDOM('<div id="root"></div>',{url:"http://localhost:3000/admin"});
@@ -19,17 +20,24 @@ for(const conflict of[false,true]) test(`staff edit Contact, Bulk and Returns th
     await act(async()=>root.render(<ContentEditor session={{user:{id:"editor",email:"editor@example.test",role:"editor"},csrfToken:"c".repeat(64)}} initialContent={defaultStorefrontContent} onExpired={()=>assert.fail("Unexpected expiry")}/>));
     await act(async()=>button("Existing pages").click());await page("contact");
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Contact page title"]')?.value,"Contact Us","Contact template must be editable");
+    // The contact page opens on its redesign (Figma 298:511, owner 10 Nov 2026).
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Contact heading"]')?.value,"A conversation.\nA considered beginning.");
     await fill("Contact page title","Talk to Maple");await fill("Contact heading","A home made around you");await fill("Contact help heading","Find an answer");
     await fill("Contact Tracking category title","Your delivery");await fill("Contact Tracking question 1","Where is my order?");await fill("Contact Tracking answer 1","<script>literal text</script> Contact our team.");
     await fill("Contact cities heading","Cities we serve");
-    const move=button("Move Contact Help up");move.focus();await act(async()=>move.click());assert.equal(document.activeElement,move);assert.equal(move.disabled,true);
+    // Its six regions: Help moves up past three to the top; Cities starts hidden.
+    const move=button("Move Contact Help up");move.focus();for(let i=0;i<3;i++)await act(async()=>move.click());assert.equal(document.activeElement,move);assert.equal(move.disabled,true);
     await act(async()=>container.querySelector<HTMLInputElement>('[aria-label="Show Contact Cities"]')!.click());
+    await fill("Contact enquiry heading","Tell us\nwhat you need");
     await page("bulk");assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Bulk page title"]')?.value,"Bulk Enquiry");
-    await fill("Bulk heading","Spaces for your business");await fill("Bulk trust heading","Built with care");await fill("Bulk project count","125+");
-    await fill("Bulk Quality promise","Carefully checked");await fill("Bulk process heading","Your project journey");await fill("Bulk Meet step body","Tell us about your space.");
+    // The Bulk Enquiry redesign (Figma 298:924, owner 10 Nov 2026): the editor opens on the page as it now reads.
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Bulk heading"]')?.value,"Spaces with purpose.\nFurniture with presence.");
+    await fill("Bulk heading","Spaces for your business");await fill("Bulk advantages heading","Built with care");await fill("Bulk project count","125+");
+    await fill("Bulk Quality advantage","Carefully checked");await fill("Bulk process heading","Your project journey");await fill("Bulk Meet step body","Tell us about your space.");
     await fill("Bulk business body","Discuss your furnishing project.");await fill("Bulk business feature 1","Furniture for your brief");await fill("Bulk business button","Discuss bulk furniture");
+    await fill("Bulk opening button","Plan a project");await fill("Bulk cities figure","25+");await fill("Bulk proposal heading","Tell us\nabout it");await fill("Bulk form button","Send brief");await fill("Bulk cities line","Delhi · Pune");
     const bulkMove=button("Move Bulk Process up");bulkMove.focus();await act(async()=>bulkMove.click());assert.equal(document.activeElement,bulkMove);
-    await act(async()=>container.querySelector<HTMLInputElement>('[aria-label="Show Bulk Hero and form"]')!.click());
+    await act(async()=>container.querySelector<HTMLInputElement>('[aria-label="Show Bulk Opening"]')!.click());
     await page("returns");assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Returns heading"]')?.value,"Return & Exchange");
     await fill("Returns page title","");await act(async()=>button("Save draft").click());assert.equal(puts,0,"Invalid copy must not be sent");
     await fill("Returns page title","Returns support");await fill("Returns heading","Help with a return");await fill("Returns policy link label","Read our refund policy");await fill("Returns introduction","Tell us about your order.");
@@ -37,11 +45,14 @@ for(const conflict of[false,true]) test(`staff edit Contact, Bulk and Returns th
     await act(async()=>button("Save draft").click());assert.ok(saved);assert.equal(puts,1);assert.equal(saved.expectedVersion,4);
     const c=saved.content.servicePages;
     assert.equal(c.contact.title,"Talk to Maple");assert.equal(c.contact.helpHeading,"Find an answer");assert.equal(c.contact.cities.heading,"Cities we serve");
-    assert.deepEqual(c.contact.sections,[{key:"help",enabled:true},{key:"intro",enabled:true},{key:"cities",enabled:false}]);
+    assert.deepEqual(c.contact.sections,["help","intro","reach","enquiry","visit","cities"].map(key=>({key,enabled:true})));assert.equal(c.contact.enquiryHeading,"Tell us\nwhat you need");
     assert.equal(c.contact.categories[0].key,"tracking");assert.equal(c.contact.categories[0].title,"Your delivery");assert.deepEqual(c.contact.categories[0].questions[0],{key:"q1",question:"Where is my order?",answer:"<script>literal text</script> Contact our team."});
     assert.equal(c.bulk.heading,"Spaces for your business");assert.equal(c.bulk.trust.metricValue,"125+");assert.equal(c.bulk.trust.items.find((i:any)=>i.key==="quality").title,"Carefully checked");
-    assert.deepEqual(c.bulk.sections.slice(0,3),[{key:"hero",enabled:false},{key:"process",enabled:true},{key:"trust",enabled:true}]);
+    assert.deepEqual(c.bulk.sections.slice(0,4),[{key:"hero",enabled:false},{key:"figures",enabled:true},{key:"process",enabled:true},{key:"trust",enabled:true}]);
     assert.equal(c.bulk.process.steps.find((i:any)=>i.key==="meet").body,"Tell us about your space.");assert.equal(c.bulk.business.features[0],"Furniture for your brief");assert.equal(c.bulk.business.cta,"Discuss bulk furniture");
+    assert.equal(c.bulk.trust.heading,"Built with care");assert.equal(c.bulk.heroCta,"Plan a project");assert.equal(c.bulk.figures.find((i:any)=>i.key==="cities").value,"25+");
+    assert.equal(c.bulk.proposal.heading,"Tell us\nabout it");assert.equal(c.bulk.proposal.cta,"Send brief");assert.equal(c.bulk.cities.body,"Delhi · Pune");
+    assert.equal(storefrontContentSchema.safeParse(saved.content).success,true,"the saved draft passes the storefront contract");
     assert.deepEqual(c.returns,{title:"Returns support",heading:"Help with a return",policyLabel:"Read our refund policy",intro:"Tell us about your order."});
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Contact heading"]')?.value,"A home made around you","Conflict retains local edits");
     assert.match(container.textContent??"",conflict?/another editor|changed|conflict/i:/Draft saved/);assert.match(container.textContent??"",/Published version 2/);
