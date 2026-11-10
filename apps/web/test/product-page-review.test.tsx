@@ -29,6 +29,8 @@ const empty: Cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR"
 const inDays = (ms: number) => new Date(Date.now() + ms).toISOString();
 const DAY = 86_400_000, HOUR = 3_600_000, MINUTE = 60_000;
 const deal = { offer: "10% off", code: "PREVIEW10", endsAt: inDays(2 * DAY + 3 * HOUR + 4 * MINUTE + 30_500) };
+// The product's own Keeri offer, which is what the box and the tab show.
+const offered: Product = { ...product, offer: { label: "10% off", code: "PREVIEW10", startsAt: inDays(-DAY), endsAt: deal.endsAt } };
 const card = (handle: string, title: string, pricePaise: number | null, category: ProductCard["category"] = "tables") =>
   toProductCard({ id: handle, handle, title, images: [`https://example.com/${handle}.jpg`], category, variants: [{ pricePaise, compareAtPaise: null }] });
 
@@ -50,9 +52,9 @@ async function mount(check: (doc: Document) => void | Promise<void>, value: Prod
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, " ").trim();
 const hook = (doc: Document, name: string) => doc.querySelector(`[${name}]`);
 
-test("the store-wide deal is optional, names an offer and a code, and ends at a real time", () => {
+test("a legacy store-wide deal saved in the content still parses as it was saved; the page no longer reads it", () => {
   const base = { swatches: [], products: [] };
-  assert.equal(productHighlightsSchema.safeParse(base).success, true, "documents saved before the deal stay valid");
+  assert.equal(productHighlightsSchema.safeParse(base).success, true, "documents without one stay valid");
   assert.equal(productHighlightsSchema.safeParse({ ...base, deal }).success, true);
   assert.equal(productHighlightsSchema.safeParse({ ...base, deal: { ...deal, code: "SALE30%" } }).success, true, "the frame's own code shape");
   for (const bad of [{ ...deal, code: "sale 20" }, { ...deal, code: "" }, { ...deal, offer: " " }, { ...deal, endsAt: "next week" }, { ...deal, extra: 1 }])
@@ -67,7 +69,7 @@ test("the buy box opens with the piece's category as a chip linking to its colle
   }, product, { highlights: { swatches: [], products: [{ handle: "aero-dining-chair", isNew: true, rating: null }] } });
 });
 
-test("a live deal counts down to its end in days, hours, minutes and seconds, with its code to copy", async () => {
+test("the product's running offer counts down to its end in days, hours, minutes and seconds, with its code to copy", async () => {
   const copied: string[] = [];
   Object.defineProperty(dom.window.navigator, "clipboard", { value: { writeText: async (value: string) => { copied.push(value); } }, configurable: true });
   await mount(async (doc) => {
@@ -83,7 +85,7 @@ test("a live deal counts down to its end in days, hours, minutes and seconds, wi
     await act(async () => box.querySelector<HTMLButtonElement>("button[data-deal-copy]")!.click());
     assert.deepEqual(copied, ["PREVIEW10"]);
     assert.equal(text(box.querySelector("[data-deal-copy-status]")), "Copied");
-  }, product, { highlights: { swatches: [], products: [], deal } });
+  }, offered);
 });
 
 test("the offer's end is read in India's time, worded the same on the server and in the browser", () => {
@@ -92,17 +94,17 @@ test("the offer's end is read in India's time, worded the same on the server and
   assert.equal(endsLabel("2027-01-01T06:30:00+05:30"), "1 January 2027, 6:30 am IST");
 });
 
-test("the offer tab names the deal on the page's edge and can be closed; an ended deal shows neither", async () => {
+test("the offer tab names the product's offer on the page's edge and can be closed; an ended offer shows neither", async () => {
   await mount(async (doc) => {
     const tab = hook(doc, "data-deal-tab")!;
     assert.equal(text(tab.querySelector("[data-deal-tab-text]")), "Get 10% off, use code PREVIEW10");
     await act(async () => tab.querySelector<HTMLButtonElement>("button[aria-label='Close offer']")!.click());
     assert.equal(hook(doc, "data-deal-tab"), null);
-  }, product, { highlights: { swatches: [], products: [], deal } });
+  }, offered);
   await mount((doc) => {
     assert.equal(hook(doc, "data-countdown"), null);
     assert.equal(hook(doc, "data-deal-tab"), null);
-  }, product, { highlights: { swatches: [], products: [], deal: { ...deal, endsAt: inDays(-MINUTE) } } });
+  }, { ...offered, offer: { ...offered.offer!, endsAt: inDays(-MINUTE) } });
 });
 
 test("availability says what the catalogue says: made to order, never a stock count", async () => {

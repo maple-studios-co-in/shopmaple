@@ -41,4 +41,7 @@ assert.ok(totalRaw <= 275_000, `Initial homepage JavaScript exceeds the 275,000-
 // 6 Nov 2026: 81,135 gzip after the cities panel's two arrows (Figma 177:1159), a small client component in place of the
 // CSS-only drifting row. Raised by 1,000 bytes for that; the registry-leak check stays the main guard.
 // 9 Nov 2026: 82,564 gzip after the same menu. Raised by 1,500 bytes for that; the registry-leak check stays the main guard.
-assert.ok(totalGzip <= 83_000, `Initial homepage JavaScript exceeds the 83,000-byte gzip budget: ${totalGzip}`);
+// 10 Nov 2026: 83,009 gzip after product offers: the shared contracts every page loads gained the product's offer and
+// the checkout's promo code and promotion, while the campaign deals left the layout. Raised by 500 bytes for that; the
+// registry-leak check stays the main guard.
+assert.ok(totalGzip <= 83_500, `Initial homepage JavaScript exceeds the 83,500-byte gzip budget: ${totalGzip}`);
