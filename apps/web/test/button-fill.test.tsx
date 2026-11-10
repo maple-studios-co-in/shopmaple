@@ -98,7 +98,7 @@ test("the storefront's call-to-action buttons take part, each with the fill that
   assert.ok([...nimbus.querySelectorAll("[data-nimbus-explore]")].every((cta) => fills(nimbus).includes(cta as HTMLElement)), "Explore");
   const values = new JSDOM(renderToStaticMarkup(<HomeValues watermark />)).window.document;
   assert.ok(fills(values).includes(values.querySelector<HTMLElement>("[data-values-cta]")!), "Experience Maple");
-  const reviews = new JSDOM(renderToStaticMarkup(<ProductReviews rating={null} writeHref="/pages/contact" />)).window.document;
+  const reviews = new JSDOM(renderToStaticMarkup(<ProductReviews rating={null} writeHref="/contact" />)).window.document;
   assert.equal(reviews.querySelector("[data-write-review]")?.getAttribute("data-fill-button"), "light", "Write a review, white on burgundy");
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });

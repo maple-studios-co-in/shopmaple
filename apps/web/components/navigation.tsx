@@ -212,7 +212,7 @@ export function DesktopNavigation({
                           <Link
                             className="maple-mega-custom"
                             data-mega-custom
-                            href={`/pages/contact?${new URLSearchParams({ product: "Custom size" })}`}
+                            href={`/contact?${new URLSearchParams({ product: "Custom size" })}`}
                             onClick={() => setActive(null)}
                           >
                             <MenuIcon name="measure" />

@@ -11,7 +11,7 @@ test('authored article blocks and empty lists survive storefront validation', ()
   assert.equal(result.success, true, 'valid authored articles must be accepted by the storefront boundary');
   if (result.success) assert.deepEqual(result.data.authoredArticles, [value]);
   assert.equal(parse([]).success, true);
-  for (const block of [ { id: 'quote', type: 'quote', text: 'Comfort.' }, { id: 'heading', type: 'heading', level: 2, text: 'Rooms' }, { id: 'heading-3', type: 'heading', level: 3, text: 'Rooms' }, { id: 'list', type: 'list', ordered: false, items: ['Wood'] }, { id: 'link', type: 'link', text: 'Story', href: '/pages/our-story' }, { id: 'image', type: 'image', src: '/media/room.webp', alt: 'Room' } ]) assert.equal(parse([{ ...value, blocks: [block] }]).success, true);
+  for (const block of [ { id: 'quote', type: 'quote', text: 'Comfort.' }, { id: 'heading', type: 'heading', level: 2, text: 'Rooms' }, { id: 'heading-3', type: 'heading', level: 3, text: 'Rooms' }, { id: 'list', type: 'list', ordered: false, items: ['Wood'] }, { id: 'link', type: 'link', text: 'Story', href: '/our-story' }, { id: 'image', type: 'image', src: '/media/room.webp', alt: 'Room' } ]) assert.equal(parse([{ ...value, blocks: [block] }]).success, true);
 });
 test('authored boundaries reject unsafe, ambiguous and oversized data', () => {
   const value = article();

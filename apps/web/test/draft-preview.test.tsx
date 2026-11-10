@@ -51,10 +51,10 @@ test("the renderer resolves every storefront page family from one document and r
   const pageDoc = new JSDOM(await html(page!.node)).window.document;
   assert.equal(pageDoc.querySelector("h1")?.textContent, "Care guide draft");
   assert.equal(pageDoc.querySelector(".content-page-banner img")?.getAttribute("src"), `/api/admin/media/${sha}/preview`);
-  assert.equal(renderStorefrontRoute(["pages", "our-story"], draft)?.path, "/pages/our-story");
+  assert.equal(renderStorefrontRoute(["pages", "our-story"], draft)?.path, "/our-story");
   assert.equal(renderStorefrontRoute(["pages", "sofas"], draft)?.title, "Sofas");
-  assert.equal(renderStorefrontRoute(["pages", "contact"], draft)?.path, "/pages/contact");
-  assert.equal(renderStorefrontRoute(["pages", "returns"], draft)?.path, "/pages/returns");
+  assert.equal(renderStorefrontRoute(["pages", "contact"], draft)?.path, "/contact");
+  assert.equal(renderStorefrontRoute(["pages", "returns"], draft)?.path, "/returns");
   assert.equal(renderStorefrontRoute(["policies", "refund-policy"], draft)?.path, "/policies/refund-policy");
   const blog = listPreviewPages(draft).find(item => item.segments[0] === "blogs")!;
   assert.ok(blog, "Preview page list includes blogs");

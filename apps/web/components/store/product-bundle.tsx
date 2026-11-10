@@ -96,7 +96,7 @@ export function ProductBundle({ product, variant, paired, quantities }: { produc
                 {adding ? "Adding to cart…" : "Add bundle to cart"}
               </button>
             ) : (
-              <Link data-bundle-enquire data-fill-button="" href={"/pages/contact?" + new URLSearchParams({ product: names.join(" + ") })}
+              <Link data-bundle-enquire data-fill-button="" href={"/contact?" + new URLSearchParams({ product: names.join(" + ") })}
                 className="w-full rounded-[30px] bg-maple p-4 text-center text-[16px] leading-[1.35] font-semibold text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
                 Enquire about this bundle
               </Link>

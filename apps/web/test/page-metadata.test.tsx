@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { generateMetadata } from "../app/pages/[slug]/page";
+import { generateMetadata } from "../app/[slug]/page";
 test("contact page titles allow the root layout to add the brand once", async () => {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
@@ -23,7 +23,7 @@ test("contact page titles allow the root layout to add the brand once", async ()
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ContactHelp } from "../components/contact-form";
-import { contactCategories } from "../app/pages/contact-content";
+import { contactCategories } from "../lib/contact-content";
 test("source help copy is accompanied by truthful account availability", () => {
   const markup = renderToStaticMarkup(
     <ContactHelp categories={contactCategories} />,

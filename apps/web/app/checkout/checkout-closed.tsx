@@ -13,7 +13,7 @@ export function CheckoutClosed() {
         <Link className="button" href="/cart">
           Return to cart
         </Link>
-        <Link className="button secondary" href="/pages/contact">
+        <Link className="button secondary" href="/contact">
           Contact our team
         </Link>
       </div>

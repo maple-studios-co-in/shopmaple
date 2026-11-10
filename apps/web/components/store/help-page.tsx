@@ -53,7 +53,7 @@ export function HelpPage({ chrome: { links, care }, current, title, opening, pho
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center text-[12px] leading-[19px] text-help-muted">
             <li><Link href="/" className="transition-colors hover:text-maple">Home</Link></li>
-            <li className="before:mx-[7px] before:content-['/']"><Link href="/pages/contact" className="transition-colors hover:text-maple">Help</Link></li>
+            <li className="before:mx-[7px] before:content-['/']"><Link href="/contact" className="transition-colors hover:text-maple">Help</Link></li>
             <li aria-current="page" className="before:mx-[7px] before:content-['/']">{name}</li>
           </ol>
         </nav>

@@ -16,7 +16,7 @@ export function StoryFields({ value, onChange }: { value?: StoryPageContent; onC
   );
   return (
     <PageEditor label="Our Story page content" title="Our Story"
-      description="Edit the /pages/our-story page. Changes stay in your draft until published. Its photos are in Artwork, under Our Story."
+      description="Edit the /our-story page. Changes stay in your draft until published. Its photos are in Artwork, under Our Story."
       intro={<>
         <TextFields value={page} onChange={onChange} fields={[["title", "Our Story page title", 160]]} />
         <Prose className="mt-3 text-xs">Use one line per heading line, up to three. A blank line in a longer text starts a new paragraph. Text displays as text, including any HTML.</Prose>

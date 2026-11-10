@@ -30,7 +30,7 @@ export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string,
         <div data-faq-heading className="flex flex-col items-start gap-6 lg:sticky lg:top-[calc(var(--site-header-offset,0px)+32px)] lg:mb-24 lg:w-[clamp(340px,36vw,452px)] lg:shrink-0 lg:self-start wide:w-[30vw]">
           <h2 id="product-faq-title" className="m-0 text-[36px] leading-[1.2] font-medium text-maple md:text-[48px]">Frequently asked questions</h2>
           <p className="m-0 font-heading text-[20px] leading-[1.3] font-medium md:text-[24px]">Still looking for an answer?</p>
-          <Link data-faq-contact href="/pages/contact" className="inline-flex h-11 items-center gap-2 rounded-[30px] bg-maple px-5 text-[14px] font-medium text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+          <Link data-faq-contact href="/contact" className="inline-flex h-11 items-center gap-2 rounded-[30px] bg-maple px-5 text-[14px] font-medium text-white no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
             Contact us
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/arrow-up-right.svg" alt="" width={18} height={18} className="size-[18px] rounded-full bg-white p-1" />

@@ -14,8 +14,8 @@ const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://loc
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 
 const features: Feature[] = [
-  { key: "about", title: "About Product", icon: "detail-finish", body: "A generously cushioned seat. ".repeat(8).trim(), link: { label: "Explore finishes with Maple", href: "/pages/contact" } },
-  { key: "materials", title: "Materials", icon: "detail-material", rows: [["Frame", "Oak"], ["Seat", "Bouclé"]], link: { label: "Explore materials with Maple", href: "/pages/contact" } },
+  { key: "about", title: "About Product", icon: "detail-finish", body: "A generously cushioned seat. ".repeat(8).trim(), link: { label: "Explore finishes with Maple", href: "/contact" } },
+  { key: "materials", title: "Materials", icon: "detail-material", rows: [["Frame", "Oak"], ["Seat", "Bouclé"]], link: { label: "Explore materials with Maple", href: "/contact" } },
   { key: "specification", title: "Specifications", icon: "detail-spec", rows: [["Width", "71 cm"], ["Depth", "61 cm"], ["Warranty", "36 Months"]] },
   { key: "care", title: "Material Care", icon: "detail-care", body: "Dust weekly." },
 ];

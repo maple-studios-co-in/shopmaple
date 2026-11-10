@@ -9,7 +9,7 @@
 import { pathToFileURL } from "node:url";
 
 /** The pages most visitors open first: the homepage and the four rooms its hero tiles lead to, then the full range. */
-export const warmPages = ["/", "/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds", "/collections/all"];
+export const warmPages = ["/", "/sofas", "/chairs", "/tables", "/collections/beds", "/collections/all"];
 
 /** Every resized-photo address a page names in a src, srcset or imagesrcset, made absolute, once each, up to `maxWidth`. */
 export function imageUrls(html, base, maxWidth = 1920) {

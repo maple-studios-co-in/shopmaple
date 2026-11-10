@@ -8,7 +8,7 @@ import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
 /** The contact page's enquiry, already about a custom piece, as the menu's Custom Furniture opens it. */
-const conversationHref = `/pages/contact?${new URLSearchParams({ product: "Custom furniture" })}`;
+const conversationHref = `/contact?${new URLSearchParams({ product: "Custom furniture" })}`;
 const principleIcons: Record<StoryPrincipleKey, string> = {
   handmade: "/media/our-story/handmade.svg",
   "unique-designs": "/media/our-story/unique-designs.svg",

@@ -244,7 +244,7 @@ export function CheckoutDetails({ id, input, options, deliveryMethodId, onDelive
           <img src="/checkout/chat.svg" alt="" width={24} height={24} className="size-6 shrink-0" />
           <span className="flex flex-col gap-1">
             <span className="text-[14px] leading-5 font-medium text-[#1c1c1c]">A little help before you decide?</span>
-            <Link href="/pages/contact" className="text-[13px] leading-[19px] font-medium text-maple underline">Speak with the Maple team ↗</Link>
+            <Link href="/contact" className="text-[13px] leading-[19px] font-medium text-maple underline">Speak with the Maple team ↗</Link>
           </span>
         </div>
       </aside>

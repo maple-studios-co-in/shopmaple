@@ -18,7 +18,7 @@ test('structured pages accept every shared block kind in order and retain legacy
     { id: 'subheading', type: 'heading', level: 3, text: 'Details' },
     { id: 'quote', type: 'quote', text: 'Comfort.' },
     { id: 'list', type: 'list', ordered: true, items: ['Wood', 'Steel'] },
-    { id: 'link', type: 'link', text: 'Story', href: '/pages/our-story#intro' },
+    { id: 'link', type: 'link', text: 'Story', href: '/our-story#intro' },
     { id: 'image', type: 'image', src: '/media/room.webp', alt: 'Room' },
   ];
   const value = { ...page, blocks };

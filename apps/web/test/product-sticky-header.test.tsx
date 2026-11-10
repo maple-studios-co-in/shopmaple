@@ -29,7 +29,7 @@ test("a product page's header is marked to stay pinned; every other page's heade
     assert.deepEqual([...header.querySelectorAll(".header-actions button")].map((button) => button.getAttribute("aria-label")),
       ["Search furniture", "Your account", "Saved furniture (0)", "Open cart (0 items)"], `${path}: and every shopping action`);
   }
-  for (const path of ["/", "/collections/chairs", "/pages/our-story", "/blogs/recent-stories", "/productsx", "/policies/privacy-policy"])
+  for (const path of ["/", "/collections/chairs", "/our-story", "/blogs/recent-stories", "/productsx", "/policies/privacy-policy"])
     assert.equal(chrome(path).querySelector("header.site-header")!.hasAttribute("data-sticky"), false, path);
   assert.equal(chrome("/blogs/recent-stories").querySelector("header.site-header")!.hasAttribute("data-header"), false, "the blog has the store's own header");
 });

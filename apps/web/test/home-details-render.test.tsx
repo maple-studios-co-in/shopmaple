@@ -62,7 +62,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
   assert.deepEqual(texts(doc, ".category-tile h2"), ["Sofas", "Chairs", "Tables", "Beds"]);
   assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"), "the frame shows a visit prompt, not the price line");
-  assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds"]);
+  assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/sofas", "/chairs", "/tables", "/collections/beds"]);
   assert.equal(doc.querySelector(".home-difference h2")?.textContent, "Every element is yours to reshape");
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
   assert.equal(doc.querySelector("[data-nimbus-heading]")?.textContent, "The Nimbus Collection");
@@ -83,15 +83,15 @@ test("older published homepage retains original copy, assets, local links and fo
 test("published detail copy reaches every homepage section and stable keys keep their assets and destinations", async () => {
   const { doc, requests } = await renderHome(editedDetails());
   assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Discover our collection");
-  assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
+  assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");
   assert.deepEqual(texts(doc, ".category-tile h2"), ["Restful beds", "Welcoming sofas", "Everyday chairs", "Gathering tables"]);
   assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"));
   assert.ok(!doc.body.textContent!.includes("Made for your budget"), "the admin's price lines are not on the Impact Layout tiles");
-  assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/collections/beds", "/pages/sofas", "/pages/chairs", "/pages/tables"]);
+  assert.deepEqual([...doc.querySelectorAll(".category-tile")].map((node) => node.getAttribute("href")), ["/collections/beds", "/sofas", "/chairs", "/tables"]);
   assert.ok(doc.querySelector(".category-tile img")?.getAttribute("src")?.includes("hero-beds.webp"));
   assert.deepEqual(texts(doc, ".home-difference .home-eyebrow, .home-difference h2, .home-difference a"), ["Why Maple", "Crafted around you", "Plan your space"]);
   assert.deepEqual(texts(doc, ".home-difference li span"), ["Your fabric", "Your city", "Our workshop", "Our promise"]);
-  assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");
+  assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/contact");
   assert.deepEqual(texts(doc, "[data-nimbus-lead], [data-nimbus-heading], [data-nimbus-explore]"), ["A softer landing", "Meet Nimbus", "View Nimbus"]);
   assert.equal(doc.querySelector(".home-nimbus-icons"), null, "the stage shows the tagline, name and button, as in the frame, with no feature row");
   assert.equal(doc.querySelector(".home-testimonial h3")?.textContent, "Our room feels complete");

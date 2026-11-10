@@ -5,8 +5,8 @@ import { renderToReadableStream } from "react-dom/server";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import Home from "../app/page";
-import NimbusPage from "../app/pages/nimbus-collection/page";
-import StoryPage from "../app/pages/our-story/page";
+import NimbusPage from "../app/nimbus-collection/page";
+import StoryPage from "../app/our-story/page";
 import { NimbusLanding } from "../components/category-nimbus";
 import { StoryLanding } from "../components/category-story";
 import { CategorySlideshow, CategoryVideo } from "../components/category-controls";
@@ -18,9 +18,9 @@ const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
   ["home-workshop-poster", "home", ".hero-film img", "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
-  ["home-hero-sofas", "home", '.category-tile[href="/pages/sofas"] img', "/media/home/hero-sofas.webp", ""],
-  ["home-hero-chairs", "home", '.category-tile[href="/pages/chairs"] img', "/media/home/hero-chairs.webp", ""],
-  ["home-hero-tables", "home", '.category-tile[href="/pages/tables"] img', "/media/home/hero-tables.webp", ""],
+  ["home-hero-sofas", "home", '.category-tile[href="/sofas"] img', "/media/home/hero-sofas.webp", ""],
+  ["home-hero-chairs", "home", '.category-tile[href="/chairs"] img', "/media/home/hero-chairs.webp", ""],
+  ["home-hero-tables", "home", '.category-tile[href="/tables"] img', "/media/home/hero-tables.webp", ""],
   ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', "/media/home/hero-beds.webp", ""],
   ["home-nimbus", "home", ".nimbus-stage-media img", "/media/home/nimbus-clouds.webp", "The Nimbus Collection — cloud-like upholstered furniture", "/media/home/nimbus-clouds.webp"],
   ["home-newsletter", "home", ".home-newsletter img", files + "Cover_Image_Maple_1.png", "Maple Furnishers"],
@@ -121,7 +121,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
     }
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
-      assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/pages/nimbus-collection");
+      assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");
       // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
       assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
       assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");

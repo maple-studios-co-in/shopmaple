@@ -60,15 +60,19 @@ const cleanUrl = (value: string) =>
   !/[\s\\%\u0000-\u001f\u007f]/.test(value) &&
   !value.split(/[/?#]/).some(segment => segment === "." || segment === "..") &&
   !value.replace(/^https:\/\//i, "").split(/[?#]/)[0]!.includes("//");
+/** The store's own top-level routes. A page slug can never be one of them, and a one-segment store link is a page only
+ *  when it is not one of them (pages moved from /pages/<slug> to /<slug>, 10 Nov 2026). */
+export const storeRouteNames = ["account", "admin", "api", "blogs", "cart", "checkout", "collections", "favourites", "home", "media", "orders", "pages", "policies", "products"] as const;
+const pageSegment = `(?!(?:${storeRouteNames.join("|")})(?:#|$))[a-z0-9-]+`;
+const storeLinkPattern = new RegExp(
+  `^\\/(?:collections\\/[a-z0-9-]+|products\\/[a-z0-9-]+|${pageSegment}|pages\\/[a-z0-9-]+|blogs\\/[a-z0-9-]+(?:\\/[a-z0-9-]+)?|policies\\/[a-z0-9-]+)?(?:#[a-z0-9-]+)?$`,
+);
 export const contentLinkSchema = z
   .string()
   .max(500)
   .refine(
     (value) =>
-      cleanUrl(value) &&
-      /^\/(?:collections\/[a-z0-9-]+|products\/[a-z0-9-]+|pages\/[a-z0-9-]+|blogs\/[a-z0-9-]+(?:\/[a-z0-9-]+)?|policies\/[a-z0-9-]+)?(?:#[a-z0-9-]+)?$/.test(
-        value,
-      ),
+      cleanUrl(value) && storeLinkPattern.test(value),
     "Use a canonical store link",
   );
 export const contentImageSchema = z
@@ -260,6 +264,8 @@ export const contentPageSchema = z
             "account",
             "cart",
             "checkout",
+            // Pages live at /<slug> (10 Nov 2026), beside the store's own top-level routes.
+            ...storeRouteNames,
           ].includes(s),
         "This page route is reserved",
       ),

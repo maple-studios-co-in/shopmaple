@@ -11,7 +11,7 @@ export function ReturnExchange({ content, chrome }: { content: ReturnsPageConten
   return (
     <HelpPage
       chrome={chrome}
-      current="/pages/returns"
+      current="/returns"
       title={content.heading}
       opening={<p>{content.intro}</p>}
       photo="/media/policies/return-exchange.jpg"

@@ -45,15 +45,15 @@ test('chrome drafts stay private, safe enabled destinations publish and same-can
   const saved = await save(document());
   assert.equal((await publicContent()).status, 404);
   assert.equal((await publish(saved.version)).status, 200);
-  const candidate = document(); candidate.siteChrome.utilityLinks = [chromeLink('page', '/pages/chrome-new-page'), chromeLink('article', '/blogs/news/chrome-new-story'), chromeLink('product', '/products/chrome-chair-true#details'), chromeLink('account', '/account'), chromeLink('favourites', '/favourites')];
+  const candidate = document(); candidate.siteChrome.utilityLinks = [chromeLink('page', '/chrome-new-page'), chromeLink('article', '/blogs/news/chrome-new-story'), chromeLink('product', '/products/chrome-chair-true#details'), chromeLink('account', '/account'), chromeLink('favourites', '/favourites')];
   const savedCandidate = await save({ ...candidate, pages: [{ slug: 'chrome-new-page', title: 'Page', description: '', body: 'Welcome', banner: null }], authoredArticles: [article] });
   assert.equal((await publicContent()).body.content.siteChrome.utilityLinks[0].href, '/account');
   assert.equal((await publish(savedCandidate.version)).status, 200);
-  assert.equal((await publicContent()).body.content.siteChrome.utilityLinks[0].href, '/pages/chrome-new-page');
+  assert.equal((await publicContent()).body.content.siteChrome.utilityLinks[0].href, '/chrome-new-page');
 });
 
 test('missing enabled targets in every chrome surface reject publication atomically', async () => {
-  const missing = '/pages/chrome-missing';
+  const missing = '/chrome-missing';
   const updates: Array<(chrome: ReturnType<typeof chromeFixture>) => void> = [
     chrome => { chrome.announcement.href = missing; },
     chrome => { chrome.utilityLinks = [chromeLink('missing', missing)]; },
@@ -77,7 +77,7 @@ test('missing enabled targets in every chrome surface reject publication atomica
 });
 
 test('unpublished products and nonexistent route families cannot be chrome destinations', async () => {
-  for (const href of ['/products/chrome-chair-false', '/products/chrome-missing', '/collections/chrome-missing', '/blogs/chrome-missing', '/blogs/news/chrome-absent', '/policies/chrome-missing', '/pages/chrome-new-page']) {
+  for (const href of ['/products/chrome-chair-false', '/products/chrome-missing', '/collections/chrome-missing', '/blogs/chrome-missing', '/blogs/news/chrome-absent', '/policies/chrome-missing', '/chrome-new-page']) {
     const chrome = chromeFixture(); chrome.utilityLinks = [chromeLink('missing', href)];
     const saved = await save(document(chrome)); const previous = await snapshot();
     const response = await publish(saved.version);
@@ -87,7 +87,7 @@ test('unpublished products and nonexistent route families cannot be chrome desti
 });
 
 test('hidden links and hidden navigation/footer parents can be saved and published but re-enabling validates targets', async () => {
-  const chrome = chromeFixture(); const missing = '/pages/chrome-hidden';
+  const chrome = chromeFixture(); const missing = '/chrome-hidden';
   chrome.announcement = { ...chrome.announcement, enabled: false, href: missing };
   chrome.utilityLinks = [{ ...chromeLink('hidden', missing), enabled: false }];
   chrome.navigation[0] = { ...chrome.navigation[0]!, enabled: false, href: missing, columns: [{ id: 'hidden', links: [{ ...chromeLink('hidden', missing), parent: false }] }] };
@@ -120,7 +120,7 @@ test('original storefront chrome defaults publish through the real router and re
   const saved = await save({ ...contentFixture(), siteChrome: structuredClone(defaultSiteChrome) });
   assert.equal((await publish(saved.version)).status, 200);
   const content = (await publicContent()).body.content;
-  assert.equal(content.siteChrome.navigation[0].columns[0].links[0].href, '/pages/sofas');
+  assert.equal(content.siteChrome.navigation[0].columns[0].links[0].href, '/sofas');
   assert.equal(content.siteChrome.navigation[1].columns[0].links[4].enquirySubject, 'Kids Beds');
   assert.equal(content.siteChrome.whatsapp.phone, '+918796130252');
 });

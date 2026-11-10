@@ -3,7 +3,7 @@ import { test } from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import * as storyRoute from "../app/pages/our-story/page";
+import * as storyRoute from "../app/our-story/page";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { legacyStoryPage } from "../lib/story-content-defaults";
 import { storefrontContentSchema } from "@shopmaple/contracts";
@@ -119,7 +119,7 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
     assert.equal(text(doc, ".story-invitation p"), "Bring us your space, your materials and the way you want to live.");
     const talk = doc.querySelector(".story-invitation a");
     assert.equal(talk?.textContent, "Start a conversation");
-    assert.equal(talk?.getAttribute("href"), "/pages/contact?product=Custom+furniture");
+    assert.equal(talk?.getAttribute("href"), "/contact?product=Custom+furniture");
     // The old film and promise row are gone.
     assert.equal(doc.querySelector("video"), null);
     assert.equal(doc.querySelector(".landing-promises"), null);

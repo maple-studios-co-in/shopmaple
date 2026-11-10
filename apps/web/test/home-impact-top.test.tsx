@@ -71,7 +71,7 @@ test("the Maple Difference row is plain: eyebrow, serif heading, a text link and
   assert.equal(text(difference.querySelector("[data-difference-eyebrow]")), "The Maple Difference");
   assert.equal(text(difference.querySelector("h2")), "Every element is yours to reshape");
   const link = difference.querySelector<HTMLAnchorElement>("[data-difference-link]")!;
-  assert.equal(link.getAttribute("href"), "/pages/contact");
+  assert.equal(link.getAttribute("href"), "/contact");
   assert.match(text(link), /^Tell Us About Your Space/);
   assert.deepEqual([...difference.querySelectorAll("[data-difference-promise]")].map(text), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
   assert.equal(difference.querySelectorAll("[data-difference-promise] img").length, 4, "each promise keeps its icon");

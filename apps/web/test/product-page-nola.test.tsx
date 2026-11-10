@@ -100,7 +100,7 @@ test("finish options are photo tiles under a label naming the chosen finish, wit
     assert.deepEqual([...group.querySelectorAll("label")].map(text), ["Deep Atlantic", "Desert Taupe"]);
     const link = doc.querySelector<HTMLAnchorElement>("a[data-customization]")!;
     assert.equal(text(link), "Customisation available");
-    assert.match(link.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair&variant=Deep\+Atlantic/);
+    assert.match(link.getAttribute("href") ?? "", /^\/contact\?product=Aero\+Dining\+Chair&variant=Deep\+Atlantic/);
     assert.equal(group.contains(link), false);
     await act(async () => group.querySelectorAll<HTMLInputElement>("input")[1]!.click());
     assert.equal(text(group.querySelector("legend")), "Finish: Desert Taupe");
@@ -117,7 +117,7 @@ test("purchase row: quantity, Add to cart and a second action that follows wheth
     assert.equal(doc.querySelector("button[data-buy-now]"), null, "No Buy it now while online checkout is off");
     const enquire = doc.querySelector<HTMLAnchorElement>("a[data-enquire]")!;
     assert.equal(text(enquire), "Enquire about this piece");
-    assert.match(enquire.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    assert.match(enquire.getAttribute("href") ?? "", /^\/contact\?product=Aero\+Dining\+Chair/);
   });
   const pushed: string[] = [];
   const writes: string[] = [];
@@ -155,7 +155,7 @@ test("Ask a question opens an enquiry about the piece, and Share stays a real co
     assert.equal(text(hook(doc, "data-shipping-note")), "Shipping is charged separately and quoted before you confirm your order.");
     const ask = doc.querySelector<HTMLAnchorElement>("a[data-ask]")!;
     assert.equal(text(ask), "Ask a question");
-    assert.match(ask.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    assert.match(ask.getAttribute("href") ?? "", /^\/contact\?product=Aero\+Dining\+Chair/);
     assert.ok(doc.querySelector("button[data-share]"));
   });
 });
@@ -232,7 +232,7 @@ test("Hear From Them shows the real rating and count, invites a review and shows
     assert.equal(band.querySelectorAll("[data-rating-summary] [data-star]").length, 5);
     const write = band.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
     assert.equal(text(write), "Write a review");
-    assert.match(write.getAttribute("href") ?? "", /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    assert.match(write.getAttribute("href") ?? "", /^\/contact\?product=Aero\+Dining\+Chair/);
     assert.equal(band.querySelector("[data-review-card]"), null, "The catalogue holds no customer review text");
   }, { ...product, productPage: reviewed(4.6, 12) }, { highlights });
   await mount((doc) => {
@@ -255,7 +255,7 @@ test("the FAQ answers from the store's published policies and opens one question
     assert.match(text(items[3]!)!, /36 months/);
     const contact = faq.querySelector<HTMLAnchorElement>("a[data-faq-contact]")!;
     assert.equal(text(contact), "Contact us");
-    assert.equal(contact.getAttribute("href"), "/pages/contact");
+    assert.equal(contact.getAttribute("href"), "/contact");
     await act(async () => { items[2]!.querySelector("summary")!.click(); items[2]!.open = true; items[2]!.dispatchEvent(new dom.window.Event("toggle")); });
     assert.deepEqual(items.map((item) => item.open), [false, false, true, false, false, false]);
     await act(async () => { items[4]!.open = true; items[4]!.dispatchEvent(new dom.window.Event("toggle")); });

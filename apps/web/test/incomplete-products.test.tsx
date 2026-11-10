@@ -89,7 +89,7 @@ test("an unpriced saved cart uses unknown totals and an enquiry instead of check
   await mount(<CartContents />, () => {
     assert.match(document.querySelector(".cart-summary strong")!.textContent!, /Price on request/);
     assert.equal(document.querySelector('a[href="/checkout"]'), null);
-    assert.ok(document.querySelector('.cart-summary a[href="/pages/contact"]'));
+    assert.ok(document.querySelector('.cart-summary a[href="/contact"]'));
     assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Increase quantity of New Model"]')!.disabled, true);
     assert.equal(document.querySelector<HTMLButtonElement>('[aria-label="Decrease quantity of New Model"]')!.disabled, false);
     assert.ok(document.querySelector('[role="img"][aria-label*="Image unavailable"]'));
@@ -137,7 +137,7 @@ test("Shopify-origin details keep review and support navigation internal", async
         false,
       );
       assert.ok(
-        document.querySelector('#product-reviews a[href^="/pages/contact"]'),
+        document.querySelector('#product-reviews a[href^="/contact"]'),
       );
     },
   );

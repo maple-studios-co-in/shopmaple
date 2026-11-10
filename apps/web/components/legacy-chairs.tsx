@@ -40,7 +40,7 @@ function LegacyProducts({
     if (product) return <ProductCard key={handle} product={product} />;
     const source = sourceProducts[handle];
     if (!source) return null;
-    const href = `/pages/contact?product=${encodeURIComponent(source.title)}`;
+    const href = `/contact?product=${encodeURIComponent(source.title)}`;
     return (
       <article data-product-card className="product-card landing-source-product" key={handle}>
         <div data-card-image className="product-card-image">

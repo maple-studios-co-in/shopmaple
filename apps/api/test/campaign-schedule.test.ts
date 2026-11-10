@@ -12,7 +12,7 @@ const origin = "http://localhost:3000";
 const config = { webOrigin: origin, catalogMode: "preview" as const, secureCookies: false };
 const password = randomBytes(24).toString("base64url");
 const schedule = { startsAt: "2026-10-26T10:00:00Z", endsAt: "2026-10-27T10:00:00Z" };
-const campaign = { key: "sofas-sale", label: "Autumn", headline: ["Autumn sofas"], supporting: "", offer: [], eligibility: "", cta: "Explore", href: "/pages/sofas", artwork: null };
+const campaign = { key: "sofas-sale", label: "Autumn", headline: ["Autumn sofas"], supporting: "", offer: [], eligibility: "", cta: "Explore", href: "/sofas", artwork: null };
 const content = {
   schemaVersion: 1, landingPages: [], homeSections: [{ key: "hero", enabled: true }],
   homeCopy: { categoryHeading: "Rooms", bestsellersHeading: "Favourites", socialHeading: "At home", ticker: "Thoughtful furniture", testimonialHeading: "Our customers", testimonialSubheading: "Stories" },

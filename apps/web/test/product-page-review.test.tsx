@@ -141,7 +141,7 @@ test("the showroom box gives the real address and leads to the store's page, wit
   await mount((doc) => {
     const showroom = hook(doc, "data-showroom")!;
     assert.match(text(showroom)!, /^Visit the Maple Furnishers showroom A-2\/56 - 57, W\.H\.S, Kirti Nagar, New Delhi 110015 View store information$/);
-    assert.equal(showroom.querySelector("a")?.getAttribute("href"), "/pages/contact");
+    assert.equal(showroom.querySelector("a")?.getAttribute("href"), "/contact");
     assert.equal(hook(doc, "data-pickup"), null, "Pickup times the store has not published are not promised");
     assert.deepEqual([...doc.querySelectorAll("[data-assurances] li")].map(text), ["Delivery across India", "Defects and transit damage", "36 Months warranty"]);
     assert.equal(hook(doc, "data-assurances-copy")?.getAttribute("aria-hidden"), "true", "The strip's repeat for the loop is decoration");
@@ -174,7 +174,7 @@ test("Precision in Every Detail: four cards around the piece, each showing a lit
     const link = pops[0]!.querySelector<HTMLAnchorElement>("a[data-pop-link]")!;
     assert.equal(pops[0]!.hidden, false);
     assert.equal(text(link), "Explore finishes with Maple");
-    assert.match(link.getAttribute("href")!, /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    assert.match(link.getAttribute("href")!, /^\/contact\?product=Aero\+Dining\+Chair/);
     await act(async () => toggles[2]!.click());
     assert.deepEqual([...pops[2]!.querySelectorAll("[data-pop-chip]")].map((chip) => [...chip.children].map(text)), [["Width", "28\" (≈ 71 cm)"], ["Depth", "61 cm"], ["Warranty", "36 Months"]], "the popup shows every row");
     assert.deepEqual(specRows().map((row) => row.hidden), [false, false, true], "while the card keeps its preview");
@@ -297,7 +297,7 @@ test("with no reviews yet, Hear From Them invites the first one: sized to its co
     const write = band.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
     assert.equal(text(write), "Write the first review");
     assert.equal(write.getAttribute("data-fill-button"), "light", "white on burgundy, filling from the pointer");
-    assert.match(write.getAttribute("href")!, /^\/pages\/contact\?product=Aero\+Dining\+Chair/, "without script the link still leads to the team");
+    assert.match(write.getAttribute("href")!, /^\/contact\?product=Aero\+Dining\+Chair/, "without script the link still leads to the team");
     const rate = band.querySelector("[data-rate]")!;
     assert.equal(rate.getAttribute("role"), "group");
     assert.equal(text(doc.getElementById(rate.getAttribute("aria-labelledby")!)), "Rate the Aero Dining Chair");

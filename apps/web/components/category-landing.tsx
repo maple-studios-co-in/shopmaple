@@ -79,7 +79,7 @@ export function CategoryBanner({
 }
 function SourceProductCard({ product }: { product: SourceProduct }) {
   // Keep editorial products absent from the live catalogue enquiry-only.
-  const href = `/pages/contact?product=${encodeURIComponent(product.title)}`;
+  const href = `/contact?product=${encodeURIComponent(product.title)}`;
   return (
     <article data-product-card className="product-card landing-source-product">
       <div data-card-image className="product-card-image">
