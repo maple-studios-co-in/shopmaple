@@ -13,7 +13,7 @@ export function StoryFields({ value, onChange }: { value?: StoryPageContent; onC
   );
   return (
     <PageEditor label="Our Story page content" title="Our Story"
-      description="Edit the existing /pages/our-story page. Changes stay in your draft until published. Original images and video stay in place."
+      description="Edit the existing /our-story page. Changes stay in your draft until published. Original images and video stay in place."
       intro={<>
         <TextFields value={page} onChange={onChange} fields={[
           ["title", "Our Story page title", 160], ["tagline", "Our Story tagline", 300], lines("Our Story hero heading", "heroHeading"),

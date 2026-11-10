@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { AuthoredBlock, ContentPage as Page } from "@shopmaple/contracts";
 import { ContentPage } from "../components/content-page";
-import ShopPage, { generateMetadata } from "../app/pages/[slug]/page";
+import ShopPage, { generateMetadata } from "../app/[slug]/page";
 import { readPublishedContent } from "../lib/content";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
@@ -77,7 +77,7 @@ test("structured pages render all block kinds in author order and suppress retai
 });
 
 test("page rendering leaves dangerous unsaved link destinations as escaped plain text", () => {
-  for (const href of ["javascript:alert(1)", "https://attacker.example", "//attacker.example", "/admin", "/collections/../admin", "/pages/%2f%2fattacker.example"]) {
+  for (const href of ["javascript:alert(1)", "https://attacker.example", "//attacker.example", "/admin", "/collections/../admin", "/%2f%2fattacker.example"]) {
     const page = { ...structuredPage, banner: null, blocks: [{ id: "link", type: "link" as const, href, text: "Read <script>bad()</script>" }] };
     const doc = documentFor(<ContentPage page={page} />);
     assert.equal(doc.querySelector(".content-page-copy")?.textContent, "Read <script>bad()</script>");
@@ -124,7 +124,7 @@ test("published structured pages reach the real route and retain title and descr
     assert.equal(doc.querySelector("h1")?.textContent, "Room & reading guide");
     assert.equal(doc.querySelector(".content-page-copy h2")?.textContent, "Choose your corner");
     assert.equal(doc.querySelector(".content-page-copy img")?.getAttribute("src"), managedImage);
-    assert.deepEqual(await generateMetadata(routeProps()), { title: "Room & reading guide", description: "A quiet corner", alternates: { canonical: "/pages/design-guide" } });
+    assert.deepEqual(await generateMetadata(routeProps()), { title: "Room & reading guide", description: "A quiet corner", alternates: { canonical: "/design-guide" } });
   });
 });
 

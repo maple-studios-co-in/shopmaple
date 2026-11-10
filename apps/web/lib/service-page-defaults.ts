@@ -1,5 +1,5 @@
 import { bulkSectionKeys, contactSectionKeys, type ServicePagesContent } from "@shopmaple/contracts";
-import { contactCategories } from "../app/pages/contact-content";
+import { contactCategories } from "./contact-content";
 
 /** Original rendered copy; images, routes, contact destinations and operations stay fixed. */
 export const defaultServicePages: ServicePagesContent = {

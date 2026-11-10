@@ -176,7 +176,7 @@ export function CartContents() {
         <p>Shipping and availability will be confirmed before payment.</p>
         <Link
           className="button full-width"
-          href={cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "/checkout" : "/pages/contact"}
+          href={cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "/checkout" : "/contact"}
           onClick={() => setCartOpen(false)}
         >
           {cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}

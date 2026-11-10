@@ -19,5 +19,5 @@ test("collects every resized photo a page names, once each, up to the width limi
 });
 
 test("warms the homepage and the four rooms its hero tiles open", () => {
-  for (const path of ["/", "/pages/sofas", "/pages/chairs", "/pages/tables", "/collections/beds"]) assert.ok(warmPages.includes(path), path);
+  for (const path of ["/", "/sofas", "/chairs", "/tables", "/collections/beds"]) assert.ok(warmPages.includes(path), path);
 });

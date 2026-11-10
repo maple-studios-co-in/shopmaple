@@ -91,7 +91,7 @@ test("category defaults preserve original copy, artwork, local collection links,
   );
   assert.ok(
     doc.querySelector(
-      '.landing-source-product a[href^="/pages/contact?product="]',
+      '.landing-source-product a[href^="/contact?product="]',
     ),
   );
   assert.equal(

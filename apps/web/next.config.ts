@@ -24,6 +24,11 @@ const config: NextConfig = {
       },
     ],
   },
+  // Pages moved from Shopify's /pages/<slug> to /<slug> (10 Nov 2026). Old links, search results and sent emails keep
+  // working, and the query (an enquiry's ?product=) carries over.
+  async redirects() {
+    return [{ source: "/pages/:slug", destination: "/:slug", permanent: true }];
+  },
   async rewrites() {
     return [
       { source: "/media/keeri/:filename", destination: (process.env.API_URL ?? "http://127.0.0.1:4100") + "/media/keeri/:filename" },

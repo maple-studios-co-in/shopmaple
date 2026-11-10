@@ -1,10 +1,10 @@
 export const contentFixture = () => ({ schemaVersion: 1, homeSections: [{ key: 'hero', enabled: true }], homeCopy: { categoryHeading: '', bestsellersHeading: '', socialHeading: '', ticker: '', testimonialHeading: '', testimonialSubheading: '' }, campaigns: [], instagramPosts: [{ href: 'https://www.instagram.com/p/test/', src: '/media/room.webp', alt: 'Room' }], pages: [], motion: { autoplaySocial: false, autoplayCities: false, revealSections: false } });
-export const chromeLink = (id = 'contact', href = '/pages/contact') => ({ id, label: 'Contact', href, enabled: true });
+export const chromeLink = (id = 'contact', href = '/contact') => ({ id, label: 'Contact', href, enabled: true });
 export const chromeFixture = () => ({
   announcement: { text: 'Welcome home', href: '/collections/all', enabled: true },
   utilityLinks: [chromeLink('account', '/account')],
   navigation: [{ ...chromeLink('living', '/collections/chairs'), feature: 'living', columns: [{ id: 'chairs', links: [{ ...chromeLink('chair', '/collections/chairs'), parent: true }] }] }],
-  desktopDiscovery: [{ ...chromeLink('story', '/pages/our-story'), cta: 'Discover' }],
+  desktopDiscovery: [{ ...chromeLink('story', '/our-story'), cta: 'Discover' }],
   mobileQuickLinks: [chromeLink('favourites', '/favourites')],
   footer: {
     columns: [{ key: 'shop', enabled: true }, { key: 'help', enabled: true }, { key: 'care', enabled: true }],

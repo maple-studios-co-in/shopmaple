@@ -53,7 +53,7 @@ test("the stage shows Nimbus then Terra by default: one live slide, the other in
   assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-title] .sr-only")?.textContent), ["The Nimbus Collection", "The Terra Collection"]);
   assert.deepEqual(slides.map((slide) => slide.hasAttribute("data-active")), [true, false]);
   assert.deepEqual(slides.map((slide) => slide.hasAttribute("inert")), [false, true]);
-  assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/pages/nimbus-collection", "/collections/sofas"]);
+  assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.getAttribute("href")), ["/nimbus-collection", "/collections/sofas"]);
   assert.deepEqual(slides.map((slide) => slide.querySelector("[data-nimbus-explore]")?.textContent), ["Explore", "Explore"]);
   const dots = all(page, "[data-stage-dot]");
   assert.deepEqual(dots.map((dot) => [dot.tagName, dot.textContent, dot.getAttribute("aria-current")]), [["BUTTON", "1", "true"], ["BUTTON", "2", null]]);

@@ -17,6 +17,7 @@ export {
   campaignDealSchema,
   contentPageSchema,
   contentLinkSchema,
+  storeRouteNames,
   contentImageSchema,
   homeMerchandisingSchema,
   productHighlightsSchema,

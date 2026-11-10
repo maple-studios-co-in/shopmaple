@@ -111,7 +111,7 @@ export function Header({
             Wishlist <span>View your saved items →</span>
           </Link>
           <Link
-            href="/pages/contact?product=Order%20support"
+            href="/contact?product=Order%20support"
             onClick={() => setAccount(false)}
           >
             Help Center <span>Contact support →</span>

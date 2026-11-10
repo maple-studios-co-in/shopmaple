@@ -10,7 +10,8 @@ const id = z.string().max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const destination = z.union([z.lazy(() => contentLinkSchema), z.literal("/account"), z.literal("/favourites")]);
 const linkFields = { id, label: text(120), href: destination, enabled: z.boolean(), enquirySubject: text(160).optional() };
 const contactSubject = (value: { href: string; enquirySubject?: string }, ctx: z.RefinementCtx) => {
-  if (value.enquirySubject !== undefined && value.href !== "/pages/contact")
+  // "/pages/contact" is the address before pages moved to the top level; it still redirects to /contact.
+  if (value.enquirySubject !== undefined && value.href !== "/contact" && value.href !== "/pages/contact")
     ctx.addIssue({ code: "custom", path: ["enquirySubject"], message: "Enquiry subjects require the contact page destination" });
 };
 const linkSchema = z.object(linkFields).strict().superRefine(contactSubject);

@@ -84,7 +84,7 @@ test("links and navigation preserve IDs across edits, moves, nested editing and 
     const utilityRows=()=>[...container.querySelectorAll<HTMLElement>('[aria-label="Utility links"] [data-chrome-row]')];
     const added=utilityRows().at(-1)!; const id=added.dataset.chromeRow!;
     const index=utilityRows().length;
-    await type(`Utility link ${index} label`,"Ask us"); await type(`Utility link ${index} destination`,"/pages/contact"); await type(`Utility link ${index} enquiry subject`,"Dining tables");
+    await type(`Utility link ${index} label`,"Ask us"); await type(`Utility link ${index} destination`,"/contact"); await type(`Utility link ${index} enquiry subject`,"Dining tables");
     button(`Move utility link ${index} up`).focus(); await click(`Move utility link ${index} up`);
     assert.equal((document.activeElement as HTMLElement).dataset.chromeRow,id);
     await click("Save draft");

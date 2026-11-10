@@ -14,9 +14,9 @@ const policies = [
   link("refund", "Refund Policy", "/policies/refund-policy"),
 ];
 const utility = [
-  link("story", "Our Story", "/pages/our-story"),
-  link("bulk", "Bulk Enquiry", "/pages/bulk-enquiry"),
-  link("help", "Help Center", "/pages/contact"),
+  link("story", "Our Story", "/our-story"),
+  link("bulk", "Bulk Enquiry", "/bulk-enquiry"),
+  link("help", "Help Center", "/contact"),
 ];
 // The main menu (Figma 256:3836, 9 Nov 2026): the rooms, then Collections, Custom Furniture and Sale. The old store's
 // Contact item is in the footer and the phone menu.
@@ -56,7 +56,7 @@ export const defaultSiteChrome: SiteChrome = {
     })),
   })),
     { id: "nav-collections", label: "Collections", enabled: true, href: "/collections/all", feature: "none" as const, columns: [] },
-    { id: "nav-custom", label: "Custom Furniture", enabled: true, href: "/pages/contact", enquirySubject: "Custom furniture", feature: "none" as const, columns: [] },
+    { id: "nav-custom", label: "Custom Furniture", enabled: true, href: "/contact", enquirySubject: "Custom furniture", feature: "none" as const, columns: [] },
     { id: "nav-sale", label: "Sale", enabled: true, href: "/collections/clearance-sale", feature: "none" as const, columns: [] },
   ],
   // The mega menu's right-hand list: each link's `cta` is the line under its name.
@@ -70,7 +70,7 @@ export const defaultSiteChrome: SiteChrome = {
     link("all", "All furniture", "/collections/all"),
     link("saved", "Saved furniture", "/favourites"),
     {
-      ...link("custom", "Custom furniture", "/pages/contact"),
+      ...link("custom", "Custom furniture", "/contact"),
       enquirySubject: "Custom furniture",
     },
     link("account", "Account", "/account"),
@@ -95,7 +95,7 @@ export const defaultSiteChrome: SiteChrome = {
     ],
     helpLinks: [
       ...structuredClone(policies),
-      link("returns", "Return & Exchange", "/pages/returns"),
+      link("returns", "Return & Exchange", "/returns"),
     ],
     policyLinks: structuredClone(policies),
     addressLines: [
@@ -126,7 +126,7 @@ export function resolveSiteChrome(value?: SiteChrome): SiteChrome {
   return structuredClone(value ?? defaultSiteChrome);
 }
 export function chromeHref(link: ChromeLink): string {
-  return link.href === "/pages/contact" && link.enquirySubject
-    ? `${link.href}?${new URLSearchParams({ product: link.enquirySubject })}`
+  return (link.href === "/contact" || link.href === "/pages/contact") && link.enquirySubject
+    ? `/contact?${new URLSearchParams({ product: link.enquirySubject })}`
     : link.href;
 }

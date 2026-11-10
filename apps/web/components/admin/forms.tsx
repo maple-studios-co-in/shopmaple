@@ -181,7 +181,7 @@ export function PageFields(props: Props) {
   const addPageButton = <ActionButton icon={Plus} variant="default" size="default" disabled={pages.length >= 20} onClick={addPage}>Add page</ActionButton>;
   return <section aria-label="Informational pages editor">
     <PanelHeader title="Informational pages" actions={pages.length > 0 && tally(pages.length, 20, "pages", addPageButton)}
-      description="Create a simple informational page at /pages/your-slug. Existing storefront and enquiry routes are reserved." />
+      description="Create a simple informational page at /your-slug. Existing storefront and enquiry routes are reserved." />
     {pages.length > 0 && (
       <SelectField label="Page" className="mb-6 max-w-sm" value={selected} onChange={(event) => selectPage(Number(event.target.value))}>
         {pages.map((value, index) => <NativeSelectOption key={index} value={index}>{value.title || "Untitled page"}</NativeSelectOption>)}
@@ -230,7 +230,7 @@ export function PageFields(props: Props) {
           </DangerZone>
         </div>
         <PreviewPanel aria-label="Page preview" eyebrow="Local page preview"
-          footnote={<>Local preview · /pages/{page.slug || "your-slug"}</>}>
+          footnote={<>Local preview · /{page.slug || "your-slug"}</>}>
           <PreviewTitle>{page.title || "Untitled page"}</PreviewTitle>
           {page.description && <p className="text-muted-foreground">{page.description}</p>}
           <div className="store-prose [overflow-wrap:anywhere]"><StoreContent nodes={pageDocument(page)} previewUploads /></div>

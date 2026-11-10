@@ -48,7 +48,7 @@ test("published chrome overrides text, targets, ordering and visibility across p
   );
   assert.equal(
     doc.querySelector(".announcement a")?.getAttribute("href"),
-    "/pages/our-story",
+    "/our-story",
   );
   assert.deepEqual(
     [...doc.querySelectorAll(".utility-links a")].map((e) => e.textContent),

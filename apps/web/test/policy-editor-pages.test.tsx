@@ -30,7 +30,7 @@ const helpPages = [
   ["Terms of Service", "/policies/terms-of-service"],
   ["Shipping Policy", "/policies/shipping-policy"],
   ["Refund Policy", "/policies/refund-policy"],
-  ["Return & Exchange", "/pages/returns"],
+  ["Return & Exchange", "/returns"],
 ];
 
 // What each frame shows: its Help tab, its title, the line under it and its "On this page" list.
@@ -79,7 +79,7 @@ test("each policy page has the Help frame's breadcrumb, Help tabs, title, openin
       const { tab, title, opening } = design[slug];
       const crumbs = [...doc.querySelectorAll('nav[aria-label="Breadcrumb"] li')];
       assert.deepEqual(crumbs.map(text), ["Home", "Help", tab], slug);
-      assert.deepEqual(crumbs.map(item => item.querySelector("a")?.getAttribute("href") ?? null), ["/", "/pages/contact", null], slug);
+      assert.deepEqual(crumbs.map(item => item.querySelector("a")?.getAttribute("href") ?? null), ["/", "/contact", null], slug);
       assert.equal(crumbs[2]!.getAttribute("aria-current"), "page", slug);
       for (const menu of ["[data-help-tabs]", "[data-help-menu]"]) {
         const links = [...doc.querySelectorAll(`${menu} a`)];

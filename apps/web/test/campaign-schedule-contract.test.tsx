@@ -5,7 +5,7 @@ import * as contracts from "@shopmaple/contracts";
 const campaign = {
   key: "sofas-sale", label: "Autumn", headline: ["Autumn sofas"],
   supporting: "", offer: [], eligibility: "", cta: "Explore",
-  href: "/pages/sofas", artwork: null,
+  href: "/sofas", artwork: null,
 };
 const start = "2026-10-26T10:00:00Z";
 const end = "2026-10-27T10:00:00Z";

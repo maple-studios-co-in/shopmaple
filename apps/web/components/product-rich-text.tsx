@@ -10,7 +10,8 @@ function safeHref(value: string): string | undefined {
     if (url.hostname === "shop.maplefurnishers.com") {
       // A double-slash path must never become a protocol-relative external link.
       if (url.pathname.startsWith("//")) return;
-      return url.pathname + url.search + url.hash;
+      // The old shop's /pages/<slug> is /<slug> here.
+      return url.pathname.replace(/^\/pages\//, "/") + url.search + url.hash;
     }
     return value;
   } catch { return; }

@@ -44,7 +44,9 @@ export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient,
   const paths = new Set([...articlePaths, ...pagePaths, ...chromePaths]);
   if (!paths.size) return;
   const destinations = new Set([
-    "/", "/account", "/favourites", ...originalPages.map(slug => `/pages/${slug}`), ...content.pages.map(page => `/pages/${page.slug}`),
+    "/", "/account", "/favourites",
+    // Pages live at /<slug>; their old /pages/<slug> addresses redirect there, so links saved before the move still publish.
+    ...[...originalPages, ...content.pages.map(page => page.slug)].flatMap(slug => [`/${slug}`, `/pages/${slug}`]),
     ...policySlugs.map(slug => `/policies/${slug}`), ...blogHandles.map(handle => `/blogs/${handle}`),
     ...articleHandles.map(handle => `/blogs/recent-stories/${handle}`),
     ...(content.authoredArticles ?? []).map(article => `/blogs/${article.blog}/${article.handle}`),

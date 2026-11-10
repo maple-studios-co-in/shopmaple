@@ -20,8 +20,8 @@ test("bed discovery retains its collection destination", () => {
 
 test("hero category discovery opens the corresponding editorial category page", () => {
   assert.deepEqual(destinations().filter((link) => link.category !== "Beds"), [
-    { category: "Sofas", href: "/pages/sofas" },
-    { category: "Chairs", href: "/pages/chairs" },
-    { category: "Tables", href: "/pages/tables" },
+    { category: "Sofas", href: "/sofas" },
+    { category: "Chairs", href: "/chairs" },
+    { category: "Tables", href: "/tables" },
   ]);
 });

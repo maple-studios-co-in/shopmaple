@@ -30,7 +30,7 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
   if (rest.length > 0) return null;
   if (root === undefined || (root === "home" && second === undefined)) return { title: "Home", path: "/", node: <HomePage content={content} /> };
   if (root === "pages" && second !== undefined && third === undefined) {
-    const path = `/pages/${second}`;
+    const path = `/${second}`;
     if ((categoryPageSlugs as readonly string[]).includes(second)) {
       const slug = second as CategoryPageSlug;
       return { title: resolveCategoryPageContent(slug, content.landingPages).title, path, node: <CategoryLanding slug={slug} content={content} /> };

@@ -7,7 +7,7 @@
         "links": [
           {
             "title": "Sofas",
-            "href": "/pages/sofas",
+            "href": "/sofas",
             "parent": true
           },
           {
@@ -51,12 +51,12 @@
         "links": [
           {
             "title": "Chairs",
-            "href": "/pages/chairs",
+            "href": "/chairs",
             "parent": true
           },
           {
             "title": "All Chairs",
-            "href": "/pages/chairs",
+            "href": "/chairs",
             "parent": false
           },
           {
@@ -100,12 +100,12 @@
         "links": [
           {
             "title": "Tables",
-            "href": "/pages/tables",
+            "href": "/tables",
             "parent": true
           },
           {
             "title": "All Tables",
-            "href": "/pages/tables",
+            "href": "/tables",
             "parent": false
           },
           {
@@ -251,7 +251,7 @@
   },
   {
     "title": "Contact",
-    "href": "/pages/contact",
+    "href": "/contact",
     "columns": []
   }
 ]
