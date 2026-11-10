@@ -58,3 +58,4 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run test:homepage-payload
+      - run: npm run test:not-found-status
