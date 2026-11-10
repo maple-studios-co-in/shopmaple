@@ -64,3 +64,21 @@ test("an unpaid or unknown checkout says so without inventing an order", async (
     assert.match(text(), /No payment was taken/);
   });
 });
+
+test("an order paid with a code shows the lines before it, the code's discount line and the total charged", async () => {
+  // 10% off with SAVE10: the chair 4500000 -> 4050000; delivery is never discounted.
+  const promoted = { ...quote, items: [{ ...quote.items[0]!, unitPricePaise: 4050000, lineTotalPaise: 4050000, discountPaise: 450000, undiscountedUnitPricePaise: 4500000 }],
+    subtotalPaise: 4050000, totalPaise: 4300000, promotion: { code: "SAVE10", label: "10% off", discountPaise: 450000 } };
+  await mount(() => Response.json(status({ fulfillmentStatus: "confirmed", orderReference: "SO-78", amountPaise: 4300000, quote: promoted })), () => {
+    const totals = document.querySelector("[data-order-status] dl")!.textContent!;
+    assert.match(totals, /Subtotal₹45,000/);
+    assert.match(totals, /Discount \(SAVE10\)−₹4,500/);
+    assert.match(totals, /Total₹43,000/);
+  });
+});
+
+test("an order without a code has no discount line", async () => {
+  await mount(() => Response.json(status({ fulfillmentStatus: "confirmed", orderReference: "SO-77" })), () => {
+    assert.equal(document.querySelector("[data-discount-line]"), null);
+  });
+});

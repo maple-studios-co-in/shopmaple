@@ -307,3 +307,38 @@ test("the default schedule rides out a five-second Keeri restart", async () => {
   assert.deepEqual(await client.request("reservations/verify", {}), { verified: true });
   assert.equal(calls, 5, "tries at about 0, 0.5, 1.5, 3.5 and 6 s");
 });
+
+test("Keeri's four promo refusals on a quote or a hold are read from its 422 body and kept apart", async () => {
+  for (const path of ["quotes", "reservations"])
+    for (const code of ["PROMO_NOT_FOUND", "PROMO_NOT_RUNNING", "PROMO_NOT_APPLICABLE", "PROMO_ALREADY_USED"]) {
+      let calls = 0;
+      const client = createKeeriCommerce({
+        ...base,
+        retryDelaysMs: [0, 0],
+        fetch: async () => {
+          calls++;
+          return Response.json({ error: code }, { status: 422, headers: { "Cache-Control": "no-store" } });
+        },
+      });
+      await assert.rejects(client.request(path, {}), (e: any) => e.code === code && e.unreachable === false, `${path} ${code}`);
+      assert.equal(calls, 1, "a refusal is final");
+    }
+});
+
+test("any other refusal body, an unreadable one or an oversized one stays a plain rejection", async () => {
+  const replies: Array<() => Response> = [
+    () => Response.json({ error: "INVALID_REQUEST" }, { status: 422 }),
+    () => Response.json({ error: "PROMO_NOT_FOUND", detail: "x" }, { status: 422 }),
+    () => Response.json({ error: ["PROMO_NOT_FOUND"] }, { status: 422 }),
+    () => new Response('{"error":"PROMO_NOT_FOUND"}', { status: 422, headers: { "content-type": "text/plain" } }),
+    () => new Response("{not json", { status: 422, headers: { "content-type": "application/json" } }),
+    () => Response.json({ error: "PROMO_NOT_FOUND", pad: "x".repeat(10_000) }, { status: 422 }),
+    // Only a 422 is read: the same body on a 400 or a 409 is not a promo refusal.
+    () => Response.json({ error: "PROMO_NOT_FOUND" }, { status: 400 }),
+    () => Response.json({ error: "PROMO_ALREADY_USED" }, { status: 409 }),
+  ];
+  for (const reply of replies) {
+    const client = createKeeriCommerce({ ...base, fetch: async () => reply() });
+    await assert.rejects(client.request("quotes", {}), { code: "UPSTREAM_REJECTED" });
+  }
+});

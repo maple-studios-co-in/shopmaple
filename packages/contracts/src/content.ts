@@ -190,7 +190,10 @@ const dealOfferFields = {
   offer: text(40).refine(offer => offer.trim().length > 0, "Describe the offer"),
   code: z.string().regex(/^[A-Z0-9][A-Z0-9%-]{1,23}$/, "Use 2–24 capital letters, numbers, % or -"),
 };
-/** A campaign's offer on the product page's countdown. Its window is the campaign's own schedule, so it has no dates of its own. */
+/**
+ * Legacy: a campaign's offer for the product page's countdown, which no longer reads it (10 Nov 2026: the page shows only
+ * the product's own Keeri offer, whose code checkout takes). Kept so content saved with one still parses; nothing edits it.
+ */
 export const campaignDealSchema = z.object(dealOfferFields).strict();
 /** Staff-entered card highlights: colours for option names, and per-product New and Limited flags and review ratings. */
 export const productHighlightsSchema = z.object({
@@ -204,8 +207,8 @@ export const productHighlightsSchema = z.object({
     // The review count is optional: the owner may hold a piece's real rating without the count behind it.
     rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(100_000).optional() }).strict().nullable(),
   }).strict()).max(300),
-  // A store-wide offer the product page counts down to ("Don't miss the deal") and names on its edge tab; shown only
-  // until it ends, and optional so documents saved before it stay valid.
+  // Legacy and unread since 10 Nov 2026: a store-wide offer the product page used to count down to. The page now shows
+  // only the product's own Keeri offer, whose code checkout takes. Kept so documents saved with one still parse.
   deal: z.object({
     ...dealOfferFields,
     endsAt: z.iso.datetime({ offset: true }),
@@ -234,7 +237,7 @@ export const campaignContentSchema = z
     cta: text(80),
     href: contentLinkSchema,
     schedule: campaignScheduleSchema.nullable().optional(),
-    // The product page counts down to this campaign's end while it runs; optional so campaigns saved before it stay valid.
+    // Legacy and unread (see campaignDealSchema); campaigns saved with one stay valid.
     deal: campaignDealSchema.optional(),
     artwork: z
       .object({

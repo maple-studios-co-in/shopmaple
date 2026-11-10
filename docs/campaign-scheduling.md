@@ -10,16 +10,7 @@ When a successful content response validates, its timing controls banner appeara
 
 ## The product page timer
 
-A campaign may carry a timer offer (an offer line and a code, under **Product page timer** beside its schedule). While that campaign's window is open, every product page shows "Don't miss the deal" with the code and a countdown to the schedule's end, plus the offer tab on the page's edge. There is one source of truth: moving the schedule moves the timer, and no dates are entered twice. Publishing is what applies a change, as with any campaign edit; a page already open picks up a new schedule on its next load, and honours the window it already has at each start and end.
-
-- A timer needs a deadline: a campaign with an offer but no end shows no timer, and the form says so.
-- When campaigns overlap, the shopper sees the deadline that comes first. When it ends, the next one takes over.
-- A running campaign's offer takes the place of the offer set by hand under Product highlights, which still runs when no campaign does.
-- During an API outage no offer runs, for the same reason no banner does.
-- The code is shown to shoppers; nothing here creates or applies a discount. Add only an offer your team honours.
-- A schedule is not an embargo here either: once published, a code scheduled for later can be read in the page's data before its start, so publish a code only when it may be seen.
-
-`CAMPAIGN_DEAL_DEMO=1` runs a placeholder offer (SALE30) through this same path for local design reviews, until a real campaign carries an offer. A production server ignores it. To remove it, delete `apps/web/lib/demo-campaign-deal.ts` and its call in `readPublishedContent`.
+Since 10 November 2026 the product page's "Don't miss the deal" box and its edge tab show only the product's own offer from Keeri (the catalogue's `offers=1` level), while it runs. Its code is one checkout takes. Campaigns and Product highlights no longer carry a timer offer: a store-wide code could name an offer checkout does not apply. A `deal` saved on a campaign or under Product highlights before then still parses and is kept, but nothing reads or edits it. Campaign banners and their schedules are unchanged. Offers are set up in Keeri; see `docs/keeri-integration.md`.
 
 ## Verification
 

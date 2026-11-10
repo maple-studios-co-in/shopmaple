@@ -7,8 +7,6 @@ export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-co
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
 export type { CampaignSchedule } from "./campaign-schedule";
-export { campaignDeals, liveCampaignDeal } from "./campaign-deal";
-export type { CampaignDeal } from "./campaign-deal";
 export {
   storefrontContentSchema,
   homeSectionKeys,
@@ -71,6 +69,17 @@ export const sourceTaxonomySchema = z.object({
 export const sourceDetailsSchema = z.object({
  details: z.string().max(10000).nullable(), materials: z.string().max(10000).nullable(), dimensions: z.string().max(10000).nullable(), careInstructions: z.string().max(10000).nullable(), warranty: z.string().max(10000).nullable(),
 }).strict();
+/**
+ * The product's own Keeri offer (Keeri's `offers=1` level): the switched-on one running now, or else the
+ * one starting soonest; Keeri never sends one that has ended. Its code is one checkout takes.
+ */
+export const productOfferSchema = z.object({
+  label: z.string().trim().min(1).max(40),
+  code: z.string().regex(/^[A-Z0-9]{3,24}$/),
+  startsAt: z.iso.datetime({ offset: true }),
+  endsAt: z.iso.datetime({ offset: true }),
+}).strict().refine((offer) => Date.parse(offer.endsAt) > Date.parse(offer.startsAt), "An offer ends after it starts");
+export type ProductOffer = z.infer<typeof productOfferSchema>;
 export const productSchema = z.object({
   id: z.string().min(1).max(160),
   handle: addressPart.max(200),
@@ -86,6 +95,8 @@ export const productSchema = z.object({
   sourceDetails: sourceDetailsSchema.nullable().optional(),
   /** Keeri's product-page data: specs, highlights, FAQ, reviews, photo details and bundles. */
   productPage: productPageSchema.nullable().optional(),
+  /** Null when Keeri has no offer for it; absent when the export came from a level without offers. */
+  offer: productOfferSchema.nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });
@@ -218,8 +229,10 @@ export {
   quoteRequestSchema,
   quoteSnapshotSchema,
   quoteResponseSchema,
+  promoCodeSchema,
+  promotionSchema,
 } from "./checkout";
-export type { CheckoutInput, QuoteRequest, QuoteSnapshot } from "./checkout";
+export type { CheckoutInput, QuoteRequest, QuoteSnapshot, Promotion } from "./checkout";
 
 export * from "./category-content";
 export * from "./story-content";

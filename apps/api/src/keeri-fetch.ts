@@ -8,6 +8,8 @@ export interface KeeriFetchOptions {
   includeAttributes?: boolean;
   /** Reviews, hotspots, batch counts, specs and bundles (Keeri's `productPage=1`, which needs every level before it). */
   includeProductPage?: boolean;
+  /** Each model's own offer for the product page's countdown (Keeri's `offers=1`, which needs `productPage=1`). */
+  includeOffers?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -23,9 +25,9 @@ export class KeeriFetchError extends Error {
 }
 /**
  * Keeri accepts each opt-in only after the ones before it, in exactly this order:
- * taxonomy, content, attributes, then compareAt and productPage together.
+ * taxonomy, content, attributes, then compareAt and productPage together, then offers.
  */
-export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage">) {
+export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers">) {
   const query = new URLSearchParams();
   if (options.includeTaxonomy || options.includeContent) query.set("taxonomy", "1");
   if (options.includeContent) query.set("content", "1");
@@ -33,6 +35,7 @@ export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonom
   if (options.includeContent && options.includeAttributes && options.includeProductPage) {
     query.set("compareAt", "1");
     query.set("productPage", "1");
+    if (options.includeOffers) query.set("offers", "1");
   }
   const text = query.toString();
   return text ? `?${text}` : "";
@@ -94,7 +97,12 @@ export async function fetchKeeriExport(
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("EXPORT_TIMEOUT");
     }
-    // A Keeri release from before variant options refuses the opt-in with 400; the caller asks again without it.
+    // A Keeri release from before an opt-in (offers, the product page, variant options) refuses it with 400;
+    // the caller asks again a level down.
+    if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("OFFERS_UNSUPPORTED");
+    }
     if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("PRODUCT_PAGE_UNSUPPORTED");

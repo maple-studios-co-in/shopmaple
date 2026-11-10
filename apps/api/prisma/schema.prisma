@@ -23,6 +23,8 @@ model Product {
   /// how many there are (0 when none) and their average to one decimal (null when none).
   reviewCount Int @default(0)
   reviewAverage Float?
+  /// The product's own Keeri offer for the product page's countdown ({ label, code, startsAt, endsAt }); null without one.
+  offer Json?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]

@@ -62,6 +62,7 @@ export async function syncCatalogueUnion(
           ...fields,
           pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull,
           productPage: fields.productPage ?? Prisma.DbNull,
+          offer: fields.offer ?? Prisma.DbNull,
           ...reviewSummary(fields.productPage),
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };

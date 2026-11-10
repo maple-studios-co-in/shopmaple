@@ -45,7 +45,7 @@ import "@/styles/tailwind.css";
 import { ButtonEffectsIsland } from "@/components/button-effects-island";
 import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
-import { documentDeals, getPublishedContent } from "@/lib/content";
+import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 import { JsonLd } from "@/components/store/json-ld";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
@@ -70,7 +70,7 @@ export default async function Layout({
       <body>
         <JsonLd data={[organizationStructuredData(seo, resolveSiteChrome(siteChrome)), websiteStructuredData(seo)]} />
         <ShopProvider>
-          <ProductHighlightsProvider value={productHighlights} deals={documentDeals(content)}>
+          <ProductHighlightsProvider value={productHighlights}>
             <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
           </ProductHighlightsProvider>
         </ShopProvider>

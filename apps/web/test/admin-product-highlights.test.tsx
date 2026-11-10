@@ -234,29 +234,13 @@ test("every highlights control is labelled and reachable from the keyboard", asy
   } finally { await app.close(); }
 });
 
-test("an offer for every product page: offer, code and end time, checked inline, saved, and removable", async () => {
+test("product highlights set no offer: the product page shows each product's own Keeri offer instead", async () => {
   const app = await setup();
   try {
     await click("Product highlights");
-    await click("Add an offer");
-    assert.match(errorFor("Offer"), /describe the offer/i);
-    assert.match(errorFor("Offer code"), /capital letters/i);
-    await click("Save draft");
-    assert.equal(app.saves(), 0, "a half-made offer is never sent");
-    await fill("Offer", "20% off");
-    await fill("Offer code", "sale 20");
-    assert.equal(field("Offer code").value, "SALE20", "codes are capitals without spaces");
-    assert.equal(errorFor("Offer code"), "");
-    await fill("Offer ends", "2099-01-31T18:30");
-    assert.equal(field("Offer ends").value, "2099-01-31T18:30");
-    await click("Save draft");
-    const deal = app.saved().content.productHighlights.deal;
-    assert.deepEqual(deal, { offer: "20% off", code: "SALE20", endsAt: new Date("2099-01-31T18:30").toISOString() }, "the end is the editor's local time, stored with its zone");
-    await fill("Offer ends", "2001-01-31T18:30");
-    assert.match(errorFor("Offer ends"), /has passed/i, "an ended offer says product pages no longer show it");
-    await click("Remove the offer");
-    await click("Save draft");
-    assert.equal("deal" in app.saved().content.productHighlights, false, "removing it leaves no field");
+    assert.equal(panel().querySelector('[aria-label="Product page offer"]'), null);
+    assert.equal([...panel().querySelectorAll("button")].some((b) => /add an offer/i.test(b.textContent ?? "")), false);
+    assert.equal(panel().querySelector('input[aria-label="Offer code"]'), null);
   } finally { await app.close(); }
 });
 
