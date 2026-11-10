@@ -50,6 +50,12 @@ const repeatable = new Set([
 // answers 502 (or 504), or the connection fails. Keeri's own 500 or 503 (for example a
 // missing quote policy) won't clear in seconds, and refusals and timeouts are final too.
 const defaultRetryDelaysMs = [500, 1000, 2000, 2500];
+/** Keeri's 422 refusals of a promo code (on a quote, or on a hold if the offer stopped or the
+ * customer used the code meanwhile). Each reaches the buyer as its own message. */
+export const promoRefusalCodes = ["PROMO_NOT_FOUND", "PROMO_NOT_RUNNING", "PROMO_NOT_APPLICABLE", "PROMO_ALREADY_USED"] as const;
+export type PromoRefusal = (typeof promoRefusalCodes)[number];
+const promoRefusals = new Set<string>(promoRefusalCodes);
+const refusalMaxBytes = 1024;
 /** Server-only, fixed-origin machine transport. Each domain consumer validates its response schema. */
 export function createKeeriCommerce(options: Options) {
   const timeoutMs = options.timeoutMs ?? 10_000,
@@ -140,6 +146,9 @@ export function createKeeriCommerce(options: Options) {
         throw new KeeriCommerceError("TRANSPORT_TIMEOUT");
       }
       if (response.status !== 200 || response.redirected) {
+        // A 422 may name a promo refusal the buyer can act on; no other refusal body is read.
+        const refusal = response.status === 422 && !response.redirected ? await promoRefusal(response) : null;
+        if (refusal) throw new KeeriCommerceError(refusal);
         void response.body?.cancel().catch(() => {});
         // 5xx is a Keeri outage; anything else is a refusal of this request. Only nginx's
         // 502/504 mean Keeri is not running at all, which `request` retries.
@@ -148,6 +157,20 @@ export function createKeeriCommerce(options: Options) {
           response.status === 502 || response.status === 504,
         );
       }
+      return json(response, maxBytes);
+    }
+    /** Exactly `{ "error": <promo code> }` within a small bound, or nothing. */
+    async function promoRefusal(response: Response) {
+      try {
+        const body = (await json(response, refusalMaxBytes)) as { error?: unknown } | null;
+        const code = body !== null && typeof body === "object" && Object.keys(body).length === 1 ? body.error : null;
+        return typeof code === "string" && promoRefusals.has(code) ? (code as PromoRefusal) : null;
+      } catch (error) {
+        if (error instanceof KeeriCommerceError && error.code === "TRANSPORT_TIMEOUT") throw error;
+        return null;
+      }
+    }
+    async function json(response: Response, limit: number): Promise<unknown> {
       if (
         !/^application\/json(?:\s*;|$)/i.test(
           response.headers.get("content-type") ?? "",
@@ -160,7 +183,7 @@ export function createKeeriCommerce(options: Options) {
       const length = response.headers.get("content-length");
       if (
         length !== null &&
-        (!/^\d+$/.test(length) || Number(length) > maxBytes)
+        (!/^\d+$/.test(length) || Number(length) > limit)
       ) {
         void response.body.cancel().catch(() => {});
         throw new KeeriCommerceError("RESPONSE_TOO_LARGE");
@@ -174,7 +197,7 @@ export function createKeeriCommerce(options: Options) {
           throw new KeeriCommerceError("TRANSPORT_TIMEOUT");
         if (next.done) break;
         size += next.value.byteLength;
-        if (size > maxBytes) throw new KeeriCommerceError("RESPONSE_TOO_LARGE");
+        if (size > limit) throw new KeeriCommerceError("RESPONSE_TOO_LARGE");
         chunks.push(next.value);
       }
       try {

@@ -1,20 +1,18 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { liveCampaignDeal, type CampaignDeal, type ProductHighlights } from "@shopmaple/contracts";
+import type { ProductOffer } from "@shopmaple/contracts";
 import { useCampaignClock } from "../campaign-clock";
 
-export type Deal = NonNullable<ProductHighlights["deal"]>;
-
-/** Whether the store-wide offer is still running at `now`. */
-export const dealLive = (deal: Deal | undefined, now: number): deal is Deal => Boolean(deal && Date.parse(deal.endsAt) > now);
+export type Deal = ProductOffer;
 
 /**
- * The offer the page shows right now: a running campaign's, or else the one set by hand. Rechecked as each offer starts
- * and ends, so an open page follows the campaign without a reload.
+ * The product's own Keeri offer while it runs (from its start, inclusive, to its end, exclusive), or nothing. Only this
+ * offer is shown: its code is one checkout takes, which a store-wide one might not be. Rechecked as the offer starts and
+ * ends, so an open page follows it without a reload.
  */
-export function useRunningDeal({ campaignDeals, deal: manual }: { campaignDeals: readonly CampaignDeal[]; deal?: Deal | undefined }, openedAt: number): Deal | undefined {
-  const now = useCampaignClock([...campaignDeals.flatMap((deal) => [deal.startsAt, deal.endsAt]), manual?.endsAt], openedAt);
-  return liveCampaignDeal(campaignDeals, now) ?? (dealLive(manual, now) ? manual : undefined);
+export function useRunningOffer(offer: ProductOffer | null | undefined, openedAt: number): Deal | undefined {
+  const now = useCampaignClock([offer?.startsAt, offer?.endsAt], openedAt);
+  return offer && Date.parse(offer.startsAt) <= now && now < Date.parse(offer.endsAt) ? offer : undefined;
 }
 
 /** One offer's identity: a different one starts the box and the tab afresh, which brings back a tab closed for the last. */
@@ -80,9 +78,10 @@ export function endsLabel(iso: string) {
 }
 
 /**
- * Frame 2:447 ("Don't miss the deal"): the burgundy offer box with its code to copy and a countdown to the end the
- * admin set. It shows only while the offer runs, counting from `openedAt` (the page's clock, see useSecondsLeft). The
- * numbers tick for sighted shoppers; screen readers hear the end date once instead of a number every second.
+ * Frame 2:447 ("Don't miss the deal"): the burgundy offer box with its code to copy and a countdown to the end staff set
+ * on the offer in Keeri. It shows only while the offer runs, counting from `openedAt` (the page's clock, see
+ * useSecondsLeft). The numbers tick for sighted shoppers; screen readers hear the end date once instead of a number every
+ * second.
  */
 export function ProductDeal({ deal, openedAt }: { deal: Deal; openedAt: number }) {
   const seconds = useSecondsLeft(deal.endsAt, openedAt);
@@ -167,7 +166,7 @@ export function DealTab({ deal }: { deal: Deal }) {
         <img src="/product-page/tab-close.svg" alt="" width={6} height={6} className="size-[5.5px]" />
       </button>
       <a href="#product-deal" className="text-maple no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
-        <span data-deal-tab-text className="block rotate-180 text-[12px] leading-[22.4px] font-bold whitespace-nowrap uppercase [writing-mode:vertical-rl]">Get {deal.offer}, use code {deal.code}</span>
+        <span data-deal-tab-text className="block rotate-180 text-[12px] leading-[22.4px] font-bold whitespace-nowrap uppercase [writing-mode:vertical-rl]">Get {deal.label}, use code {deal.code}</span>
       </a>
     </aside>
   );

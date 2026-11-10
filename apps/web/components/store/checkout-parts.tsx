@@ -35,7 +35,8 @@ export function QuoteLines({ items }: { items: Quote["items"] }) {
             </span>
             {makingTime(item) && <span data-lead-time className={muted}>{makingTime(item)}</span>}
           </span>
-          <span className="shrink-0 tabular-nums">{money(item.lineTotalPaise)}</span>
+          {/* Before any code's discount, which QuoteTotals takes off in one line, so the review adds up. */}
+          <span className="shrink-0 tabular-nums">{money(item.lineTotalPaise + (item.discountPaise ?? 0))}</span>
         </li>
       ))}
     </ul>
@@ -44,12 +45,20 @@ export function QuoteLines({ items }: { items: Quote["items"] }) {
 
 export function QuoteTotals({ quote, totalPaise, methodLabel }: { quote: Quote; totalPaise: number; methodLabel?: string }) {
   const row = "flex justify-between gap-4";
+  // Keeri's subtotal is already discounted; the lines read before the discount and it follows them as its own line.
+  const promotion = quote.promotion;
   return (
     <dl className="m-0 grid gap-2 text-ui text-espresso">
       <div className={row}>
         <dt>Subtotal</dt>
-        <dd className="m-0 tabular-nums">{money(quote.subtotalPaise)}</dd>
+        <dd className="m-0 tabular-nums">{money(quote.subtotalPaise + (promotion?.discountPaise ?? 0))}</dd>
       </div>
+      {promotion && (
+        <div data-discount-line className={row}>
+          <dt>Discount ({promotion.code})</dt>
+          <dd className="m-0 tabular-nums text-[#2f6b32]">−{money(promotion.discountPaise)}</dd>
+        </div>
+      )}
       <div className={row}>
         <dt>
           Delivery{methodLabel ? ` (${methodLabel})` : ""}

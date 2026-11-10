@@ -22,6 +22,15 @@ export interface CheckoutOptions {
 const emptyBody = z.object({}).strict();
 const quoteRejectedMessage =
   "We can't quote this order as entered. Check the delivery method and address, or contact our team. No payment has been taken.";
+/** What a buyer can do about each of Keeri's promo refusals, at the quote or the hold. */
+const promoMessages: Record<string, string> = {
+  PROMO_NOT_FOUND: "We don't recognise that code. No payment has been taken.",
+  PROMO_NOT_RUNNING: "That offer isn't running right now. No payment has been taken.",
+  PROMO_NOT_APPLICABLE: "That code doesn't apply to anything in your cart. No payment has been taken.",
+  PROMO_ALREADY_USED: "That code has already been used with this phone number or email. No payment has been taken.",
+};
+const promoError = (code: string) =>
+  Object.hasOwn(promoMessages, code) ? new HttpError(422, code, promoMessages[code]!) : undefined;
 const attemptId = z.uuid();
 const paymentCallback = z
   .object({
@@ -64,6 +73,8 @@ function publicAttempt(
             taxPaise: quote.data.taxPaise,
             totalPaise: quote.data.totalPaise,
             gstMode: quote.data.gstMode,
+            // The applied code, its label and the whole discount; null without one.
+            promotion: quote.data.promotion ?? null,
             expiresAt: quote.data.expiresAt,
           },
         }
@@ -198,6 +209,10 @@ export function registerCheckoutRoutes(
 /** Translate known domain failures without exposing merchant data, provider
  * payloads, reservation IDs, internal failure codes or exception messages. */
 export function commerceHttpError(error: unknown): HttpError | undefined {
+  if (error instanceof OrderFlowError || error instanceof KeeriCommerceError) {
+    const promo = promoError(error.code);
+    if (promo) return promo;
+  }
   if (error instanceof OrderFlowError) {
     if (["CART_NOT_FOUND", "ATTEMPT_NOT_FOUND"].includes(error.code))
       return new HttpError(
@@ -228,6 +243,13 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
         422,
         "DELIVERY_UNPRICED",
         "We can't price delivery to this pincode online right now. Send us an enquiry and our team will quote delivery for you. No payment has been taken.",
+      );
+    // A piece the store no longer links to Keeri, or that Keeri no longer sells online.
+    if (["CATALOGUE_BINDING_REQUIRED", "RESERVATION_NOT_ELIGIBLE"].includes(error.code))
+      return new HttpError(
+        422,
+        "ITEM_NOT_BUYABLE",
+        "An item in your cart can no longer be bought online. Remove it or send us an enquiry. No payment has been taken.",
       );
     if (error.code === "CHECKOUT_IN_PROGRESS")
       return new HttpError(

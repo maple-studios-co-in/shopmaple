@@ -19,7 +19,7 @@ import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
 import { CustomiseQuote } from "./customise-quote";
-import { DealTab, ProductDeal, dealKey, useRunningDeal } from "./product-deal";
+import { DealTab, ProductDeal, dealKey, useRunningOffer } from "./product-deal";
 import { ProductEnquiry } from "./product-enquiry";
 import { ProductFaq } from "./product-faq";
 import { ProductFeatures, previewChars, type Feature } from "./product-features";
@@ -256,7 +256,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const highlightPhoto = highlightLines.length ? cutoutFor(variantId)?.image : undefined;
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
-  const deal = useRunningDeal(highlights, openedAt);
+  const deal = useRunningOffer(product.offer, openedAt);
   return (
     // 30px between the sections (owner, 9 Nov 2026).
     <div ref={page} data-store data-product-page className="flex flex-col gap-[30px] bg-white font-text text-black">

@@ -152,7 +152,8 @@ test("status responses carry the public quote, payment key and fulfilment fields
   const response = await request(app).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
   assert.equal(response.status, 200);
   assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderReference", "paid", "payBy", "payWithinSeconds", "providerOrderId", "quote", "state"]);
-  assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "delivery", "expiresAt", "gstMode", "items", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
+  assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "delivery", "expiresAt", "gstMode", "items", "promotion", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
+  assert.equal(response.body.quote.promotion, null, "no code applied");
   assert.deepEqual(response.body.quote.delivery, { courierName: "Bluedart", estimatedDays: 4 });
   assert.deepEqual(response.body.quote.items[0].fulfilment, { kind: "made_to_order", leadTimeDays: 21 });
   assert.equal(response.body.orderReference, "SO-42");
