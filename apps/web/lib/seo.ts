@@ -39,14 +39,14 @@ export const robotsMeta = (settings: SeoSettings) => ({ index: settings.indexing
 
 /** Pages that always exist, beside products, content pages, policies and articles. */
 const fixedPages = ["/", "/collections/all", ...categories.map((category) => `/collections/${category}`),
-  "/pages/sofas", "/pages/tables", "/pages/chairs", "/pages/our-story", "/pages/nimbus-collection",
-  "/pages/contact", "/pages/bulk-enquiry", "/pages/returns", "/blogs/recent-stories"];
+  "/sofas", "/tables", "/chairs", "/our-story", "/nimbus-collection",
+  "/contact", "/bulk-enquiry", "/returns", "/blogs/recent-stories"];
 export function sitemapEntries(settings: SeoSettings, input: {
   products: Product[]; pages: string[]; policies: string[]; articles: { blog: string; handle: string }[];
 }): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [
     ...fixedPages.map((path) => ({ url: absolute(settings, path) })),
-    ...input.pages.map((slug) => ({ url: absolute(settings, `/pages/${slug}`) })),
+    ...input.pages.map((slug) => ({ url: absolute(settings, `/${slug}`) })),
     ...input.policies.filter((slug) => (policySlugs as readonly string[]).includes(slug)).map((slug) => ({ url: absolute(settings, `/policies/${slug}`) })),
     ...input.articles.map((article) => ({ url: absolute(settings, `/blogs/${article.blog}/${article.handle}`) })),
     ...input.products.filter((product) => product.published).map((product) => ({

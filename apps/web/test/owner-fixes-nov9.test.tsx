@@ -110,7 +110,7 @@ test("the main menu runs the rooms, then Collections, Custom Furniture and Sale,
   assert.equal(labels.includes("Contact"), false);
   assert.deepEqual(labels.slice(-3), ["Collections", "Custom Furniture", "Sale"]);
   const custom = defaultSiteChrome.navigation.find((item) => item.label === "Custom Furniture")!;
-  assert.equal(chromeHref(custom), "/pages/contact?product=Custom+furniture", "Custom Furniture opens an enquiry already about it");
+  assert.equal(chromeHref(custom), "/contact?product=Custom+furniture", "Custom Furniture opens an enquiry already about it");
   // Sale opens the store's real sale collection; there is no /collections/sale, and the publish check refuses it.
   assert.equal(defaultSiteChrome.navigation.find((item) => item.label === "Sale")!.href, "/collections/clearance-sale");
   assert.deepEqual(defaultSiteChrome.desktopDiscovery.map((link) => link.label), ["New Arrivals", "Bestsellers", "Complete the Look"]);
@@ -136,7 +136,7 @@ test("the open menu shows the room's card, the groups with their icons, the cust
     assert.ok(panel.querySelector('a[href="/collections/sofas"]')?.textContent?.startsWith("Explore Living Room"));
     assert.ok(panel.querySelectorAll("[data-menu-icon]").length >= 3, "each group's first link has its icon");
     const customSize = panel.querySelector<HTMLAnchorElement>("a[data-mega-custom]")!;
-    assert.equal(customSize.getAttribute("href"), "/pages/contact?product=Custom+size");
+    assert.equal(customSize.getAttribute("href"), "/contact?product=Custom+size");
     assert.match(customSize.textContent ?? "", /Need a custom size\?.*Start Customizing/);
     assert.equal(panel.querySelectorAll(".maple-mega-discovery img").length, 3);
     assert.equal(panel.querySelector("[data-mega-footer]"), null, "the old promise strip under the columns is gone");
@@ -297,7 +297,7 @@ test("the reviews band takes three quarters of the screen, drops the count under
   const review = (id: string, rating: number, title: string) =>
     ({ id, rating, title, body: "Made beautifully.", reviewerName: "Asha", city: "Jaipur", reviewedAt: "2026-10-12", source: "online_order" as const, verifiedBuyer: false, variantId: null, photos: [] });
   const reviews = [review("r1", 5, "Sturdy and gorgeous"), review("r2", 4, "Worth the wait")];
-  await mount(<ProductReviews rating={{ value: 4.5, count: 6 }} writeHref="/pages/contact" reviews={reviews} />, (host) => {
+  await mount(<ProductReviews rating={{ value: 4.5, count: 6 }} writeHref="/contact" reviews={reviews} />, (host) => {
     const band = host.querySelector("[data-reviews]")!;
     assert.ok(classes(band).includes("md:h-[75svh]"));
     const summary = band.querySelector("[data-rating-summary]")!;

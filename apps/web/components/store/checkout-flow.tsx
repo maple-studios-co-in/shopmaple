@@ -438,7 +438,7 @@ function CheckoutStages({
         </p>
         <div className={buttonRow}>
           {submitted && orderLink(stage.attempt.id)}
-          <Link className={solid} href="/pages/contact">
+          <Link className={solid} href="/contact">
             Contact our team
           </Link>
           <Link className={outline} href="/cart">
@@ -569,14 +569,14 @@ function CheckoutStages({
           <Link href="/cart" className={solid}>
             Review your cart
           </Link>
-          <Link href="/pages/contact" className={outline}>
+          <Link href="/contact" className={outline}>
             Ask about these items
           </Link>
         </div>
       </Notice>
     );
   const enquiryHref =
-    "/pages/contact?" +
+    "/contact?" +
     new URLSearchParams({
       topic: "Delivery quote",
       ...(input ? { pincode: input.shippingAddress.pincode } : {}),

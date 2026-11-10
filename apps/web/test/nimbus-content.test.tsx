@@ -4,7 +4,7 @@ import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { renderToReadableStream, renderToStaticMarkup } from "react-dom/server";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import * as nimbusRoute from "../app/pages/nimbus-collection/page";
+import * as nimbusRoute from "../app/nimbus-collection/page";
 import { NimbusLanding, MaplePromises } from "../components/category-nimbus";
 import { CategorySlideshow } from "../components/category-controls";
 import { CategoryValues } from "../components/category-landing";
@@ -83,7 +83,7 @@ test("Nimbus defaults preserve Shopify copy, element order, media and enquiry-on
     assert.deepEqual(regions(doc), ["sr-only", "landing-video landing-nimbus-hero", "landing-nimbus-intro home-container", "landing-nimbus-bento", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-slideshow", "landing-series home-container", "landing-products home-products home-container", "landing-project home-container", "landing-promises home-container"]);
     assert.equal(doc.querySelectorAll(".landing-source-product").length, 12);
     assert.equal(doc.querySelector('.landing-source-product a[href^="/products/"]'), null);
-    assert.ok(doc.querySelector('.landing-source-product a[href^="/pages/contact?product="]'));
+    assert.ok(doc.querySelector('.landing-source-product a[href^="/contact?product="]'));
     assert.equal((await metadata()).title, "The Nimbus Collection");
   });
 });

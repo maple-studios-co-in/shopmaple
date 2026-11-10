@@ -77,7 +77,7 @@ test("homepage preserves original value icons and copy while showing the suggest
     }
   }
   assert.equal(doc.querySelector(".home-difference h2")?.textContent, "Every element is yours to reshape");
-  assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/pages/contact");
+  assert.equal(doc.querySelector(".home-difference a")?.getAttribute("href"), "/contact");
   assert.equal(doc.querySelector(".home-cities h2")?.textContent, "20+ Cities");
   assert.ok(doc.querySelector('[data-cities-rail][aria-roledescription="carousel"][aria-label="Cities served"]'), "the cities are one labelled row");
 });

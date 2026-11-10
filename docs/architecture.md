@@ -181,7 +181,7 @@ docs/                     Integration contracts, status and architecture
 compose.yaml              Local PostgreSQL service
 ```
 
-Current route families include `/`, `/collections/[handle]`, `/products/[handle]`, `/cart`, `/checkout`, `/favourites`, generic `/pages/[slug]`, and dedicated sofas, tables, chairs, Nimbus and Our Story pages. Some Shopify-owned features or destinations remain external links; route existence alone does not establish feature or visual parity.
+Current route families include `/`, `/collections/[handle]`, `/products/[handle]`, `/cart`, `/checkout`, `/favourites`, generic `/[slug]` (the old `/pages/[slug]` addresses redirect there permanently), and dedicated sofas, tables, chairs, Nimbus and Our Story pages. Some Shopify-owned features or destinations remain external links; route existence alone does not establish feature or visual parity.
 
 Catalogue pages call the API from the server using `API_URL`, validate its response with shared contracts, and use a 30-second Next fetch revalidation window with a six-second timeout. The API advertises `public, max-age=30, s-maxage=60` for catalogue responses. There is no implemented publication-triggered cache invalidation or measured production CDN behavior.
 

@@ -52,7 +52,7 @@ async function pick(dialog: HTMLDialogElement, name: string, value: string) {
 test("Customisation available opens the panel: the piece, four steps and a live selection, with Get a quote outside the scrolling part", async () => {
   await mount(async (doc) => {
     assert.equal(panel(doc), null, "the panel joins the page only when asked for");
-    assert.match(doc.querySelector("a[data-customization]")!.getAttribute("href")!, /^\/pages\/contact\?/, "without script the link still leads to an enquiry");
+    assert.match(doc.querySelector("a[data-customization]")!.getAttribute("href")!, /^\/contact\?/, "without script the link still leads to an enquiry");
     const dialog = await open(doc);
     assert.equal(dialog.open, true);
     assert.equal(dialog.getAttribute("aria-labelledby"), "customise-title");

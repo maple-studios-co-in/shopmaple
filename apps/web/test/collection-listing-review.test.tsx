@@ -151,7 +151,7 @@ test("the results: heading, count, sort, four-across cards and the custom order 
     assert.equal(results.querySelectorAll(".collection-products [data-product-card]").length, 2);
     const custom = results.querySelector("[data-custom-order]")!;
     assert.equal(text(custom.querySelector("h2")), "Can’t find what you’re looking for?");
-    assert.equal(custom.querySelector("a")?.getAttribute("href"), "/pages/contact");
+    assert.equal(custom.querySelector("a")?.getAttribute("href"), "/contact");
     assert.equal(text(custom.querySelector("a")), "Request custom order →");
   });
 });

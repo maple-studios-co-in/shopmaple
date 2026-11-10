@@ -6,7 +6,7 @@ import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { ContactHelp } from "../components/contact-form";
 import { CategorySlideshow } from "../components/category-controls";
-import { contactCategories } from "../app/pages/contact-content";
+import { contactCategories } from "../lib/contact-content";
 import Home from "../app/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";

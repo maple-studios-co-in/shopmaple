@@ -50,9 +50,9 @@ const star = (host: HTMLElement, value: number) => host.querySelector<HTMLInputE
 const submit = (host: HTMLElement) => act(async () => host.querySelector<HTMLFormElement>("[data-review-dialog] form")!.requestSubmit());
 
 test("Write a review opens the form on the page, while without script the link still leads to the team", async () => {
-  await mount(<ProductReviews rating={null} writeHref="/pages/contact?product=Nola" piece={piece} />, async (host) => {
+  await mount(<ProductReviews rating={null} writeHref="/contact?product=Nola" piece={piece} />, async (host) => {
     const write = host.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
-    assert.equal(write.getAttribute("href"), "/pages/contact?product=Nola", "the no-script fallback stays");
+    assert.equal(write.getAttribute("href"), "/contact?product=Nola", "the no-script fallback stays");
     assert.equal(host.querySelector("[data-review-dialog]"), null, "the form joins the page on the first click");
     let followed = true;
     await act(async () => {
@@ -68,7 +68,7 @@ test("Write a review opens the form on the page, while without script the link s
 });
 
 test("a piece's page can still draw the band with no form behind it: the link is a plain link", async () => {
-  await mount(<ProductReviews rating={null} writeHref="/pages/contact" />, async (host) => {
+  await mount(<ProductReviews rating={null} writeHref="/contact" />, async (host) => {
     const write = host.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
     const click = new dom.window.MouseEvent("click", { bubbles: true, cancelable: true });
     click.preventDefault = click.preventDefault.bind(click);
@@ -277,7 +277,7 @@ test("a photo that cannot be read stops the send and names the photo", async () 
 
 test("CLOSE, the backdrop and Escape all close the form, and reopening after a sent review starts afresh", async () => {
   await withFetch(received, async () => {
-    await mount(<ProductReviews rating={null} writeHref="/pages/contact" piece={piece} />, async (host) => {
+    await mount(<ProductReviews rating={null} writeHref="/contact" piece={piece} />, async (host) => {
       const write = host.querySelector<HTMLAnchorElement>("a[data-write-review]")!;
       const dialog = () => host.querySelector<HTMLDialogElement>("dialog[data-review-dialog]")!;
       await act(async () => write.click());

@@ -149,7 +149,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       ? [quote.shippingAddress.line1, quote.shippingAddress.line2, `${quote.shippingAddress.city} ${quote.shippingAddress.pincode}`].filter(Boolean).join(", ")
       : "";
     const total = attempt ? rupees(attempt.amountPaise) : "";
-    const contact = `Questions? Reply to this email or contact us at ${email.adminOrigin}/pages/contact.`;
+    const contact = `Questions? Reply to this email or contact us at ${email.adminOrigin}/contact.`;
     if (kind === "customer_confirmed" && attempt && quote && reference)
       return {
         to: quote.customer.email,

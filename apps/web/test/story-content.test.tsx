@@ -3,7 +3,7 @@ import { test } from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import * as storyRoute from "../app/pages/our-story/page";
+import * as storyRoute from "../app/our-story/page";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 

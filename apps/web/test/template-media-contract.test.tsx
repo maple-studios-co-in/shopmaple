@@ -25,7 +25,7 @@ test("template artwork rejects duplicate unknown or excessive identities and ext
   for (const key of ["unknown", "Home-newsletter", "../home-newsletter", "home_newsletter"])
     assert.equal(parse([{ ...item, key }]).success, false, key);
   assert.equal(parse(Array.from({ length: 48 }, () => item)).success, false);
-  assert.equal(parse([{ ...item, href: "/pages/contact" }]).success, false);
+  assert.equal(parse([{ ...item, href: "/contact" }]).success, false);
 });
 test("template artwork enforces approved media and nonblank control-free bounded alternatives", () => {
   for (const image of ["https://evil.invalid/art.jpg", "javascript:alert(1)", "/media/../secret", "/media/%2e%2e/secret", "//cdn.shopify.com/s/files/a.jpg"])

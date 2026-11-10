@@ -42,7 +42,7 @@ test("the purchase column follows the design: title, price, struck-out price, de
     assert.equal(card.querySelector("[data-description]")?.textContent, "A soft barrel-back accent chair.");
     assert.equal(card.querySelector("[data-variants] legend")?.textContent, "Finish: Rust");
     const custom = card.querySelector<HTMLAnchorElement>("a[data-customization]")!;
-    assert.match(custom.getAttribute("href") ?? "", /^\/pages\/contact\?product=Nola\+Accent\+Chair/);
+    assert.match(custom.getAttribute("href") ?? "", /^\/contact\?product=Nola\+Accent\+Chair/);
   });
 });
 

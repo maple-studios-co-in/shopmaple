@@ -21,7 +21,7 @@ export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; o
   return (
     <PageEditor label="Nimbus page content" title="The Nimbus Collection"
       intro={<TextFields value={page} onChange={onChange} fields={[["title", "Nimbus page title", 160]]} />}
-      description="Edit /pages/nimbus-collection. Changes stay in your draft until published. The original artwork, videos and product links stay attached to their sections.">
+      description="Edit /nimbus-collection. Changes stay in your draft until published. The original artwork, videos and product links stay attached to their sections.">
       <SectionToggles prefix="Nimbus" labels={sections} items={page.sections} onChange={sections => patch({ sections })}
         description="Drag sections into order, or use the Move buttons, and hide the ones you do not need. A page heading remains available to screen readers." />
       <ContentPanels>

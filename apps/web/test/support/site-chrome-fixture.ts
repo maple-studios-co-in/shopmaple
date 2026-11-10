@@ -1,14 +1,14 @@
 const link = (
   id: string,
   label: string,
-  href = "/pages/contact",
+  href = "/contact",
   enabled = true,
 ) => ({ id, label, href, enabled });
 export function customChrome() {
   return {
     announcement: {
       text: "Visit our new showroom",
-      href: "/pages/our-story",
+      href: "/our-story",
       enabled: true,
     },
     utilityLinks: [
@@ -73,7 +73,7 @@ export function customChrome() {
       helpHeading: "Hidden help",
       careHeading: "Talk to us",
       shopLinks: [
-        link("story", "Meet Maple", "/pages/our-story"),
+        link("story", "Meet Maple", "/our-story"),
         link("hide", "Hidden shop", "/account", false),
       ],
       helpLinks: [link("help", "Hidden help link")],

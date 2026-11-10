@@ -394,7 +394,7 @@ test("a delivery Shiprocket cannot price offers an enquiry instead of payment", 
     await submitDetails();
     assert.match(text(), /can't price delivery to this pincode/);
     const enquiry = document.querySelector<HTMLAnchorElement>("[data-checkout-enquiry]")!;
-    assert.match(enquiry.href, /\/pages\/contact\?/);
+    assert.match(enquiry.href, /\/contact\?/);
     assert.match(decodeURIComponent(enquiry.href), /400001/);
     assert.ok(!button("Pay ₹3,835"));
   } finally { await cleanup(); }

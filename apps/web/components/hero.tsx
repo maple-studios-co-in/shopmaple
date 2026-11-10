@@ -74,7 +74,7 @@ export function Hero({
               <div className="hero-introduction">
                 <h2 data-hero-headline>{slide.headline}</h2>
                 <p data-hero-intro>{slide.intro}</p>
-                <Link className="hero-cta" href="/pages/nimbus-collection" data-fill-button="">
+                <Link className="hero-cta" href="/nimbus-collection" data-fill-button="">
                   {content.cta} <ArrowRight aria-hidden size={17} />
                 </Link>
               </div>
@@ -88,7 +88,7 @@ export function Hero({
         {content.tiles.map(({ key, label }) => {
           const artwork = resolveHomeTemplateMedia(`home-hero-${key}`, media);
           return (
-            <Link href={(key === "beds" ? "/collections/" : "/pages/") + key} className="category-tile" data-hero-tile={key} key={key}>
+            <Link href={(key === "beds" ? "/collections/" : "/") + key} className="category-tile" data-hero-tile={key} key={key}>
               <Image src={artwork.image} alt={artwork.alt} fill sizes="(max-width: 700px) 48vw, 25vw" preload />
               <div>
                 <h2 data-hero-tile-title>{label}</h2>

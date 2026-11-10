@@ -37,7 +37,7 @@ async function submit() {
 test("the Return & Exchange page has the Help head, the Find your order form, the guidance and customer care", () => {
   const doc = parse(renderToStaticMarkup(<ReturnsPageContent content={content} footer={footer} />));
   assert.deepEqual([...doc.querySelectorAll('nav[aria-label="Breadcrumb"] li')].map(text), ["Home", "Help", "Return & Exchange"]);
-  assert.deepEqual([...doc.querySelectorAll("[data-help-tabs] a")].filter(link => link.getAttribute("aria-current") === "page").map(link => link.getAttribute("href")), ["/pages/returns"]);
+  assert.deepEqual([...doc.querySelectorAll("[data-help-tabs] a")].filter(link => link.getAttribute("aria-current") === "page").map(link => link.getAttribute("href")), ["/returns"]);
   assert.deepEqual([...doc.querySelectorAll("h1")].map(text), ["Return & Exchange"]);
   assert.equal(text(doc.querySelector("[data-help-opening]")), "Enter your order number and the email you ordered with, and our care team will get back to you about a return or exchange.");
   assert.equal(doc.querySelector("[data-help-photo] img")?.getAttribute("src"), "/media/policies/return-exchange.jpg");

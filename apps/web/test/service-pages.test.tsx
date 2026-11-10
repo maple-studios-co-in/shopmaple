@@ -4,10 +4,10 @@ import React, { act } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
-import ServicePage, { generateMetadata } from "../app/pages/[slug]/page";
-import * as returnsRoute from "../app/pages/returns/page";
+import ServicePage, { generateMetadata } from "../app/[slug]/page";
+import * as returnsRoute from "../app/returns/page";
 import { ContactHelp } from "../components/contact-form";
-import { contactCategories } from "../app/pages/contact-content";
+import { contactCategories } from "../lib/contact-content";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
 async function withResponse(body: unknown, run: () => Promise<void>) {
@@ -231,7 +231,7 @@ test("legacy, outage, malformed and draft responses retain original service defa
 test("custom pages still render published content and unknown routes remain not found", async () => {
   await withResponse({ version: 1, content: { ...defaultStorefrontContent, pages: [{ slug: "care-guide", title: "Care guide", description: "Care information", body: "Clean gently.", banner: null }] } }, async () => {
     assert.equal((await renderPage("care-guide")).querySelector("h1")?.textContent, "Care guide");
-    assert.deepEqual(await generateMetadata({ params: Promise.resolve({ slug: "care-guide" }) }), { title: "Care guide", description: "Care information", alternates: { canonical: "/pages/care-guide" } });
+    assert.deepEqual(await generateMetadata({ params: Promise.resolve({ slug: "care-guide" }) }), { title: "Care guide", description: "Care information", alternates: { canonical: "/care-guide" } });
     await assert.rejects(() => renderPage("unknown-service"), /NEXT_HTTP_ERROR_FALLBACK;404/);
   });
 });

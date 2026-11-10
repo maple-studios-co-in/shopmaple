@@ -88,7 +88,7 @@ test("published destinations control every collection campaign placement", async
         campaign.key,
       )
     )
-      campaign.href = "/pages/craft-stories";
+      campaign.href = "/craft-stories";
   globalThis.fetch = async (url) =>
     String(url).includes("/api/content/storefront")
       ? Response.json({ version: 12, content })
@@ -106,7 +106,7 @@ test("published destinations control every collection campaign placement", async
       for (const link of links)
         assert.equal(
           link.getAttribute("href"),
-          "/pages/craft-stories",
+          "/craft-stories",
           `${handle} must honor its published destination`,
         );
     }

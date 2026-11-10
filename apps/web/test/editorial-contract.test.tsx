@@ -30,7 +30,7 @@ test("editorial documents reject executable nodes, hidden fields and unsafe link
     { tag: "a", children: [], src: "https://cdn.shopify.com/s/files/a.png" },
     { tag: "br", children: ["hidden"] }, { tag: "hr", children: ["hidden"] },
     { tag: "img", children: ["hidden"], src: "https://cdn.shopify.com/s/files/a.png" },
-    ...["javascript:alert(1)", "data:text/html,<script>", "//evil.invalid/a", "https://user:pass@example.com/a", "https://example.com/a b", "https://example.com/a\\b", "https://example.com/\u0000", "http://example.com", "/admin", "/pages/%2e%2e/admin", "https://checkout.shopify.com/", "https://other.myshopify.com/", "https://shop.maplefurnishers.com/admin", "https://evil.invalid/"] .map(href => ({ tag: "a", href, children: ["Link"] })),
+    ...["javascript:alert(1)", "data:text/html,<script>", "//evil.invalid/a", "https://user:pass@example.com/a", "https://example.com/a b", "https://example.com/a\\b", "https://example.com/\u0000", "http://example.com", "/admin", "/%2e%2e/admin", "https://checkout.shopify.com/", "https://other.myshopify.com/", "https://shop.maplefurnishers.com/admin", "https://evil.invalid/"] .map(href => ({ tag: "a", href, children: ["Link"] })),
     ...["/media/uploads/a.webp", "data:image/png,x", "https://evil.invalid/a.png", "https://user@cdn.shopify.com/s/files/a.png", "https://cdn.shopify.com.evil.invalid/s/files/a.png"].map(src => ({ tag: "img", src, children: [], alt: "Image" })),
   ];
   for (const node of nodeCases) assert.equal(parse({ ...fixture(), policies: [{ ...fixture().policies[0], content: [node] }] }).success, false, JSON.stringify(node));
@@ -129,7 +129,7 @@ test("every original source document fits the editable contract including image 
 
 test("approved editorial links, media and literal markup survive validation as text", () => {
   const content = [
-    ...["/", "/pages/contact", "/policies/refund-policy", "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online", "https://maplefurnishers.com/pages/contact", "https://store.maplefurnishers.com/collections/chairs", "mailto:hello@maplefurnishers.com", "tel:+911234567890"].map(href => ({ tag: "a", href, children: ["Link"] })),
+    ...["/", "/contact", "/policies/refund-policy", "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online", "https://maplefurnishers.com/pages/contact", "https://store.maplefurnishers.com/collections/chairs", "mailto:hello@maplefurnishers.com", "tel:+911234567890"].map(href => ({ tag: "a", href, children: ["Link"] })),
     { tag: "img", src: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/image2.png?v=1783927419", alt: "Original image", children: [] },
     "<script>Literal text only</script>\n  preserved",
   ];

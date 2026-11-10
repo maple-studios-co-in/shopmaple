@@ -58,7 +58,7 @@ test("a paid order whose hold lapsed promises a call or a full refund", async ()
 test("an unpaid or unknown checkout says so without inventing an order", async () => {
   await mount(() => Response.json({ code: "CHECKOUT_NOT_FOUND", message: "We couldn't find that checkout." }, { status: 404 }), () => {
     assert.match(text(), /couldn't find this order in this browser/i);
-    assert.ok(document.querySelector('a[href="/pages/contact"]'));
+    assert.ok(document.querySelector('a[href="/contact"]'));
   });
   await mount(() => Response.json(status({ state: "abandoned", paid: false })), () => {
     assert.match(text(), /No payment was taken/);

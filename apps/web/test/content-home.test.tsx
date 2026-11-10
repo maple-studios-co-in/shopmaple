@@ -4,7 +4,7 @@ import React from "react";
 import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import Home from "../app/page";
-import ContactPage from "../app/pages/[slug]/page";
+import ContactPage from "../app/[slug]/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 async function withContent(

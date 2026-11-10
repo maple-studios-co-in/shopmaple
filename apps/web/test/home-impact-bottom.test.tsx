@@ -61,7 +61,7 @@ test("values end the page with the brand name as a watermark and an Experience M
   assert.equal(values.querySelector("[data-values-watermark]")!.getAttribute("aria-hidden"), "true");
   assert.equal(values.querySelectorAll("h3").length, 4);
   const cta = values.querySelector<HTMLAnchorElement>("[data-values-cta]")!;
-  assert.equal(cta.getAttribute("href"), "/pages/our-story");
+  assert.equal(cta.getAttribute("href"), "/our-story");
   assert.equal(text(cta), "Experience Maple");
 });
 

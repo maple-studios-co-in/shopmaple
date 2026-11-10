@@ -138,7 +138,7 @@ test("the showroom box gives the real address and leads to the store's page, wit
   await mount((doc) => {
     const showroom = hook(doc, "data-showroom")!;
     assert.match(text(showroom)!, /^Visit the Maple Furnishers showroom A-2\/56 - 57, W\.H\.S, Kirti Nagar, New Delhi 110015 View store information$/);
-    assert.equal(showroom.querySelector("a")?.getAttribute("href"), "/pages/contact");
+    assert.equal(showroom.querySelector("a")?.getAttribute("href"), "/contact");
     assert.equal(hook(doc, "data-pickup"), null, "Pickup times the store has not published are not promised");
     assert.deepEqual([...doc.querySelectorAll("[data-assurances] li")].map(text), ["Delivery across India", "Defects and transit damage", "36 Months warranty"]);
     assert.equal(hook(doc, "data-assurances-copy")?.getAttribute("aria-hidden"), "true", "The strip's repeat for the loop is decoration");
@@ -170,7 +170,7 @@ test("Precision in Every Detail: four cards around the piece, each showing a lit
     assert.equal(cards[0]!.getAttribute("data-open"), "true");
     assert.equal(link.hidden, false);
     assert.equal(text(link), "Explore finishes with Maple");
-    assert.match(link.getAttribute("href")!, /^\/pages\/contact\?product=Aero\+Dining\+Chair/);
+    assert.match(link.getAttribute("href")!, /^\/contact\?product=Aero\+Dining\+Chair/);
     await act(async () => toggles[2]!.click());
     assert.deepEqual(specRows().map((row) => row.hidden), [false, false, false], "open, the card shows every row");
     assert.equal(cards[1]!.getAttribute("data-open"), "false", "each card opens on its own");

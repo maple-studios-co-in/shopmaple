@@ -127,7 +127,7 @@ test("unexpected substantive table children receive valid ancestors and keep the
       " ", { tag: "p", children: ["Section introduction"] },
       { tag: "tr", children: [
         "Row note", { tag: "span", children: ["Inline note"] },
-        { tag: "a", href: "/pages/contact", children: [] },
+        { tag: "a", href: "/contact", children: [] },
         { tag: "br", children: [] }, { tag: "hr", children: [] },
         { tag: "img", src: "https://cdn.shopify.com/example.png", alt: "Preserved artwork", children: [] },
         { tag: "td", children: ["Cell text"] }, { tag: "th", children: [] },
@@ -139,7 +139,7 @@ test("unexpected substantive table children receive valid ancestors and keep the
       "Table introduction", "Direct row heading", "", "Section heading", "Section introduction",
       "Row note", "Inline note", "", "", "", "", "Cell text", "",
     ]);
-    assert.ok(document.querySelector('td > a[href="/pages/contact"]'));
+    assert.ok(document.querySelector('td > a[href="/contact"]'));
     assert.ok(document.querySelector("td > br"));
     assert.ok(document.querySelector("td > hr"));
     assert.equal(document.querySelector("td > img")?.getAttribute("alt"), "Preserved artwork");
@@ -152,7 +152,7 @@ test("content tables have an accessible name and keyboard focus without adding s
   await withRenderedContent([
     { tag: "p", children: ["Dining dimensions"] },
     { tag: "table", children: [{ tag: "tbody", children: [{ tag: "tr", children: [{ tag: "th", children: ["Seating"] }, { tag: "td", children: ["Four people"] }] }] }] },
-    { tag: "a", href: "/pages/contact", children: ["Ask about sizes"] },
+    { tag: "a", href: "/contact", children: ["Ask about sizes"] },
   ], document => {
     const table = document.querySelector("table")!;
     assert.equal(table.getAttribute("tabindex"), "0", "overflowing table must be in the keyboard tab order");

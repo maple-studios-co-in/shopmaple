@@ -56,7 +56,7 @@ test("Nimbus states its tagline and offers an Explore button before anyone hover
   const nimbus = section(await renderHome((content) => { content.homeDetails!.nimbus.tagline = "Soft presence. Strong craftsmanship."; content.homeDetails!.nimbus.cta = "Explore"; }), "nimbus");
   assert.equal(text(nimbus.querySelector("[data-nimbus-lead]")), "Soft presence. Strong craftsmanship.");
   const explore = nimbus.querySelector<HTMLAnchorElement>("[data-nimbus-explore]")!;
-  assert.equal(explore.getAttribute("href"), "/pages/nimbus-collection");
+  assert.equal(explore.getAttribute("href"), "/nimbus-collection");
   assert.equal(text(explore), "Explore");
 });
 

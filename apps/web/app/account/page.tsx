@@ -9,13 +9,13 @@ export default function AccountPage() {
         storefront yet.
       </p>
       <div className="account-actions">
-        <Link href="/pages/contact?product=Order%20support">
+        <Link href="/contact?product=Order%20support">
           Orders <span>Contact support about an order →</span>
         </Link>
         <Link href="/favourites">
           Wishlist <span>View your saved items →</span>
         </Link>
-        <Link href="/pages/contact?product=Account%20support">
+        <Link href="/contact?product=Account%20support">
           Profile &amp; Addresses{" "}
           <span>Contact support about your details →</span>
         </Link>
