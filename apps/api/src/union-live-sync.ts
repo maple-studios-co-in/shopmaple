@@ -6,7 +6,6 @@ export interface UnionSyncOptions {
   origin: string;
   token: string;
   tenantId: string;
-  shopify: unknown;
   databaseUrl?: string;
   approval?: string;
   apply?: boolean;
@@ -68,23 +67,14 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
   if (age > 900000 || age < -60000) throw new Error("STALE_OR_FUTURE_SNAPSHOT");
   if (options.apply && !snapshot.products.length && !options.allowEmptyKeeri)
     throw new Error("EMPTY_KEERI_REQUIRES_APPROVAL");
-  const plan = planCatalogueUnion(
-    options.shopify,
-    snapshot.input,
-    options.tenantId,
-  );
-  let report = plan.report;
+  const plan = planCatalogueUnion(snapshot.input, options.tenantId);
+  let report: typeof plan.report & { replayed?: boolean; retiredProducts?: number } = plan.report;
   if (options.apply) {
     const db = new PrismaClient({
       datasources: { db: { url: options.databaseUrl! } },
     });
     try {
-      report = await syncCatalogueUnion(
-        db,
-        options.shopify,
-        snapshot.input,
-        options.tenantId,
-      );
+      report = await syncCatalogueUnion(db, snapshot.input, options.tenantId);
     } catch {
       throw new Error("CATALOGUE_APPLY_FAILED");
     } finally {
@@ -94,9 +84,6 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
   return {
     ...report,
     capturedAt: snapshot.capturedAt,
-    shopifySnapshotCapturedAt: plan.shopifyCapturedAt,
-    publicPricesCapturedAt: plan.publicPricesCapturedAt,
-    shopifyRefreshMode: "pinned-snapshot",
     dryRun: !options.apply,
     checkoutEnabled: false,
   };

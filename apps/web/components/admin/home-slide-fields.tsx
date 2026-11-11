@@ -2,8 +2,6 @@
 import { useRef } from "react";
 import { Plus, X } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
-import { heroFilm, heroHeadline, heroIntro } from "@/lib/hero-film";
-import { homeTemplateMedia } from "@/lib/home-template-media";
 import { Notice } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { ActionButton, EditableList, FieldGrid, Hint, SelectField, Subsection, textField, textFields } from "./kit";
@@ -28,18 +26,13 @@ function withoutEmpty<T extends object>(value: T, keys: (keyof T)[]): T {
   return next;
 }
 
-/** The hero tile's slider: add, order and edit slides. With none, the hero shows the current shop film. */
+/** The hero tile's slider: add, order and edit slides. With none, the hero shows four default stills. */
 export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero: HomeDetails["hero"]; onChange: (hero: HomeDetails["hero"]) => void } & Media) {
   const slides = hero.slides;
   const known = useRef<string[]>([]).current;
   const set = (next: HeroSlide[]) => {
     const { slides: _removed, ...rest } = hero;
     onChange(next.length ? { ...rest, slides: next } : rest);
-  };
-  // The first slide added keeps today's film as slide 1, so adding a slide never makes the film disappear.
-  const shopFilm = (): HeroSlide => {
-    const poster = homeTemplateMedia["home-workshop-poster"];
-    return { kind: "video", src: heroFilm, poster: poster.image, alt: poster.alt, headline: heroHeadline, intro: heroIntro };
   };
   const blank = (): HeroSlide => ({ kind: "image", src: "", alt: "", headline: "", intro: "" });
   const picker = (label: string, slot: "src" | "poster", slide: HeroSlide, edit: (slide: HeroSlide) => void) => session && onExpired && (
@@ -49,12 +42,12 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
     </div>
   );
   return <Subsection title="Hero slides"
-    description="Slides of the large hero tile, with a dot for each. With none, the hero shows the current shop film. Videos play on their own, muted, and stop for visitors who ask for reduced motion.">
+    description="Slides of the large hero tile, with a dot for each. With none, the hero shows four stills: the Workshop video poster and the three Nimbus slideshow rooms (your uploads, else photos of Keeri products). Videos play on their own, muted, and stop for visitors who ask for reduced motion.">
     {!slides ? <div>
-      <ActionButton icon={Plus} onClick={() => set([shopFilm(), blank()])}>Add hero slide</ActionButton>
-      <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">The shop film becomes slide 1 so it keeps playing; the new slide follows it.</p>
+      <ActionButton icon={Plus} onClick={() => set([blank()])}>Add hero slide</ActionButton>
+      <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">Your slides replace the default stills.</p>
     </div> : <>
-      <Notice tone="info">Videos must be hosted at a Maple media address (one starting /media/, such as the shop film), or on Shopify until the store's move from Shopify is finished. The media library only uploads images, so use it for pictures and video posters.</Notice>
+      <Notice tone="info">Videos must be hosted at a Maple media address (one starting /media/). The media library only uploads images, so use it for pictures and video posters.</Notice>
       <EditableList name="Hero slide" items={rows(slides, known)} identity={row => row.id} min={1} max={6} create={() => ({ id: rowId(), slide: blank() })}
         onChange={next => { known.splice(0, known.length, ...next.map(row => row.id)); set(next.map(row => row.slide)); }}
         render={({ slide, id }, index, edit) => {
@@ -74,7 +67,7 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
             {picker(`${name} picture`, video ? "poster" : "src", slide, change)}
           </>;
         }} />
-      <div><ActionButton icon={X} onClick={() => set([])}>Use the shop film only</ActionButton></div>
+      <div><ActionButton icon={X} onClick={() => set([])}>Use the default stills</ActionButton></div>
     </>}
   </Subsection>;
 }

@@ -1,4 +1,4 @@
-import { StoryLanding } from "@/components/category-story";
+import { StoryWithArtwork } from "@/components/artwork-pages";
 import { getPublishedContent } from "@/lib/content";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 export const dynamic = "force-dynamic";
@@ -8,5 +8,5 @@ export async function generateMetadata() {
 }
 export default async function Page() {
   const content = await getPublishedContent();
-  return <StoryLanding content={content.storyPage} media={content.templateMedia} />;
+  return <StoryWithArtwork content={content} />;
 }

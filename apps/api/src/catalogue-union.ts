@@ -1,9 +1,6 @@
 import { productSchema, type Product } from "@shopmaple/contracts";
 import { adaptKeeriExportV2, keeriExportV2Schema } from "./keeri.js";
-import {
-  adaptShopifyCatalogue,
-  approvedCatalogueImage,
-} from "./shopify-catalogue.js";
+import { approvedCatalogueImage } from "./catalogue-images.js";
 export interface SourceBinding {
   source: string;
   externalId: string;
@@ -22,14 +19,20 @@ const empty: ExistingCatalogue = {
   variantBindings: [],
   handleAliases: [],
 };
-/** Exact identity evidence only. Ambiguities stay as separate enquiry listings. */
+/**
+ * The store's catalogue from Keeri alone (owner, 11 Nov 2026): every product Keeri publishes to the store, with Keeri's
+ * title, description, copy, photos and prices. Nothing comes from Shopify any more.
+ *
+ * A Keeri product that earlier syncs merged into a former Shopify listing keeps that listing's store identity through the
+ * recorded bindings: its product id, its address (handle), its variant ids (so carts keep pointing at them) and each
+ * variant's `?variant=` value. Only its presentation changes to Keeri's. A former listing that Keeri does not publish is
+ * left out here; the sync unpublishes it (catalogue-union-sync.ts).
+ */
 export function planCatalogueUnion(
-  shopifyInput: unknown,
   keeriInput: unknown,
   tenantId: string,
   existing: ExistingCatalogue = empty,
 ) {
-  const shopify = adaptShopifyCatalogue(shopifyInput);
   const keeri = adaptKeeriExportV2(keeriInput, tenantId);
   const raw = keeriExportV2Schema.parse(keeriInput);
   const source = keeri.source;
@@ -39,176 +42,52 @@ export function planCatalogueUnion(
     )
   )
     throw new Error("FOREIGN_TENANT_BINDING");
-  const binding = (rows: SourceBinding[], s: string, id: string) =>
-    rows.find((b) => b.source === s && b.externalId === id)?.targetId;
+  const binding = (rows: SourceBinding[], id: string) =>
+    rows.find((b) => b.source === source && b.externalId === id)?.targetId;
   const old = new Map(existing.products.map((p) => [p.id, p]));
+  const variantOwner = new Map(existing.products.flatMap((p) => p.variants.map((v) => [v.id, p.id] as const)));
+  const claims = new Set<string>();
   const products = new Map<string, Product>();
   const productBindings: SourceBinding[] = [];
   const variantBindings: SourceBinding[] = [];
-  for (const p of shopify.products) {
-    const id = binding(existing.productBindings, "shopify", p.id) ?? p.id;
+  let formerShopifyListings = 0;
+  let keeriPricedVariants = 0;
+  for (const p of keeri.products) {
+    const id = binding(existing.productBindings, p.id) ?? p.id;
+    // One store product per Keeri product: a recorded identity is never shared or moved.
+    if (claims.has(id)) throw new Error("EXISTING_IDENTITY_CONFLICT");
+    claims.add(id);
     const prior = old.get(id);
-    products.set(id, {
+    if (prior && !["shopify-preview", source].includes(prior.source))
+      throw new Error("FOREIGN_SOURCE_IDENTITY");
+    // A former Shopify listing drops a photo from an unapproved host rather than failing the sync, as it always has.
+    const formerListing = prior?.source === "shopify-preview";
+    if (formerListing) formerShopifyListings++;
+    const variants = p.variants.map((v) => {
+      const variantId = binding(existing.variantBindings, v.id) ?? v.id;
+      const owner = variantOwner.get(variantId);
+      if (owner && owner !== id) throw new Error("EXISTING_IDENTITY_CONFLICT");
+      if (v.pricePaise != null) keeriPricedVariants++;
+      variantBindings.push({ source, externalId: v.id, targetId: variantId });
+      return {
+        ...v,
+        id: variantId,
+        images: formerListing ? (v.images ?? []).filter(approvedCatalogueImage) : v.images,
+        // Only a variant with Keeri's store price may be bought (owner, 7 Nov 2026).
+        available: v.available && v.pricePaise != null,
+      };
+    });
+    products.set(id, productSchema.parse({
       ...p,
       id,
       handle: prior?.handle ?? p.handle,
-      description: p.description,
-      images: p.images,
-      category: p.category ?? prior?.category ?? null,
-      variants: p.variants.map((v) => ({
-        ...v,
-        id: binding(existing.variantBindings, "shopify", v.id) ?? v.id,
-      })),
-    });
-    productBindings.push({ source: "shopify", externalId: p.id, targetId: id });
-    p.variants.forEach((v) =>
-      variantBindings.push({
-        source: "shopify",
-        externalId: v.id,
-        targetId: binding(existing.variantBindings, "shopify", v.id) ?? v.id,
-      }),
-    );
-  }
-  const shopVariants = [...products.values()].flatMap((p) =>
-    p.variants.map((v) => ({ p, v })),
-  );
-  const skuIndex = new Map<string, typeof shopVariants>();
-  for (const row of shopVariants) {
-    if (row.v.sku)
-      skuIndex.set(row.v.sku, [...(skuIndex.get(row.v.sku) ?? []), row]);
-  }
-  const shopProduct = (id: string) =>
-    products.get(
-      binding(existing.productBindings, "shopify", `preview-${id}`) ??
-        `preview-${id}`,
-    );
-  const shopVariant = (id: string) =>
-    shopVariants.find(
-      (row) =>
-        row.v.id ===
-        (binding(existing.variantBindings, "shopify", `preview-${id}`) ??
-          `preview-${id}`),
-    );
-  const keeriSkuCounts = new Map<string, number>();
-  for (const v of keeri.products.flatMap((p) => p.variants))
-    if (v.sku) keeriSkuCounts.set(v.sku, (keeriSkuCounts.get(v.sku) ?? 0) + 1);
-  const candidates = keeri.products.map((p) => {
-    const model = raw.models.find((m) => `${source}:${m.id}` === p.id)!;
-    const targetProducts = new Set<string>();
-    const variantMap = new Map<string, string>();
-    let ambiguous = false;
-    const bound = binding(existing.productBindings, source, p.id);
-    if (bound) targetProducts.add(bound);
-    if (model.shopifyProductId) {
-      const target = shopProduct(model.shopifyProductId);
-      if (target) targetProducts.add(target.id);
-    }
-    for (const v of p.variants) {
-      const rawV = model.variants.find((r) => `${source}:${r.id}` === v.id)!;
-      const targets = new Set<string>();
-      const held = binding(existing.variantBindings, source, v.id);
-      if (held) targets.add(held);
-      if (rawV.shopifyVariantId) {
-        const row = shopVariant(rawV.shopifyVariantId);
-        if (row) {
-          if (
-            rawV.shopifyProductId &&
-            row.p.id !== shopProduct(rawV.shopifyProductId)?.id
-          )
-            ambiguous = true;
-          targets.add(row.v.id);
-          targetProducts.add(row.p.id);
-        }
-      }
-      const sameSku = v.sku ? skuIndex.get(v.sku) : undefined;
-      if (sameSku?.length === 1 && keeriSkuCounts.get(v.sku!) === 1) {
-        // A current SKU cannot override explicit stable identity evidence, even
-        // when that former Shopify item is absent from the current snapshot.
-        if (
-          (rawV.shopifyVariantId &&
-            shopVariant(rawV.shopifyVariantId)?.v.id !== sameSku[0]!.v.id) ||
-          (rawV.shopifyProductId &&
-            shopProduct(rawV.shopifyProductId)?.id !== sameSku[0]!.p.id) ||
-          (model.shopifyProductId &&
-            shopProduct(model.shopifyProductId)?.id !== sameSku[0]!.p.id)
-        )
-          ambiguous = true;
-        targets.add(sameSku[0]!.v.id);
-        targetProducts.add(sameSku[0]!.p.id);
-      }
-      if (targets.size > 1) ambiguous = true;
-      if (targets.size === 1) variantMap.set(v.id, [...targets][0]!);
-    }
-    if (
-      targetProducts.size > 1 ||
-      new Set(variantMap.values()).size !== variantMap.size
-    )
-      ambiguous = true;
-    const target = [...targetProducts][0];
-    const publishedCategory = raw.publication.find((entry) => entry.modelId === model.id)?.category;
-    return { p, target, variantMap, ambiguous, bound, publishedCategory };
-  });
-  const claims = new Map<string, number>();
-  for (const c of candidates)
-    if (c.target) claims.set(c.target, (claims.get(c.target) ?? 0) + 1);
-  let mergedModels = 0;
-  let keeriPricedVariants = 0;
-  let priceChangedFromShopify = 0;
-  let ambiguousModels = 0;
-  for (const c of candidates) {
-    const ambiguous =
-      c.ambiguous ||
-      (c.target !== undefined && (claims.get(c.target) ?? 0) > 1);
-    if (ambiguous && c.bound) throw new Error("EXISTING_IDENTITY_CONFLICT");
-    if (ambiguous) ambiguousModels++;
-    const target = !ambiguous ? c.target : undefined;
-    const base = target ? products.get(target) : undefined;
-    const id = target ?? c.p.id;
-    const prior = base ?? old.get(id);
-    if (prior && !["shopify-preview", source].includes(prior.source))
-      throw new Error("FOREIGN_SOURCE_IDENTITY");
-    if (base) mergedModels++;
-    const variants = new Map((base?.variants ?? []).map((v) => [v.id, v]));
-    for (const v of c.p.variants) {
-      const variantId = !ambiguous ? (c.variantMap.get(v.id) ?? v.id) : v.id;
-      const before = base?.variants.find((v) => v.id === variantId);
-      variants.set(variantId, {
-        ...v,
-        id: variantId,
-        title: before?.title ?? v.title,
-        // A merged listing filters Keeri photos to approved hosts rather than failing, as its gallery does.
-        images: base ? (v.images ?? []).filter(approvedCatalogueImage) : v.images,
-        // The owner's rule: the store shows Keeri's store price (its before-GST MRP plus GST,
-        // 7 Nov 2026), which is what its quote charges, with Keeri's compare-at. Shopify's price
-        // shows only where Keeri has no store price, and such a variant is never purchasable.
-        pricePaise: v.pricePaise ?? before?.pricePaise ?? null,
-        compareAtPaise: v.pricePaise != null ? (v.compareAtPaise ?? null) : (before?.compareAtPaise ?? null),
-        available: v.available && v.pricePaise != null,
-        leadTimeDays: v.leadTimeDays ?? null,
-      });
-      if (v.pricePaise != null) {
-        keeriPricedVariants++;
-        if (before?.pricePaise != null && before.pricePaise !== v.pricePaise) priceChangedFromShopify++;
-      }
-      variantBindings.push({ source, externalId: v.id, targetId: variantId });
-    }
-    const product = productSchema.parse({
-      ...c.p,
-      id,
-      handle: prior?.handle ?? c.p.handle,
-      // Shopify owns display presentation for exact matches, including empty
-      // current fields. Keeri remains the source of operational variant data.
-      title: base ? base.title : c.p.title,
-      description: base ? base.description : c.p.description,
-      pdpContent: base?.pdpContent ?? null,
-      // Explicit channel categories outrank a fallback derived from the source type.
-      category: c.publishedCategory ?? base?.category ?? c.p.category ?? null,
-      images: [...new Set([...(base?.images ?? []), ...(base ? c.p.images.filter(approvedCatalogueImage) : c.p.images)])],
-      source: base ? "shopify-preview" : source,
-      variants: [...variants.values()],
-    });
-    products.set(id, product);
-    productBindings.push({ source, externalId: c.p.id, targetId: id });
+      // Keeri's copy is `sourceDetails`; the copy blocks a former Shopify listing carried are not shown any more.
+      pdpContent: null,
+      images: formerListing ? p.images.filter(approvedCatalogueImage) : p.images,
+      source,
+      variants,
+    }));
+    productBindings.push({ source, externalId: p.id, targetId: id });
   }
   const named = nameAddresses([...products.values()], raw.models, existing);
   const handleAliases = named.flatMap((p) => p.alias ? [{ handle: p.alias, productId: p.product.id }] : []);
@@ -235,15 +114,10 @@ export function planCatalogueUnion(
     variantBindings,
     source,
     capturedAt: keeri.capturedAt,
-    shopifyCapturedAt: shopify.capturedAt,
-    publicPricesCapturedAt: shopify.publicPricesCapturedAt,
     report: {
-      shopifyProducts: shopify.products.length,
       keeriProducts: keeri.products.length,
-      mergedModels,
-      ambiguousModels,
+      formerShopifyListings,
       keeriPricedVariants,
-      priceChangedFromShopify,
       totalProducts: result.length,
       totalVariants: variantIds.size,
     },
@@ -252,7 +126,7 @@ export function planCatalogueUnion(
 
 /** A readable address segment: "Zyro Lounge" -> "zyro-lounge"; accents dropped, at most 80 characters. */
 /**
- * Keeri's product-page data names Keeri ids; a merged listing keeps its Shopify product and variant ids.
+ * Keeri's product-page data names Keeri ids; a former Shopify listing keeps its store product and variant ids.
  * Point bundles, reviews and photos at the final store ids and addresses. A bundle with a piece the store
  * does not list is left out rather than offered incomplete.
  */

@@ -22,13 +22,13 @@ const hrefs = (root: ParentNode, selector: string) => [...root.querySelectorAll(
 const regions = (doc: Document) => [...doc.querySelectorAll("[data-collection-section]")].map(node => node.getAttribute("data-collection-section"));
 const region = (doc: Document, key: string) => doc.querySelector<HTMLElement>(`[data-collection-section="${key}"]`)!;
 
-// The edit's eight real pieces, in the design's order; the table's catalogue name is longer than the frame's.
+// The edit's eight real pieces, in the design's order: the Keeri products that replaced its Shopify listings.
 const pieces = [
-  "aurevon-sectional-sofa", "opelle-accent-chair", "aeris-marble-nesting-center-table", "aileron-signature-bed",
-  "luna-curve-lounge-chair", "oryon-fluted-console-unit", "aileron-upholstered-bench", "velata-pillow-drift-bed",
+  "cloudblock", "virelle-chair", "avelon-table", "aileron",
+  "nova-chair", "meridian-console", "aileron-bench", "elara-bed",
 ];
 const liveName = (handle: string) => `Live ${handle}`;
-const liveImage = (handle: string) => `https://cdn.shopify.com/s/files/1/0000/live-${handle}.jpg`;
+const liveImage = (handle: string) => `https://store.maplefurnishers.com/media/keeri/live-${handle}.webp`;
 const card = (handle: string) => ({
   id: handle, handle, title: liveName(handle), image: liveImage(handle), pricePaise: 1234500, compareAtPaise: null,
   priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[], optionThumbs: [] as never[],
@@ -77,10 +77,8 @@ function assertDesign(doc: Document) {
   assert.equal(discover.textContent?.replace("→", "").trim(), "Discover Nimbus");
   assert.equal(discover.getAttribute("href"), "#nimbus-pieces", "the button glides to the edit");
   assert.ok(doc.getElementById("nimbus-pieces"), "the edit carries the anchor");
-  // The existing Nimbus film (24.7 s), not the design's placeholder clip.
-  const film = hero.querySelector<HTMLButtonElement>("button[data-collection-film]")!;
-  assert.match(film.textContent ?? "", /Watch collection film\s*\/\s*00:25/);
-  assert.equal(film.getAttribute("aria-haspopup"), "dialog");
+  // No film link: Nimbus's films were Shopify files, and films cannot be uploaded yet (owner, 11 Nov 2026).
+  assert.equal(hero.querySelector("[data-collection-film]"), null);
 
   const rooms = region(doc, "room-nav");
   assert.equal(rooms.tagName, "NAV");
@@ -124,11 +122,13 @@ function assertDesign(doc: Document) {
   assert.equal(edit.getAttribute("data-mode"), "products");
   assert.equal(edit.querySelector("[data-collection-eyebrow]")?.textContent, "The Nimbus edit");
   assert.equal(edit.querySelector("h2")?.textContent, "Pieces to build your world around.");
+  // The cards are the catalogue's (the page draws none it cannot read); each keeps the line saved for its place.
+  const shown = edit.querySelectorAll("[data-collection-piece]").length;
   assert.deepEqual(texts(edit, "[data-collection-piece] [data-collection-line]"), [
     "Living / Sectional seating", "Living / Accent seating", "Living / Centre tables", "Bedroom / Beds",
     "Living / Lounge chairs", "Storage / Consoles", "Bedroom / Benches", "Bedroom / Upholstered beds",
-  ]);
-  assert.deepEqual(texts(edit, "[data-collection-piece] [data-collection-link]"), Array(8).fill("View piece →"));
+  ].slice(0, shown));
+  assert.deepEqual(texts(edit, "[data-collection-piece] [data-collection-link]"), Array(shown).fill("View piece →"));
   const all = edit.querySelector<HTMLAnchorElement>("a[data-collection-cta]")!;
   assert.equal(all.textContent?.replace("→", "").trim(), "View the Nimbus collection");
   assert.equal(all.getAttribute("href"), "/collections/nimbus");
@@ -157,7 +157,7 @@ test("the Nimbus page draws Figma 311:548's ten regions with the design's words 
     const photos = [...edit.querySelectorAll<HTMLImageElement>("[data-collection-piece] img")];
     assert.equal(photos.length, 8);
     photos.forEach((photo, index) => {
-      assert.match(photo.getAttribute("src") ?? "", new RegExp(`live-${pieces[index]}\\.jpg`), "the product's own photo");
+      assert.match(photo.getAttribute("src") ?? "", new RegExp(`live-${pieces[index]}\\.webp`), "the product's own photo");
       assert.equal(photo.getAttribute("alt"), liveName(pieces[index]!));
     });
     // The store's email from the footer's customer care settings, not the frame's.
@@ -264,20 +264,17 @@ test("staff choose the redesign's words, order and visibility; a hidden edit rea
   }, { content: published(page) });
 });
 
-test("a piece the live catalogue no longer lists falls back to its saved name and an enquiry; an outage keeps the edit", async () => {
+test("a piece the live catalogue no longer lists is left out, the others keep their lines; an outage shows no cards", async () => {
   await fixture(async () => {
     const edit = region(await renderPage(), "pieces");
-    assert.equal(texts(edit, "[data-collection-piece] h3")[2], "Avelon Marble Nesting Center Table", "the catalogue snapshot's name");
-    assert.equal(hrefs(edit, "[data-collection-piece] h3 a")[2], "/contact?product=Avelon+Marble+Nesting+Center+Table");
-    assert.equal(hrefs(edit, "[data-collection-piece] h3 a")[0], "/products/aurevon-sectional-sofa");
-  }, { missing: ["aeris-marble-nesting-center-table"] });
+    const kept = pieces.filter(handle => handle !== "avelon-table");
+    assert.deepEqual(hrefs(edit, "[data-collection-piece] h3 a"), kept.map(handle => `/products/${handle}`));
+    assert.equal(texts(edit, "[data-collection-piece] [data-collection-line]")[2], "Bedroom / Beds", "each card keeps its own line");
+  }, { missing: ["avelon-table"] });
   await fixture(async () => {
     const edit = region(await renderPage(), "pieces");
-    assert.deepEqual(texts(edit, "[data-collection-piece] h3"), [
-      "Aurevon Sectional Sofa", "Opelle Accent Chair", "Avelon Marble Nesting Center Table", "Aileron Signature Bed",
-      "Luna Curve Lounge Chair", "Oryon Fluted Console Unit", "Aileron Upholstered Bench", "Velata Pillow Drift Bed",
-    ]);
-    assert.deepEqual(hrefs(edit, "[data-collection-piece] h3 a"), pieces.map(handle => `/products/${handle}`));
+    assert.equal(edit.querySelectorAll("[data-collection-piece]").length, 0, "no saved names or photos stand in for the catalogue");
+    assert.equal(edit.querySelector("a[data-collection-cta]")?.getAttribute("href"), "/collections/nimbus");
   }, { unavailable: true });
 });
 

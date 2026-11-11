@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isShopifyMedia } from "./shopify-media-removal";
 import { siteChromeSchema } from "./site-chrome";
 import { authoredArticlesSchema, authoredBlocksSchema } from "./authored-articles";
 import { editorialContentSchema, editorialDocumentSchema } from "./editorial-content";
@@ -80,24 +81,10 @@ export const contentImageSchema = z
   .string()
   .max(1000)
   .refine((value) => {
+    // The store's own media only: uploads and bundled files under /media/. Shopify's files are no longer accepted
+    // (owner, 11 Nov 2026); stored content that still names one is read through withoutShopifyMedia.
     if (!cleanUrl(value)) return false;
-    if (/^\/media\/[a-zA-Z0-9_./-]+$/.test(value)) return true;
-    try {
-      const u = new URL(value);
-      return (
-        u.protocol === "https:" &&
-        !u.username &&
-        !u.password &&
-        !u.port &&
-        !u.hash &&
-        ((u.hostname === "cdn.shopify.com" &&
-          u.pathname.startsWith("/s/files/")) ||
-          (u.hostname === "shop.maplefurnishers.com" &&
-            u.pathname.startsWith("/cdn/shop/")))
-      );
-    } catch {
-      return false;
-    }
+    return /^\/media\/[a-zA-Z0-9_./-]+$/.test(value) && !isShopifyMedia(value);
   }, "Use approved Maple media");
 export const templateMediaKeys = [
   "home-workshop-poster", "home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds",

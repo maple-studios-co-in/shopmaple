@@ -1,3 +1,4 @@
+import { approvedCatalogueImage } from "./catalogue-images.js";
 import { PrismaClient } from "@prisma/client";
 import { fetchKeeriExport } from "./keeri-fetch.js";
 import { syncKeeriExport } from "./keeri-sync.js";
@@ -51,13 +52,8 @@ export async function pullKeeriCatalogue(options: LiveCatalogueOptions): Promise
     throw new Error("STALE_OR_FUTURE_SNAPSHOT");
   // Keep aligned with the deployed Next image remotePatterns. Adding a media
   // host needs a reviewed public-media mapping and frontend configuration first.
-  for (const image of snapshot.products.flatMap(product => product.images)) {
-    const url = new URL(image);
-    if (url.protocol !== "https:" || url.username || url.password || url.port ||
-      !((url.hostname === "cdn.shopify.com" && url.pathname.startsWith("/s/files/")) ||
-        (url.hostname === "shop.maplefurnishers.com" && url.pathname.startsWith("/cdn/shop/"))))
-      throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
-  }
+  for (const image of snapshot.products.flatMap(product => product.images))
+    if (!approvedCatalogueImage(image)) throw new Error("UNSUPPORTED_PUBLIC_MEDIA");
   if (options.apply && snapshot.products.length === 0 && !options.allowEmpty)
     throw new Error("EMPTY_CATALOGUE_REQUIRES_APPROVAL");
   if (options.apply) {

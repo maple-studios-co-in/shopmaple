@@ -1,25 +1,26 @@
 import type { TemplateMedia, TemplateMediaItem, TemplateMediaKey } from "@shopmaple/contracts";
-import nimbus from "@/data/landing-nimbus.json";
-import story from "@/data/landing-story.json";
 import { homeTemplateMedia } from "@/lib/home-template-media";
 
-const storySection = (key: string) => story.sections.find(item => item.key === key)!;
-const rooms = nimbus.sections.find(item => item.key === "slideshow_PnGjbg")!;
-type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" };
+/**
+ * A placement's original artwork. `image` is a file bundled with the store, or "" where there is none: the artwork
+ * first published on Shopify left the store (owner, 11 Nov 2026). Such a placement shows, until staff upload their own,
+ * the first photo of `product` (a Keeri product the store lists) or, without one, nothing at all.
+ */
+export type TemplateMediaSlot = TemplateMediaItem & { product?: string; label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" };
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
-  { ...homeTemplateMedia["home-workshop-poster"], label: "Workshop video poster", group: "Homepage" },
+  { ...homeTemplateMedia["home-workshop-poster"], product: "arbor-sofa", label: "Workshop video poster", group: "Homepage" },
   { ...homeTemplateMedia["home-hero-sofas"], label: "Hero sofas tile", group: "Homepage" },
   { ...homeTemplateMedia["home-hero-chairs"], label: "Hero chairs tile", group: "Homepage" },
   { ...homeTemplateMedia["home-hero-tables"], label: "Hero tables tile", group: "Homepage" },
   { ...homeTemplateMedia["home-hero-beds"], label: "Hero beds tile", group: "Homepage" },
   { ...homeTemplateMedia["home-nimbus"], label: "Nimbus collection feature", group: "Homepage" },
-  { key: "home-newsletter", label: "Newsletter image", group: "Homepage", image: "/media/shopify/6a1f9eb4ba6d3c3a07c9fe33034665fb.png", alt: "Maple Furnishers" },
-  { key: "home-testimonial-poster", label: "Customer testimonial video poster", group: "Homepage", image: "/media/shopify/f6e87cff2aa5d106b180fca8c05ec7ef.jpg", alt: "Maple customer testimonial" },
+  { key: "home-newsletter", label: "Newsletter image", group: "Homepage", image: "", alt: "Maple Furnishers" },
+  { key: "home-testimonial-poster", label: "Customer testimonial video poster", group: "Homepage", image: "", alt: "Maple customer testimonial" },
   // The Nimbus redesign (Figma 311:548, owner 10 Nov 2026): the design file's renders, to replace with Maple's own. Each photo
   // keeps the original template's slot whose role it took; the project photo is retired (its key stays valid for older
-  // revisions). The room slideshow's photos stay: the homepage hero shows them until staff add slides.
+  // revisions). The room slideshow's slots stand in from Keeri products, as the homepage hero shows them until staff add slides.
   { key: "nimbus-hero-poster", label: "Opening photo", group: "Nimbus", image: "/media/nimbus-collection/hero.webp", mobileImage: "/media/nimbus-collection/hero-mobile.webp", alt: "A cream sofa, bouclé lounge chairs and a marble nesting table set on a bank of soft cloud" },
   { key: "nimbus-origin", label: "Origin photo", group: "Nimbus", image: "/media/nimbus-collection/origin.webp", alt: "A travertine archway opening onto a sea of cloud at sunrise" },
   { key: "nimbus-craft-poster", label: "Details photo", group: "Nimbus", image: "/media/nimbus-collection/detail.webp", alt: "The piped arm of a cream bouclé armchair, close up" },
@@ -27,13 +28,13 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "nimbus-room-collection", label: "Accent chairs photo", group: "Nimbus", image: "/media/nimbus-collection/accent-chairs.webp", mobileImage: "/media/nimbus-collection/accent-chairs.webp", alt: "A cream bouclé accent chair on walnut legs beside a bronze side table" },
   { key: "nimbus-room-dining", label: "Tables & consoles photo", group: "Nimbus", image: "/media/nimbus-collection/tables.webp", alt: "Two fluted travertine nesting tables on a woven rug, a walnut console behind them" },
   { key: "nimbus-room-bedroom", label: "Beds & benches photo", group: "Nimbus", image: "/media/nimbus-collection/beds.webp", alt: "A cream upholstered bed and bench in a bedroom whose arches open onto the clouds" },
-  { key: "nimbus-slide-living", label: "Living room slideshow image", group: "Nimbus", image: rooms.images[1]!, mobileImage: rooms.images[0]!, alt: "Living room" },
-  { key: "nimbus-slide-bedroom", label: "Bedroom slideshow image", group: "Nimbus", image: rooms.images[3]!, mobileImage: rooms.images[2]!, alt: "Bedroom" },
-  { key: "nimbus-slide-dining", label: "Dining room slideshow image", group: "Nimbus", image: rooms.images[5]!, mobileImage: rooms.images[4]!, alt: "Dining room" },
-  // Our Story's redesign (Figma 293:1093, owner 10 Nov 2026). The opening and belief photos are Maple's own (the belief
-  // one is the old film's poster frame); the chapter pictures are the design file's renders, to replace when real ones exist.
-  { key: "story-hero", label: "Story hero image", group: "Our Story", image: storySection("media_with_content_be4kK3").images[0]!, alt: "A hand resting on the bouclé seat of a Maple armchair" },
-  { key: "story-belief", label: "Belief image", group: "Our Story", image: storySection("media_with_content_deBkJg").videos[0]!.poster, alt: "The hand-woven cord seat of a Maple chair" },
+  { key: "nimbus-slide-living", label: "Living room slideshow image", group: "Nimbus", image: "", product: "aurevo", alt: "Living room" },
+  { key: "nimbus-slide-bedroom", label: "Bedroom slideshow image", group: "Nimbus", image: "", product: "altura-table", alt: "Bedroom" },
+  { key: "nimbus-slide-dining", label: "Dining room slideshow image", group: "Nimbus", image: "", product: "meridian-table", alt: "Dining room" },
+  // Our Story's redesign (Figma 293:1093, owner 10 Nov 2026). The opening and belief photos stand in from Keeri products
+  // until staff upload Maple's own; the chapter pictures are the design file's renders, to replace when real ones exist.
+  { key: "story-hero", label: "Story hero image", group: "Our Story", image: "", product: "luca", alt: "A Maple armchair" },
+  { key: "story-belief", label: "Belief image", group: "Our Story", image: "", product: "varin", alt: "A Maple dining chair" },
   { key: "story-chapter-1", label: "Journey chapter 1 image", group: "Our Story", image: "/media/our-story/chapter-1.webp", alt: "A walnut chair frame on a workbench strewn with shavings and hand planes" },
   { key: "story-chapter-2", label: "Journey chapter 2 image", group: "Our Story", image: "/media/our-story/chapter-2.webp", alt: "A cream sofa with burgundy cushions in a sunlit Indian living room" },
   { key: "story-chapter-3", label: "Journey chapter 3 image", group: "Our Story", image: "/media/our-story/chapter-3.webp", alt: "A bouclé lounge chair on a walnut frame beneath an arched alcove" },
@@ -66,14 +67,14 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "terra-piece-2", label: "Concept 2 photo (lounge chair)", group: "Terra", image: "/media/terra-collection/concept-chair.webp", alt: "A lounge chair with walnut ring arms and leaf-print upholstery" },
   { key: "terra-piece-3", label: "Concept 3 photo (bed)", group: "Terra", image: "/media/terra-collection/concept-bed.webp", alt: "A low tan leather bed made up with cream linen" },
   { key: "terra-piece-4", label: "Concept 4 photo (terrace chair)", group: "Terra", image: "/media/terra-collection/concept-terrace-chair.webp", alt: "An armchair woven in olive cord on a teak frame, with cream cushions" },
-  { key: "home-difference-1", label: "Difference promise 1", group: "Homepage icons", image: "/media/shopify/810bf424e7f5965dcc4965652150f519.svg", alt: "" },
-  { key: "home-difference-2", label: "Difference promise 2", group: "Homepage icons", image: "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg", alt: "" },
-  { key: "home-difference-3", label: "Difference promise 3", group: "Homepage icons", image: "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg", alt: "" },
-  { key: "home-difference-4", label: "Difference promise 4", group: "Homepage icons", image: "/media/shopify/5312458c26254d733cd7067921fcd4da.svg", alt: "" },
-  { key: "home-value-quiet-luxury", label: "Quiet Luxury icon", group: "Homepage icons", image: "/media/shopify/92d3be8e403dddf68de05a5f1404f9d4.svg", alt: "" },
-  { key: "home-value-real-living", label: "Built for Real Living icon", group: "Homepage icons", image: "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg", alt: "" },
-  { key: "home-value-ages-beautifully", label: "Ages Beautifully icon", group: "Homepage icons", image: "/media/shopify/8a4d8dfa23cb366a932e3020010e74a8.svg", alt: "" },
-  { key: "home-value-strength", label: "Strength You Don’t See icon", group: "Homepage icons", image: "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg", alt: "" },
+  { key: "home-difference-1", label: "Difference promise 1", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-difference-2", label: "Difference promise 2", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-difference-3", label: "Difference promise 3", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-difference-4", label: "Difference promise 4", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-value-quiet-luxury", label: "Quiet Luxury icon", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-value-real-living", label: "Built for Real Living icon", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-value-ages-beautifully", label: "Ages Beautifully icon", group: "Homepage icons", image: "", alt: "" },
+  { key: "home-value-strength", label: "Strength You Don’t See icon", group: "Homepage icons", image: "", alt: "" },
   { key: "home-city-delhi", label: "Delhi city artwork", group: "Cities", image: "/media/cities/delhi.webp", alt: "Delhi" },
   { key: "home-city-kolkata", label: "Kolkata city artwork", group: "Cities", image: "/media/cities/kolkata.webp", alt: "Kolkata" },
   { key: "home-city-hyderabad", label: "Hyderabad city artwork", group: "Cities", image: "/media/cities/hyderabad.webp", alt: "Hyderabad" },
@@ -83,20 +84,44 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "home-city-bengaluru", label: "Bengaluru city artwork", group: "Cities", image: "/media/cities/bengaluru.webp", alt: "Bengaluru" },
   { key: "home-city-chennai", label: "Chennai city artwork", group: "Cities", image: "/media/cities/chennai.webp", alt: "Chennai" },
   { key: "home-city-gujarat", label: "Gujarat city artwork", group: "Cities", image: "/media/cities/gujarat.webp", alt: "Gujarat" },
-  { key: "home-city-artwork-1", label: "City artwork 1", group: "Cities", image: "/media/shopify/9f0133efbb387f0f88791864e7a27773.svg", alt: "" },
-  { key: "home-city-artwork-2", label: "City artwork 2", group: "Cities", image: "/media/shopify/f31ecae8be1fb47df55a2ca398c3d1e6.svg", alt: "" },
-  { key: "home-city-artwork-3", label: "City artwork 3", group: "Cities", image: "/media/shopify/8880fe84ee809a72d7f0850fbc829067.svg", alt: "" },
-  { key: "home-city-artwork-4", label: "City artwork 4", group: "Cities", image: "/media/shopify/2774449bb413ac0707583d7855a20257.svg", alt: "" },
-  { key: "home-city-artwork-5", label: "City artwork 5", group: "Cities", image: "/media/shopify/310e8c5bee99349cb2518705193441df.svg", alt: "" },
-  { key: "home-city-artwork-6", label: "City artwork 6", group: "Cities", image: "/media/shopify/0e03d90f650a697f9653bde630feefc4.svg", alt: "" },
-  { key: "home-city-artwork-7", label: "City artwork 7", group: "Cities", image: "/media/shopify/36acb01ec777dabbbcdd7a466446313b.svg", alt: "" },
-  { key: "home-city-artwork-8", label: "City artwork 8", group: "Cities", image: "/media/shopify/d976f5f8269ae89a987b74a4d94eded2.svg", alt: "" },
+  { key: "home-city-artwork-1", label: "City artwork 1", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-2", label: "City artwork 2", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-3", label: "City artwork 3", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-4", label: "City artwork 4", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-5", label: "City artwork 5", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-6", label: "City artwork 6", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-7", label: "City artwork 7", group: "Cities", image: "", alt: "" },
+  { key: "home-city-artwork-8", label: "City artwork 8", group: "Cities", image: "", alt: "" },
   { key: "home-city-agra", label: "Agra city artwork", group: "Cities", image: "/media/cities/agra.webp", alt: "Agra" },
 ];
 
 export function resolveTemplateMedia(key: TemplateMediaKey, value?: TemplateMedia, fallbackAlt?: string): TemplateMediaItem {
   const override = value?.find(item => item.key === key);
   if (override) return { ...override };
-  const { label: _label, group: _group, ...asset } = templateMediaSlots.find(item => item.key === key)!;
+  const { label: _label, group: _group, product: _product, ...asset } = templateMediaSlots.find(item => item.key === key)!;
   return { ...asset, alt: fallbackAlt ?? asset.alt };
+}
+
+/** Each listed product's first photo, by handle (lib/product-photos.ts reads them for a page). */
+export type ProductPhotos = ReadonlyMap<string, string>;
+
+/** The Keeri products whose photos stand in for these placements, where staff have not uploaded their own. */
+export function artworkProducts(keys: readonly TemplateMediaKey[], value?: TemplateMedia): string[] {
+  return keys.flatMap(key => {
+    if (resolveTemplateMedia(key, value).image) return [];
+    const product = templateMediaSlots.find(item => item.key === key)?.product;
+    return product ? [product] : [];
+  });
+}
+
+/**
+ * The artwork to draw for a placement: staff's upload, else the bundled original, else the stand-in product's photo
+ * (desktop and mobile alike), else null, and the placement is left out.
+ */
+export function resolveArtwork(key: TemplateMediaKey, value: TemplateMedia | undefined, photos: ProductPhotos | undefined, fallbackAlt?: string): TemplateMediaItem | null {
+  const artwork = resolveTemplateMedia(key, value, fallbackAlt);
+  if (artwork.image) return artwork;
+  const product = templateMediaSlots.find(item => item.key === key)?.product;
+  const photo = product ? photos?.get(product) : undefined;
+  return photo ? { ...artwork, image: photo, mobileImage: photo } : null;
 }

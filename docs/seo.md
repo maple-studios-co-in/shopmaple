@@ -16,7 +16,7 @@ Perplexity, Google AI Overviews) from one module, `apps/web/lib/seo.ts`.
 - `SITE_URL` is the address used for canonical links, the sitemap and structured data (read at
   request time). There is no hard-coded default: a missing or malformed value falls back to
   `WEB_ORIGIN`, then `http://localhost:3000`, so set it in `store.env`. `SITE_ALIASES` lists the
-  store's other addresses during a move (see [the move to shop.](shopify-media-migration.md));
+  store's other addresses during the move to `shop.maplefurnishers.com`;
   links to them become paths here, but canonical links always use `SITE_URL`.
 
 ## What each page publishes

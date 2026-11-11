@@ -21,16 +21,15 @@
       "oro",
       "elyra-accent-chair-ivory-mocha-walnut",
       "havren-accent-chair",
-      "elyra-accent-chair",
       "lurex-accent-chair",
       "solvane-accent-chair",
       "velmora-accent-chair",
       "elvara-accent-chair",
-      "orlen-accent-chair",
-      "valen-accent-chair",
-      "orvane-accent-chair",
+      "orlen",
+      "valen",
+      "orvane",
       "veyra-accent-chair",
-      "luma-haven-accent-chair",
+      "luma-haven",
       "nimbus-cloud-lounge-chair-grey-boucle-walnut",
       "aurelia-luxe-accent-chair-walnut-mocha",
       "alto-luxe-lounge-chair-gold-charcoal",
@@ -41,7 +40,7 @@
       "emerald-tufted-velvet-accent-chair",
       "lira-barrel-accent-chair",
       "nova-boucle-barrel-lounge-chair",
-      "aera-swivel-lounge-chair"
+      "avelon-chair"
     ]
   },
   "beds": {
@@ -68,11 +67,11 @@
       "nimbus-cloud-lounge-chair-grey-boucle-walnut",
       "aurelia-luxe-accent-chair-walnut-mocha",
       "alto-luxe-lounge-chair-gold-charcoal",
-      "ovalo-modern-console-walnut-white",
+      "kova",
       "maple-bloom-petal-coffee-table-white-marble-brass-finish",
       "aurelia-fluted-coffee-table-white-marble-gold",
-      "oslo-retro-console-walnut-ivory",
-      "winston-wooden-console-table-with-brass-trim-mirror",
+      "rovyn",
+      "avro",
       "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
       "elanora-rose-gold-console-table-with-mirror-black-glass-top",
       "aurelia-luxe-console-table-with-mirror-black-marble-gold",
@@ -88,10 +87,10 @@
       "aurelia-luxe-console-table-with-mirror-black-marble-gold",
       "elanora-rose-gold-console-table-with-mirror-black-glass-top",
       "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
-      "winston-wooden-console-table-with-brass-trim-mirror",
-      "oslo-retro-console-walnut-ivory",
+      "avro",
+      "rovyn",
       "maple-bloom-petal-coffee-table-white-marble-brass-finish",
-      "ovalo-modern-console-walnut-white"
+      "kova"
     ]
   },
   "l-shape-sofa-set": {
@@ -109,12 +108,12 @@
       "aurum-blossom-dining-set-ivory-gold-floral",
       "celesta-grand-dining-white-marble-gold-velvet",
       "hexa-luxe-dining-set-honey-oak-velvet-gold",
-      "cirque-luxe-marble-dining-table-emperador-gold",
-      "ovalo-modern-console-walnut-white",
+      "elvo",
+      "kova",
       "maple-bloom-petal-coffee-table-white-marble-brass-finish",
       "aurelia-fluted-coffee-table-white-marble-gold",
-      "oslo-retro-console-walnut-ivory",
-      "winston-wooden-console-table-with-brass-trim-mirror",
+      "rovyn",
+      "avro",
       "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
       "elanora-rose-gold-console-table-with-mirror-black-glass-top",
       "aurelia-luxe-console-table-with-mirror-black-marble-gold",
@@ -124,12 +123,12 @@
   "console-tables": {
     "title": "Console Tables",
     "handles": [
-      "tavik-console-table",
-      "lyro-console-table",
-      "zovik-console-table",
-      "ovalo-modern-console-walnut-white",
-      "oslo-retro-console-walnut-ivory",
-      "winston-wooden-console-table-with-brass-trim-mirror",
+      "tavik",
+      "lyro",
+      "zovik",
+      "kova",
+      "rovyn",
+      "avro",
       "elmore-sculpted-console-table-walnut-finish-with-marble-top-mirror",
       "elanora-rose-gold-console-table-with-mirror-black-glass-top",
       "aurelia-luxe-console-table-with-mirror-black-marble-gold"
@@ -139,16 +138,16 @@
     "title": "Coffee Tables",
     "handles": [
       "ralvo-sofa-table",
-      "kynor-sofa-table",
-      "xarvo-sofa-table",
-      "veylo-sofa-table",
-      "elrik-sofa-table",
-      "zayro-sofa-table",
-      "noryx-sofa-table",
-      "kyvik-sofa-table",
-      "zarek-sofa-table",
-      "velon-sofa-table",
-      "oryx-sofa-table",
+      "kynor",
+      "xarvo",
+      "veylo",
+      "elrik",
+      "zayro",
+      "noryx",
+      "kyvik",
+      "zarek",
+      "velon",
+      "oryx",
       "maple-bloom-petal-coffee-table-white-marble-brass-finish",
       "aurelia-fluted-coffee-table-white-marble-gold"
     ]
@@ -157,16 +156,16 @@
     "title": "Center Tables",
     "handles": [
       "ralvo-sofa-table",
-      "kynor-sofa-table",
-      "xarvo-sofa-table",
-      "veylo-sofa-table",
-      "elrik-sofa-table",
-      "zayro-sofa-table",
-      "noryx-sofa-table",
-      "kyvik-sofa-table",
-      "zarek-sofa-table",
-      "velon-sofa-table",
-      "oryx-sofa-table",
+      "kynor",
+      "xarvo",
+      "veylo",
+      "elrik",
+      "zayro",
+      "noryx",
+      "kyvik",
+      "zarek",
+      "velon",
+      "oryx",
       "maple-bloom-petal-coffee-table-white-marble-brass-finish",
       "aurelia-fluted-coffee-table-white-marble-gold"
     ]
@@ -180,7 +179,7 @@
   "office-suite": {
     "title": "Office Suite",
     "handles": [
-      "winston-wooden-console-table-with-brass-trim-mirror"
+      "avro"
     ]
   },
   "hotel-luxury": {
@@ -320,7 +319,7 @@
   "dining-chair": {
     "title": "Dining Chair",
     "handles": [
-      "naro-dining-chair",
+      "naro",
       "arven",
       "aero-dining-chair",
       "evo-dining-chair",
@@ -376,16 +375,15 @@
       "oro",
       "elyra-accent-chair-ivory-mocha-walnut",
       "havren-accent-chair",
-      "elyra-accent-chair",
       "lurex-accent-chair",
       "solvane-accent-chair",
       "velmora-accent-chair",
       "elvara-accent-chair",
-      "orlen-accent-chair",
-      "valen-accent-chair",
-      "orvane-accent-chair",
+      "orlen",
+      "valen",
+      "orvane",
       "veyra-accent-chair",
-      "luma-haven-accent-chair",
+      "luma-haven",
       "nimbus-cloud-lounge-chair-grey-boucle-walnut",
       "solis-curved-velvet-lounge-chairs",
       "emerald-tufted-velvet-accent-chair"
@@ -401,16 +399,15 @@
       "nero",
       "arno",
       "ivo",
-      "aeris-sculpt-lounge-chair",
-      "valen-accent-chair",
+      "avelon-chair",
+      "valen",
       "nimbus-cloud-lounge-chair-grey-boucle-walnut",
       "aurelia-luxe-accent-chair-walnut-mocha",
       "alto-luxe-lounge-chair-gold-charcoal",
       "solis-curved-velvet-lounge-chairs",
       "ava-pleated-velvet-lounge-chair",
       "lira-barrel-accent-chair",
-      "nova-boucle-barrel-lounge-chair",
-      "aera-swivel-lounge-chair"
+      "nova-boucle-barrel-lounge-chair"
     ]
   },
   "rocking-chair": {
@@ -455,18 +452,18 @@
   "sofas": {
     "title": "Sofas",
     "handles": [
-      "alcyone-7-seater-sofa",
-      "vesper-7-seater-sofa",
-      "rhea-7-seater-sofa",
-      "eira-7-seater-sofa",
-      "vela-7-seater-sofa",
-      "alina-7-seater-sofa",
-      "sora-5-seater-sofa",
-      "estelle-5-seater-sofa",
-      "zaria-5-seater-sofa",
-      "nysa-5-seater-sofa",
+      "alcyone",
+      "vesper",
+      "rhea",
+      "eira-sofa",
+      "vela-sofa",
+      "alina",
+      "sora",
+      "estelle",
+      "zaria",
+      "nysa",
       "aria-5-seater-sofa",
-      "vivienne-5-seater-sofa",
+      "vivienne",
       "seraphine-3-seater-sofa",
       "valencia-3-seater-sofa",
       "nova-3-seater-sofa",
@@ -474,12 +471,12 @@
       "lunae-3-seater-sofa",
       "astraea-3-seater-sofa",
       "elara-3-seater-sofa",
-      "selene-2-seater-sofa",
+      "selene",
       "lyra-2-seater-sofa",
       "aurelia-2-seater-sofa",
       "celeste-sofa",
       "novaire-sofa",
-      "aurevon-sectional-sofa"
+      "cloudblock"
     ]
   },
   "sofa-cum-beds": {
@@ -505,7 +502,7 @@
   "2-seater-sofas": {
     "title": "2 Seater Sofas",
     "handles": [
-      "selene-2-seater-sofa",
+      "selene",
       "lyra-2-seater-sofa",
       "aurelia-2-seater-sofa"
     ]
@@ -513,7 +510,7 @@
   "dining-chairs-1": {
     "title": "Dining-Chairs",
     "handles": [
-      "naro-dining-chair",
+      "naro",
       "arven",
       "aero-dining-chair",
       "evo-dining-chair",
@@ -534,7 +531,7 @@
   "wing-chair": {
     "title": "Wing Chair",
     "handles": [
-      "valen-accent-chair"
+      "valen"
     ]
   },
   "bedroom-sofa": {
@@ -544,22 +541,22 @@
   "5-seater-sofa": {
     "title": "5-Seater Sofa",
     "handles": [
-      "sora-5-seater-sofa",
-      "estelle-5-seater-sofa",
-      "zaria-5-seater-sofa",
-      "nysa-5-seater-sofa",
-      "vivienne-5-seater-sofa"
+      "sora",
+      "estelle",
+      "zaria",
+      "nysa",
+      "vivienne"
     ]
   },
   "7-seater-sofa": {
     "title": "7+ Seater Sofa",
     "handles": [
-      "alcyone-7-seater-sofa",
-      "vesper-7-seater-sofa",
-      "rhea-7-seater-sofa",
-      "eira-7-seater-sofa",
-      "vela-7-seater-sofa",
-      "alina-7-seater-sofa"
+      "alcyone",
+      "vesper",
+      "rhea",
+      "eira-sofa",
+      "vela-sofa",
+      "alina"
     ]
   },
   "sofa-sets": {
@@ -573,10 +570,10 @@
   "bedroom-nimbus": {
     "title": "Bedroom-Nimbus",
     "handles": [
-      "aileron-upholstered-bench",
-      "orbicular-lounge-chair",
-      "aileron-signature-bed",
-      "velata-pillow-drift-bed",
+      "aileron-bench",
+      "aurevo-chair",
+      "aileron",
+      "elara-bed",
       "loft-bench",
       "cozy-cot-baby-bed",
       "aspen-bed"
@@ -586,8 +583,8 @@
     "title": "Dining Room - Nimbus",
     "handles": [
       "virello-marble-table",
-      "luna-curve-lounge-chair",
-      "oryon-fluted-console-unit",
+      "nova-chair",
+      "meridian-console",
       "oryon-fluted-bar-counter-set",
       "oryon-dining-table-set"
     ]
@@ -601,84 +598,84 @@
       "novaire-sofa",
       "marbelle-center-table",
       "velune-lounge-chair",
-      "aurevon-sectional-sofa",
+      "cloudblock",
       "virello-marble-table",
-      "opelle-accent-chair",
-      "elysian-marble-living-room-set",
-      "aeris-marble-nesting-center-table",
-      "aeris-sculpt-lounge-chair",
-      "aeris-living-room-set"
+      "virelle-chair",
+      "aether",
+      "avelon-table",
+      "avelon-chair",
+      "avelon"
     ]
   },
   "dining": {
     "title": "Dining",
     "handles": [
-      "varyn-dining-table",
-      "veyro-dining-table",
-      "nova-dining-table",
-      "velor-dining-table",
-      "seno-dining-table",
-      "runo-dining-table",
+      "varyn",
+      "veyro",
+      "nova",
+      "velor",
+      "seno",
+      "runo",
       "xylo-dining-table",
       "vexa-dining-table",
       "tylo-dining-table",
       "sova-dining-table",
-      "cirque-luxe-marble-dining-table-emperador-gold"
+      "elvo"
     ]
   },
   "storage": {
     "title": "Storage",
     "handles": [
-      "veyra-chest-of-drawers",
-      "rowan-bookcase",
-      "elion-storage-cabinet",
-      "arden-console-cabinet"
+      "aileron-chest",
+      "arboris-bookcase",
+      "radiance-cabinet",
+      "arcana-console"
     ]
   },
   "tables": {
     "title": "Tables",
     "handles": [
-      "aven-side-table",
-      "cirque-luxe-marble-dining-table-emperador-gold",
+      "aven-table",
+      "elvo",
       "elora",
       "elowen-1",
       "elowen-3",
-      "elrik-sofa-table",
+      "elrik",
       "kiro-bar-table",
-      "kynor-sofa-table",
-      "kyvik-sofa-table",
-      "lyro-console-table",
+      "kynor",
+      "kyvik",
+      "lyro",
       "mavik-side-table",
-      "morik-media-unit",
+      "morik",
       "nexo-bar-table",
       "norik-side-table",
-      "noryx-sofa-table",
-      "nova-dining-table",
-      "orven-side-table",
-      "oryx-sofa-table",
+      "noryx",
+      "nova",
+      "orven",
+      "oryx",
       "ralvo-sofa-table",
-      "runo-dining-table",
-      "seno-dining-table",
+      "runo",
+      "seno",
       "solen-side-table",
       "sova-dining-table",
-      "tavik-console-table",
+      "tavik",
       "tylo-dining-table",
-      "varyn-dining-table",
-      "velon-sofa-table",
-      "velor-dining-table",
+      "varyn",
+      "velon",
+      "velor",
       "vexa-dining-table",
-      "veya-1",
-      "veylo-sofa-table",
-      "veyro-dining-table",
-      "xarvo-sofa-table",
+      "altura-table",
+      "veylo",
+      "veyro",
+      "xarvo",
       "xylo-dining-table",
       "yuno-bar-table",
-      "zarek-sofa-table",
-      "zayro-sofa-table",
+      "zarek",
+      "zayro",
       "zento-side-table",
-      "zenvo-side-table",
-      "zovik-console-table",
-      "zylen-media-unit"
+      "zenvo",
+      "zovik",
+      "zylen"
     ]
   },
   "bar": {
@@ -692,34 +689,34 @@
   "tv-media-units": {
     "title": "TV & Media Units",
     "handles": [
-      "morik-media-unit",
-      "zylen-media-unit"
+      "morik",
+      "zylen"
     ]
   },
   "sofa-table": {
     "title": "Sofa Table",
     "handles": [
-      "oryx-sofa-table",
-      "velon-sofa-table",
-      "zarek-sofa-table",
-      "kyvik-sofa-table",
-      "noryx-sofa-table",
-      "elrik-sofa-table",
-      "veylo-sofa-table",
-      "xarvo-sofa-table",
-      "kynor-sofa-table",
+      "oryx",
+      "velon",
+      "zarek",
+      "kyvik",
+      "noryx",
+      "elrik",
+      "veylo",
+      "xarvo",
+      "kynor",
       "ralvo-sofa-table"
     ]
   },
   "side-table": {
     "title": "Side Table",
     "handles": [
-      "veya-1",
+      "altura-table",
       "elowen-3",
       "elowen-1",
-      "orven-side-table",
-      "aven-side-table",
-      "zenvo-side-table",
+      "orven",
+      "aven-table",
+      "zenvo",
       "solen-side-table",
       "mavik-side-table",
       "zento-side-table",
@@ -729,25 +726,25 @@
   "dinings": {
     "title": "Dinings",
     "handles": [
-      "varyn-dining-table",
-      "veyro-dining-table",
-      "nova-dining-table",
-      "velor-dining-table",
-      "seno-dining-table",
-      "runo-dining-table",
+      "varyn",
+      "veyro",
+      "nova",
+      "velor",
+      "seno",
+      "runo",
       "xylo-dining-table",
       "vexa-dining-table",
       "tylo-dining-table",
       "sova-dining-table",
-      "cirque-luxe-marble-dining-table-emperador-gold"
+      "elvo"
     ]
   },
   "consoles": {
     "title": "Consoles",
     "handles": [
-      "tavik-console-table",
-      "lyro-console-table",
-      "zovik-console-table"
+      "tavik",
+      "lyro",
+      "zovik"
     ]
   },
   "outdoor-furnitures": {
@@ -768,21 +765,21 @@
       "novaire-sofa",
       "marbelle-center-table",
       "velune-lounge-chair",
-      "aurevon-sectional-sofa",
+      "cloudblock",
       "virello-marble-table",
-      "opelle-accent-chair",
-      "elysian-marble-living-room-set",
-      "aeris-marble-nesting-center-table",
-      "aeris-sculpt-lounge-chair",
-      "aeris-living-room-set",
-      "luna-curve-lounge-chair",
-      "oryon-fluted-console-unit",
+      "virelle-chair",
+      "aether",
+      "avelon-table",
+      "avelon-chair",
+      "avelon",
+      "nova-chair",
+      "meridian-console",
       "oryon-fluted-bar-counter-set",
       "oryon-dining-table-set",
-      "aileron-upholstered-bench",
-      "orbicular-lounge-chair",
-      "aileron-signature-bed",
-      "velata-pillow-drift-bed",
+      "aileron-bench",
+      "aurevo-chair",
+      "aileron",
+      "elara-bed",
       "loft-bench",
       "cozy-cot-baby-bed",
       "aspen-bed"
@@ -871,12 +868,11 @@
   "bestseller-chairs": {
     "title": "Bestseller chairs",
     "handles": [
-      "orlen-accent-chair",
-      "luma-haven-accent-chair",
-      "orvane-accent-chair",
-      "valen-accent-chair",
+      "orlen",
+      "luma-haven",
+      "orvane",
+      "valen",
       "tara",
-      "elyra-accent-chair",
       "elyra-accent-chair-ivory-mocha-walnut",
       "solvane-accent-chair",
       "oro",

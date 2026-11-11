@@ -23,11 +23,12 @@ const rich: EditorialNode[] = [
 test("a page body can be rich text, with the same safety rules as policies", () => {
   assert.ok(contentPageSchema.safeParse(page({ content: rich })).success);
   assert.ok(contentPageSchema.safeParse(page({ content: [{ tag: "img", src: upload, alt: "A sofa", children: [] }] })).success, "media library uploads are allowed");
-  assert.ok(contentPageSchema.safeParse(page({ content: [{ tag: "img", src: shopImage, alt: "", children: [] }] })).success);
   for (const unsafe of [
     [{ tag: "script", children: ["alert(1)"] }],
     [{ tag: "a", href: "javascript:alert(1)", children: ["x"] }],
     [{ tag: "img", src: "https://elsewhere.example/x.png", children: [] }],
+    // Shopify's files are no longer media the store shows (owner, 11 Nov 2026).
+    [{ tag: "img", src: shopImage, alt: "", children: [] }],
     [{ tag: "img", src: "/media/uploads/../../etc/passwd", children: [] }],
   ] as EditorialNode[][]) assert.equal(contentPageSchema.safeParse(page({ content: unsafe })).success, false, JSON.stringify(unsafe));
   const huge: EditorialNode[] = Array.from({ length: 900 }, () => ({ tag: "p", children: ["x".repeat(60)] }));

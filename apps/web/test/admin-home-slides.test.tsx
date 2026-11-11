@@ -4,7 +4,6 @@ import React, { act, useState } from "react";
 import { JSDOM } from "jsdom";
 import { homeDetailsSchema, type HomeDetails } from "@shopmaple/contracts";
 import { defaultHomeDetails } from "../lib/home-details-defaults";
-import { heroFilm } from "../lib/hero-film";
 
 const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
@@ -50,19 +49,17 @@ async function choose(label: string, value: string) {
 }
 const slides = () => latest?.hero.slides;
 
-test("hero: with no slides staff see the shop film is in use, and adding a slide keeps the film as slide 1", async () => {
+test("hero: with no slides staff see the default stills are in use, and adding a slide adds one blank slide", async () => {
   const close = await mount("hero");
   try {
-    assert.match(container.textContent ?? "", /current shop film/i);
+    assert.match(container.textContent ?? "", /four stills/i);
+    assert.doesNotMatch(container.textContent ?? "", /shop film/i, "the Shopify film is gone, so it is never offered");
     assert.equal(field("Hero slide 1 headline"), null, "no slide rows until one is added");
     await click("Add hero slide");
-    assert.equal(slides()?.length, 2);
-    assert.deepEqual([slides()![0]!.kind, slides()![0]!.src, slides()![0]!.headline], ["video", heroFilm, "Timeless Craftsmanship for Modern Living"]);
-    assert.equal(field("Hero slide 1 media address")!.value, heroFilm);
-    assert.equal(field("Hero slide 1 poster address")!.value, slides()![0]!.poster);
-    assert.equal(field("Hero slide 1 intro")!.value, "Handcrafted furniture that brings elegance to every corner of your home.");
-    assert.equal(field("Hero slide 2 headline")!.value, "", "the new slide starts blank");
-    assert.equal(homeDetailsSchema.safeParse({ ...latest!, hero: { ...latest!.hero, slides: [slides()![0]!] } }).success, true, "the film as slide 1 is valid content");
+    assert.equal(slides()?.length, 1);
+    assert.deepEqual(slides()![0], { kind: "image", src: "", alt: "", headline: "", intro: "" });
+    assert.equal(field("Hero slide 1 headline")!.value, "", "the new slide starts blank");
+    assert.equal(field("Hero slide 2 headline"), null);
   } finally { await close(); }
 });
 
@@ -70,39 +67,44 @@ test("hero: editing a slide's kind, media, description and words, and a video's 
   const close = await mount("hero");
   try {
     await click("Add hero slide");
-    assert.equal(field("Hero slide 2 kind")!.value, "image", "a new slide is an image");
-    assert.equal(field("Hero slide 2 poster address"), null, "an image has no poster field");
-    await fill("Hero slide 2 media address", upload);
-    await fill("Hero slide 2 image description", "A walnut sofa");
-    await fill("Hero slide 2 headline", "Sofas that last");
-    await fill("Hero slide 2 intro", "Built to be lived in.");
-    await choose("Hero slide 2 kind", "video");
-    assert.equal(slides()![1]!.kind, "video");
-    assert.ok(field("Hero slide 2 poster address"), "a video needs a poster");
-    assert.match(container.textContent ?? "", /Maple media address \(one starting \/media\/, such as the shop film\)/);
+    assert.equal(field("Hero slide 1 kind")!.value, "image", "a new slide is an image");
+    assert.equal(field("Hero slide 1 poster address"), null, "an image has no poster field");
+    await fill("Hero slide 1 media address", upload);
+    await fill("Hero slide 1 image description", "A walnut sofa");
+    await fill("Hero slide 1 headline", "Sofas that last");
+    await fill("Hero slide 1 intro", "Built to be lived in.");
+    await choose("Hero slide 1 kind", "video");
+    assert.equal(slides()![0]!.kind, "video");
+    assert.ok(field("Hero slide 1 poster address"), "a video needs a poster");
+    assert.match(container.textContent ?? "", /Maple media address \(one starting \/media\/\)/);
+    assert.doesNotMatch(container.textContent ?? "", /Shopify/, "staff are never told to host on Shopify");
     assert.match(container.textContent ?? "", /media library only uploads images/);
-    await fill("Hero slide 2 media address", "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4");
-    await fill("Hero slide 2 poster address", upload);
-    assert.deepEqual(slides()![1], { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4", poster: upload, alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." });
+    await fill("Hero slide 1 media address", "/media/films/workshop.mp4");
+    await fill("Hero slide 1 poster address", upload);
+    assert.deepEqual(slides()![0], { kind: "video", src: "/media/films/workshop.mp4", poster: upload, alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." });
     assert.equal(homeDetailsSchema.safeParse(latest).success, true, "what staff entered is valid content");
+    await fill("Hero slide 1 media address", "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4");
+    assert.equal(homeDetailsSchema.safeParse(latest).success, false, "a film on Shopify is no longer valid content");
   } finally { await close(); }
 });
 
-test("hero: slides move, are removed down to one, stop at six, and can go back to the shop film", async () => {
+test("hero: slides move, are removed down to one, stop at six, and can go back to the default stills", async () => {
   const close = await mount("hero");
   try {
     await click("Add hero slide");
+    await fill("Hero slide 1 headline", "First");
+    await click("Add hero slide");
     await fill("Hero slide 2 headline", "Second");
     await click("Move hero slide 2 up");
-    assert.deepEqual(slides()!.map(slide => slide.headline), ["Second", "Timeless Craftsmanship for Modern Living"]);
+    assert.deepEqual(slides()!.map(slide => slide.headline), ["Second", "First"]);
     assert.equal(field("Hero slide 1 headline")!.value, "Second");
     for (let n = 0; n < 4; n++) await click("Add hero slide");
     assert.equal(slides()!.length, 6);
     assert.equal(button("Add hero slide").disabled, true, "at most six");
     for (let n = 0; n < 5; n++) await click("Remove hero slide 1");
     assert.equal(slides()!.length, 1);
-    assert.equal(button("Remove hero slide 1").disabled, true, "the last slide stays; use the shop film button instead");
-    await click("Use the shop film only");
+    assert.equal(button("Remove hero slide 1").disabled, true, "the last slide stays; use the button that goes back to the defaults instead");
+    await click("Use the default stills");
     assert.equal(latest!.hero.slides, undefined);
     assert.equal("slides" in latest!.hero, false, "the key is gone, as in documents published before slides");
     assert.equal(field("Hero slide 1 headline"), null);
@@ -118,6 +120,8 @@ test("hero: an image slide can take its picture from the media library", async (
   const close = await mount("hero");
   try {
     await click("Add hero slide");
+    await click("Add hero slide");
+    await choose("Hero slide 1 kind", "video");
     assert.equal(container.querySelectorAll('[data-slide-picker="src"]').length, 1, "only the image slide offers the library for its picture");
     assert.equal(container.querySelectorAll('[data-slide-picker="poster"]').length, 1, "the video slide offers it for its poster");
     await act(async () => container.querySelector<HTMLElement>('[data-slide-picker="src"] button')!.click());

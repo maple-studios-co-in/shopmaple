@@ -14,7 +14,6 @@ const principles = section("section_aGJjhK");
 const series = section("section_BBYid8");
 const project = section("section_PYMfcR");
 const promises = section("section_hrKc6w");
-const film = section("hero_section_pfEKq3");
 
 /** The original template's copy, as the live store published it before the redesign (10 Nov 2026). */
 export const legacyNimbusPage: LegacyNimbusPageContent = {
@@ -181,11 +180,13 @@ export function resolveNimbusPageContent(value?: NimbusPageContent): CollectionL
 }
 
 /** The edit's eight real pieces, in the design's order. The table's catalogue name is "Avelon Marble Nesting Center Table". */
+// Keeri products (owner, 11 Nov 2026: the store lists Keeri's catalogue only): the Keeri pieces that replaced the design's
+// Shopify listings, in the design's order (data/retired-products.json, `replacements`).
 export const nimbusPieceHandles = [
-  "aurevon-sectional-sofa", "opelle-accent-chair", "aeris-marble-nesting-center-table", "aileron-signature-bed",
-  "luna-curve-lounge-chair", "oryon-fluted-console-unit", "aileron-upholstered-bench", "velata-pillow-drift-bed",
+  "cloudblock", "virelle-chair", "avelon-table", "aileron",
+  "nova-chair", "meridian-console", "aileron-bench", "elara-bed",
 ] as const;
-/** A piece as the catalogue has it: its own name, photo and page (or an enquiry, when the catalogue no longer lists it). */
+/** A piece as the catalogue has it: its own name, photo and page. */
 export type NimbusPiece = { title: string; image: string; href: string };
 
 /** The rooms' own Nimbus collections (data/navigation.json, the source collections). */
@@ -208,16 +209,16 @@ const enquiry = (subject: string) => `/contact?${new URLSearchParams({ product: 
 
 /**
  * The Nimbus page, ready for the collection template: the staff words, the Nimbus artwork slots, the store's customer
- * email from the footer settings, the existing Nimbus film (24.7 seconds) and the edit's pieces as the catalogue has them.
+ * email from the footer settings and the edit's pieces as the catalogue has them. The page has no film: Nimbus's films
+ * were Shopify files and left the store with it, and films cannot be uploaded yet (owner, 11 Nov 2026).
  */
-export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "siteChrome">, pieces: readonly NimbusPiece[] = []): CollectionLanding {
+export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "siteChrome">, pieces: readonly (NimbusPiece | null)[] = []): CollectionLanding {
   const page = resolveNimbusPageContent(site.nimbusPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
     return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt };
   };
   const sections = page.sections.filter(item => item.enabled).map(item => item.key);
-  const [desktopFilm, phoneFilm] = film.videos;
   return {
     key: "nimbus",
     title: page.title,
@@ -229,15 +230,6 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       // "Discover Nimbus" glides to the edit; with the edit hidden it opens the whole collection.
       cta: { label: page.hero.cta, href: sections.includes("pieces") ? "#nimbus-pieces" : "/collections/nimbus" },
       media: media("nimbus-hero-poster"),
-      film: {
-        label: page.hero.film ?? defaultNimbusPage.hero.film!,
-        duration: "00:25",
-        title: `${page.title} film`,
-        src: desktopFilm!.src,
-        mobileSrc: phoneFilm!.src,
-        // Shopify's full-size frame rather than its small thumbnail.
-        poster: `${desktopFilm!.poster.replace("_small.jpg", ".jpg")}&width=1440`,
-      },
     },
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: roomLinks[index]! })),
     philosophy: { ...page.philosophy },
@@ -262,12 +254,13 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       eyebrow: page.pieces.eyebrow,
       heading: page.pieces.heading,
       linkLabel: page.pieces.link,
-      items: pieces.map((piece, index) => ({
+      // A piece the catalogue no longer lists is left out, and each card keeps the line saved for its place.
+      items: pieces.flatMap((piece, index) => (piece ? [{
         title: piece.title,
         line: page.pieces.items[index]!.line,
         href: piece.href,
         media: { src: piece.image, alt: piece.title },
-      })),
+      }] : [])),
       cta: { label: page.pieces.cta!, href: "/collections/nimbus" },
     },
     consultation: {

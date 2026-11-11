@@ -1,34 +1,23 @@
-import type { ProductCard, StorefrontContent } from "@shopmaple/contracts";
+import type { StorefrontContent } from "@shopmaple/contracts";
 import { CollectionLandingView } from "@/components/collection-landing";
-import sourceCatalog from "@/data/landing-catalog.json";
 import { getProductCards } from "@/lib/catalog";
 import { nimbusPieceHandles, resolveNimbusLanding, resolveNimbusPageContent, type NimbusPiece } from "@/lib/nimbus-content-defaults";
 
-type SavedProduct = { handle: string; title: string; image: string };
-const saved: Record<string, SavedProduct> = sourceCatalog;
-
 /**
- * The edit's pieces as the live catalogue has them: each product's own name, photo and page. A piece the catalogue no
- * longer lists keeps its saved name and photo and leads to an enquiry about it, as the other landing pages' cards do;
- * while the catalogue cannot be read, the saved names and photos still lead to the product pages.
+ * The edit's pieces as the live catalogue has them: each product's own name, photo and page, in the edit's order. A piece
+ * the catalogue does not list, or one without a photo, is null and left out; while the catalogue cannot be read the edit
+ * is empty. Nothing is saved alongside: product names and photos come from Keeri only (owner, 11 Nov 2026).
  */
-async function nimbusPieces(): Promise<NimbusPiece[]> {
-  let live: Map<string, ProductCard> | null;
+async function nimbusPieces(): Promise<(NimbusPiece | null)[]> {
   try {
-    live = new Map((await getProductCards([...nimbusPieceHandles])).map(product => [product.handle, product]));
+    const live = new Map((await getProductCards([...nimbusPieceHandles])).map(product => [product.handle, product]));
+    return nimbusPieceHandles.map(handle => {
+      const product = live.get(handle);
+      return product?.image ? { title: product.title, image: product.image, href: `/products/${handle}` } : null;
+    });
   } catch {
-    live = null;
+    return [];
   }
-  return nimbusPieceHandles.map(handle => {
-    const product = live?.get(handle);
-    const fallback = saved[handle]!;
-    if (product) return { title: product.title, image: product.image ?? fallback.image, href: `/products/${handle}` };
-    return {
-      title: fallback.title,
-      image: fallback.image,
-      href: live ? `/contact?${new URLSearchParams({ product: fallback.title })}` : `/products/${handle}`,
-    };
-  });
 }
 
 /**

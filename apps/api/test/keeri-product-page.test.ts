@@ -9,7 +9,6 @@ import { buildKeeriQuery, KeeriFetchError, fetchKeeriExport } from "../src/keeri
 /** Keeri's own synthetic `productPage=1` fixture (Keeri docs/contracts/shopmaple-catalogue-v2-product-page.json). */
 const fixture = () => JSON.parse(readFileSync(new URL("./fixtures/keeri-v2-product-page.json", import.meta.url), "utf8"));
 const id = (value: string) => `keeri:tenant-demo:${value}`;
-const emptyShopify = { schemaVersion: 1, source: "shopify-admin", complete: true, capturedAt: "2026-11-01T00:00:00.000Z", products: [] };
 
 test("the product-page level fills specs, highlights, FAQ, assembly, customisation and rooms", () => {
   const chair = adaptKeeriExportV2(fixture(), "tenant-demo").products.find((p) => p.handle === "keeri-model-demo")!;
@@ -86,7 +85,7 @@ test("an export without the product-page level leaves the new fields empty", () 
 });
 
 test("bundles name store products by their current address, and a bundle missing a piece is left out", () => {
-  const plan = planCatalogueUnion(emptyShopify, fixture(), "tenant-demo");
+  const plan = planCatalogueUnion(fixture(), "tenant-demo");
   const chair = plan.products.find((p) => p.id === id("model-demo"))!;
   assert.deepEqual(chair.productPage!.bundles, [{
     id: "bundle-demo",
@@ -99,7 +98,7 @@ test("bundles name store products by their current address, and a bundle missing
   }]);
   const partial = fixture();
   partial.bundles[0].items[1].modelId = "model-not-in-snapshot";
-  assert.throws(() => planCatalogueUnion(emptyShopify, partial, "tenant-demo"), /bundle/i);
+  assert.throws(() => planCatalogueUnion(partial, "tenant-demo"), /bundle/i);
 });
 
 test("the store asks Keeri for the product-page level with exactly the documented query", () => {

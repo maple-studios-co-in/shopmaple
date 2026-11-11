@@ -5,7 +5,7 @@ import { ContentImage as Image } from "@/components/content-image";
 import { HomeCities } from "@/components/home-sections";
 import { StoryJourneySlider } from "@/components/story-journey";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { artworkProducts, resolveArtwork, resolveTemplateMedia, type ProductPhotos } from "@/lib/template-media-defaults";
 
 /** The contact page's enquiry, already about a custom piece, as the menu's Custom Furniture opens it. */
 const conversationHref = `/contact?${new URLSearchParams({ product: "Custom furniture" })}`;
@@ -38,11 +38,17 @@ const slashed = (text: string) => text.split("/").map(part => part.trim()).filte
  * the journey as a timeline slider (293:1434), the cities served and an invitation to start a piece. Staff choose the
  * regions' order and visibility and every word; the photos are template artwork.
  */
-export function StoryLanding({ content, media }: { content?: StoryPageContent; media?: TemplateMedia } = {}) {
+/** The Keeri products whose photos stand in for the opening and belief photos where staff have uploaded none. */
+export function storyArtworkProducts(_content: StoryPageContent | undefined, media?: TemplateMedia): string[] {
+  return artworkProducts(["story-hero", "story-belief"], media);
+}
+
+export function StoryLanding({ content, media, photos }: { content?: StoryPageContent; media?: TemplateMedia; photos?: ProductPhotos } = {}) {
   const page = resolveStoryPageContent(content);
   const shown = new Set(page.sections.filter(item => item.enabled).map(item => item.key));
-  const opening = resolveTemplateMedia("story-hero", media);
-  const belief = resolveTemplateMedia("story-belief", media);
+  // The original opening and belief photos were Shopify files; staff's upload, else a Keeri product's photo, else none.
+  const opening = resolveArtwork("story-hero", media, photos);
+  const belief = resolveArtwork("story-belief", media, photos);
   const regions: Record<StorySectionKey, ReactNode> = {
     hero: (
       <section className="story-hero" data-story-section="hero" data-store>
@@ -53,9 +59,9 @@ export function StoryLanding({ content, media }: { content?: StoryPageContent; m
           <p className="story-hero-body">{page.heroBody}</p>
           {shown.has("journey") && <a className="story-button story-hero-cta" href="#maple-journey" data-fill-button="">{page.heroCta}</a>}
         </div>
-        <div className="story-hero-media">
+        {opening && <div className="story-hero-media">
           <Image src={opening.image} alt={opening.alt} width={1200} height={1200} sizes="(max-width: 899px) calc(100vw - 40px), 44vw" preload />
-        </div>
+        </div>}
       </section>
     ),
     principles: (
@@ -77,9 +83,9 @@ export function StoryLanding({ content, media }: { content?: StoryPageContent; m
     ),
     "belief-film": (
       <section className="story-belief" data-story-section="belief-film" data-store>
-        <div className="story-belief-media">
+        {belief && <div className="story-belief-media">
           <Image src={belief.image} alt={belief.alt} width={1080} height={1920} sizes="(max-width: 699px) min(520px, calc(100vw - 40px)), 38vw" />
-        </div>
+        </div>}
         <div className="story-belief-copy">
           <Eyebrow parts={slashed(page.beliefEyebrow)} />
           <h2 className="story-belief-title"><Lines lines={page.beliefHeading} /></h2>

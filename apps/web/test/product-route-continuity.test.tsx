@@ -26,10 +26,12 @@ const chair: Product = {
   ],
 };
 const other = { ...chair, id: "continuity-other", handle: "continuity-other", title: "Other Chair" };
+// A former Shopify listing that keeps its variant ids; its option's photo is now that Keeri variant's own photo.
+const aeroFront = "https://store.maplefurnishers.com/media/keeri/aero-front.webp";
 const mapped: Product = {
-  ...chair, id: "continuity-aero", handle: "aero-dining-chair", source: "shopify-preview",
-  images: ["https://cdn.shopify.com/s/files/1/0691/8651/9229/files/Frame174.png?v=1777655455", "https://example.com/aero-side.jpg"],
-  variants: [{ ...chair.variants[0]!, id: "preview-46728293843133" }, chair.variants[1]!],
+  ...chair, id: "continuity-aero", handle: "aero-dining-chair", source: "keeri:maple",
+  images: [aeroFront, "https://example.com/aero-side.jpg", "https://example.com/aero-back.jpg"],
+  variants: [{ ...chair.variants[0]!, id: "preview-46728293843133", images: [aeroFront] }, chair.variants[1]!],
 };
 const cart = { items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" };
 // The page keeps no delivery form; the project enquiry's phone field stands in for state the shopper typed on the page.
@@ -162,7 +164,7 @@ test("external mapped options update their image and acknowledgements preserve a
     await fillPin();
     await act(async () => button("Show product image 2").click());
     await render("preview-46728293843133", mapped.handle);
-    assert.equal(selectedImage(), "Show product image 1", "external option uses its validated mapped image");
+    assert.equal(selectedImage(), "Show product image 1", "external option opens on its own photo");
     assert.equal(input().value, "9811000000");
     await render("second", mapped.handle);
     await act(async () => option("preview-46728293843133").click());

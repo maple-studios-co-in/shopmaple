@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -11,7 +10,7 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 // The top of the homepage as the "Maple / Impact Layout" frame (Figma 1049:27656) lays it out:
 // the hero bento, the announcement strip, the Maple Difference row, round category photos, the
 // statement band and the offer tiles. Copy still comes from the admin's content document.
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome(edit?: (content: typeof defaultStorefrontContent) => void) {
   const content = structuredClone(defaultStorefrontContent);
@@ -33,12 +32,15 @@ async function renderHome(edit?: (content: typeof defaultStorefrontContent) => v
 const section = (doc: Document, key: string) => doc.querySelector(`[data-home-section="${key}"]`)!;
 const text = (node: Element | null | undefined) => (node?.textContent ?? "").replace(/\s+/g, " ").trim();
 
-test("the hero is a bento: the film tile with its headline and four category tiles that invite a visit", async () => {
+test("the hero is a bento: the slides tile with its headline and four category tiles that invite a visit", async () => {
   const hero = section(await renderHome(), "hero");
   assert.ok(hero.querySelector("[data-hero-bento]"), "bento container");
   assert.equal(text(hero.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
   assert.equal(text(hero.querySelector("[data-hero-intro]")), "Handcrafted furniture that brings elegance to every corner of your home.");
-  assert.equal(hero.querySelector("[data-hero-film] video")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4"), "the owner's film still plays in the large tile");
+  // The owner's film was on Shopify and left the store (11 Nov 2026): the large tile shows four stills of Keeri products.
+  assert.equal(hero.querySelector("[data-hero-film] video"), null);
+  assert.deepEqual([...hero.querySelectorAll("[data-hero-film] [data-hero-slide] img")].map((img) => decodeURIComponent(img.getAttribute("src") ?? "").match(/\/media\/keeri\/([a-z-]+)\.webp/)?.[1]),
+    ["arbor-sofa", "aurevo", "altura-table", "meridian-table"]);
   const tiles = [...hero.querySelectorAll("[data-hero-tile]")];
   assert.deepEqual(tiles.map((tile) => tile.getAttribute("data-hero-tile")), ["sofas", "chairs", "tables", "beds"]);
   assert.deepEqual(tiles.map((tile) => text(tile.querySelector("[data-hero-tile-title]"))), ["Sofas", "Chairs", "Tables", "Beds"]);
@@ -75,7 +77,7 @@ test("the Maple Difference row is plain: eyebrow, serif heading, a text link and
   assert.equal(link.getAttribute("href"), "/contact");
   assert.match(text(link), /^Tell Us About Your Space/);
   assert.deepEqual([...difference.querySelectorAll("[data-difference-promise]")].map(text), ["Fully Customizable", "Delivery Across India", "In-House Crafted in Delhi", "36-Month Warranty"]);
-  assert.equal(difference.querySelectorAll("[data-difference-promise] img").length, 4, "each promise keeps its icon");
+  assert.equal(difference.querySelectorAll("[data-difference-promise] img").length, 0, "the icons were Shopify files: no icon until staff upload one");
 });
 
 test("categories show round photos with an arrow badge under a heading with an ornament", async () => {

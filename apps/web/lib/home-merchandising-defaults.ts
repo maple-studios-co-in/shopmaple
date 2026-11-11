@@ -2,7 +2,8 @@ import type { HomeMerchandising } from "@shopmaple/contracts";
 
 /** Original homepage selections, retained for revisions saved before merchandising controls. */
 export const defaultHomeMerchandising: HomeMerchandising = {
-  bestsellers: ["aera-swivel-lounge-chair", "aero-dining-chair", "aileron-signature-bed", "aileron-upholstered-bench", "alcyone-7-seater-sofa", "alina-7-seater-sofa"],
+  // Keeri's products only (owner, 11 Nov 2026): the retired Shopify listings became their Keeri replacements in place.
+  bestsellers: ["avelon-chair", "aero-dining-chair", "aileron", "aileron-bench", "alcyone", "alina"],
   chairs: ["caro", "ario", "nola", "tara", "arno", "rollo"],
   categories: [
     { key: "sofas", title: "Sofas", collectionHandle: "sofas", image: "/media/home/category-sofas.webp", alt: "Sofas", enabled: true },

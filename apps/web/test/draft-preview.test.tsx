@@ -111,7 +111,7 @@ test("reading a draft preview forwards only the staff cookie, never caches and r
 
 test("pictures chosen in hero slides, extra Nimbus cards and the editorial block show in the staff preview too", () => {
   const upload = `/media/uploads/${sha}.webp`;
-  const content = previewMediaContent({ homeDetails: { hero: { slides: [{ kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/x.mp4", poster: upload }] }, nimbus: { slides: [{ image: upload, mobileImage: upload }] }, editorial: { leftImage: upload, rightImage: upload, text: `a path ${upload} in prose` } } });
+  const content = previewMediaContent({ homeDetails: { hero: { slides: [{ kind: "video", src: "/media/films/workshop.mp4", poster: upload }] }, nimbus: { slides: [{ image: upload, mobileImage: upload }] }, editorial: { leftImage: upload, rightImage: upload, text: `a path ${upload} in prose` } } });
   const preview = `/api/admin/media/${sha}/preview`;
   assert.equal(content.homeDetails.hero.slides[0]!.poster, preview);
   assert.equal(content.homeDetails.nimbus.slides[0]!.image, preview);

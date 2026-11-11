@@ -15,7 +15,8 @@ test("the editorial and compare sections start from the Impact Layout's words", 
   assert.deepEqual(defaultHomeDetails.compare, {
     eyebrow: "Find your feel", heading: "Two ways to unwind",
     lede: "Explore distinct silhouettes and choose the one that feels at home in your space.",
-    left: { handle: "aera-swivel-lounge-chair", label: "Aera" }, right: { handle: "caro", label: "Caro" },
+    // The original left piece (Aera) existed only on Shopify; its Keeri replacement, Avelon, starts the comparison.
+    left: { handle: "avelon-chair", label: "Avelon" }, right: { handle: "caro", label: "Caro" },
   });
   assert.equal(storefrontContentSchema.safeParse(defaultStorefrontContent).success, true, "and the default draft is a valid document");
 });

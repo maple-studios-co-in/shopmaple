@@ -16,20 +16,22 @@ dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; 
 const product: Product = {
   id: "chair", handle: "chair", title: "Aero Chair", description: "A chair", category: "chairs",
   images: ["https://example.com/blue.jpg", "https://example.com/red.jpg", "https://example.com/green.jpg"],
-  published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z",
+  published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z",
   variants: [
     { id: "blue", title: "Blue", sku: "BLUE", pricePaise: 1000000, compareAtPaise: null, available: false, stockPolicy: "unverified" },
     { id: "red", title: "Red", sku: "RED", pricePaise: 1200000, compareAtPaise: null, available: false, stockPolicy: "unverified" },
   ],
 };
-async function mount(check: () => Promise<void>, images = product.images) {
+/** Each option's own photo, as Keeri sends it: the blue option the first picture, the red one the second. */
+const withOptionPhotos = (images: string[]): Product => ({ ...product, images, variants: product.variants.map((v, i) => ({ ...v, images: images[i] ? [images[i]!] : [] })) });
+async function mount(check: () => Promise<void>, images = product.images, optionPhotos = false) {
   const root = createRoot(document.getElementById("root")!);
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   try {
     await act(async () => root.render(<ShopProvider><AppRouterContext.Provider value={router}>
-      <ProductDetail product={{ ...product, images }} presentation={{ variantImages: { blue: product.images[0]!, red: product.images[1]! }, reviewLabel: null }} />
+      <ProductDetail product={optionPhotos ? withOptionPhotos(images) : { ...product, images }} />
     </AppRouterContext.Provider></ShopProvider>));
     await check();
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
@@ -48,7 +50,7 @@ async function touch(target: Element, type: string, x: number, y: number, count 
   await act(async () => { target.dispatchEvent(event); });
   return event;
 }
-test("thumbnails, variant images and zoom retain their existing behavior", async () => {
+test("thumbnails and zoom retain their existing behavior", async () => {
   await mount(async () => {
     await act(async () => button("Show product image 3").click());
     assert.equal(selected(), "Show product image 3");
@@ -56,10 +58,17 @@ test("thumbnails, variant images and zoom retain their existing behavior", async
     assert.equal(document.querySelector("dialog")?.open, true);
     assert.equal(document.querySelector("[data-zoom] img")?.getAttribute("src"), "https://example.com/green.jpg");
     await act(async () => button("Close Aero Chair").click());
-    await act(async () => document.querySelector<HTMLInputElement>('input[value="red"]')!.click());
-    assert.equal(selected(), "Show product image 2");
-    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/red.jpg");
   });
+});
+
+// Option photos come only from each Keeri variant's own photos now (the hand-made Shopify mapping is gone).
+test("choosing an option leads the gallery with that option's own photo", async () => {
+  await mount(async () => {
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/blue.jpg");
+    await act(async () => document.querySelector<HTMLInputElement>('input[value="red"]')!.click());
+    assert.equal(selected(), "Show product image 1");
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/red.jpg");
+  }, product.images, true);
 });
 test("empty and broken image sources retain a readable fallback", async () => {
   await mount(async () => {

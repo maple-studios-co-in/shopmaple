@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -8,12 +7,10 @@ import Home from "../app/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
-// The owner's fixes on the classic homepage (2026-11-01): the latest shop film plays on its own
-// with no controls, Instagram points at @maplefurnishers, and Bestsellers scrolls without
-// arrows or a "View all" link.
-// The shop film first published on Shopify, played from the store's own copy.
-const film = copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+// The owner's fixes on the classic homepage (2026-11-01): the hero has no play or pause control, Instagram points at
+// @maplefurnishers, and Bestsellers scrolls without arrows. The shop film itself was on Shopify and left the store
+// (11 Nov 2026); a staff film slide's autoplay is covered in hero-video-motion.test.tsx.
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome() {
   const previous = globalThis.fetch;
@@ -34,11 +31,10 @@ async function renderHome() {
 }
 const section = (doc: Document, key: string) => doc.querySelector(`[data-home-section="${key}"]`)!;
 
-test("the hero plays the latest shop film on its own, looping, with no play or pause control", async () => {
+test("the default hero shows stills, with no film and no play or pause control", async () => {
   const hero = section(await renderHome(), "hero");
-  const video = hero.querySelector("video")!;
-  assert.equal(video.getAttribute("src"), film);
-  for (const attribute of ["muted", "loop", "playsinline"]) assert.ok(video.hasAttribute(attribute), `${attribute} is set`);
+  assert.equal(hero.querySelector("video"), null);
+  assert.equal(hero.querySelectorAll("[data-hero-slide] img").length, 4);
   assert.equal([...hero.querySelectorAll("button")].filter((button) => /play|pause|video|motion/i.test(button.getAttribute("aria-label") ?? button.textContent ?? "")).length, 0, "no video controls");
 });
 

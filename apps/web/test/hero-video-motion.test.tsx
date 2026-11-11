@@ -1,16 +1,17 @@
 import assert from "node:assert/strict";
-import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { test } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { Hero } from "../components/hero";
+import { defaultHomeDetails } from "../lib/home-details-defaults";
 
-// The owner's choice (2026-11-01): the latest shop film plays on its own, muted and looping, with
-// no play or pause control. A shopper who asks for reduced motion sees the still poster.
-// The shop film first published on Shopify, played from the store's own copy.
-const film = shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0")!;
+// The owner's choice (2026-11-01): a hero film plays on its own, muted and looping, with no play or pause control. A
+// shopper who asks for reduced motion sees the still poster. The shop film was on Shopify and left the store (11 Nov
+// 2026), so these cover a film slide staff author on a Maple media address.
+const film = "/media/films/workshop.mp4";
+const hero = { ...defaultHomeDetails.hero, slides: [{ kind: "video" as const, src: film, poster: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "The workshop", headline: "Made by hand", intro: "In Delhi." }] };
 
 async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement, browser: { plays: number; reduce(value: boolean): Promise<void>; unmount(): Promise<void>; listeners: () => number }) => Promise<void>) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });
@@ -35,7 +36,7 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
   const root = createRoot(document.getElementById("root")!);
   let mounted = true;
   try {
-    await act(async () => root.render(<Hero />));
+    await act(async () => root.render(<Hero content={hero} />));
     // The film's behaviour is a lazily loaded chunk now; wait for it to attach, as the browser does after hydration.
     for (let i = 0; i < 400 && !document.querySelector("[data-slider-ready]"); i++) await act(async () => { await new Promise(resolve => setImmediate(resolve)); });
     await check(document.querySelector("video")!, {
@@ -53,8 +54,14 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
   }
 }
 
-test("server rendering shows the poster and the latest film, muted and looping, with no controls", () => {
-  const doc = new JSDOM(renderToStaticMarkup(<Hero />)).window.document;
+test("the default hero has no film: its stills are pictures only", () => {
+  const doc = new JSDOM(renderToStaticMarkup(<Hero photos={new Map([["arbor-sofa", "https://store.maplefurnishers.com/media/keeri/arbor.webp"]])} />)).window.document;
+  assert.equal(doc.querySelector(".hero-film video"), null);
+  assert.deepEqual([...doc.querySelectorAll("[data-hero-slide]")].map(slide => slide.getAttribute("data-hero-slide-kind")), ["image"]);
+});
+
+test("server rendering shows the poster and the film, muted and looping, with no controls", () => {
+  const doc = new JSDOM(renderToStaticMarkup(<Hero content={hero} />)).window.document;
   assert.ok(doc.querySelector(".hero-film img")?.getAttribute("src"), "the poster shows until the film plays");
   const video = doc.querySelector(".hero-film video")!;
   assert.equal(video.getAttribute("src"), film);

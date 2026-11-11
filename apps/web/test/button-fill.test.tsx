@@ -112,7 +112,7 @@ test("the storefront's call-to-action buttons take part, each with the fill that
 
 test("on the homepage the hero, announcement, rails and closing buttons all fill", async () => {
   const content = structuredClone(defaultStorefrontContent);
-  const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+  const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
   const previous = globalThis.fetch;
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));

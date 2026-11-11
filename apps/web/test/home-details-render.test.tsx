@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -44,8 +43,8 @@ async function renderHome(details?: ReturnType<typeof editedDetails>) {
     requests.push({ url, method: init?.method ?? "GET" });
     if (url.endsWith("/api/content/storefront")) return Response.json({ version: 7, content });
     if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ published: true,
-      products: new URL(url).searchParams.get("handles")!.split(",").includes("aera-swivel-lounge-chair") ? [{
-        id: "aera", handle: "aera-swivel-lounge-chair", title: "Aera lounge chair", image: null,
+      products: new URL(url).searchParams.get("handles")!.split(",").includes("avelon-chair") ? [{
+        id: "avelon", handle: "avelon-chair", title: "Avelon lounge chair", image: null,
         pricePaise: 2360000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1,
       }] : [],
     });
@@ -77,8 +76,12 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector(".home-project strong")?.textContent, "24 hours");
   assert.ok(doc.querySelector('.home-project-form input[name="email"][required]'));
   assert.ok(doc.querySelector('.home-newsletter-form input[type="email"][required]'));
-  assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), copyOf("files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg"));
-  assert.ok(doc.querySelector(".home-testimonial video[controls] source"));
+  // The shop film, its poster and the customer's film were Shopify files (left the store 11 Nov 2026). With no Keeri photo
+  // listed for the stills, the hero keeps its words over the tile; the testimonial keeps its words.
+  assert.equal(doc.querySelector(".hero-film video"), null);
+  assert.equal(doc.querySelector(".hero-film img"), null);
+  assert.equal(doc.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
+  assert.equal(doc.querySelector(".home-testimonial video"), null);
 });
 
 test("published detail copy reaches every homepage section and stable keys keep their assets and destinations", async () => {
@@ -101,7 +104,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, ".home-newsletter h2, .home-newsletter-row > div > p, .home-newsletter h3"), ["Keep in touch", "News from our workshop.", "Get collection news"]);
   assert.deepEqual(texts(doc, ".home-values h3"), ["Lasting frames", "Better with time", "Everyday comfort", "Quiet details"]);
   assert.deepEqual(texts(doc, ".home-values p"), ["Built with care.", "Materials that mature.", "For every day.", "A calm room."]);
-  assert.equal(shown(doc.querySelector(".home-values img")?.getAttribute("src")), copyOf("files/Cover_Image_Maple_5.svg"));
+  assert.equal(doc.querySelector(".home-values img"), null, "the value icons were Shopify files: none until staff upload one");
   assert.deepEqual(texts(doc, ".home-cities header .home-eyebrow, .home-cities h2"), ["Find us near you", "Across India"]);
   assert.equal(doc.querySelector(".home-project h2")?.textContent, "Tell us your idea");
   assert.deepEqual(texts(doc, ".home-project > div > p"), ["Our team replies in two working days with tailored ideas.", "Start with your room."]);

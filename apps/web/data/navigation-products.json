@@ -1,44 +1,8 @@
 [
-  {
-    "handle": "veyra-chest-of-drawers",
-    "title": "Veyra Chest of Drawers",
-    "image": "/media/shopify/940535a619ed1aab3e4019faa4e72fad.webp",
-    "pricePaise": 7670000,
-    "compareAtPaise": 8260000
-  },
-  {
-    "handle": "rowan-bookcase",
-    "title": "Rowan Bookcase",
-    "image": "/media/shopify/9ba0ac69c76446dc1a7f97337b1dde86.webp",
-    "pricePaise": 10030000,
-    "compareAtPaise": 10856000
-  },
-  {
-    "handle": "elion-storage-cabinet",
-    "title": "Elion Storage Cabinet",
-    "image": "/media/shopify/dd78bef5c2f3a88e0d510fca1c4ac4cb.webp",
-    "pricePaise": 10856000,
-    "compareAtPaise": 11800000
-  },
-  {
-    "handle": "arden-console-cabinet",
-    "title": "Arden Console Cabinet",
-    "image": "/media/shopify/535a470decf261e38c35acc258c3c4c0.webp",
-    "pricePaise": 10620000,
-    "compareAtPaise": 11800000
-  },
-  {
-    "handle": "morik-media-unit",
-    "title": "Morik Media Unit",
-    "image": "/media/shopify/c825bec73762677672921245dffc8f39.webp",
-    "pricePaise": 14514000,
-    "compareAtPaise": 15104000
-  },
-  {
-    "handle": "zylen-media-unit",
-    "title": "Zylen Media Unit",
-    "image": "/media/shopify/5d55a7f601b28f616b66a2465dd729c0.webp",
-    "pricePaise": 14160000,
-    "compareAtPaise": 14514000
-  }
+  { "handle": "aileron-chest", "title": "Aileron Chest" },
+  { "handle": "arboris-bookcase", "title": "Arboris Bookcase" },
+  { "handle": "radiance-cabinet", "title": "Radiance Cabinet" },
+  { "handle": "arcana-console", "title": "Arcana Console" },
+  { "handle": "morik", "title": "Morik Media Unit" },
+  { "handle": "zylen", "title": "Zylen Media Unit" }
 ]

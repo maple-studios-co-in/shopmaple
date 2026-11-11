@@ -14,7 +14,6 @@ import { listProducts, serializeProduct } from "./catalog.js";
 import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-media.js";
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagram-feed.js";
-import { createShopifyMediaStore, mapShopifyMediaInResponses, registerShopifyMedia, type ShopifyMediaConfig } from "./shopify-media.js";
 import { saveEnquiry } from "./enquiries.js";
 import type { KeeriLeadsConfig } from "./keeri-leads.js";
 import { registerReviewRoutes, type KeeriReviewsConfig } from "./reviews.js";
@@ -48,8 +47,6 @@ export type AppConfig = {
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
   instagramFeed?: InstagramFeedConfig | null;
-  /** The store's own copies of Shopify's media (SHOPIFY_MEDIA_ROOT); absent serves only the fallback. */
-  shopifyMedia?: ShopifyMediaConfig;
 };
 export function createApp(
   db: PrismaClient,
@@ -79,9 +76,6 @@ export function createApp(
     }),
   );
   if (commerce) registerPaymentWebhook(app, commerce);
-  const shopifyMedia = createShopifyMediaStore(config.shopifyMedia);
-  mapShopifyMediaInResponses(app, shopifyMedia);
-  registerShopifyMedia(app, shopifyMedia);
   registerMediaRoutes(app, db, config);
   registerReviewRoutes(app, db, { webOrigin: config.webOrigin, keeri: config.keeriReviews, enquiryDelivery: config.enquiryDelivery });
   app.use("/api/admin/content", express.json({ limit: "128kb" }));

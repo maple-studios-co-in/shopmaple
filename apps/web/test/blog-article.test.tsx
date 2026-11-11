@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import ArticlePage from "../app/blogs/[blog]/[article]/page";
@@ -22,8 +21,8 @@ test("the article opens with its title, its author's byline and its own picture 
     // times by ESRGAN (owner, 10 Nov 2026: "the hero is blur").
     [measure, "/blog/art/how-to-measure-furniture-before-ordering-online.webp", "1600", "1069", "Jul 13, 2026", "2026-07-13T07:57:33Z", "Rezaa Modasiya"],
     // Published at 20:56 UTC, already the 6th in India.
-    // Its picture first appeared on Shopify; the store shows its own copy.
-    ["space-saving-furniture-ideas-for-small-homes", shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/articles/image1_e2fafe60-2493-483b-8f0f-05563168be25.png?v=1780903153")!, "1536", "1024", "Jun 6, 2026", "2026-06-05T20:56:16Z", "Abhigna Ghosh"],
+    // Its picture was a Shopify file, which left the store (11 Nov 2026): it opens on Maple's own room photo instead.
+    ["space-saving-furniture-ideas-for-small-homes", "/media/home/editorial-flip-varyn.webp", "800", "800", "Jun 6, 2026", "2026-06-05T20:56:16Z", "Abhigna Ghosh"],
   ]) {
     const document = await render(handle);
     assert.equal(document.querySelectorAll("h1").length, 1);
@@ -52,7 +51,8 @@ test("the text keeps the original words and its own pictures", async () => {
   const dining = await render("standard-dining-table-size-guide-for-indian-homes");
   assert.equal(dining.querySelectorAll("img[data-article-hero]").length, 1);
   const own = [...dining.querySelectorAll("article[data-blog-body] img")].filter((img) => !img.closest("[data-body-picture]"));
-  assert.equal(own.length, 1, "the article's own picture stays, once");
+  assert.equal(own.length, 0, "the article's own picture was a Shopify file and is no longer drawn");
+  assert.doesNotMatch(dining.body.innerHTML, /shopify|\/cdn\/shop\//i);
   // An article that names no author is signed by the store.
   assert.equal(dining.querySelector("[data-article-byline] [data-blog-author]")?.textContent, "Maple Furnishers");
 });
@@ -80,7 +80,7 @@ test("an imported article reads picture, text, picture, text, picture, text: thr
       assert.equal(picture.getAttribute("data-chapter"), String(at + 1).padStart(2, "0"));
       assert.equal(picture.querySelector("[data-figure-frame]")?.getAttribute("data-ratio"), "16:9", "a 16:9 frame");
       const image = picture.querySelector("img")!;
-      assert.match(decodeURIComponent(image.getAttribute("src")!), /\/media\/home\/[a-z-]+\.webp|\/media\/shopify\/[a-f0-9]{32}\.(?:png|webp|jpg)/, "Maple's own room photography");
+      assert.match(decodeURIComponent(image.getAttribute("src")!), /\/media\/home\/[a-z-]+\.webp/, "Maple's own room photography");
       assert.ok(image.alt.length > 20, "each photo is described");
       shown.add(image.getAttribute("src")!);
     });
