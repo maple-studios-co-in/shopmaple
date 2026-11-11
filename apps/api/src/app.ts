@@ -16,6 +16,7 @@ import { registerCatalogueMedia, type CatalogueMediaConfig } from "./catalogue-m
 import { registerCatalogueViewRoutes } from "./catalogue-view.js";
 import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagram-feed.js";
 import { saveEnquiry } from "./enquiries.js";
+import type { KeeriLeadsConfig } from "./keeri-leads.js";
 import { registerReviewRoutes, type KeeriReviewsConfig } from "./reviews.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
@@ -39,6 +40,8 @@ export type AppConfig = {
   previewSecret?: string;
   catalogueMedia?: CatalogueMediaConfig;
   enquiryDelivery?: EnquiryDeliveryConfig | null;
+  /** KEERI_LEADS_ENABLED: contact, project and bulk enquiries are also queued as Keeri leads. */
+  keeriLeads?: KeeriLeadsConfig | null;
   /** Where the product page's reviews go; null or absent keeps them in the admin's inbox until the credential is present. */
   keeriReviews?: KeeriReviewsConfig | null;
   /** Transport for outbound staff replies; tests inject a local double. Defaults to global fetch. */
@@ -98,7 +101,7 @@ export function createApp(
   registerStaffRoutes(app, db, config.secureCookies);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
   registerEnquiryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.outboundFetch, config.replyRateLimit);
-  registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null);
+  registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.keeriLeads ?? null);
   registerCrmRoutes(app, db, config.secureCookies);
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
@@ -179,6 +182,7 @@ export function createApp(
         req.body,
         req.get("Idempotency-Key"),
         config.enquiryDelivery ?? null,
+        config.keeriLeads ?? null,
       );
       res.status(result.created ? 201 : 200).json(result.receipt);
     },

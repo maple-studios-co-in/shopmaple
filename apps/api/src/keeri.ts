@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
+import { productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
 
 const id = z
   .string()
@@ -215,6 +215,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
         content: sourceDetailsSchema.optional(),
         media: z.array(mediaV2Schema),
         productPage: modelPageSchema.optional(),
+        // The `offers=1` level: the model's running or next offer, or null. Absent below that level.
+        offer: productOfferSchema.nullable().optional(),
         taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,
@@ -488,6 +490,8 @@ function adaptValidated(
         sourceUpdatedAt: data.capturedAt,
         // Present only when Keeri sent the product-page level; the sync clears it when a later export does not.
         ...(productPage ? { productPage } : {}),
+        // Only at the offers level; the sync clears a stored offer when a later export has none.
+        ...("offer" in model && model.offer !== undefined ? { offer: model.offer } : {}),
         variants: eligible.map((v) => ({
           id: identity(v.id),
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",

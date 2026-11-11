@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { saveEnquiry } from "../src/enquiries.js";
-import { enquiryDeliveryResponseSchema, enquiryDeliveryRetryInputSchema } from "@shopmaple/contracts";
+import { enquiryDeliveryResponseSchema, enquiryDeliveryRetryInputSchema } from "@shopmaple/contracts/enquiry-delivery";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).hostname !== "127.0.0.1" || new URL(url).port !== "55439" || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated loopback test database required");
 const db = new PrismaClient({ datasources: { db: { url } } });
@@ -37,8 +37,8 @@ type Staff = Awaited<ReturnType<typeof staff>>;
 const path = (id: string) => `/api/admin/enquiries/${id}/delivery`;
 const get = (actor: Staff, id: string, settings: typeof config | null = config) => client(settings).get(path(id)).set("Cookie", actor.cookie);
 const post = (actor: Staff, id: string, body: object, settings: typeof config | null = config) => client(settings).post(`${path(id)}/retry`).set("Cookie", actor.cookie).set("Origin", origin).set("X-CSRF-Token", actor.csrf).send(body);
-const job = (id: string) => db.enquiryDelivery.findUniqueOrThrow({ where: { enquiryId: id } });
-async function retryable(id: string) { return db.enquiryDelivery.update({ where: { enquiryId: id }, data: { status: "retry_wait", attempts: 1, version: 2, firstAttemptAt: new Date(), nextAttemptAt: new Date(Date.now() + 600000), errorCode: "network_error" } }); }
+const job = (id: string) => db.enquiryDelivery.findUniqueOrThrow({ where: { enquiryId_target: { enquiryId: id, target: "email" } } });
+async function retryable(id: string) { return db.enquiryDelivery.update({ where: { enquiryId_target: { enquiryId: id, target: "email" } }, data: { status: "retry_wait", attempts: 1, version: 2, firstAttemptAt: new Date(), nextAttemptAt: new Date(Date.now() + 600000), errorCode: "network_error" } }); }
 test("protected status exposes only delivery state and truthful disabled or absent intents", async () => {
   const actor = await staff(), id = await enquiry(), absent = await enquiry(false);
   const response = await get(actor, id); assert.equal(response.status, 200);
@@ -84,7 +84,7 @@ test("retry eligibility rejects disabled, changed config, exhausted, expired and
     assert.equal((await post(actor, id, { expectedVersion: 2 }, settings)).status, 409);
   }
   for (const data of [{ attempts: 5 }, { attempts: 1, firstAttemptAt: new Date(Date.now() - 23 * 3600000) }, ...["queued", "sending", "accepted", "failed", "uncertain"].map(status => ({ status, firstAttemptAt: new Date() }))]) {
-    await db.enquiryDelivery.update({ where: { enquiryId: id }, data });
+    await db.enquiryDelivery.update({ where: { enquiryId_target: { enquiryId: id, target: "email" } }, data });
     assert.equal((await get(actor, id)).body.delivery?.canRetry, false); assert.equal((await post(actor, id, { expectedVersion: 2 })).status, 409);
   }
   assert.equal(await db.enquiryDeliveryRetryAudit.count({ where: { delivery: { enquiryId: id } } }), 0);

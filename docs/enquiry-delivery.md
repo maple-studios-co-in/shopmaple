@@ -10,7 +10,7 @@ The API reads ENQUIRY_DELIVERY_ENABLED (default false), ENQUIRY_RESEND_API_KEY, 
 
 The operator explicitly chose `contact@maplefurnishers.com` for Shop team alerts on26October2026. The first publisher is separately `aditya@maplefurnishers.com`. The local private environment records this recipient with delivery disabled; production configuration, verified sender credentials and actual mailbox acceptance remain pending. No alert was sent by this configuration change.
 
-The alert contains only reference, kind, creation date and a link to /admin. Customer names, email addresses, phone numbers, enquiry messages and notes remain in the protected application. No customer reply or marketing message is sent by this workflow.
+The alert contains only reference, kind, creation date and a link to /admin (or, with Keeri leads enabled and the lead already in Keeri, a link to that lead; see [Keeri leads](keeri-leads.md)). Customer names, email addresses, phone numbers, enquiry messages and notes remain in the protected application. No customer reply or marketing message is sent by this workflow.
 
 ## Delivery and recovery
 

@@ -322,3 +322,26 @@ test("a sync stores Keeri's purchasable verdict and lead time, and a later refus
   const withdrawn = await db.variant.findUniqueOrThrow({ where: { id: "preview-201" } });
   assert.equal(withdrawn.available, false);
 });
+
+test("a sync stores each product's Keeri offer, the product API serves it, and a later export without one clears it", async () => {
+  const { s, k } = fixtures();
+  const offer = { label: "15% off", code: "DIWALI15", startsAt: "2026-10-20T00:00:00.000Z", endsAt: "2026-11-20T00:00:00.000Z" };
+  (k.models[0] as any).offer = offer;
+  await syncCatalogueUnion(db, s, k, "maple");
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false });
+  const product = await db.product.findFirstOrThrow({ where: { published: true } });
+  const served = await request(app).get(`/api/products/${product.handle}`);
+  assert.equal(served.status, 200);
+  assert.deepEqual(served.body.offer, offer);
+  (k.models[0] as any).offer = null;
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal((await request(app).get(`/api/products/${product.handle}`)).body.offer, null);
+  (k.models[0] as any).offer = offer;
+  k.capturedAt = "2026-10-25T12:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  delete (k.models[0] as any).offer;
+  k.capturedAt = "2026-10-25T13:00:00Z";
+  await syncCatalogueUnion(db, s, k, "maple");
+  assert.equal((await request(app).get(`/api/products/${product.handle}`)).body.offer, null, "a lower level clears it too");
+});

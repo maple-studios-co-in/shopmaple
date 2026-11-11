@@ -31,7 +31,7 @@ export async function bootstrapPublicPreview(db: PrismaClient, input: unknown) {
       throw new Error("Public preview bootstrap requires an empty catalogue");
     for (const product of payload.products) {
       const { variants, sourceUpdatedAt, ...fields } = product;
-      await tx.product.create({ data: { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, productPage: fields.productPage ?? Prisma.DbNull, sourceUpdatedAt: new Date(sourceUpdatedAt), variants: { create: variants.map((v) => ({ ...v, productPage: v.productPage ?? Prisma.DbNull })) } } });
+      await tx.product.create({ data: { ...fields, pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull, productPage: fields.productPage ?? Prisma.DbNull, offer: fields.offer ?? Prisma.DbNull, sourceUpdatedAt: new Date(sourceUpdatedAt), variants: { create: variants.map((v) => ({ ...v, productPage: v.productPage ?? Prisma.DbNull })) } } });
     }
   }, { isolationLevel: "Serializable", timeout: 30_000 });
   return payload.products.length;

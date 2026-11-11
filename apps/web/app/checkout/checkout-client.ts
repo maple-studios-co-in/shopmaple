@@ -32,6 +32,9 @@ export const checkoutAttemptSchema = z.object({
           fulfilment: z
             .object({ kind: z.enum(["stocked", "made_to_order"]), leadTimeDays: z.number().int().min(1).nullable() })
             .optional(),
+          /** With a code: the line's whole discount, and its unit price before it. */
+          discountPaise: money.optional(),
+          undiscountedUnitPricePaise: money.optional(),
         }),
       ),
       /** The Shiprocket courier Keeri chose and its transit estimate. */
@@ -42,6 +45,8 @@ export const checkoutAttemptSchema = z.object({
       taxPaise: money,
       totalPaise: money,
       gstMode: z.enum(["included", "excluded"]),
+      /** The code Keeri applied and its whole discount, already out of the subtotal and total. */
+      promotion: z.object({ code: z.string(), label: z.string(), discountPaise: money }).nullable().optional(),
       expiresAt: z.iso.datetime({ offset: true }),
     })
     .optional(),
@@ -57,7 +62,7 @@ export type CheckoutAttempt = z.infer<typeof checkoutAttemptSchema>;
 /** A failure the buyer can act on. `closed` means the API no longer offers checkout at all. */
 export class CheckoutClientError extends Error {
   constructor(
-    public readonly kind: "closed" | "blocked" | "unavailable" | "lost" | "invalid" | "network" | "unpriced",
+    public readonly kind: "closed" | "blocked" | "unavailable" | "lost" | "invalid" | "network" | "unpriced" | "promo",
     message: string,
   ) {
     super(message);
@@ -75,6 +80,12 @@ const safeMessages: Record<string, CheckoutClientError["kind"]> = {
   PAYMENT_UNAVAILABLE: "unavailable",
   CHECKOUT_NOT_FOUND: "lost",
   INVALID_INPUT: "invalid",
+  ITEM_NOT_BUYABLE: "invalid",
+  // Keeri refused the promo code; the page shows these beside the code field.
+  PROMO_NOT_FOUND: "promo",
+  PROMO_NOT_RUNNING: "promo",
+  PROMO_NOT_APPLICABLE: "promo",
+  PROMO_ALREADY_USED: "promo",
 };
 const fallback: Record<CheckoutClientError["kind"], string> = {
   closed: "Online checkout is not available right now. No payment has been taken.",
@@ -84,6 +95,7 @@ const fallback: Record<CheckoutClientError["kind"], string> = {
   invalid: "Check the supplied values and try again.",
   network: "We couldn't confirm that request. Please check your connection and try again.",
   unpriced: "We can't price delivery to this pincode online right now. Send us an enquiry and our team will quote delivery for you. No payment has been taken.",
+  promo: "We couldn't apply that code. Remove it to continue. No payment has been taken.",
 };
 async function translate(response: Response): Promise<CheckoutClientError> {
   let code = "";

@@ -6,6 +6,7 @@ import { after, beforeEach, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import { createOrderService, type ReservationPort } from "../src/orders/service.js";
 import { createRazorpayGateway } from "../src/payments/razorpay.js";
+import { KeeriCommerceError } from "../src/keeri-commerce.js";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test")
   throw new Error("Dedicated shopmaple_test required");
@@ -648,4 +649,120 @@ test("a customer name carrying a Unicode line break is refused before it can rea
     await assert.rejects(freeze(flow, "unicode-" + name.length, { ...input, customer: { ...customer, name } }));
   assert.equal(quotes, 0, "refused by input validation, before Keeri is asked");
   assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+// Keeri's promoted quote for "DIWALI15" (15% off) on the fixture's two chairs: each unit 10000 -> 8500.
+function promoted(request: any, change: (q: any) => void = () => {}) {
+  const q: any = quotation(request);
+  const s = q.snapshot;
+  s.items[0] = { ...s.items[0], unitPricePaise: 8500, lineTotalPaise: 17000, discountPaise: 3000, undiscountedUnitPricePaise: 10000 };
+  Object.assign(s, { subtotalPaise: 17000, taxPaise: 3060, totalPaise: 21060, promotion: { code: "DIWALI15", label: "15% off", discountPaise: 3000 } });
+  change(q);
+  return resigned(q);
+}
+const app = (flow: ReturnType<typeof service>) =>
+  createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, flow);
+const post = (flow: ReturnType<typeof service>, path: string, key: string | null, body: unknown) => {
+  const req = request(app(flow)).post(path).set("Origin", "http://localhost:3000").set("Cookie", `maple_cart=${token}`);
+  return (key ? req.set("Idempotency-Key", key) : req).send(body as object);
+};
+
+test("a promo code reaches Keeri uppercased, and its discounted quote freezes at the discounted total", async () => {
+  const flow = service(async (r) => {
+    assert.equal(r.promoCode, "DIWALI15");
+    return promoted(r);
+  });
+  const frozen = await freeze(flow, "promo-first", { ...input, promoCode: " diwali15 " });
+  assert.equal(frozen.amountPaise, 21060, "what Razorpay will charge");
+  const response = await request(app(flow)).get(`/api/checkout/${frozen.id}`).set("Cookie", `maple_cart=${token}`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.quote.promotion, { code: "DIWALI15", label: "15% off", discountPaise: 3000 });
+  assert.equal(response.body.quote.items[0].undiscountedUnitPricePaise, 10000);
+  assert.equal(response.body.quote.subtotalPaise, 17000);
+  await flow.createProviderOrder(token, frozen.id);
+  assert.equal((providerPosts[0] as any).amount, 21060);
+});
+
+test("checkout without a code sends no promoCode and its status carries no promotion", async () => {
+  const flow = service(async (r) => {
+    assert.equal("promoCode" in r, false);
+    return quotation(r);
+  });
+  const frozen = await freeze(flow);
+  const response = await request(app(flow)).get(`/api/checkout/${frozen.id}`).set("Cookie", `maple_cart=${token}`);
+  assert.equal(response.body.quote.promotion, null);
+});
+
+test("a different code, or none, under the same key is a changed checkout, never the old quote", async () => {
+  const flow = service(async (r) => (r.promoCode ? promoted(r, (q) => (q.snapshot.promotion.code = r.promoCode)) : quotation(r)));
+  const original = await freeze(flow, "promo-replay", { ...input, promoCode: "DIWALI15" });
+  assert.equal((await freeze(flow, "promo-replay", { ...input, promoCode: "diwali15" })).id, original.id);
+  await assert.rejects(freeze(flow, "promo-replay", { ...input, promoCode: "SALE20" }), { code: "CHECKOUT_INPUT_CHANGED" });
+  await assert.rejects(freeze(flow, "promo-replay", input), { code: "CHECKOUT_INPUT_CHANGED" });
+  const plain = await freeze(flow, "plain-replay");
+  await assert.rejects(freeze(flow, "plain-replay", { ...input, promoCode: "DIWALI15" }), { code: "CHECKOUT_INPUT_CHANGED" });
+  assert.notEqual(plain.id, original.id);
+});
+
+test("a promoted quote that does not add up, or names another code, freezes nothing", async () => {
+  const broken: Array<[string, any, (q: any) => void]> = [
+    ["line discount", { ...input, promoCode: "DIWALI15" }, (q) => (q.snapshot.items[0].discountPaise = 2999)],
+    ["unit before discount below unit after", { ...input, promoCode: "DIWALI15" }, (q) => Object.assign(q.snapshot.items[0], { undiscountedUnitPricePaise: 8000, discountPaise: -1000 })],
+    ["promotion total", { ...input, promoCode: "DIWALI15" }, (q) => (q.snapshot.promotion.discountPaise = 2000)],
+    ["missing line fields", { ...input, promoCode: "DIWALI15" }, (q) => { delete q.snapshot.items[0].discountPaise; }],
+    ["another code", { ...input, promoCode: "DIWALI15" }, (q) => (q.snapshot.promotion.code = "SALE20")],
+    ["promotion nobody asked for", input, () => {}],
+  ];
+  for (const [label, data, change] of broken) {
+    const flow = service(async (r) => promoted(r, change));
+    await assert.rejects(freeze(flow, "promo-broken", data), (e: any) => ["QUOTE_INVALID"].includes(e.code), label);
+  }
+  const fieldsWithoutPromotion = service(async (r) => promoted(r, (q) => { delete q.snapshot.promotion; }));
+  await assert.rejects(freeze(fieldsWithoutPromotion, "promo-broken", input), { code: "QUOTE_INVALID" });
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("the store price a discount starts from must still be the price the store shows", async () => {
+  await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { pricePaise: 9000 } });
+  await assert.rejects(freeze(service(async (r) => promoted(r)), "promo-price", { ...input, promoCode: "DIWALI15" }), { code: "PRICE_CHANGED" });
+});
+
+test("Keeri's promo refusals on a quote answer 422 with the buyer's message and freeze nothing", async () => {
+  const messages: Record<string, string> = {
+    PROMO_NOT_FOUND: "We don't recognise that code. No payment has been taken.",
+    PROMO_NOT_RUNNING: "That offer isn't running right now. No payment has been taken.",
+    PROMO_NOT_APPLICABLE: "That code doesn't apply to anything in your cart. No payment has been taken.",
+    PROMO_ALREADY_USED: "That code has already been used with this phone number or email. No payment has been taken.",
+  };
+  for (const [code, message] of Object.entries(messages)) {
+    const flow = service(async () => {
+      throw new KeeriCommerceError(code);
+    });
+    const response = await post(flow, "/api/checkout", `refused-${code}`, { ...input, promoCode: "DIWALI15" });
+    assert.equal(response.status, 422, code);
+    assert.deepEqual({ code: response.body.code, message: response.body.message }, { code, message });
+  }
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("a hold Keeri refuses for the code leaves the attempt abandoned with the reason, and a new quote may follow", async () => {
+  for (const code of ["PROMO_NOT_RUNNING", "PROMO_ALREADY_USED"]) {
+    await db.checkoutAttempt.deleteMany();
+    providerPosts = [];
+    const flow = service(async (r) => (r.promoCode ? promoted(r) : quotation(r)));
+    const frozen = await freeze(flow, `hold-${code}`, { ...input, promoCode: "DIWALI15" });
+    reserveHook = async () => {
+      throw new KeeriCommerceError(code);
+    };
+    const response = await post(flow, `/api/checkout/${frozen.id}/payment-order`, null, {});
+    assert.equal(response.status, 422);
+    assert.equal(response.body.code, code);
+    assert.match(response.body.message, /No payment has been taken\.$/);
+    const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.id } });
+    assert.deepEqual({ state: attempt.state, failureCode: attempt.failureCode }, { state: "abandoned", failureCode: code });
+    assert.equal(providerPosts.length, 0, "no payment order is created");
+    reserveHook = undefined;
+    const retry = await freeze(flow, `hold-${code}-without`, input);
+    assert.equal(retry.amountPaise, 24600, "the buyer removes the code and continues");
+  }
 });

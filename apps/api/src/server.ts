@@ -4,7 +4,8 @@ import { z } from "zod";
 import { createApp } from "./app.js";
 import { composeCommerce, loadCommerceConfig } from "./commerce-composition.js";
 import { loadEnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
-import { processEnquiryDeliveries } from "./enquiry-delivery-worker.js";
+import { processEnquiryDeliveries, processKeeriLeadDeliveries } from "./enquiry-delivery-worker.js";
+import { loadKeeriLeadsConfig } from "./keeri-leads.js";
 import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 import { installShutdown } from "./server-lifecycle.js";
 import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
@@ -30,6 +31,8 @@ if (
 )
   throw new Error("Trusted local proxy requires a loopback-bound API");
 const enquiryDelivery = loadEnquiryDeliveryConfig(process.env);
+// Website enquiries also go to Keeri as leads only with KEERI_LEADS_ENABLED=true; a missing key stops startup.
+const keeriLeads = loadKeeriLeadsConfig(process.env);
 // Checkout is off unless CHECKOUT_ENABLED=true and every commerce value is valid.
 const commerceConfig = loadCommerceConfig(process.env);
 // The homepage Instagram feed is off (staff-edited posts) until every private Meta setting is present.
@@ -47,6 +50,7 @@ const server = createApp(
     trustProxyLoopback: env.API_TRUST_PROXY_LOOPBACK === "true",
     seoIndexing: process.env.SEO_INDEXING === "on",
     enquiryDelivery,
+    keeriLeads,
     keeriReviews: loadKeeriReviewsConfig(process.env),
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
@@ -62,9 +66,16 @@ const server = createApp(
       (commerce ? " (preview catalogue; checkout enabled)" : " (preview; checkout disabled)"),
   ),
 );
-const deliveryRunner = enquiryDelivery
+const deliveryRunner = enquiryDelivery || keeriLeads
   ? startEnquiryDeliveryRunner(
-      () => processEnquiryDeliveries(db, enquiryDelivery),
+      async () => {
+        // Keeri first, so the staff email built in the same cycle can link the new lead. A Keeri
+        // failure must not stop the email, so both run before any error is reported.
+        let failed = false;
+        if (keeriLeads) await processKeeriLeadDeliveries(db, keeriLeads).catch(() => { failed = true; });
+        if (enquiryDelivery) await processEnquiryDeliveries(db, enquiryDelivery, undefined, undefined, undefined, keeriLeads?.adminOrigin).catch(() => { failed = true; });
+        if (failed) throw new Error("Enquiry delivery cycle failed");
+      },
       () => console.error("Enquiry delivery cycle failed; queued work remains recoverable."),
     )
   : null;
