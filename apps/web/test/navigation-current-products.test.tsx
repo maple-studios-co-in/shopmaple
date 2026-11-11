@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import { test, type TestContext } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -56,7 +57,7 @@ test("menu waits for current publication and prices while retaining curated orde
     assert.match(cards()[0]!.textContent!, /1,234/);
     assert.match(cards()[0]!.querySelector("del")!.textContent!, /1,500/);
     assert.doesNotMatch(cards()[0]!.textContent!, /76,700|82,600/);
-    assert.match(cards()[0]!.querySelector("img")!.getAttribute("src")!, /f64f78cc692eed394c40922a3594286a/);
+    assert.equal(shown(cards()[0]!.querySelector("img")!.getAttribute("src")), copyOf("files/f64f78cc692eed394c40922a3594286a.webp"));
     await click("Living Room");
     assert.deepEqual(cards().map(a => a.getAttribute("href")), ["/products/morik-media-unit", "/products/zylen-media-unit"]);
     assert.equal(app.requests.length, 6, "drilldown reuses this opening's current records");

@@ -1,6 +1,6 @@
 # Store deployment
 
-Target: `https://store.maplefurnishers.com`. Shopify remains at `https://shop.maplefurnishers.com`.
+Target: `https://store.maplefurnishers.com`. Shopify remains at `https://shop.maplefurnishers.com` until the store moves there; the move, and copying every photo and film off Shopify first, is in [shopify-media-migration.md](shopify-media-migration.md). The store's addresses are the `SITE_URL` and `SITE_ALIASES` settings, not code.
 
 ## Isolated runtime
 

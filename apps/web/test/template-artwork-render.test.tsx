@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -15,29 +16,35 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
 
 const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
+/** The Nimbus films first published on Shopify, played from the store's own copies. */
+const films: Record<string, string> = {
+  "87921481": copyOf("https://cdn.shopify.com/videos/c/vp/3b1b192f7b064d9c92271dcea887b26e/3b1b192f7b064d9c92271dcea887b26e.HD-1080p-3.3Mbps-87921481.mp4"),
+  "88094202": copyOf("https://cdn.shopify.com/videos/c/vp/453715fe42df4f5fa8dc558f518b08ad/453715fe42df4f5fa8dc558f518b08ad.HD-720p-3.0Mbps-88094202.mp4"),
+  "83728678": copyOf("https://cdn.shopify.com/videos/c/vp/a1971b26aefb4007b0261fc8f95a7b55/a1971b26aefb4007b0261fc8f95a7b55.HD-720p-1.6Mbps-83728678.mp4"),
+};
 // Independent source expectations catch altered originals and incorrect key-to-slot wiring.
 const slots = [
-  ["home-workshop-poster", "home", ".hero-film img", "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600", "Arranging flowers on a Maple sideboard beside a floral armchair"],
+  ["home-workshop-poster", "home", ".hero-film img", copyOf("https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600"), "Arranging flowers on a Maple sideboard beside a floral armchair"],
   ["home-hero-sofas", "home", '.category-tile[href="/sofas"] img', "/media/home/hero-sofas.webp", ""],
   ["home-hero-chairs", "home", '.category-tile[href="/chairs"] img', "/media/home/hero-chairs.webp", ""],
   ["home-hero-tables", "home", '.category-tile[href="/tables"] img', "/media/home/hero-tables.webp", ""],
   ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', "/media/home/hero-beds.webp", ""],
   ["home-nimbus", "home", ".nimbus-stage-media img", "/media/home/nimbus-clouds.webp", "The Nimbus Collection — cloud-like upholstered furniture", "/media/home/nimbus-clouds.webp"],
-  ["home-newsletter", "home", ".home-newsletter img", files + "Cover_Image_Maple_1.png", "Maple Furnishers"],
-  ["home-testimonial-poster", "home", ".home-testimonial video", files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960", "Maple customer testimonial"],
-  ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', files + "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Bedroom"],
-  ["nimbus-room-living", "nimbus", '.landing-nimbus-tiles a[href="/collections/living-room-nimbus"] img', files + "Untitled_design_6.svg", "Living Room"],
-  ["nimbus-room-dining", "nimbus", '.landing-nimbus-tiles a[href="/collections/dining-room-nimbus"] img', files + "Chairs.svg", "Dining Room"],
-  ["nimbus-room-collection", "nimbus", '.landing-nimbus-tiles a[href="/collections/nimbus"] img', files + "Chairs_1.png", "Nimbus collection", files + "Chairs_3.png"],
-  ["nimbus-origin", "nimbus", ".landing-nimbus-origin img", files + "Untitled_design_35.png?height=1024&v=1779725875", "Nimbus sculptural lounge furniture"],
-  ["nimbus-slide-living", "nimbus", ".landing-slideshow img", files + "livingroom.png?v=1779440214", "Living room", files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg?v=1780342962"],
-  ["nimbus-slide-bedroom", "nimbus", ".landing-slideshow img", files + "NIMBUS_bedroom.png?v=1779439068", "Bedroom", files + "bedroom.png?v=1780257906"],
-  ["nimbus-slide-dining", "nimbus", ".landing-slideshow img", files + "nimbus_dinning.png?v=1779439066", "Dining room", files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg?v=1780342962"],
-  ["nimbus-project", "nimbus", ".landing-project > img", files + "image_7.png?v=1778317065", "Maple furniture design details"],
-  ["nimbus-hero-poster", "nimbus", ".landing-nimbus-hero video", files + "preview_images/453715fe42df4f5fa8dc558f518b08ad.thumbnail.0000000000_small.jpg?v=1783143693", "Nimbus collection film", files + "preview_images/3b1b192f7b064d9c92271dcea887b26e.thumbnail.0000000000_small.jpg?v=1782971263"],
-  ["nimbus-craft-poster", "nimbus", ".landing-nimbus-bento video", files + "preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401", "Nimbus furniture craftsmanship"],
-  ["story-hero", "story", ".story-hero-media img", files + "Frame129.png?height=4291&v=1777318243", "A hand resting on the bouclé seat of a Maple armchair"],
-  ["story-belief", "story", ".story-belief-media img", files + "preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg?v=1776870599", "The hand-woven cord seat of a Maple chair"],
+  ["home-newsletter", "home", ".home-newsletter img", copyOf(files + "Cover_Image_Maple_1.png"), "Maple Furnishers"],
+  ["home-testimonial-poster", "home", ".home-testimonial video", copyOf(files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960"), "Maple customer testimonial"],
+  ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', copyOf(files + "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png"), "Bedroom"],
+  ["nimbus-room-living", "nimbus", '.landing-nimbus-tiles a[href="/collections/living-room-nimbus"] img', copyOf(files + "Untitled_design_6.svg"), "Living Room"],
+  ["nimbus-room-dining", "nimbus", '.landing-nimbus-tiles a[href="/collections/dining-room-nimbus"] img', copyOf(files + "Chairs.svg"), "Dining Room"],
+  ["nimbus-room-collection", "nimbus", '.landing-nimbus-tiles a[href="/collections/nimbus"] img', copyOf(files + "Chairs_1.png"), "Nimbus collection", copyOf(files + "Chairs_3.png")],
+  ["nimbus-origin", "nimbus", ".landing-nimbus-origin img", copyOf(files + "Untitled_design_35.png?height=1024&v=1779725875"), "Nimbus sculptural lounge furniture"],
+  ["nimbus-slide-living", "nimbus", ".landing-slideshow img", copyOf(files + "livingroom.png?v=1779440214"), "Living room", copyOf(files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg?v=1780342962")],
+  ["nimbus-slide-bedroom", "nimbus", ".landing-slideshow img", copyOf(files + "NIMBUS_bedroom.png?v=1779439068"), "Bedroom", copyOf(files + "bedroom.png?v=1780257906")],
+  ["nimbus-slide-dining", "nimbus", ".landing-slideshow img", copyOf(files + "nimbus_dinning.png?v=1779439066"), "Dining room", copyOf(files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg?v=1780342962")],
+  ["nimbus-project", "nimbus", ".landing-project > img", copyOf(files + "image_7.png?v=1778317065"), "Maple furniture design details"],
+  ["nimbus-hero-poster", "nimbus", ".landing-nimbus-hero video", copyOf(files + "preview_images/453715fe42df4f5fa8dc558f518b08ad.thumbnail.0000000000_small.jpg?v=1783143693"), "Nimbus collection film", copyOf(files + "preview_images/3b1b192f7b064d9c92271dcea887b26e.thumbnail.0000000000_small.jpg?v=1782971263")],
+  ["nimbus-craft-poster", "nimbus", ".landing-nimbus-bento video", copyOf(files + "preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401"), "Nimbus furniture craftsmanship"],
+  ["story-hero", "story", ".story-hero-media img", copyOf(files + "Frame129.png?height=4291&v=1777318243"), "A hand resting on the bouclé seat of a Maple armchair"],
+  ["story-belief", "story", ".story-belief-media img", copyOf(files + "preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg?v=1776870599"), "The hand-woven cord seat of a Maple chair"],
   ["story-chapter-1", "story", '[data-story-chapter="chapter-1"] img', "/media/our-story/chapter-1.webp", "A walnut chair frame on a workbench strewn with shavings and hand planes"],
   ["story-chapter-2", "story", '[data-story-chapter="chapter-2"] img', "/media/our-story/chapter-2.webp", "A cream sofa with burgundy cushions in a sunlit Indian living room"],
   ["story-chapter-3", "story", '[data-story-chapter="chapter-3"] img', "/media/our-story/chapter-3.webp", "A bouclé lounge chair on a walnut frame beneath an arched alcove"],
@@ -125,7 +132,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
       // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
       assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
       assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
-      if (!fallback || doc.querySelector(".home-testimonial")) assert.ok(doc.querySelector('.home-testimonial video[controls] source[src$="84199271.mp4?v=0"]'));
+      if (!fallback || doc.querySelector(".home-testimonial")) assert.equal(doc.querySelector(".home-testimonial video[controls] source")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4"));
       if (!fallback || doc.querySelector(".home-newsletter")) assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
     if (page === "nimbus") {
@@ -152,7 +159,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
     assert.equal(doc.querySelector("video")?.getAttribute("src"), null, "Reduced motion keeps the film unloaded before deliberate playback");
     assert.equal(doc.querySelector("button")?.getAttribute("aria-label"), `Play ${edited ? "Edited nimbus-hero-poster" : "Nimbus collection film"}`, "Reduced motion retains a user-operated play control");
     await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
-    assert.ok(doc.querySelector(`video[src$="${small ? "87921481" : "88094202"}.mp4?v=0"]`), "Deliberate playback preserves the matching source MP4");
+    assert.equal(doc.querySelector("video")?.getAttribute("src"), films[small ? "87921481" : "88094202"], "Deliberate playback preserves the matching source MP4 (the store's copy)");
   });
   const story = await StoryPage();
   assert.equal(island(StoryLanding(story.props), CategoryVideo), undefined, "Our Story draws no film control");
@@ -163,7 +170,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
     await withIsland(element, false, async doc => {
       assert.equal(doc.querySelector("video")?.getAttribute("src"), null);
       await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
-      assert.ok(doc.querySelector(`video[src$="${suffix}.mp4?v=0"]`), "Deferred film retains its original MP4");
+      assert.equal(doc.querySelector("video")?.getAttribute("src"), films[suffix], "Deferred film retains its original MP4 (the store's copy)");
     });
   }
 }
@@ -201,13 +208,13 @@ test("renamed and reordered Nimbus rooms keep dynamic default descriptions and k
       assert.deepEqual(tiles.map(n => n.getAttribute("alt")), edited
         ? ["Edited nimbus-room-dining", "Edited nimbus-room-bedroom", "Edited nimbus-room-living", "Edited nimbus-room-collection"]
         : ["Gather here", "Rest here", "Unwind here", "Nimbus collection"]);
-      assert.equal(tiles[0]?.getAttribute("src"), edited ? "/media/nimbus-room-dining.webp" : files + "Chairs.svg");
+      assert.equal(tiles[0]?.getAttribute("src"), edited ? "/media/nimbus-room-dining.webp" : copyOf(files + "Chairs.svg"));
       assert.deepEqual([...doc.querySelectorAll(".landing-nimbus-tiles h3")].map(n => n.textContent), ["Gather here", "Rest here", "Unwind here"]);
       const page = await NimbusPage();
       await withIsland(island(NimbusLanding(page.props), CategorySlideshow)!, false, async doc => {
         for (const [key, label, image] of [["dining", "Shared meals", "nimbus_dinning.png?v=1779439066"], ["living", "Slow evenings", "livingroom.png?v=1779440214"], ["bedroom", "Restful nights", "NIMBUS_bedroom.png?v=1779439068"]]) {
           assert.equal(doc.querySelector("img")?.getAttribute("alt"), edited ? `Edited nimbus-slide-${key}` : label);
-          assert.equal(doc.querySelector("img")?.getAttribute("src"), edited ? `/media/nimbus-slide-${key}.webp` : files + image);
+          assert.equal(doc.querySelector("img")?.getAttribute("src"), edited ? `/media/nimbus-slide-${key}.webp` : copyOf(files + image));
           await act(async () => doc.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
         }
       });

@@ -5,7 +5,27 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { StoreContent } from "../components/store-content";
 import content from "../data/store-content.json";
-test("source content preserves words while removing executable HTML and unsafe destinations", () => {
+/** The store's settings during the move: shop. is the address, store. the other one (docs/shopify-media-migration.md). */
+function withSite<T>(env: Record<string, string>, run: () => T): T {
+  const before = { SITE_URL: process.env.SITE_URL, SITE_ALIASES: process.env.SITE_ALIASES, WEB_ORIGIN: process.env.WEB_ORIGIN, STORE_SITE_ORIGINS: process.env.STORE_SITE_ORIGINS };
+  for (const key of Object.keys(before)) delete process.env[key];
+  Object.assign(process.env, env);
+  try { return run(); }
+  finally { for (const [key, value] of Object.entries(before)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } }
+}
+const duringMove = { SITE_URL: "https://shop.maplefurnishers.com", SITE_ALIASES: "https://store.maplefurnishers.com" };
+test("links to either of the store's own addresses become paths here; which addresses those are is a setting", () => {
+  const link = (href: string) => new JSDOM(renderToStaticMarkup(<StoreContent nodes={[{ tag: "a", href, children: ["Chairs"] }]} />)).window.document.querySelector("a")?.getAttribute("href");
+  withSite(duringMove, () => {
+    assert.equal(link("https://shop.maplefurnishers.com/collections/chairs"), "/collections/chairs");
+    assert.equal(link("https://store.maplefurnishers.com/pages/contact?x=1#y"), "/contact?x=1#y");
+    assert.equal(link("https://maplefurnishers.com/about"), "https://maplefurnishers.com/about");
+  });
+  withSite({ SITE_URL: "https://shop.maplefurnishers.com" }, () => {
+    assert.equal(link("https://store.maplefurnishers.com/collections/chairs"), "https://store.maplefurnishers.com/collections/chairs", "not the store once it is no longer one of its addresses");
+  });
+});
+test("source content preserves words while removing executable HTML and unsafe destinations", () => withSite(duringMove, () => {
   const nodes = [
     {
       tag: "p",
@@ -34,7 +54,7 @@ test("source content preserves words while removing executable HTML and unsafe d
   );
   assert.equal(doc.querySelector("script"), null);
   assert.equal(doc.querySelector('[href^="javascript"]'), null);
-});
+}));
 test("migrated policy renders complete source copy with the authorized customer contact", () => {
   const doc = new JSDOM(
     renderToStaticMarkup(

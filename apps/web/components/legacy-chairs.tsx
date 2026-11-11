@@ -6,7 +6,6 @@ import { ProductCard } from "./product-card";
 import { CardRating } from "./store/card-highlights";
 import { HomeCarousel } from "./home-carousel";
 import { CategoryValues } from "./category-landing";
-import { shopFile } from "@/lib/format";
 import data from "@/data/legacy-chairs.json";
 import sourceCatalog from "@/data/landing-catalog.json";
 
@@ -85,7 +84,7 @@ export function LegacyChairs({ products }: { products: ProductCardModel[] }) {
     <div className="home-parity landing-parity legacy-chairs">
       <section className="legacy-chairs-hero">
         <Image
-          src={shopFile(data.hero.image)}
+          src={data.hero.image}
           alt="Furniture in a thoughtfully designed living space"
           fill
           sizes="100vw"
@@ -217,7 +216,7 @@ export function LegacyChairs({ products }: { products: ProductCardModel[] }) {
       <section className="legacy-chairs-signature home-container">
         <div className="legacy-chairs-signature-image">
           <Image
-            src={shopFile(data.signature.image)}
+            src={data.signature.image}
             alt="Maple signature furniture"
             fill
             sizes="(max-width:749px) 100vw, 48vw"

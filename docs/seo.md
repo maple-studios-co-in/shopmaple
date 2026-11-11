@@ -13,8 +13,11 @@ Perplexity, Google AI Overviews) from one module, `apps/web/lib/seo.ts`.
   Change `store.env`, then restart `shopmaple-web` and `shopmaple-api`; no rebuild.
 - After launch, admin, API, cart, checkout, account and favourites still say noindex, and
   robots.txt keeps crawlers off `/api/` only.
-- `SITE_URL` (default `https://store.maplefurnishers.com`) is the address used for canonical
-  links, the sitemap and structured data. A missing or malformed value falls back to the default.
+- `SITE_URL` is the address used for canonical links, the sitemap and structured data (read at
+  request time). There is no hard-coded default: a missing or malformed value falls back to
+  `WEB_ORIGIN`, then `http://localhost:3000`, so set it in `store.env`. `SITE_ALIASES` lists the
+  store's other addresses during a move (see [the move to shop.](shopify-media-migration.md));
+  links to them become paths here, but canonical links always use `SITE_URL`.
 
 ## What each page publishes
 

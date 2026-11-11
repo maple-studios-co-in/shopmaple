@@ -4,18 +4,18 @@
  * schema.org structured data. Pure functions, so every rule is tested without a server.
  */
 import type { Metadata, MetadataRoute } from "next";
-import { categories, policySlugs, type Product, type SiteChrome } from "@shopmaple/contracts";
+import { categories, policySlugs, primarySiteUrl, type Product, type SiteChrome } from "@shopmaple/contracts";
 
 export type SeoSettings = { siteUrl: string; indexing: boolean };
 const brand = "Maple Furnishers";
 const fallbackDescription = "Handcrafted luxury furniture from Maple Furnishers, made to order in Delhi and delivered across India.";
 
-const storeUrl = "https://store.maplefurnishers.com";
-/** SEO_INDEXING=on opens the store to search engines; anything else keeps it out. A missing or malformed SITE_URL means the store. */
+/**
+ * SEO_INDEXING=on opens the store to search engines; anything else keeps it out. The address is SITE_URL, the setting
+ * (a missing or malformed one falls back to WEB_ORIGIN, then the local development address; see site-address.ts).
+ */
 export function seoSettings(env: Record<string, string | undefined>): SeoSettings {
-  const value = env.SITE_URL?.trim() ?? "";
-  const valid = /^https?:\/\/[^/\s]/.test(value) && URL.canParse(value);
-  return { siteUrl: (valid ? value : storeUrl).replace(/\/+$/, ""), indexing: env.SEO_INDEXING === "on" };
+  return { siteUrl: primarySiteUrl(env), indexing: env.SEO_INDEXING === "on" };
 }
 export const absolute = (settings: SeoSettings, path: string) => /^https?:\/\//.test(path) ? path : `${settings.siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 

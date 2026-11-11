@@ -25,7 +25,13 @@ const controls = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 const text = (max: number) => z.string().max(max).refine(value => !controls.test(value), "Control characters are not content");
 const heading = (max: number) => text(max).refine(value => value.trim().length > 0, "Use a nonempty title");
 const tags = new Set(["div", "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "strong", "b", "em", "i", "u", "br", "a", "blockquote", "table", "thead", "tbody", "tr", "th", "td", "span", "hr", "img"]);
-/** Whether an editorial link may be published: store paths, Maple pages, mailto: and tel: only. */
+/**
+ * Maple's own domain. Whether a saved link is a Maple page never depends on one deployment's settings (content valid on
+ * one server must not fail on another); which Maple address is this store, and so becomes a local path when shown, is
+ * the SITE_URL / SITE_ALIASES setting (site-address.ts).
+ */
+const mapleDomain = "maplefurnishers.com";
+/** Whether an editorial link may be published: store paths, Maple pages (maplefurnishers.com and its subdomains), mailto: and tel: only. */
 export function safeLink(value: unknown): boolean {
   if (typeof value !== "string" || value.length > 1000 || /[\s\\%\u0000-\u001f\u007f]/.test(value)) return false;
   if (value.split(/[/?#]/).some(segment => segment === ".." || segment === ".")) return false;
@@ -35,7 +41,7 @@ export function safeLink(value: unknown): boolean {
   try {
     const url = new URL(value);
     return url.protocol === "https:" && !url.username && !url.password && !url.port &&
-      ["maplefurnishers.com", "www.maplefurnishers.com", "store.maplefurnishers.com", "shop.maplefurnishers.com"].includes(url.hostname) &&
+      (url.hostname === mapleDomain || url.hostname.endsWith(`.${mapleDomain}`)) &&
       contentLinkSchema.safeParse(url.pathname + url.search + url.hash).success;
   } catch { return false; }
 }

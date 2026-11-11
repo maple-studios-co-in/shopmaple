@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { catalogueImageSchema } from "./shopify-media-path";
 import { canOrder, lowestPrice, productCardSchema } from "./catalogue-cards";
 export const categoryNames: Record<string, string> = {
   all: "All Furniture", sofas: "Sofas", chairs: "Chairs", tables: "Tables",
@@ -221,7 +222,7 @@ export const collectionFacetsSchema = z.object({
   // The hero's photo and featured piece: the collection's first piece with a photo, whatever the filters, so it stays put
   // while browsing. Its address and price come with it for the featured-product card.
   cover: z.object({
-    image: z.url().max(4096).refine((value) => value.startsWith("https://")), title: z.string().min(1).max(500),
+    image: catalogueImageSchema, title: z.string().min(1).max(500),
     handle: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200).optional(),
     pricePaise: z.number().int().min(0).max(1_000_000_000).nullable().optional(), priceFrom: z.boolean().optional(),
   }).strict().nullable(),

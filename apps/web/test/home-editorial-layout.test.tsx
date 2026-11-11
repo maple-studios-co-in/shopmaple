@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -30,7 +31,7 @@ test("bundled newsletter logo displays white on burgundy while published artwork
     for (const dom of [defaults, unrelatedOverride]) {
       const image = dom.window.document.querySelector(".home-newsletter img")!;
       assert.equal(dom.window.getComputedStyle(image).filter, "brightness(0) invert(1)", "Bundled dark logo needs a white presentation on the burgundy panel");
-      assert.ok(image.getAttribute("src")?.includes("Cover_Image_Maple_1.png"), "Keep the original source asset");
+      assert.equal(shown(image.getAttribute("src")), copyOf("files/Cover_Image_Maple_1.png"), "Keep the original source asset (the store's copy)");
     }
     const customImage = published.window.document.querySelector(".home-newsletter img")!;
     assert.equal(published.window.getComputedStyle(customImage).filter, "", "Published artwork must never inherit the bundled logo colour transform");
@@ -59,7 +60,7 @@ test("editorial restyling preserves the complete original testimonial and custom
     assert.ok(video.playsInline);
     assert.equal(video.preload, "none");
     assert.equal(video.autoplay, false);
-    assert.equal(video.querySelector("source")?.src, videoSource);
+    assert.equal(video.querySelector("source")?.getAttribute("src"), copyOf(videoSource), "the store's copy of the Shopify film");
     assert.equal(doc.querySelectorAll("video").length, 1);
   } finally { dom.window.close(); }
 });

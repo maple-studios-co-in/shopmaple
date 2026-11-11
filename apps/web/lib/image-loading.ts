@@ -14,6 +14,16 @@ export function shopifyLoader({ src, width }: ImageLoaderProps) {
   return url.toString();
 }
 
+/**
+ * Whether an address names one particular file of Maple's Shopify store ("files/Cover_Image_Maple_1.png"), by either
+ * Shopify host and with any query: published content may still name a bundled default by its Shopify address.
+ */
+export function isShopifyFile(src: unknown, path: string): boolean {
+  if (typeof src !== "string") return false;
+  const bare = src.split(/[?#]/, 1)[0]!;
+  return bare === `https://shop.maplefurnishers.com/cdn/shop/${path}` || bare === `https://cdn.shopify.com/s/files/1/0691/8651/9229/${path}`;
+}
+
 /** The loader for a photo: Shopify's resizer for its own files, else the default optimizer (undefined). */
 export const imageLoaderFor = (src: unknown) => (isShopifyImage(src) ? shopifyLoader : undefined);
 

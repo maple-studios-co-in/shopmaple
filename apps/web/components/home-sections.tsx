@@ -1,10 +1,10 @@
 import { InstagramRail } from "@/components/motion-rail";
+import { isShopifyFile } from "@/lib/image-loading";
 import { CityRail } from "@/components/city-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
-import { shopFile } from "@/lib/format";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
 import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
@@ -27,14 +27,14 @@ export function HomeBanner({
   flush?: boolean;
 }) {
   const desktopProps = getImageProps({
-    src: shopFile(desktop),
+    src: desktop,
     alt,
     width: 2784,
     height: 700,
     sizes: "100vw",
   }).props;
   const mobileProps = getImageProps({
-    src: shopFile(mobile),
+    src: mobile,
     alt,
     width: 4796,
     height: 4796,
@@ -166,7 +166,7 @@ export function HomeTestimonial({
       </figure>
       <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}>
         <source
-          src="https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0"
+          src="/media/shopify/1f8fdfa20a342eab4481edb4fb8233fa.mp4"
           type="video/mp4"
         />
       </video>
@@ -179,7 +179,8 @@ export function HomeNewsletter({
   media,
 }: { content?: HomeDetails["newsletter"]; media?: TemplateMedia } = {}) {
   const artwork = resolveTemplateMedia("home-newsletter", media);
-  const bundledArtwork = artwork.image === resolveTemplateMedia("home-newsletter").image;
+  // The bundled logo, as the store's copy or as published content may still name it on Shopify.
+  const bundledArtwork = artwork.image === resolveTemplateMedia("home-newsletter").image || isShopifyFile(artwork.image, "files/Cover_Image_Maple_1.png");
   const headingId = useId();
   return (
     <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>

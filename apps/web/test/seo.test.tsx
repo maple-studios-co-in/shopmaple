@@ -8,8 +8,8 @@ import {
 } from "../lib/seo";
 
 const site = "https://store.maplefurnishers.com";
-const on = seoSettings({ SEO_INDEXING: "on" });
-const off = seoSettings({});
+const on = seoSettings({ SEO_INDEXING: "on", SITE_URL: site });
+const off = seoSettings({ SITE_URL: site });
 const photo = (name: string) => `${site}/media/keeri/${name}.webp`;
 const product: Product = {
   id: "keeri:t:arix", handle: "arix", title: "Arix", description: "  The Arix Dining Chair features a softly sculpted\nwraparound back.  ", category: "chairs",
@@ -42,9 +42,13 @@ test("after launch the public store is indexed, private pages say noindex, and c
   assert.equal(robotsHeader(on, "/cartography"), null, "a prefix match is per path segment");
 });
 
-test("a missing or malformed site address falls back to the store instead of breaking every page", () => {
-  for (const value of ["", "  ", "store.maplefurnishers.com", "javascript:alert(1)", "ftp://x"]) assert.equal(seoSettings({ SITE_URL: value }).siteUrl, site, JSON.stringify(value));
+test("the site address is the SITE_URL setting; a missing or malformed one falls back to WEB_ORIGIN, never to a hard-coded store", () => {
+  for (const value of ["", "  ", "store.maplefurnishers.com", "javascript:alert(1)", "ftp://x"]) {
+    assert.equal(seoSettings({ SITE_URL: value, WEB_ORIGIN: "https://shop.maplefurnishers.com" }).siteUrl, "https://shop.maplefurnishers.com", JSON.stringify(value));
+    assert.equal(seoSettings({ SITE_URL: value }).siteUrl, "http://localhost:3000", JSON.stringify(value));
+  }
   assert.equal(seoSettings({ SITE_URL: "https://preview.maplefurnishers.com/" }).siteUrl, "https://preview.maplefurnishers.com");
+  assert.equal(seoSettings({ SITE_URL: "https://shop.maplefurnishers.com", SITE_ALIASES: "https://store.maplefurnishers.com" }).siteUrl, "https://shop.maplefurnishers.com", "canonical links use the address, not an alias");
 });
 
 test("the sitemap lists every public page once, with readable product addresses, their photos and when they changed", () => {

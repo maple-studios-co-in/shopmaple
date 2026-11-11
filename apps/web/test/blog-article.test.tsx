@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import ArticlePage from "../app/blogs/[blog]/[article]/page";
@@ -21,7 +22,8 @@ test("the article opens with its title, its author's byline and its own picture 
     // times by ESRGAN (owner, 10 Nov 2026: "the hero is blur").
     [measure, "/blog/art/how-to-measure-furniture-before-ordering-online.webp", "1600", "1069", "Jul 13, 2026", "2026-07-13T07:57:33Z", "Rezaa Modasiya"],
     // Published at 20:56 UTC, already the 6th in India.
-    ["space-saving-furniture-ideas-for-small-homes", "https://shop.maplefurnishers.com/cdn/shop/articles/image1_e2fafe60-2493-483b-8f0f-05563168be25.png?v=1780903153", "1536", "1024", "Jun 6, 2026", "2026-06-05T20:56:16Z", "Abhigna Ghosh"],
+    // Its picture first appeared on Shopify; the store shows its own copy.
+    ["space-saving-furniture-ideas-for-small-homes", shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/articles/image1_e2fafe60-2493-483b-8f0f-05563168be25.png?v=1780903153")!, "1536", "1024", "Jun 6, 2026", "2026-06-05T20:56:16Z", "Abhigna Ghosh"],
   ]) {
     const document = await render(handle);
     assert.equal(document.querySelectorAll("h1").length, 1);
@@ -78,7 +80,7 @@ test("an imported article reads picture, text, picture, text, picture, text: thr
       assert.equal(picture.getAttribute("data-chapter"), String(at + 1).padStart(2, "0"));
       assert.equal(picture.querySelector("[data-figure-frame]")?.getAttribute("data-ratio"), "16:9", "a 16:9 frame");
       const image = picture.querySelector("img")!;
-      assert.match(decodeURIComponent(image.getAttribute("src")!), /\/media\/home\/[a-z-]+\.webp|cdn\.shopify\.com\/s\/files\/1\/0691\/8651\/9229\/files\//, "Maple's own room photography");
+      assert.match(decodeURIComponent(image.getAttribute("src")!), /\/media\/home\/[a-z-]+\.webp|\/media\/shopify\/[a-f0-9]{32}\.(?:png|webp|jpg)/, "Maple's own room photography");
       assert.ok(image.alt.length > 20, "each photo is described");
       shown.add(image.getAttribute("src")!);
     });
@@ -140,7 +142,7 @@ test("the sidebar shares the article on Facebook, X and Pinterest by its full ad
   assert.equal(share.querySelector("button[data-share-native] img")?.getAttribute("src"), "/blog/share.svg");
   const url = encodeURIComponent(absolute(seoSettings(process.env), `/blogs/recent-stories/${measure}`));
   const title = encodeURIComponent("How to Measure Furniture Before Ordering Online");
-  const picture = encodeURIComponent("https://store.maplefurnishers.com/blog/art/how-to-measure-furniture-before-ordering-online.webp");
+  const picture = encodeURIComponent(absolute(seoSettings(process.env), "/blog/art/how-to-measure-furniture-before-ordering-online.webp"));
   const expected = {
     facebook: [`https://www.facebook.com/sharer/sharer.php?u=${url}`, "Share on Facebook", "/blog/facebook.svg"],
     x: [`https://twitter.com/intent/tweet?url=${url}&text=${title}`, "Share on X", "/blog/x.svg"],

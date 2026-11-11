@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import type { ProductRichText as RichText, ProductRichTextNode } from "@shopmaple/contracts";
+import { storeOrigins, storePath } from "@/lib/site-origins";
 
 function safeHref(value: string): string | undefined {
   if (value.length > 2048 || /[\s\\\u0000-\u001f\u007f]/.test(value)) return;
@@ -7,11 +8,11 @@ function safeHref(value: string): string | undefined {
   try {
     const url = new URL(value);
     if (!["https:", "http:", "mailto:"].includes(url.protocol) || url.username || url.password) return;
-    if (url.hostname === "shop.maplefurnishers.com") {
-      // A double-slash path must never become a protocol-relative external link.
-      if (url.pathname.startsWith("//")) return;
-      // The old shop's /pages/<slug> is /<slug> here.
-      return url.pathname.replace(/^\/pages\//, "/") + url.search + url.hash;
+    // A link to one of the store's own addresses (SITE_URL, SITE_ALIASES) is a path here; the old shop's /pages/<slug>
+    // is /<slug> here. A double-slash path never becomes a protocol-relative external link.
+    if (storeOrigins().some((origin) => new URL(origin).host === url.host)) {
+      const path = storePath(value);
+      return path ? path.replace(/^\/pages\//, "/") : undefined;
     }
     return value;
   } catch { return; }

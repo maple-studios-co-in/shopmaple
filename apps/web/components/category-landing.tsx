@@ -6,7 +6,6 @@ import { ArrowRight } from "lucide-react";
 import { Fragment, Suspense, type CSSProperties } from "react";
 import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
-import { shopFile } from "@/lib/format";
 import { ProductCard } from "@/components/product-card";
 import { CardRating } from "@/components/store/card-highlights";
 import { HomeCarousel } from "@/components/home-carousel";
@@ -45,7 +44,7 @@ export function CategoryBanner({
   eager?: boolean;
 }) {
   const image = getContentImageProps({
-    src: shopFile(desktop),
+    src: desktop,
     alt,
     width,
     height,
@@ -55,7 +54,7 @@ export function CategoryBanner({
     fetchPriority: eager ? "high" : "auto",
   }).props;
   const small = getContentImageProps({
-    src: shopFile(mobile),
+    src: mobile,
     alt,
     width: 4796,
     height: 4796,
@@ -171,11 +170,7 @@ export function CategoryValues({
       {items.map((item) => (
         <div key={item.key ?? item.title}>
           <Image
-            src={
-              item.image.startsWith("https:")
-                ? item.image
-                : shopFile(item.image)
-            }
+            src={item.image}
             alt=""
             width={100}
             height={100}

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import { test } from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { renderToReadableStream, renderToStaticMarkup } from "react-dom/server";
@@ -102,18 +103,18 @@ test("published Nimbus copy renders safely with selected order and stable artwor
     assert.equal(doc.querySelector(".landing-nimbus-principles h2")?.textContent, "What matters");
     assert.equal(doc.querySelector(".landing-values h3")?.textContent, "Room to live");
     assert.equal(doc.querySelector(".landing-values p")?.textContent, "Space for you.");
-    assert.match(doc.querySelector(".landing-values img")?.getAttribute("src") ?? "", /Maple_Banner_12\.svg/);
+    assert.equal(shown(doc.querySelector(".landing-values img")?.getAttribute("src")), copyOf("files/Maple_Banner_12.svg"));
     assert.equal(doc.querySelector(".landing-series p")?.textContent, "Our collection");
     assert.equal(doc.querySelector(".landing-series h2")?.textContent, "Explore the series");
     assert.equal(doc.querySelector(".landing-project h2")?.textContent, "Tell us your plans");
     assert.equal(doc.querySelector(".landing-project p")?.textContent, "We are here to help.");
     assert.equal(doc.querySelector(".landing-promises span")?.textContent, "Our assurance");
-    assert.match(doc.querySelector(".landing-promises img")?.getAttribute("src") ?? "", /Maple_Banner_5\.svg/);
+    assert.equal(shown(doc.querySelector(".landing-promises img")?.getAttribute("src")), copyOf("files/Maple_Banner_5.svg"));
     const tiles = [...doc.querySelectorAll(".landing-nimbus-tiles a")];
     assert.deepEqual(tiles.map(n => n.getAttribute("href")), ["/collections/dining-room-nimbus", "/collections/bedroom-nimbus", "/collections/living-room-nimbus", "/collections/nimbus"]);
     assert.deepEqual(tiles.map(n => n.querySelector("h3")?.textContent), ["Gather here", "Rest here", "Unwind here", undefined]);
-    assert.deepEqual(tiles.map(n => n.querySelector("img")?.getAttribute("src")?.split("/").at(-1)), ["Chairs.svg", "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Untitled_design_6.svg", "Chairs_1.png"]);
-    assert.match(tiles[3]!.querySelector("source")?.getAttribute("srcset") ?? "", /Chairs_3\.png/);
+    assert.deepEqual(tiles.map(n => shown(n.querySelector("img")?.getAttribute("src"))), ["Chairs.svg", "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Untitled_design_6.svg", "Chairs_1.png"].map(file => copyOf(`files/${file}`)));
+    assert.equal(shown(tiles[3]!.querySelector("source")?.getAttribute("srcset")), copyOf("files/Chairs_3.png"));
     assert.deepEqual(regions(doc), ["sr-only", "landing-project home-container", "landing-nimbus-intro home-container", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-nimbus-bento", "landing-slideshow", "landing-promises home-container", "landing-series home-container", "landing-products home-products home-container"]);
     assert.equal((await metadata()).title, "Nimbus for your home");
   });
@@ -169,8 +170,8 @@ test("reordered renamed Nimbus rooms keep each desktop/mobile pair through carou
         ["Restful nights", "NIMBUS_bedroom.png", "bedroom.png"],
       ]) {
         assert.equal(document.querySelector("picture img")?.getAttribute("alt"), label);
-        assert.equal(new URL(document.querySelector("picture img")!.getAttribute("src")!).pathname.split("/").at(-1), desktop);
-        assert.equal(new URL(document.querySelector("picture source")!.getAttribute("srcset")!).pathname.split("/").at(-1), mobile);
+        assert.equal(shown(document.querySelector("picture img")!.getAttribute("src")!), copyOf(`files/${desktop}`));
+        assert.equal(shown(document.querySelector("picture source")!.getAttribute("srcset")!), copyOf(`files/${mobile}`));
         await act(async () => document.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
       }
     } finally { await act(async () => root.unmount()); dom.window.close(); }
