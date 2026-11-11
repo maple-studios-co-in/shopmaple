@@ -28,13 +28,17 @@ function CartDrawerOnDemand() {
   return cartOpened && <CartDrawer />;
 }
 import type { SiteChrome } from "@shopmaple/contracts";
+import type { MenuArtwork } from "@/lib/menu-artwork";
 export function StoreChromeView({
   path,
   children,
   siteChrome,
+  menuArtwork,
 }: {
   path: string | null;
   siteChrome?: SiteChrome;
+  /** The mega menu's pictures (lib/menu-artwork.ts). */
+  menuArtwork?: MenuArtwork;
   children: ReactNode;
 }) {
   // The staff preview frame renders the draft's own chrome inside the page.
@@ -47,7 +51,7 @@ export function StoreChromeView({
   const product = Boolean(path?.startsWith("/products/"));
   return (
     <>
-      <Header siteChrome={siteChrome} sticky={product} />
+      <Header siteChrome={siteChrome} sticky={product} menuArtwork={menuArtwork} />
       <main id="main">{children}</main>
       <Footer siteChrome={siteChrome} />
       <CartDrawerOnDemand />
@@ -58,12 +62,14 @@ export function StoreChromeView({
 export function StoreChrome({
   children,
   siteChrome,
+  menuArtwork,
 }: {
   children: ReactNode;
   siteChrome?: SiteChrome;
+  menuArtwork?: MenuArtwork;
 }) {
   return (
-    <StoreChromeView path={usePathname()} siteChrome={siteChrome}>
+    <StoreChromeView path={usePathname()} siteChrome={siteChrome} menuArtwork={menuArtwork}>
       {children}
     </StoreChromeView>
   );

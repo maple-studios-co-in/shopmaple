@@ -9,6 +9,7 @@ import { SearchDialog } from "./search-dialog";
 import dynamic from "next/dynamic";
 import { DesktopNavigation, MobileNavigation } from "./navigation";
 import type { SiteChrome } from "@shopmaple/contracts";
+import type { MenuArtwork } from "@/lib/menu-artwork";
 
 // The wishlist list (with its product cards) loads on demand, keeping cards out of every page's first-load JavaScript.
 const Favourites = dynamic(() => import("./favourites").then((module) => module.Favourites));
@@ -16,7 +17,8 @@ import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
 export function Header({
   siteChrome = defaultSiteChrome,
   sticky = false,
-}: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean } = {}) {
+  menuArtwork,
+}: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean; menuArtwork?: MenuArtwork } = {}) {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
     [wishlist, setWishlist] = useState(false),
@@ -57,7 +59,7 @@ export function Header({
               preload
             />
           </Link>
-          <DesktopNavigation siteChrome={siteChrome} />
+          <DesktopNavigation siteChrome={siteChrome} artwork={menuArtwork} />
           <div className="header-actions">
             <button
               className="icon-button"
