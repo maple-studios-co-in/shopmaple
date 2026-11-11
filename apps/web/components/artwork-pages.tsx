@@ -1,5 +1,4 @@
 import { HomePage, homeArtworkProducts } from "@/components/home-page";
-import { NimbusLanding, nimbusArtworkProducts } from "@/components/category-nimbus";
 import { StoryLanding, storyArtworkProducts } from "@/components/category-story";
 import type { StorefrontDocument } from "@/lib/content";
 import { getProductPhotos } from "@/lib/product-photos";
@@ -11,11 +10,6 @@ import { getProductPhotos } from "@/lib/product-photos";
 export async function HomeWithArtwork({ content }: { content: StorefrontDocument }) {
   const photos = await getProductPhotos(homeArtworkProducts(content));
   return HomePage({ content, photos });
-}
-
-export async function NimbusWithArtwork({ content }: { content: StorefrontDocument }) {
-  const photos = await getProductPhotos(nimbusArtworkProducts(content.nimbusPage, content.templateMedia));
-  return <NimbusLanding content={content.nimbusPage} media={content.templateMedia} photos={photos} />;
 }
 
 export async function StoryWithArtwork({ content }: { content: StorefrontDocument }) {

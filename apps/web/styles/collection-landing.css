@@ -1,0 +1,822 @@
+/* The collection landing template (Figma 311:548 "Maple / Nimbus Collection / Desktop" and 311:921 "Maple / Terra
+   Collection / Desktop"; owner, 10 Nov 2026), between the site's own header and footer. Drawn at the design's 1440px:
+   below the opening every size is the design's value at 1440 written as a share of the screen (value / 14.4 vw), down to
+   a floor that still reads and up to a third larger at 1920, as the Contact and Bulk Enquiry pages do. The opening scales
+   by one unit, --collection-u (a design pixel): the smaller of the width's share and the height left under the header, so
+   on a short laptop the whole opening fits the window. Regions fold by the page's own width (container queries).
+   components/collection-landing.tsx draws the markup; [data-collection="<key>"] holds a page's own spacing. */
+.collection {
+  --collection-maple: #80241c;
+  --collection-ink: #292622;
+  --collection-muted: #77716c;
+  /* On the sand bands the design's grey reads at 4.2:1; a shade deeper keeps small text at 4.7:1 (WCAG AA). */
+  --collection-muted-on-sand: #6e6863;
+  --collection-icon: #49443f;
+  --collection-paper: #fcfbf8;
+  --collection-sand: #f2eee6;
+  --collection-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* 80px at 1440; past 1920 the page stops growing and centres. */
+  --collection-gutter: max(clamp(20px, 5.556vw, 106.7px), calc((100% - 1706.7px) / 2));
+  /* The announcement bar and header above the page (42px + 96px on a laptop). */
+  --collection-chrome: 138px;
+  /* The design's vertical rhythm, one name per step. */
+  --collection-gap-16: clamp(10px, 1.111vw, 21.3px);
+  --collection-gap-20: clamp(12px, 1.389vw, 26.7px);
+  --collection-gap-22: clamp(12px, 1.528vw, 29.3px);
+  --collection-gap-24: clamp(14px, 1.667vw, 32px);
+  --collection-gap-26: clamp(14px, 1.806vw, 34.7px);
+  --collection-gap-28: clamp(16px, 1.944vw, 37.3px);
+  --collection-pad-40: clamp(24px, 2.778vw, 53.3px);
+  --collection-pad-48: clamp(28px, 3.333vw, 64px);
+  --collection-pad-60: clamp(36px, 4.167vw, 80px);
+  --collection-pad-96: clamp(56px, 6.667vw, 128px);
+  --collection-pad-100: clamp(56px, 6.944vw, 133.3px);
+  /* Each region's own padding, so a page can keep its frame's (Terra's below). */
+  --collection-philosophy-pad: var(--collection-pad-100);
+  --collection-origin-top: var(--collection-pad-40);
+  --collection-origin-bottom: var(--collection-pad-60);
+  container: collection / inline-size;
+  overflow-x: clip;
+  background: var(--collection-paper);
+  color: var(--collection-ink);
+  font-family: var(--font-text);
+}
+@media (max-width: 1099px) {
+  .collection { --collection-chrome: 118px; }
+}
+@media (max-width: 767px) {
+  .collection { --collection-chrome: 108px; }
+}
+@media (max-width: 749px) {
+  .collection { --collection-chrome: 100px; }
+}
+/* Terra's frame sets its point of view closer (40px) and its origin evenly (60px). */
+.collection[data-collection="terra"] {
+  --collection-philosophy-pad: var(--collection-pad-40);
+  --collection-origin-top: var(--collection-pad-60);
+}
+/* Terra's frame (311:921) closes How it feels 64px under the cards (Nimbus's 60), and sets its room tags' slashes two
+   spaces apart ("CURVED SEATING  /  WALNUT"). */
+.collection[data-collection="terra"] .collection-feeling {
+  padding-bottom: clamp(38px, 4.444vw, 85.3px);
+}
+.collection[data-collection="terra"] .collection-tag-slash {
+  padding-inline: 0.2em;
+}
+/* The opening's button glides to its region, for anyone who has not asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(.collection) {
+    scroll-behavior: smooth;
+  }
+}
+.collection [id] {
+  scroll-margin-top: 24px;
+}
+.collection p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* ---- Shared type: the small capitals, the maple headings, the reading lines ---- */
+.collection .collection-eyebrow {
+  color: var(--collection-muted);
+  font: 400 clamp(11px, 0.833vw, 16px) / 1.45 var(--font-text);
+  text-transform: uppercase;
+}
+.collection .collection-title {
+  color: var(--collection-maple);
+  overflow-wrap: break-word;
+  /* A line break in a heading is the design's own. */
+  white-space: pre-line;
+}
+.collection .collection-title-statement { font: 500 clamp(34px, 3.889vw, 74.7px) / 1.12 var(--font-heading); }
+.collection .collection-title-origin { font: 500 clamp(30px, 3.333vw, 64px) / 1.15 var(--font-heading); }
+.collection .collection-title-material { font: 500 clamp(32px, 3.611vw, 69.3px) / 1.12 var(--font-heading); }
+.collection .collection-title-section { font: 500 clamp(30px, 3.333vw, 64px) / 1.15 var(--font-heading); }
+.collection .collection-title-browse { font: 500 clamp(28px, 3.056vw, 58.7px) / 1.15 var(--font-heading); }
+.collection .collection-title-room { font: 500 clamp(28px, 2.778vw, 53.3px) / 1.12 var(--font-heading); }
+.collection .collection-text {
+  color: var(--collection-ink);
+  font: 400 clamp(17px, 1.389vw, 26.7px) / 1.45 var(--font-text);
+  white-space: pre-line;
+}
+
+/* ---- Buttons: 260 by 54 at 1440, the arrow easing forward on hover; they fill from the pointer like every button on
+   the site (styles/button-fill.css) ---- */
+.collection .collection-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  min-width: clamp(220px, 18.056vw, 346.7px);
+  min-height: clamp(48px, 3.75vw, 72px);
+  margin: 0;
+  padding: 0.5em 1.25em;
+  border: 0;
+  border-radius: 0;
+  background: var(--collection-maple);
+  color: #fff;
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.45 var(--font-text);
+  text-align: center;
+  text-decoration: none;
+}
+.collection .collection-button-light {
+  background: var(--collection-paper);
+  color: var(--collection-maple);
+}
+.collection-arrow {
+  display: inline-block;
+  transition: translate 0.5s var(--collection-ease);
+}
+@media (hover: hover) {
+  .collection .collection-button:hover .collection-arrow {
+    translate: 0.25em 0;
+  }
+}
+.collection :is(a, button):focus-visible {
+  outline: 2px solid var(--collection-maple);
+  outline-offset: 4px;
+}
+.collection :is(.collection-hero, .collection-consultation) :is(a, button):focus-visible {
+  outline-color: #fff;
+}
+.collection .collection-icon {
+  display: block;
+  flex: none;
+  color: var(--collection-icon);
+}
+.collection .collection-icon-52 {
+  width: clamp(40px, 3.611vw, 69.3px);
+  height: clamp(40px, 3.611vw, 69.3px);
+}
+.collection .collection-icon-28 {
+  width: clamp(24px, 1.944vw, 37.3px);
+  height: clamp(24px, 1.944vw, 37.3px);
+}
+
+/* ---- Photos fill their frames: the frame's shape is the design's, the crop is the photo's ---- */
+.collection-photo,
+.collection-piece-photo {
+  position: relative;
+  overflow: hidden;
+  background: #ebe4d8;
+}
+.collection :is(.collection-photo, .collection-piece-photo, .collection-hero-media) img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+.collection :is(.collection-card, .collection-piece) img {
+  transition: scale 0.9s var(--collection-ease);
+}
+@media (hover: hover) {
+  .collection :is(.collection-card, .collection-piece):has(.collection-card-link:hover) img {
+    scale: 1.03;
+  }
+}
+.collection :is(.collection-card, .collection-piece):has(.collection-card-link:focus-visible) img {
+  scale: 1.03;
+}
+
+/* ---- The opening: the campaign photo under a light shade, the words over it ---- */
+.collection-hero {
+  --collection-u: clamp(0.5px, min(calc(100vw / 1440), calc((100svh - var(--collection-chrome)) / 760)), 1.3333px);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(760 * var(--collection-u));
+  padding: calc(80 * var(--collection-u)) var(--collection-gutter);
+  overflow: hidden;
+  background: #8d8984;
+  color: #fff;
+}
+.collection-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.collection-hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* The design's shade, a touch deeper behind the words on the left so the small lines stay legible over bright cloud. */
+  background: linear-gradient(90deg, rgb(20 15 10 / 0.14), rgb(20 15 10 / 0) 55%), rgb(20 15 10 / 0.23);
+}
+.collection-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(24 * var(--collection-u));
+  max-width: calc(1100 * var(--collection-u));
+}
+.collection .collection-hero .collection-eyebrow {
+  color: #fff;
+  font-size: max(11px, calc(13 * var(--collection-u)));
+}
+.collection .collection-hero-title {
+  color: #fff;
+  font: 500 max(36px, calc(80 * var(--collection-u))) / 1.12 var(--font-heading);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+.collection .collection-hero-body {
+  max-width: calc(680 * var(--collection-u));
+  color: #fff;
+  font: 400 max(16px, calc(22 * var(--collection-u))) / 1.45 var(--font-text);
+  white-space: pre-line;
+}
+.collection .collection-hero .collection-button {
+  min-width: max(220px, calc(260 * var(--collection-u)));
+  min-height: max(44px, calc(54 * var(--collection-u)));
+  font-size: max(15px, calc(15 * var(--collection-u)));
+}
+.collection .collection-film-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+  padding: 0.25em 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font: 400 max(14px, calc(16 * var(--collection-u))) / 1.3 var(--font-text);
+  cursor: pointer;
+}
+.collection-film-play {
+  display: grid;
+  place-items: center;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.92);
+  color: var(--collection-maple);
+}
+.collection-film-play svg {
+  width: 0.62em;
+  height: 0.62em;
+  margin-left: 0.08em;
+}
+.collection-film-slash {
+  opacity: 0.85;
+}
+.collection-film-link > span:not(.collection-film-play):not(.collection-film-slash) {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--collection-ease);
+}
+@media (hover: hover) {
+  .collection-film-link:hover > span:not(.collection-film-play):not(.collection-film-slash) {
+    background-size: 100% 1px;
+  }
+}
+/* The film, over the page, with the browser's own controls. */
+.collection-film {
+  width: min(92vw, calc((100svh - 96px) * 2), 1280px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  color: #fff;
+}
+.collection-film::backdrop {
+  background: rgb(18 14 10 / 0.86);
+}
+.collection-film-frame {
+  position: relative;
+}
+.collection-film video {
+  display: block;
+  width: 100%;
+  max-height: calc(100svh - 96px);
+  background: #000;
+}
+.collection-film-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+  cursor: pointer;
+}
+.collection-film-close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+html:has(.collection-film[open]) {
+  overflow: hidden;
+}
+/* The words rise in once over the settling photo. */
+@keyframes collection-rise {
+  from { opacity: 0; transform: translateY(16px); }
+}
+@keyframes collection-settle {
+  from { transform: scale(1.05); }
+}
+.collection-hero-media img {
+  animation: collection-settle 2.4s var(--collection-ease) both;
+}
+.collection-hero-copy > :not(dialog) {
+  animation: collection-rise 1s var(--collection-ease) both;
+}
+.collection-hero-copy > :nth-child(2) { animation-delay: 80ms; }
+.collection-hero-copy > :nth-child(3) { animation-delay: 160ms; }
+.collection-hero-copy > :nth-child(4) { animation-delay: 240ms; }
+.collection-hero-copy > :nth-child(5) { animation-delay: 320ms; }
+
+/* ---- Room navigation: three numbered rooms across a quiet band ---- */
+.collection-room-nav {
+  padding: clamp(20px, 2.5vw, 48px) var(--collection-gutter);
+  background: var(--collection-paper);
+}
+.collection-room-nav ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(16px, 4.861vw, 93.3px);
+  width: min(100%, 84.722vw);
+  margin: 0 auto;
+}
+/* A row of its own, so the band is the design's 91px rather than the page's line box. */
+.collection-room-nav li {
+  display: flex;
+}
+.collection-room-nav a {
+  display: inline-block;
+  color: var(--collection-maple);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.45 var(--font-text);
+  text-decoration: none;
+  text-transform: uppercase;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--collection-ease);
+}
+.collection-room-number {
+  margin-right: 0.4em;
+}
+@media (hover: hover) {
+  .collection-room-nav a:hover {
+    background-size: 100% 1px;
+  }
+}
+
+/* ---- The point of view: statement on the left, the collection's story line on the right ---- */
+.collection-philosophy {
+  display: grid;
+  grid-template-columns: minmax(0, 550fr) minmax(0, 630fr);
+  column-gap: clamp(32px, 6.944vw, 133.3px);
+  row-gap: var(--collection-gap-24);
+  align-items: start;
+  padding: var(--collection-philosophy-pad) var(--collection-gutter);
+}
+.collection-statement {
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-gap-22);
+  min-width: 0;
+}
+.collection .collection-story {
+  padding-top: clamp(0px, 2.639vw, 50.7px);
+  color: var(--collection-ink);
+  font: 400 clamp(18px, 1.528vw, 29.3px) / 1.45 var(--font-text);
+  white-space: pre-line;
+}
+
+/* ---- Photo beside narrative: the origin and the material story ---- */
+.collection-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: clamp(32px, 5.556vw, 106.7px);
+  row-gap: var(--collection-gap-28);
+  align-items: start;
+}
+.collection-narrative {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.collection-origin {
+  padding: var(--collection-origin-top) var(--collection-gutter) var(--collection-origin-bottom);
+}
+.collection-origin-photo {
+  aspect-ratio: 600 / 470;
+}
+.collection-origin-copy {
+  gap: var(--collection-gap-24);
+  padding-top: clamp(0px, 1.667vw, 32px);
+}
+.collection-material {
+  padding: var(--collection-pad-100) var(--collection-gutter);
+}
+.collection-material-photo {
+  aspect-ratio: 600 / 540;
+}
+.collection-material-copy {
+  gap: var(--collection-gap-26);
+  padding-top: clamp(0px, 2.778vw, 53.3px);
+}
+.collection-notes {
+  display: grid;
+  gap: var(--collection-gap-16);
+}
+.collection-notes li {
+  display: flex;
+  align-items: center;
+  gap: var(--collection-gap-16);
+  color: #000;
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
+}
+.collection-notes .collection-icon {
+  color: var(--collection-maple);
+}
+
+/* ---- Terra's settings: photo and narrative alternating sides ---- */
+.collection-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-gap-28);
+  padding: var(--collection-pad-100) var(--collection-gutter);
+  background: #fff;
+}
+.collection-room-list {
+  display: grid;
+  gap: var(--collection-gap-28);
+}
+.collection-room {
+  display: grid;
+  grid-template-columns: minmax(0, 760fr) minmax(0, 456fr);
+  column-gap: clamp(28px, 4.444vw, 85.3px);
+  row-gap: var(--collection-gap-24);
+  align-items: start;
+  padding-top: var(--collection-pad-40);
+}
+.collection-room:nth-child(even) {
+  grid-template-columns: minmax(0, 456fr) minmax(0, 760fr);
+}
+.collection-room:nth-child(even) .collection-room-photo {
+  order: 2;
+}
+.collection-room-photo {
+  aspect-ratio: 760 / 460;
+}
+.collection-room-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-22);
+  min-width: 0;
+  padding-top: clamp(0px, 2.917vw, 56px);
+}
+.collection .collection-room-text {
+  font-size: clamp(16px, 1.25vw, 24px);
+}
+.collection .collection-tags {
+  color: var(--collection-muted);
+  font: 400 clamp(11px, 0.764vw, 14.7px) / 1.45 var(--font-text);
+  text-transform: uppercase;
+}
+.collection-tag-slash {
+  white-space: pre;
+}
+
+/* ---- How it feels: three cards on sand ---- */
+.collection-feeling {
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-gap-28);
+  padding: var(--collection-pad-40) var(--collection-gutter) var(--collection-pad-60);
+  background: var(--collection-sand);
+}
+.collection-feeling .collection-eyebrow {
+  color: var(--collection-muted-on-sand);
+}
+.collection-feeling-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--collection-gap-24);
+}
+.collection-feeling-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-20);
+  min-width: 0;
+  padding: clamp(18px, 1.944vw, 37.3px);
+  background: var(--collection-paper);
+}
+.collection .collection-feeling-title {
+  color: var(--collection-maple);
+  font: 500 clamp(21px, 1.875vw, 36px) / 1.15 var(--font-heading);
+}
+.collection .collection-feeling-text {
+  color: var(--collection-muted);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
+}
+
+/* ---- Explore by collection: wide and narrow cards, then narrow and wide ---- */
+.collection-browse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-gap-28);
+  padding: var(--collection-pad-96) var(--collection-gutter);
+}
+.collection-browse-cards {
+  --collection-card-gap: clamp(16px, 2.222vw, 42.7px);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--collection-card-gap);
+  row-gap: clamp(32px, 3.333vw, 64px);
+}
+.collection-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-16);
+  min-width: 0;
+  width: calc((100% - var(--collection-card-gap)) * 488 / 1248);
+}
+.collection-card:nth-child(4n + 1),
+.collection-card:nth-child(4n + 4) {
+  width: calc((100% - var(--collection-card-gap)) * 760 / 1248);
+}
+.collection-card-photo {
+  align-self: stretch;
+  aspect-ratio: 488 / 460;
+}
+.collection-card:nth-child(4n + 1) .collection-card-photo,
+.collection-card:nth-child(4n + 4) .collection-card-photo {
+  aspect-ratio: 760 / 460;
+}
+.collection .collection-card-title {
+  color: var(--collection-maple);
+  font: 500 clamp(22px, 2.083vw, 40px) / 1.15 var(--font-heading);
+}
+.collection .collection-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+/* The whole card answers to its title's link. */
+.collection .collection-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.collection .collection-card-more {
+  color: #000;
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--collection-ease);
+}
+@media (hover: hover) {
+  .collection :is(.collection-card, .collection-piece):has(.collection-card-link:hover) :is(.collection-card-more, .collection-piece-more) {
+    background-size: 100% 1px;
+  }
+}
+
+/* ---- The edit: real pieces on white, or concepts on sand ---- */
+.collection-pieces {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-28);
+  padding: var(--collection-pad-100) var(--collection-gutter);
+  background: #fff;
+}
+.collection-pieces[data-mode="concepts"] {
+  padding-block: var(--collection-pad-96);
+  background: var(--collection-sand);
+}
+.collection-pieces[data-mode="concepts"] :is(.collection-eyebrow, .collection-lead, .collection-piece-line) {
+  color: var(--collection-muted-on-sand);
+}
+.collection .collection-lead {
+  max-width: 58.8em;
+  color: var(--collection-muted);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
+}
+.collection-pieces .collection-title-section {
+  line-height: 1.12;
+}
+.collection-piece-grid {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--collection-gap-24);
+  row-gap: var(--collection-gap-28);
+}
+.collection-piece {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-16);
+  min-width: 0;
+}
+.collection-piece-photo {
+  align-self: stretch;
+  aspect-ratio: 1;
+  border-radius: clamp(8px, 0.833vw, 16px);
+}
+.collection .collection-piece-title {
+  color: var(--collection-maple);
+  font: 500 clamp(18px, 1.458vw, 28px) / 1.15 var(--font-heading);
+}
+.collection .collection-piece-line {
+  color: var(--collection-muted);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+}
+.collection .collection-piece-more {
+  color: var(--collection-maple);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--collection-ease);
+}
+
+/* ---- The consultation: an invitation on maple, the light button and the store's email beside it ---- */
+.collection-consultation {
+  display: grid;
+  grid-template-columns: minmax(0, 780fr) minmax(0, 400fr);
+  column-gap: clamp(32px, 6.944vw, 133.3px);
+  row-gap: var(--collection-gap-28);
+  align-items: start;
+  padding: var(--collection-pad-100) var(--collection-gutter);
+  background: var(--collection-maple);
+  color: #fff;
+}
+.collection-invitation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--collection-gap-24);
+  min-width: 0;
+}
+.collection .collection-consultation :is(.collection-eyebrow, .collection-title, .collection-text) {
+  color: #fff;
+}
+.collection .collection-consultation .collection-text {
+  max-width: 38em;
+}
+.collection-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--collection-gap-20);
+  min-width: 0;
+  padding-top: clamp(0px, 5vw, 96px);
+}
+.collection .collection-note {
+  color: #fff;
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+}
+.collection .collection-email {
+  max-width: 100%;
+  color: #fff;
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.45 var(--font-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--collection-ease);
+}
+@media (hover: hover) {
+  .collection .collection-email:hover {
+    background-size: 100% 1px;
+  }
+}
+
+/* ---- The Maple promise: three icon labels on sand ---- */
+.collection-promise {
+  padding: var(--collection-pad-48) var(--collection-gutter);
+  background: var(--collection-sand);
+}
+.collection-promise ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--collection-gap-20) clamp(16px, 2.222vw, 42.7px);
+}
+.collection-promise li {
+  display: flex;
+  align-items: center;
+  gap: var(--collection-gap-16);
+  min-width: 0;
+  color: var(--collection-maple);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
+}
+
+/* ---- Narrower pages: regions fold by the page's own width ---- */
+@container collection (max-width: 1023px) {
+  .collection-piece-grid {
+    column-gap: 16px;
+  }
+}
+@container collection (max-width: 899px) {
+  .collection-philosophy,
+  .collection-consultation {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .collection .collection-story,
+  .collection-contact {
+    padding-top: 0;
+  }
+  .collection-room,
+  .collection-room:nth-child(even) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .collection-room:nth-child(even) .collection-room-photo {
+    order: 0;
+  }
+  .collection-room-copy {
+    padding-top: 0;
+  }
+  .collection-piece-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container collection (max-width: 799px) {
+  .collection-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .collection-origin-copy,
+  .collection-material-copy {
+    padding-top: 0;
+  }
+}
+@container collection (max-width: 699px) {
+  .collection-feeling-cards,
+  .collection-promise ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .collection-card,
+  .collection-card:nth-child(4n + 1),
+  .collection-card:nth-child(4n + 4) {
+    width: 100%;
+  }
+  .collection-card-photo,
+  .collection-card:nth-child(4n + 1) .collection-card-photo,
+  .collection-card:nth-child(4n + 4) .collection-card-photo {
+    aspect-ratio: 4 / 3;
+  }
+}
+@container collection (max-width: 479px) {
+  .collection-room-nav ul {
+    column-gap: 12px;
+  }
+  .collection-room-nav a {
+    font-size: 11px;
+  }
+  .collection-room-number {
+    display: block;
+    margin: 0 0 2px;
+  }
+  .collection-piece-grid {
+    column-gap: 12px;
+  }
+}
+/* Phones: the opening fills the screen in its portrait crop, the words resting at the foot of the photo. */
+@media (max-width: 749px) {
+  .collection-hero {
+    --collection-u: 0.5px;
+    justify-content: flex-end;
+    min-height: min(calc(100svh - var(--collection-chrome)), 180vw);
+    padding-block: 40px 44px;
+  }
+  .collection-hero-media::after {
+    background: linear-gradient(0deg, rgb(20 15 10 / 0.42), rgb(20 15 10 / 0) 62%), rgb(20 15 10 / 0.16);
+  }
+  .collection-hero-copy {
+    gap: 14px;
+  }
+  .collection .collection-hero-title {
+    font-size: clamp(34px, 10.3vw, 44px);
+  }
+  .collection .collection-hero-body {
+    max-width: none;
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection *,
+  .collection *::before,
+  .collection *::after,
+  .collection-film,
+  .collection-film * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .collection :is(.collection-card, .collection-piece) img {
+    scale: none !important;
+  }
+}

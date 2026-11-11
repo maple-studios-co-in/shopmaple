@@ -45,6 +45,22 @@ The opening and belief photos were Shopify files and are no longer loaded; until
 
 `/blog/art/<article>.webp` (in `apps/web/public/blog/art/`) are seven imported articles’ own pictures from the former shop, which are only 482px wide. Each was enlarged four times with ESRGAN (the `@upscalerjs/esrgan-thick` 1.0.0 4x model, run locally in the browser) and saved at 1600px wide, so the article’s 1200px banner is sharp. The three articles whose pictures were already 1536px wide used them from Shopify; since 11 November 2026 they show Maple's own room photos from `home/` instead.
 
+## Nimbus Collection (10 November 2026)
+
+From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), frame 311:548 "Maple / Nimbus Collection / Desktop", exported through the Figma connector on 10 November 2026. All are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Nimbus, when real ones exist.
+
+- Enlarged twice with ESRGAN (the `@upscalerjs/esrgan-medium` 1.0.0 2x model, run locally in the browser), then saved as WebP, because their raw images were smaller than about 1.5 times the size they are drawn at on a 1920px screen or a phone: `nimbus-collection/hero.webp` at 3072 x 2043 (the campaign hero, node 311:581, raw image 1538 x 1023 PNG) and `hero-mobile.webp`, its portrait crop for phones around the sofa and the nesting table, at 1269 x 2046; `origin.webp` at 2048 x 2048 (node 315:558, raw 1024 x 1024 PNG); `detail.webp` at 2048 x 2048 (the material story, node 311:620, raw 1024 x 1024 PNG); `sofas.webp` and `beds.webp` at 2400 x 1350 (the wide collection cards, nodes 320:557 and 320:561, raw 1536 x 864 PNG); `accent-chairs.webp` and `tables.webp` at 2048 x 2048 (the narrow cards, nodes 320:558 and 320:560, raw 1024 x 1024 PNG).
+- The edit's eight product photos are the catalogue's own (Keeri), not files here. The line icons are Lucide's shapes (lucide-react 0.577), the same paths the design's SVG exports draw.
+
+## Terra Collection (10 November 2026)
+
+From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), frame 311:921 "Maple / Terra Collection / Desktop", exported through the Figma connector on 10 November 2026. All fourteen are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Terra, when real ones exist.
+
+- Re-encoded as WebP at their own size: `terra-collection/room-lobby.webp`, `room-bedroom.webp`, `room-terrace.webp` (the three settings, nodes 311:983, 311:992 and 311:1001, raw images 1672 x 941 JPEG) and `concept-sofa.webp`, `concept-chair.webp`, `concept-bed.webp`, `concept-terrace-chair.webp` (the Terra edit's four concepts, nodes 315:671, 315:676, 315:681 and 315:686, raw images 1024 x 1024 PNG) and `browse-tables.webp` (the Tables card, node 320:566, raw image 1024 x 1024 PNG).
+- Enlarged with ESRGAN (the `@upscalerjs/esrgan-thick` 1.0.0 models, run locally in the browser as for the blog pictures: 4x for `browse-bedroom.webp`, 2x in overlapping 128px tiles for the others), then reduced with Lanczos where larger than needed and saved as WebP, because their raw images were no more than about 1.5 times the size they are drawn at on a 1920px screen: `terra-collection/hero.webp` at 2880 x 1620 (the campaign hero, node 311:954, raw image 1536 x 864 PNG); `browse-lounge.webp` and `browse-outdoor.webp` at 2560 x 1440 (nodes 320:563 and 320:567, raw 1536 x 864 PNG); `browse-bedroom.webp` at 2048 x 2048 (node 320:564, raw 1024 x 1024 PNG).
+- Enlarged 1.5 times with sharp (Lanczos, then light sharpening) and saved as WebP: `terra-collection/origin.webp` (node 315:623) and `detail.webp` (the material story, node 311:1004), 1536 x 1536 from raw images 1024 x 1024 PNG.
+- `terra-collection/hero-mobile.webp` (1215 x 2160): a 972 x 1728 portrait crop of the enlarged hero (the sofa, stone table and walnut chair), enlarged 1.25 times with sharp (Lanczos, then light sharpening), for the phone layout, where the opening stands about 9:16; the frame has no phone design.
+
 ## Bulk Enquiry (10 November 2026)
 
 From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), page node 298:924, exported through the Figma connector on 10 November 2026:

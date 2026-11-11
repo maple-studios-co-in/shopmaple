@@ -2,17 +2,12 @@ import assert from "node:assert/strict";
 import { shown } from "./support/rendered-src";
 import { cardFixture } from "./support/catalogue-fixtures";
 import test from "node:test";
-import React, { act, Children, isValidElement, type ReactNode } from "react";
+import React from "react";
 import { renderToReadableStream } from "react-dom/server";
-import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import Home from "../app/page";
 import NimbusPage from "../app/nimbus-collection/page";
 import StoryPage from "../app/our-story/page";
-import { NimbusLanding } from "../components/category-nimbus";
-import { StoryLanding } from "../components/category-story";
-import { NimbusWithArtwork, StoryWithArtwork } from "../components/artwork-pages";
-import { CategorySlideshow, CategoryVideo } from "../components/category-controls";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
@@ -22,7 +17,7 @@ import { templateMediaResponsiveKeys } from "@shopmaple/contracts";
 const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
 // Independent expectations catch altered originals and incorrect key-to-slot wiring. The originals first published on
 // Shopify left the store (owner, 11 Nov 2026): such a slot shows its Keeri stand-in product's photo (desktop and mobile
-// alike), or, with none, nothing (`null`) until staff upload artwork. The films are stills now.
+// alike), or, with none, nothing (`null`) until staff upload artwork. No page draws a film.
 const slots = [
   ["home-workshop-poster", "home", ".hero-film [data-hero-slide] img", photo("arbor-sofa"), "Maple furniture"],
   ["home-hero-sofas", "home", '.category-tile[href="/sofas"] img', "/media/home/hero-sofas.webp", ""],
@@ -32,17 +27,13 @@ const slots = [
   ["home-nimbus", "home", ".nimbus-stage-media img", "/media/home/nimbus-clouds.webp", "The Nimbus Collection — cloud-like upholstered furniture", "/media/home/nimbus-clouds.webp"],
   ["home-newsletter", "home", ".home-newsletter img", null, "Maple Furnishers"],
   ["home-testimonial-poster", "home", ".home-testimonial img", null, "Maple customer testimonial"],
-  ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', photo("elara-bed"), "Bedroom", photo("elara-bed")],
-  ["nimbus-room-living", "nimbus", '.landing-nimbus-tiles a[href="/collections/living-room-nimbus"] img', photo("alpine"), "Living Room", photo("alpine")],
-  ["nimbus-room-dining", "nimbus", '.landing-nimbus-tiles a[href="/collections/dining-room-nimbus"] img', photo("radiance-table"), "Dining Room", photo("radiance-table")],
-  ["nimbus-room-collection", "nimbus", '.landing-nimbus-tiles a[href="/collections/nimbus"] img', photo("virelle-chair"), "Nimbus collection", photo("virelle-chair")],
-  ["nimbus-origin", "nimbus", ".landing-nimbus-origin img", photo("virelle"), "Nimbus sculptural lounge furniture"],
-  ["nimbus-slide-living", "nimbus", ".landing-slideshow img", photo("aurevo"), "Living room", photo("aurevo")],
-  ["nimbus-slide-bedroom", "nimbus", ".landing-slideshow img", photo("altura-table"), "Bedroom", photo("altura-table")],
-  ["nimbus-slide-dining", "nimbus", ".landing-slideshow img", photo("meridian-table"), "Dining room", photo("meridian-table")],
-  ["nimbus-project", "nimbus", ".landing-project > img", photo("mela"), "Maple furniture design details"],
-  ["nimbus-hero-poster", "nimbus", ".landing-nimbus-hero img", photo("geometric-grotto"), "The Nimbus collection", "mobile-if-uploaded"],
-  ["nimbus-craft-poster", "nimbus", ".landing-nimbus-bento > [data-nimbus-still] img", photo("aether-table"), "Nimbus furniture craftsmanship"],
+  ["nimbus-hero-poster", "nimbus", '[data-collection-section="hero"] img', "/media/nimbus-collection/hero.webp", "A cream sofa, bouclé lounge chairs and a marble nesting table set on a bank of soft cloud", "/media/nimbus-collection/hero-mobile.webp"],
+  ["nimbus-origin", "nimbus", '[data-collection-section="origin"] img', "/media/nimbus-collection/origin.webp", "A travertine archway opening onto a sea of cloud at sunrise"],
+  ["nimbus-craft-poster", "nimbus", '[data-collection-section="material"] img', "/media/nimbus-collection/detail.webp", "The piped arm of a cream bouclé armchair, close up"],
+  ["nimbus-room-living", "nimbus", "[data-collection-card]:nth-child(1) img", "/media/nimbus-collection/sofas.webp", "A cream modular sectional around a round travertine table in a sunlit room above the clouds"],
+  ["nimbus-room-collection", "nimbus", "[data-collection-card]:nth-child(2) img", "/media/nimbus-collection/accent-chairs.webp", "A cream bouclé accent chair on walnut legs beside a bronze side table", "/media/nimbus-collection/accent-chairs.webp"],
+  ["nimbus-room-dining", "nimbus", "[data-collection-card]:nth-child(3) img", "/media/nimbus-collection/tables.webp", "Two fluted travertine nesting tables on a woven rug, a walnut console behind them"],
+  ["nimbus-room-bedroom", "nimbus", "[data-collection-card]:nth-child(4) img", "/media/nimbus-collection/beds.webp", "A cream upholstered bed and bench in a bedroom whose arches open onto the clouds"],
   ["story-hero", "story", ".story-hero-media img", photo("luca"), "A Maple armchair"],
   ["story-belief", "story", ".story-belief-media img", photo("varin"), "A Maple dining chair"],
   ["story-chapter-1", "story", '[data-story-chapter="chapter-1"] img', "/media/our-story/chapter-1.webp", "A walnut chair frame on a workbench strewn with shavings and hand planes"],
@@ -86,44 +77,13 @@ async function documentFor(page: "home" | "nimbus" | "story") {
   const element = page === "home" ? <ShopProvider><Home /></ShopProvider> : page === "nimbus" ? <ShopProvider>{await NimbusPage()}</ShopProvider> : await StoryPage();
   return new JSDOM(await new Response(await renderToReadableStream(element)).text()).window.document;
 }
-function island(node: ReactNode, component: unknown, className?: string): React.ReactElement | undefined {
-  for (const child of Children.toArray(node)) {
-    if (!isValidElement<{ children?: ReactNode; className?: string }>(child)) continue;
-    if (child.type === component && (className === undefined || (child.props.className ?? "") === className)) return child;
-    const nested = island(child.props.children, component, className);
-    if (nested) return nested;
-  }
-}
-async function withIsland(element: React.ReactElement, small: boolean, run: (doc: Document) => Promise<void>) {
-  const dom = new JSDOM('<!doctype html><div id="root"></div>', { pretendToBeVisual: true });
-  const values = { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true };
-  const previous = new Map(Object.keys(values).map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
-  Object.assign(globalThis, values);
-  Object.defineProperty(dom.window, "matchMedia", { value: (query: string) => ({ matches: query.includes("reduced-motion") || small, addEventListener() {}, removeEventListener() {} }) });
-  const paused = new WeakMap<HTMLMediaElement, boolean>();
-  Object.defineProperties(dom.window.HTMLMediaElement.prototype, {
-    paused: { get(this: HTMLMediaElement) { return paused.get(this) ?? true; } },
-    play: { value(this: HTMLMediaElement) { paused.set(this, false); this.dispatchEvent(new dom.window.Event("play")); return Promise.resolve(); } },
-    pause: { value(this: HTMLMediaElement) { paused.set(this, true); this.dispatchEvent(new dom.window.Event("pause")); } },
-  });
-  const root = createRoot(document.getElementById("root")!);
-  try { await act(async () => root.render(element)); await run(document); }
-  finally {
-    await act(async () => root.unmount()); dom.window.close();
-    for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key); }
-  }
-}
 /** Sections a fresh homepage keeps hidden (it closes on the values); their artwork is checked wherever a document shows them. */
 const hiddenByDefault = new Set(["home-newsletter", "home-testimonial-poster"]);
-async function nimbusTree() {
-  const landing = await (NimbusWithArtwork as (props: unknown) => Promise<React.ReactElement>)((await NimbusPage()).props);
-  return (NimbusLanding as (props: unknown) => React.ReactElement)(landing.props);
-}
 async function checkArtwork(edited: boolean, fallback = false) {
   for (const page of ["home", "nimbus", "story"] as const) {
     const doc = await documentFor(page);
     for (const [key, scope, selector, image, alt, mobile] of slots) {
-      if (scope !== page || key.startsWith("nimbus-slide-")) continue;
+      if (scope !== page) continue;
       const node = doc.querySelector(selector);
       // Content that falls back to the defaults draws a fresh homepage, without those sections.
       if (!node && fallback && hiddenByDefault.has(key)) continue;
@@ -134,7 +94,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
       // A stand-in photo serves both crops; an upload brings its own mobile crop where the placement takes one.
       const source = node.parentElement?.querySelector("source")?.getAttribute("srcset") ?? null;
       if (edited) { if (mobile) assert.equal(source, responsive(key) ? `/media/${key}-small.webp` : null, `${key} mobile`); }
-      else if (mobile) assert.equal(source, mobile === "mobile-if-uploaded" ? null : mobile, `${key} mobile`);
+      else if (mobile) assert.equal(source, mobile, `${key} mobile`);
     }
     // No film anywhere: they were Shopify files, and films cannot be uploaded yet.
     assert.equal(doc.querySelector("video"), null, `${page} draws no film`);
@@ -144,27 +104,18 @@ async function checkArtwork(edited: boolean, fallback = false) {
       assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
       if (!fallback || doc.querySelector(".home-newsletter")) assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
-    if (page === "nimbus") assert.equal(doc.querySelector(".landing-nimbus-intro h2")?.textContent, "Introducing nimbus");
-  }
-  const tree = await nimbusTree();
-  await withIsland(island(tree, CategorySlideshow)!, false, async doc => {
-    for (const [key, , , image, alt, mobile] of slots.filter(s => s[0].startsWith("nimbus-slide-"))) {
-      assert.equal(shown(doc.querySelector("img")?.getAttribute("src")), edited ? `/media/${key}.webp` : image);
-      assert.equal(doc.querySelector("source")?.getAttribute("srcset"), edited ? `/media/${key}-small.webp` : mobile);
-      assert.equal(doc.querySelector("img")?.getAttribute("alt"), edited ? `Edited ${key}` : alt);
-      await act(async () => doc.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
+    if (page === "nimbus") {
+      assert.equal(doc.querySelector('[data-collection-section="philosophy"] h2')?.textContent, "Comfort is\nthe starting point.");
+      assert.equal(doc.querySelector("[data-collection-film]"), null, "Nimbus has no film to open");
     }
-  });
-  assert.equal(island(tree, CategoryVideo), undefined, "the Nimbus page draws no film control");
-  const story = await (StoryWithArtwork as (props: unknown) => Promise<React.ReactElement>)((await StoryPage()).props);
-  assert.equal(island((StoryLanding as (props: unknown) => React.ReactElement)(story.props), CategoryVideo), undefined, "Our Story draws no film control");
+  }
 }
 
 test("legacy published pages show every bundled original, Keeri stand-ins for the former Shopify artwork, and nothing else", async () => {
   await withPublished(published(), () => checkArtwork(false));
 });
 
-test("published artwork overrides reach all 28 slots, six responsive pairs and accessible descriptions", async () => {
+test("published artwork overrides reach all 24 slots, three responsive pairs and accessible descriptions", async () => {
   await withPublished(published(overrides()), () => checkArtwork(true));
 });
 
@@ -177,31 +128,20 @@ test("draft-only, malformed artwork, malformed responsive pairs and unavailable 
   ]) await withPublished(body, () => checkArtwork(false, true));
 });
 
-test("renamed and reordered Nimbus rooms keep dynamic default descriptions and keyed overrides", async () => {
+test("renamed Nimbus collection cards keep their photos and descriptions, and keyed overrides follow their slots", async () => {
   for (const edited of [false, true]) {
     const body = published(edited ? overrides() : undefined);
-    body.content.nimbusPage = structuredClone(defaultNimbusPage);
-    body.content.nimbusPage.roomTiles = [
-      { key: "dining", title: "Gather here" }, { key: "bedroom", title: "Rest here" }, { key: "living", title: "Unwind here" },
-    ];
-    body.content.nimbusPage.roomSlides = [
-      { key: "dining", label: "Shared meals" }, { key: "living", label: "Slow evenings" }, { key: "bedroom", label: "Restful nights" },
-    ];
+    const page = structuredClone(defaultNimbusPage);
+    page.browse.items = [{ title: "Sit back" }, { title: "Take a seat" }, { title: "Gather here" }, { title: "Rest here" }];
+    body.content.nimbusPage = page;
     await withPublished(body, async () => {
       const doc = await documentFor("nimbus");
-      const tiles = [...doc.querySelectorAll(".landing-nimbus-tiles img")];
-      assert.deepEqual(tiles.map(n => n.getAttribute("alt")), edited
-        ? ["Edited nimbus-room-dining", "Edited nimbus-room-bedroom", "Edited nimbus-room-living", "Edited nimbus-room-collection"]
-        : ["Gather here", "Rest here", "Unwind here", "Nimbus collection"]);
-      assert.equal(shown(tiles[0]?.getAttribute("src")), edited ? "/media/nimbus-room-dining.webp" : photo("radiance-table"));
-      assert.deepEqual([...doc.querySelectorAll(".landing-nimbus-tiles h3")].map(n => n.textContent), ["Gather here", "Rest here", "Unwind here"]);
-      await withIsland(island(await nimbusTree(), CategorySlideshow)!, false, async doc => {
-        for (const [key, label, product] of [["dining", "Shared meals", "meridian-table"], ["living", "Slow evenings", "aurevo"], ["bedroom", "Restful nights", "altura-table"]]) {
-          assert.equal(doc.querySelector("img")?.getAttribute("alt"), edited ? `Edited nimbus-slide-${key}` : label);
-          assert.equal(shown(doc.querySelector("img")?.getAttribute("src")), edited ? `/media/nimbus-slide-${key}.webp` : photo(product!));
-          await act(async () => doc.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
-        }
-      });
+      assert.deepEqual([...doc.querySelectorAll("[data-collection-card] h3")].map(n => n.textContent), ["Sit back", "Take a seat", "Gather here", "Rest here"]);
+      const photos = [...doc.querySelectorAll("[data-collection-card] img")];
+      assert.deepEqual(photos.map(n => n.getAttribute("alt")), edited
+        ? ["Edited nimbus-room-living", "Edited nimbus-room-collection", "Edited nimbus-room-dining", "Edited nimbus-room-bedroom"]
+        : slots.filter(s => s[0].startsWith("nimbus-room-")).map(s => s[4]));
+      assert.equal(shown(photos[2]?.getAttribute("src")), edited ? "/media/nimbus-room-dining.webp" : "/media/nimbus-collection/tables.webp");
     });
   }
 });

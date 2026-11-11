@@ -9,6 +9,7 @@ import { campaignScheduleSchema } from "./campaign-schedule";
 import { storyPageContentSchema } from "./story-content";
 import { homeDetailsSchema } from "./home-details";
 import { nimbusPageContentSchema } from "./nimbus-content";
+import { collectionLandingContentSchema } from "./collection-landing";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -99,6 +100,9 @@ export const templateMediaKeys = [
   "contact-studio", "contact-workshop",
   // The Bulk Enquiry redesign (Figma 298:924; owner, 10 Nov 2026): the opening, one photo per step and the proposal's.
   "bulk-hero", "bulk-step-meet", "bulk-step-design", "bulk-step-deliver", "bulk-proposal",
+  // The Terra Collection (Figma 311:921; owner, 10 Nov 2026): its photos in page order, rooms, cards and concepts by position.
+  "terra-hero", "terra-origin", "terra-room-1", "terra-room-2", "terra-room-3", "terra-detail",
+  "terra-browse-1", "terra-browse-2", "terra-browse-3", "terra-browse-4", "terra-piece-1", "terra-piece-2", "terra-piece-3", "terra-piece-4",
   "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
   "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
   "home-city-delhi", "home-city-kolkata", "home-city-hyderabad", "home-city-varanasi", "home-city-mumbai",
@@ -128,6 +132,7 @@ export const homeCitiesLayoutSchema = z.array(z.object({
 export type HomeCitiesLayout = z.infer<typeof homeCitiesLayoutSchema>;
 export const templateMediaResponsiveKeys = [
   "home-nimbus", "nimbus-room-collection", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-hero-poster",
+  "terra-hero",
 ] as const;
 export type TemplateMediaKey = typeof templateMediaKeys[number];
 const templateMediaItemSchema = z.object({
@@ -252,6 +257,7 @@ export const contentPageSchema = z
             "tables",
             "sofas",
             "nimbus-collection",
+            "terra-collection",
             "our-story",
             "returns",
             "admin",
@@ -337,6 +343,8 @@ export const storefrontContentSchema = z
     templateMedia: templateMediaSchema.optional(),
     // Legacy revisions retain the original Nimbus collection template copy.
     nimbusPage: nimbusPageContentSchema.optional(),
+    // The Terra Collection (Figma 311:921; owner, 10 Nov 2026); revisions saved before it keep its default copy.
+    terraPage: collectionLandingContentSchema.optional(),
     // Legacy revisions retain the original service page templates.
     servicePages: servicePagesContentSchema.optional(),
     motion: z

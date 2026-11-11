@@ -55,15 +55,25 @@ test("template fallback resolution preserves original assets and caller labels w
   // A placement whose original was a Shopify file has no bundled image any more.
   assert.deepEqual(resolveTemplateMedia("home-workshop-poster"), { key: "home-workshop-poster", image: "", alt: "Maple furniture" });
   assert.equal(resolveTemplateMedia("nimbus-room-living", [], "Evening lounge").alt, "Evening lounge");
-  assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "Living Room");
+  // The Nimbus redesign (10 Nov 2026) gave the living room tile's slot to its sofas card.
+  assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "A cream modular sectional around a round travertine table in a sunlit room above the clouds");
   const override = [{ key: "home-newsletter" as const, image: "/media/override.webp", alt: "Updated room" }];
   const selected = resolveTemplateMedia("home-newsletter", override, "Ignored fallback");
   assert.deepEqual(selected, { key: "home-newsletter", image: "/media/override.webp", alt: "Updated room" });
   selected.alt = "Mutated";
   assert.equal(override[0]!.alt, "Updated room");
   // Our Story's redesign (10 Nov 2026) traded the film poster for the belief photo and added seven chapter photos; the
-  // contact redesign added two photos and the Bulk Enquiry redesign five (54 + 2 + 5).
-  assert.equal(templateMediaSlots.length, 61);
+  // contact redesign added two photos, the Bulk Enquiry redesign five and the Terra Collection fourteen (54 + 2 + 5 + 14);
+  // the Nimbus redesign retired its project photo (- 1). Its room slideshow's slots stay for the homepage hero, standing in
+  // from Keeri products until staff upload photos (owner, 11 Nov 2026: nothing from Shopify).
+  assert.equal(templateMediaSlots.length, 74);
+  assert.deepEqual(templateMediaSlots.filter(slot => slot.group === "Nimbus").map(slot => [slot.key, slot.image]), [
+    ["nimbus-hero-poster", "/media/nimbus-collection/hero.webp"], ["nimbus-origin", "/media/nimbus-collection/origin.webp"],
+    ["nimbus-craft-poster", "/media/nimbus-collection/detail.webp"], ["nimbus-room-living", "/media/nimbus-collection/sofas.webp"],
+    ["nimbus-room-collection", "/media/nimbus-collection/accent-chairs.webp"], ["nimbus-room-dining", "/media/nimbus-collection/tables.webp"],
+    ["nimbus-room-bedroom", "/media/nimbus-collection/beds.webp"],
+    ["nimbus-slide-living", ""], ["nimbus-slide-bedroom", ""], ["nimbus-slide-dining", ""],
+  ]);
   assert.deepEqual(templateMediaSlots.filter(slot => slot.key.startsWith("bulk-")).map(slot => [slot.key, slot.image]), [
     ["bulk-hero", "/media/bulk-enquiry/hero.webp"], ["bulk-step-meet", "/media/bulk-enquiry/step-meet.webp"],
     ["bulk-step-design", "/media/bulk-enquiry/step-design.webp"], ["bulk-step-deliver", "/media/bulk-enquiry/step-deliver.webp"],

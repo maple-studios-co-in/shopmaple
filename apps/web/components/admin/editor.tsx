@@ -22,6 +22,7 @@ import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
+import { TerraFields } from "./terra-fields";
 import { ServicePageFields } from "./service-page-fields";
 import { EditorialFields } from "./editorial-fields";
 import { AuthoredArticleFields } from "./authored-article-fields";
@@ -69,7 +70,7 @@ const icons: Record<Tab, typeof House> = {
 };
 /** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
 const existingPages = [
-  ["story", "Our Story", "pages/our-story"], ["nimbus", "The Nimbus Collection", "pages/nimbus-collection"], ["contact", "Contact", "pages/contact"],
+  ["story", "Our Story", "pages/our-story"], ["nimbus", "The Nimbus Collection", "pages/nimbus-collection"], ["terra", "The Terra Collection", "pages/terra-collection"], ["contact", "Contact", "pages/contact"],
   ["bulk", "Bulk Enquiry", "pages/bulk-enquiry"], ["returns", "Return & Exchange", "pages/returns"],
 ] as const;
 type ExistingPage = (typeof existingPages)[number][0];
@@ -420,6 +421,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         </SelectField>
         {existingPage === "story" ? <StoryFields value={content.storyPage} onChange={set("storyPage")} />
           : existingPage === "nimbus" ? <NimbusFields value={content.nimbusPage} onChange={set("nimbusPage")} />
+          : existingPage === "terra" ? <TerraFields value={content.terraPage} onChange={set("terraPage")} />
           : <ServicePageFields key={existingPage} page={existingPage} value={content.servicePages} onChange={set("servicePages")} />}
       </>;
       default: return null;

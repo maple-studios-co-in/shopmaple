@@ -1,17 +1,15 @@
 import { z } from "zod";
+import { collectionLandingContentSchema, copyText as text } from "./collection-landing";
 
-export const nimbusSectionKeys = [
+/** The original template's nine regions, before the redesign (Figma 311:548; owner, 10 Nov 2026). */
+export const legacyNimbusSectionKeys = [
   "hero", "intro", "rooms-grid", "origin", "principles", "rooms-slideshow", "series", "project", "promises",
 ] as const;
-const text = (max: number) => z.string().min(1).max(max).refine(
-  value => value.trim().length > 0 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value),
-  "Use nonempty text without control characters",
-);
 
-/** Copy and order for the existing template; routes, media and commerce remain fixed. */
-export const nimbusPageContentSchema = z.object({
+/** The original template's copy and order, which the live store published; older revisions still validate. */
+export const legacyNimbusPageContentSchema = z.object({
   title: text(160),
-  sections: z.array(z.object({ key: z.enum(nimbusSectionKeys), enabled: z.boolean() }).strict()).length(9),
+  sections: z.array(z.object({ key: z.enum(legacyNimbusSectionKeys), enabled: z.boolean() }).strict()).length(9),
   intro: z.object({ heading: text(160), body: text(2000) }).strict(),
   roomTiles: z.array(z.object({ key: z.enum(["bedroom", "living", "dining"]), title: text(160) }).strict()).length(3),
   origin: z.object({ eyebrow: text(160), heading: text(160), body: text(8000) }).strict(),
@@ -30,5 +28,9 @@ export const nimbusPageContentSchema = z.object({
   if (new Set(page.principles.items.map(item => item.key)).size !== page.principles.items.length)
     ctx.addIssue({ code: "custom", path: ["principles", "items"], message: "Nimbus identities must be unique" });
 });
+export type LegacyNimbusPageContent = z.infer<typeof legacyNimbusPageContentSchema>;
+
+/** The Nimbus page's words: the collection template's (shared with Terra), or an older revision of the original's, which
+    reads as the redesign. Routes, photos and products stay with the page. */
+export const nimbusPageContentSchema = z.union([collectionLandingContentSchema, legacyNimbusPageContentSchema]);
 export type NimbusPageContent = z.infer<typeof nimbusPageContentSchema>;
-export type NimbusSectionKey = NimbusPageContent["sections"][number]["key"];

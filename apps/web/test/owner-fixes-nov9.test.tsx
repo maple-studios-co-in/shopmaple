@@ -293,7 +293,7 @@ test("the product page is one column 30px apart: sections on white carry no padd
 // ---- 5. No faint rules ----
 
 test("no faint full-width rules are drawn between sections", () => {
-  for (const file of ["category-story.tsx", "category-nimbus.tsx", "category-landing.tsx"])
+  for (const file of ["category-story.tsx", "collection-landing.tsx", "category-landing.tsx"])
     assert.doesNotMatch(source(`../components/${file}`), /className="home-divider/, file);
   assert.doesNotMatch(source("../components/service-pages.tsx"), /cp-divider/);
 });

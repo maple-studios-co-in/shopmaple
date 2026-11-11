@@ -952,8 +952,7 @@
 }
 
 /* The film itself is the touch target. Keyboard focus exposes its control. */
-.hero-film .video-control,
-.landing-video.landing-video > button {
+.hero-film .video-control {
   inset: 0;
   width: 100%;
   height: 100%;
@@ -964,12 +963,9 @@
   pointer-events: auto;
 }
 .hero-film .video-control { z-index: 1; }
-.hero-film .video-control > svg,
-.landing-video.landing-video > button > svg { opacity: 0; }
-.hero-film .video-control:focus-visible,
-.landing-video.landing-video > button:focus-visible { outline: 2px solid white; outline-offset: -6px; }
-.hero-film .video-control:focus-visible > svg,
-.landing-video.landing-video > button:focus-visible > svg {
+.hero-film .video-control > svg { opacity: 0; }
+.hero-film .video-control:focus-visible { outline: 2px solid white; outline-offset: -6px; }
+.hero-film .video-control:focus-visible > svg {
   opacity: 1;
   background: #292d28b3;
   border-radius: 50%;

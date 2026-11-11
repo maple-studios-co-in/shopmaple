@@ -3,7 +3,9 @@ import { categoryPageSlugs, type CategoryPageSlug } from "@shopmaple/contracts";
 import { BlogArticle } from "@/components/blog-article";
 import { BlogIndex } from "@/components/blog-index";
 import { CategoryLanding } from "@/components/category-landing";
-import { HomeWithArtwork, NimbusWithArtwork, StoryWithArtwork } from "@/components/artwork-pages";
+import { NimbusCollection } from "@/components/nimbus-collection";
+import { CollectionLandingView } from "@/components/collection-landing";
+import { HomeWithArtwork, StoryWithArtwork } from "@/components/artwork-pages";
 import { ContentPage } from "@/components/content-page";
 import { PolicyArticle } from "@/components/policy-page";
 import { BulkEnquiry, Contact, ReturnsPageContent, emptyEnquiryContext } from "@/components/service-pages";
@@ -17,6 +19,7 @@ import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 import { resolveServicePages } from "@/lib/service-page-defaults";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
+import { resolveTerraLanding, resolveTerraPageContent } from "@/lib/terra-content-defaults";
 
 export type StorefrontRoute = { title: string; path: string; node: ReactNode };
 
@@ -39,7 +42,10 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
       return { title: resolveStoryPageContent(content.storyPage).title, path, node: <StoryWithArtwork content={content} /> };
     }
     if (second === "nimbus-collection") {
-      return { title: resolveNimbusPageContent(content.nimbusPage).title, path, node: <NimbusWithArtwork content={content} /> };
+      return { title: resolveNimbusPageContent(content.nimbusPage).title, path, node: <NimbusCollection site={content} /> };
+    }
+    if (second === "terra-collection") {
+      return { title: resolveTerraPageContent(content.terraPage).title, path, node: <CollectionLandingView page={resolveTerraLanding(content)} /> };
     }
     const services = resolveServicePages(content.servicePages);
     if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} site={content} /> };
@@ -73,6 +79,7 @@ export function listPreviewPages(content: StorefrontDocument): { label: string; 
     ...categoryPageSlugs.map((slug) => ({ label: resolveCategoryPageContent(slug, content.landingPages).title, segments: ["pages", slug] })),
     { label: "Our Story", segments: ["pages", "our-story"] },
     { label: "Nimbus Collection", segments: ["pages", "nimbus-collection"] },
+    { label: "Terra Collection", segments: ["pages", "terra-collection"] },
     { label: "Contact", segments: ["pages", "contact"] },
     { label: "Bulk Enquiry", segments: ["pages", "bulk-enquiry"] },
     { label: "Return & Exchange", segments: ["pages", "returns"] },
