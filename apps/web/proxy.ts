@@ -11,5 +11,7 @@ export function proxy(request: NextRequest) {
   if (tag) response.headers.set("X-Robots-Tag", tag);
   return response;
 }
-// Scripts and styles are never indexed; everything else, images included, gets the header.
-export const config = { matcher: ["/((?!_next/static/).*)"] };
+// Scripts and styles are never indexed; everything else, images included, gets the header. Film uploads are left out:
+// running the proxy copies a request's body into memory, capped at 10 MB, and a film is up to 80 MB (the API's answer
+// there carries its own noindex header).
+export const config = { matcher: ["/((?!_next/static/|api/admin/media/films).*)"] };
