@@ -18,10 +18,6 @@
   [data-home-section="nimbus"] .home-nimbus-stage,
   .page-section,
   .site-footer,
-  .cp-container,
-  .cp-indiamart,
-  .cp-contact-intro,
-  .cp-help-section,
   .blog-index,
   .maple-footer-main,
   .maple-footer-bottom {
@@ -33,8 +29,6 @@
   .page-section.cart-page {
     max-width: calc(820px + 2 * var(--wide-gutter));
   }
-  .cp-help,
-  .cp-bulk-scene,
   .landing-nimbus-bento {
     max-width: none;
   }

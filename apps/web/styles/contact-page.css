@@ -1,0 +1,698 @@
+/* The contact page (Figma 298:511 "Maple / Contact / Desktop"; owner, 10 Nov 2026), between the store's own header and
+   footer. Drawn at the design's 1440px: each size is the design's value at 1440 as a share of the screen (value / 14.4
+   vw), so the page keeps its proportions as the screen narrows, down to a floor that still reads, and grows to a third
+   larger at 1920, as Our Story does. Regions fold by the page's own width (container queries). */
+.contact-us {
+  --contact-maple: #80241c;
+  --contact-ink: #292622;
+  --contact-muted: #77716c;
+  --contact-paper: #fcfbf8;
+  --contact-sand: #f2eee6;
+  --contact-rule: #d8d1c7;
+  --contact-line: #bcb2a4;
+  --contact-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --contact-gutter: clamp(20px, 5.556vw, 106.7px);
+  --contact-text: 400 clamp(15px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  container: contact / inline-size;
+  overflow-x: clip;
+  background: var(--contact-paper);
+  color: var(--contact-ink);
+  font-family: var(--font-text);
+}
+.contact-us p {
+  margin: 0;
+  text-wrap: pretty;
+}
+/* Headings break into even lines on narrow screens; the two the design breaks by hand keep their breaks. */
+.contact-us :is(.contact-help-title, .contact-visit-title, .contact-form-title, .contact-guide-title, .contact-way h3, .contact-faq-text) {
+  text-wrap: balance;
+}
+
+/* The small capital labels, 13px ("START A CONVERSATION"); the opening's is 12px. */
+.contact-us .contact-eyebrow {
+  margin: 0;
+  color: var(--contact-muted);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.385 var(--font-text);
+  text-transform: uppercase;
+}
+
+/* Maple red buttons with a white arrow that leans on as the pointer arrives; they fill from the pointer like every button
+   on the site (styles/button-fill.css). */
+.contact-us .contact-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  min-height: 3.375em;
+  margin: 0;
+  padding: 1em;
+  border: 0;
+  border-radius: 0.3125em;
+  background: var(--contact-maple);
+  color: #fff;
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.contact-us .contact-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.contact-button-arrow {
+  display: inline-block;
+  transition: translate 0.5s var(--contact-ease);
+}
+.contact-us .contact-button:is(:hover, :focus-visible) .contact-button-arrow {
+  translate: 0.3em 0;
+}
+
+/* ---- The opening: the words, then the consultation studio across the page ---- */
+.contact-intro {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 3.333vw, 64px);
+  padding: clamp(40px, 6.111vw, 117.3px) var(--contact-gutter) 0;
+}
+.contact-intro-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 1.389vw, 26.7px);
+}
+.contact-us .contact-intro .contact-eyebrow {
+  font-size: clamp(12px, 0.833vw, 16px);
+  line-height: 1.25;
+}
+.contact-us .contact-title {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(40px, 5.278vw, 101.3px) / 1.2237 var(--font-heading);
+  white-space: pre-line;
+}
+.contact-us .contact-intro-body {
+  max-width: 45em;
+  color: var(--contact-muted);
+  font: 400 clamp(17px, 1.389vw, 26.7px) / 1.2 var(--font-text);
+}
+.contact-intro-media {
+  height: clamp(240px, 34.722vw, 666.7px);
+  overflow: hidden;
+  background: #ebe4d8;
+}
+.contact-intro-media img,
+.contact-visit-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ---- Three ways to reach us, ruled apart ---- */
+.contact-reach {
+  padding: clamp(28px, 3.333vw, 64px) var(--contact-gutter) clamp(36px, 4.444vw, 85.3px);
+}
+.contact-us .contact-ways {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2.222vw, 42.7px);
+  width: 95.625%;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.contact-way {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(10px, 0.972vw, 18.7px);
+  min-width: 0;
+  padding: clamp(16px, 1.667vw, 32px) clamp(16px, 1.667vw, 32px) clamp(16px, 1.667vw, 32px) 0;
+  border-right: 1px solid var(--contact-rule);
+}
+.contact-way:last-child {
+  border-right: 0;
+}
+.contact-way-icon {
+  display: block;
+  width: clamp(28px, 2.5vw, 48px);
+  height: auto;
+}
+.contact-us .contact-way h3 {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4167 var(--font-heading);
+}
+.contact-us .contact-way-detail {
+  max-width: 100%;
+  color: var(--contact-ink);
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  background: linear-gradient(var(--contact-maple), var(--contact-maple)) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.6s var(--contact-ease), color 0.3s var(--contact-ease);
+}
+.contact-us .contact-way-detail:hover {
+  color: var(--contact-maple);
+  background-size: 100% 1px;
+}
+.contact-us .contact-way-note {
+  color: var(--contact-muted);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.4286 var(--font-text);
+}
+
+/* ---- The enquiry: what to include beside the form ---- */
+.contact-enquiry {
+  display: grid;
+  grid-template-columns: minmax(0, 440fr) minmax(0, 760fr);
+  align-items: start;
+  column-gap: clamp(32px, 5.556vw, 106.7px);
+  padding: clamp(48px, 5.556vw, 106.7px) var(--contact-gutter);
+}
+.contact-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+  min-width: 0;
+}
+.contact-us .contact-enquiry-title {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(32px, 3.056vw, 58.7px) / 1.227 var(--font-heading);
+  white-space: pre-line;
+}
+.contact-us .contact-guide-lead {
+  max-width: 93.2%;
+  color: var(--contact-muted);
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+}
+.contact-us .contact-guide-title {
+  margin: 0;
+  color: var(--contact-ink);
+  font: 500 clamp(18px, 1.389vw, 26.7px) / 1.4 var(--font-heading);
+}
+.contact-us .contact-guide-text {
+  max-width: 93.2%;
+  color: var(--contact-muted);
+  font: var(--contact-text);
+}
+.contact-us .contact-bulk-link {
+  min-width: 16.25em;
+}
+
+/* The form: labels over underlined fields, two to a row. */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 2.083vw, 40px);
+  min-width: 0;
+  padding-inline: clamp(0px, 2.778vw, 53.3px);
+}
+.contact-us .contact-form-title {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(26px, 2.222vw, 42.7px) / 1.219 var(--font-heading);
+}
+.contact-form-context {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--contact-maple);
+  background: var(--contact-sand);
+  color: var(--contact-ink);
+  font: var(--contact-text);
+  overflow-wrap: anywhere;
+}
+.contact-form-context strong {
+  font-weight: 600;
+}
+.contact-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(20px, 2.083vw, 40px) clamp(14px, 1.389vw, 26.7px);
+}
+.contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.694vw, 13.3px);
+  min-width: 0;
+}
+.contact-field-wide {
+  grid-column: 1 / -1;
+}
+.contact-us .contact-label {
+  color: var(--contact-ink);
+  font: 400 clamp(14px, 0.972vw, 18.7px) / 1.4286 var(--font-text);
+}
+.contact-us .contact-form :is(input, textarea),
+.contact-us .contact-select-value {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(12px, 1.111vw, 21.3px);
+  border: 0;
+  border-bottom: 1px solid var(--contact-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--contact-ink);
+  font: 400 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  transition: border-color 0.4s var(--contact-ease), box-shadow 0.4s var(--contact-ease);
+}
+.contact-us .contact-form textarea {
+  height: clamp(120px, 9.722vw, 186.7px);
+  resize: vertical;
+}
+/* Where the browser can, the message grows with what is written instead of showing a resize grip. */
+@supports (field-sizing: content) {
+  .contact-us .contact-form textarea {
+    field-sizing: content;
+    height: auto;
+    min-height: clamp(120px, 9.722vw, 186.7px);
+    max-height: 26em;
+    resize: none;
+  }
+}
+.contact-us .contact-form :is(input, textarea)::placeholder {
+  color: var(--contact-muted);
+  opacity: 1;
+}
+/* Focus draws the underline in maple red, twice as heavy, in place of the site's outline. */
+.contact-us .contact-form :is(input, textarea):focus-visible {
+  outline: none;
+  border-bottom-color: var(--contact-maple);
+  box-shadow: inset 0 -1px 0 var(--contact-maple);
+}
+.contact-us .contact-select:has(select:focus-visible) .contact-select-value {
+  border-bottom-color: var(--contact-maple);
+  box-shadow: inset 0 -1px 0 var(--contact-maple);
+}
+/* The topic: the design's words and arrow, the native list unseen over them. */
+.contact-select {
+  position: relative;
+}
+.contact-us .contact-select-value {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.contact-us .contact-select-value[data-empty] {
+  color: var(--contact-muted);
+}
+.contact-select-arrow {
+  flex: none;
+  width: 0.75em;
+  height: 0.75em;
+  color: var(--contact-maple);
+}
+.contact-us .contact-select select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font-size: 16px;
+  cursor: pointer;
+  appearance: none;
+}
+.contact-us .contact-form-note {
+  color: var(--contact-muted);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.385 var(--font-text);
+}
+.contact-us .contact-submit {
+  width: 100%;
+}
+.contact-us .contact-form-status {
+  margin-top: calc(-0.5 * clamp(20px, 2.083vw, 40px));
+  color: var(--contact-ink);
+  font: var(--contact-text);
+}
+.contact-us .contact-form-status[role="alert"] {
+  color: var(--contact-maple);
+}
+
+/* ---- The help centre on sand: five topics, then the chosen topic's questions ---- */
+.contact-help {
+  /* The design's grey, a shade deeper on sand so small text keeps 4.5:1. */
+  --contact-muted: #716b66;
+  padding: clamp(48px, 6.25vw, 120px) var(--contact-gutter);
+  background: var(--contact-sand);
+}
+.contact-us .contact-help-title {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(34px, 3.333vw, 64px) / 1.229 var(--font-heading);
+}
+.contact-us .contact-help-lead {
+  color: var(--contact-muted);
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+}
+.contact-topic-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(8px, 1.111vw, 21.3px);
+  padding-block: clamp(24px, 2.778vw, 53.3px);
+}
+.contact-us .contact-topic {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  min-width: 0;
+  margin: 0;
+  padding: clamp(16px, 1.667vw, 32px) 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--contact-ink);
+  text-align: left;
+  cursor: pointer;
+}
+.contact-us .contact-topic:focus-visible {
+  outline: 2px solid var(--contact-maple);
+  outline-offset: 4px;
+}
+/* The design's line icons, coloured by the tab: ink, maple red once chosen. */
+.contact-topic-icon {
+  display: block;
+  width: clamp(28px, 2.222vw, 42.7px);
+  aspect-ratio: 1;
+  background-color: currentColor;
+  -webkit-mask: var(--contact-icon) center / contain no-repeat;
+  mask: var(--contact-icon) center / contain no-repeat;
+  transition: color 0.4s var(--contact-ease);
+}
+.contact-topic-label {
+  max-width: 80.2%;
+  font: 500 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-heading);
+  transition: font-weight 0.4s var(--contact-ease);
+}
+.contact-us .contact-topic[aria-selected="true"] .contact-topic-icon {
+  color: var(--contact-maple);
+}
+.contact-us .contact-topic[aria-selected="true"] .contact-topic-label {
+  font-weight: 800;
+}
+@media (hover: hover) {
+  .contact-us .contact-topic:hover .contact-topic-icon {
+    color: var(--contact-maple);
+  }
+}
+
+/* A question: a plus while closed; once open its upright bar lies down, a quarter turn, into the minus the design draws. */
+.contact-faqs {
+  animation: contact-panel 0.6s var(--contact-ease) both;
+}
+.contact-faq {
+  --contact-faq-x: clamp(14px, 1.667vw, 32px);
+  --contact-faq-y: clamp(18px, 1.944vw, 37.3px);
+  border-bottom: 1px solid var(--contact-rule);
+}
+.contact-us .contact-faq-question {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(12px, 1.389vw, 26.7px);
+  padding: var(--contact-faq-y) var(--contact-faq-x);
+  list-style: none;
+  cursor: pointer;
+  transition: padding-bottom 0.5s var(--contact-ease);
+}
+.contact-us .contact-faq-question::-webkit-details-marker {
+  display: none;
+}
+.contact-us .contact-faq-question:focus-visible {
+  outline: 2px solid var(--contact-maple);
+  outline-offset: -2px;
+}
+.contact-us .contact-faq[open] > .contact-faq-question {
+  padding-bottom: clamp(8px, 0.833vw, 16px);
+}
+.contact-faq-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--contact-ink);
+  font: 500 clamp(17px, 1.389vw, 26.7px) / 1.4 var(--font-heading);
+  transition: color 0.3s var(--contact-ease);
+}
+@media (hover: hover) {
+  .contact-us .contact-faq-question:hover .contact-faq-text {
+    color: var(--contact-maple);
+  }
+}
+.contact-faq-sign {
+  position: relative;
+  flex: none;
+  width: clamp(24px, 2.222vw, 42.7px);
+  height: clamp(26px, 2.153vw, 41.3px);
+}
+.contact-faq-sign::before,
+.contact-faq-sign::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 6.25%;
+  width: clamp(9px, 0.625vw, 12px);
+  height: clamp(1.5px, 0.104vw, 2px);
+  margin-top: calc(clamp(1.5px, 0.104vw, 2px) / -2);
+  border-radius: 1px;
+  background: var(--contact-maple);
+}
+.contact-us .contact-faq-sign::after {
+  rotate: 90deg;
+  transition: rotate 0.5s var(--contact-ease);
+}
+.contact-us .contact-faq[open] .contact-faq-sign::after {
+  rotate: 0deg;
+}
+.contact-faq-answer {
+  padding: 0 var(--contact-faq-x) var(--contact-faq-y);
+}
+.contact-us .contact-faq-answer p {
+  max-width: 93.3%;
+  color: var(--contact-muted);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.412 var(--font-text);
+  white-space: pre-line;
+}
+.contact-faq[open] .contact-faq-answer {
+  animation: contact-rise 0.5s var(--contact-ease) both;
+}
+/* The answer's height eases open where the browser can size to its content. */
+@supports (interpolate-size: allow-keywords) {
+  .contact-faq {
+    interpolate-size: allow-keywords;
+  }
+  .contact-faq::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition: block-size 0.5s var(--contact-ease), content-visibility 0.5s allow-discrete;
+  }
+  .contact-faq[open]::details-content {
+    block-size: auto;
+  }
+}
+
+/* ---- The Delhi workshop: its photo beside the address ---- */
+.contact-visit {
+  display: grid;
+  grid-template-columns: minmax(0, 460fr) minmax(0, 740fr);
+  align-items: start;
+  column-gap: clamp(32px, 5.556vw, 106.7px);
+  padding: clamp(48px, 5.556vw, 106.7px) var(--contact-gutter);
+}
+.contact-visit-media {
+  aspect-ratio: 460 / 300;
+  overflow: hidden;
+  background: #ebe4d8;
+}
+.contact-visit-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+  min-width: 0;
+}
+.contact-us .contact-visit-title {
+  margin: 0;
+  color: var(--contact-maple);
+  font: 500 clamp(28px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
+}
+.contact-us .contact-visit-address {
+  display: flex;
+  flex-direction: column;
+  max-width: 87.8%;
+  color: var(--contact-ink);
+  font: 400 clamp(17px, 1.389vw, 26.7px) / 1.4 var(--font-text);
+  font-style: normal;
+}
+.contact-us .contact-visit-body {
+  color: var(--contact-muted);
+  font: var(--contact-text);
+}
+.contact-us .contact-directions {
+  min-width: 15em;
+}
+
+/* ---- The cities served, should staff show them ---- */
+.contact-cities {
+  display: flow-root;
+  background: var(--contact-paper);
+}
+
+/* ---- Motion: the opening settles in; the workshop photo opens as it scrolls into view ---- */
+.contact-intro-copy > * {
+  animation: contact-rise 0.9s var(--contact-ease) both;
+}
+.contact-intro-copy > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+.contact-intro-copy > :nth-child(3) {
+  animation-delay: 0.16s;
+}
+.contact-intro-media img {
+  animation: contact-settle 1.6s var(--contact-ease) both;
+}
+@supports (animation-timeline: view()) {
+  .contact-visit-media {
+    animation: contact-open linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+@keyframes contact-rise {
+  from { opacity: 0; translate: 0 14px; }
+}
+@keyframes contact-panel {
+  from { opacity: 0; translate: 0 10px; }
+}
+@keyframes contact-settle {
+  from { scale: 1.04; }
+}
+@keyframes contact-open {
+  from { clip-path: inset(7% 5%); }
+  to { clip-path: inset(0); }
+}
+
+/* ---- Narrower windows ---- */
+/* Below a laptop the enquiry stacks, its guidance above the form. */
+@container contact (max-width: 999px) {
+  .contact-enquiry {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 40px;
+  }
+  .contact-guide {
+    max-width: 640px;
+  }
+  .contact-form {
+    padding-inline: 0;
+  }
+}
+/* The ways to reach us become a list: the icon beside its words, ruled underneath. */
+@container contact (max-width: 959px) {
+  .contact-us .contact-ways {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    width: 100%;
+  }
+  .contact-way {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 20px;
+    row-gap: 4px;
+    padding: 20px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--contact-rule);
+  }
+  .contact-way:first-child {
+    padding-top: 0;
+  }
+  .contact-way:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .contact-way-icon {
+    grid-row: 1 / span 3;
+  }
+  .contact-way > :not(.contact-way-icon) {
+    grid-column: 2;
+  }
+}
+@container contact (max-width: 799px) {
+  .contact-visit {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 28px;
+  }
+  .contact-us .contact-visit-address {
+    max-width: none;
+  }
+}
+/* A phone: the topics become a strip that scrolls to the screen's edges. */
+@container contact (max-width: 759px) {
+  .contact-topic-list {
+    display: flex;
+    gap: 8px;
+    margin-inline: calc(-1 * var(--contact-gutter));
+    padding-inline: var(--contact-gutter);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: var(--contact-gutter);
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  .contact-topic-list::-webkit-scrollbar {
+    display: none;
+  }
+  /* Narrow enough that the next topic peeks in at the edge (3.4 across a 390px phone), so the strip reads as one that
+     scrolls; where all five fit, they keep 124px. */
+  .contact-us .contact-topic {
+    flex: 0 0 auto;
+    width: max(92px, min(124px, calc((100cqw - var(--contact-gutter) - 24px) / 3.4)));
+    scroll-snap-align: start;
+  }
+  .contact-topic-label {
+    max-width: none;
+  }
+}
+@container contact (max-width: 559px) {
+  .contact-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .contact-guide .contact-guide-lead,
+  .contact-guide .contact-guide-text,
+  .contact-us .contact-faq-answer p {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-intro-copy > *,
+  .contact-intro-media img,
+  .contact-visit-media,
+  .contact-faqs,
+  .contact-faq[open] .contact-faq-answer {
+    animation: none;
+  }
+  .contact-button-arrow,
+  .contact-us .contact-way-detail,
+  .contact-us .contact-form :is(input, textarea),
+  .contact-us .contact-select-value,
+  .contact-topic-icon,
+  .contact-topic-label,
+  .contact-us .contact-faq-question,
+  .contact-faq-text,
+  .contact-us .contact-faq-sign::after {
+    transition: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-faq::details-content {
+    transition: none;
+  }
+}

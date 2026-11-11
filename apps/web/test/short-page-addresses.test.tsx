@@ -34,9 +34,10 @@ test("store code links to pages by their short address", () => {
   // A quoted "/pages/..." is a link; the redirect and the old-link mapping name the old form on purpose.
   const allowed = new Set(["lib/site-chrome-defaults.ts"]);
   const offenders = files
-    .filter((file) => !allowed.has(relative(root, file)))
+    // Forward slashes on every system, so the allowance also holds on Windows.
+    .filter((file) => !allowed.has(relative(root, file).replaceAll("\\", "/")))
     .filter((file) => /["'`(]\/pages\//.test(readFileSync(file, "utf8")))
-    .map((file) => relative(root, file));
+    .map((file) => relative(root, file).replaceAll("\\", "/"));
   assert.deepEqual(offenders, []);
 });
 

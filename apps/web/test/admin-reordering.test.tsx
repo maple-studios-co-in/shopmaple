@@ -150,7 +150,8 @@ test("service page sections drag and save", async () => {
     await click("Existing pages"); await select("Existing page", "contact");
     await drag("Contact Cities", "ArrowUp", 2);
     const content = await app.save();
-    assert.deepEqual(content.servicePages!.contact.sections.map(section => section.key), ["cities", "intro", "help"]);
+    // The contact page's six regions since its redesign (Figma 298:511, owner 10 Nov 2026).
+    assert.deepEqual(content.servicePages!.contact.sections.map(section => section.key), ["intro", "reach", "enquiry", "cities", "help", "visit"]);
   } finally { await app.close(); }
 });
 

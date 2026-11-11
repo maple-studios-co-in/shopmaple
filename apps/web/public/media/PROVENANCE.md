@@ -48,3 +48,17 @@ The opening and belief photos are Maple's own, still referenced at their Shopify
 ## Blog article pictures, sharpened (10 November 2026)
 
 `/blog/art/<article>.webp` (in `apps/web/public/blog/art/`) are seven imported articles’ own pictures from Shopify (`shop.maplefurnishers.com/cdn/shop/articles/…`), which are only 482px wide. Each was enlarged four times with ESRGAN (the `@upscalerjs/esrgan-thick` 1.0.0 4x model, run locally in the browser) and saved at 1600px wide, so the article’s 1200px banner is sharp. The three articles whose pictures were already 1536px wide keep their Shopify addresses.
+
+## Bulk Enquiry (10 November 2026)
+
+From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), page node 298:924, exported through the Figma connector on 10 November 2026:
+
+- `bulk-enquiry/hero.webp`: the opening's lounge (raw image 1619 x 972 PNG); `step-meet.webp`, `step-design.webp`, `step-deliver.webp`: the three steps' photos (raw images 1254 x 1254 JPEG); `proposal.webp`: the material samples beside the form (raw image 1280 x 1024). Re-encoded as WebP at the same sizes. Like the Our Story chapters, they are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Bulk Enquiry, when real ones exist.
+- `bulk-enquiry/ruler.svg`, `layers.svg`, `shield.svg`, `truck.svg`, `upload.svg`: the design's line icons, unchanged SVG exports. `tag.svg` is drawn to match them, for a price promise kept from the original template.
+
+## Contact (10 November 2026)
+
+From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), frame 298:511 "Maple / Contact / Desktop", exported through the Figma connector on 10 November 2026:
+
+- `contact/studio.webp`: the opening's consultation studio (node 298:549, raw image 1792 x 768 PNG); `contact/workshop.webp`: the Delhi address's wood finishing (node 298:667, raw image 1536 x 1024 PNG). Re-encoded as WebP at the same sizes. Like the Our Story chapters, they are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Contact, when real ones exist.
+- `contact/phone.svg`, `mail.svg`, `pin.svg` (the ways to reach us) and `truck.svg`, `receipt.svg`, `user.svg`, `shield.svg`, `box.svg` (the help centre's topics): the design's line icons, unchanged SVG exports.

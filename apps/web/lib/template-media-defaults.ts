@@ -8,7 +8,7 @@ const nimbusSection = (key: string) => nimbus.sections.find(item => item.key ===
 const storySection = (key: string) => story.sections.find(item => item.key === key)!;
 const rooms = nimbusSection("slideshow_PnGjbg");
 const hero = nimbusSection("hero_section_pfEKq3");
-type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" };
+type TemplateMediaSlot = TemplateMediaItem & { label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" };
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
@@ -42,6 +42,15 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "story-chapter-5", label: "Journey chapter 5 image", group: "Our Story", image: "/media/our-story/chapter-5.webp", alt: "A cream armchair with a burgundy cushion lit for a photo shoot" },
   { key: "story-chapter-6", label: "Journey chapter 6 image", group: "Our Story", image: "/media/our-story/chapter-6.webp", alt: "Cream dining chairs around a round walnut table in a stone-floored room" },
   { key: "story-chapter-7", label: "Journey chapter 7 image", group: "Our Story", image: "/media/our-story/chapter-7.webp", alt: "A craftsman wrapping a walnut sideboard in protective cloth" },
+  // The contact page's redesign (Figma 298:511, owner 10 Nov 2026): the design file's two renders, to replace with Maple's own.
+  { key: "contact-studio", label: "Introduction photo", group: "Contact", image: "/media/contact/studio.webp", alt: "A walnut dining table between two cream bouclé chairs on a jute rug, a burgundy armchair by the window" },
+  { key: "contact-workshop", label: "Delhi workshop photo", group: "Contact", image: "/media/contact/workshop.webp", alt: "A craftsman sanding the curved walnut frame of a chair at a workbench, chisels beside it" },
+  // The Bulk Enquiry redesign (Figma 298:924, owner 10 Nov 2026): the design file's renders, to replace with Maple's own.
+  { key: "bulk-hero", label: "Opening photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/hero.webp", alt: "A lounge with a cream sectional sofa, velvet armchairs and a dark marble coffee table" },
+  { key: "bulk-step-meet", label: "Meet your designer photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/step-meet.webp", alt: "A designer sketching on a floor plan with a client, material samples across the table" },
+  { key: "bulk-step-design", label: "Refine every detail photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/step-design.webp", alt: "A designer pointing out a 3D render of a living room to a client beside wood and fabric samples" },
+  { key: "bulk-step-deliver", label: "Bring it home photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/step-deliver.webp", alt: "Maple’s team unpacking, hanging art and arranging cushions in a client’s living room" },
+  { key: "bulk-proposal", label: "Proposal photo", group: "Bulk Enquiry", image: "/media/bulk-enquiry/proposal.webp", alt: "Upholstery fabrics, walnut, travertine and a floor plan laid out for a project" },
   { key: "home-difference-1", label: "Difference promise 1", group: "Homepage icons", image: shopFile("Custom_F.svg"), alt: "" },
   { key: "home-difference-2", label: "Difference promise 2", group: "Homepage icons", image: shopFile("Del_mf.svg"), alt: "" },
   { key: "home-difference-3", label: "Difference promise 3", group: "Homepage icons", image: shopFile("Icon_homepage.svg"), alt: "" },

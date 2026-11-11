@@ -108,6 +108,10 @@ export const templateMediaKeys = [
   // valid for older revisions, though the page no longer shows the film.
   "story-belief", "story-chapter-1", "story-chapter-2", "story-chapter-3", "story-chapter-4", "story-chapter-5",
   "story-chapter-6", "story-chapter-7",
+  // The contact page's redesign (Figma 298:511; owner, 10 Nov 2026): the opening photo and the Delhi workshop.
+  "contact-studio", "contact-workshop",
+  // The Bulk Enquiry redesign (Figma 298:924; owner, 10 Nov 2026): the opening, one photo per step and the proposal's.
+  "bulk-hero", "bulk-step-meet", "bulk-step-design", "bulk-step-deliver", "bulk-proposal",
   "home-difference-1", "home-difference-2", "home-difference-3", "home-difference-4",
   "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
   "home-city-delhi", "home-city-kolkata", "home-city-hyderabad", "home-city-varanasi", "home-city-mumbai",

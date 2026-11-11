@@ -1,0 +1,710 @@
+/* Bulk Enquiry (Figma 298:924; owner, 10 Nov 2026), between the site's own header and footer. Drawn at the design's
+   1440px: below the opening every size is the design's value at 1440 written as a share of the screen (value / 14.4 vw),
+   down to a floor that still reads and up to a third larger at 1920, as Our Story does. The opening scales by one unit,
+   --bulk-u (a design pixel), the smaller of the width's share and the height left under the header, so on a short laptop
+   it fits the window whole. Regions fold by the page's own width (container queries). */
+.bulk-page {
+  --bulk-maple: #80241c;
+  --bulk-ink: #292622;
+  --bulk-muted: #77716c;
+  /* On the sand bands the design's grey reads at 4.2:1; a shade deeper keeps small text at 4.7:1 (WCAG AA). */
+  --bulk-muted-on-sand: #6e6863;
+  --bulk-paper: #fcfbf8;
+  --bulk-sand: #f2eee6;
+  --bulk-rule: #d8d1c7;
+  --bulk-line: #bcb2a4;
+  --bulk-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bulk-gutter: clamp(20px, 5.556vw, 107px);
+  --bulk-gap: clamp(16px, 1.667vw, 32px);
+  /* The announcement bar and header above the page (42px + 96px on a laptop). */
+  --bulk-chrome: 138px;
+  container: bulk / inline-size;
+  overflow-x: clip;
+  background: var(--bulk-paper);
+  color: var(--bulk-ink);
+  font-family: var(--font-text);
+}
+/* The opening's button glides down to the form, for anyone who has not asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(.bulk-page) {
+    scroll-behavior: smooth;
+  }
+}
+@media (max-width: 1099px) {
+  .bulk-page { --bulk-chrome: 118px; }
+}
+@media (max-width: 767px) {
+  .bulk-page { --bulk-chrome: 108px; }
+}
+@media (max-width: 749px) {
+  .bulk-page { --bulk-chrome: 100px; }
+}
+
+/* ---- Shared type: the small capital labels, the section titles and the lines under them ---- */
+.bulk-page .bulk-eyebrow {
+  color: var(--bulk-muted);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.385 var(--font-text);
+  text-transform: uppercase;
+}
+.bulk-page .bulk-title {
+  color: var(--bulk-maple);
+  font: 500 clamp(30px, 3.333vw, 64px) / 1.229 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.bulk-page .bulk-lede {
+  color: var(--bulk-muted);
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+}
+.bulk-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.944vw, 37.3px);
+  min-width: 0;
+}
+
+/* ---- Buttons and links: maple red, the arrow easing forward on hover; they fill from the pointer like every button on
+   the site (styles/button-fill.css) ---- */
+.bulk-page .bulk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-width: 16.25em;
+  margin: 0;
+  padding: 1em;
+  border: 0;
+  border-radius: 0;
+  background: var(--bulk-maple);
+  color: #fff;
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.25 var(--font-text);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bulk-page .bulk-button svg {
+  flex: none;
+  width: 1.125em;
+  height: 1.125em;
+  transition: translate 0.5s var(--bulk-ease);
+}
+@media (hover: hover) {
+  .bulk-page .bulk-button:hover svg {
+    translate: 0.2em 0;
+  }
+}
+.bulk-page .bulk-button-light {
+  background: var(--bulk-paper);
+  color: var(--bulk-maple);
+}
+.bulk-page .bulk-button-sand {
+  min-width: 17.5em;
+  border-radius: 5px;
+  background: var(--bulk-sand);
+  color: var(--bulk-maple);
+}
+.bulk-page .bulk-button[disabled] {
+  cursor: progress;
+  opacity: 0.75;
+}
+.bulk-page :is(a, button):focus-visible {
+  outline: 2px solid var(--bulk-maple);
+  outline-offset: 4px;
+}
+.bulk-page :is(.bulk-hero, .bulk-business) :is(a, button):focus-visible {
+  outline-color: #fff;
+}
+
+/* ---- The opening: the lounge under a warm shade, the words over it ---- */
+.bulk-hero {
+  --bulk-u: clamp(0.5px, min(calc(100vw / 1440), calc((100svh - var(--bulk-chrome)) / 700)), 1.3333px);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: max(calc(664 * var(--bulk-u)), min(560px, calc(100svh - var(--bulk-chrome))));
+  padding: calc(120 * var(--bulk-u)) clamp(20px, 6.944vw, 133px) calc(110 * var(--bulk-u));
+  overflow: hidden;
+  background: #3a3027;
+  color: #fff;
+}
+.bulk-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.bulk-hero-media img {
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+.bulk-hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* The design's shade, a little deeper behind the words on the left. */
+  background: linear-gradient(90deg, rgb(20 15 10 / 0.16), rgb(20 15 10 / 0) 62%), rgb(20 15 10 / 0.42);
+}
+.bulk-hero-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(28 * var(--bulk-u));
+  max-width: calc(1200 * var(--bulk-u));
+}
+.bulk-page .bulk-hero .bulk-eyebrow,
+.bulk-page .bulk-hero-note {
+  color: #fff;
+  font: 400 max(11px, calc(12 * var(--bulk-u))) / 1.25 var(--font-text);
+  text-transform: uppercase;
+}
+/* The design sets its slashes two spaces apart here. */
+.bulk-page .bulk-hero-note .bulk-slash {
+  margin-inline: 0.217em;
+}
+.bulk-page .bulk-hero-title {
+  color: #fff;
+  font: 500 max(36px, calc(76 * var(--bulk-u))) / 1.224 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.bulk-page .bulk-hero-subtitle {
+  max-width: 35.5em;
+  color: #fff;
+  font: 400 max(16px, calc(22 * var(--bulk-u))) / 1.227 var(--font-text);
+}
+.bulk-page .bulk-hero-cta {
+  padding: max(12px, calc(16 * var(--bulk-u)));
+  font-size: max(15px, calc(16 * var(--bulk-u)));
+}
+/* The words rise in once over the settling photo. */
+@keyframes bulk-rise {
+  from { opacity: 0; transform: translateY(16px); }
+}
+@keyframes bulk-settle {
+  from { transform: scale(1.06); }
+}
+.bulk-hero-media img {
+  animation: bulk-settle 2.4s var(--bulk-ease) both;
+}
+.bulk-hero-intro > * {
+  animation: bulk-rise 1s var(--bulk-ease) both;
+}
+.bulk-hero-intro > :nth-child(2) { animation-delay: 80ms; }
+.bulk-hero-intro > :nth-child(3) { animation-delay: 160ms; }
+.bulk-hero-intro > :nth-child(4) { animation-delay: 240ms; }
+.bulk-hero-intro > :nth-child(5) { animation-delay: 320ms; }
+
+/* ---- Four figures on a band of sand ---- */
+.bulk-figures {
+  padding: clamp(32px, 3.333vw, 64px) var(--bulk-gutter);
+  background: var(--bulk-sand);
+}
+.bulk-page .bulk-figures-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px clamp(20px, 2.222vw, 42.7px);
+}
+.bulk-figure {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.556vw, 10.7px);
+  min-width: 0;
+}
+.bulk-page .bulk-figure-value {
+  color: var(--bulk-maple);
+  font: 500 clamp(28px, 2.778vw, 53.3px) / 1.225 var(--font-heading);
+}
+.bulk-page .bulk-figure-label {
+  color: var(--bulk-muted-on-sand);
+  font: 400 clamp(14px, 1.111vw, 21.3px) / 1.25 var(--font-text);
+}
+
+/* ---- "Your brief. Our craft.": four promises, ruled apart ---- */
+.bulk-advantages {
+  padding: clamp(56px, 7.778vw, 149px) var(--bulk-gutter);
+  background: var(--bulk-paper);
+}
+.bulk-page .bulk-advantages-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--bulk-gap);
+  margin-top: clamp(28px, 3.889vw, 74.7px);
+}
+.bulk-advantage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  min-width: 0;
+  padding: var(--bulk-gap) var(--bulk-gap) var(--bulk-gap) 0;
+  border-right: 1px solid var(--bulk-rule);
+}
+.bulk-advantage:last-child {
+  border-right: 0;
+}
+.bulk-advantage img {
+  width: clamp(36px, 2.917vw, 56px);
+  height: auto;
+}
+.bulk-page .bulk-advantage h3 {
+  max-width: 11.55em;
+  color: var(--bulk-maple);
+  font: 500 clamp(17px, 1.528vw, 29.3px) / 1.409 var(--font-heading);
+}
+.bulk-page .bulk-advantage p {
+  max-width: 15.875em;
+  color: var(--bulk-muted);
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+}
+
+/* ---- Three steps, each with its photo ---- */
+.bulk-process {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 2.5vw, 48px);
+  padding: clamp(56px, 6.667vw, 128px) var(--bulk-gutter);
+  background: var(--bulk-sand);
+}
+.bulk-process .bulk-head {
+  gap: clamp(20px, 2.5vw, 48px);
+}
+.bulk-page .bulk-process .bulk-eyebrow {
+  color: var(--bulk-muted-on-sand);
+}
+.bulk-page .bulk-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px clamp(20px, 1.944vw, 37.3px);
+}
+.bulk-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bulk-gap);
+  min-width: 0;
+}
+.bulk-step-media {
+  aspect-ratio: 408 / 400;
+  overflow: hidden;
+  background: #e6ded3;
+}
+.bulk-step-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: scale 1.2s var(--bulk-ease);
+}
+@media (hover: hover) {
+  .bulk-step:hover .bulk-step-media img {
+    scale: 1.035;
+  }
+}
+.bulk-step-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bulk-gap);
+  min-width: 0;
+}
+.bulk-page .bulk-step-number {
+  color: var(--bulk-maple);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.4286 var(--font-text);
+}
+.bulk-page .bulk-step h3 {
+  color: var(--bulk-maple);
+  font: 500 clamp(22px, 1.944vw, 37.3px) / 1.393 var(--font-heading);
+}
+.bulk-page .bulk-step h3 + p {
+  max-width: 95.6%;
+  color: var(--bulk-muted-on-sand);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.412 var(--font-text);
+}
+
+/* ---- The proposal: the words, the materials and a number to call beside the form ---- */
+.bulk-proposal {
+  display: grid;
+  grid-template-columns: minmax(0, 440fr) minmax(0, 760fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "intro form" "aside form";
+  gap: var(--bulk-gap) clamp(32px, 5.556vw, 107px);
+  padding: clamp(56px, 7.778vw, 149px) var(--bulk-gutter);
+  background: var(--bulk-paper);
+  scroll-margin-top: 12px;
+}
+.bulk-proposal-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  grid-area: intro;
+  gap: var(--bulk-gap);
+  min-width: 0;
+}
+.bulk-page .bulk-proposal-title {
+  color: var(--bulk-maple);
+  font: 500 clamp(32px, 3.056vw, 58.7px) / 1.227 var(--font-heading);
+}
+.bulk-proposal-intro .bulk-lede {
+  max-width: 93.2%;
+}
+.bulk-proposal-aside {
+  display: flex;
+  flex-direction: column;
+  grid-area: aside;
+  align-self: start;
+  gap: var(--bulk-gap);
+  min-width: 0;
+}
+.bulk-proposal-media {
+  aspect-ratio: 440 / 350;
+  overflow: hidden;
+  background: #e9e1d6;
+}
+.bulk-proposal-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bulk-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bulk-gap);
+}
+.bulk-page .bulk-conversation h3 {
+  color: var(--bulk-maple);
+  font: 500 clamp(18px, 1.389vw, 26.7px) / 1.4 var(--font-heading);
+}
+.bulk-page .bulk-conversation p {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: var(--bulk-ink);
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.389 var(--font-text);
+}
+.bulk-page .bulk-conversation a {
+  color: inherit;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+@media (hover: hover) {
+  .bulk-page .bulk-conversation a:hover {
+    color: var(--bulk-maple);
+    text-decoration: underline;
+    text-underline-offset: 5px;
+  }
+}
+.bulk-proposal-form {
+  grid-area: form;
+  min-width: 0;
+  padding-inline: clamp(0px, 2.778vw, 53.3px);
+}
+
+/* The form: labels over underlined fields, two to a row. */
+.bulk-form {
+  container: bulk-form / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(22px, 2.083vw, 40px);
+}
+.bulk-page .bulk-form-title {
+  color: var(--bulk-maple);
+  font: 500 clamp(26px, 2.222vw, 42.7px) / 1.219 var(--font-heading);
+}
+.bulk-page .bulk-form-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 12px 16px;
+  background: var(--bulk-sand);
+  color: var(--bulk-ink);
+  font: 400 clamp(14px, 0.972vw, 18.7px) / 1.43 var(--font-text);
+}
+.bulk-form-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 2.083vw, 40px) clamp(16px, 1.389vw, 26.7px);
+}
+.bulk-page .bulk-field {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.694vw, 13.3px);
+  min-width: 0;
+  margin: 0;
+}
+.bulk-page .bulk-field[data-wide] {
+  grid-column: 1 / -1;
+}
+.bulk-page .bulk-field-label {
+  color: var(--bulk-ink);
+  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.4286 var(--font-text);
+}
+.bulk-page .bulk-field :is(input, select, textarea) {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(12px, 1.111vw, 21.3px);
+  border: 0;
+  border-bottom: 1px solid var(--bulk-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--bulk-ink);
+  font: 400 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.bulk-page .bulk-field :is(input, textarea)::placeholder {
+  color: var(--bulk-muted);
+  opacity: 1;
+}
+/* The brief's box grows with what is written, where the browser can (otherwise it scrolls), with no handle to drag. */
+.bulk-page .bulk-field textarea {
+  display: block;
+  min-height: clamp(130px, 10.417vw, 200px);
+  max-height: 24em;
+  resize: none;
+  field-sizing: content;
+}
+.bulk-page .bulk-field select {
+  padding-right: 2.75em;
+  appearance: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2380241c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 1em center / 0.75em auto;
+  cursor: pointer;
+}
+.bulk-page .bulk-field select:has(option[value=""]:checked) {
+  color: var(--bulk-muted);
+}
+.bulk-page .bulk-field option {
+  color: var(--bulk-ink);
+}
+.bulk-page .bulk-field :is(input, select, textarea):focus {
+  outline: none;
+  border-bottom-color: var(--bulk-maple);
+  box-shadow: inset 0 -1px 0 var(--bulk-maple);
+}
+@media (hover: hover) {
+  .bulk-page .bulk-field :is(input, select, textarea):hover:not(:focus) {
+    border-bottom-color: var(--bulk-muted);
+  }
+}
+.bulk-page .bulk-references {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  padding: clamp(18px, 1.667vw, 32px);
+  border: 1px dashed var(--bulk-rule);
+  border-radius: 6px;
+  background: var(--bulk-paper);
+  color: var(--bulk-ink);
+  text-decoration: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+.bulk-page .bulk-references img {
+  flex: none;
+  width: clamp(24px, 1.944vw, 37.3px);
+  height: auto;
+  transition: translate 0.5s var(--bulk-ease);
+}
+@media (hover: hover) {
+  .bulk-page .bulk-references:hover {
+    border-color: var(--bulk-line);
+    background: #fff;
+  }
+  .bulk-page .bulk-references:hover img {
+    translate: 0 -2px;
+  }
+}
+.bulk-references-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.bulk-page .bulk-references strong {
+  color: var(--bulk-ink);
+  font: 500 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-heading);
+}
+.bulk-page .bulk-references-text span,
+.bulk-page .bulk-form-note {
+  color: var(--bulk-muted);
+  font: 400 clamp(12px, 0.903vw, 17.3px) / 1.385 var(--font-text);
+}
+.bulk-page .bulk-form-submit {
+  width: 100%;
+  border-radius: 5px;
+  font-size: clamp(16px, 1.111vw, 21.3px);
+  line-height: 1.375;
+}
+.bulk-page .bulk-form-status {
+  padding: 12px 16px;
+  border-left: 2px solid var(--bulk-maple);
+  background: var(--bulk-sand);
+  color: var(--bulk-ink);
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.5 var(--font-text);
+}
+.bulk-page .bulk-form-status[data-failed] {
+  background: #f8e9e6;
+}
+
+/* ---- Sourcing in volume, on maple red ---- */
+.bulk-business {
+  display: grid;
+  grid-template-columns: minmax(0, 760fr) minmax(0, 440fr);
+  align-items: start;
+  gap: 32px clamp(32px, 5.556vw, 107px);
+  padding: clamp(56px, 6.944vw, 133px) var(--bulk-gutter);
+  background: var(--bulk-maple);
+  color: #fff;
+}
+.bulk-business-copy,
+.bulk-business-support {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bulk-gap);
+  min-width: 0;
+}
+.bulk-page .bulk-business .bulk-eyebrow {
+  color: #fff;
+  line-height: 1.231;
+}
+.bulk-page .bulk-business-title {
+  color: #fff;
+  font: 500 clamp(30px, 2.778vw, 53.3px) / 1.225 var(--font-heading);
+}
+.bulk-page .bulk-business .bulk-lede {
+  max-width: 94.7%;
+  color: #fff;
+  line-height: 1.222;
+}
+.bulk-page .bulk-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bulk-gap);
+}
+.bulk-page .bulk-checks li {
+  display: flex;
+  align-items: center;
+  gap: 0.26em;
+  color: #fff;
+  font: 400 clamp(16px, 1.25vw, 24px) / 1.222 var(--font-text);
+}
+.bulk-checks svg {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
+  margin-left: -0.12em;
+}
+
+/* ---- The cities served ---- */
+.bulk-reach {
+  padding: clamp(48px, 5.556vw, 107px) var(--bulk-gutter);
+  background: var(--bulk-paper);
+}
+.bulk-reach .bulk-head {
+  gap: clamp(10px, 1.111vw, 21.3px);
+}
+
+/* ---- Narrower pages: the promises two by two, then the proposal and the business band stacked ---- */
+@container bulk (max-width: 1023px) {
+  .bulk-page .bulk-advantages-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bulk-advantage:nth-child(2n) {
+    border-right: 0;
+  }
+  .bulk-advantage:nth-child(n + 3) {
+    border-top: 1px solid var(--bulk-rule);
+  }
+  .bulk-page .bulk-advantage h3 {
+    font-size: 19px;
+  }
+}
+@container bulk (max-width: 959px) {
+  .bulk-proposal {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "intro" "form" "aside";
+    row-gap: clamp(32px, 5vw, 48px);
+  }
+  .bulk-proposal-form {
+    padding-inline: 0;
+  }
+  .bulk-proposal-aside {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 24px 32px;
+  }
+  .bulk-business {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container bulk (max-width: 899px) {
+  .bulk-page .bulk-steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .bulk-step {
+    display: grid;
+    grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+    align-items: center;
+    gap: 28px;
+  }
+}
+@container bulk (max-width: 699px) {
+  .bulk-page .bulk-figures-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container bulk (max-width: 599px) {
+  .bulk-step {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .bulk-page .bulk-step h3 + p {
+    max-width: none;
+  }
+  .bulk-page .bulk-advantages-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bulk-page .bulk-advantage {
+    padding: 24px 0;
+    border-right: 0;
+    border-top: 1px solid var(--bulk-rule);
+  }
+  .bulk-page .bulk-advantage:first-child {
+    border-top: 0;
+  }
+  .bulk-proposal-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bulk-page .bulk-advantage h3 {
+    font-size: 20px;
+  }
+  /* The opening's two sentences run on rather than leave a word alone on a line. */
+  .bulk-page .bulk-hero-subtitle br {
+    display: none;
+  }
+  /* A phone opens on the whole room, the floating Contact us button over the photo rather than the figures. */
+  .bulk-hero {
+    min-height: calc(100svh - var(--bulk-chrome));
+  }
+}
+@container bulk-form (max-width: 439px) {
+  .bulk-form-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulk-hero-media img,
+  .bulk-hero-intro > * {
+    animation: none;
+  }
+  .bulk-page .bulk-button svg,
+  .bulk-step-media img,
+  .bulk-page .bulk-references,
+  .bulk-page .bulk-references img,
+  .bulk-page .bulk-field :is(input, select, textarea) {
+    transition: none;
+  }
+}

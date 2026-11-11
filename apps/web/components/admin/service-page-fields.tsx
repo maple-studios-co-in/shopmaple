@@ -2,18 +2,19 @@
 import type { ReactNode } from "react";
 import type { ServicePagesContent } from "@shopmaple/contracts";
 import { resolveServicePages } from "@/lib/service-page-defaults";
+import { resolveContactPage, type ResolvedContactPage } from "@/lib/contact-page-content";
+import { BulkEnquiryFields } from "./bulk-enquiry-fields";
 import { Notice } from "./crm-primitives";
-import { ContentPanel, ContentPanels, GroupedFields, PageEditor, SectionToggles, TextFields, listFields, patchKey, textField } from "./kit";
+import { ContentPanel, ContentPanels, GroupedFields, PageEditor, SectionToggles, TextFields, patchKey } from "./kit";
 
-const contactLabels = { intro: "Introduction and form", help: "Help", cities: "Cities" };
-const bulkLabels = { hero: "Hero and form", trust: "Trust", process: "Process", business: "Business", cities: "Cities" };
+const contactLabels = { intro: "Introduction", reach: "Ways to reach us", enquiry: "Enquiry", help: "Help", visit: "Delhi address", cities: "Cities" };
+const guidanceLabels = { order: "existing order", project: "larger project" };
 const categoryLabels = { tracking: "Tracking", payment: "Payment", account: "Account", warranty: "Warranty", damage: "Damage" };
-const trustLabels = { price: "Price", quality: "Quality", materials: "Materials", custom: "Customization" };
-const stepLabels = { meet: "Meet", design: "Design", deliver: "Deliver" };
 type Cities = { eyebrow: string; heading: string };
 type Sections<K extends string> = { key: K; enabled: boolean }[];
 
-/** The contact and bulk editors: page title, section order and visibility, then the section panels ending with Cities. */
+/** The contact editor's frame: page title, section order and visibility, then the section panels ending with Cities.
+    (Bulk Enquiry has its own editor, `BulkEnquiryFields`.) */
 function ServicePage<K extends string>({ prefix, title, description, labels, data, patch, children }: {
   prefix: string; title: string; description: string; labels: Record<K, string>; children: ReactNode;
   data: { title: string; sections: Sections<K>; cities: Cities }; patch: (next: { title?: string; sections?: Sections<K>; cities?: Cities }) => void;
@@ -37,60 +38,60 @@ export function ServicePageFields({ value, page, onChange }: {
 }) {
   const content = resolveServicePages(value);
   if (page === "contact") {
-    const data = content.contact;
-    const patch = (next: Partial<typeof data>) => onChange({ ...content, contact: { ...data, ...next } });
+    // The redesign's words (Figma 298:511, owner 10 Nov 2026); an older draft opens with the design's copy filled in.
+    const data = resolveContactPage(content.contact);
+    const { reach } = data;
+    const patch = (next: Partial<ResolvedContactPage>) => onChange({ ...content, contact: { ...data, ...next } });
     return <ServicePage prefix="Contact" title="Contact" labels={contactLabels} data={data} patch={patch}
-      description="Edit /contact. Changes stay in your draft until published. Contact destinations and enquiry handling are managed separately.">
+      description="Edit /contact. Changes stay in your draft until published. The phone number, email and address are the footer's customer care details; the photos are under Artwork, Contact. Enquiry handling is managed separately.">
       <ContentPanel title="Introduction">
-        <TextFields value={data} onChange={patch} fields={[["eyebrow", "Contact eyebrow", 160], ["heading", "Contact heading", 300]]} />
+        <TextFields value={data} onChange={patch} fields={[
+          ["eyebrow", "Contact eyebrow", 160], ["heading", "Contact heading", 300, true], ["introBody", "Contact introduction text", 300, true],
+        ]} />
+      </ContentPanel>
+      <ContentPanel title="Ways to reach us">
+        <Notice tone="info">The number and email shown are the footer’s customer care details, under Navigation &amp; footer.</Notice>
+        <TextFields value={reach.call} onChange={call => patch({ reach: { ...reach, call } })} fields={[["title", "Contact call title", 80], ["note", "Contact call note", 160]]} />
+        <TextFields value={reach.write} onChange={write => patch({ reach: { ...reach, write } })} fields={[["title", "Contact email title", 80], ["note", "Contact email note", 160]]} />
+        <TextFields value={reach.visit} onChange={visit => patch({ reach: { ...reach, visit } })}
+          fields={[["title", "Contact visit title", 80], ["detail", "Contact visit detail", 160], ["note", "Contact visit note", 160]]} />
+      </ContentPanel>
+      <ContentPanel title="Enquiry">
+        <TextFields value={data} onChange={patch} fields={[
+          ["enquiryEyebrow", "Contact enquiry eyebrow", 160], ["enquiryHeading", "Contact enquiry heading", 300, true], ["enquiryBody", "Contact enquiry text", 600, true],
+        ]} />
+        <GroupedFields items={data.guidance} legend={item => item.key === "order" ? "For an existing order" : "For a larger project"} onChange={guidance => patch({ guidance })}
+          fields={item => [["title", `Contact ${guidanceLabels[item.key]} title`, 160], ["body", `Contact ${guidanceLabels[item.key]} text`, 400, true]]} />
+        <TextFields value={data} onChange={patch} fields={[
+          ["bulkCta", "Contact bulk enquiry button", 80], ["formHeading", "Contact form heading", 160], ["formNote", "Contact form note", 300, true],
+        ]} />
       </ContentPanel>
       <ContentPanel title="Help introduction">
-        <TextFields value={data} onChange={patch} fields={[["helpEyebrow", "Contact help eyebrow", 300], ["helpHeading", "Contact help heading", 160]]} />
+        <TextFields value={data} onChange={patch} fields={[
+          ["helpEyebrow", "Contact help eyebrow", 300], ["helpHeading", "Contact help heading", 160], ["helpBody", "Contact help text", 300, true],
+        ]} />
       </ContentPanel>
       {data.categories.map(category => {
         const label = categoryLabels[category.key], change = (next: Partial<typeof category>) => patch({ categories: patchKey(data.categories, category.key, next) });
         return (
           <ContentPanel key={category.key} title={`${label} questions`}>
-            <TextFields value={category} onChange={change}
-              fields={[["title", `Contact ${label} category title`, 160], ["subtitle", `Contact ${label} category subtitle`, 300]]} />
+            <TextFields value={category} onChange={change} fields={[["title", `Contact ${label} category title`, 160]]} />
             <GroupedFields items={category.questions} legend={question => `Question ${question.key.slice(1)}`} onChange={questions => change({ questions })}
               fields={({ key }) => [["question", `Contact ${label} question ${key.slice(1)}`, 300], ["answer", `Contact ${label} answer ${key.slice(1)}`, 4000, true]]} />
           </ContentPanel>
         );
       })}
-    </ServicePage>;
-  }
-  if (page === "bulk") {
-    const data = content.bulk;
-    const { trust, process, business } = data;
-    const patch = (next: Partial<typeof data>) => onChange({ ...content, bulk: { ...data, ...next } });
-    return <ServicePage prefix="Bulk" title="Bulk Enquiry" labels={bulkLabels} data={data} patch={patch}
-      description="Edit /bulk-enquiry. Changes stay in your draft until published. Images, business destinations and form requirements stay attached to the original template.">
-      <ContentPanel title="Hero">
-        <TextFields value={data} onChange={patch} fields={[["eyebrow", "Bulk eyebrow", 160], ["heading", "Bulk heading", 160], ["subtitle", "Bulk subtitle", 300]]} />
-      </ContentPanel>
-      <ContentPanel title="Trust">
-        <TextFields value={trust} onChange={trust => patch({ trust })} fields={[
-          ["heading", "Bulk trust heading", 300], ["metricValue", "Bulk project count", 80], ["metricLabel", "Bulk project count label", 160],
-          ...trust.items.map(item => textField(`Bulk ${trustLabels[item.key]} promise`, item.title, 160,
-            title => patch({ trust: { ...trust, items: patchKey(trust.items, item.key, { title }) } }))),
-        ]} />
-      </ContentPanel>
-      <ContentPanel title="Process">
-        <TextFields value={process} onChange={process => patch({ process })}
-          fields={[["eyebrow", "Bulk process eyebrow", 300], ["heading", "Bulk process heading", 160]]} />
-        <GroupedFields items={process.steps} legend={step => stepLabels[step.key]} onChange={steps => patch({ process: { ...process, steps } })}
-          fields={step => [["title", `Bulk ${stepLabels[step.key]} step title`, 160], ["body", `Bulk ${stepLabels[step.key]} step body`, 3000, true]]} />
-      </ContentPanel>
-      <ContentPanel title="Business">
-        <TextFields value={business} onChange={business => patch({ business })} fields={[
-          ["badge", "Bulk business badge", 160], ["heading", "Bulk business heading", 160], ["body", "Bulk business body", 4000, true],
-          ...listFields(business.features, index => `Bulk business feature ${index + 1}`, 200, features => patch({ business: { ...business, features } })),
-          ["cta", "Bulk business button", 160], ["trust", "Bulk business trust text", 160],
+      <ContentPanel title="Delhi address">
+        <Notice tone="info">The address shown is the footer’s, under Navigation &amp; footer.</Notice>
+        <TextFields value={data} onChange={patch} fields={[
+          ["visitEyebrow", "Contact address eyebrow", 160], ["visitHeading", "Contact address heading", 300], ["visitBody", "Contact address text", 300, true],
+          ["visitCta", "Contact directions button", 80],
         ]} />
       </ContentPanel>
     </ServicePage>;
   }
+  // The Bulk Enquiry redesign has its own editor (Figma 298:924, owner 10 Nov 2026).
+  if (page === "bulk") return <BulkEnquiryFields content={content} onChange={onChange} />;
   const data = content.returns;
   return <PageEditor label="Service page content" title="Return & Exchange" description="Edit /returns. The policy destination and enquiry-only explanation stay in place."
     intro={<TextFields value={data} onChange={returns => onChange({ ...content, returns })} fields={[
