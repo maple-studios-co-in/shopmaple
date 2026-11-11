@@ -23,7 +23,7 @@ test("delivery migration deploys fresh and upgrades without backfilling or losin
     assert.equal(result.status, 0, "Migration must deploy successfully");
   };
   try {
-    cpSync(resolve("prisma"), join(temporary, "prisma"), { recursive: true, filter: path => !path.includes("20261027070000_enquiry_delivery") });
+    cpSync(resolve("prisma"), join(temporary, "prisma"), { recursive: true, filter: path => !path.includes("20261027070000_enquiry_delivery") && !path.includes("20261111010000_enquiry_keeri_leads") });
     migrate(join(temporary, "prisma/schema.prisma"));
     db = new PrismaClient({ datasources: { db: { url: target.href } } });
     const id = `enq_${randomUUID()}`;
@@ -37,6 +37,12 @@ test("delivery migration deploys fresh and upgrades without backfilling or losin
     assert.equal(delivery.attempts, 0); assert.equal(delivery.status, "queued");
     await assert.rejects(db.enquiry.delete({ where: { id } }));
     await assert.rejects(db.enquiryDelivery.create({ data: { enquiryId: id, configurationHash: "a".repeat(64) } }));
+    assert.equal(delivery.target, "email");
+    const lead = await db.enquiryDelivery.create({ data: { enquiryId: id, target: "keeri", configurationHash: "c".repeat(64) } });
+    await assert.rejects(db.enquiryDelivery.create({ data: { enquiryId: id, target: "keeri", configurationHash: "c".repeat(64) } }));
+    await assert.rejects(db.enquiryDelivery.create({ data: { enquiryId: id, target: "sms", configurationHash: "c".repeat(64) } }));
+    await assert.rejects(db.enquiryDelivery.update({ where: { id: delivery.id }, data: { keeriLeadId: "lead_1" } }), "Keeri results only belong on Keeri rows");
+    await assert.rejects(db.enquiryDelivery.update({ where: { id: lead.id }, data: { keeriOutcome: "updated" } }));
     await assert.rejects(db.enquiryDelivery.update({ where: { id: delivery.id }, data: { attempts: 6 } }));
     await assert.rejects(db.enquiryDelivery.update({ where: { id: delivery.id }, data: { status: "delivered" } }));
   } finally {

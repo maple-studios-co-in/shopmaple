@@ -256,6 +256,7 @@ export * from "./product-page";
 export * from "./cart-eligibility";
 export * from "./catalogue-collections";
 
-export * from "./enquiry-delivery";
+// Admin-only delivery schemas are imported from "@shopmaple/contracts/enquiry-delivery", keeping them out of
+// the storefront bundle every page loads.
 export * from "./crm";
 export * from "./instagram-feed";

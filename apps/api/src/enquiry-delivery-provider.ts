@@ -16,6 +16,8 @@ export interface EnquiryAlert {
   enquiryId: string;
   kind: (typeof enquiryKinds)[number];
   createdAt: Date;
+  /** Set by the worker when Keeri already had the lead before this alert's first attempt. */
+  keeriLeadUrl?: string;
 }
 
 export type EnquiryDeliveryOutcome =
@@ -56,6 +58,8 @@ const alertSchema = z.object({
   enquiryId: z.string().regex(/^enq_[a-f0-9-]{36}$/),
   kind: z.enum(enquiryKinds),
   createdAt: z.date(),
+  // An HTTPS origin and a lead path only: nothing else from Keeri reaches the email.
+  keeriLeadUrl: z.string().regex(/^https:\/\/[a-z0-9.-]{1,253}(?::[0-9]{1,5})?\/leads\/[A-Za-z0-9_:-]{1,200}$/).optional(),
 });
 const acceptedSchema = z.object({ id: z.uuid() }).strict();
 const responseByteLimit = 16_384;
@@ -82,7 +86,8 @@ export async function sendEnquiryAlert(
     from: checked.from,
     to: [checked.to],
     subject: "New ShopMaple enquiry",
-    text: `Reference: ${input.enquiryId}\nKind: ${input.kind}\nCreated: ${input.createdAt.toISOString()}\n\nOpen the staff inbox: ${checked.adminOrigin}/admin`,
+    text: `Reference: ${input.enquiryId}\nKind: ${input.kind}\nCreated: ${input.createdAt.toISOString()}\n\n` +
+      (input.keeriLeadUrl ? `Open the lead in Keeri: ${input.keeriLeadUrl}` : `Open the staff inbox: ${checked.adminOrigin}/admin`),
   }, fetchImpl);
 }
 

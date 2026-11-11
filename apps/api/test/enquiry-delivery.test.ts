@@ -48,7 +48,7 @@ test("delivery evidence prevents accidental enquiry deletion", async () => {
   assert.equal(await db.enquiry.count({ where: { id } }), 1);
 });
 
-const job = (id: string) => db.enquiryDelivery.findUniqueOrThrow({ where: { enquiryId: id } });
+const job = (id: string) => db.enquiryDelivery.findUniqueOrThrow({ where: { enquiryId_target: { enquiryId: id, target: "email" } } });
 const accepted = async () => ({ status: "accepted" as const, providerId: "synthetic-provider-id" });
 test("concurrent worker claims send one metadata-only alert and never resend accepted jobs", async () => {
   const id = await create(), alerts: unknown[] = [];
@@ -95,7 +95,7 @@ test("configuration changes, deduplication expiry and payload conflicts require 
   await processEnquiryDeliveries(db, { ...config, fingerprint: "b".repeat(64) }, send);
   assert.equal((await job(changed)).errorCode, "configuration_changed"); assert.equal(calls, 0);
   const expired = await create();
-  await db.enquiryDelivery.update({ where: { enquiryId: expired }, data: { status: "sending", attempts: 1, firstAttemptAt: new Date(Date.now() - 23 * 3600000), leaseToken: "old", leaseExpiresAt: new Date(0) } });
+  await db.enquiryDelivery.update({ where: { enquiryId_target: { enquiryId: expired, target: "email" } }, data: { status: "sending", attempts: 1, firstAttemptAt: new Date(Date.now() - 23 * 3600000), leaseToken: "old", leaseExpiresAt: new Date(0) } });
   await processEnquiryDeliveries(db, config, send);
   assert.equal((await job(expired)).status, "uncertain"); assert.equal((await job(expired)).errorCode, "retry_window_expired"); assert.equal(calls, 0);
   const conflicted = await create();
