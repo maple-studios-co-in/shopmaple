@@ -8,7 +8,7 @@ import { homeDetailsSchema } from "@shopmaple/contracts";
 import { HomeCities, HomeNewsletter } from "../components/home-sections";
 import { HomePage } from "../components/home-page";
 import { ShopProvider } from "../components/shop-provider";
-import { kindLabels } from "../components/admin/contact-page";
+import { kindLabels } from "../components/admin/crm-primitives";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultHomeDetails } from "../lib/home-details-defaults";
 

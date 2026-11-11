@@ -391,7 +391,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     if (!content) return null;
     const set = <K extends keyof StorefrontContent>(key: K) => (value: StorefrontContent[K]) => edit({ ...content, [key]: value });
     switch (tab) {
-      case "Overview": return <OverviewPanel content={content} session={session} onExpired={onExpired} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
+      case "Overview": return <OverviewPanel content={content} session={session} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
       case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
         inspecting={inspecting} onInspect={setInspecting} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} scheduleEditing={scheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {

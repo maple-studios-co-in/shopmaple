@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { enquiryDeliveryResponseSchema, type EnquiryDeliveryResponse, type EnquiryDeliveryTarget } from "@shopmaple/contracts/enquiry-delivery";
 import { Button } from "@/components/ui/button";
-import { Notice, Skeleton, writeOptions } from "./crm-primitives";
-import { isDenied, type CrmViewProps } from "./crm-tasks";
+import { Notice, Skeleton, isDenied, writeOptions } from "./crm-primitives";
+import type { StaffSession } from "./dashboard";
 import { Subsection, useLatest } from "./kit";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
@@ -15,15 +15,15 @@ const leadLabels = { pending: "Pending: not yet in Keeri.", created: "Lead creat
 const pendingLabels: Partial<Record<string, string>> = { sending: "Pending: sending to Keeri.", retry_wait: "Pending: waiting to retry with Keeri." };
 const at = (value: string) => <time dateTime={value}>{new Date(value).toLocaleString()}</time>;
 
-/** The staff alert and, when enabled, the Keeri lead for one enquiry; key it per enquiry. onEnabled says whether email is configured, so replies can refuse up front. */
-export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onEnabled }: Pick<CrmViewProps, "session" | "onDenied"> & {
-  enquiryId: string; onBusy: (busy: boolean) => void; onEnabled?: (enabled: boolean) => void;
+/** The staff alert and, when enabled, the Keeri lead for one enquiry; key it per enquiry. */
+export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy }: {
+  session: StaffSession; enquiryId: string; onDenied: (status: number) => void; onBusy: (busy: boolean) => void;
 }) {
   const request = useAdminRequest();
   const [value, setValue] = useState<EnquiryDeliveryResponse | null>(null);
   const [busy, setBusy] = useState(true), [error, setError] = useState("");
   const active = useRef(true), pending = useRef(false), sequence = useRef(0);
-  const callbacks = useLatest({ onDenied, onBusy, onEnabled });
+  const callbacks = useLatest({ onDenied, onBusy });
   const path = `/api/admin/enquiries/${encodeURIComponent(enquiryId)}/delivery`;
   const job = value?.delivery, canRetry = !!value?.enabled && job?.status === "retry_wait" && job.canRetry;
   const keeri = value?.keeri, lead = keeri?.delivery, canRetryLead = !!keeri?.enabled && lead?.status === "retry_wait" && lead.canRetry;
@@ -50,7 +50,7 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
       const result = await read(!!retry);
       // The worker may already have advanced beyond the retry response.
       const refreshed = result && retry && isCurrent() ? await read(false) : result;
-      if (refreshed && isCurrent()) { setValue(refreshed); callbacks.current.onEnabled?.(refreshed.enabled); }
+      if (refreshed && isCurrent()) setValue(refreshed);
     } catch (failure) {
       if (!isCurrent()) return;
       setValue(null);
@@ -78,7 +78,7 @@ export function EnquiryDeliveryPanel({ session, enquiryId, onDenied, onBusy, onE
       <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void run()}>Reload notification</Button></div>
   </Subsection>
   {keeri && <Subsection title="Keeri lead" aria-label="Keeri lead" aria-busy={busy} className="mt-6"
-    description="Contact, project and bulk enquiries are also sent to the Keeri CRM. This enquiry stays here either way.">
+    description="Contact, project and bulk enquiries are sent to Keeri as leads; staff reply, assign and follow up there. The enquiry also stays here, read-only.">
     {!lead ? <p className="text-sm text-foreground">Not sent to Keeri: newsletter signups and reviews stay in the store.</p>
       : <div className="grid gap-1 rounded-lg border border-line-soft bg-surface px-3.5 py-3 text-xs text-muted-foreground">
         <p className="text-sm font-semibold text-foreground">{lead.state === "pending" ? pendingLabels[lead.status] ?? leadLabels.pending : leadLabels[lead.state]}</p>

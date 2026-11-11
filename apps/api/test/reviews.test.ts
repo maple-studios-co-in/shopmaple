@@ -25,7 +25,6 @@ function stubDb(product: unknown = linked) {
   const enquiries: Record<string, unknown>[] = [], deliveries: unknown[] = [];
   const tx = {
     $queryRaw: async () => [],
-    contact: { findUnique: async () => null, create: async () => ({ id: "ct_1" }) },
     enquiry: { create: async ({ data }: { data: Record<string, unknown> }) => { enquiries.push(data); return data; }, findFirst: async () => null },
     enquiryDelivery: { create: async ({ data }: { data: unknown }) => { deliveries.push(data); return data; } },
   };

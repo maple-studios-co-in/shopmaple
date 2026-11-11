@@ -1,6 +1,6 @@
 # Admin redesign: audit, design system and live preview
 
-The `/admin` dashboard was rebuilt to a premium standard with a builder-style live preview. This document records the audit of the previous admin, the design system every admin screen now shares, the font handling, and the live-preview model. It is a companion to [admin-preview-and-reordering.md](admin-preview-and-reordering.md) (preview token model, drag-and-drop) and [admin-crm.md](admin-crm.md) (CRM).
+The `/admin` dashboard was rebuilt to a premium standard with a builder-style live preview. This document records the audit of the previous admin, the design system every admin screen now shares, the font handling, and the live-preview model. It is a companion to [admin-preview-and-reordering.md](admin-preview-and-reordering.md) (preview token model, drag-and-drop) and [admin-crm.md](admin-crm.md) (the retired CRM; enquiries are handled in Keeri).
 
 ## 1. Audit of the previous admin (29 October 2026)
 

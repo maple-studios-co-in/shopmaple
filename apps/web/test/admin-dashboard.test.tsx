@@ -932,14 +932,14 @@ test("section reveal preference can be edited and saved without publishing", asy
 
 test("authorised enquiry staff can use the inbox when the content draft is unavailable", async () => {
   const previous = globalThis.fetch;
-  const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
+  const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", createdAt: "2026-10-26T00:00:00.000Z", keeri: null };
   try {
     for (const failure of ["unavailable", "malformed"]) {
       let recovered = false;
       globalThis.fetch = async (url) => {
         const path = String(url);
         if (path.endsWith("/session")) return Response.json({ ...staff("publisher"), user: { ...staff("publisher").user, canManageEnquiries: true } });
-        if (path === "/api/admin/enquiries") return Response.json({ items: [row], nextCursor: null });
+        if (path === "/api/admin/enquiries") return Response.json({ items: [row], nextCursor: null, keeriLeadsUrl: null });
         if (path === "/api/admin/content") return recovered ? Response.json(doc()) : failure === "unavailable" ? Response.json({}, { status: 503 }) : Response.json({ ...doc(), publishedVersion: 99 });
         throw Error(`Unexpected request: ${path}`);
       };
@@ -949,7 +949,7 @@ test("authorised enquiry staff can use the inbox when the content draft is unava
         assert.equal(button("Save draft").disabled, true);
         assert.equal(button("Publish draft").disabled, true);
         await click("Enquiries");
-        assert.ok(container.querySelector('[aria-label="Customer enquiries"]'), "A content failure must not hide the separately protected inbox");
+        assert.ok(container.querySelector('[aria-label="Website enquiries"]'), "A content failure must not hide the separately protected inbox");
         assert.ok(container.textContent!.includes(row.id));
         assert.equal(button("Open enquiry").disabled, false);
         await click("Overview");

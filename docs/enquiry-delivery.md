@@ -1,6 +1,6 @@
 # Enquiry alerts
 
-Shop Admin displays an enquiry's notification state separately from its review, assignment and notes. Only active staff with enquiry permission can view or retry notifications. The publisher identity does not automatically receive this permission or select the email recipient.
+Shop Admin displays an enquiry's notification state in its delivery panel, beside the read-only enquiry details (the store CRM's review, assignment and notes are retired; see [admin CRM](admin-crm.md)). Only active staff with enquiry permission can view or retry notifications. The publisher identity does not automatically receive this permission or select the email recipient.
 
 Alerts are disabled by default. A saved enquiry is available in the private inbox regardless of transport configuration. When explicitly enabled, a new submission and one notification intent commit together. Repeated submissions cannot create extra intents; existing enquiries are not backfilled. Public receipts continue to report notificationSent:false because acceptance into a queue does not mean delivery.
 

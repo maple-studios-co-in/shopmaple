@@ -10,8 +10,8 @@ const { EnquiryInbox } = await import("../components/admin/enquiry-inbox");
 const container = document.getElementById("root")!;
 const page = document.body;
 const session = { user: { id: "staff", email: "staff@example.invalid", role: "editor" as const, canManageEnquiries: true }, csrfToken: "a".repeat(64) };
-const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
-const detail = { ...row, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, reviews: [] };
+const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", createdAt: "2026-10-26T00:00:00.000Z", keeri: null };
+const detail = { id: row.id, kind: row.kind, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, createdAt: row.createdAt };
 const retryable = { status: "retry_wait", version: 3, attempts: 1, nextAttemptAt: "2026-10-26T01:00:00.000Z", acceptedAt: null, errorCode: "rate_limited", canRetry: true };
 const response = (delivery: unknown = retryable, enabled = true, enquiryId = row.id) => ({ enquiryId, enabled, delivery });
 function button(text: string) { const found = [...page.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent === text); assert.ok(found, `Missing ${text}`); return found; }
@@ -21,8 +21,7 @@ function transport(overrides?: (path: string, options?: RequestInit) => Response
   return async (url: string | URL | Request, options?: RequestInit) => {
     const path = String(url); const result = overrides?.(path, options); if (result) return result;
     if (path.endsWith("/delivery")) return Response.json(response());
-    if (path.includes("/assignees") || path.includes("/activity")) return Response.json({ items: [], nextCursor: null });
-    return Response.json(path.includes(row.id) ? detail : { items: [row], nextCursor: null });
+    return Response.json(path.includes(row.id) ? detail : { items: [row], nextCursor: null, keeriLeadsUrl: null });
   };
 }
 async function mount() { const root = createRoot(container); await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}}/>)); await click("Open enquiry"); return root; }
@@ -92,21 +91,20 @@ test("late delivery from a closed enquiry cannot populate the next enquiry", asy
     if (path === `/api/admin/enquiries/${row.id}/delivery`) return new Promise(resolve => { resolveOld = resolve; });
     if (path === `/api/admin/enquiries/${other.id}/delivery`) return Response.json(response(null, true, other.id));
     if (path.endsWith(other.id)) return Response.json(other);
-    if (path === "/api/admin/enquiries") return Response.json({ items: [row, { ...row, id: other.id }], nextCursor: null });
+    if (path === "/api/admin/enquiries") return Response.json({ items: [row, { ...row, id: other.id }], nextCursor: null, keeriLeadsUrl: null });
   });
   const root = await mount();
   try { await click("Close enquiry"); await act(async () => [...page.querySelectorAll<HTMLButtonElement>("button")].filter(item => item.textContent === "Open enquiry")[1]!.click()); await act(async () => resolveOld(Response.json(response({ ...retryable, status: "accepted", canRetry: false })))); assert.match(panel().textContent!, /no notification.*queued/i); assert.ok(!panel().textContent!.includes("Accepted by")); }
   finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
 
-test("completed workflow cannot unlock inbox while notification retry remains pending", async () => {
-  const previous = fetch; let resolveRetry: (value: Response) => void = () => {}; let resolveWorkflow: (value: Response) => void = () => {}; let writes = 0;
-  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) { writes++; return new Promise(resolve => { resolveRetry = resolve; }); } if (path.endsWith("/stage")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
+test("a pending notification retry keeps the list locked until it settles", async () => {
+  const previous = fetch; let resolveRetry: (value: Response) => void = () => {}; let writes = 0;
+  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) { writes++; return new Promise(resolve => { resolveRetry = resolve; }); } });
   const root = await mount();
   try {
-    await click("Contacted"); await click("Retry notification"); await click("Retry notification"); assert.equal(writes, 1);
-    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "contacted", version: 1 })));
-    for (const label of ["Close enquiry", "Reload inbox", "Open enquiry"]) assert.equal(button(label).disabled, true, label);
+    await click("Retry notification"); await click("Retry notification"); assert.equal(writes, 1);
+    for (const label of ["Close enquiry", "Reload list", "Open enquiry"]) assert.equal(button(label).disabled, true, label);
     await act(async () => resolveRetry(Response.json(response({ ...retryable, version: 4, status: "queued", canRetry: false }))));
     assert.equal(button("Close enquiry").disabled, false);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
@@ -149,17 +147,5 @@ test("session identity change discards a pending retry and ignores its eventual 
     await click("Open enquiry");
     await act(async () => resolveOld(Response.json({}, { status: 401 })));
     assert.equal(denied, 0); assert.match(page.textContent!, /synthetic@example.invalid/); assert.equal(button("Retry notification").disabled, false); assert.equal(button("Close enquiry").disabled, false);
-  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
-});
-
-test("completed notification retry cannot unlock inbox while workflow remains pending", async () => {
-  const previous = fetch; let resolveWorkflow: (value: Response) => void = () => {};
-  globalThis.fetch = transport(path => { if (path.endsWith("/delivery/retry")) return Response.json(response({ ...retryable, status: "queued", canRetry: false })); if (path.endsWith("/stage")) return new Promise(resolve => { resolveWorkflow = resolve; }); });
-  const root = await mount();
-  try {
-    await click("Contacted"); await click("Retry notification");
-    assert.equal(button("Close enquiry").disabled, true); assert.equal(button("Reload inbox").disabled, true);
-    await act(async () => resolveWorkflow(Response.json({ ...detail, status: "contacted", version: 1 })));
-    assert.equal(button("Close enquiry").disabled, false);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });

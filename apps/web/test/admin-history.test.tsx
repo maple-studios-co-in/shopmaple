@@ -24,7 +24,6 @@ async function open(role: "editor" | "publisher", detail: (id: string) => Respon
     if (path === "/api/admin/content") return Response.json({ version: 6, draft: structuredClone(defaultStorefrontContent), publishedVersion: 5, updatedAt: "2026-10-27T10:00:00Z" });
     if (path === "/api/admin/content/revisions") return Response.json({ revisions });
     if (path.startsWith("/api/admin/content/revisions/")) return detail(path.split("/").at(-1)!);
-    if (path.startsWith("/api/admin/crm/")) return Response.json({ stages: { new: 0, contacted: 0, quoted: 0, won: 0, lost: 0 }, overdueTasks: 0, dueTodayTasks: 0, newLastSevenDays: 0 });
     throw new Error(`Unexpected request ${path}`);
   };
   const root = createRoot(container);

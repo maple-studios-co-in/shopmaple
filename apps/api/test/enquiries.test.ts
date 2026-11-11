@@ -32,6 +32,15 @@ test("concurrent retry returns one durable receipt; changed payload conflicts",a
  assert.equal(row.message,sample.message);assert.equal(row.status,"new");
  assert.match(String(results[0]!.headers['cache-control']),/no-store/);
 });
+test("a saved enquiry is no longer copied into the retired store contact directory",async()=>{
+ // Customers live in Keeri now: the store keeps the enquiry itself and makes no second copy of the person.
+ const address=`no-contact-${randomUUID()}@example.invalid`;
+ const result=await client().post("/api/enquiries").set("Origin",origin).set("Idempotency-Key",randomUUID()).send({...sample,email:address,phone:"+91 98765 43210"});
+ assert.equal(result.status,201);
+ const row=await db.enquiry.findUniqueOrThrow({where:{id:result.body.reference}});
+ assert.equal(row.contactId,null);
+ assert.equal(await db.contact.count({where:{emailKey:address}}),0);
+});
 test("enquiry validation rejects bad keys, injected properties and invalid bulk/context",async()=>{
  const http=client();
  const send=(body:object,key:string=randomUUID())=>http.post("/api/enquiries").set("Origin",origin).set("Idempotency-Key",key).send(body);

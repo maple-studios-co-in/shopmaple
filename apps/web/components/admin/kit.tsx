@@ -1,14 +1,12 @@
 "use client";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps, type ReactElement, type ReactNode, type Ref } from "react";
+import { useLayoutEffect, useRef, type ComponentProps, type ReactElement, type ReactNode, type Ref } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeCheckbox } from "@/components/ui/native-checkbox";
 import { NativeSelect } from "@/components/ui/native-select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { Field } from "./field";
 import { SortableList, type SortableRowProps } from "./sortable-list";
-import { AdminRequestTimeout } from "./use-admin-request";
 
 /* The admin's layout vocabulary on top of components/ui: admin screens compose these instead of writing their own CSS. */
 
@@ -380,56 +378,3 @@ export function useLatest<T>(value: T) {
 
 /** Adds an opaque paging cursor to an admin API path. */
 export const withCursor = (path: string, cursor: string | null) => cursor ? `${path}${path.includes("?") ? "&" : "?"}cursor=${encodeURIComponent(cursor)}` : path;
-
-type PageResult<T> = { ok: true; value: { items: T[]; nextCursor: string | null } } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };
-/** A cursor-paged admin list: a later page appends without repeats, a denial empties it, a superseded response is dropped. */
-export function usePaged<T extends { id: string }>(read: (cursor: string | null) => Promise<PageResult<T>>, onDenied: (status: number) => void) {
-  const [items, setItems] = useState<T[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const sequence = useRef(0);
-  const latest = useLatest({ read, onDenied });
-  useEffect(() => () => { sequence.current++; }, []);
-  const load = useCallback(async (next: string | null = null) => {
-    const current = ++sequence.current;
-    setLoading(true); setError("");
-    const result = await latest.current.read(next);
-    if (current !== sequence.current) return;
-    setLoading(false);
-    if (!result.ok) { if (result.denied) { setItems([]); latest.current.onDenied(result.denied); } else setError(result.message); return; }
-    setItems(rows => next ? [...rows, ...result.value.items.filter(item => !rows.some(row => row.id === item.id))] : result.value.items);
-    setCursor(result.value.nextCursor);
-  }, [latest]);
-  return { items, setItems, cursor, loading, error, load };
-}
-
-/** One write at a time: busy, error and notice state, with a timed-out or failed request turned into a message. */
-export function useWrite(onBusy?: (busy: boolean) => void) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const active = useRef(true);
-  const latest = useLatest(onBusy);
-  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
-  async function run(work: () => Promise<void>, failed: (timedOut: boolean) => string) {
-    setBusy(true); latest.current?.(true); setError(""); setNotice("");
-    try { await work(); }
-    catch (failure) { if (active.current) setError(failed(failure instanceof AdminRequestTimeout)); }
-    finally { if (active.current) { setBusy(false); latest.current?.(false); } }
-  }
-  return { busy, error, setError, notice, setNotice, active, run };
-}
-
-/** Tabs that switch a view, with the panels as children. Triggers also select on click (Radix activates on mousedown and focus). */
-export function TabBar<T extends string>({ label, tabs, value, onSelect, disabled, className, children }: {
-  label: string; tabs: readonly (readonly [T, string, ...string[]])[]; value: T | ""; onSelect: (value: T) => void;
-  disabled?: boolean; className?: string; children?: ReactNode;
-}) {
-  return <Tabs value={value} onValueChange={(next) => onSelect(next as T)} className={className}>
-    <TabsList aria-label={label}>
-      {tabs.map(([key, text]) => <TabsTrigger key={key} value={key} className="px-3 text-sm" disabled={disabled} onClick={() => onSelect(key)}>{text}</TabsTrigger>)}
-    </TabsList>
-    {children}
-  </Tabs>;
-}

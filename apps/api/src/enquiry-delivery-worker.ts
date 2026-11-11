@@ -16,8 +16,12 @@ function windowOpen(job: EnquiryDelivery, now: Date) {
 const canRetry = (job: EnquiryDelivery, fingerprint: string | undefined, now: Date) =>
   !!fingerprint && job.status === "retry_wait" && job.configurationHash === fingerprint && job.attempts < 5 && windowOpen(job, now);
 const iso = (value: Date | null) => value?.toISOString() ?? null;
-const keeriState = (job: EnquiryDelivery) =>
+type LeadRow = Pick<EnquiryDelivery, "status" | "keeriOutcome" | "keeriLeadPath">;
+const keeriState = (job: LeadRow) =>
   job.status === "accepted" ? (job.keeriOutcome === "matched" ? "matched" : "created") : job.status === "failed" || job.status === "uncertain" ? "failed" : "pending";
+const leadUrl = (job: LeadRow, config: KeeriLeadsConfig | null) => config && job.status === "accepted" && job.keeriLeadPath ? config.adminOrigin + job.keeriLeadPath : null;
+/** One lead as the admin's enquiry list shows it; the link only while Keeri leads are configured. */
+export const keeriLeadSummary = (job: LeadRow, config: KeeriLeadsConfig | null) => ({ state: keeriState(job), leadUrl: leadUrl(job, config) });
 /**
  * The staff view of one enquiry's outbox. The Keeri section appears only when leads are enabled or
  * this enquiry has a lead row, so a store without Keeri leads answers exactly as before.
@@ -33,7 +37,7 @@ export function deliveryResponse(enquiryId: string, job: EnquiryDelivery | null,
     state: keeriState(lead), status: lead.status, version: lead.version, attempts: lead.attempts,
     nextAttemptAt: iso(lead.nextAttemptAt), acceptedAt: iso(lead.acceptedAt), errorCode: lead.errorCode,
     canRetry: canRetry(lead, keeri.config?.fingerprint, now),
-    leadUrl: keeri.config && lead.status === "accepted" && lead.keeriLeadPath ? keeri.config.adminOrigin + lead.keeriLeadPath : null,
+    leadUrl: leadUrl(lead, keeri.config),
   } } } : {}) });
 }
 
