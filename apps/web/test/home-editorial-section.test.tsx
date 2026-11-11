@@ -8,7 +8,7 @@ import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 
 // "Pull up a chair" (Figma 1049:27656): a square photo with a caption, beside one large photo.
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://cdn.shopify.com/s/files/1/0691/8651/9229/files/${handle}.jpg`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome(edit?: (content: typeof defaultStorefrontContent) => void) {
   const content = structuredClone(defaultStorefrontContent);
@@ -58,7 +58,7 @@ test("the admin's words, links and photos are what the section shows", async () 
     content.homeDetails!.editorial = {
       title: "Stay a while", text: "Good company, good chairs.", cta: "See all dining", href: "/collections/chairs",
       leftImage: "/media/home/category-dinings.webp", leftAlt: "A dining set",
-      rightImage: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/room.jpg", rightAlt: "A set table",
+      rightImage: "/media/uploads/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.webp", rightAlt: "A set table",
     };
   }));
   assert.equal(text(section.querySelector("[data-editorial-title]")), "Stay a while");
@@ -67,7 +67,7 @@ test("the admin's words, links and photos are what the section shows", async () 
   assert.equal(section.querySelector("[data-editorial-cta]")!.getAttribute("href"), "/collections/chairs");
   assert.match(source(section.querySelector("[data-editorial-left] img")), /category-dinings\.webp/);
   assert.equal(section.querySelector("[data-editorial-left] img")!.getAttribute("alt"), "A dining set");
-  assert.match(source(section.querySelector("[data-editorial-right] img")), /files\/room\.jpg/);
+  assert.match(source(section.querySelector("[data-editorial-right] img")), /\/media\/uploads\/b{64}\.webp/);
 });
 
 test("a document published before the section existed shows no new section and nothing else changes", async () => {

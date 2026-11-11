@@ -10,7 +10,7 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 // Follow-up to the owner's review of the live page against the "Maple / Impact Layout" frame (Figma 1049:27656):
 // the hero bento, the announcement strip, the Maple Difference row, round category photos, the
 // statement band and the offer tiles. Copy still comes from the admin's content document.
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome(edit?: (content: typeof defaultStorefrontContent) => void) {
   const content = structuredClone(defaultStorefrontContent);
@@ -101,21 +101,20 @@ test("Nimbus shows the frame's clean cloud photo with the collection name set as
 test("Nimbus with the staff's own artwork keeps the word in the artwork, with no live word on top", async () => {
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { HomeNimbus } = await import("../components/home-nimbus");
-  const media = [{ key: "home-nimbus" as const, image: "https://shop.maplefurnishers.com/cdn/shop/files/custom-nimbus.webp", alt: "Staff artwork" }];
+  const media = [{ key: "home-nimbus" as const, image: "/media/uploads/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.webp", alt: "Staff artwork" }];
   const doc = new JSDOM(renderToStaticMarkup(<HomeNimbus media={media} />)).window.document;
   const nimbus = doc.querySelector("[data-nimbus-slide]")!;
   assert.ok(!nimbus.querySelector("[data-nimbus-title]"), "the Nimbus card has no live word; Terra after it keeps its own");
-  assert.match(nimbus.querySelector("picture img")!.getAttribute("src")!, /custom-nimbus\.webp/);
+  assert.match(nimbus.querySelector("picture img")!.getAttribute("src")!, /f{64}\.webp/);
 });
 
-test("the hero ships with four slides, as the frame has four dots: the shop film, then three Maple room photos", async () => {
+test("the hero ships with four slides, as the frame has four dots: four stills of Keeri products (the shop film left with Shopify)", async () => {
   const hero = section(await renderHome(), "hero");
   const slides = [...hero.querySelectorAll("[data-hero-slide]")];
   assert.equal(slides.length, 4);
   assert.equal(hero.querySelectorAll("[data-slider-dots] button, .slider-dots button").length, 4, "one dot per slide");
-  assert.ok(slides[0]!.querySelector("video"), "slide 1 is the film");
-  assert.deepEqual(slides.slice(1).map((slide) => slide.querySelector("video")), [null, null, null]);
-  assert.deepEqual(slides.slice(1).map((slide) => slide.querySelector("img")!.getAttribute("alt")), ["Living room", "Bedroom", "Dining room"]);
+  assert.deepEqual(slides.map((slide) => slide.querySelector("video")), [null, null, null, null], "no film");
+  assert.deepEqual(slides.map((slide) => slide.querySelector("img")!.getAttribute("alt")), ["Maple furniture", "Living room", "Bedroom", "Dining room"]);
   for (const slide of slides) assert.equal(text(slide.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
 });
 

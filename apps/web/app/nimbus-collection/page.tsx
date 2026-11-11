@@ -1,4 +1,4 @@
-import { NimbusLanding } from "@/components/category-nimbus";
+import { NimbusWithArtwork } from "@/components/artwork-pages";
 import { getPublishedContent } from "@/lib/content";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 export const dynamic = "force-dynamic";
@@ -8,5 +8,5 @@ export async function generateMetadata() {
 }
 export default async function Page() {
   const content = await getPublishedContent();
-  return <NimbusLanding content={content.nimbusPage} media={content.templateMedia} />;
+  return <NimbusWithArtwork content={content} />;
 }

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { siteOrigins } from "../../packages/contracts/src/site-address";
+import retired from "./data/retired-products.json";
 
 // Evaluated when the release is built: the store's own addresses (SITE_URL, SITE_ALIASES and WEB_ORIGIN, see
 // packages/contracts/src/site-address.ts) are fixed into this build's image allowlist and its link handling. Changing
@@ -21,33 +22,26 @@ const config: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
   images: {
-    // WebP only: encoding AVIF on a cold cache took seconds per photo and made pages wait on images. Photos still named
-    // by their Shopify address skip this optimizer (lib/image-loading.ts); the store's own copies (/media/shopify) and
-    // everything else are made here and cached for a week once made.
+    // WebP only: encoding AVIF on a cold cache took seconds per photo and made pages wait on images. Every photo is made
+    // here and cached for a week once made.
     formats: ["image/webp"],
     minimumCacheTTL: 604800,
-    remotePatterns: [
-      // Keeri photos, and customer photos on approved reviews (served by the API only while the review is listed).
-      ...ownMedia,
-      // Shopify stays allowed until the move is finished: published content and the catalogue snapshot may still name
-      // a file the server has not copied yet (docs/shopify-media-migration.md). Copied files are served as
-      // /media/shopify/<name> and never touch these hosts.
-      {
-        protocol: "https",
-        hostname: "cdn.shopify.com",
-        pathname: "/s/files/**",
-      },
-      {
-        protocol: "https",
-        hostname: "shop.maplefurnishers.com",
-        pathname: "/cdn/shop/**",
-      },
-    ],
+    // Keeri photos, and customer photos on approved reviews (served by the API only while the review is listed). Nothing
+    // is loaded from Shopify (owner, 11 Nov 2026).
+    remotePatterns: ownMedia,
   },
-  // Pages moved from Shopify's /pages/<slug> to /<slug> (10 Nov 2026). Old links, search results and sent emails keep
-  // working, and the query (an enquiry's ?product=) carries over.
   async redirects() {
-    return [{ source: "/pages/:slug", destination: "/:slug", permanent: true }];
+    return [
+      // Pages moved from Shopify's /pages/<slug> to /<slug> (10 Nov 2026). Old links, search results and sent emails keep
+      // working, and the query (an enquiry's ?product=) carries over.
+      { source: "/pages/:slug", destination: "/:slug", permanent: true },
+      // The products that existed only in the old Shopify catalogue left the store (owner, 11 Nov 2026), for now: each old
+      // address goes to its kind's collection, or to all furniture, temporarily (307), so search engines keep the
+      // address while the owner decides what returns (data/retired-products.json).
+      ...Object.entries(retired.redirects).map(([handle, collection]) => ({
+        source: `/products/${handle}`, destination: `/collections/${collection}`, permanent: false,
+      })),
+    ];
   },
   async rewrites() {
     return [
@@ -55,8 +49,6 @@ const config: NextConfig = {
       { source: "/media/keeri-review/:filename", destination: api + "/media/keeri-review/:filename" },
       { source: "/media/instagram-feed/:filename", destination: api + "/media/instagram-feed/:filename" },
       { source: "/media/uploads/:filename", destination: api + "/media/uploads/:filename" },
-      // The store's own copies of the photos, artwork and films first published on Shopify.
-      { source: "/media/shopify/:filename", destination: api + "/media/shopify/:filename" },
       { source: "/api/:path*", destination: api + "/api/:path*" },
     ];
   },

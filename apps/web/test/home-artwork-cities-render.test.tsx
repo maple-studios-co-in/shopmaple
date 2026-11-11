@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -9,24 +8,21 @@ import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultHomeDetails } from "../lib/home-details-defaults";
 
-const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
-// Independent original asset expectations catch accidental remapping during migration.
-const difference = ["Custom_F.svg", "Del_mf.svg", "Icon_homepage.svg", "Maple_Banner_5.svg"];
-const values = [
-  ["quiet-luxury", "Icon_maple_3.svg"], ["real-living", "Cover_Image_Maple_2.svg"],
-  ["ages-beautifully", "Icon_maple_1.svg"], ["strength", "Cover_Image_Maple_5.svg"],
-] as const;
+// The difference and value icons were Shopify files and left the store (owner, 11 Nov 2026): each slot shows an icon only
+// once staff upload one. The eight unnamed city artworks likewise show only when uploaded.
+const difference = [1, 2, 3, 4];
+const values = [["quiet-luxury"], ["real-living"], ["ages-beautifully"], ["strength"]] as const;
 const cities = [
   ["delhi", "Delhi.svg", "Delhi"], ["kolkata", "Kolkata.svg", "Kolkata"],
   ["hyderabad", "Hyderabad.svg", "Hyderabad"], ["varanasi", "VARANASI1.svg", "Varanasi"],
   ["mumbai", "Mumbai.svg", "Mumbai"], ["jaipur", "jaipur.svg", "Jaipur"],
   ["bengaluru", "bengaluru_5d95b443-519f-4637-9d23-0cbbf2838908.svg", "Bengaluru"],
   ["chennai", "chennai.svg", "Chennai"], ["gujarat", "gujrat.svg", "Gujarat"],
-  ["artwork-1", "engaged_3_2d4f6db1-cb60-497e-b2a1-061b5886d0ec.svg", ""],
-  ["artwork-2", "engaged_5.svg", ""], ["artwork-3", "engaged_4.svg", ""],
-  ["artwork-4", "engaged_11.svg", ""], ["artwork-5", "engaged_9.svg", ""],
-  ["artwork-6", "engaged_10.svg", ""], ["artwork-7", "engaged_12.svg", ""],
-  ["artwork-8", "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", ""],
+  ["artwork-1", "", ""],
+  ["artwork-2", "", ""], ["artwork-3", "", ""],
+  ["artwork-4", "", ""], ["artwork-5", "", ""],
+  ["artwork-6", "", ""], ["artwork-7", "", ""],
+  ["artwork-8", "", ""],
   ["agra", "Agra.svg", "Agra"],
 ] as const;
 function published(extra: Record<string, unknown> = {}) {
@@ -60,15 +56,15 @@ async function render(body: unknown) {
 const cityImages = ".home-city-track img";
 const attrs = (doc: Document, selector: string, name: string) => [...doc.querySelectorAll(selector)].map(n => n.getAttribute(name));
 function assertOriginal(doc: Document) {
-  assert.deepEqual(attrs(doc, ".home-difference img", "src"), difference.map(file => copyOf(files + file)));
-  assert.deepEqual(attrs(doc, ".home-difference img", "alt"), ["", "", "", ""]);
-  assert.deepEqual(attrs(doc, ".home-values img", "src"), values.map(([, file]) => copyOf(files + file)));
-  assert.deepEqual(attrs(doc, ".home-values img", "alt"), ["", "", "", ""]);
+  assert.deepEqual(attrs(doc, ".home-difference img", "src"), [], "no icon until staff upload one");
+  assert.equal(doc.querySelectorAll("[data-difference-promise]").length, 4, "the four promises still read as words");
+  assert.deepEqual(attrs(doc, ".home-values img", "src"), [], "no icon until staff upload one");
+  assert.equal(doc.querySelectorAll(".home-values h3").length, 4, "the four values still read as words");
   assert.deepEqual(attrs(doc, cityImages, "src"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([key]) => `/media/cities/${key}.webp`));
   assert.deepEqual(attrs(doc, cityImages, "alt"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([, , alt]) => alt));
 }
 
-test("homepage preserves original value icons and copy while showing the suggested photographic city cards", async () => {
+test("homepage keeps its promises and values as words without the Shopify icons, beside the photographic city cards", async () => {
   const doc = await render(published());
   assertOriginal(doc);
   for (const [selector, width, height] of [[".home-difference img", "60", "60"], [".home-values img", "80", "80"], [cityImages, "400", "600"]]) {
@@ -113,11 +109,12 @@ test("published reordered values and cities retain keyed artwork and hide disabl
       ...(custom ? { templateMedia: artworkOverrides() } : {}),
       homeCitiesLayout: [...cities].reverse().map(([key]) => ({ key, enabled: key === "agra" || key === "artwork-8" || key === "delhi" })),
     }));
+    // An enabled unnamed city slot without an upload is skipped rather than drawn empty.
     assert.deepEqual(attrs(doc, cityImages, "src"), custom
       ? ["/media/city-agra.webp", "/media/city-artwork-8.webp", "/media/city-delhi.webp"]
-      : ["/media/cities/agra.webp", copyOf(files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg"), "/media/cities/delhi.webp"]);
-    assert.deepEqual(attrs(doc, cityImages, "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
-    assert.equal(doc.querySelector(".home-values img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : copyOf(files + "Cover_Image_Maple_5.svg"));
+      : ["/media/cities/agra.webp", "/media/cities/delhi.webp"]);
+    assert.deepEqual(attrs(doc, cityImages, "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "Delhi"]);
+    assert.equal(doc.querySelector(".home-values img")?.getAttribute("src") ?? null, custom ? "/media/value-strength.webp" : null);
     assert.equal(doc.querySelector(".home-values h3")?.textContent, "Strength You Don’t See");
     assert.ok(doc.querySelector('[data-cities-rail][aria-label="Cities served"]'));
   }

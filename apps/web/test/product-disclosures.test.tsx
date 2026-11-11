@@ -99,7 +99,7 @@ test("source paragraphs, emphasis, newlines, headings and ordered and unordered 
 });
 
 test("approved links keep source text and owned Shopify links navigate locally", async () => {
-  // The store's settings during the move: shop. and store. are both its own address (docs/shopify-media-migration.md).
+  // The store's settings during the move: shop. and store. are both its own address (docs/seo.md).
   const before = { SITE_URL: process.env.SITE_URL, SITE_ALIASES: process.env.SITE_ALIASES };
   Object.assign(process.env, { SITE_URL: "https://shop.maplefurnishers.com", SITE_ALIASES: "https://store.maplefurnishers.com" });
   try { await owned(); }

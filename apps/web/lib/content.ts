@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { z } from "zod";
-import { storefrontContentSchema, type StorefrontContent } from "@shopmaple/contracts";
+import { storefrontContentSchema, withoutShopifyMedia, type StorefrontContent } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "./content-defaults";
 const publishedSchema = z
   .object({
@@ -19,7 +19,9 @@ export async function readPublishedContent(transport: typeof fetch = fetch): Pro
       { cache: "no-store", signal: AbortSignal.timeout(3000) },
     );
     if (response.ok) {
-      const result = publishedSchema.safeParse(await response.json());
+      // An older API may still answer with Shopify's files; they are dropped here too, never drawn.
+      const body = (await response.json()) as { content?: unknown };
+      const result = publishedSchema.safeParse(body && typeof body === "object" ? { ...body, content: withoutShopifyMedia(body.content, storefrontContentSchema) } : body);
       if (result.success) return { ...result.data.content, campaignsAvailable: true };
     } else if (response.status === 404) {
       const error = await response.json();

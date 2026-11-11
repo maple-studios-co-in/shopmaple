@@ -12,7 +12,7 @@ const now = new Date("2026-10-25T10:02:00Z");
 const options = {origin: "https://maplefurnishers.keeri.in", token: "synthetic-catalogue-service-token", tenantId: "maple", now};
 function fixture() {
   const data = keeriFixture();
-  data.publicMedia[0]!.url = "https://cdn.shopify.com/s/files/synthetic/zyro.webp";
+  data.publicMedia[0]!.url = "https://store.maplefurnishers.com/media/keeri/zyro.webp";
   return data;
 }
 const response = (data = fixture()) => Response.json(data);
@@ -77,7 +77,9 @@ test("stale or future snapshots cannot update the storefront read model", async 
 });
 
 test("media outside the deployed storefront image allowlist blocks publication", async () => {
-  for (const url of ["https://private.example.com/admin/photo.webp", "https://cdn.shopify.com/admin/photo.webp", "https://shop.maplefurnishers.com:444/cdn/shop/photo.webp"]) {
+  // Only Keeri photos on the store's own address; Shopify's files are refused too (owner, 11 Nov 2026).
+  for (const url of ["https://private.example.com/admin/photo.webp", "https://cdn.shopify.com/s/files/1/photo.webp",
+    "https://shop.maplefurnishers.com/cdn/shop/files/photo.webp", "https://store.maplefurnishers.com:444/media/keeri/photo.webp"]) {
     const input=fixture(); input.publicMedia[0]!.url=url;
     await assert.rejects(pullKeeriCatalogue({...options, databaseUrl, apply:true, approval:"publish-selected-keeri-no-checkout", fetch:async () => response(input)}), /UNSUPPORTED_PUBLIC_MEDIA/);
   }

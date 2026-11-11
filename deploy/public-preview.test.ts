@@ -15,16 +15,18 @@ test("operator must explicitly approve an exact isolated ShopMaple database", ()
     ["postgresql://u:p@127.0.0.1:5432/shopmaple_store", "shopmaple_store", "publish-public-preview-no-checkout"],
   ]) assert.throws(() => assertPreviewTarget(url!, name!, approval!));
 });
-test("public preview has all public products but never claims available stock", () => {
+test("public preview has all its Keeri products but never claims available stock", () => {
   const output = preparePublicPreview(fixture);
-  assert.equal(output.products.length, 85);
+  assert.equal(output.products.length, 96);
+  assert.equal(output.products.every(p => p.source.startsWith("keeri:") && p.id.startsWith(`${p.source}:`)), true);
   assert.equal(output.products.flatMap(p => p.variants).every(v => !v.available && v.stockPolicy === "unverified"), true);
 });
-test("public preview refuses non-preview identities or sources", () => {
+test("public preview refuses identities or sources other than the Keeri snapshot's", () => {
   for (const mutate of [
-    (p: any) => { p.source = "keeri"; },
-    (p: any) => { p.products[0].source = "keeri"; },
-    (p: any) => { p.products[0].id = "real-product"; },
+    (p: any) => { p.source = "shopify-preview"; },
+    (p: any) => { p.products[0].source = "shopify-preview"; },
+    (p: any) => { p.products[0].source = "keeri:othertenant"; },
+    (p: any) => { p.products[0].id = "preview-7990430073021"; },
     (p: any) => { p.products[0].variants[0].id = "real-variant"; },
   ]) {
     const altered = structuredClone(fixture); mutate(altered);

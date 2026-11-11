@@ -1,6 +1,6 @@
 # Store deployment
 
-Target: `https://store.maplefurnishers.com`. Shopify remains at `https://shop.maplefurnishers.com` until the store moves there; the move, and copying every photo and film off Shopify first, is in [shopify-media-migration.md](shopify-media-migration.md). The store's addresses are the `SITE_URL` and `SITE_ALIASES` settings, not code.
+Target: `https://store.maplefurnishers.com`, moving to `https://shop.maplefurnishers.com` (which Shopify serves until the move). Nothing on the store is loaded from Shopify ([shopify-media-migration.md](shopify-media-migration.md)). The store's addresses are the `SITE_URL` and `SITE_ALIASES` settings, not code.
 
 ## Isolated runtime
 
@@ -26,7 +26,7 @@ The isolated database and PM2 database process were provisioned on 2026-10-26. A
 
 Until Keeri publication metadata, channel selections, delivery rates, and payment verification are complete, the new hostname serves the approved public Shopify catalogue snapshot as a preview. It must retain `CATALOG_MODE=preview`, checkout disabled, and noindex. Prices are a snapshot; neither displayed pricing nor stock is a live Keeri quote.
 
-The ordinary local preview importer intentionally refuses production. The separate deployment bootstrap accepts only the committed `apps/api/data/preview-catalog.json`, numeric `preview-*` identities and `shopify-preview` sources. It strips unknown fields, forces every variant to `available=false` / `stockPolicy=unverified`, requires an empty catalogue and exact loopback database target, and writes atomically. It never copies carts, enquiries, orders, credentials or customers from a developer database.
+The ordinary local preview importer intentionally refuses production. The separate deployment bootstrap accepts only the committed `apps/api/data/preview-catalog.json`, Keeri identities (`keeri:<tenant>:<id>`) with one `keeri:<tenant>` source. It strips unknown fields, forces every variant to `available=false` / `stockPolicy=unverified`, requires an empty catalogue and exact loopback database target, and writes atomically. It never copies carts, enquiries, orders, credentials or customers from a developer database.
 
 Run once from a validated release, using the private environment:
 

@@ -28,9 +28,8 @@ function listing(node: ReactNode): Record<string, unknown> | undefined {
 test("a normal collection makes one compact read and displays its authoritative page and facets", async () => {
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "all" }), searchParams: Promise.resolve({ q: " oak ", sort_by: "price-descending", page: "999" }) }))!;
-    // The page, and the hero's featured piece (lib/collection-hero-photos), a one-product read the catalogue cache keeps.
-    assert.deepEqual(requests.map((request) => request.pathname), ["/api/catalogue/collections/all", "/api/catalogue/cards"], "one collection page must not fetch the whole catalogue");
-    assert.equal(requests[1]!.searchParams.get("handles"), "aria-5-seater-sofa");
+    // Only the page: the hero features the collection's own first piece with a photo, from the same answer.
+    assert.deepEqual(requests.map((request) => request.pathname), ["/api/catalogue/collections/all"], "one collection page must not fetch the whole catalogue");
     assert.equal(requests[0]!.pathname, "/api/catalogue/collections/all");
     assert.equal(requests[0]!.searchParams.get("limit"), "24");
     assert.equal(requests[0]!.searchParams.get("q"), "oak");
@@ -64,31 +63,16 @@ test("search rejects a valid summary page for another query instead of showing s
   await transport(async () => { await assert.rejects(searchProducts("oak", new AbortController())); }, () => ({ ...page, query: { ...query, q: "brass" }, limit: 4 }));
 });
 
-test("bare editorial chairs adds one canonical compact category page to bounded unique editorial card batches", async () => {
+test("the bare chairs address opens on its listing with one compact page read and nothing else", async () => {
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "chairs" }), searchParams: Promise.resolve({}) }))!;
-    const collections = requests.filter(request => request.pathname === "/api/catalogue/collections/chairs");
-    assert.equal(collections.length, 1, "the canonical chair category requires exactly one compact page read");
-    assert.equal(collections[0]!.searchParams.get("limit"), "24");
-    assert.equal(collections[0]!.searchParams.get("page"), "1");
-    assert.equal(collections[0]!.searchParams.get("sort"), "title");
-    assert.equal(collections[0]!.searchParams.has("q"), false);
-    assert.equal(collections[0]!.searchParams.has("category"), false);
+    // The older chairs editorial (Shopify's artwork and products) left the store on 11 Nov 2026.
+    assert.deepEqual(requests.map(request => request.pathname), ["/api/catalogue/collections/chairs"], "no editorial card batches");
+    assert.equal(requests[0]!.searchParams.get("limit"), "24");
+    assert.equal(requests[0]!.searchParams.has("q"), false);
+    assert.equal(requests[0]!.searchParams.has("category"), false);
     assert.deepEqual(result.products, [card]);
     assert.equal(result.total, 1);
-    const batches = requests.filter(request => request.pathname === "/api/catalogue/cards");
-    assert.ok(batches.length > 0);
-    assert.equal(requests.length, collections.length + batches.length, "no full-product or unrelated catalogue reads are allowed");
-    for (const request of batches) {
-      const handles = request.searchParams.get("handles")!.split(",");
-      assert.ok(handles.length > 0 && handles.length <= 50);
-    }
-    const requestedHandles = batches.flatMap(request => request.searchParams.get("handles")!.split(","));
-    assert.equal(new Set(requestedHandles).size, requestedHandles.length, "editorial products are deduplicated across all batches");
-    assert.deepEqual(requestedHandles, [
-      "aera-swivel-lounge-chair", "aero-dining-chair", "aileron-signature-bed", "aileron-upholstered-bench", "alcyone-7-seater-sofa", "alina-7-seater-sofa",
-      "lira-barrel-accent-chair", "nimbus-cloud-lounge-chair-grey-boucle-walnut", "aurelia-luxe-accent-chair-walnut-mocha", "alto-luxe-lounge-chair-gold-charcoal", "ovalo-modern-console-walnut-white", "maple-bloom-petal-coffee-table-white-marble-brass-finish", "aurelia-fluted-coffee-table-white-marble-gold", "caro", "ario", "nola", "tara", "arno", "rollo",
-    ]);
   }, url => url.pathname === "/api/catalogue/collections/chairs"
     ? { ...page, handle: "chairs", collectionTotal: 1, inStock: 1, outOfStock: 0, highestPrice: 120000 }
     : { products: [], published: true });

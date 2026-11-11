@@ -672,3 +672,21 @@
     left: -29px;
   }
 }
+
+/* A banner that shows a product photo in place of its former artwork keeps that artwork's shape: wide here, square on
+   phones, the photo cropped to fill it (components/category-landing.tsx). */
+.landing-banner[data-banner-crop] img {
+  aspect-ratio: var(--banner-ratio);
+  object-fit: cover;
+}
+@media (max-width: 768px) {
+  .landing-banner[data-banner-crop] img { aspect-ratio: 1; }
+}
+/* A film's place on the Nimbus page, now a still (components/category-nimbus.tsx). */
+.landing-still picture,
+.landing-still img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

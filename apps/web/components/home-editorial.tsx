@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ContentImage as Image } from "@/components/content-image";
 import { CompareIsland } from "@/components/compare-island";
+import { currentHandle } from "@/lib/retired-products";
 import { getProductCards } from "@/lib/catalog";
 import type { ResolvedHomeDetails } from "@/lib/home-details-defaults";
 
@@ -54,15 +55,19 @@ export const compareStart = 25;
  * Without both products and both photos there is nothing to compare, so the section draws nothing.
  */
 export async function HomeCompare({ content }: { content: ResolvedHomeDetails["compare"] }) {
-  const handles = [content.left.handle, content.right.handle];
+  // A product that left the store with Shopify is compared through its Keeri replacement, labelled with that product's
+  // own name; one without a replacement leaves the section out (lib/retired-products.ts).
+  const current = [content.left, content.right].map((side) => ({ handle: currentHandle(side.handle), label: currentHandle(side.handle) === side.handle ? side.label : null }));
+  if (current.some((side) => !side.handle)) return null;
+  const handles = current.map((side) => side.handle!);
   const unique = [...new Set(handles)];
   const cards = await getProductCards(handles).catch(() => []);
   // A renamed product answers under its new handle, in the order it was asked for.
   const pick = (handle: string) => cards.find((card) => card.handle === handle) ?? (cards.length === unique.length ? cards[unique.indexOf(handle)] : undefined);
-  const sides = [
-    { side: "left", label: content.left.label, product: pick(content.left.handle) },
-    { side: "right", label: content.right.label, product: pick(content.right.handle) },
-  ] as const;
+  const sides = (["left", "right"] as const).map((side, index) => {
+    const product = pick(handles[index]!);
+    return { side, label: current[index]!.label ?? product?.title ?? "", product };
+  });
   if (sides.some(({ product }) => !product?.image)) return null;
   return (
     <section className="home-compare home-container" aria-label={content.heading} data-compare>
@@ -79,7 +84,7 @@ export async function HomeCompare({ content }: { content: ResolvedHomeDetails["c
           </div>
         ))}
         <div data-compare-divider>
-          <span role="slider" aria-label={`Compare ${content.left.label} and ${content.right.label}`} aria-orientation="horizontal"
+          <span role="slider" aria-label={`Compare ${sides[0]!.label} and ${sides[1]!.label}`} aria-orientation="horizontal"
             aria-valuemin={0} aria-valuemax={100} aria-valuenow={compareStart} data-compare-grip>
             <i data-compare-bar /><i data-compare-bar /><i data-compare-bar />
           </span>

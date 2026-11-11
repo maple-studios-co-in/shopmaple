@@ -11,9 +11,11 @@ const product = (handle: string, sourceTaxonomy?: Taxonomy | null, category = "c
 const handles = (products: ReturnType<typeof product>[], collection: string) =>
   collectionMembers(products, collection).map((item) => item.handle);
 
-test("preserves Shopify membership order rather than catalogue input order", () => {
-  assert.deepEqual(handles([product("arven"), product("unlisted"), product("naro-dining-chair")], "dining-chair"),
-    ["naro-dining-chair", "arven"]);
+// The curated lists name Keeri products: a retired Shopify-only piece became its Keeri replacement in place
+// (naro-dining-chair → naro, 11 Nov 2026), so the curated order holds.
+test("preserves curated membership order rather than catalogue input order", () => {
+  assert.deepEqual(handles([product("arven"), product("unlisted"), product("naro"), product("naro-dining-chair")], "dining-chair"),
+    ["naro", "arven"]);
 });
 
 test("marketing, bestseller and named campaign collections retain curated membership", () => {
@@ -29,16 +31,16 @@ test("missing and unknown taxonomy never guesses functional membership from titl
 });
 
 // Removing the source taxonomy union loses Keeri-only dining chairs; ignoring type admits dining tables.
-test("dining chair aliases append explicit Keeri chairs after Shopify order and deduplicate handles", () => {
+test("dining chair aliases append explicit Keeri chairs after the curated order and deduplicate handles", () => {
   const products = [
     product("keeri-chair", { productType: " Chair ", category: " DINING ", subCategory: null }),
     product("arven", { productType: "chair", category: "Dining", subCategory: null }),
     product("keeri-table", { productType: "table", category: "Dining", subCategory: null }, "tables"),
-    product("naro-dining-chair"),
+    product("naro"),
     product("keeri-chair", { productType: "chair", category: "Dining", subCategory: null }),
   ];
   for (const collection of ["dining-chair", "dining-chairs-1"])
-    assert.deepEqual(handles(products, collection), ["naro-dining-chair", "arven", "keeri-chair"], collection);
+    assert.deepEqual(handles(products, collection), ["naro", "arven", "keeri-chair"], collection);
 });
 
 test('functional collection aliases follow explicit source taxonomy without crossing furniture types',()=>{

@@ -4,7 +4,6 @@ import { adaptKeeriExportV2 } from '../src/keeri.js';
 import { planCatalogueUnion } from '../src/catalogue-union.js';
 import { fetchKeeriExport } from '../src/keeri-fetch.js';
 import { v2Fixture } from './fixtures/keeri-v2.js';
-import { shopifyFixture } from './fixtures/shopify-admin.js';
 
 function fixture() {
   const data = v2Fixture();
@@ -16,9 +15,13 @@ test('Keeri taxonomy survives adaptation without requiring price or image', () =
   assert.deepEqual(product.sourceTaxonomy,{productType:'chair',category:'Dining',subCategory:null});
   assert.equal(product.variants.length,0);
 });
-test('taxonomy follows exact Keeri identity onto a merged Shopify product', () => {
-  const data=fixture(); data.models[0]!.variants[0]!.sku='CHAIR-OAK';
-  const result=planCatalogueUnion(shopifyFixture(),data,'maple');
+test('taxonomy follows the recorded Keeri identity onto a former Shopify listing', () => {
+  const data=fixture(); data.publicMedia=[];
+  const listing={id:'preview-101',handle:'real-chair',title:'Real chair',description:'',category:'chairs',images:[],published:true,source:'shopify-preview',sourceUpdatedAt:'2026-10-25T09:00:00Z',
+    variants:[{id:'preview-201',title:'Oak',sku:null,pricePaise:null,compareAtPaise:null,available:false,stockPolicy:'unverified'}]};
+  const result=planCatalogueUnion(data,'maple',{products:[listing as never],
+    productBindings:[{source:'keeri:maple',externalId:'keeri:maple:model1',targetId:'preview-101'}],
+    variantBindings:[{source:'keeri:maple',externalId:'keeri:maple:variant1',targetId:'preview-201'}]});
   assert.equal(result.products.length,1);
   assert.equal(result.products[0]!.handle,'real-chair');
   assert.deepEqual(result.products[0]!.sourceTaxonomy,{productType:'chair',category:'Dining',subCategory:null});
@@ -43,7 +46,7 @@ test('customer details and approved storefront image references survive the comb
  const data=fixture();const m=data.models[0]!;
  const content={details:'Solid oak frame',materials:'Oak and linen',dimensions:'80 x 60 cm',careInstructions:'Dry cloth',warranty:'One year'};
  const input={...data,models:[{...m,content}],publicMedia:data.publicMedia.map(a=>({...a,url:`https://store.maplefurnishers.com/media/keeri/${a.assetId}.webp`}))};
- const result=planCatalogueUnion(shopifyFixture(),input,'maple');
+ const result=planCatalogueUnion(input,'maple');
  const p=result.products.find(p=>p.id.startsWith('keeri:'))!;
  assert.deepEqual(p.sourceDetails,content);
  assert.ok(p.images[0]?.startsWith('https://store.maplefurnishers.com/media/keeri/'));

@@ -6,7 +6,6 @@ import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-r
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
-import { withProductImages } from "@/lib/shopify-copies";
 import { JsonLd } from "@/components/store/json-ld";
 import { breadcrumbStructuredData, productMetadata, productStructuredData, seoSettings } from "@/lib/seo";
 import { collectionTitles } from "@/lib/collections";
@@ -49,10 +48,8 @@ export default async function ProductPage({
     .map((card) => getProduct(card.handle).catch(() => null))))
     .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
   const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
-  const presentation =
-    product.source === "shopify-preview" && Object.hasOwn(presentationData, handle)
-      ? withProductImages(presentationData[handle as keyof typeof presentationData], product.images)
-      : undefined;
+  // Hand-placed white-background cut-outs (local files) for the pieces Keeri has none for, by their unchanged address.
+  const presentation = Object.hasOwn(presentationData, handle) ? presentationData[handle as keyof typeof presentationData] : undefined;
   const seo = seoSettings(process.env);
   const trail: [string, string][] = [["Home", "/"],
     ...(product.category ? [[collectionTitles[product.category] ?? "Furniture", `/collections/${product.category}`] as [string, string]] : []),

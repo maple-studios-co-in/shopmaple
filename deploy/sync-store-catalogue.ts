@@ -1,5 +1,6 @@
-import { readFile, stat } from "node:fs/promises";
 import { pullCatalogueUnion } from "../apps/api/src/union-live-sync.js";
+// Keeri is the store's only product source (owner, 11 Nov 2026). SHOPIFY_CATALOGUE_FILE, which once named a pinned
+// Shopify export to merge, is no longer read: a server that still sets it syncs exactly as one that does not.
 try {
   const args = process.argv.slice(2);
   if (
@@ -11,17 +12,12 @@ try {
     KEERI_ORIGIN: origin,
     KEERI_CATALOGUE_TOKEN: token,
     KEERI_TENANT_ID: tenantId,
-    SHOPIFY_CATALOGUE_FILE: file,
   } = process.env;
-  if (!origin || !token || !tenantId || !file)
-    throw new Error("MISSING_CONFIGURATION");
-  if ((await stat(file)).size > 50 * 1024 * 1024)
-    throw new Error("SNAPSHOT_TOO_LARGE");
+  if (!origin || !token || !tenantId) throw new Error("MISSING_CONFIGURATION");
   const result = await pullCatalogueUnion({
     origin,
     token,
     tenantId,
-    shopify: JSON.parse(await readFile(file, "utf8")),
     databaseUrl: process.env.DATABASE_URL,
     approval: process.env.APPROVE_STORE_CATALOGUE,
     apply: args.includes("--apply"),

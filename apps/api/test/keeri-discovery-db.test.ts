@@ -5,7 +5,6 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { syncCatalogueUnion } from "../src/catalogue-union-sync.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";
-import { shopifyPricedFixture } from "./fixtures/shopify-admin.js";
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test" || !["127.0.0.1", "localhost"].includes(new URL(url).hostname))
@@ -22,7 +21,7 @@ beforeEach(async () => {
 });
 
 // Exercises the actual importer, persistence and HTTP collection route together.
-test("sparse Keeri-only products remain discoverable by category, page and search beside Shopify products", async () => {
+test("sparse Keeri products remain discoverable by category, page and search", async () => {
   const keeri = v2Fixture();
   const original = keeri.models[0]!;
   keeri.publicMedia = [];
@@ -34,14 +33,18 @@ test("sparse Keeri-only products remain discoverable by category, page and searc
       variants: [{ ...original.variants[0]!, id: `variant-${suffix}`, modelId: `model-${suffix}`, sku: null, prices: [], media: [] }],
     };
   });
+  keeri.models[5]!.variants[0]!.prices = [
+    { kind: "mrp", amount: 10462, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+    { kind: "store_price", amount: 12345, currency: "INR", updatedAt: "2026-10-25T09:30:00Z" },
+  ];
   keeri.publication = keeri.models.map(model => ({ modelId: model.id, handle: `keeri-${model.id}`, category: null }));
-  const imported = await syncCatalogueUnion(db, shopifyPricedFixture(), keeri, "maple");
-  assert.equal(imported.totalProducts, 28);
-  assert.equal(imported.totalVariants, 28);
-  assert.equal(imported.mergedModels, 0);
+  const imported = await syncCatalogueUnion(db, keeri, "maple");
+  assert.equal(imported.totalProducts, 27);
+  assert.equal(imported.totalVariants, 27);
+  assert.equal(imported.formerShopifyListings, 0);
   const first = await request(app).get("/api/catalogue/collections/chairs");
   assert.equal(first.status, 200);
-  assert.equal(first.body.total, 27);
+  assert.equal(first.body.total, 26);
   assert.equal(first.body.products.length, 24);
   assert.equal(first.body.products[0].handle, "keeri-00");
   assert.equal(first.body.products[23].handle, "keeri-23");
@@ -50,7 +53,7 @@ test("sparse Keeri-only products remain discoverable by category, page and searc
   assert.equal(first.body.checkoutEnabled, false);
   const last = await request(app).get("/api/catalogue/collections/chairs?page=2");
   assert.equal(last.status, 200);
-  assert.deepEqual(last.body.products.map((p: { handle: string }) => p.handle), ["keeri-24", "keeri-25", "real-chair"]);
+  assert.deepEqual(last.body.products.map((p: { handle: string }) => p.handle), ["keeri-24", "keeri-25"]);
   const searched = await request(app).get("/api/catalogue/collections/chairs?q=Keeri%2025&page=999");
   assert.equal(searched.status, 200);
   assert.equal(searched.body.query.page, 1);
@@ -58,11 +61,11 @@ test("sparse Keeri-only products remain discoverable by category, page and searc
   assert.equal(searched.body.products[0].handle, "keeri-25");
   const unclassified = await request(app).get("/api/catalogue/collections/all?q=Keeri%2026");
   assert.equal(unclassified.status, 200);
-  assert.equal(unclassified.body.collectionTotal, 28);
+  assert.equal(unclassified.body.collectionTotal, 27);
   assert.equal(unclassified.body.products[0].handle, "keeri-26");
   const priceFilter = await request(app).get("/api/catalogue/collections/chairs?max=200");
   assert.equal(priceFilter.status, 200);
-  assert.deepEqual(priceFilter.body.products.map((p: { handle: string }) => p.handle), ["real-chair"]);
+  assert.deepEqual(priceFilter.body.products.map((p: { handle: string }) => p.handle), ["keeri-05"]);
   // Fallback addresses are renamed to the product names, and the old ones redirect.
   assert.equal((await request(app).get("/api/products/keeri-model-25")).headers.location, "/api/products/keeri-25");
   const detail = await request(app).get("/api/products/keeri-25");

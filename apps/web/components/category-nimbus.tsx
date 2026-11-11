@@ -2,41 +2,29 @@ import { Fragment } from "react";
 import { ContentImage as Image } from "@/components/content-image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import type { NimbusPageContent, NimbusSectionKey, TemplateMedia } from "@shopmaple/contracts";
+import type { NimbusPageContent, NimbusSectionKey, TemplateMedia, TemplateMediaItem, TemplateMediaKey } from "@shopmaple/contracts";
 import {
   CategoryProducts,
   CategoryValues,
   landingCollectionHref,
 } from "@/components/category-landing";
-import { CategoryVideo, CategorySlideshow } from "@/components/category-controls";
+import { CategorySlideshow } from "@/components/category-controls";
 import { HomeProjectForm } from "@/components/home-forms";
 import nimbus from "@/data/landing-nimbus.json";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
-import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
+import { currentHandles } from "@/lib/retired-products";
+import { artworkProducts, resolveArtwork, type ProductPhotos } from "@/lib/template-media-defaults";
+import { defaultNimbusPage, resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 
 const section = (key: string) => nimbus.sections.find((item) => item.key === key)!;
-// The promise icons: the store's copies of Shopify's Custom_F.svg, Del_mf.svg, Icon_homepage.svg and Maple_Banner_5.svg.
-export const maplePromises = [
-  { title: "Fully Customizable", image: "/media/shopify/810bf424e7f5965dcc4965652150f519.svg" },
-  { title: "Delivery Across India", image: "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg" },
-  { title: "In-House Crafted in Delhi", image: "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg" },
-  { title: "36-Month Warranty", image: "/media/shopify/5312458c26254d733cd7067921fcd4da.svg" },
-];
-const promiseImages = {
-  custom: "/media/shopify/810bf424e7f5965dcc4965652150f519.svg",
-  delivery: "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg",
-  craft: "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg",
-  warranty: "/media/shopify/5312458c26254d733cd7067921fcd4da.svg",
-};
-export function MaplePromises({ items }: { items?: NimbusPageContent["promises"] } = {}) {
-  const promises = items
-    ? items.map(item => ({ key: item.key, title: item.title, image: promiseImages[item.key] }))
-    : maplePromises.map(item => ({ ...item, key: item.image }));
+/**
+ * The promise strip's words. Its icons were Shopify files and left the store with it (owner, 11 Nov 2026); the strip
+ * reads as words alone.
+ */
+export function MaplePromises({ items = defaultNimbusPage.promises }: { items?: NimbusPageContent["promises"] } = {}) {
   return (
     <ul className="landing-promises home-container">
-      {promises.map((item) => (
+      {items.map((item) => (
         <li key={item.key}>
-          <Image src={item.image} alt="" width={70} height={70} />
           <span>{item.title}</span>
         </li>
       ))}
@@ -44,30 +32,56 @@ export function MaplePromises({ items }: { items?: NimbusPageContent["promises"]
   );
 }
 
+/** A still in a film's place: the page's films were on Shopify, and films cannot be uploaded yet. */
+function NimbusStill({ artwork, className = "" }: { artwork: TemplateMediaItem; className?: string }) {
+  return (
+    <div className={`landing-video landing-still ${className}`.trim()} data-nimbus-still>
+      <picture>
+        {artwork.mobileImage && artwork.mobileImage !== artwork.image && <source media="(max-width:749px)" srcSet={artwork.mobileImage} />}
+        <img src={artwork.image} alt={artwork.alt} loading="lazy" />
+      </picture>
+    </div>
+  );
+}
+
+/** Every placement the page draws that a Keeri product's photo can stand in for. */
+const nimbusArtworkKeys: TemplateMediaKey[] = [
+  "nimbus-hero-poster", "nimbus-craft-poster", "nimbus-room-bedroom", "nimbus-room-living", "nimbus-room-dining",
+  "nimbus-room-collection", "nimbus-origin", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-project",
+];
+/** The Keeri products whose photos the page needs where staff have uploaded none (lib/product-photos.ts). */
+export function nimbusArtworkProducts(_content: NimbusPageContent | undefined, media?: TemplateMedia): string[] {
+  return artworkProducts(nimbusArtworkKeys, media);
+}
+
 const roomTileHandles = {
   bedroom: "bedroom-nimbus",
   living: "living-room-nimbus",
   dining: "dining-room-nimbus",
 };
-const principleImageIndices = { comfort: 0, silhouettes: 1, luxury: 2, spaces: 3 };
 
-export function NimbusLanding({ content, media }: { content?: NimbusPageContent; media?: TemplateMedia } = {}) {
+/**
+ * The Nimbus page. Its artwork is staff's upload where there is one, else a Keeri product's photo from `photos`
+ * (nimbusArtworkProducts); a placement with neither is left out, as is a section left with nothing to show.
+ */
+export function NimbusLanding({ content, media, photos }: { content?: NimbusPageContent; media?: TemplateMedia; photos?: ProductPhotos } = {}) {
   const page = resolveNimbusPageContent(content);
-  const hero = section("hero_section_pfEKq3");
-  const bento = section("blocks_6WyRMx");
-  const origin = resolveTemplateMedia("nimbus-origin", media);
-  const heroPoster = resolveTemplateMedia("nimbus-hero-poster", media);
-  const craftPoster = resolveTemplateMedia("nimbus-craft-poster", media);
-  const principles = section("section_aGJjhK");
-  const project = resolveTemplateMedia("nimbus-project", media);
+  const origin = resolveArtwork("nimbus-origin", media, photos);
+  const heroPoster = resolveArtwork("nimbus-hero-poster", media, photos);
+  const craftPoster = resolveArtwork("nimbus-craft-poster", media, photos);
+  const project = resolveArtwork("nimbus-project", media, photos);
   const tiles = [
-    ...page.roomTiles.map(item => ({ ...item, handle: roomTileHandles[item.key], artwork: resolveTemplateMedia(`nimbus-room-${item.key}`, media, item.title) })),
-    { key: "collection", title: "", handle: "nimbus", artwork: resolveTemplateMedia("nimbus-room-collection", media) },
-  ];
+    ...page.roomTiles.map(item => ({ ...item, handle: roomTileHandles[item.key], artwork: resolveArtwork(`nimbus-room-${item.key}`, media, photos, item.title) })),
+    { key: "collection", title: "", handle: "nimbus", artwork: resolveArtwork("nimbus-room-collection", media, photos) },
+  ].flatMap(tile => (tile.artwork ? [{ ...tile, artwork: tile.artwork }] : []));
+  const slides = page.roomSlides.flatMap(item => {
+    const artwork = resolveArtwork(`nimbus-slide-${item.key}`, media, photos, item.label);
+    return artwork ? [{ key: item.key, alt: artwork.alt, desktop: artwork.image, mobile: artwork.mobileImage ?? artwork.image }] : [];
+  });
   function renderSection(key: NimbusSectionKey) {
     switch (key) {
       case "hero":
-        return <CategoryVideo className="landing-nimbus-hero" desktop={{ ...hero.videos[0]!, poster: heroPoster.image }} mobile={{ ...hero.videos[1]!, poster: heroPoster.mobileImage! }} label={heroPoster.alt} />;
+        return heroPoster && <NimbusStill className="landing-nimbus-hero" artwork={heroPoster} />;
       case "intro":
         return (
           <header className="landing-nimbus-intro home-container">
@@ -77,8 +91,8 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
         );
       case "rooms-grid":
         return (
-          <section className="landing-nimbus-bento" aria-label="Explore Nimbus rooms">
-            <CategoryVideo desktop={{ ...bento.videos[0]!, poster: craftPoster.image }} label={craftPoster.alt} />
+          (craftPoster || tiles.length > 0) && <section className="landing-nimbus-bento" aria-label="Explore Nimbus rooms">
+            {craftPoster && <NimbusStill artwork={craftPoster} />}
             <div className="landing-nimbus-tiles">
               {tiles.map(tile => (
                 <Link href={landingCollectionHref(`/collections/${tile.handle}`)} key={tile.key} aria-label={tile.title || "Shop the Nimbus collection"}>
@@ -97,7 +111,7 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
         return (
           <>
             <section className="landing-media-content landing-nimbus-origin">
-              <Image src={origin.image} alt={origin.alt} width={1200} height={1200} sizes="(max-width:749px) 100vw, 50vw" />
+              {origin && <Image src={origin.image} alt={origin.alt} width={1200} height={1200} sizes="(max-width:749px) 100vw, 50vw" />}
               <div>
                 <p className="home-eyebrow">{page.origin.eyebrow}</p>
                 <h2>{page.origin.heading}</h2>
@@ -111,22 +125,13 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
           <>
             <section className="landing-nimbus-principles">
               <h2>{page.principles.heading}</h2>
-              <CategoryValues items={page.principles.items.map(item => ({
-                key: item.key, title: item.title, body: item.body,
-                image: principles.images[principleImageIndices[item.key]]!,
-              }))} />
+              {/* The principles' icons were Shopify files; the principles read as words alone. */}
+              <CategoryValues items={page.principles.items.map(item => ({ key: item.key, title: item.title, body: item.body }))} />
             </section>
           </>
         );
       case "rooms-slideshow":
-        return (
-          <>
-            <CategorySlideshow slides={page.roomSlides.map(item => {
-              const artwork = resolveTemplateMedia(`nimbus-slide-${item.key}`, media, item.label);
-              return { key: item.key, alt: artwork.alt, desktop: artwork.image, mobile: artwork.mobileImage! };
-            })} />
-          </>
-        );
+        return slides.length > 0 && <CategorySlideshow slides={slides} />;
       case "series":
         return (
           <>
@@ -134,7 +139,7 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
               <p>{page.series.eyebrow}</p>
               <h2>{page.series.heading}</h2>
             </header>
-            <CategoryProducts handles={section("product_list_fTpw38").handles} grid />
+            <CategoryProducts handles={currentHandles(section("product_list_fTpw38").handles)} grid />
           </>
         );
       case "project":
@@ -145,7 +150,7 @@ export function NimbusLanding({ content, media }: { content?: NimbusPageContent;
               <p>{page.project.body}</p>
               <HomeProjectForm />
             </div>
-            <Image src={project.image} alt={project.alt} width={1000} height={1000} sizes="(max-width:749px) 100vw, 45vw" />
+            {project && <Image src={project.image} alt={project.alt} width={1000} height={1000} sizes="(max-width:749px) 100vw, 45vw" />}
           </section>
         );
       case "promises":

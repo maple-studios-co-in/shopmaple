@@ -2,11 +2,16 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { Prisma, type PrismaClient, type ShopContent } from "@prisma/client";
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { storefrontContentSchema, previewTokenPattern } from "@shopmaple/contracts";
+import { storefrontContentSchema, previewTokenPattern, withoutShopifyMedia } from "@shopmaple/contracts";
 import { HttpError } from "../cart.js";
 import { prepareMediaForPublication } from "./media.js";
 import { normalizeArticlePublicationDates, validateAuthoredContentLinks } from "./authored-articles.js";
 import { requireStaff } from "./auth.js";
+/**
+ * Content saved before the store left Shopify may still name Shopify's files; it is read without them (see
+ * withoutShopifyMedia), so no answer names Shopify and the next save or publish drops them for good.
+ */
+const readStored = (value: unknown) => storefrontContentSchema.parse(withoutShopifyMedia(value, storefrontContentSchema));
 const documentId = "storefront";
 const version = z.number().int().min(0).max(2000000000);
 const expectedSchema = z.object({ expectedVersion: version }).strict();
@@ -48,7 +53,7 @@ function serialize(row: ShopContent | null) {
   return row
     ? {
         version: row.version,
-        draft: row.draft,
+        draft: row.draft === null ? null : withoutShopifyMedia(row.draft, storefrontContentSchema),
         publishedVersion: row.publishedVersion,
         updatedAt: row.updatedAt.toISOString(),
       }
@@ -98,7 +103,7 @@ async function change(
             "CONTENT_REVISION_NOT_FOUND",
             "This revision does not exist.",
           );
-        content = storefrontContentSchema.parse(revision.content);
+        content = readStored(revision.content);
       } else {
         if (!row)
           throw new HttpError(
@@ -106,7 +111,7 @@ async function change(
             "CONTENT_DRAFT_REQUIRED",
             "Save a draft before publishing.",
           );
-        content = storefrontContentSchema.parse(row.draft);
+        content = readStored(row.draft);
       }
       const parsed = storefrontContentSchema.parse(content);
       if (action === "publish") {
@@ -177,7 +182,7 @@ export function registerContentRoutes(
       );
     res.json({
       version: row.publishedVersion,
-      content: storefrontContentSchema.parse(row.published),
+      content: readStored(row.published),
     });
   });
   app.get("/api/admin/content", async (_req, res) =>
@@ -221,7 +226,7 @@ export function registerContentRoutes(
       version: row.version,
       publishedVersion: row.publishedVersion,
       expiresAt: claims.expiresAt.toISOString(),
-      content: storefrontContentSchema.parse(row.draft),
+      content: readStored(row.draft),
     });
   });
   app.get("/api/admin/content/revisions", async (_req, res) => {
@@ -256,7 +261,7 @@ export function registerContentRoutes(
       action: revision.action,
       actorEmail: revision.actor.email,
       createdAt: revision.createdAt.toISOString(),
-      content: storefrontContentSchema.parse(revision.content),
+      content: readStored(revision.content),
     });
   });
 }

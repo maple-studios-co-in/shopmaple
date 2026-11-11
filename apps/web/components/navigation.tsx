@@ -352,7 +352,8 @@ function ProductRail({
     >
       {selection.map((product) => {
         const result = current[product.handle];
-        if (result?.state !== "ready" || !result.product) return null;
+        // The piece's own photo from the catalogue (Keeri's); one the catalogue does not list, or without a photo, is left out.
+        if (result?.state !== "ready" || !result.product?.image) return null;
         const model = result.product;
         return (
           <Link
@@ -362,11 +363,7 @@ function ProductRail({
             onClick={onNavigate}
           >
             <Image
-              src={
-                product.image.startsWith("//")
-                  ? `https:${product.image}`
-                  : product.image
-              }
+              src={model.image!}
               width={260}
               height={260}
               sizes="130px"

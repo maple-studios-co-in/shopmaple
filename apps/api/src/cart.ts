@@ -42,7 +42,8 @@ export async function readCart(
     handle: v.product.handle,
     title: v.product.title,
     variantTitle: v.title,
-    image: v.product.images[0] ?? "",
+    // A product the store no longer lists keeps its line, without its old photo.
+    image: v.product.published ? v.product.images[0] ?? "" : "",
     pricePaise: v.pricePaise,
     quantity,
     lineTotalPaise: v.pricePaise === null ? null : v.pricePaise * quantity,

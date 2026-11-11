@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { test } from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -8,6 +7,7 @@ import { CategoryLanding } from "../components/category-landing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { ShopProvider } from "../components/shop-provider";
 import { storefrontContentSchema } from "@shopmaple/contracts";
+import { cardFixture } from "./support/catalogue-fixtures";
 
 const override = {
   slug: "sofas",
@@ -42,16 +42,22 @@ const override = {
     { key: "bedroom-products", enabled: false },
   ],
 };
+const keeriPhoto = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}-photo.webp`;
+/** The catalogue's cards for the handles asked for that it lists (`listed`), each with its own Keeri photo. */
 async function render(
   slug: "sofas" | "tables" | "chairs",
   content: unknown = defaultStorefrontContent,
+  listed: ReadonlySet<string> | "all" = new Set(),
 ) {
   const previous = globalThis.fetch;
   globalThis.fetch = async (url) => {
     if (String(url).endsWith("/api/content/storefront"))
       return Response.json({ version: 3, content });
-    if (new URL(String(url)).pathname === "/api/catalogue/cards")
-      return Response.json({ products: [], published: true });
+    const address = new URL(String(url));
+    if (address.pathname === "/api/catalogue/cards") {
+      const handles = (address.searchParams.get("handles") ?? "").split(",").filter((handle) => listed === "all" || listed.has(handle));
+      return Response.json({ products: handles.map((handle) => ({ ...cardFixture(handle), image: keeriPhoto(handle) })), published: true });
+    }
     throw new Error(`Unexpected network request: ${String(url)}`);
   };
   try {
@@ -68,46 +74,39 @@ async function render(
     globalThis.fetch = previous;
   }
 }
-// The outdoor sofa banner first published on Shopify, now the store's own copy.
-const outdoorBanner = shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/files/2_-_Sofa_web_banner_Outddor_17dc7073-c9f4-44fe-bd25-b79867474b48.png")!;
-test("category defaults preserve original copy, artwork, local collection links, and enquiry-only source products", async () => {
-  const doc = await render("sofas");
+test("category defaults keep their copy and local collection links; banners and circles show Keeri photos, rails only listed pieces", async () => {
+  // The catalogue lists the outdoor banner's sofa (casaba), one circle's (atrio-sofa) and two rail pieces (sora, nysa).
+  const doc = await render("sofas", defaultStorefrontContent, new Set(["casaba", "atrio-sofa", "sora", "nysa"]));
   assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
   assert.deepEqual(
     [...doc.querySelectorAll(".landing-products h2")].map((n) => n.textContent),
     ["Best Sellers", "Sofas", "Bedrooms", "Living", "Paired Together"],
   );
-  assert.equal(
-    doc.querySelector(
-      '.landing-categories a[href="/collections/wooden-sofas"] h2',
-    )?.textContent,
-    "Wooden Sofas",
+  const wooden = doc.querySelector('.landing-categories a[href="/collections/wooden-sofas"]');
+  assert.equal(wooden?.querySelector("h2")?.textContent, "Wooden Sofas");
+  assert.ok(decodeURIComponent(wooden?.querySelector("img")?.getAttribute("src") ?? "").includes(keeriPhoto("atrio-sofa")), "a circle shows its Keeri product's photo");
+  const recliners = doc.querySelector('.landing-categories a[href="/collections/recliners"]');
+  assert.equal(recliners?.querySelector("h2")?.textContent, "Recliners", "a circle without a listed photo keeps its title and link");
+  assert.equal(recliners?.querySelector("img"), null, "and draws no broken picture");
+  assert.match(doc.querySelector(".landing-values p")?.textContent ?? "", /Where nature begins the story/);
+  assert.equal(doc.querySelector(".landing-values img"), null, "the values read as words: their icons were Shopify files");
+  const banners = [...doc.querySelectorAll(".landing-banner img")].map((n) => decodeURIComponent(n.getAttribute("src") ?? ""));
+  assert.equal(banners.length, 1, "only the banner whose Keeri product is listed is drawn");
+  assert.ok(banners[0]!.includes(keeriPhoto("casaba")));
+  assert.equal(doc.querySelector(".landing-source-product"), null, "no fallback cards from older data");
+  assert.deepEqual(
+    [...doc.querySelectorAll(".landing-products [data-product-card] a[href^='/products/']")].map((n) => n.getAttribute("href")).filter((href, i, all) => all.indexOf(href) === i),
+    ["/products/sora", "/products/nysa"],
+    "rails show only what the catalogue lists",
   );
-  assert.match(
-    doc.querySelector(".landing-values p")?.textContent ?? "",
-    /Where nature begins the story/,
-  );
-  assert.ok(
-    [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      decodeURIComponent(n.getAttribute("src") ?? "").includes(outdoorBanner),
-    ),
-  );
-  assert.ok(
-    doc.querySelector(
-      '.landing-source-product a[href^="/contact?product="]',
-    ),
-  );
-  assert.equal(
-    doc.querySelector('.landing-source-product a[href^="/products/"]'),
-    null,
-  );
+  assert.doesNotMatch(doc.body.innerHTML, /shopify|\/cdn\/shop\//i);
 });
 test("only published category overrides change the selected page while preserving artwork and destinations", async () => {
   const content = {
     ...structuredClone(defaultStorefrontContent),
     landingPages: [override],
   };
-  const doc = await render("sofas", content);
+  const doc = await render("sofas", content, new Set(["casaba"]));
   assert.equal(
     doc.querySelector("h1")?.textContent,
     "Sofas for everyday living",
@@ -142,10 +141,10 @@ test("only published category overrides change the selected page while preservin
     doc.querySelector(".landing-values p")?.textContent,
     "Every grain tells its own story.",
   );
-  assert.ok(
-    [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      decodeURIComponent(n.getAttribute("src") ?? "").includes(outdoorBanner),
-    ),
+  assert.deepEqual(
+    [...doc.querySelectorAll(".landing-banner img")].map((n) => decodeURIComponent(n.getAttribute("src") ?? "").includes(keeriPhoto("casaba"))),
+    [true],
+    "overrides keep the banner's artwork",
   );
   const tables = await render("tables", content);
   assert.equal(tables.querySelector("h1")?.textContent, "Tables");

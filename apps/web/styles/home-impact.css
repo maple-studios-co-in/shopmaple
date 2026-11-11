@@ -724,8 +724,11 @@
 }
 [data-home-section="testimonial"] .home-quote blockquote h3 { order: 1; }
 [data-home-section="testimonial"] .home-quote figcaption { order: 2; }
-[data-home-section="testimonial"] .home-testimonial > video {
+[data-home-section="testimonial"] .home-testimonial > video,
+[data-home-section="testimonial"] .home-testimonial > .home-testimonial-still {
   display: block;
+  height: auto;
+  object-fit: cover;
   width: 100%;
   max-width: 720px;
   max-height: 460px;

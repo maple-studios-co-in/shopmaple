@@ -41,7 +41,7 @@ async function upload(background: string) {
   return response.body.asset as { id: string; url: string; sha256: string; previewUrl: string };
 }
 const details = (slideSrc: string, poster: string, nimbus: string, left: string, right: string) => ({
-  hero: { cta: "Explore", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: key, priceLabel: "From" })), slides: [{ kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4?v=0", poster, alt: "Film", headline: "Hello", intro: "World" }, { kind: "image", src: slideSrc, alt: "Room", headline: "Two", intro: "Slide" }] },
+  hero: { cta: "Explore", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: key, priceLabel: "From" })), slides: [{ kind: "video", src: "/media/films/workshop.mp4", poster, alt: "Film", headline: "Hello", intro: "World" }, { kind: "image", src: slideSrc, alt: "Room", headline: "Two", intro: "Slide" }] },
   difference: { eyebrow: "A", heading: "B", cta: "C", promises: ["a", "b", "c", "d"] },
   nimbus: { heading: "Nimbus", tagline: "Soft", features: ["a", "b", "c", "d"], cta: "Go", slides: [{ heading: "Terra", tagline: "Earthy", features: ["a", "b", "c", "d"], cta: "Go", href: "/collections/all", image: nimbus, alt: "Terra" }] },
   testimonial: { title: "T", paragraphs: ["p"], name: "N", attribution: "A" },

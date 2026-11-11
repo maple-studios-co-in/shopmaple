@@ -57,18 +57,6 @@ test("the help pages' menus turn their arrow up when open", () => {
   assertMenuArrow(contents.querySelector('[data-policy-contents="menu"] summary'), "Jump to a section");
 });
 
-test("the chairs page's questions open from a down arrow that turns up, in place of the browser's sideways triangle", () => {
-  const css = read("../components/legacy-chairs.css");
-  assert.match(css, /\.legacy-chairs \.legacy-chairs-faq summary \{[^}]*list-style: none;/, "the browser's triangle is gone");
-  assert.match(css, /\.legacy-chairs \.legacy-chairs-faq summary::-webkit-details-marker \{\s*display: none;/);
-  const arrow = /\.legacy-chairs \.legacy-chairs-faq summary::before \{([^}]*)\}/.exec(css)?.[1] ?? "";
-  assert.match(arrow, /content: "";/, "an arrow is drawn where the triangle was, before the question");
-  assert.match(arrow, /rotate: 45deg;/, "pointing down while closed");
-  assert.match(arrow, /transition: rotate 0\.5s cubic-bezier\(0\.22, 1, 0\.36, 1\)/, "turning smoothly");
-  assert.match(css, /\.legacy-chairs \.legacy-chairs-faq details\[open\] > summary::before \{\s*rotate: 225deg;/, "and up once open");
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\.legacy-chairs \.legacy-chairs-faq summary::before \{\s*transition: none;/);
-});
-
 test("the main menu's chevron already follows the rule: down while closed, up while its menu is open", () => {
   const css = read("../styles/header-menu.css");
   assert.match(read("../components/navigation.tsx"), /<ChevronDown aria-hidden="true"[^>]*data-menu-chevron/);

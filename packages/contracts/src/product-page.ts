@@ -1,13 +1,11 @@
 import { z } from "zod";
-import { shopifyMediaPathPattern } from "./shopify-media-path";
 
 /**
  * What the product page shows beyond the catalogue copy, as Keeri exports it at the `productPage=1`
  * level (Keeri docs/shopmaple-product-page.md), with Keeri ids already translated to store ids.
  * Nothing here is invented: reviews, counts and batch figures exist only when Keeri sent them.
  */
-/** A public https address, or the store's own copy of a Shopify file (`/media/shopify/<name>`). */
-const httpsUrl = z.union([z.string().regex(shopifyMediaPathPattern), z.url().refine((url) => URL.canParse(url) && new URL(url).protocol === "https:")]);
+const httpsUrl = z.url().refine((url) => new URL(url).protocol === "https:");
 const storeId = z.string().min(1).max(160);
 const measure = z.number().positive().max(10_000).nullable();
 const line = (max: number) => z.string().trim().min(1).max(max);

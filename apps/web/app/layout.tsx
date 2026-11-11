@@ -16,7 +16,6 @@ import "@/styles/campaign-banners.css";
 import "@/styles/product-parity.css";
 import "@/styles/collection-parity.css";
 import "@/styles/landing-parity.css";
-import "@/components/legacy-chairs.css";
 import "@/styles/navigation-parity.css";
 import "@/styles/site-chrome.css";
 import "@/styles/suggested-pages.css";

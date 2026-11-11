@@ -2,10 +2,8 @@ import { notFound } from "next/navigation";
 import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
 import { CollectionListing } from "@/components/collection-listing";
 import { CollectionHero } from "@/components/store/collection-hero";
-import { LegacyChairs, legacyChairHandles } from "@/components/legacy-chairs";
-import { getCollectionPage, getProductCards } from "@/lib/catalog";
+import { getCollectionPage } from "@/lib/catalog";
 import { collectionIntro, heroTitle } from "@/lib/collection-intro";
-import { heroPhotosFor } from "@/lib/collection-hero-photos";
 import {
   collectionTitles,
   collectionQuery,
@@ -36,39 +34,11 @@ export default async function Collection({
 }) {
   const { handle } = await params;
   if (!Object.hasOwn(collectionTitles, handle)) notFound();
-  const rawQuery = await searchParams;
-  const query = collectionQuery(rawQuery);
-  // Explicit browsing controls retain the historical chair grid, including
-  // empty or malformed values handled by the existing query normalizer.
-  const browsingRequested = [
-    "q",
-    "sort",
-    "sort_by",
-    "availability",
-    "min",
-    "max",
-    "category",
-    "material",
-    "colour",
-    "wmin",
-    "wmax",
-    "dmin",
-    "dmax",
-    "page",
-  ].some((key) => Object.hasOwn(rawQuery, key));
-  const showChairEditorial = handle === "chairs" && !browsingRequested;
-  // The hero's photo for the whole range or a category (lib/collection-hero-photos), read with the listing; a failed
-  // read leaves the collection's own first photo in place.
-  const photos = showChairEditorial ? [] : heroPhotosFor(handle === "all" ? "all" : categoryHandles.includes(handle) ? handle : null);
-  const [result, editorialProducts, photoCards] = await Promise.all([
-    getCollectionPage(handle, query),
-    showChairEditorial ? getProductCards(legacyChairHandles) : Promise.resolve([]),
-    photos.length ? getProductCards(photos.map((photo) => photo.handle)).catch(() => []) : Promise.resolve([]),
-  ]);
-  const chosen = photos.map((photo) => ({ photo, card: photoCards.find((card) => card.handle === photo.handle) })).find((entry) => entry.card);
-  const cover = chosen
-    ? { image: chosen.photo.image, title: chosen.card!.title, handle: chosen.card!.handle, pricePaise: chosen.card!.pricePaise, priceFrom: chosen.card!.priceFrom, width: chosen.photo.width, position: chosen.photo.position }
-    : result.facets?.cover ?? null;
+  const query = collectionQuery(await searchParams);
+  // Every collection, chairs included, opens on its listing (owner, 11 Nov 2026): the older chairs editorial was drawn
+  // from Shopify's artwork and products and left with them. The hero shows the collection's first piece with a photo.
+  const result = await getCollectionPage(handle, query);
+  const cover = result.facets?.cover ?? null;
   const campaign: CampaignKey | undefined = (
     {
       beds: "beds-hero",
@@ -81,8 +51,7 @@ export default async function Collection({
   const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;
   return (
     <>
-      {showChairEditorial && <LegacyChairs products={editorialProducts} />}
-      {!showChairEditorial && <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />}
+      <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />
       {campaign && (
         <div className="landing-banner-frame" data-landing-banner="hero">
           <CampaignBanner campaign={campaign} eager />

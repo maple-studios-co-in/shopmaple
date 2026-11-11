@@ -3,17 +3,22 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { productSchema } from "@shopmaple/contracts";
 import { planCatalogueUnion } from "./catalogue-union.js";
 import { reviewSummary } from "./review-summary.js";
+/**
+ * Applies Keeri's catalogue in one transaction (see planCatalogueUnion). The watermark (`union:<tenant>`) refuses an
+ * older snapshot and replays the same one; a store product that Keeri no longer publishes, including every former
+ * Shopify-only listing, is unpublished with its variants rather than deleted, so carts keep valid references and see the
+ * line as no longer available.
+ */
 export async function syncCatalogueUnion(
   db: PrismaClient,
-  shopify: unknown,
   keeri: unknown,
   tenantId: string,
 ) {
-  const validated = planCatalogueUnion(shopify, keeri, tenantId);
+  const validated = planCatalogueUnion(keeri, tenantId);
   const source = `union:${tenantId}`;
   const capturedAt = new Date(validated.capturedAt);
   const payloadHash = createHash("sha256")
-    .update(JSON.stringify({ shopify, keeri }))
+    .update(JSON.stringify({ keeri }))
     .digest("hex");
   return db.$transaction(
     async (tx) => {
@@ -27,7 +32,7 @@ export async function syncCatalogueUnion(
         tx.variantSourceIdentity.findMany(),
         tx.productHandleAlias.findMany({ select: { handle: true, productId: true } }),
       ]);
-      const plan = planCatalogueUnion(shopify, keeri, tenantId, {
+      const plan = planCatalogueUnion(keeri, tenantId, {
         products: rows.map((p) =>
           productSchema.parse({
             ...p,
@@ -50,7 +55,7 @@ export async function syncCatalogueUnion(
         if (previous.capturedAt.getTime() === capturedAt.getTime()) {
           if (previous.payloadHash !== payloadHash)
             throw new Error("CONFLICTING_UNION_SNAPSHOT");
-          return { replayed: true, ...plan.report };
+          return { replayed: true, retiredProducts: 0, ...plan.report };
         }
       }
       for (const product of plan.products) {
@@ -149,8 +154,8 @@ export async function syncCatalogueUnion(
         where: { product: omitted },
         data: { published: false, available: false },
       });
-      await tx.product.updateMany({
-        where: omitted,
+      const retired = await tx.product.updateMany({
+        where: { ...omitted, published: true },
         data: { published: false },
       });
       await tx.catalogueSyncState.upsert({
@@ -158,7 +163,7 @@ export async function syncCatalogueUnion(
         create: { source, capturedAt, payloadHash },
         update: { capturedAt, payloadHash, importedAt: new Date() },
       });
-      return { replayed: false, ...plan.report };
+      return { replayed: false, retiredProducts: retired.count, ...plan.report };
     },
     { timeout: 60000, isolationLevel: "ReadCommitted" },
   );

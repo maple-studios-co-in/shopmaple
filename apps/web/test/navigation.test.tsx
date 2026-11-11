@@ -24,7 +24,9 @@ beforeEach(() => {
     const url = String(input);
     assert.match(url, /^\/api\/catalogue\/cards\/[a-z0-9-]+$/);
     const handle = url.split("/").at(-1)!;
-    return Response.json(cardEnvelope(handle, handle));
+    const envelope = cardEnvelope(handle, handle);
+    // Each featured piece's own Keeri photo, as the catalogue sends it; the menu shows nothing without one.
+    return Response.json({ ...envelope, product: { ...envelope.product, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp` } });
   };
 });
 afterEach(() => { globalThis.fetch = originalFetch; });
@@ -240,7 +242,7 @@ for (const living of [false, true]) {
         await act(async () => trigger.click());
       }
       const product = document.querySelector<HTMLAnchorElement>(".maple-menu-product")!;
-      assert.equal(product.getAttribute("href"), living ? "/products/morik-media-unit" : "/products/veyra-chest-of-drawers");
+      assert.equal(product.getAttribute("href"), living ? "/products/morik" : "/products/aileron-chest");
       await activateLink(product);
       assert.equal(document.querySelector("dialog")!.open, false, "selected product must not remain covered by the drawer");
       assert.equal(document.body.style.overflow, "scroll");

@@ -64,13 +64,14 @@ test("imported indentation reads as one space, as it does on the storefront", ()
 test("pasted content the store would refuse is cleaned: off-site images go, control characters go, words stay", () => {
   const back = fromEditorDoc({ type: "doc", content: [
     { type: "image", attrs: { src: "https://elsewhere.example/x.png", alt: "x" } },
+    { type: "image", attrs: { src: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.png", alt: "Shopify" } },
     { type: "paragraph", content: [{ type: "text", text: "Line\u000bbreak\u0008 here" }] },
   ] });
   assert.deepEqual(back, [{ tag: "p", children: ["Linebreak here"] }]);
 });
 
 test("an image inside a heading is kept, after the heading", () => {
-  const src = "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.png";
+  const src = "/media/home/editorial-right.webp";
   const back = roundTrip([{ tag: "h2", children: ["Care", { tag: "img", src, alt: "Care", children: [] }] }]);
   assert.deepEqual(back, [{ tag: "h2", children: ["Care"] }, { tag: "img", src, alt: "Care", children: [] }]);
 });

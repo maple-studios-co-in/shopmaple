@@ -91,7 +91,7 @@ test("a number shows its collection and the others step back", () => {
 });
 
 test("staff artwork that carries its own lettering gets no live word on top, only a heading for readers", () => {
-  const page = doc(<HomeNimbus content={content(undefined)} media={[{ key: "home-nimbus", image: "https://shop.maplefurnishers.com/cdn/shop/files/custom-nimbus.webp", alt: "Staff artwork" }]} />);
+  const page = doc(<HomeNimbus content={content(undefined)} media={[{ key: "home-nimbus", image: "/media/uploads/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.webp", alt: "Staff artwork" }]} />);
   assert.equal(page.querySelector("[data-nimbus-word]"), null);
   assert.equal(page.querySelector("[data-nimbus-title]"), null);
   assert.equal(page.querySelector("h2.sr-only[data-nimbus-heading]")?.textContent, "The Nimbus Collection");

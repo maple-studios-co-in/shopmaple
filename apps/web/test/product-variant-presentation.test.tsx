@@ -15,7 +15,7 @@ dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; 
 const product: Product = {
   id: "aero", handle: "aero-dining-chair", title: "Aero Dining Chair", description: "A dining chair", category: "chairs",
   images: ["https://example.com/blue.webp", "https://example.com/side.webp"],
-  published: true, source: "shopify-preview", sourceUpdatedAt: "2026-10-26T00:00:00Z",
+  published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z",
   variants: [
     { id: "catalogue-nordic", title: "Nordic Ivory", sku: "AERO-NI", pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" },
     { id: "catalogue-taupe", title: "Desert Taupe", sku: "AERO-DT", pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" },
@@ -25,7 +25,9 @@ const product: Product = {
     { id: "preview-slate", title: "Slate Modern", sku: "AERO-SM-03", pricePaise: 2360000, compareAtPaise: null, available: false, stockPolicy: "unverified" },
   ],
 };
+// Option photos are each Keeri variant's own photos (the hand-made Shopify mapping is gone): `images` gives options theirs.
 const mapped = { "preview-atlantic": product.images[0]! };
+const withPhotos = (value: Product, photos: Record<string, string>): Product => ({ ...value, variants: value.variants.map(v => photos[v.id] ? { ...v, images: [photos[v.id]!] } : v) });
 async function mount(check: (requests: string[], replacements: string[]) => Promise<void>, options: {
   initialVariant?: string; images?: Record<string, string>; value?: Product;
 } = {}) {
@@ -38,8 +40,7 @@ async function mount(check: (requests: string[], replacements: string[]) => Prom
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace(href: string) { replacements.push(href); }, prefetch() {} };
   try {
     await act(async () => root.render(<ShopProvider><AppRouterContext.Provider value={router}>
-      <ProductDetail product={options.value ?? product} initialVariant={options.initialVariant}
-        presentation={{ variantImages: options.images ?? mapped, reviewLabel: null }} />
+      <ProductDetail product={withPhotos(options.value ?? product, options.images ?? mapped)} initialVariant={options.initialVariant} />
     </AppRouterContext.Provider></ShopProvider>));
     await check(requests, replacements);
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
@@ -65,24 +66,25 @@ test("default chooses the mapped priced Deep Atlantic option for cart selection"
     assert.deepEqual(requests, ["GET /api/cart"]);
   });
 });
-test("invalid query and invalid image mapping fall back to a known priced option", async () => {
+test("an invalid query falls back to a known priced option, even one without a photo of its own", async () => {
   await mount(async () => {
     assert.equal(selected(), "preview-atlantic");
-    assert.ok(notice());
-    assert.equal(tile("catalogue-nordic").querySelector("img"), null);
-  }, { initialVariant: "unknown", images: { "catalogue-nordic": "https://example.com/not-in-gallery.webp" } });
+    assert.ok(notice(), "the priced option has no photo of its own");
+    assert.ok(tile("catalogue-nordic").querySelector("img"), "the unpriced option shows its own photo");
+  }, { initialVariant: "unknown", images: { "catalogue-nordic": product.images[1]! } });
 });
 test("validated imagery takes priority over an earlier priced option", async () => {
   await mount(async () => { assert.equal(selected(), "preview-atlantic"); },
     { value: { ...product, variants: product.variants.map(v => v.id === "catalogue-nordic" ? { ...v, pricePaise: 1000000 } : v) } });
 });
-test("selecting an unmapped option keeps the product gallery and discloses the missing photo", async () => {
+test("selecting an option without its own photo shows the product's shared photos and discloses the missing photo", async () => {
   await mount(async (_requests, replacements) => {
     await act(async () => tile("preview-atlantic").querySelector("input")!.click());
     assert.equal(notice(), undefined);
     await act(async () => tile("catalogue-nordic").querySelector("input")!.click());
     assert.ok(notice());
-    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/blue.webp");
+    // blue.webp is Deep Atlantic's own photo; the photos no option claims are the ones every option shares.
+    assert.equal(document.querySelector("[data-main-image] img")?.getAttribute("src"), "https://example.com/side.webp");
     assert.ok(tile("catalogue-nordic").querySelector("[data-variant-placeholder]"), "The option's circle stays empty rather than borrowing another photo");
     assert.equal(tile("catalogue-nordic").querySelector("img"), null);
     assert.equal(new URL(window.location.href).searchParams.get("variant"), "catalogue-nordic");

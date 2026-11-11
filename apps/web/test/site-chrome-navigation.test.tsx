@@ -108,7 +108,7 @@ test("mobile preset keeps current featured selection after rename and Back resto
     const handle = String(input).split("/").at(-1)!;
     const result = cardEnvelope(handle, handle);
     result.product.pricePaise = 432100;
-    return Response.json(result);
+    return Response.json({ ...result, product: { ...result.product, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp` } });
   };
   const root = createRoot(document.getElementById("root")!);
   const value = customChrome();
@@ -144,7 +144,7 @@ test("mobile preset keeps current featured selection after rename and Back resto
       [...document.querySelectorAll(".maple-menu-product")].map((e) =>
         e.getAttribute("href"),
       ),
-      ["/products/morik-media-unit", "/products/zylen-media-unit"],
+      ["/products/morik", "/products/zylen"],
     );
     assert.match(
       document.querySelector(".maple-menu-product")!.textContent!,

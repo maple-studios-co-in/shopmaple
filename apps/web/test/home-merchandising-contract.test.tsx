@@ -57,7 +57,7 @@ test("merchandising keeps the complete document within the 128 KiB content bound
 test("legacy resolution restores original selections and every resolution isolates nested edits", async () => {
   const { defaultHomeMerchandising, resolveHomeMerchandising } = await import("../lib/home-merchandising-defaults");
   const legacy = resolveHomeMerchandising();
-  assert.deepEqual(legacy.bestsellers, ["aera-swivel-lounge-chair", "aero-dining-chair", "aileron-signature-bed", "aileron-upholstered-bench", "alcyone-7-seater-sofa", "alina-7-seater-sofa"]);
+  assert.deepEqual(legacy.bestsellers, ["avelon-chair", "aero-dining-chair", "aileron", "aileron-bench", "alcyone", "alina"]);
   assert.deepEqual(legacy.chairs, ["caro", "ario", "nola", "tara", "arno", "rollo"]);
   assert.deepEqual(legacy.categories.map(item => item.collectionHandle), ["sofas", "dining-chair", "center-tables", "accent-chair", "beds", "dinings"]);
   assert.deepEqual(legacy.offers.map(item => item.collectionHandle), ["clearance-sale", "minimum-60-off", "best-buy-under-rs-50-000", "furniture-store-under-rs-25-000"]);
