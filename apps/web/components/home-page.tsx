@@ -225,6 +225,7 @@ export function HomePage({ content, photos }: { content: StorefrontDocument; pho
       <HomeTestimonial
         content={details.testimonial}
         media={content.templateMedia}
+        films={content.templateFilms}
         heading={copy.testimonialHeading}
         subheading={copy.testimonialSubheading}
       />

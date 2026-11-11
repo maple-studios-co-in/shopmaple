@@ -229,3 +229,15 @@ test("one slide never advances; leaving the page removes the listener and the ti
     });
   } finally { mock.timers.reset(); }
 });
+
+test("a slide's film covers its poster only while it plays, so reduced motion and paused slides show the poster", async () => {
+  await mountHero(async (browser, document) => {
+    const film = videos(document)[0]!;
+    assert.equal(film.hasAttribute("data-playing"), false, "nothing plays under reduced motion: the poster shows");
+    await browser.reduce(false);
+    await browser.fire(film, "playing");
+    assert.equal(film.hasAttribute("data-playing"), true, "a playing film covers its poster");
+    await browser.fire(film, "pause");
+    assert.equal(film.hasAttribute("data-playing"), false, "a paused film uncovers it");
+  }, { reduced: true });
+});

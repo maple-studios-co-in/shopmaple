@@ -6,6 +6,7 @@ import nimbus from "@/data/landing-nimbus.json";
 import type { CollectionIcon, CollectionLanding, CollectionMedia } from "@/lib/collection-landing";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { collectionFilm, withFilm } from "@/lib/template-films";
 
 const section = (key: string) => nimbus.sections.find(item => item.key === key)!;
 const intro = section("section_E3gzag");
@@ -208,17 +209,18 @@ const promiseIcons: readonly CollectionIcon[] = ["ruler", "hammer", "truck"];
 const enquiry = (subject: string) => `/contact?${new URLSearchParams({ product: subject })}#contact-enquiry`;
 
 /**
- * The Nimbus page, ready for the collection template: the staff words, the Nimbus artwork slots, the store's customer
- * email from the footer settings and the edit's pieces as the catalogue has them. The page has no film: Nimbus's films
- * were Shopify files and left the store with it, and films cannot be uploaded yet (owner, 11 Nov 2026).
+ * The Nimbus page, ready for the collection template: the staff words, the Nimbus artwork slots, the film staff chose
+ * (Artwork → Nimbus; the Shopify films left with Shopify, so without one there is no film link), the store's customer email
+ * from the footer settings and the edit's pieces as the catalogue has them.
  */
-export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "siteChrome">, pieces: readonly (NimbusPiece | null)[] = []): CollectionLanding {
+export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "templateFilms" | "siteChrome">, pieces: readonly (NimbusPiece | null)[] = []): CollectionLanding {
   const page = resolveNimbusPageContent(site.nimbusPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
     return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt };
   };
   const sections = page.sections.filter(item => item.enabled).map(item => item.key);
+  const hero = media("nimbus-hero-poster");
   return {
     key: "nimbus",
     title: page.title,
@@ -229,7 +231,8 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       body: page.hero.body,
       // "Discover Nimbus" glides to the edit; with the edit hidden it opens the whole collection.
       cta: { label: page.hero.cta, href: sections.includes("pieces") ? "#nimbus-pieces" : "/collections/nimbus" },
-      media: media("nimbus-hero-poster"),
+      media: hero,
+      ...withFilm(collectionFilm("nimbus-hero", site.templateFilms, { label: page.hero.film ?? defaultNimbusPage.hero.film!, title: `${page.title} film`, poster: hero.src })),
     },
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: roomLinks[index]! })),
     philosophy: { ...page.philosophy },

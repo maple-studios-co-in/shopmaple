@@ -26,7 +26,7 @@ export type CollectionLanding = {
     /** The light button ("Discover Nimbus"). */
     cta: CollectionLink;
     media: CollectionMedia;
-    /** "Watch collection film / 00:08": opens the film over the page. Omit for a page without a film (Terra). */
+    /** "Watch collection film / 00:08": opens the film staff chose (Artwork → Nimbus / Terra) over the page; absent without one. */
     film?: CollectionFilm;
   };
   /** "01 Living / 02 Dining / 03 Bedroom": numbered from 01 in order. Each goes to a collection or a room below. */
@@ -86,7 +86,7 @@ export type CollectionLink = { label: string; href: string };
  * blurred copy of itself; the frame's shape comes from the design.
  */
 export type CollectionMedia = {
-  /** A local `/media/...` file or an approved Shopify CDN address. */
+  /** A local `/media/...` file: one bundled with the store or an image from the media library. */
   src: string;
   /** A narrower crop for phones (up to 749px wide), when the slot has one. */
   mobileSrc?: string;
@@ -100,13 +100,15 @@ export type CollectionMedia = {
 export type CollectionFilm = {
   /** "Watch collection film". */
   label: string;
-  /** The running time as shown ("00:08"). */
-  duration: string;
+  /** The running time as shown ("00:08"), when the film's file states it. */
+  duration?: string;
   /** The dialog's accessible name ("The Nimbus collection film"). */
   title: string;
+  /** The film from the media library (`/media/uploads/<sha>.mp4` or `.webm`). */
   src: string;
   /** A portrait cut for phones (up to 749px wide). */
   mobileSrc?: string;
+  /** The still shown before the film plays: the page's opening photo. */
   poster: string;
 };
 

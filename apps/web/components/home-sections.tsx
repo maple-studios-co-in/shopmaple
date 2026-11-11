@@ -5,7 +5,9 @@ import { ContentImage as Image, getContentImageProps as getImageProps } from "@/
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { HomeProjectForm, HomeNewsletterForm } from "@/components/home-forms";
-import type { HomeDetails, HomeCitiesLayout, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
+import type { HomeDetails, HomeCitiesLayout, TemplateFilms, TemplateMedia, TemplateMediaKey } from "@shopmaple/contracts";
+import { AmbientFilm } from "@/components/ambient-film";
+import { resolveTemplateFilm } from "@/lib/template-films";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
 import { defaultHomeCitiesLayout } from "@/lib/home-cities-defaults";
@@ -135,15 +137,18 @@ export function HomeSocial({
 export function HomeTestimonial({
   content = defaultHomeDetails.testimonial,
   media,
+  films,
   heading = "Why They Love Us",
   subheading = "Thoughtful designs. Exceptional service.",
 }: {
   content?: HomeDetails["testimonial"];
   media?: TemplateMedia;
+  films?: TemplateFilms;
   heading?: string;
   subheading?: string;
 } = {}) {
   const poster = resolveTemplateMedia("home-testimonial-poster", media);
+  const film = resolveTemplateFilm("home-testimonial", films);
   const headingId = useId();
   return (
     <section className="home-testimonial" aria-labelledby={headingId}>
@@ -164,9 +169,12 @@ export function HomeTestimonial({
           <span>{content.attribution}</span>
         </figcaption>
       </figure>
-      {/* The customer's film was on Shopify and left with it; films cannot be uploaded yet, so an uploaded poster shows as
-          a still beside the words, and without one the words stand alone. */}
-      {poster.image && <Image className="home-testimonial-still" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
+      {/* The film staff chose (Homepage → Testimonial) plays with its poster; without a film an uploaded poster shows as a
+          still beside the words, and without either the words stand alone. */}
+      {film
+        ? <AmbientFilm src={film.src} label={poster.alt} width={720} height={1280}
+          poster={poster.image ? getImageProps({ src: poster.image, alt: poster.alt, width: 720, height: 1280 }).props.src : undefined} />
+        : poster.image && <Image className="home-testimonial-still" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
     </section>
   );
 }

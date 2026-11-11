@@ -262,6 +262,11 @@ textarea {
   position: absolute;
   inset: 0;
 }
+/* A slide's film covers its poster picture only while it plays (lib/slider-behaviour.ts): under reduced motion, before the
+   slider's script runs and on slides not in view, the poster shows. */
+.hero-film video:not([data-playing]) {
+  opacity: 0;
+}
 .hero-cta {
   position: absolute;
   bottom: 20px;

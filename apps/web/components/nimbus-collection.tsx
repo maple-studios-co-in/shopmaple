@@ -24,7 +24,7 @@ async function nimbusPieces(): Promise<(NimbusPiece | null)[]> {
  * The Nimbus Collection (Figma 311:548; owner, 10 Nov 2026) from a content document: the published store, or a staff
  * draft in the preview. The catalogue is read only when the edit is shown.
  */
-export async function NimbusCollection({ site }: { site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "siteChrome"> }) {
+export async function NimbusCollection({ site }: { site: Pick<StorefrontContent, "nimbusPage" | "templateMedia" | "templateFilms" | "siteChrome"> }) {
   const shown = resolveNimbusPageContent(site.nimbusPage).sections.some(item => item.key === "pieces" && item.enabled);
   return <CollectionLandingView page={resolveNimbusLanding(site, shown ? await nimbusPieces() : [])} />;
 }
