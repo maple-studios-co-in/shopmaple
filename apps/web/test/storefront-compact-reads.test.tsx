@@ -223,7 +223,7 @@ test("PDP retains full main detail and requests five compact related cards befor
       assert.deepEqual(detail.product, product("main"));
       assert.equal(detail.initialVariant, "one");
       assert.deepEqual(propsOf(node, RelatedProducts).flatMap(p => p.products), ["first", "second", "third", "fourth"].map(card));
-      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables", "/api/catalogue/related?category=sofas"], "and no piece in full for a bundle");
+      assert.deepEqual(requests.map(u => u.pathname + u.search), ["/api/products/main", "/api/catalogue/related?category=chairs", "/api/catalogue/related?category=tables", "/api/catalogue/related?category=sofas", "/api/content/storefront"], "and no piece in full for a bundle, then the published storefront for the banner");
       assert.deepEqual(detail.bundle, [], "Buy in Bundle comes only from a bundle staff built in Keeri, never from pieces the store picks");
       assert.equal(detail.bundleQuantities, undefined);
       assert.deepEqual(detail.completeLook, ["first", "second", "third", "fourth"].map(card), "compact cards, never the piece itself");
@@ -238,7 +238,7 @@ test("a bundle staff built in Keeri is the page's Buy in Bundle and leads Comple
     assert.deepEqual(detail.completeLook, ["first", "second"].map(card), "the bundle's other pieces, in Keeri's order");
     assert.deepEqual((detail.bundle as { handle: string }[]).map(piece => piece.handle), ["first", "second"], "read in full for their options and prices");
     assert.deepEqual(detail.bundleQuantities, { main: 4, first: 1, second: 2 });
-    assert.deepEqual(requests.map(u => u.pathname), ["/api/products/main", "/api/catalogue/related", "/api/catalogue/cards", "/api/products/first", "/api/products/second"]);
+    assert.deepEqual(requests.map(u => u.pathname), ["/api/products/main", "/api/catalogue/related", "/api/catalogue/cards", "/api/products/first", "/api/products/second", "/api/content/storefront"]);
     assert.equal(requests[2]!.searchParams.get("handles"), "first,second");
   }, { related: ["first", "second", "third"], bundle: [{ handle: "main", quantity: 4 }, { handle: "first", quantity: 1 }, { handle: "second", quantity: 2 }] });
 });

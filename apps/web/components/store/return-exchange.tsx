@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ReturnsPageContent } from "@shopmaple/contracts";
+import type { ReturnsPageContent, TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { HelpPage, type HelpChrome } from "./help-page";
 import { ReturnLookupForm } from "./return-lookup-form";
 
@@ -7,14 +8,17 @@ import { ReturnLookupForm } from "./return-lookup-form";
  * Return & Exchange (Figma 150:3952, mobile 150:4558): the Help page head with the page's editable heading and
  * line, "Find your order", the care team's number, and what to have ready before raising a request.
  */
-export function ReturnExchange({ content, chrome }: { content: ReturnsPageContent; chrome: HelpChrome }) {
+export function ReturnExchange({ content, chrome, media }: { content: ReturnsPageContent; chrome: HelpChrome; media?: TemplateMedia }) {
+  // The photo is template artwork (policy-return-exchange).
+  const photo = resolveTemplateMedia("policy-return-exchange", media);
   return (
     <HelpPage
       chrome={chrome}
       current="/returns"
       title={content.heading}
       opening={<p>{content.intro}</p>}
-      photo="/media/policies/return-exchange.jpg"
+      photo={photo.image}
+      photoAlt={photo.alt}
       titleScale="compact"
     >
       <div className="flex flex-col items-center gap-6 pt-8 pb-12 lg:pt-[60px] lg:pb-20">

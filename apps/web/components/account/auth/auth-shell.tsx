@@ -1,17 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { TemplateMedia } from "@shopmaple/contracts";
+import { ContentImage } from "@/components/content-image";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
-/** The photograph and its words on the left of each sign-in page: Figma 392:1652 (login) and 392:1697 (sign-up). */
+/**
+ * The photograph and its words on the left of each sign-in page: Figma 392:1652 (login) and 392:1697 (sign-up). The
+ * photograph is template artwork (`auth-login`, `auth-sign-up`), which staff can replace (12 Nov 2026).
+ */
 const editorials = {
   login: {
-    photo: "/media/account/login-editorial.webp",
+    photo: "auth-login",
     kicker: "Welcome home",
     title: ["Good living", "begins at home."],
     lead: ["Thoughtful furniture. Quiet details.", "A little more room to be yourself."],
   },
   "sign-up": {
-    photo: "/media/account/sign-up-editorial.webp",
+    photo: "auth-sign-up",
     kicker: "Make it yours",
     title: ["A home.", "A feeling.", "Entirely you."],
     lead: ["A personal space for your pieces,", "your plans and what comes next."],
@@ -32,8 +38,9 @@ const lines = (parts: readonly string[]) =>
  * the editorial photograph (780 of 1440; a band above the form on phones). These pages wear no store header: the logo and
  * "Back to shop" lead home. The form comes first in the page's order; the photograph only illustrates it.
  */
-export function AuthShell({ editorial, aside, children }: { editorial: AuthEditorial; aside: ReactNode; children: ReactNode }) {
+export function AuthShell({ editorial, aside, children, media }: { editorial: AuthEditorial; aside: ReactNode; children: ReactNode; /** The published template artwork. */ media?: TemplateMedia }) {
   const art = editorials[editorial];
+  const photo = resolveTemplateMedia(art.photo, media);
   return (
     <div className="account auth" data-store data-auth={editorial}>
       <main id="main" className="auth-panel">
@@ -57,7 +64,7 @@ export function AuthShell({ editorial, aside, children }: { editorial: AuthEdito
       </main>
       <div className="auth-editorial">
         <div className="auth-editorial-media">
-          <Image className="auth-editorial-photo" src={art.photo} alt="" fill sizes="(max-width: 959px) 100vw, 54vw" preload />
+          <ContentImage className="auth-editorial-photo" src={photo.image} alt={photo.alt} fill sizes="(max-width: 959px) 100vw, 54vw" preload />
         </div>
         <p className="auth-kicker">Maple Furnishers&nbsp;&nbsp;/&nbsp;&nbsp;The art of living</p>
         <div className="auth-caption">

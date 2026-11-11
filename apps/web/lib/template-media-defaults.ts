@@ -1,12 +1,13 @@
 import type { TemplateMedia, TemplateMediaItem, TemplateMediaKey } from "@shopmaple/contracts";
 import { homeTemplateMedia } from "@/lib/home-template-media";
+import { pictureSlots, type PictureSlotGroup } from "@/lib/picture-slot-defaults";
 
 /**
  * A placement's original artwork. `image` is a file bundled with the store, or "" where there is none: the artwork
  * first published on Shopify left the store (owner, 11 Nov 2026). Such a placement shows, until staff upload their own,
  * the first photo of `product` (a Keeri product the store lists) or, without one, nothing at all.
  */
-export type TemplateMediaSlot = TemplateMediaItem & { product?: string; label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" };
+export type TemplateMediaSlot = TemplateMediaItem & { product?: string; label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" | PictureSlotGroup; help?: string };
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
@@ -93,12 +94,14 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
   { key: "home-city-artwork-7", label: "City artwork 7", group: "Cities", image: "", alt: "" },
   { key: "home-city-artwork-8", label: "City artwork 8", group: "Cities", image: "", alt: "" },
   { key: "home-city-agra", label: "Agra city artwork", group: "Cities", image: "/media/cities/agra.webp", alt: "Agra" },
+  // Pictures fixed in code until the owner made them admin slots (12 Nov 2026): lib/picture-slot-defaults.ts.
+  ...pictureSlots,
 ];
 
 export function resolveTemplateMedia(key: TemplateMediaKey, value?: TemplateMedia, fallbackAlt?: string): TemplateMediaItem {
   const override = value?.find(item => item.key === key);
   if (override) return { ...override };
-  const { label: _label, group: _group, product: _product, ...asset } = templateMediaSlots.find(item => item.key === key)!;
+  const { label: _label, group: _group, product: _product, help: _help, ...asset } = templateMediaSlots.find(item => item.key === key)!;
   return { ...asset, alt: fallbackAlt ?? asset.alt };
 }
 

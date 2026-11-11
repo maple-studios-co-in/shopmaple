@@ -58,8 +58,10 @@ const textCard = (value: string | null | undefined): ReactNode => value?.trim() 
  * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each. `serverNow` is
  * the server's clock when it rendered the page, which the offer timer starts from.
  */
-export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, serverNow, children }: {
+export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, serverNow, banner, children }: {
   product: Product;
+  /** The banner's photo (template artwork `product-banner`), resolved by the page. */
+  banner?: { image: string; alt: string };
   serverNow?: number;
   initialVariant?: string;
   presentation?: Presentation;
@@ -419,7 +421,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       {deal && <DealTab key={dealKey(deal)} deal={deal} />}
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
       <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} />
-      <ProductBanner />
+      <ProductBanner picture={banner} />
       <ProductTicker warranty={warranty} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)}
         piece={{ handle: product.handle, title: product.title, image: images[0], collection: category, variantId: variant?.id }} />

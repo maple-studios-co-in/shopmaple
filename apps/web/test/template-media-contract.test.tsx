@@ -66,7 +66,9 @@ test("template fallback resolution preserves original assets and caller labels w
   // contact redesign added two photos, the Bulk Enquiry redesign five and the Terra Collection fourteen (54 + 2 + 5 + 14);
   // the Nimbus redesign retired its project photo (- 1). Its room slideshow's slots stay for the homepage hero, standing in
   // from Keeri products until staff upload photos (owner, 11 Nov 2026: nothing from Shopify).
-  assert.equal(templateMediaSlots.length, 74);
+  // The pictures fixed in code until 12 Nov 2026 became slots too: 5 menu, 10 banners, 22 circles, 12 value icons,
+  // 12 blog, 1 product banner, 4 editorial flips, 5 Help pages and 2 sign-in pages (73).
+  assert.equal(templateMediaSlots.length, 74 + 73);
   assert.deepEqual(templateMediaSlots.filter(slot => slot.group === "Nimbus").map(slot => [slot.key, slot.image]), [
     ["nimbus-hero-poster", "/media/nimbus-collection/hero.webp"], ["nimbus-origin", "/media/nimbus-collection/origin.webp"],
     ["nimbus-craft-poster", "/media/nimbus-collection/detail.webp"], ["nimbus-room-living", "/media/nimbus-collection/sofas.webp"],
@@ -79,7 +81,9 @@ test("template fallback resolution preserves original assets and caller labels w
     ["bulk-step-design", "/media/bulk-enquiry/step-design.webp"], ["bulk-step-deliver", "/media/bulk-enquiry/step-deliver.webp"],
     ["bulk-proposal", "/media/bulk-enquiry/proposal.webp"],
   ]);
-  assert.equal(parse(templateMediaSlots.filter(slot => slot.image).map(({ label: _label, group: _group, product: _product, ...asset }) => asset)).success, true);
+  // Every original under /media/ is valid artwork as it stands; a few bundled originals live elsewhere (the blog's
+  // imported art, the product page banner), which only an upload replaces.
+  assert.equal(parse(templateMediaSlots.filter(slot => slot.image.startsWith("/media/")).map(({ label: _label, group: _group, product: _product, help: _help, ...asset }) => asset)).success, true);
   assert.ok(templateMediaSlots.every(slot => !/shopify|\/cdn\/shop\//i.test(`${slot.image} ${slot.mobileImage ?? ""}`)), "no slot's original names Shopify");
 });
 

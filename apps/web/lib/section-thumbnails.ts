@@ -45,7 +45,7 @@ const inputs: Record<HomeSectionKey, (content: StorefrontContent) => unknown> = 
   "seating-banner": (c) => campaign(c, "landing-sofa-accent-chair"),
   chairs: (c) => [c.homeMerchandising?.chairs, c.homeCopy.chairsHeading, c.productHighlights],
   promos: (c) => campaign(c, "landing-dining", "landing-storage", "landing-consoles"),
-  editorial: (c) => [c.homeDetails?.editorial],
+  editorial: (c) => [c.homeDetails?.editorial, c.templateMedia],
   // The two products' photos come from the catalogue, which a thumbnail cannot see change.
   compare: (c) => [c.homeDetails?.compare],
   testimonial: (c) => [c.homeDetails?.testimonial, c.homeCopy.testimonialHeading, c.homeCopy.testimonialSubheading, c.templateMedia],

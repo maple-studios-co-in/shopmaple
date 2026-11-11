@@ -13,6 +13,13 @@ import type { CategoryPageSlug } from "@shopmaple/contracts";
 import { resolveCategoryPage } from "@/lib/category-content-defaults";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import { getProductPhotos } from "@/lib/product-photos";
+import { artworkProducts, resolveArtwork } from "@/lib/template-media-defaults";
+import { templateMediaKeys, type TemplateMediaKey } from "@shopmaple/contracts";
+
+/** The page's template artwork slot for a banner, circle or value icon (packages/contracts/src/picture-slots.ts). */
+function landingSlot(key: string): TemplateMediaKey | null {
+  return (templateMediaKeys as readonly string[]).includes(key) ? key as TemplateMediaKey : null;
+}
 export function landingCollectionHref(path: string) {
   const handle = path.split("/").filter(Boolean).at(-1) || "all";
   return Object.hasOwn(collectionTitles, handle)
@@ -20,9 +27,9 @@ export function landingCollectionHref(path: string) {
     : `/collections/all?q=${encodeURIComponent(handle.replaceAll("-", " "))}`;
 }
 /**
- * A wide banner between the rails. Its artwork was a Shopify file; it now shows a Keeri product's photo from the same
- * kind of room (data/landing-categories.json, `product`), cropped to the banner's own shape: wide on larger screens,
- * square on phones, as the original artwork was.
+ * A wide banner between the rails, cropped to the banner's own shape: wide on larger screens, square on phones, as the
+ * original artwork was. It is template artwork (`<page>-<section key>`): staff's desktop and mobile images, else, as the
+ * original was a Shopify file, a Keeri product's photo from the same kind of room (data/landing-categories.json).
  */
 export function CategoryBanner({
   desktop,
@@ -64,7 +71,8 @@ export function CategoryBanner({
       <picture>
         <source
           media="(max-width: 768px)"
-          srcSet={small.srcSet}
+          // An unoptimized picture (a staff preview of an unpublished upload) has no srcSet: its address stands in.
+          srcSet={small.srcSet ?? small.src}
           sizes={small.sizes}
         />
         <img {...image} />
@@ -128,8 +136,9 @@ export function CategoryValues({
     key?: string;
     title: string;
     body?: string;
-    /** An icon; the originals were Shopify files, so the values read as words alone unless one is given. */
+    /** An icon; the originals were Shopify files, so the values read as words alone unless staff upload one. */
     image?: string;
+    alt?: string;
   }[];
 }) {
   return (
@@ -138,7 +147,7 @@ export function CategoryValues({
         <div key={item.key ?? item.title}>
           {item.image && <Image
             src={item.image}
-            alt=""
+            alt={item.alt ?? ""}
             width={100}
             height={100}
           />}
@@ -155,12 +164,15 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
   const handles = [...new Set(data.sections
     .filter((section) => section.type === "products")
     .flatMap((section) => section.handles ?? []))];
-  // The banners' and circles' photos: each one's Keeri product, read once for the page; one the catalogue does not list
-  // (or a failed read) leaves its banner out and its circle without a photo.
-  const photos = await getProductPhotos(data.sections.flatMap((section) => [
-    ...(section.type === "banner" && section.product ? [section.product] : []),
-    ...(section.type === "categories" ? (section.items ?? []).flatMap((item) => (item.product ? [item.product] : [])) : []),
-  ]));
+  // The banners', circles' and value icons' template artwork. Where staff have uploaded none, a banner or circle shows its
+  // Keeri product's photo, read once for the page; one the catalogue does not list (or a failed read) leaves its banner
+  // out and its circle without a photo, and a value without an icon reads as words alone.
+  const media = content.templateMedia;
+  const slots = data.sections.flatMap((section) => [
+    ...(section.type === "banner" ? [landingSlot(`${slug}-${section.key}`)] : []),
+    ...(section.type === "categories" ? (section.items ?? []).map((item) => landingSlot(`${slug}-tile-${item.key}`)) : []),
+  ]).filter((key): key is TemplateMediaKey => key !== null);
+  const photos = await getProductPhotos(artworkProducts(slots, media));
   let catalogueRequest: Promise<ReadonlyMap<string, ProductCardModel>> | undefined;
   // Start only when a server rail renders; the hero tree need not wait for cards.
   const catalogue = () => catalogueRequest ??= getProductCards(handles).then(
@@ -182,8 +194,9 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
             section.key === "hero" || section.key === "sale"
               ? (`${slug}-${section.key}` as const)
               : null;
-          const photo = section.product ? photos.get(section.product) : undefined;
-          if (!campaign && !photo) return null;
+          const slot = campaign ? null : landingSlot(`${slug}-${section.key}`);
+          const artwork = slot ? resolveArtwork(slot, media, photos, `${data.title} — ${hero ? "furniture for every occasion" : "find furniture for your space"}`) : null;
+          if (!campaign && !artwork) return null;
           // The owner's sizes (9 Nov 2026): the hero runs edge to edge at 350px; every other banner is 200px tall,
           // inside the page's side margins with the product cards' rounded corners.
           return (
@@ -193,12 +206,12 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
                   <CampaignBanner campaign={campaign} content={content} eager={hero} />
                 ) : (
                   <CategoryBanner
-                    desktop={photo!}
-                    mobile={photo!}
+                    desktop={artwork!.image}
+                    mobile={artwork!.mobileImage || artwork!.image}
                     width={section.width!}
                     height={section.height!}
                     eager={hero}
-                    alt={`${data.title} — ${hero ? "furniture for every occasion" : "find furniture for your space"}`}
+                    alt={artwork!.alt}
                   />
                 )}
               </div>
@@ -220,13 +233,14 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
               aria-label={`${data.title} categories`}
             >
               {section.items!.map((item) => {
-                const photo = item.product ? photos.get(item.product) : undefined;
+                const slot = landingSlot(`${slug}-tile-${item.key}`);
+                const photo = slot ? resolveArtwork(slot, media, photos, item.title) : null;
                 return (
                 <Link href={landingCollectionHref(item.href!)} key={item.href} data-landing-category>
                   <div>
                     {photo && <Image
-                      src={photo}
-                      alt={item.title}
+                      src={photo.image}
+                      alt={photo.alt}
                       fill
                       sizes="(max-width:749px) 48vw, 20vw"
                     />}
@@ -266,7 +280,11 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
             </header>
           );
         if (section.type === "values")
-          return <CategoryValues key={section.key} items={section.items!} />;
+          return <CategoryValues key={section.key} items={section.items!.map((item) => {
+            const slot = landingSlot(`${slug}-value-${item.key}`);
+            const icon = slot ? resolveArtwork(slot, media, undefined) : null;
+            return icon ? { ...item, image: icon.image, alt: icon.alt } : item;
+          })} />;
         return null;
       })}
     </div>

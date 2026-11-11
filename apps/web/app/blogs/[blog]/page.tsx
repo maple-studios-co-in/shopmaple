@@ -13,7 +13,7 @@ export async function generateMetadata({
 }) {
   const { blog } = await params;
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
   const record = blogs.find((item) => item.handle === blog);
   return {
     title: record?.title || "Blogs",
@@ -30,8 +30,8 @@ export default async function BlogPage({
   const { blog } = await params;
   if (!source.blogs.some((item) => item.handle === blog)) notFound();
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
   const record = blogs.find((item) => item.handle === blog)!;
   // Shop Bestsellers under the stories shows the homepage's bestsellers, as staff pick them.
-  return <BlogIndex blog={blog} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} />;
+  return <BlogIndex blog={blog} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} media={content.templateMedia} />;
 }
