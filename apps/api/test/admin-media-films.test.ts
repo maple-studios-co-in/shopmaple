@@ -9,7 +9,7 @@ import request from "supertest";
 import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 import { HttpError } from "../src/cart.js";
-import { registerMediaRoutes, prepareMediaForPublication } from "../src/admin/media.js";
+import { registerMediaRoutes, prepareMediaForPublication, sweepAbandonedUploads } from "../src/admin/media.js";
 import { mp4Film, webmFilm } from "./fixtures/films.js";
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
@@ -103,6 +103,35 @@ test("films over 80 MB are refused from their declared length, before any of the
   assert.ok((await readdir(root)).every(name => !name.startsWith(".film-")));
 });
 
+test("a film sent in chunks with no length, as Cloudflare's tunnel sends uploads, is taken, and stopped once it passes 80 MB", async () => {
+  const { request: send } = await import("node:http");
+  const server = app().listen(0); const address = server.address(); assert.ok(address && typeof address !== "string");
+  const headers = { Origin: origin, Cookie: `shop_admin=${token}`, "X-CSRF-Token": digest("csrf:" + token), "Content-Type": "video/mp4", "Transfer-Encoding": "chunked" };
+  const upload = (write: (req: import("node:http").ClientRequest) => void) => new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = send({ host: "127.0.0.1", port: address.port, path: "/api/admin/media/films", method: "POST", headers }, res => {
+      let body = ""; res.setEncoding("utf8"); res.on("data", chunk => { body += chunk; }); res.on("end", () => resolve({ status: res.statusCode!, body }));
+    });
+    req.on("error", error => (error as NodeJS.ErrnoException).code === "ECONNRESET" || (error as NodeJS.ErrnoException).code === "EPIPE" ? undefined : reject(error));
+    write(req);
+  });
+  try {
+    const bytes = mp4Film({ seed: 11, payload: 256 * 1024 });
+    const ok = await upload(req => { for (let at = 0; at < bytes.length; at += 32 * 1024) req.write(bytes.subarray(at, at + 32 * 1024)); req.end(); });
+    assert.equal(ok.status, 201, ok.body);
+    assert.equal(JSON.parse(ok.body).asset.sha256, digest(bytes), "the chunked film is kept byte for byte");
+    const big = await upload(req => {
+      req.write(mp4Film({ seed: 12 }));
+      const block = Buffer.alloc(1024 * 1024); let sent = 0;
+      const more = () => { while (sent < 82) { sent++; if (!req.write(block)) { req.once("drain", more); return; } } req.end(); };
+      req.on("response", () => { sent = 1e9; }); more();
+    });
+    assert.equal(big.status, 413, big.body);
+    assert.equal(JSON.parse(big.body).code, "MEDIA_FILM_TOO_LARGE");
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
+  for (let i = 0; i < 100 && (await readdir(root)).some(name => name.startsWith(".film-")); i++) await new Promise(r => setTimeout(r, 10));
+  assert.ok((await readdir(root)).every(name => !name.startsWith(".film-")), "the oversized film's temporary file is removed");
+});
+
 test("a film that stops arriving part way leaves no temporary file", async () => {
   const { request: send } = await import("node:http");
   const server = app().listen(0); const address = server.address(); assert.ok(address && typeof address !== "string");
@@ -116,6 +145,19 @@ test("a film that stops arriving part way leaves no temporary file", async () =>
     assert.ok((await readdir(root)).every(name => !name.startsWith(".film-")), "an abandoned upload is removed");
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
   assert.equal(await db.shopMediaAsset.count({ where: { sha256: digest(bytes) } }), 0);
+});
+
+test("temporary upload files over an hour old are swept when the API starts; newer ones and films are kept", async () => {
+  const { utimes, writeFile } = await import("node:fs/promises");
+  const dir = await mkdtemp(join(tmpdir(), "shop-film-sweep-"));
+  try {
+    const old = ".film-0b6f5c1e-3a52-4c8e-9d7e-2f1a6b9c4d10.part", oldImage = ".upload-0b6f5c1e-3a52-4c8e-9d7e-2f1a6b9c4d11.tmp", fresh = ".film-0b6f5c1e-3a52-4c8e-9d7e-2f1a6b9c4d12.part", kept = `${"a".repeat(64)}.mp4`;
+    for (const name of [old, oldImage, fresh, kept]) await writeFile(join(dir, name), "x");
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60_000);
+    for (const name of [old, oldImage, kept]) await utimes(join(dir, name), twoHoursAgo, twoHoursAgo);
+    assert.equal(await sweepAbandonedUploads(dir), 2);
+    assert.deepEqual((await readdir(dir)).sort(), [fresh, kept].sort());
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test("films stay private until published, then stream with byte ranges and long caching", async () => {

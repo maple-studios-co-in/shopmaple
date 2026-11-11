@@ -25,6 +25,7 @@ const filmMime: Record<FilmContainer, string> = { mp4: "video/mp4", webm: "video
 const missing = () => new HttpError(404, "MEDIA_NOT_FOUND", "This image is unavailable.");
 const invalid = () => new HttpError(400, "MEDIA_INVALID_IMAGE", "Choose a valid, non-animated JPEG, PNG or WebP image up to 24 million pixels.");
 const invalidFilm = () => new HttpError(400, "MEDIA_INVALID_FILM", "Choose a complete MP4 or WebM film. Other video formats cannot be played on the website.");
+const filmTooLarge = () => new HttpError(413, "MEDIA_FILM_TOO_LARGE", "Choose a film up to 80 MB.");
 const unavailable = () => new HttpError(503, "MEDIA_STORAGE_UNAVAILABLE", "Image uploads are temporarily unavailable.");
 /** A film's extension, from its stored name (`<sha>.mp4`); an image's is always webp. */
 const extension = (row: ShopMediaAsset) => row.kind === "video" ? row.storageKey.slice(65) : "webp";
@@ -93,7 +94,12 @@ async function installFilm(root: string, temporary: string, filename: string) {
  * is never held in memory. The first bytes must declare the chosen container. A body that is not one is still read to
  * its end (bounded by its declared length) so the browser receives the refusal rather than a broken connection.
  */
-async function receiveFilm(req: Request, root: string, declared: number, container: FilmContainer) {
+/**
+ * Writes the arriving film to a private temporary file, hashing it as it goes. `declared` is its Content-Length, or null
+ * when it arrives in chunks (Cloudflare's tunnel re-sends uploads chunked by default); then only the 80 MB cap applies,
+ * counted as the bytes arrive.
+ */
+async function receiveFilm(req: Request, root: string, declared: number | null, container: FilmContainer) {
  const temporary = join(root, `.film-${randomUUID()}.part`);
  const file = await open(temporary, "wx+", 0o600);
  const hash = createHash("sha256");
@@ -101,16 +107,16 @@ async function receiveFilm(req: Request, root: string, declared: number, contain
  try {
   for await (const chunk of req as AsyncIterable<Buffer>) {
    bytes += chunk.length;
-   if (bytes > declared) throw invalidFilm();
+   if (declared === null ? bytes > maxFilmBytes : bytes > declared) throw declared === null ? filmTooLarge() : invalidFilm();
    if (refused) continue;
    if (head.length < filmHeadBytes) {
     head = Buffer.concat([head, chunk.subarray(0, filmHeadBytes - head.length)]);
-    if (head.length >= Math.min(filmHeadBytes, declared) && sniffFilm(head) !== container) { refused = true; continue; }
+    if (head.length >= Math.min(filmHeadBytes, declared ?? filmHeadBytes) && sniffFilm(head) !== container) { refused = true; continue; }
    }
    hash.update(chunk);
    for (let offset = 0; offset < chunk.length;) offset += (await file.write(chunk, offset, chunk.length - offset)).bytesWritten;
   }
-  if (refused || bytes !== declared || sniffFilm(head) !== container) throw invalidFilm();
+  if (refused || bytes === 0 || (declared !== null && bytes !== declared) || sniffFilm(head) !== container) throw invalidFilm();
   await file.sync();
   const facts = await inspectFilm(file, bytes, container).catch(error => { throw error instanceof FilmInvalid ? invalidFilm() : error; });
   return { temporary, bytes, sha256: hash.digest("hex"), facts };
@@ -160,8 +166,22 @@ async function serveFile(req: Request, res: Response, root: string | undefined, 
   await pipeline(file.createReadStream({ start, end, autoClose: true }), res).catch(() => {});
  } finally { if (!streaming) await file.close(); }
 }
+/**
+ * Removes temporary upload files over an hour old. A restart mid-upload (a release, a PM2 restart) leaves one behind,
+ * nothing else would ever remove it, and it counts against no quota. Runs once as the API starts.
+ */
+export async function sweepAbandonedUploads(root: string, olderThanMs = 60 * 60_000): Promise<number> {
+ let removed = 0;
+ for (const name of await readdir(root)) {
+  if (!/^\.(?:upload-[0-9a-f-]{36}\.tmp|film-[0-9a-f-]{36}\.part)$/.test(name)) continue;
+  const path = join(root, name), stat = await lstat(path).catch(() => null);
+  if (stat?.isFile() && Date.now() - stat.mtimeMs > olderThanMs) { await unlink(path).catch(() => {}); removed++; }
+ }
+ return removed;
+}
 export function registerMediaRoutes(app: Express, db: PrismaClient, config: MediaConfig) {
  let activeUploads = 0, activeFilmUploads = 0;
+ if (config.mediaRoot && isAbsolute(config.mediaRoot)) void sweepAbandonedUploads(config.mediaRoot).catch(() => {});
  app.use("/api/admin/media", (_req, res, next) => { res.set("Cache-Control", "private, no-store"); next(); });
  const guard = async (req: Request, _res: Response, next: NextFunction) => {
   if (req.get("Origin") !== config.webOrigin) throw new HttpError(403, "ORIGIN_REJECTED", "Please make this change from the Maple website.");
@@ -198,7 +218,7 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
    return { asset, created: true };
   }, { timeout: 20_000 });
   res.status(result.created ? 201 : 200).json({ asset: serialize(result.asset) });
-  } finally { activeUploads--; req.setTimeout(0); }
+  } finally { activeUploads--; if (req.socket) req.setTimeout(0); }
  });
  /**
   * Films are stored exactly as uploaded: the server cannot re-encode, so staff upload a web-ready MP4 or WebM
@@ -209,9 +229,11 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   if (!config.mediaRoot || !isAbsolute(config.mediaRoot)) throw unavailable();
   const container = filmTypes[req.get("Content-Type") ?? ""];
   if (!container) throw new HttpError(415, "MEDIA_TYPE_REJECTED", "Choose an MP4 or WebM film.");
-  const declared = Number(req.get("Content-Length"));
-  if (req.get("Transfer-Encoding") !== undefined || !Number.isSafeInteger(declared) || declared <= 0) throw new HttpError(411, "MEDIA_LENGTH_REQUIRED", "Choose a film file to upload.");
-  if (declared > maxFilmBytes) throw new HttpError(413, "MEDIA_FILM_TOO_LARGE", "Choose a film up to 80 MB.");
+  // A declared length is checked before any of the body is read. Cloudflare's tunnel sends uploads chunked, with no
+  // length, so those are taken too and stopped as soon as they pass 80 MB.
+  const chunked = req.get("Transfer-Encoding") !== undefined, declared = chunked ? null : Number(req.get("Content-Length"));
+  if (declared !== null && (!Number.isSafeInteger(declared) || declared <= 0)) throw new HttpError(411, "MEDIA_LENGTH_REQUIRED", "Choose a film file to upload.");
+  if (declared !== null && declared > maxFilmBytes) throw filmTooLarge();
   let label: string;
   try { label = decodeURIComponent(req.get("X-Media-Label") ?? "Uploaded film").trim(); } catch { label = ""; }
   if (!label || label.length > 160 || /[\u0000-\u001f\u007f]/.test(label)) throw new HttpError(400, "MEDIA_INVALID_LABEL", "Use a film label of up to 160 characters.");
@@ -238,7 +260,7 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
     }, { timeout: 20_000 });
     res.status(result.created ? 201 : 200).json({ asset: serialize(result.asset) });
    } finally { await unlink(film.temporary).catch(() => {}); }
-  } finally { activeFilmUploads--; req.setTimeout(0); }
+  } finally { activeFilmUploads--; if (req.socket) req.setTimeout(0); } // the socket is gone when an upload was cut off
  });
  app.get("/api/admin/media", async (req, res) => {
   await requireStaff(db, req, config.secureCookies);
