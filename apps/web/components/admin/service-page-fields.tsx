@@ -50,7 +50,7 @@ export function ServicePageFields({ value, page, onChange }: {
         ]} />
       </ContentPanel>
       <ContentPanel title="Ways to reach us">
-        <Notice tone="info">The number and email shown are the footer’s customer care details, under Navigation & footer.</Notice>
+        <Notice tone="info">The number and email shown are the footer’s customer care details, under Navigation &amp; footer.</Notice>
         <TextFields value={reach.call} onChange={call => patch({ reach: { ...reach, call } })} fields={[["title", "Contact call title", 80], ["note", "Contact call note", 160]]} />
         <TextFields value={reach.write} onChange={write => patch({ reach: { ...reach, write } })} fields={[["title", "Contact email title", 80], ["note", "Contact email note", 160]]} />
         <TextFields value={reach.visit} onChange={visit => patch({ reach: { ...reach, visit } })}
@@ -82,7 +82,7 @@ export function ServicePageFields({ value, page, onChange }: {
         );
       })}
       <ContentPanel title="Delhi address">
-        <Notice tone="info">The address shown is the footer’s, under Navigation & footer.</Notice>
+        <Notice tone="info">The address shown is the footer’s, under Navigation &amp; footer.</Notice>
         <TextFields value={data} onChange={patch} fields={[
           ["visitEyebrow", "Contact address eyebrow", 160], ["visitHeading", "Contact address heading", 300], ["visitBody", "Contact address text", 300, true],
           ["visitCta", "Contact directions button", 80],
