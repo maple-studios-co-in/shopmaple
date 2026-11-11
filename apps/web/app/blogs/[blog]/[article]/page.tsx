@@ -15,7 +15,7 @@ export async function generateMetadata({
 }) {
   const { blog, article } = await params;
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
   const post = blogs.find((item) => item.handle === blog)?.articles.find((item) => item.handle === article);
   if (!post) return { title: "Article" };
   const path = `/blogs/${blog}/${article}`, description = pageDescription(post.excerpt);
@@ -35,7 +35,7 @@ export default async function ArticlePage({
 }) {
   const { blog, article } = await params;
   const content = await getPublishedContent();
-  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
   const record = blogs.find((item) => item.handle === blog)!;
   const post = record?.articles.find((item) => item.handle === article);
   if (!post) notFound();
@@ -45,6 +45,6 @@ export default async function ArticlePage({
       articleStructuredData(seo, { title: post.title, excerpt: post.excerpt, path, image: post.cover?.src, published: post.publishedAt ?? undefined }),
       breadcrumbStructuredData(seo, [["Home", "/"], [record.title, `/blogs/${blog}`], [post.title, path]]),
     ]} />
-    <BlogArticle blog={blog} record={record!} post={post} shareUrl={absolute(seo, path)} />
+    <BlogArticle blog={blog} record={record!} post={post} shareUrl={absolute(seo, path)} media={content.templateMedia} />
   </>;
 }

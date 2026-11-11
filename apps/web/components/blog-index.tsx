@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import type { TemplateMedia } from "@shopmaple/contracts";
 import { BlogBestsellers } from "@/components/blog/bestsellers";
 import { BlogCardList } from "@/components/blog/card-list";
 import { BlogFeaturedSlider } from "@/components/blog/featured-slider";
@@ -13,11 +14,13 @@ type Story = Pick<BlogPost, "handle" | "title" | "publishedAt" | "excerpt" | "co
  * story after the newest as a card (six at a time, with Load more), then Shop Bestsellers. Each story is signed by the
  * author it names, else by the store; articles take no comments, so no comment count is shown.
  */
-export function BlogIndex({ blog, title, articles, bestsellers }: {
+export function BlogIndex({ blog, title, articles, bestsellers, media }: {
   blog: string;
   title: string;
   articles: readonly Story[];
   bestsellers: string[];
+  /** The published template artwork, for the Shop Bestsellers photo. */
+  media?: TemplateMedia;
 }) {
   const stories = newestFirst(articles);
   return (
@@ -40,7 +43,7 @@ export function BlogIndex({ blog, title, articles, bestsellers }: {
         )}
       </section>
       <Suspense fallback={<section className="blog-bestsellers" aria-label="Shop Bestsellers" aria-busy="true" data-rail-placeholder />}>
-        <BlogBestsellers handles={bestsellers} />
+        <BlogBestsellers handles={bestsellers} media={media} />
       </Suspense>
     </div>
   );
