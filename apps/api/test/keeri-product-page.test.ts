@@ -37,6 +37,16 @@ test("approved reviews keep Keeri's own average and count, with store variant id
   assert.deepEqual(table.reviews, { average: null, count: 0, items: [] });
 });
 
+test("review photos on the store's new shop. address are accepted after the move; any other host is refused", () => {
+  const moved = (host: string) =>
+    JSON.parse(JSON.stringify(fixture()).replaceAll("https://store.maplefurnishers.com/media/keeri-review/", `https://${host}/media/keeri-review/`));
+  const chair = adaptKeeriExportV2(moved("shop.maplefurnishers.com"), "tenant-demo").products.find((p) => p.handle === "keeri-model-demo")!;
+  assert.equal(chair.productPage!.reviews.items[0]!.photos[0]!.url, "https://shop.maplefurnishers.com/media/keeri-review/review-photo-demo.webp");
+  assert.doesNotThrow(() => productSchema.parse(chair));
+  assert.throws(() => adaptKeeriExportV2(moved("evil.example.com"), "tenant-demo"));
+  assert.throws(() => adaptKeeriExportV2(moved("shop.maplefurnishers.com.evil.example"), "tenant-demo"));
+});
+
 test("photo details carry the public address, role, alt text, real-photo mark and hotspots", () => {
   const page = adaptKeeriExportV2(fixture(), "tenant-demo").products.find((p) => p.handle === "keeri-model-demo")!.productPage!;
   assert.deepEqual(page.media, [{

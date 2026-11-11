@@ -183,7 +183,7 @@ const modelPageSchema = z.object({
       reviewerName: z.string().trim().min(1).max(60), city: z.string().trim().min(1).max(60).nullable(),
       reviewedAt: z.iso.date(), source: z.enum(reviewSources), verifiedBuyer: z.boolean(), variantId: id.nullable(),
       photos: z.array(z.object({
-        id, url: z.string().regex(/^https:\/\/store\.maplefurnishers\.com\/media\/keeri-review\/[A-Za-z0-9_-]{1,64}\.webp$/),
+        id, url: z.string().regex(/^https:\/\/(?:store|shop)\.maplefurnishers\.com\/media\/keeri-review\/[A-Za-z0-9_-]{1,64}\.webp$/),
         width: z.number().int().positive().max(20_000).nullable(), height: z.number().int().positive().max(20_000).nullable(),
       }).strict()).max(5),
     }).strict()).max(50),
