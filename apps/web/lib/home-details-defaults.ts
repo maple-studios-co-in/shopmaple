@@ -68,7 +68,7 @@ export const defaultHomeDetails: HomeDetails = {
   compare: {
     eyebrow: "Find your feel", heading: "Two ways to unwind",
     lede: "Explore distinct silhouettes and choose the one that feels at home in your space.",
-    left: { handle: "aera-swivel-lounge-chair", label: "Aera" }, right: { handle: "caro", label: "Caro" },
+    left: { handle: "avelon-chair", label: "Avelon" }, right: { handle: "caro", label: "Caro" },
   },
 };
 

@@ -163,7 +163,7 @@ test("legacy drafts show original selections and browsing leaves the draft clean
   const app=await setup({legacy:true});
   try {
     await click("Merchandising");
-    assert.deepEqual([...container.querySelectorAll('[aria-label="Bestsellers selection"] li')].map(node=>node.querySelector("p")?.textContent),["aera-swivel-lounge-chair","aero-dining-chair","aileron-signature-bed","aileron-upholstered-bench","alcyone-7-seater-sofa","alina-7-seater-sofa"]);
+    assert.deepEqual([...container.querySelectorAll('[aria-label="Bestsellers selection"] li')].map(node=>node.querySelector("p")?.textContent),["avelon-chair","aero-dining-chair","aileron","aileron-bench","alcyone","alina"]);
     assert.deepEqual([...container.querySelectorAll('[aria-label="Chairs selection"] li')].map(node=>node.querySelector("p")?.textContent),["caro","ario","nola","tara","arno","rollo"]);
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Category tile 1 collection handle"]')?.value,"sofas");
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Offer tile 2 collection handle"]')?.value,"minimum-60-off");

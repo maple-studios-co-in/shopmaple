@@ -10,7 +10,7 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 // The top of the homepage as the "Maple / Impact Layout" frame (Figma 1049:27656) lays it out:
 // the hero bento, the announcement strip, the Maple Difference row, round category photos, the
 // statement band and the offer tiles. Copy still comes from the admin's content document.
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome(edit?: (content: typeof defaultStorefrontContent) => void) {
   const content = structuredClone(defaultStorefrontContent);

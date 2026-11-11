@@ -6,16 +6,14 @@ import Collection from "../app/collections/[handle]/page";
 import Home from "../app/page";
 import ProductPage from "../app/products/[handle]/page";
 import { CategoryProducts } from "../components/category-landing";
-import { LegacyChairs } from "../components/legacy-chairs";
 import { ProductCard } from "../components/product-card";
 import { RelatedProducts } from "../components/store/related-products";
 import { ProductDetail } from "../components/product-detail";
 import { CollectionListing } from "../components/collection-listing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
-import chairs from "../data/legacy-chairs.json";
 
 const product: Product = {
-  id: "card-one", handle: chairs.bestsellers[0]!, title: "Boundary Chair",
+  id: "card-one", handle: "caro", title: "Boundary Chair",
   description: "Full upholstery and dimension description".repeat(200), category: "chairs",
   images: ["https://example.com/first.jpg", "https://example.com/detail.jpg"],
   published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z",
@@ -100,9 +98,4 @@ test("homepage rails omit descriptions, galleries, source metadata and variants 
       assert.deepEqual(JSON.parse(JSON.stringify(card)), { ...expected, handle: data.handle });
     }
   });
-});
-test("legacy chair landing preserves compact live-catalogue cards at its carousel boundary", async () => {
-  const cards = await railCards(LegacyChairs({ products: [expected] }));
-  assert.ok(cards.length > 0);
-  for (const card of cards) assert.deepEqual(JSON.parse(JSON.stringify(card)), expected);
 });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
+import { shown } from "./support/rendered-src";
+import type { TemplateMedia } from "@shopmaple/contracts";
 import { test } from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
@@ -19,7 +20,17 @@ function slideshow(node: ReactNode): React.ReactElement | undefined {
   }
 }
 
-async function withRooms(run: (room: HTMLElement) => Promise<void>) {
+const keeri = (id: string) => `https://store.maplefurnishers.com/media/keeri/${id}.webp`;
+const upload = (name: string) => `/media/uploads/${name}.webp`;
+// The rooms' original pictures were Shopify files; until staff upload their own, Keeri products' photos stand in.
+const photos = new Map([["aurevo", keeri("aurevo")], ["altura-table", keeri("altura")], ["meridian-table", keeri("meridian")]]);
+// Staff uploads with distinct desktop and mobile crops.
+const uploads: TemplateMedia = [
+  { key: "nimbus-slide-living", image: upload("living-wide"), mobileImage: upload("living-tall"), alt: "Living room" },
+  { key: "nimbus-slide-bedroom", image: upload("bedroom-wide"), mobileImage: upload("bedroom-tall"), alt: "Bedroom" },
+  { key: "nimbus-slide-dining", image: upload("dining-wide"), mobileImage: upload("dining-tall"), alt: "Dining room" },
+];
+async function withRooms(run: (room: HTMLElement) => Promise<void>, media?: TemplateMedia) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', {
     url: "http://localhost",
   });
@@ -30,7 +41,7 @@ async function withRooms(run: (room: HTMLElement) => Promise<void>) {
   });
   const root = createRoot(document.getElementById("root")!);
   try {
-    const island = slideshow(NimbusLanding());
+    const island = slideshow(NimbusLanding({ media, photos }));
     assert.ok(island, "Nimbus must render its room slideshow");
     await act(async () => root.render(island));
     await run(document.querySelector<HTMLElement>('section[aria-label="Nimbus rooms"]')!);
@@ -60,22 +71,31 @@ test("Nimbus room controls preserve named selection and wrap in both directions"
   });
 });
 
-test("Nimbus keeps source desktop and mobile artwork paired after next, previous and dot navigation", async () => {
+test("Nimbus rooms show Keeri photos until staff upload their own", async () => {
   await withRooms(async (room) => {
-    // Independent filenames from page.teracotta.json's image_1/mobile_image_1.
+    for (const [alt, photo] of [["Living room", keeri("aurevo")], ["Bedroom", keeri("altura")], ["Dining room", keeri("meridian")]]) {
+      assert.equal(room.querySelector("picture img")?.getAttribute("alt"), alt);
+      assert.equal(shown(room.querySelector("picture img")!.getAttribute("src")!), photo);
+      await click(room, "Next room");
+    }
+  });
+});
+
+test("Nimbus keeps uploaded desktop and mobile artwork paired after next, previous and dot navigation", async () => {
+  await withRooms(async (room) => {
     const expected = [
-      ["Living room", "livingroom.png", "WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg"],
-      ["Bedroom", "NIMBUS_bedroom.png", "bedroom.png"],
-      ["Dining room", "nimbus_dinning.png", "WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg"],
+      ["Living room", upload("living-wide"), upload("living-tall")],
+      ["Bedroom", upload("bedroom-wide"), upload("bedroom-tall")],
+      ["Dining room", upload("dining-wide"), upload("dining-tall")],
     ] as const;
     const check = (index: number) => {
       const [alt, desktop, mobile] = expected[index]!;
       const image = room.querySelector("picture img")!;
       const source = room.querySelector("picture source")!;
       assert.equal(image.getAttribute("alt"), alt);
-      assert.equal(shown(image.getAttribute("src")!), copyOf(`files/${desktop}`), `${alt} desktop artwork`);
+      assert.equal(shown(image.getAttribute("src")!), desktop, `${alt} desktop artwork`);
       assert.equal(source.getAttribute("media"), "(max-width: 749px)");
-      assert.equal(shown(source.getAttribute("srcset")!), copyOf(`files/${mobile}`), `${alt} mobile artwork`);
+      assert.equal(shown(source.getAttribute("srcset")!), mobile, `${alt} mobile artwork`);
     };
     check(0);
     await click(room, "Next room");
@@ -88,5 +108,5 @@ test("Nimbus keeps source desktop and mobile artwork paired after next, previous
     check(0);
     await click(room, "Show Dining room");
     check(2);
-  });
+  }, uploads);
 });

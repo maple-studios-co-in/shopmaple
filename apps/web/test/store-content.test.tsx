@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { StoreContent } from "../components/store-content";
 import content from "../data/store-content.json";
-/** The store's settings during the move: shop. is the address, store. the other one (docs/shopify-media-migration.md). */
+/** The store's settings during the move: shop. is the address, store. the other one (docs/seo.md). */
 function withSite<T>(env: Record<string, string>, run: () => T): T {
   const before = { SITE_URL: process.env.SITE_URL, SITE_ALIASES: process.env.SITE_ALIASES, WEB_ORIGIN: process.env.WEB_ORIGIN, STORE_SITE_ORIGINS: process.env.STORE_SITE_ORIGINS };
   for (const key of Object.keys(before)) delete process.env[key];
@@ -79,6 +79,18 @@ test("unusable media and disguised script links cannot break or execute in sourc
   assert.equal(doc.querySelector("a")?.hasAttribute("href"), false);
 });
 
+// Imported content may still name a Shopify picture; the store draws only its own media (owner, 11 Nov 2026).
+test("a picture on Shopify, by either Shopify host or an older copy path, is left out while the store's own media shows", () => {
+  const doc = new JSDOM(renderToStaticMarkup(<StoreContent nodes={[
+    { tag: "img", src: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/room.png", alt: "CDN", children: [] },
+    { tag: "img", src: "https://shop.maplefurnishers.com/cdn/shop/files/room.png", alt: "Old shop", children: [] },
+    { tag: "img", src: "/media/shopify/0123456789abcdef0123456789abcdef.png", alt: "Old copy", children: [] },
+    { tag: "img", src: "/media/home/editorial-right.webp", alt: "Ours", children: [] },
+  ]} />)).window.document;
+  assert.deepEqual([...doc.querySelectorAll("img")].map((img) => img.getAttribute("alt")), ["Ours"]);
+  assert.doesNotMatch(doc.body.innerHTML, /shopify|\/cdn\/shop\//i);
+});
+
 async function withRenderedContent(nodes: React.ComponentProps<typeof StoreContent>["nodes"], run: (document: Document) => void) {
   const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost" });
   const previous = { window: globalThis.window, document: globalThis.document };
@@ -149,7 +161,7 @@ test("unexpected substantive table children receive valid ancestors and keep the
         "Row note", { tag: "span", children: ["Inline note"] },
         { tag: "a", href: "/contact", children: [] },
         { tag: "br", children: [] }, { tag: "hr", children: [] },
-        { tag: "img", src: "https://cdn.shopify.com/example.png", alt: "Preserved artwork", children: [] },
+        { tag: "img", src: "/media/home/editorial-right.webp", alt: "Preserved artwork", children: [] },
         { tag: "td", children: ["Cell text"] }, { tag: "th", children: [] },
       ] },
     ] },

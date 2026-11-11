@@ -24,11 +24,10 @@ beforeEach(async () => {
 });
 /** Keeri's own synthetic `productPage=1` fixture: a chair with two approved reviews (4.5) and a table with none. */
 const keeri = () => JSON.parse(readFileSync(new URL("./fixtures/keeri-v2-product-page.json", import.meta.url), "utf8"));
-const emptyShopify = { schemaVersion: 1, source: "shopify-admin", complete: true, capturedAt: "2026-11-01T00:00:00.000Z", products: [] };
 type Card = { handle: string; rating?: { value: number; count: number } };
 
 test("the sync keeps Keeri's approved review average and count beside each product, and the cards carry them", async () => {
-  await syncCatalogueUnion(db, emptyShopify, keeri(), "tenant-demo");
+  await syncCatalogueUnion(db, keeri(), "tenant-demo");
   const rows = await db.product.findMany({ select: { handle: true, reviewCount: true, reviewAverage: true }, orderBy: { handle: "asc" } });
   assert.deepEqual(rows, [
     { handle: "demo-dining-chair", reviewCount: 2, reviewAverage: 4.5 },

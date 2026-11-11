@@ -16,7 +16,6 @@ import { defaultCategoryPages } from "../lib/category-content-defaults";
 import { resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
 import categories from "../data/landing-categories.json";
 import nimbus from "../data/landing-nimbus.json";
-import source from "../data/landing-catalog.json";
 
 const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[], optionThumbs: [] as never[] });
 const product = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, description: "Full detail description", category: "chairs", images: ["https://example.com/chair.jpg", "https://example.com/gallery.jpg"], published: true, source: "keeri", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [{ id: "one", title: "Oak", sku: "ONE", pricePaise: 1234500, compareAtPaise: 1500000, available: true, stockPolicy: "stocked" }, { id: "two", title: "Custom", sku: null, pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" }] });
@@ -27,7 +26,7 @@ const keeriPage = (items: { handle: string; quantity: number }[]) => ({
   bundles: [{ id: "set", name: "Dining set", description: null, items: items.map(({ handle, quantity }) => ({ productId: handle, handle, variantId: null, quantity })) }],
 });
 let fixtureId = 0;
-async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void>; bundle?: { handle: string; quantity: number }[] } = {}) {
+async function fixture(run: (requests: URL[]) => Promise<void>, options: { content?: typeof defaultStorefrontContent; missing?: string[]; broken?: string[]; unavailable?: boolean; related?: string[]; cardsGate?: Promise<void>; gated?: (handles: string[]) => boolean; bundle?: { handle: string; quantity: number }[] } = {}) {
   const previousFetch = globalThis.fetch;
   const previousApi = process.env.API_URL;
   process.env.API_URL = `http://storefront-compact-${++fixtureId}.test`;
@@ -37,8 +36,8 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
     requests.push(url);
     if (url.pathname === "/api/content/storefront") return Response.json({ version: 1, content: options.content ?? defaultStorefrontContent });
     if (url.pathname === "/api/catalogue/cards") {
-      await options.cardsGate;
       const handles = url.searchParams.get("handles")!.split(",");
+      if (!options.gated || options.gated(handles)) await options.cardsGate;
       if (options.unavailable || handles.some(h => options.broken?.includes(h))) return new Response(null, { status: 503 });
       return Response.json({ products: handles.filter(h => !options.missing?.includes(h)).map(card), published: true });
     }
@@ -51,7 +50,7 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
     }
     if (url.pathname === "/api/products") {
       if (options.unavailable) return new Response(null, { status: 503 });
-      const handles = url.searchParams.has("category") ? options.related ?? [] : [...Object.keys(source), "live-chair"];
+      const handles = url.searchParams.has("category") ? options.related ?? [] : ["live-chair"];
       return Response.json({ products: handles.filter(h => !options.missing?.includes(h)).map(product), total: handles.length, page: 1, limit: 50, mode: "preview", checkoutEnabled: false });
     }
     throw new Error(`Unexpected fixture request ${url.pathname}`);
@@ -76,7 +75,15 @@ function railContent() {
   content.homeMerchandising = { bestsellers: ["second", "first"], chairs: ["chair-two", "chair-one"], categories: [], offers: [] };
   return content;
 }
+/** The Keeri products whose photos stand in for the default hero's four stills (no uploads in the default content). */
+const heroArtwork = "arbor-sofa,aurevo,altura-table,meridian-table";
+const notHeroArtwork = (u: URL) => !(u.pathname === "/api/catalogue/cards" && u.searchParams.get("handles") === heroArtwork);
 const links = (doc: Document) => [...doc.querySelectorAll("[data-card-name]")].map(n => n.getAttribute("href"));
+/** The Keeri products whose photos a category page's banners and circles show, in page order (data/landing-categories.json). */
+const artworkHandles = (slug: keyof typeof categories, hidden: string[] = []) => [...new Set((categories[slug].sections as { type: string; heading?: string; product?: string; items?: { product?: string }[] }[])
+  .filter(s => !hidden.includes(s.heading ?? ""))
+  .flatMap(s => [...(s.type === "banner" && s.product ? [s.product] : []), ...(s.type === "categories" ? (s.items ?? []).flatMap(i => i.product ? [i.product] : []) : [])]))];
+const railHandles = (slug: keyof typeof categories) => (categories[slug].sections as { type: string; handles?: string[] }[]).filter(s => s.type === "products").flatMap(s => s.handles ?? []);
 
 test("characterization: homepage retains rail order, prices and partial success", async () => {
   const content = railContent();
@@ -92,7 +99,10 @@ test("homepage reads one compact batch per enabled rail and recovers only compac
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
     assert.equal(doc.querySelectorAll("[data-product-card]").length, 4);
-    assert.deepEqual(requests.filter(u => !["/api/content/storefront", "/api/instagram/feed"].includes(u.pathname)).map(u => u.pathname + u.search), ["/api/catalogue/cards?handles=second%2Cfirst", "/api/catalogue/cards?handles=chair-two%2Cchair-one"]);
+    // The hero is not shown here, so its stand-in photos are not read either.
+    assert.deepEqual(requests.filter(u => !["/api/content/storefront", "/api/instagram/feed"].includes(u.pathname)).map(u => u.pathname + u.search).sort(), [
+      "/api/catalogue/cards?handles=second%2Cfirst", "/api/catalogue/cards?handles=chair-two%2Cchair-one",
+    ].sort(), "one batch per rail and nothing for a hidden hero");
   }, { content: railContent() });
   const content = railContent();
   content.homeMerchandising!.bestsellers = ["second", "broken", "first"];
@@ -100,7 +110,7 @@ test("homepage reads one compact batch per enabled rail and recovers only compac
     const doc = await documentFor(<Home />);
     assert.deepEqual(links(doc), ["/products/second", "/products/first", "/products/chair-two", "/products/chair-one"]);
     assert.equal(requests.some(u => u.pathname.startsWith("/api/products")), false);
-    assert.deepEqual(requests.filter(u => u.pathname === "/api/catalogue/cards").map(u => u.searchParams.get("handles")).sort(), ["second,broken,first", "chair-two,chair-one", "second", "broken", "first"].sort());
+    assert.deepEqual(requests.filter(u => u.pathname === "/api/catalogue/cards").filter(notHeroArtwork).map(u => u.searchParams.get("handles")).sort(), ["second,broken,first", "chair-two,chair-one", "second", "broken", "first"].sort());
   }, { content, broken: ["broken"] });
 });
 
@@ -111,24 +121,26 @@ test("hidden or empty homepage rails issue no product requests", async () => {
   await fixture(async requests => {
     const doc = await documentFor(<Home />);
     assert.equal(doc.querySelectorAll(".home-catalogue-unavailable").length, 1);
-    assert.deepEqual(requests.map(u => u.pathname).sort(), ["/api/content/storefront", "/api/instagram/feed"], "Only the content and the Instagram feed; no catalogue reads");
+    assert.deepEqual(requests.filter(notHeroArtwork).map(u => u.pathname).sort(), ["/api/content/storefront", "/api/instagram/feed"], "Only the content, the Instagram feed and the hero's stand-in photos; no rail reads");
   }, { content });
 });
 
-test("category parent returns its hero before catalogue loading and all rendered rails share one deferred read", async () => {
+test("category parent returns its hero once its artwork photos are read, before the rails' cards, and all rendered rails share one deferred read", async () => {
   let release!: () => void;
   const cardsGate = new Promise<void>(resolve => { release = resolve; });
+  const rails = new Set(railHandles("sofas"));
+  const railRead = (u: URL) => u.pathname === "/api/catalogue/cards" && u.searchParams.get("handles")!.split(",").every(h => rails.has(h));
   await fixture(async requests => {
     let resolved = false;
     const pendingPage = CategoryLanding({ slug: "sofas" }).then(page => { resolved = true; return page; });
     let pendingDocument: Promise<Document> | undefined;
     try {
-      await new Promise<void>(resolve => setImmediate(resolve));
-      assert.equal(resolved, true, "hero tree must resolve without awaiting the catalogue response");
-      assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 0, "an abandoned page tree must not start a catalogue request");
+      for (let i = 0; i < 5; i++) await new Promise<void>(resolve => setImmediate(resolve));
+      assert.equal(resolved, true, "hero tree must resolve without awaiting the rails' catalogue response");
+      assert.deepEqual(requests.filter(u => u.pathname === "/api/catalogue/cards").map(u => u.searchParams.get("handles")), [artworkHandles("sofas").join(",")], "only the banners' and circles' photos were read; an abandoned page tree starts no rail request");
       pendingDocument = documentFor(await pendingPage);
       await new Promise<void>(resolve => setImmediate(resolve));
-      assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 1, "all concurrently rendered rails share a single read");
+      assert.equal(requests.filter(railRead).length, 1, "all concurrently rendered rails share a single read");
       release();
       const doc = await pendingDocument;
       assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
@@ -139,7 +151,7 @@ test("category parent returns its hero before catalogue loading and all rendered
       await pendingPage;
       await pendingDocument;
     }
-  }, { cardsGate });
+  }, { cardsGate, gated: handles => handles.every(h => rails.has(h)) });
 });
 
 test("category reads unique visible curated handles once and keeps each rail order", async () => {
@@ -152,21 +164,23 @@ test("category reads unique visible curated handles once and keeps each rail ord
   await fixture(async requests => {
     const doc = await documentFor(<CategoryLanding slug="sofas" />);
     assert.deepEqual(links(doc), visible.flatMap(s => s.handles.map(h => `/products/${h}`)));
-    assert.deepEqual(requests.filter(u => u.pathname !== "/api/content/storefront").map(u => [u.pathname, u.searchParams.get("handles")]), [["/api/catalogue/cards", handles.join(",")]]);
+    assert.deepEqual(requests.filter(u => u.pathname !== "/api/content/storefront").map(u => [u.pathname, u.searchParams.get("handles")]), [
+      ["/api/catalogue/cards", artworkHandles("sofas").join(",")],
+      ["/api/catalogue/cards", handles.join(",")],
+    ], "one read for the artwork's photos, then one for the rails");
   }, { content });
 });
 
-test("standalone category rail preserves source-only enquiry cards and skips unknown handles", async () => {
-  const handle = Object.keys(source)[0]!;
-  const original = source[handle as keyof typeof source];
+test("standalone category rail shows only the pieces the catalogue lists, with no fallback cards", async () => {
   await fixture(async requests => {
-    const doc = await documentFor(<CategoryProducts handles={["live-chair", handle, "unknown-chair"]} />);
-    assert.deepEqual(links(doc), ["/products/live-chair", `/contact?product=${encodeURIComponent(original.title)}`]);
-    assert.equal(doc.querySelector(".landing-source-product [data-card-price]")!.textContent, "Price on request");
-    assert.equal(doc.querySelector(".landing-source-product img")!.getAttribute("alt"), original.title);
+    // sora-5-seater-sofa left the store with Shopify; once it had a "Price on request" card from older data.
+    const doc = await documentFor(<CategoryProducts handles={["live-chair", "sora-5-seater-sofa", "unknown-chair"]} />);
+    assert.deepEqual(links(doc), ["/products/live-chair"]);
+    assert.equal(doc.querySelector(".landing-source-product"), null);
+    assert.doesNotMatch(doc.body.textContent ?? "", /Price on request/);
     assert.equal(requests.length, 1);
     assert.equal(requests[0]!.pathname, "/api/catalogue/cards");
-  }, { missing: [handle, "unknown-chair"] });
+  }, { missing: ["sora-5-seater-sofa", "unknown-chair"] });
 });
 
 test("deferred category errors are consumed by every rail without falling back to invented availability", async () => {
@@ -178,12 +192,12 @@ test("deferred category errors are consumed by every rail without falling back t
       CategoryProducts(props as Parameters<typeof CategoryProducts>[0]),
     ));
     assert.deepEqual(results.map(result => result.status), Array(5).fill("rejected"));
-    assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 1);
+    assert.equal(requests.filter(u => u.pathname === "/api/catalogue/cards").length, 2, "the artwork's photo read (which fails quietly) and one shared rail read");
   }, { unavailable: true });
 });
 
 test("failed category catalogue remains an error instead of masquerading as source-only stock", async () => {
-  await fixture(async () => { await assert.rejects(CategoryProducts({ handles: [Object.keys(source)[0]!] })); }, { unavailable: true });
+  await fixture(async () => { await assert.rejects(CategoryProducts({ handles: ["live-chair"] })); }, { unavailable: true });
 });
 
 test("Nimbus reads only series handles and hidden series reads none", async () => {

@@ -35,8 +35,6 @@ import { cutoutOf, productFaq, productHighlightLines, productRating, productRevi
 import { labelledRows, richPlain } from "@/lib/product-detail-text";
 
 type Presentation = {
-  variantImages: Record<string, string>;
-  reviewLabel: string | null;
   /** White-background photos by finish address (`variant.slug`), with hotspot positions; the notes come from the product's own text. */
   cutouts?: Record<string, Cutout>;
 };
@@ -73,13 +71,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryVariant = searchParams ? searchParams.get("variant") ?? undefined : initialVariant;
-  // An option's photo: the variant's own first photo, else the curated Shopify mapping.
-  const variantImage = (id: string) => {
-    const own = product.variants.find((v) => v.id === id)?.images?.[0];
-    if (own) return own;
-    const src = presentation?.variantImages[id];
-    return src && product.images.includes(src) ? src : undefined;
-  };
+  // An option's photo: the variant's own first photo.
+  const variantImage = (id: string) => product.variants.find((v) => v.id === id)?.images?.[0];
   // A finish with a white-background photo opens on it, and it leads that finish's gallery. Keeri's photo and notes
   // come first; the hand-placed presentation cut-outs remain only for products Keeri has none for.
   const presentationCutout = (id: string): Cutout | undefined => {
@@ -100,7 +93,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   };
   // Catalogues without any per-option photos present plain option tiles rather than a grid of
   // "Photo unavailable" boxes.
-  const optionPhotos = product.variants.some((v) => v.images?.length) || Boolean(presentation && Object.keys(presentation.variantImages).length);
+  const optionPhotos = product.variants.some((v) => v.images?.length);
   const textOptions = !optionPhotos && product.images.length > 0;
   // Staff-entered colours (the card highlights' swatches) fill the finish circles when an option has no photo.
   const highlights = useProductHighlights();

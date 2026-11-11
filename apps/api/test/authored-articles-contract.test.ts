@@ -34,6 +34,9 @@ test('media paths reject dot-segment and duplicate-slash aliases before browser 
     assert.equal(parse([{ ...article(), blocks: [{ id: 'image', type: 'image', src, alt: 'Room' }] }]).success, false, src);
     assert.equal(storefrontContentSchema.safeParse({ ...base, instagramPosts: [{ ...base.instagramPosts[0], src }] }).success, false, `legacy media: ${src}`);
   }
-  for (const src of [`/media/uploads/${hash}.webp`, '/media/room.v2.webp', 'https://cdn.shopify.com/s/files/1/room.webp?v=1&width=640', 'https://shop.maplefurnishers.com/cdn/shop/files/room.webp?v=123'])
+  for (const src of [`/media/uploads/${hash}.webp`, '/media/room.v2.webp'])
     assert.equal(parse([{ ...article(), cover: { src, alt: 'Room' } }]).success, true, src);
+  // Shopify's files are no longer store media (owner, 11 Nov 2026).
+  for (const src of ['https://cdn.shopify.com/s/files/1/room.webp?v=1&width=640', 'https://shop.maplefurnishers.com/cdn/shop/files/room.webp?v=123', '/media/shopify/0123456789abcdef0123456789abcdef.webp'])
+    assert.equal(parse([{ ...article(), cover: { src, alt: 'Room' } }]).success, false, src);
 });

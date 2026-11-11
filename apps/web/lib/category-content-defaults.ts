@@ -15,13 +15,14 @@ export type LandingSection = {
   columns?: number;
   width?: number;
   height?: number;
-  desktop?: string;
-  mobile?: string;
+  /** A Keeri product whose first photo is the banner's artwork. */
+  product?: string;
   items?: {
     key: string;
     href?: string;
     title: string;
-    image: string;
+    /** A circle's Keeri product, whose first photo it shows. */
+    product?: string;
     body?: string;
   }[];
   heading?: string;

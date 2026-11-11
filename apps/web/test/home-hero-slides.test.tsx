@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
 import { mock, test } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,13 +8,14 @@ import { Hero } from "../components/hero";
 import { defaultHomeDetails } from "../lib/home-details-defaults";
 import { inBrowser } from "./support/slider-harness";
 
-// The hero tile is a slider of slides. With no `slides` it is the one film it always was; with
-// slides the staff author each slide's media and words. Slides are server markup (a scroll-snap
-// track that works without script); a lazy island adds dots, autoplay and video control.
-// The shop film first published on Shopify, played from the store's own copy.
-const film = copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
+// The hero tile is a slider of slides. With no `slides` it shows four stills (the shop film was on Shopify and left the
+// store on 11 Nov 2026): each placement's upload, else a Keeri product's photo. With slides the staff author each
+// slide's media and words. Slides are server markup (a scroll-snap track that works without script); a lazy island adds
+// dots, autoplay and video control.
+const keeri = (id: string) => `https://store.maplefurnishers.com/media/keeri/${id}.webp`;
+const photos = new Map([["arbor-sofa", keeri("arbor")], ["aurevo", keeri("aurevo")], ["altura-table", keeri("altura")], ["meridian-table", keeri("meridian")]]);
 const slides: NonNullable<HomeDetails["hero"]["slides"]> = [
-  { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aaa/aaa.mp4?v=1", poster: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "Craftsmen at work", headline: "Made by hand", intro: "In our Delhi workshop." },
+  { kind: "video", src: "/media/films/craft.mp4", poster: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "Craftsmen at work", headline: "Made by hand", intro: "In our Delhi workshop." },
   { kind: "image", src: "/media/uploads/" + "b".repeat(64) + ".webp", alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." },
   { kind: "image", src: "/media/uploads/" + "c".repeat(64) + ".webp", alt: "A dining set", headline: "Gather round", intro: "Tables for every home." },
 ];
@@ -23,17 +23,35 @@ const content = (next?: HomeDetails["hero"]["slides"]): HomeDetails["hero"] => (
 const doc = (node: React.ReactElement) => new JSDOM(renderToStaticMarkup(node)).window.document;
 const all = (root: ParentNode, selector: string) => [...root.querySelectorAll<HTMLElement>(selector)];
 
-test("without slides the hero is the shop film followed by three room photos, with a dot for each", () => {
-  const page = doc(<Hero />);
+test("without slides the hero is four stills of Keeri products, with a dot for each and no film", () => {
+  const page = doc(<Hero photos={photos} />);
   const rendered = all(page, "[data-hero-slide]");
-  assert.deepEqual(rendered.map(slide => slide.getAttribute("data-hero-slide-kind")), ["video", "image", "image", "image"]);
-  assert.equal(rendered[0]!.querySelector("video")?.getAttribute("src"), film);
+  assert.deepEqual(rendered.map(slide => slide.getAttribute("data-hero-slide-kind")), ["image", "image", "image", "image"]);
+  assert.deepEqual(rendered.map(slide => slide.querySelector("img")?.getAttribute("src")), [keeri("arbor"), keeri("aurevo"), keeri("altura"), keeri("meridian")]);
+  assert.equal(page.querySelector("video"), null);
   for (const slide of rendered) {
     assert.equal(slide.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
     assert.equal(slide.querySelector("[data-hero-intro]")?.textContent, "Handcrafted furniture that brings elegance to every corner of your home.");
   }
   assert.equal(all(page, "[data-slider-dot]").length, 4);
   assert.equal(page.querySelector(".hero-film button:not([data-slider-dot])"), null, "no play or pause control");
+});
+
+test("an uploaded still wins over its Keeri photo, and a still without either is left out", () => {
+  const page = doc(<Hero photos={new Map([["aurevo", keeri("aurevo")]])} media={[{ key: "home-workshop-poster", image: "/media/uploads/" + "d".repeat(64) + ".webp", alt: "Our workshop" }]} />);
+  const rendered = all(page, "[data-hero-slide]");
+  assert.deepEqual(rendered.map(slide => slide.querySelector("img")?.getAttribute("alt")), ["Our workshop", "Living room"]);
+  assert.ok(rendered[0]!.querySelector("img")?.getAttribute("src")?.includes("d".repeat(64)));
+  assert.equal(rendered[1]!.querySelector("img")?.getAttribute("src"), keeri("aurevo"));
+});
+
+test("with no upload and no listed photo the hero keeps one slide of words, with no broken picture", () => {
+  const page = doc(<Hero />);
+  const rendered = all(page, "[data-hero-slide]");
+  assert.equal(rendered.length, 1);
+  assert.equal(rendered[0]!.querySelector("img"), null);
+  assert.equal(rendered[0]!.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
+  assert.equal(all(page, "[data-slider-dot]").length, 0);
 });
 
 test("a single authored film slide is the one shop film with no dots", () => {
@@ -72,13 +90,16 @@ test("with several slides the first is active and each dot is a real button nami
   assert.deepEqual(dots.map(dot => dot.getAttribute("type")), ["button", "button", "button"]);
 });
 
-test("a draft slide that is not finished yet is left out; none left means the shop film", () => {
+test("a draft slide that is not finished yet is left out; none left means the default stills", () => {
   const blank = { ...slides[1]!, src: "" };
   assert.equal(all(doc(<Hero content={content([slides[1]!, blank])} />), "[data-hero-slide]").length, 1);
-  const none = doc(<Hero content={content([blank])} />);
-  assert.equal(none.querySelector("[data-hero-slide] video")?.getAttribute("src"), film);
+  const none = doc(<Hero content={content([blank])} photos={photos} />);
+  assert.equal(none.querySelector("video"), null);
+  assert.equal(all(none, "[data-hero-slide] img").length, 4);
   const noPoster = { ...slides[0]!, poster: undefined };
-  assert.equal(all(doc(<Hero content={content([noPoster])} />), "[data-hero-slide]")[0]!.querySelector("video")?.getAttribute("src"), film);
+  const fallback = doc(<Hero content={content([noPoster])} photos={photos} />);
+  assert.equal(fallback.querySelector("video"), null, "a film without a poster is unfinished, so the stills show");
+  assert.equal(all(fallback, "[data-hero-slide] img")[0]!.getAttribute("src"), keeri("arbor"));
 });
 
 const mountHero = (check: Parameters<typeof inBrowser>[2], options: { reduced?: boolean } = {}, many = slides) =>

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductCardModel } from "@/lib/product-card-model";
-import { isShopifyImage, shopifySized } from "@/lib/image-loading";
 import { CardSwatchThumb } from "./card-swatch-thumb";
 
 const shown = 5;
@@ -22,8 +21,7 @@ export function CardOptionThumbs({ product }: { product: ProductCardModel }) {
         return thumb.image ? (
           <li key={thumb.name} data-card-option-thumb>
             <Link href={href} aria-label={thumb.name} title={thumb.name} className="relative block size-7 overflow-hidden rounded-full border border-sand bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-              {/* Shopify's photos come pre-sized from Shopify's edge rather than through the optimizer. */}
-              <Image src={isShopifyImage(thumb.image) ? shopifySized(thumb.image, 28) : thumb.image} unoptimized={isShopifyImage(thumb.image)} alt="" width={28} height={28} sizes="28px" className="size-full object-cover" />
+              <Image src={thumb.image} alt="" width={28} height={28} sizes="28px" className="size-full object-cover" />
             </Link>
           </li>
         ) : <CardSwatchThumb key={thumb.name} name={thumb.name} href={href} />;

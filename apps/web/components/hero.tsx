@@ -4,46 +4,62 @@ import { ArrowRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { SliderDots } from "@/components/slider-dots";
 import { SliderIsland } from "@/components/slider-island";
-import { heroFilm, heroHeadline, heroIntro } from "@/lib/hero-film";
+import { heroHeadline, heroIntro } from "@/lib/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { artworkProducts, resolveArtwork, type ProductPhotos } from "@/lib/template-media-defaults";
 
 /** How long a slide stays before the next one, unless the shopper hovers or focuses the tile. */
 const autoplayMs = 6000;
 
-type Slide = { kind: "image" | "video"; video?: string; image: string; alt: string; headline: string; intro: string };
+type Slide = { kind: "image" | "video"; video?: string; image?: string; alt: string; headline: string; intro: string };
 
-/**
- * The slides to show: the staff's, skipping any draft that is not finished (a blank address would break the
- * image), or, when there are none, the shop film followed by three room photos.
- */
-function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia): Slide[] {
-  const authored = (content.slides ?? []).flatMap((slide): Slide[] => {
+/** The default slides' four stills: the opening still, then the Nimbus slideshow's three rooms. */
+const defaultStills = ["home-workshop-poster", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining"] as const;
+
+/** The staff's slides, skipping any draft that is not finished (a blank address would break the image). */
+function authoredSlides(content: HomeDetails["hero"]): Slide[] {
+  return (content.slides ?? []).flatMap((slide): Slide[] => {
     const image = slide.kind === "video" ? slide.poster : slide.src;
     if (!slide.src || !image) return [];
     return [{ kind: slide.kind, video: slide.kind === "video" ? slide.src : undefined, image, alt: slide.alt, headline: slide.headline, intro: slide.intro }];
   });
-  if (authored.length) return authored;
-  // No slides authored yet: the shop film, then three of Maple's own room photos (the Nimbus slideshow's), as the frame's four dots show.
-  const poster = resolveHomeTemplateMedia("home-workshop-poster", media);
-  const rooms = (["nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining"] as const).map((key): Slide => {
-    const room = resolveTemplateMedia(key, media);
-    return { kind: "image", image: room.image, alt: room.alt, headline: heroHeadline, intro: heroIntro };
-  });
-  return [{ kind: "video", video: heroFilm, image: poster.image, alt: poster.alt, headline: heroHeadline, intro: heroIntro }, ...rooms];
 }
 
 /**
- * The hero bento: the film tile, a scroll-snap slider of slides each with its headline, then one light tile
+ * The Keeri products whose photos the hero needs: none when staff have authored slides, else those standing in for
+ * the default stills that have no upload.
+ */
+export function heroArtworkProducts(content: HomeDetails["hero"], media?: TemplateMedia): string[] {
+  return authoredSlides(content).length ? [] : artworkProducts(defaultStills, media);
+}
+
+/**
+ * The slides to show: the staff's, or, when there are none, four stills: each placement's upload, else a Keeri
+ * product's photo (`photos`). There is no default film: the shop film was on Shopify, and films cannot be uploaded yet.
+ * With no photo at all the one slide keeps its words over the tile's own colour.
+ */
+function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia, photos?: ProductPhotos): Slide[] {
+  const authored = authoredSlides(content);
+  if (authored.length) return authored;
+  const stills = defaultStills.flatMap((key): Slide[] => {
+    const artwork = resolveArtwork(key, media, photos);
+    return artwork ? [{ kind: "image", image: artwork.image, alt: artwork.alt, headline: heroHeadline, intro: heroIntro }] : [];
+  });
+  return stills.length ? stills : [{ kind: "image", alt: "", headline: heroHeadline, intro: heroIntro }];
+}
+
+/**
+ * The hero bento: the slides tile, a scroll-snap slider of slides each with its headline, then one light tile
  * per category. A server component; the slider's behaviour (dots, autoplay, playing only the current video)
  * is loaded lazily by the island and the tile works as a plain swipeable row without it.
  */
 export function Hero({
   content = defaultHomeDetails.hero,
   media,
-}: { content?: HomeDetails["hero"]; media?: TemplateMedia } = {}) {
-  const slides = resolveSlides(content, media);
+  photos,
+}: { content?: HomeDetails["hero"]; media?: TemplateMedia; photos?: ProductPhotos } = {}) {
+  const slides = resolveSlides(content, media, photos);
   const many = slides.length > 1;
   return (
     <section className="hero-grid" data-hero-bento aria-label="Explore Maple furniture">
@@ -69,7 +85,7 @@ export function Hero({
               aria-label={many ? `${i + 1} of ${slides.length}` : undefined}
               key={i}
             >
-              <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} />
+              {slide.image && <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} />}
               {slide.video && <video src={slide.video} muted loop playsInline preload={i === 0 ? "metadata" : "none"} aria-hidden="true" />}
               <div className="hero-introduction">
                 <h2 data-hero-headline>{slide.headline}</h2>

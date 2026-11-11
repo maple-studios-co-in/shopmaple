@@ -1,5 +1,4 @@
 import { InstagramRail } from "@/components/motion-rail";
-import { isShopifyFile } from "@/lib/image-loading";
 import { CityRail } from "@/components/city-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
@@ -98,7 +97,8 @@ export function HomeDifference({
           const artwork = resolveTemplateMedia(icons[index]!, media);
           return (
             <li key={icons[index]} data-difference-promise>
-              <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />
+              {/* Only an uploaded icon: the originals were on Shopify (owner, 11 Nov 2026). */}
+              {artwork.image && <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />}
               <span>{text}</span>
             </li>
           );
@@ -164,12 +164,9 @@ export function HomeTestimonial({
           <span>{content.attribution}</span>
         </figcaption>
       </figure>
-      <video controls playsInline preload="none" poster={poster.image} aria-label={poster.alt}>
-        <source
-          src="/media/shopify/1f8fdfa20a342eab4481edb4fb8233fa.mp4"
-          type="video/mp4"
-        />
-      </video>
+      {/* The customer's film was on Shopify and left with it; films cannot be uploaded yet, so an uploaded poster shows as
+          a still beside the words, and without one the words stand alone. */}
+      {poster.image && <Image className="home-testimonial-still" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
     </section>
   );
 }
@@ -178,22 +175,20 @@ export function HomeNewsletter({
   content = defaultHomeDetails.newsletter,
   media,
 }: { content?: HomeDetails["newsletter"]; media?: TemplateMedia } = {}) {
+  // The original mark was a Shopify file; only an uploaded image shows now (owner, 11 Nov 2026).
   const artwork = resolveTemplateMedia("home-newsletter", media);
-  // The bundled logo, as the store's copy or as published content may still name it on Shopify.
-  const bundledArtwork = artwork.image === resolveTemplateMedia("home-newsletter").image || isShopifyFile(artwork.image, "files/Cover_Image_Maple_1.png");
   const headingId = useId();
   return (
     <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>
-      <div className="home-newsletter-mark" data-newsletter-mark>
+      {artwork.image && <div className="home-newsletter-mark" data-newsletter-mark>
         <Image
           src={artwork.image}
           alt={artwork.alt}
           width={1080}
           height={500}
           sizes="(max-width:749px) 70vw, 26vw"
-          style={bundledArtwork ? { filter: "brightness(0) invert(1)" } : undefined}
         />
-      </div>
+      </div>}
       <div className="home-container">
         <div className="home-newsletter-row">
           <div>
@@ -230,7 +225,7 @@ export function HomeValues({
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
           <div key={key}>
-            <Image src={artwork.image} alt={artwork.alt} width={80} height={80} />
+            {artwork.image && <Image src={artwork.image} alt={artwork.alt} width={80} height={80} />}
             <h3>{title}</h3>
             <p>{body}</p>
           </div>
@@ -273,6 +268,8 @@ export function HomeCities({
       <CityRail autoplay={autoplay}>
         {cities.map(({ key }) => {
           const artwork = resolveTemplateMedia(`home-city-${key}`, media);
+          // The eight unnamed city slots lost their Shopify artwork; such a slot shows only once staff upload one.
+          if (!artwork.image) return null;
           return (
             <figure key={key} className="home-city-card">
               <div className="home-city-artwork">

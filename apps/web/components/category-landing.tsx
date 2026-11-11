@@ -7,27 +7,23 @@ import { Fragment, Suspense, type CSSProperties } from "react";
 import { getProductCards } from "@/lib/catalog";
 import { collectionTitles } from "@/lib/collections";
 import { ProductCard } from "@/components/product-card";
-import { CardRating } from "@/components/store/card-highlights";
 import { HomeCarousel } from "@/components/home-carousel";
 import { CategoryIntroduction } from "@/components/category-controls";
 import type { CategoryPageSlug } from "@shopmaple/contracts";
 import { resolveCategoryPage } from "@/lib/category-content-defaults";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
-import sourceCatalog from "@/data/landing-catalog.json";
-type SourceProduct = {
-  handle: string;
-  title: string;
-  image: string;
-  price: string;
-  compareAt: string;
-};
-const sourceProducts: Record<string, SourceProduct> = sourceCatalog;
+import { getProductPhotos } from "@/lib/product-photos";
 export function landingCollectionHref(path: string) {
   const handle = path.split("/").filter(Boolean).at(-1) || "all";
   return Object.hasOwn(collectionTitles, handle)
     ? `/collections/${handle}`
     : `/collections/all?q=${encodeURIComponent(handle.replaceAll("-", " "))}`;
 }
+/**
+ * A wide banner between the rails. Its artwork was a Shopify file; it now shows a Keeri product's photo from the same
+ * kind of room (data/landing-categories.json, `product`), cropped to the banner's own shape: wide on larger screens,
+ * square on phones, as the original artwork was.
+ */
 export function CategoryBanner({
   desktop,
   mobile,
@@ -64,7 +60,7 @@ export function CategoryBanner({
     fetchPriority: eager ? "high" : "auto",
   }).props;
   return (
-    <div className="landing-banner">
+    <div className="landing-banner" data-banner-crop style={{ "--banner-ratio": `${width} / ${height}` } as CSSProperties}>
       <picture>
         <source
           media="(max-width: 768px)"
@@ -74,33 +70,6 @@ export function CategoryBanner({
         <img {...image} />
       </picture>
     </div>
-  );
-}
-function SourceProductCard({ product }: { product: SourceProduct }) {
-  // Keep editorial products absent from the live catalogue enquiry-only.
-  const href = `/contact?product=${encodeURIComponent(product.title)}`;
-  return (
-    <article data-product-card className="product-card landing-source-product">
-      <div data-card-image className="product-card-image">
-        <a href={href}>
-          <Image
-            src={product.image}
-            alt={product.title}
-            fill
-            sizes="(max-width: 749px) 48vw, 25vw"
-          />
-        </a>
-      </div>
-      <div data-card-heading className="product-card-heading">
-        <a data-card-name className="product-card-name" href={href}>
-          {product.title}
-        </a>
-        <span data-card-rating-slot className="product-card-rating"><CardRating /></span>
-      </div>
-      <p data-card-price className="product-card-price">
-        <span>Price on request</span>
-      </p>
-    </article>
   );
 }
 export async function CategoryProducts({
@@ -121,13 +90,10 @@ export async function CategoryProducts({
   const products = catalogue ? await catalogue() : new Map(
     (await getProductCards(handles)).map((product) => [product.handle, product]),
   );
+  // Only what the catalogue lists: a piece it does not list is left out, never drawn from older data.
   const cards = handles.map((handle) => {
     const product = products.get(handle);
-    return product ? (
-      <ProductCard key={handle} product={product} />
-    ) : sourceProducts[handle] ? (
-      <SourceProductCard key={handle} product={sourceProducts[handle]!} />
-    ) : null;
+    return product ? <ProductCard key={handle} product={product} /> : null;
   });
   return (
     <section
@@ -162,19 +128,20 @@ export function CategoryValues({
     key?: string;
     title: string;
     body?: string;
-    image: string;
+    /** An icon; the originals were Shopify files, so the values read as words alone unless one is given. */
+    image?: string;
   }[];
 }) {
   return (
     <section className="landing-values home-values home-container">
       {items.map((item) => (
         <div key={item.key ?? item.title}>
-          <Image
+          {item.image && <Image
             src={item.image}
             alt=""
             width={100}
             height={100}
-          />
+          />}
           <h3>{item.title}</h3>
           {item.body && <p>{item.body}</p>}
         </div>
@@ -188,6 +155,12 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
   const handles = [...new Set(data.sections
     .filter((section) => section.type === "products")
     .flatMap((section) => section.handles ?? []))];
+  // The banners' and circles' photos: each one's Keeri product, read once for the page; one the catalogue does not list
+  // (or a failed read) leaves its banner out and its circle without a photo.
+  const photos = await getProductPhotos(data.sections.flatMap((section) => [
+    ...(section.type === "banner" && section.product ? [section.product] : []),
+    ...(section.type === "categories" ? (section.items ?? []).flatMap((item) => (item.product ? [item.product] : [])) : []),
+  ]));
   let catalogueRequest: Promise<ReadonlyMap<string, ProductCardModel>> | undefined;
   // Start only when a server rail renders; the hero tree need not wait for cards.
   const catalogue = () => catalogueRequest ??= getProductCards(handles).then(
@@ -209,6 +182,8 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
             section.key === "hero" || section.key === "sale"
               ? (`${slug}-${section.key}` as const)
               : null;
+          const photo = section.product ? photos.get(section.product) : undefined;
+          if (!campaign && !photo) return null;
           // The owner's sizes (9 Nov 2026): the hero runs edge to edge at 350px; every other banner is 200px tall,
           // inside the page's side margins with the product cards' rounded corners.
           return (
@@ -218,8 +193,8 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
                   <CampaignBanner campaign={campaign} content={content} eager={hero} />
                 ) : (
                   <CategoryBanner
-                    desktop={section.desktop!}
-                    mobile={section.mobile!}
+                    desktop={photo!}
+                    mobile={photo!}
                     width={section.width!}
                     height={section.height!}
                     eager={hero}
@@ -244,20 +219,23 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
               style={{ "--landing-columns": section.columns } as CSSProperties}
               aria-label={`${data.title} categories`}
             >
-              {section.items!.map((item) => (
+              {section.items!.map((item) => {
+                const photo = item.product ? photos.get(item.product) : undefined;
+                return (
                 <Link href={landingCollectionHref(item.href!)} key={item.href} data-landing-category>
                   <div>
-                    <Image
-                      src={item.image}
+                    {photo && <Image
+                      src={photo}
                       alt={item.title}
                       fill
                       sizes="(max-width:749px) 48vw, 20vw"
-                    />
+                    />}
                   </div>
                   <h2>{item.title}</h2>
                   <ArrowRight aria-hidden size={14} data-category-arrow />
                 </Link>
-              ))}
+                );
+              })}
             </nav>
           );
         if (section.type === "products")

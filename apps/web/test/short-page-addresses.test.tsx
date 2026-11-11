@@ -12,7 +12,25 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 test("old /pages/ addresses redirect permanently to the short address, keeping the query", async () => {
   const redirects = await config.redirects!();
-  assert.deepEqual(redirects, [{ source: "/pages/:slug", destination: "/:slug", permanent: true }]);
+  assert.deepEqual(redirects.filter((r) => r.source.startsWith("/pages/")), [{ source: "/pages/:slug", destination: "/:slug", permanent: true }]);
+});
+
+// The products that existed only in the old Shopify catalogue left the store (owner, 11 Nov 2026). Each old address goes
+// to its kind's collection, or to all furniture when its kind is unknown, temporarily (307), never to a not-found page.
+test("a retired product's old address redirects temporarily to its collection, else to all furniture", async () => {
+  const redirects = (await config.redirects!()).filter((r) => r.source.startsWith("/products/"));
+  assert.equal(redirects.length, 154, "every Shopify-only product of the 11 Nov 2026 inventory");
+  assert.ok(redirects.every((r) => r.permanent === false), "temporary, while the owner decides what returns");
+  const to = (handle: string) => redirects.find((r) => r.source === `/products/${handle}`)?.destination;
+  assert.equal(to("sora-5-seater-sofa"), "/collections/sofas");
+  assert.equal(to("nova-dining-table"), "/collections/tables");
+  assert.equal(to("orvane-accent-chair"), "/collections/chairs");
+  assert.equal(to("aileron-signature-bed"), "/collections/beds");
+  assert.equal(to("arden-console-cabinet"), "/collections/storage");
+  assert.equal(to("veya"), "/collections/all", "no known kind");
+  for (const kept of ["caro", "aero-dining-chair", "sora", "avelon-chair"]) assert.equal(to(kept), undefined, `${kept} is listed and keeps its page`);
+  const collections = new Set(["sofas", "chairs", "tables", "beds", "storage", "all"]);
+  assert.ok(redirects.every((r) => /^\/products\/[a-z0-9-]+$/.test(r.source) && collections.has(r.destination.replace("/collections/", ""))));
 });
 
 test("every original page is served at its short address and none is left under /pages", () => {

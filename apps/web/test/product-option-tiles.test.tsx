@@ -21,14 +21,14 @@ const keeri: Product = {
   source: "keeri:tenant", sourceUpdatedAt: "2026-10-27T00:00:00Z",
   variants: [variant("oak", "Light Oak"), variant("walnut", "Dark Walnut"), variant("espresso", "Espresso")],
 };
-async function mount(product: Product, presentation: { variantImages: Record<string, string>; reviewLabel: string | null } | undefined, check: () => Promise<void>) {
+async function mount(product: Product, check: () => Promise<void>) {
   const root = createRoot(document.getElementById("root")!);
   const previousFetch = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   try {
     await act(async () => root.render(<ShopProvider><AppRouterContext.Provider value={router}>
-      <ProductDetail product={product} presentation={presentation} />
+      <ProductDetail product={product} />
     </AppRouterContext.Provider></ShopProvider>));
     await check();
   } finally { await act(async () => root.unmount()); globalThis.fetch = previousFetch; }
@@ -37,7 +37,7 @@ const notice = () => [...document.querySelectorAll('[role="status"]')].find(elem
 const tiles = () => [...document.querySelectorAll<HTMLLabelElement>("[data-variants] label")];
 
 test("a catalogue without per-option photos shows plain option tiles instead of placeholder boxes", async () => {
-  await mount(keeri, undefined, async () => {
+  await mount(keeri, async () => {
     assert.equal(tiles().length, 3);
     assert.equal(document.querySelectorAll("[data-variant-placeholder]").length, 0, "no grey 'Photo unavailable' boxes");
     assert.equal(document.querySelectorAll("[data-variant-image]").length, 0, "no empty image frames");
@@ -49,8 +49,10 @@ test("a catalogue without per-option photos shows plain option tiles instead of 
   });
 });
 
-test("a catalogue that maps a photo to some options keeps the placeholder for the unmapped ones", async () => {
-  await mount(keeri, { variantImages: { oak: keeri.images[0]! }, reviewLabel: null }, async () => {
+test("a catalogue with a photo for some options keeps the placeholder for the others", async () => {
+  // Only the oak option has its own photo (Keeri's variant photos are the only option photos now).
+  const oakOnly: Product = { ...keeri, variants: keeri.variants.map(v => v.id === "oak" ? { ...v, images: [keeri.images[0]!] } : v) };
+  await mount(oakOnly, async () => {
     assert.equal(document.querySelectorAll("[data-variant-image] img").length, 1);
     assert.equal(document.querySelectorAll("[data-variant-placeholder]").length, 2);
     assert.equal(document.querySelector("[data-variants=text]"), null);

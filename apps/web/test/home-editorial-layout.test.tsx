@@ -1,46 +1,35 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { HomeNewsletter, HomeTestimonial } from "../components/home-sections";
 
-const videoSource = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4?v=0";
+const upload = (letter: string) => "/media/uploads/" + letter.repeat(64) + ".webp";
 
-test("editing the original newsletter logo alt text preserves its readable white presentation", () => {
-  const dom = new JSDOM(renderToStaticMarkup(<HomeNewsletter media={[
-    { key: "home-newsletter", image: "https://shop.maplefurnishers.com/cdn/shop/files/Cover_Image_Maple_1.png", alt: "Maple Furniture logo with a leaf illustration" },
-  ]} />));
-  try {
-    const image = dom.window.document.querySelector(".home-newsletter img")!;
-    assert.equal(image.getAttribute("alt"), "Maple Furniture logo with a leaf illustration");
-    assert.equal(dom.window.getComputedStyle(image).filter, "brightness(0) invert(1)", "An alt-only edit must not make the original dark logo disappear on burgundy");
-  } finally { dom.window.close(); }
-});
-
-test("bundled newsletter logo displays white on burgundy while published artwork retains its original colours", () => {
+// The bundled newsletter mark (Cover_Image_Maple_1.png) was a Shopify file and left the store (11 Nov 2026).
+test("without an upload the newsletter shows its words and form but no mark; an upload shows in its own colours", () => {
   const defaults = new JSDOM(renderToStaticMarkup(<HomeNewsletter />));
   const unrelatedOverride = new JSDOM(renderToStaticMarkup(<HomeNewsletter media={[
-    { key: "home-testimonial-poster", image: "https://cdn.shopify.com/custom-poster.jpg", alt: "Custom poster" },
+    { key: "home-testimonial-poster", image: upload("c"), alt: "Custom poster" },
   ]} />));
   const published = new JSDOM(renderToStaticMarkup(<HomeNewsletter media={[
-    { key: "home-newsletter", image: "https://cdn.shopify.com/colourful-newsletter.png", alt: "Published colourful artwork" },
+    { key: "home-newsletter", image: upload("d"), alt: "Published colourful artwork" },
   ]} />));
   try {
     for (const dom of [defaults, unrelatedOverride]) {
-      const image = dom.window.document.querySelector(".home-newsletter img")!;
-      assert.equal(dom.window.getComputedStyle(image).filter, "brightness(0) invert(1)", "Bundled dark logo needs a white presentation on the burgundy panel");
-      assert.equal(shown(image.getAttribute("src")), copyOf("files/Cover_Image_Maple_1.png"), "Keep the original source asset (the store's copy)");
+      assert.equal(dom.window.document.querySelector(".home-newsletter img"), null);
+      assert.equal(dom.window.document.querySelector("[data-newsletter-mark]"), null, "no empty frame is left behind");
+      assert.ok(dom.window.document.querySelector('.home-newsletter input[type="email"]'));
     }
     const customImage = published.window.document.querySelector(".home-newsletter img")!;
-    assert.equal(published.window.getComputedStyle(customImage).filter, "", "Published artwork must never inherit the bundled logo colour transform");
-    assert.ok(customImage.getAttribute("src")?.includes("colourful-newsletter.png"));
+    assert.equal(published.window.getComputedStyle(customImage).filter, "", "an upload is never recoloured");
+    assert.ok(customImage.getAttribute("src")?.includes(upload("d")));
     assert.equal(customImage.getAttribute("alt"), "Published colourful artwork");
   } finally { defaults.window.close(); unrelatedOverride.window.close(); published.window.close(); }
 });
 
-test("editorial restyling preserves the complete original testimonial and customer-controlled video", () => {
+test("editorial restyling preserves the complete original testimonial, without the customer's Shopify film", () => {
   const dom = new JSDOM(renderToStaticMarkup(<HomeTestimonial />));
   try {
     const doc = dom.window.document;
@@ -55,13 +44,8 @@ test("editorial restyling preserves the complete original testimonial and custom
     ]);
     assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
     assert.equal(doc.querySelector(".home-review-stars"), null, "the stars were typed in, not data; the Impact Layout frame has none");
-    const video = doc.querySelector("video")!;
-    assert.ok(video.controls);
-    assert.ok(video.playsInline);
-    assert.equal(video.preload, "none");
-    assert.equal(video.autoplay, false);
-    assert.equal(video.querySelector("source")?.getAttribute("src"), copyOf(videoSource), "the store's copy of the Shopify film");
-    assert.equal(doc.querySelectorAll("video").length, 1);
+    assert.equal(doc.querySelectorAll("video").length, 0, "the film was on Shopify and films cannot be uploaded yet");
+    assert.equal(doc.querySelector(".home-testimonial img"), null, "no poster still without an upload");
   } finally { dom.window.close(); }
 });
 
@@ -71,9 +55,9 @@ test("published editorial copy names both regions and retains editable media wit
     <HomeTestimonial heading="Customers at home" subheading="Their spaces and stories" content={{
       title: "Our custom room", paragraphs: ["The complete first paragraph.", markup, "The complete final paragraph."],
       name: "A customer", attribution: " — Homeowner",
-    }} media={[{ key: "home-testimonial-poster", image: "https://cdn.shopify.com/editorial-poster.jpg", alt: "Customer's room film" }]} />
+    }} media={[{ key: "home-testimonial-poster", image: upload("a"), alt: "Customer's room film" }]} />
     <HomeNewsletter content={{ heading: "Workshop updates", body: "News in your inbox.", signupHeading: "Join our list" }}
-      media={[{ key: "home-newsletter", image: "https://cdn.shopify.com/editorial-logo.png", alt: "Published Maple artwork" }]} />
+      media={[{ key: "home-newsletter", image: upload("b"), alt: "Published Maple artwork" }]} />
   </>));
   try {
     const doc = dom.window.document;
@@ -87,9 +71,11 @@ test("published editorial copy names both regions and retains editable media wit
     }
     assert.deepEqual([...doc.querySelectorAll("blockquote p")].map(p => p.textContent), ["The complete first paragraph.", markup, "The complete final paragraph."]);
     assert.equal(doc.querySelectorAll("[onerror], img[src=x]").length, 0);
-    assert.equal(doc.querySelector("video")?.poster, "https://cdn.shopify.com/editorial-poster.jpg");
-    assert.equal(doc.querySelector("video")?.getAttribute("aria-label"), "Customer's room film");
-    assert.ok(doc.querySelector('.home-newsletter img[alt="Published Maple artwork"]')?.getAttribute("src")?.includes("editorial-logo.png"));
+    // An uploaded poster shows as a still beside the words.
+    const still = doc.querySelector(".home-testimonial img.home-testimonial-still")!;
+    assert.ok(decodeURIComponent(still.getAttribute("src") ?? "").includes(upload("a")));
+    assert.equal(still.getAttribute("alt"), "Customer's room film");
+    assert.ok(decodeURIComponent(doc.querySelector('.home-newsletter img[alt="Published Maple artwork"]')?.getAttribute("src") ?? "").includes(upload("b")));
     assert.equal(doc.querySelector(".home-newsletter h3")?.textContent, "Join our list");
     const email = doc.querySelector<HTMLInputElement>('.home-newsletter input[type="email"]')!;
     assert.equal(email.labels?.[0]?.textContent, "Email address");

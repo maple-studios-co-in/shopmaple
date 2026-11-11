@@ -9,7 +9,7 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 
 // The bottom of the homepage as the "Maple / Impact Layout" frame (Figma 1049:27656) lays it out:
 // the numbers band, the quote, the enquiry card and the values row. Copy still comes from the admin's content document.
-const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: `https://store.maplefurnishers.com/media/keeri/${handle}.webp`, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome(edit?: (content: typeof defaultStorefrontContent) => void) {
   const content = structuredClone(defaultStorefrontContent);
@@ -35,11 +35,12 @@ const showing = (...keys: string[]) => (content: typeof defaultStorefrontContent
   for (const item of content.homeSections) if (keys.includes(item.key)) item.enabled = true;
 };
 
-test("the testimonial leads with one large quote and its author; the film and full review follow", async () => {
+test("the testimonial leads with one large quote and its author; the full review follows", async () => {
   const testimonial = section(await renderHome(showing("testimonial")), "testimonial");
   assert.equal(text(testimonial.querySelector("[data-quote-text]")), "Getting our sofa made by Maple was a completely hassle-free experience.");
   assert.equal(text(testimonial.querySelector("[data-quote-author]")), "Anjali Gupta — Verified Customer");
-  assert.ok(testimonial.querySelector("video"), "the customer film stays, below the quote");
+  // The customer film was on Shopify and left the store (11 Nov 2026); films cannot be uploaded yet.
+  assert.equal(testimonial.querySelector("video"), null, "no film below the quote");
   assert.equal(testimonial.querySelectorAll("blockquote p").length, 4, "and so does the full review");
   assert.equal(testimonial.querySelector(".home-review-stars"), null, "no star rating: the admin has no rating to show");
   assert.equal(text(testimonial.querySelector("h2")), "Why They Love Us", "the admin's heading stays for screen readers");
@@ -84,10 +85,16 @@ test("the enquiry form keeps its tall message box and Submit button wherever the
   assert.ok(card.querySelector("[data-project-card]"));
 });
 
-test("the testimonial's film follows the figure, so the caption stays the figure's last child", async () => {
+test("the testimonial's caption stays the figure's last child, and an uploaded poster follows the figure as a still", async () => {
   const testimonial = section(await renderHome(showing("testimonial")), "testimonial");
   assert.equal(testimonial.querySelector("figure")!.lastElementChild!.tagName, "FIGCAPTION");
-  assert.ok(testimonial.querySelector("figure + video, figure ~ video"));
+  assert.equal(testimonial.querySelector("figure ~ img"), null, "no still without an upload");
+  const uploaded = section(await renderHome((content) => {
+    showing("testimonial")(content);
+    content.templateMedia = [{ key: "home-testimonial-poster", image: "/media/uploads/" + "c".repeat(64) + ".webp", alt: "Our customer's room" }];
+  }), "testimonial");
+  assert.equal(uploaded.querySelector("figure")!.lastElementChild!.tagName, "FIGCAPTION");
+  assert.equal(uploaded.querySelector("figure ~ img.home-testimonial-still")?.getAttribute("alt"), "Our customer's room");
 });
 
 test("the cities panel shows its eyebrow and heading, with no credits line or pause switch (owner)", async () => {

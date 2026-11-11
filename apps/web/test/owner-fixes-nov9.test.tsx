@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { cardFixture } from "./support/catalogue-fixtures";
+import landingCategories from "../data/landing-categories.json";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -20,6 +22,7 @@ import { ProductHighlightsProvider } from "../components/store/product-highlight
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { chromeHref, defaultSiteChrome } from "../lib/site-chrome-defaults";
 import { collectionTitles } from "../lib/collections";
+const keeriPhoto = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
 
 // The owner's ten fixes of 9 Nov 2026: the main menu (Figma 256:3836), the room pages' banners and circles, the hotspots,
 // 30px between sections, no faint rules, the reviews band, the bundle card, photos that load sooner, the cities panel
@@ -45,7 +48,7 @@ async function mount(element: React.ReactNode, check: (host: HTMLElement) => voi
  * Renders a page on the server while every catalogue read waits, and returns what is sent before those reads finish and
  * what follows once they do. A page that waited for its product rails would send nothing until then.
  */
-async function streamWhileCataloguePends(element: React.ReactNode) {
+async function streamWhileCataloguePends(element: React.ReactNode, answerAtOnce: (handles: string[]) => boolean = () => false) {
   const previous = globalThis.fetch;
   let release = () => {};
   const gate = new Promise<void>((resolve) => { release = resolve; });
@@ -53,6 +56,8 @@ async function streamWhileCataloguePends(element: React.ReactNode) {
   globalThis.fetch = async (input) => {
     const url = String(input);
     if (url.endsWith("/api/content/storefront")) return Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+    const handles = new URL(url).searchParams.get("handles")?.split(",") ?? [];
+    if (answerAtOnce(handles)) return Response.json({ products: handles.map((handle) => ({ ...cardFixture(handle), image: keeriPhoto(handle) })), published: true });
     pending.push(url);
     await gate;
     return Response.json({ products: [], published: true });
@@ -96,7 +101,9 @@ test("the homepage sends everything above its product rails before their cards a
 });
 
 test("a room page sends its banners and circles before its product rails' cards are read", async () => {
-  const { first, rest } = await streamWhileCataloguePends(<CategoryLanding slug="sofas" />);
+  // The banners' and circles' Keeri photos are one read the page waits for (11 Nov 2026); the rails' cards are not.
+  const rails = new Set((landingCategories.sofas.sections as { handles?: string[] }[]).flatMap((section) => section.handles ?? []));
+  const { first, rest } = await streamWhileCataloguePends(<CategoryLanding slug="sofas" />, (handles) => !handles.every((handle) => rails.has(handle)));
   assert.match(first, /data-landing-banner="hero"/);
   assert.match(first, /data-landing-category/);
   assert.match(first, /data-rail-placeholder/);
@@ -286,7 +293,7 @@ test("the product page is one column 30px apart: sections on white carry no padd
 // ---- 5. No faint rules ----
 
 test("no faint full-width rules are drawn between sections", () => {
-  for (const file of ["category-story.tsx", "legacy-chairs.tsx", "category-nimbus.tsx", "category-landing.tsx"])
+  for (const file of ["category-story.tsx", "category-nimbus.tsx", "category-landing.tsx"])
     assert.doesNotMatch(source(`../components/${file}`), /className="home-divider/, file);
   assert.doesNotMatch(source("../components/service-pages.tsx"), /cp-divider/);
 });
@@ -345,12 +352,15 @@ test("the bundle's summary card stands as tall as the pieces beside it", () => {
 
 // ---- 8. Photos that load sooner ----
 
-// 11 Nov 2026: Shopify's files are the store's own copies now (/media/shopify), resized by the store's optimizer, so the
-// page no longer depends on Shopify's resizer, which goes when the plan is cancelled.
-test("a room page's circles and banners are the store's own copies, resized by its own optimizer, not Shopify's", async () => {
+// 11 Nov 2026: nothing comes from Shopify. A room page's circles and banners show Keeri products' own photos (until staff
+// upload artwork), resized by the store's own optimizer.
+test("a room page's circles and banners are Keeri product photos, resized by its own optimizer, never Shopify's", async () => {
   const previous = globalThis.fetch;
-  globalThis.fetch = async (url) =>
-    String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({ products: [], published: true });
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/api/content/storefront")) return Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 });
+    const handles = new URL(String(url)).searchParams.get("handles")?.split(",") ?? [];
+    return Response.json({ products: handles.map((handle) => ({ ...cardFixture(handle), image: keeriPhoto(handle) })), published: true });
+  };
   try {
     const stream = await renderToReadableStream(<ShopProvider><CategoryLanding slug="sofas" /></ShopProvider>);
     await stream.allReady;
@@ -360,13 +370,13 @@ test("a room page's circles and banners are the store's own copies, resized by i
     assert.ok(circles.length >= 6);
     for (const circle of circles) {
       assert.equal(circle.getAttribute("data-loader"), null, circle.getAttribute("src") ?? "");
-      assert.match(circle.getAttribute("src") ?? "", /^\/media\/shopify\/[a-f0-9]{32}\.(?:png|webp|jpg)$/);
+      assert.match(circle.getAttribute("src") ?? "", /^https:\/\/store\.maplefurnishers\.com\/media\/keeri\/[a-z0-9-]+\.webp$/);
     }
     const banners = [...doc.querySelectorAll(".landing-banner img")];
     assert.ok(banners.length > 0, "the page has a picture banner");
     for (const banner of banners) {
       assert.equal(banner.getAttribute("data-loader"), null, banner.getAttribute("src") ?? "");
-      assert.match(banner.getAttribute("src") ?? "", /^\/media\/shopify\/[a-f0-9]{32}\.png$/);
+      assert.match(banner.getAttribute("src") ?? "", /^https:\/\/store\.maplefurnishers\.com\/media\/keeri\/[a-z0-9-]+\.webp$/);
     }
   } finally {
     globalThis.fetch = previous;

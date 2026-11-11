@@ -31,7 +31,9 @@ test("editorial documents reject executable nodes, hidden fields and unsafe link
     { tag: "br", children: ["hidden"] }, { tag: "hr", children: ["hidden"] },
     { tag: "img", children: ["hidden"], src: "https://cdn.shopify.com/s/files/a.png" },
     ...["javascript:alert(1)", "data:text/html,<script>", "//evil.invalid/a", "https://user:pass@example.com/a", "https://example.com/a b", "https://example.com/a\\b", "https://example.com/\u0000", "http://example.com", "/admin", "/%2e%2e/admin", "https://checkout.shopify.com/", "https://other.myshopify.com/", "https://shop.maplefurnishers.com/admin", "https://evil.invalid/"] .map(href => ({ tag: "a", href, children: ["Link"] })),
-    ...["/media/uploads/a.webp", "data:image/png,x", "https://evil.invalid/a.png", "https://user@cdn.shopify.com/s/files/a.png", "https://cdn.shopify.com.evil.invalid/s/files/a.png"].map(src => ({ tag: "img", src, children: [], alt: "Image" })),
+    // Shopify's files are no longer media the store shows (owner, 11 Nov 2026), on either Shopify host or as an older copy path.
+    ...["/media/uploads/a.webp", "data:image/png,x", "https://evil.invalid/a.png", "https://user@cdn.shopify.com/s/files/a.png", "https://cdn.shopify.com.evil.invalid/s/files/a.png",
+      "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/image2.png", "https://shop.maplefurnishers.com/cdn/shop/files/image2.png", "/media/shopify/0123456789abcdef0123456789abcdef.png"].map(src => ({ tag: "img", src, children: [], alt: "Image" })),
   ];
   for (const node of nodeCases) assert.equal(parse({ ...fixture(), policies: [{ ...fixture().policies[0], content: [node] }] }).success, false, JSON.stringify(node));
 });
@@ -130,7 +132,7 @@ test("every original source document fits the editable contract including image 
 test("approved editorial links, media and literal markup survive validation as text", () => {
   const content = [
     ...["/", "/contact", "/policies/refund-policy", "/blogs/recent-stories/how-to-measure-furniture-before-ordering-online", "https://maplefurnishers.com/pages/contact", "https://store.maplefurnishers.com/collections/chairs", "mailto:hello@maplefurnishers.com", "tel:+911234567890"].map(href => ({ tag: "a", href, children: ["Link"] })),
-    { tag: "img", src: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/image2.png?v=1783927419", alt: "Original image", children: [] },
+    { tag: "img", src: "/media/home/editorial-right.webp", alt: "Original image", children: [] },
     "<script>Literal text only</script>\n  preserved",
   ];
   const result = parse({ policies: [{ slug: "shipping-policy", title: "Shipping", content }], blogs: [], articles: [] });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
+import { shown } from "./support/rendered-src";
+import { cardFixture } from "./support/catalogue-fixtures";
 import test from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -10,41 +11,40 @@ import NimbusPage from "../app/nimbus-collection/page";
 import StoryPage from "../app/our-story/page";
 import { NimbusLanding } from "../components/category-nimbus";
 import { StoryLanding } from "../components/category-story";
+import { NimbusWithArtwork, StoryWithArtwork } from "../components/artwork-pages";
 import { CategorySlideshow, CategoryVideo } from "../components/category-controls";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultNimbusPage } from "../lib/nimbus-content-defaults";
+import { templateMediaResponsiveKeys } from "@shopmaple/contracts";
 
-const files = "https://shop.maplefurnishers.com/cdn/shop/files/";
-/** The Nimbus films first published on Shopify, played from the store's own copies. */
-const films: Record<string, string> = {
-  "87921481": copyOf("https://cdn.shopify.com/videos/c/vp/3b1b192f7b064d9c92271dcea887b26e/3b1b192f7b064d9c92271dcea887b26e.HD-1080p-3.3Mbps-87921481.mp4"),
-  "88094202": copyOf("https://cdn.shopify.com/videos/c/vp/453715fe42df4f5fa8dc558f518b08ad/453715fe42df4f5fa8dc558f518b08ad.HD-720p-3.0Mbps-88094202.mp4"),
-  "83728678": copyOf("https://cdn.shopify.com/videos/c/vp/a1971b26aefb4007b0261fc8f95a7b55/a1971b26aefb4007b0261fc8f95a7b55.HD-720p-1.6Mbps-83728678.mp4"),
-};
-// Independent source expectations catch altered originals and incorrect key-to-slot wiring.
+/** Each listed Keeri product's own photo, as the catalogue's cards carry it. */
+const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
+// Independent expectations catch altered originals and incorrect key-to-slot wiring. The originals first published on
+// Shopify left the store (owner, 11 Nov 2026): such a slot shows its Keeri stand-in product's photo (desktop and mobile
+// alike), or, with none, nothing (`null`) until staff upload artwork. The films are stills now.
 const slots = [
-  ["home-workshop-poster", "home", ".hero-film img", copyOf("https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600"), "Arranging flowers on a Maple sideboard beside a floral armchair"],
+  ["home-workshop-poster", "home", ".hero-film [data-hero-slide] img", photo("arbor-sofa"), "Maple furniture"],
   ["home-hero-sofas", "home", '.category-tile[href="/sofas"] img', "/media/home/hero-sofas.webp", ""],
   ["home-hero-chairs", "home", '.category-tile[href="/chairs"] img', "/media/home/hero-chairs.webp", ""],
   ["home-hero-tables", "home", '.category-tile[href="/tables"] img', "/media/home/hero-tables.webp", ""],
   ["home-hero-beds", "home", '.category-tile[href="/collections/beds"] img', "/media/home/hero-beds.webp", ""],
   ["home-nimbus", "home", ".nimbus-stage-media img", "/media/home/nimbus-clouds.webp", "The Nimbus Collection — cloud-like upholstered furniture", "/media/home/nimbus-clouds.webp"],
-  ["home-newsletter", "home", ".home-newsletter img", copyOf(files + "Cover_Image_Maple_1.png"), "Maple Furnishers"],
-  ["home-testimonial-poster", "home", ".home-testimonial video", copyOf(files + "preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg?v=1778852379&width=960"), "Maple customer testimonial"],
-  ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', copyOf(files + "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png"), "Bedroom"],
-  ["nimbus-room-living", "nimbus", '.landing-nimbus-tiles a[href="/collections/living-room-nimbus"] img', copyOf(files + "Untitled_design_6.svg"), "Living Room"],
-  ["nimbus-room-dining", "nimbus", '.landing-nimbus-tiles a[href="/collections/dining-room-nimbus"] img', copyOf(files + "Chairs.svg"), "Dining Room"],
-  ["nimbus-room-collection", "nimbus", '.landing-nimbus-tiles a[href="/collections/nimbus"] img', copyOf(files + "Chairs_1.png"), "Nimbus collection", copyOf(files + "Chairs_3.png")],
-  ["nimbus-origin", "nimbus", ".landing-nimbus-origin img", copyOf(files + "Untitled_design_35.png?height=1024&v=1779725875"), "Nimbus sculptural lounge furniture"],
-  ["nimbus-slide-living", "nimbus", ".landing-slideshow img", copyOf(files + "livingroom.png?v=1779440214"), "Living room", copyOf(files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg?v=1780342962")],
-  ["nimbus-slide-bedroom", "nimbus", ".landing-slideshow img", copyOf(files + "NIMBUS_bedroom.png?v=1779439068"), "Bedroom", copyOf(files + "bedroom.png?v=1780257906")],
-  ["nimbus-slide-dining", "nimbus", ".landing-slideshow img", copyOf(files + "nimbus_dinning.png?v=1779439066"), "Dining room", copyOf(files + "WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg?v=1780342962")],
-  ["nimbus-project", "nimbus", ".landing-project > img", copyOf(files + "image_7.png?v=1778317065"), "Maple furniture design details"],
-  ["nimbus-hero-poster", "nimbus", ".landing-nimbus-hero video", copyOf(files + "preview_images/453715fe42df4f5fa8dc558f518b08ad.thumbnail.0000000000_small.jpg?v=1783143693"), "Nimbus collection film", copyOf(files + "preview_images/3b1b192f7b064d9c92271dcea887b26e.thumbnail.0000000000_small.jpg?v=1782971263")],
-  ["nimbus-craft-poster", "nimbus", ".landing-nimbus-bento video", copyOf(files + "preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401"), "Nimbus furniture craftsmanship"],
-  ["story-hero", "story", ".story-hero-media img", copyOf(files + "Frame129.png?height=4291&v=1777318243"), "A hand resting on the bouclé seat of a Maple armchair"],
-  ["story-belief", "story", ".story-belief-media img", copyOf(files + "preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg?v=1776870599"), "The hand-woven cord seat of a Maple chair"],
+  ["home-newsletter", "home", ".home-newsletter img", null, "Maple Furnishers"],
+  ["home-testimonial-poster", "home", ".home-testimonial img", null, "Maple customer testimonial"],
+  ["nimbus-room-bedroom", "nimbus", '.landing-nimbus-tiles a[href="/collections/bedroom-nimbus"] img', photo("elara-bed"), "Bedroom", photo("elara-bed")],
+  ["nimbus-room-living", "nimbus", '.landing-nimbus-tiles a[href="/collections/living-room-nimbus"] img', photo("alpine"), "Living Room", photo("alpine")],
+  ["nimbus-room-dining", "nimbus", '.landing-nimbus-tiles a[href="/collections/dining-room-nimbus"] img', photo("radiance-table"), "Dining Room", photo("radiance-table")],
+  ["nimbus-room-collection", "nimbus", '.landing-nimbus-tiles a[href="/collections/nimbus"] img', photo("virelle-chair"), "Nimbus collection", photo("virelle-chair")],
+  ["nimbus-origin", "nimbus", ".landing-nimbus-origin img", photo("virelle"), "Nimbus sculptural lounge furniture"],
+  ["nimbus-slide-living", "nimbus", ".landing-slideshow img", photo("aurevo"), "Living room", photo("aurevo")],
+  ["nimbus-slide-bedroom", "nimbus", ".landing-slideshow img", photo("altura-table"), "Bedroom", photo("altura-table")],
+  ["nimbus-slide-dining", "nimbus", ".landing-slideshow img", photo("meridian-table"), "Dining room", photo("meridian-table")],
+  ["nimbus-project", "nimbus", ".landing-project > img", photo("mela"), "Maple furniture design details"],
+  ["nimbus-hero-poster", "nimbus", ".landing-nimbus-hero img", photo("geometric-grotto"), "The Nimbus collection", "mobile-if-uploaded"],
+  ["nimbus-craft-poster", "nimbus", ".landing-nimbus-bento > [data-nimbus-still] img", photo("aether-table"), "Nimbus furniture craftsmanship"],
+  ["story-hero", "story", ".story-hero-media img", photo("luca"), "A Maple armchair"],
+  ["story-belief", "story", ".story-belief-media img", photo("varin"), "A Maple dining chair"],
   ["story-chapter-1", "story", '[data-story-chapter="chapter-1"] img', "/media/our-story/chapter-1.webp", "A walnut chair frame on a workbench strewn with shavings and hand planes"],
   ["story-chapter-2", "story", '[data-story-chapter="chapter-2"] img', "/media/our-story/chapter-2.webp", "A cream sofa with burgundy cushions in a sunlit Indian living room"],
   ["story-chapter-3", "story", '[data-story-chapter="chapter-3"] img', "/media/our-story/chapter-3.webp", "A bouclé lounge chair on a walnut frame beneath an arched alcove"],
@@ -53,7 +53,8 @@ const slots = [
   ["story-chapter-6", "story", '[data-story-chapter="chapter-6"] img', "/media/our-story/chapter-6.webp", "Cream dining chairs around a round walnut table in a stone-floored room"],
   ["story-chapter-7", "story", '[data-story-chapter="chapter-7"] img', "/media/our-story/chapter-7.webp", "A craftsman wrapping a walnut sideboard in protective cloth"],
 ] as const;
-const overrides = () => slots.map(([key, , , , , mobile]) => ({ key, image: `/media/${key}.webp`, alt: `Edited ${key}`, ...(mobile ? { mobileImage: `/media/${key}-small.webp` } : {}) }));
+const responsive = (key: string) => (templateMediaResponsiveKeys as readonly string[]).includes(key);
+const overrides = () => slots.map(([key]) => ({ key, image: `/media/${key}.webp`, alt: `Edited ${key}`, ...(responsive(key) ? { mobileImage: `/media/${key}-small.webp` } : {}) }));
 function published(media?: unknown) {
   const content = structuredClone(defaultStorefrontContent);
   delete (content as Record<string, unknown>).templateMedia;
@@ -68,7 +69,8 @@ async function withPublished(body: unknown, run: () => Promise<void>) {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, method: init?.method ?? "GET", cache: init?.cache });
-    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ products: [], published: true });
+    if (new URL(url).pathname === "/api/catalogue/cards")
+      return Response.json({ published: true, products: (new URL(url).searchParams.get("handles") ?? "").split(",").map(handle => ({ ...cardFixture(handle), image: photo(handle) })) });
     if (!url.endsWith("/api/content/storefront")) throw new Error("Unexpected endpoint");
     if (body === "offline") throw new Error("offline");
     return Response.json(body);
@@ -80,7 +82,8 @@ async function withPublished(body: unknown, run: () => Promise<void>) {
   } finally { globalThis.fetch = previous; }
 }
 async function documentFor(page: "home" | "nimbus" | "story") {
-  const element = page === "home" ? <ShopProvider><Home /></ShopProvider> : page === "nimbus" ? await NimbusPage() : await StoryPage();
+  // The Nimbus series rail draws real product cards, which read the shop's cart context.
+  const element = page === "home" ? <ShopProvider><Home /></ShopProvider> : page === "nimbus" ? <ShopProvider>{await NimbusPage()}</ShopProvider> : await StoryPage();
   return new JSDOM(await new Response(await renderToReadableStream(element)).text()).window.document;
 }
 function island(node: ReactNode, component: unknown, className?: string): React.ReactElement | undefined {
@@ -112,70 +115,52 @@ async function withIsland(element: React.ReactElement, small: boolean, run: (doc
 }
 /** Sections a fresh homepage keeps hidden (it closes on the values); their artwork is checked wherever a document shows them. */
 const hiddenByDefault = new Set(["home-newsletter", "home-testimonial-poster"]);
+async function nimbusTree() {
+  const landing = await (NimbusWithArtwork as (props: unknown) => Promise<React.ReactElement>)((await NimbusPage()).props);
+  return (NimbusLanding as (props: unknown) => React.ReactElement)(landing.props);
+}
 async function checkArtwork(edited: boolean, fallback = false) {
   for (const page of ["home", "nimbus", "story"] as const) {
     const doc = await documentFor(page);
     for (const [key, scope, selector, image, alt, mobile] of slots) {
       if (scope !== page || key.startsWith("nimbus-slide-")) continue;
-      const node = doc.querySelector(selector)!;
+      const node = doc.querySelector(selector);
       // Content that falls back to the defaults draws a fresh homepage, without those sections.
       if (!node && fallback && hiddenByDefault.has(key)) continue;
+      if (!edited && image === null) { assert.equal(node, null, `${key}: nothing drawn until staff upload artwork`); continue; }
       assert.ok(node, key);
-      const video = node.tagName === "VIDEO";
-      assert.equal(node.getAttribute(video ? "poster" : "src"), edited ? `/media/${key}.webp` : image, key);
-      assert.equal(node.getAttribute(video ? "aria-label" : "alt"), edited ? `Edited ${key}` : alt, `${key} accessible description`);
-      if (mobile && !video) assert.equal(node.parentElement?.querySelector("source")?.getAttribute("srcset"), edited ? `/media/${key}-small.webp` : mobile, `${key} mobile`);
+      assert.equal(shown(node.getAttribute("src")), edited ? `/media/${key}.webp` : image, key);
+      assert.equal(node.getAttribute("alt"), edited ? `Edited ${key}` : alt, `${key} accessible description`);
+      // A stand-in photo serves both crops; an upload brings its own mobile crop where the placement takes one.
+      const source = node.parentElement?.querySelector("source")?.getAttribute("srcset") ?? null;
+      if (edited) { if (mobile) assert.equal(source, responsive(key) ? `/media/${key}-small.webp` : null, `${key} mobile`); }
+      else if (mobile) assert.equal(source, mobile === "mobile-if-uploaded" ? null : mobile, `${key} mobile`);
     }
+    // No film anywhere: they were Shopify files, and films cannot be uploaded yet.
+    assert.equal(doc.querySelector("video"), null, `${page} draws no film`);
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");
-      // The latest shop film plays on its own as decoration, with no controls (owner, 2026-11-01).
-      assert.equal(doc.querySelector(".hero-film video")?.getAttribute("aria-hidden"), "true");
       assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
-      if (!fallback || doc.querySelector(".home-testimonial")) assert.equal(doc.querySelector(".home-testimonial video[controls] source")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aee33cd277cb42e7804bfce64be22297/aee33cd277cb42e7804bfce64be22297.HD-720p-2.1Mbps-84199271.mp4"));
       if (!fallback || doc.querySelector(".home-newsletter")) assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
-    if (page === "nimbus") {
-      assert.equal(doc.querySelector(".landing-nimbus-intro h2")?.textContent, "Introducing nimbus");
-      assert.equal(doc.querySelector('.landing-nimbus-bento video')?.getAttribute("src"), null, "Server markup must defer the below-fold film source");
-      assert.ok(doc.querySelector(`.landing-nimbus-bento button[aria-label="Play ${edited ? "Edited nimbus-craft-poster" : "Nimbus furniture craftsmanship"}"]`));
-    }
-    // The redesign (10 Nov 2026) shows the old film's poster as a still and no film.
-    if (page === "story") assert.equal(doc.querySelector("video"), null, "Our Story no longer carries the film");
+    if (page === "nimbus") assert.equal(doc.querySelector(".landing-nimbus-intro h2")?.textContent, "Introducing nimbus");
   }
-  const page = await NimbusPage();
-  const tree = NimbusLanding(page.props);
+  const tree = await nimbusTree();
   await withIsland(island(tree, CategorySlideshow)!, false, async doc => {
     for (const [key, , , image, alt, mobile] of slots.filter(s => s[0].startsWith("nimbus-slide-"))) {
-      assert.equal(doc.querySelector("img")?.getAttribute("src"), edited ? `/media/${key}.webp` : image);
+      assert.equal(shown(doc.querySelector("img")?.getAttribute("src")), edited ? `/media/${key}.webp` : image);
       assert.equal(doc.querySelector("source")?.getAttribute("srcset"), edited ? `/media/${key}-small.webp` : mobile);
       assert.equal(doc.querySelector("img")?.getAttribute("alt"), edited ? `Edited ${key}` : alt);
       await act(async () => doc.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
     }
   });
-  for (const small of [false, true]) await withIsland(island(tree, CategoryVideo)!, small, async doc => {
-    const hero = slots.find(s => s[0] === "nimbus-hero-poster")!;
-    assert.equal(doc.querySelector("video")?.getAttribute("poster"), edited ? `/media/nimbus-hero-poster${small ? "-small" : ""}.webp` : hero[small ? 5 : 3]);
-    assert.equal(doc.querySelector("video")?.getAttribute("src"), null, "Reduced motion keeps the film unloaded before deliberate playback");
-    assert.equal(doc.querySelector("button")?.getAttribute("aria-label"), `Play ${edited ? "Edited nimbus-hero-poster" : "Nimbus collection film"}`, "Reduced motion retains a user-operated play control");
-    await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
-    assert.equal(doc.querySelector("video")?.getAttribute("src"), films[small ? "87921481" : "88094202"], "Deliberate playback preserves the matching source MP4 (the store's copy)");
-  });
-  const story = await StoryPage();
-  assert.equal(island(StoryLanding(story.props), CategoryVideo), undefined, "Our Story draws no film control");
-  for (const [element, suffix] of [
-    [island(tree, CategoryVideo, ""), "83728678"],
-  ] as const) {
-    assert.ok(element, "Original film control exists");
-    await withIsland(element, false, async doc => {
-      assert.equal(doc.querySelector("video")?.getAttribute("src"), null);
-      await act(async () => doc.querySelector<HTMLButtonElement>("button")!.click());
-      assert.equal(doc.querySelector("video")?.getAttribute("src"), films[suffix], "Deferred film retains its original MP4 (the store's copy)");
-    });
-  }
+  assert.equal(island(tree, CategoryVideo), undefined, "the Nimbus page draws no film control");
+  const story = await (StoryWithArtwork as (props: unknown) => Promise<React.ReactElement>)((await StoryPage()).props);
+  assert.equal(island((StoryLanding as (props: unknown) => React.ReactElement)(story.props), CategoryVideo), undefined, "Our Story draws no film control");
 }
 
-test("legacy published pages preserve all 28 original artwork slots and six responsive pairs", async () => {
+test("legacy published pages show every bundled original, Keeri stand-ins for the former Shopify artwork, and nothing else", async () => {
   await withPublished(published(), () => checkArtwork(false));
 });
 
@@ -208,13 +193,12 @@ test("renamed and reordered Nimbus rooms keep dynamic default descriptions and k
       assert.deepEqual(tiles.map(n => n.getAttribute("alt")), edited
         ? ["Edited nimbus-room-dining", "Edited nimbus-room-bedroom", "Edited nimbus-room-living", "Edited nimbus-room-collection"]
         : ["Gather here", "Rest here", "Unwind here", "Nimbus collection"]);
-      assert.equal(tiles[0]?.getAttribute("src"), edited ? "/media/nimbus-room-dining.webp" : copyOf(files + "Chairs.svg"));
+      assert.equal(shown(tiles[0]?.getAttribute("src")), edited ? "/media/nimbus-room-dining.webp" : photo("radiance-table"));
       assert.deepEqual([...doc.querySelectorAll(".landing-nimbus-tiles h3")].map(n => n.textContent), ["Gather here", "Rest here", "Unwind here"]);
-      const page = await NimbusPage();
-      await withIsland(island(NimbusLanding(page.props), CategorySlideshow)!, false, async doc => {
-        for (const [key, label, image] of [["dining", "Shared meals", "nimbus_dinning.png?v=1779439066"], ["living", "Slow evenings", "livingroom.png?v=1779440214"], ["bedroom", "Restful nights", "NIMBUS_bedroom.png?v=1779439068"]]) {
+      await withIsland(island(await nimbusTree(), CategorySlideshow)!, false, async doc => {
+        for (const [key, label, product] of [["dining", "Shared meals", "meridian-table"], ["living", "Slow evenings", "aurevo"], ["bedroom", "Restful nights", "altura-table"]]) {
           assert.equal(doc.querySelector("img")?.getAttribute("alt"), edited ? `Edited nimbus-slide-${key}` : label);
-          assert.equal(doc.querySelector("img")?.getAttribute("src"), edited ? `/media/nimbus-slide-${key}.webp` : copyOf(files + image));
+          assert.equal(shown(doc.querySelector("img")?.getAttribute("src")), edited ? `/media/nimbus-slide-${key}.webp` : photo(product!));
           await act(async () => doc.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
         }
       });

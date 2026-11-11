@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { copyOf } from "./support/shopify-copy";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -101,16 +100,9 @@ test("homepage includes source Instagram posts; the original customer testimonia
           "Getting our sofa made by Maple was a completely hassle-free experience.",
         ),
     );
-    assert.ok(
-      doc.querySelector(".home-testimonial video source")?.getAttribute("src"),
-    );
-    const poster = doc
-      .querySelector(".home-testimonial video")
-      ?.getAttribute("poster");
-    assert.ok(
-      poster === copyOf("files/preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg"),
-      "Customer video needs the verified full-resolution poster (the store's copy of Shopify's original)",
-    );
+    // The customer's film and its poster were Shopify files (left the store 11 Nov 2026): the words stand alone.
+    assert.equal(doc.querySelector(".home-testimonial video"), null);
+    assert.equal(doc.querySelector(".home-testimonial img"), null);
   } finally {
     globalThis.fetch = previousFetch;
   }
