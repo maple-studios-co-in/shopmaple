@@ -15,7 +15,6 @@ import "@/styles/motion-rail.css";
 import "@/styles/content-pages.css";
 import "@/styles/campaign-banners.css";
 import "@/styles/product-parity.css";
-import "@/styles/contact-parity.css";
 import "@/styles/collection-parity.css";
 import "@/styles/landing-parity.css";
 import "@/components/legacy-chairs.css";

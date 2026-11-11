@@ -4,9 +4,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToReadableStream } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import { ContactHelp } from "../components/contact-form";
 import { CategorySlideshow } from "../components/category-controls";
-import { contactCategories } from "../lib/contact-content";
 import Home from "../app/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
@@ -38,54 +36,6 @@ async function withClient(small: boolean | null, element: React.ReactNode, run: 
     dom.window.close();
   }
 }
-
-test("mobile help controls describe the actual named dialog and its open state", async () => {
-  await withClient(true, <ContactHelp categories={contactCategories} />, async doc => {
-    const triggers = doc.querySelectorAll<HTMLButtonElement>(".cp-help-categories button");
-    const trigger = triggers[1]!;
-    assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
-    assert.equal(trigger.getAttribute("aria-expanded"), "false");
-    await act(async () => trigger.click());
-    const target = doc.getElementById(trigger.getAttribute("aria-controls")!);
-    assert.equal(target, doc.querySelector("dialog[open]"), "the control must target the open dialog, not hidden desktop answers");
-    assert.equal(target?.getAttribute("aria-label"), contactCategories[1]!.title);
-    assert.equal(trigger.getAttribute("aria-expanded"), "true");
-    assert.equal(triggers[0]!.getAttribute("aria-expanded"), "false");
-    await act(async () => doc.querySelector<HTMLButtonElement>(".cp-help-back")!.click());
-    assert.equal(doc.querySelector<HTMLDialogElement>("dialog")!.open, false);
-    assert.equal(trigger.getAttribute("aria-expanded"), "false");
-  });
-});
-
-test("help controls retain desktop region semantics and adapt to mobile viewport changes", async () => {
-  await withClient(false, <ContactHelp categories={contactCategories} />, async (doc, viewport) => {
-    const trigger = doc.querySelector<HTMLButtonElement>(".cp-help-categories button")!;
-    assert.equal(doc.getElementById(trigger.getAttribute("aria-controls")!)?.getAttribute("role"), "region");
-    assert.equal(trigger.hasAttribute("aria-haspopup"), false);
-    await act(async () => viewport(true));
-    assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
-    await act(async () => viewport(false));
-    assert.equal(trigger.hasAttribute("aria-haspopup"), false);
-    assert.equal(doc.getElementById(trigger.getAttribute("aria-controls")!)?.getAttribute("role"), "region");
-  });
-});
-
-test("help stays readable and switches categories when viewport media queries are unavailable", async () => {
-  await assert.doesNotReject(() => withClient(null, <ContactHelp categories={contactCategories} />, async (doc, viewport) => {
-    const trigger = doc.querySelectorAll<HTMLButtonElement>(".cp-help-categories button")[1]!;
-    await act(async () => trigger.click());
-    const region = doc.getElementById(trigger.getAttribute("aria-controls")!);
-    assert.equal(region?.getAttribute("role"), "region");
-    assert.equal(region?.getAttribute("aria-label"), contactCategories[1]!.title);
-    assert.equal(trigger.getAttribute("aria-pressed"), "true");
-    assert.equal(trigger.hasAttribute("aria-haspopup"), false);
-    assert.equal(doc.querySelector<HTMLDialogElement>("dialog")!.open, false);
-    await act(async () => viewport(true));
-    assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
-    await act(async () => trigger.click());
-    assert.equal(doc.getElementById(trigger.getAttribute("aria-controls")!), doc.querySelector("dialog[open]"));
-  }), "an unavailable optional viewport API must not crash help content");
-});
 
 test("manual room navigation announces room and position without moving keyboard focus", async () => {
   const slides = [

@@ -45,10 +45,13 @@ test("small promise-strip text meets 4.5:1 on cream", () => {
   assert.doesNotMatch(source("../components/store/promise-strip.tsx"), /text-taupe/);
 });
 
-test("the map embed does not send the visitor's page address (with product and pincode) to Google", () => {
-  const help = source("../components/service-pages.tsx");
-  assert.doesNotMatch(help, /no-referrer-when-downgrade/);
-  assert.match(help, /referrerPolicy="no-referrer"/);
+test("the contact page's map links do not send the visitor's page address (with product and pincode) to Google", () => {
+  // The redesign (Figma 298:511, owner 10 Nov 2026) drops the embedded map for links to directions.
+  const page = source("../components/contact-page.tsx");
+  assert.doesNotMatch(page, /<iframe|no-referrer-when-downgrade/);
+  const links = page.match(/<a [^>]*href=\{directions\}[^>]*>/g) ?? [];
+  assert.equal(links.length, 2);
+  for (const link of links) assert.match(link, /rel="noreferrer"/);
 });
 
 test("the staff preview frame shows the draft's own card highlights on every page", () => {

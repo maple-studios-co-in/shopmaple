@@ -153,8 +153,10 @@ export function ProductFeatures({ features, highlights = [], photo, title, conta
 /**
  * A card that shows a little (two lines of text, or two rows) and stays exactly so: the arrow in its top corner, which
  * points down while closed and turns up once open (owner, 10 Nov 2026), opens its popup. The arrow belongs to the title's
- * button, drawn in the corner, so one control opens the card and its title names it. A card with nothing more to show
- * has no arrow. `side` is where its popup opens: towards the photo.
+ * button, drawn in the corner, so one control opens the card and its title names it; that button reaches over the whole
+ * card (its ::after fills the card's surface), so a click anywhere on the card opens it (owner, 10 Nov 2026), while a link
+ * in the card's text stays above it. A card with nothing more to show has no arrow. `side` is where its popup opens:
+ * towards the photo.
  */
 function FeatureCard({ feature, open, onToggle, onClose, className, side }: {
   feature: Feature; open: boolean; onToggle: () => void; onClose: () => void; className: string; side: "left" | "right";
@@ -168,13 +170,15 @@ function FeatureCard({ feature, open, onToggle, onClose, className, side }: {
   return (
     <div data-feature-slot data-open={open} className={cx("relative min-w-0 self-start", className)}>
       <article id={`feature-${feature.key}`} data-feature={feature.key} data-open={open} className="min-w-0">
-        <div data-feature-surface className="relative flex w-full flex-col items-start gap-3 rounded-[14px] border border-solid border-[#eae5e1] bg-white p-[22px]">
+        <div data-feature-surface className={cx("relative flex w-full flex-col items-start gap-3 rounded-[14px] border border-solid border-[#eae5e1] bg-white p-[22px] transition-[border-color,box-shadow] motion-reduce:transition-none",
+          "has-[[data-feature-toggle]:hover]:border-[#dccbc4] has-[[data-feature-toggle]:hover]:shadow-[0_16px_32px_-22px_rgb(31_18_13/0.4)]",
+          "has-[[data-feature-toggle]:focus-visible]:outline-2 has-[[data-feature-toggle]:focus-visible]:outline-offset-2 has-[[data-feature-toggle]:focus-visible]:outline-maple", calm)}>
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
           <img src={`/product-page/${feature.icon}.svg`} alt="" width={26} height={26} className="size-[26px]" />
           <h3 className="m-0 w-full text-[22px] leading-[1.5] font-medium text-[#3b3430]">
             {opens ? (
               <button type="button" data-feature-toggle aria-expanded={open} aria-controls={popId} aria-haspopup="dialog" onClick={onToggle}
-                className="group/toggle block w-full cursor-pointer rounded-[6px] border-0 bg-transparent p-0 text-left [font:inherit] text-inherit focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-maple">
+                className="group/toggle block w-full cursor-pointer rounded-[6px] border-0 bg-transparent p-0 text-left [font:inherit] text-inherit focus-visible:outline-none after:absolute after:inset-0 after:rounded-[14px] after:content-['']">
                 <span>{feature.title}</span>
                 <span data-feature-arrow aria-hidden="true"
                   className={cx("absolute top-[21px] right-[22px] grid size-7 place-items-center rounded-full bg-maple text-white shadow-[0_6px_14px_-6px_rgb(128_36_28/0.6)] transition-transform group-hover/toggle:scale-110 group-aria-expanded/toggle:rotate-180 motion-reduce:transition-none", calm)}>
@@ -183,7 +187,7 @@ function FeatureCard({ feature, open, onToggle, onClose, className, side }: {
               </button>
             ) : feature.title}
           </h3>
-          <div data-feature-content className="flex w-full flex-col gap-3">
+          <div data-feature-content className="flex w-full flex-col gap-3 [&_a]:relative [&_a]:z-[1]">
             {feature.body && (
               <div data-feature-body className={cx("text-[15px] leading-[23px] whitespace-pre-line text-[#756d68]", rich, long && opens && "line-clamp-2")}>{feature.body}</div>
             )}

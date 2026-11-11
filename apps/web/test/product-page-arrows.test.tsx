@@ -63,6 +63,30 @@ test("the cards' arrows point down while closed and turn up once open (owner, 10
   });
 });
 
+// The owner, 10 Nov 2026: "anywhere in the card I click then the card should open". The card's one control, its title's
+// button, reaches over the whole card (its ::after spans the card's surface), so a click anywhere on the card is a click on
+// it; links in the card's text stay above it, and the focus ring and hover lift draw round the whole card.
+test("a click anywhere on a card opens it: its button reaches over the whole card, links in it still work", async () => {
+  await mount(<ProductFeatures features={features} title="Nola Accent Chair" photo="https://example.com/nola.jpg" />, async (host) => {
+    const cards = [...host.querySelectorAll<HTMLElement>("[data-feature]")].slice(0, 3);
+    for (const card of cards) {
+      const toggle = card.querySelector<HTMLButtonElement>("button[data-feature-toggle]")!;
+      const surface = card.querySelector<HTMLElement>("[data-feature-surface]")!;
+      const positioned = (element: Element) => element.className.split(/\s+/).filter((name) => /^(relative|absolute|fixed|sticky)$/.test(name));
+      for (const name of ["after:absolute", "after:inset-0", "after:content-['']", "after:rounded-[14px]"])
+        assert.ok(toggle.classList.contains(name), `${card.dataset.feature}: the button's ${name} spans the card`);
+      assert.deepEqual(positioned(toggle), [], "the button itself is not positioned, so its ::after measures the card");
+      assert.deepEqual(positioned(toggle.closest("h3")!), [], "nor is its heading");
+      assert.ok(positioned(surface).includes("relative"), "the card's surface is what the ::after fills");
+      assert.match(surface.className, /has-\[\[data-feature-toggle\]:focus-visible\]:outline-2/, "the focus ring outlines the whole card");
+      assert.match(surface.className, /has-\[\[data-feature-toggle\]:hover\]:border-/, "the card answers the pointer anywhere on it");
+      assert.ok(toggle.classList.contains("focus-visible:outline-none"), "one ring: the card's, not a second round the title");
+      const content = card.querySelector<HTMLElement>("[data-feature-content]")!;
+      assert.ok(content.classList.contains("[&_a]:relative") && content.classList.contains("[&_a]:z-[1]"), "a link in the card's text sits above the reach");
+    }
+  });
+});
+
 // The owner's later notes: the hotspots are a plus again, dark on a light disc (9 Nov 2026), and smaller (10 Nov 2026).
 test("the hotspots are a small dark plus on a light disc that turns to a cross while open, with a full-size target", async () => {
   await mount(<ProductFeatures features={features} highlights={["Hand-woven seat", "Solid oak frame"]} title="Nola Accent Chair" photo="https://example.com/nola.jpg" />, async (host) => {

@@ -57,7 +57,13 @@ test("template fallback resolution preserves original assets and caller labels w
   assert.deepEqual(selected, { key: "home-newsletter", image: "/media/override.webp", alt: "Updated room" });
   selected.alt = "Mutated";
   assert.equal(override[0]!.alt, "Updated room");
-  // Our Story's redesign (10 Nov 2026) traded the film poster for the belief photo and added seven chapter photos.
-  assert.equal(templateMediaSlots.length, 54);
+  // Our Story's redesign (10 Nov 2026) traded the film poster for the belief photo and added seven chapter photos; the
+  // contact redesign added two photos and the Bulk Enquiry redesign five (54 + 2 + 5).
+  assert.equal(templateMediaSlots.length, 61);
+  assert.deepEqual(templateMediaSlots.filter(slot => slot.key.startsWith("bulk-")).map(slot => [slot.key, slot.image]), [
+    ["bulk-hero", "/media/bulk-enquiry/hero.webp"], ["bulk-step-meet", "/media/bulk-enquiry/step-meet.webp"],
+    ["bulk-step-design", "/media/bulk-enquiry/step-design.webp"], ["bulk-step-deliver", "/media/bulk-enquiry/step-deliver.webp"],
+    ["bulk-proposal", "/media/bulk-enquiry/proposal.webp"],
+  ]);
   assert.equal(parse(templateMediaSlots.map(({ label: _label, group: _group, ...asset }) => asset)).success, true);
 });

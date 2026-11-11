@@ -209,15 +209,28 @@
 }
 
 /* ---- The journey: one chapter at a time, the years and arrows under it ---- */
+/* One screen (owner, 10 Nov 2026): the heading, the chapter and its years fit the window together. The spacing tightens
+   on shorter windows and the photo gives way to what the height leaves (--journey-chrome is everything but the photo);
+   the arrows stand beside the heading, clear of the floating Contact us button at the bottom right. */
 .story-journey {
+  --journey-pad: min(clamp(44px, 4.444vw, 85px), 5svh);
+  --journey-gap: min(clamp(24px, 2.778vw, 53px), 3.5svh);
+  --journey-timeline-gap: min(clamp(24px, 2.5vw, 48px), 3svh);
+  --journey-eyebrow: calc(clamp(12px, 0.903vw, 17.3px) * 1.385);
+  --journey-title: calc(clamp(28px, 2.778vw, 53.3px) * 1.4);
+  --journey-arrow: clamp(44px, 3.472vw, 66.7px);
+  --journey-years: calc(clamp(12px, 0.972vw, 18.7px) * 2 + clamp(13px, 0.972vw, 18.7px) * 1.4286);
+  --journey-chrome: calc(2 * var(--journey-pad) + var(--journey-eyebrow) + var(--journey-title) + 2 * var(--journey-gap) + var(--journey-timeline-gap) + var(--journey-years) + 12px);
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: clamp(24px, 2.778vw, 53px);
-  padding: clamp(44px, 4.444vw, 85px) var(--story-gutter);
+  gap: var(--journey-gap);
+  padding: var(--journey-pad) var(--story-gutter);
   background: #fff;
 }
 .story-page .story-journey-title {
   margin: 0;
+  padding-right: calc(2 * var(--journey-arrow) + clamp(16px, 1.667vw, 32px) + 16px);
   color: var(--story-maple);
   font: 500 clamp(28px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
 }
@@ -227,7 +240,7 @@
   --story-glide: calc(560ms + var(--story-distance, 1) * 90ms);
   display: flex;
   flex-direction: column;
-  gap: clamp(24px, 2.5vw, 48px);
+  gap: var(--journey-timeline-gap);
   min-width: 0;
 }
 .story-timeline-viewport {
@@ -258,11 +271,13 @@
 .story-timeline-slide[data-active] {
   opacity: 1;
 }
+/* The photo's column is the design's share of the row (560 of 1200), or what the window's height leaves for it. */
 .story-chapter {
+  --story-chapter-gap: clamp(32px, 5.556vw, 107px);
   display: grid;
-  grid-template-columns: minmax(0, 560fr) minmax(0, 640fr);
+  grid-template-columns: max(240px, min(calc((100% - var(--story-chapter-gap)) * 0.46667), calc((100svh - var(--journey-chrome)) * 560 / 540))) minmax(0, 1fr);
   align-items: start;
-  column-gap: clamp(32px, 5.556vw, 107px);
+  column-gap: var(--story-chapter-gap);
 }
 .story-chapter-media {
   aspect-ratio: 560 / 540;
@@ -339,8 +354,10 @@
   color: var(--story-maple);
 }
 .story-timeline-arrows {
+  position: absolute;
+  top: calc(var(--journey-pad) + var(--journey-eyebrow) + var(--journey-gap) + (var(--journey-title) - var(--journey-arrow)) / 2);
+  right: var(--story-gutter);
   display: flex;
-  flex: none;
   gap: clamp(16px, 1.667vw, 32px);
 }
 .story-page .story-timeline-arrow {
