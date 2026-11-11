@@ -90,6 +90,8 @@ test('secret values from the environment and secret-looking strings never reach 
   const text = redact('key re_live_value_123456 secret abcSecretValue987 db postgresql://u:p@127.0.0.1:55440/shopmaple_store live rzp_live_AbCdEf123 bearer Bearer xyz.abc site https://shop.maplefurnishers.com/', env);
   for (const secret of ['re_live_value_123456', 'abcSecretValue987', 'postgresql://u:p@', 'rzp_live_AbCdEf123', 'xyz.abc']) assert.equal(text.includes(secret), false, secret);
   assert.match(text, /https:\/\/shop\.maplefurnishers\.com\//, 'ordinary addresses stay readable');
+  const path = '/home/deploy/shopmaple/ops/tools/ops/run-restore-drill.sh';
+  assert.equal(redact(`run ${path}`, env), `run ${path}`, 'long file paths stay readable');
 });
 
 test('alert configuration accepts plain addresses only and needs a key unless dry-running', () => {

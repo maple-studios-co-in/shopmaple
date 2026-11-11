@@ -116,7 +116,8 @@ export function redact(text, env = {}) {
     .replace(/\bre_[A-Za-z0-9_]{8,}/g, '[redacted]')
     .replace(/\bBearer(\s+Bearer)*\s+\S+/gi, 'Bearer [redacted]')
     .replace(/\b(password|secret|token|api[_-]?key)(\s*[=:]\s*)\S+/gi, '$1$2[redacted]')
-    .replace(/[A-Za-z0-9+/_=-]{48,}/g, '[redacted]');
+    // Long opaque tokens; '/' is left out so file paths stay readable (configured secrets are removed by value above).
+    .replace(/[A-Za-z0-9+_=-]{48,}/g, '[redacted]');
 }
 
 export async function sendEmail(config, { subject, text }, { idempotencyKey, fetcher = globalThis.fetch, timeoutMs = 15_000 } = {}) {
