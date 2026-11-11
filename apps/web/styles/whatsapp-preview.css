@@ -1,0 +1,503 @@
+/* The WhatsApp order confirmation's development preview (app/previews/whatsapp; owner, 11 Nov 2026): the message on a
+   phone as Figma 394:1456 draws it, the same message in WhatsApp Desktop/Web, and the template as submitted to Meta.
+   Loaded by app/previews/whatsapp/layout.tsx; every rule hangs off `.wa-preview`.
+   Fits every width from 360px without sideways scrolling: on phones the phone frame runs edge to edge (its bubble at most
+   400px) with the desktop window below it, tablets stack the two, and from 1100px they sit side by side. Both bubbles keep
+   the header image at 1200:630, and long names and piece lists wrap. */
+.wa-preview {
+  --wa-gutter: clamp(16px, 4vw, 48px);
+  --wa-ink: #1c1c1c;
+  --wa-muted: #756d68;
+  --wa-rule: #e4ded8;
+  --wa-maple: #80241c;
+  --wa-panel: #f6f3ef;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: clamp(24px, 4vw, 56px) var(--wa-gutter) clamp(40px, 6vw, 88px);
+  overflow-x: clip;
+  background: var(--wa-panel);
+  color: var(--wa-ink);
+  font: 400 15px/1.5 var(--font-text);
+}
+.wa-preview *,
+.wa-preview *::before,
+.wa-preview *::after {
+  box-sizing: border-box;
+}
+.wa-preview :is(p, h1, h2, h3, pre, ol, dl, dd, figure) {
+  margin: 0;
+}
+.wa-preview-inner {
+  display: grid;
+  gap: clamp(36px, 4vw, 64px);
+  max-width: 1360px;
+  margin-inline: auto;
+}
+
+/* ---- Heading ---- */
+.wa-preview-head {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+.wa-preview-eyebrow {
+  color: var(--wa-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.wa-preview-orders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.wa-preview .wa-preview-orders a {
+  padding: 6px 12px;
+  border: 1px solid var(--wa-rule);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--wa-ink);
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+}
+.wa-preview .wa-preview-orders a[aria-current="page"] {
+  border-color: var(--wa-maple);
+  color: var(--wa-maple);
+}
+.wa-preview h1 {
+  color: var(--wa-maple);
+  font: 500 clamp(28px, 1.25vw + 22px, 40px) / 1.15 var(--font-heading);
+}
+.wa-preview h2 {
+  color: var(--wa-maple);
+  font: 500 clamp(20px, 0.5vw + 17px, 24px) / 1.25 var(--font-heading);
+}
+.wa-preview h3 {
+  color: var(--wa-ink);
+  font: 500 16px/1.3 var(--font-heading);
+}
+
+/* ---- The two renditions: stacked, then side by side ---- */
+.wa-renditions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(36px, 3vw, 48px);
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .wa-renditions {
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+  }
+}
+.wa-rendition {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.wa-rendition-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+.wa-rendition-head p {
+  color: var(--wa-muted);
+  font-size: 13px;
+}
+
+/* ---- On a phone (Figma 394:1456, 440 wide) ---- */
+.wa-phone {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 440px;
+  padding: 20px;
+  overflow: hidden;
+  background: #eeeae2;
+}
+.wa-phone-meta {
+  color: var(--wa-muted);
+  font: 400 11px/1.4 var(--font-text);
+}
+.wa-phone-bubble {
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+}
+.wa-preview :is(.wa-media, .wa-bubble-media) {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  background: #eceee7;
+}
+.wa-phone-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  overflow-wrap: anywhere;
+}
+.wa-phone-title {
+  color: var(--wa-ink);
+  font: 500 22px/1.4 var(--font-heading);
+}
+.wa-phone-text {
+  color: var(--wa-ink);
+  font: 400 15px/1.4 var(--font-text);
+}
+.wa-phone-text.is-muted {
+  color: var(--wa-muted);
+  font-size: 14px;
+}
+.wa-phone-rule {
+  display: block;
+  height: 1px;
+  background: var(--wa-rule);
+}
+.wa-preview .wa-phone-button {
+  color: #000;
+  font: 400 15px/1.4 var(--font-text);
+  text-decoration: none;
+}
+.wa-preview .wa-phone-button.is-primary {
+  color: var(--wa-maple);
+}
+.wa-phone-arrow {
+  margin-left: 0.6em;
+}
+@media (max-width: 479.98px) {
+  /* Edge to edge: the bubble is the screen less 16px a side, at most 398px on a 430px phone. */
+  .wa-phone {
+    width: auto;
+    max-width: none;
+    margin-inline: calc(-1 * var(--wa-gutter));
+    padding: 18px 16px;
+  }
+}
+
+/* ---- On WhatsApp Desktop and Web (light theme) ---- */
+.wa-desktop {
+  --wa-d-ink: #111b21;
+  --wa-d-muted: #667781;
+  --wa-d-icon: #54656f;
+  --wa-d-link: #027eb5;
+  --wa-d-bar: #f0f2f5;
+  --wa-d-line: #e9edef;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(11, 20, 26, 0.1);
+  border-radius: 10px;
+  background: #efeae2;
+  box-shadow: 0 18px 40px -24px rgba(11, 20, 26, 0.35);
+  color: var(--wa-d-ink);
+  font-family: "Segoe UI", "Helvetica Neue", Helvetica, "Lucida Grande", Arial, Ubuntu, Cantarell, "Fira Sans", sans-serif;
+}
+.wa-desktop-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--wa-d-line);
+  background: #fff;
+  color: var(--wa-d-icon);
+  font-size: 12px;
+}
+.wa-desktop-controls {
+  display: flex;
+  gap: 22px;
+}
+.wa-desktop-controls i {
+  position: relative;
+  display: block;
+  width: 10px;
+  height: 10px;
+}
+.wa-desktop-controls i:first-child {
+  border-bottom: 1px solid currentColor;
+  height: 6px;
+}
+.wa-desktop-controls i:nth-child(2) {
+  border: 1px solid currentColor;
+}
+.wa-desktop-controls i:last-child::before,
+.wa-desktop-controls i:last-child::after {
+  content: "";
+  position: absolute;
+  top: 4.5px;
+  left: -2px;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+.wa-desktop-controls i:last-child::after {
+  transform: rotate(-45deg);
+}
+.wa-desktop-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 60px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--wa-d-line);
+  background: var(--wa-d-bar);
+}
+.wa-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--wa-maple);
+  color: #fff;
+  font: 500 18px/1 var(--font-heading);
+}
+.wa-contact {
+  flex: 1;
+  min-width: 0;
+}
+.wa-contact :is(.wa-contact-name, .wa-contact-sub) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wa-contact-name {
+  font-size: 16px;
+  line-height: 21px;
+}
+.wa-contact-sub {
+  color: var(--wa-d-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+.wa-header-icons {
+  display: flex;
+  flex: none;
+  gap: 22px;
+  color: var(--wa-d-icon);
+}
+.wa-desktop svg {
+  display: block;
+  flex: none;
+}
+.wa-desktop-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px clamp(14px, 6%, 64px) 28px;
+  background-color: #efeae2;
+  /* A quiet stand-in for WhatsApp's doodle wallpaper. */
+  background-image:
+    radial-gradient(rgba(84, 101, 111, 0.12) 1px, transparent 1.4px),
+    radial-gradient(rgba(84, 101, 111, 0.08) 1px, transparent 1.4px);
+  background-position: 0 0, 13px 13px;
+  background-size: 26px 26px;
+}
+.wa-day-chip {
+  align-self: center;
+  padding: 5px 12px 6px;
+  border-radius: 7.5px;
+  background: #fff;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  color: var(--wa-d-icon);
+  font-size: 12.5px;
+  line-height: 21px;
+  text-transform: uppercase;
+}
+/* A received message: square top-left corner and WhatsApp's tail; 500px at most, as WhatsApp Desktop's widest. */
+.wa-bubble {
+  position: relative;
+  width: min(100%, 500px);
+  padding: 3px;
+  border-radius: 0 7.5px 7.5px 7.5px;
+  background: #fff;
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+.wa-bubble::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -8px;
+  width: 8px;
+  height: 13px;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.wa-preview .wa-bubble-media {
+  border-radius: 6px;
+}
+.wa-bubble-text {
+  position: relative;
+  padding: 6px 4px 8px 6px;
+  color: var(--wa-d-ink);
+  font-size: 14.2px;
+  line-height: 19px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.wa-bubble-text strong {
+  font-weight: 700;
+}
+/* Keeps the last line clear of the time, as WhatsApp does. */
+.wa-bubble-spacer {
+  display: inline-block;
+  width: 52px;
+}
+.wa-bubble-time {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  color: var(--wa-d-muted);
+  font-size: 11px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+.wa-bubble-buttons {
+  display: flex;
+  flex-direction: column;
+  margin: 2px -3px -3px;
+}
+.wa-preview .wa-bubble-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--wa-d-line);
+  color: var(--wa-d-link);
+  font-size: 14.2px;
+  line-height: 19px;
+  text-align: center;
+  text-decoration: none;
+}
+.wa-preview .wa-bubble-button:last-child {
+  border-radius: 0 0 7.5px 7.5px;
+}
+.wa-preview .wa-bubble-button:hover {
+  background: #f5f6f6;
+}
+.wa-desktop-composer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 16px;
+  background: var(--wa-d-bar);
+  color: var(--wa-d-icon);
+}
+.wa-composer-field {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--wa-d-muted);
+  font-size: 15px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- As submitted to Meta ---- */
+.wa-submission {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  max-width: 980px;
+}
+.wa-submission h3 {
+  margin-top: 12px;
+}
+.wa-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 10px;
+}
+.wa-facts > div,
+.wa-rows > li {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--wa-rule);
+  border-radius: 8px;
+  background: #fff;
+}
+.wa-facts dt {
+  color: var(--wa-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.wa-facts dd {
+  overflow-wrap: anywhere;
+}
+.wa-preview .wa-facts a {
+  color: var(--wa-maple);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wa-preview :is(code, pre) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+.wa-preview code {
+  font-size: 0.92em;
+}
+.wa-code {
+  max-width: 100%;
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--wa-rule);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.wa-rows {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.wa-rows > li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 4px 16px;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+.wa-rows code {
+  color: var(--wa-maple);
+}
+.wa-value {
+  color: var(--wa-muted);
+}
+@media (max-width: 639.98px) {
+  .wa-rows > li {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+  .wa-rows .wa-value {
+    grid-column: 2;
+  }
+}
+.wa-definition summary {
+  color: var(--wa-maple);
+  cursor: pointer;
+}
+.wa-definition .wa-code {
+  margin-top: 10px;
+}

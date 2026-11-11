@@ -4,24 +4,26 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { z } from "zod";
 import { useShop } from "@/components/shop-provider";
-import { cx } from "@/lib/cx";
-import { money } from "@/lib/format";
 import { CheckoutClosed } from "@/app/checkout/checkout-closed";
 import {
   CheckoutClientError,
   createCheckoutClient,
+  type CheckoutAccount,
   type CheckoutAttempt,
   type CheckoutOptions,
 } from "@/app/checkout/checkout-client";
 import { openHostedPayment } from "@/app/checkout/razorpay";
-import { CheckoutDetails } from "./checkout-details";
-import { buttonRow, errorText, heading, muted, outline, panel, QuoteLines, QuoteTotals, solid } from "./checkout-parts";
+import { CheckoutDetails, type CheckoutDefaults } from "./checkout-details";
+import { PaymentFailure, PaymentSuccess, type PaymentShortfall, type ResultPhotos } from "./checkout-result";
 
 type Stage =
   | { kind: "details" }
   | { kind: "resuming" }
   | { kind: "quote"; attempt: CheckoutAttempt }
-  | { kind: "paying"; attempt: CheckoutAttempt }
+  // Opened again from the failure screen (`retry`), the window keeps that screen behind it rather than the form.
+  | { kind: "paying"; attempt: CheckoutAttempt; retry?: PaymentShortfall }
+  // Razorpay's window closed without a payment: after a failed try, or with none. The attempt and its hold stay.
+  | { kind: "failed"; attempt: CheckoutAttempt; reason: PaymentShortfall }
   | { kind: "confirming"; attempt: CheckoutAttempt }
   | { kind: "confirmed"; attempt: CheckoutAttempt }
   | { kind: "review"; attempt: CheckoutAttempt; reason: "review" | "timeout" }
@@ -42,12 +44,45 @@ const fieldLabels: Record<string, string> = {
   "billingAddress.pincode": "Billing pincode",
   deliveryMethodId: "Delivery method",
 };
+/** The form field a problem belongs to, and what to say there. The order's one name is asked as first and last name. */
+const fieldOf = (path: string) =>
+  path === "customer.name" ? "firstName" : path === "customer.email" ? "email" : path === "customer.phone" ? "phone"
+    : path.replace(/^shippingAddress\./, "shipping.").replace(/^billingAddress\./, "billing.");
+const fieldProblems: Record<string, string> = {
+  email: "Enter a valid email address, such as name@example.com.",
+  firstName: "Enter the name of the person receiving the delivery.",
+  phone: "Enter a 10-digit mobile number.",
+  line1: "Enter the house number, building and street.",
+  line2: "Shorten the apartment or landmark line.",
+  city: "Enter the city.",
+  stateCode: "Choose the state.",
+  pincode: "Enter the 6-digit PIN code.",
+};
+/** The details already entered win; otherwise a signed-in customer's contact and default address fill the form. */
+function defaultsFrom(input: CheckoutInput | null, account: CheckoutAccount | undefined): CheckoutDefaults | null {
+  if (input) {
+    const [firstName = "", ...rest] = input.customer.name.split(" ");
+    return { email: input.customer.email, firstName, lastName: rest.join(" "), phone: input.customer.phone.replace(/^\+91/, ""),
+      shipping: input.shippingAddress, billing: input.billingAddress };
+  }
+  const prefill = account?.prefill;
+  if (!prefill) return null;
+  const [firstName = "", ...rest] = prefill.name.trim().split(/\s+/);
+  return { email: prefill.email, firstName, lastName: rest.join(" "), phone: prefill.phone.replace(/^\+91/, ""), shipping: prefill.address, billing: null };
+}
 const promoShape = "Codes are 3 to 24 letters and numbers, such as DIWALI15.";
 const defaultConfirmationWindowMs = 150_000;
 /** Below this much of the hold left, the buyer gets a fresh quote instead of a payment window. */
 const minimumPayWindowMs = 60_000;
 const storageKey = "maple-checkout-attempt-v1";
-const storedAttemptSchema = z.object({ attemptId: z.uuid(), input: checkoutInputSchema, submitted: z.boolean() });
+const storedAttemptSchema = z.object({
+  attemptId: z.uuid(),
+  input: checkoutInputSchema,
+  submitted: z.boolean(),
+  // The pieces' photos for the result screens, as the cart showed them when payment started (capture empties it).
+  // Anything malformed drops the photos, never the attempt.
+  photos: z.record(z.string().max(200), z.string().min(1).max(2048)).optional().catch(undefined),
+});
 type StoredAttempt = z.infer<typeof storedAttemptSchema>;
 function readStored(): StoredAttempt | null {
   try {
@@ -95,27 +130,36 @@ function readForm(form: HTMLFormElement, sameBilling: boolean) {
     deliveryMethodId: read("deliveryMethodId"),
   };
 }
-/** A full-width message state: confirmation, review, waiting. */
-function Notice({ title, children }: { title?: string; children: ReactNode }) {
+/** A message that takes the page's place: waiting, confirmation, review. The frame's step line stays above it. */
+function Notice({ title, step = "checkout", children }: { title: string; step?: "checkout" | "confirmation"; children: ReactNode }) {
   return (
-    <section data-checkout-state aria-live="polite" className={cx(panel, "max-w-[720px] text-ui text-espresso")}>
-      {title && <h2 className={heading}>{title}</h2>}
+    <section data-checkout-state aria-live="polite" className="checkout-notice">
+      <nav className="checkout-steps" aria-label="Checkout steps">
+        <ol>
+          <li><Link href="/cart">Bag</Link></li>
+          <li aria-current={step === "checkout" ? "step" : undefined}>Checkout</li>
+          <li aria-current={step === "confirmation" ? "step" : undefined}>Confirmation</li>
+        </ol>
+      </nav>
+      <h1 className="checkout-notice-title">{title}</h1>
       {children}
     </section>
   );
 }
 const orderLink = (id: string) => (
-  <Link className={outline} href={`/orders/${id}`}>
+  <Link className="account-cta" data-variant="quiet" data-fill-button="outline" href={`/orders/${id}`}>
     View order status
   </Link>
 );
 
 type FlowProps = {
   options: CheckoutOptions;
+  /** Whether customer accounts are on, and who is signed in (their details fill the form). */
+  account?: CheckoutAccount;
   pollIntervalMs?: number;
   confirmationWindowMs?: number;
 };
-/** Live checkout: details → Keeri quote (Shiprocket delivery) → Razorpay → confirmation. */
+/** Live checkout, as one page (Figma 394:1310): details → Keeri quote (Shiprocket delivery) → Razorpay → confirmation. */
 export function CheckoutFlow(props: FlowProps) {
   const top = useRef<HTMLDivElement>(null);
   return (
@@ -126,6 +170,7 @@ export function CheckoutFlow(props: FlowProps) {
 }
 function CheckoutStages({
   options,
+  account,
   pollIntervalMs = 2500,
   confirmationWindowMs = defaultConfirmationWindowMs,
   top,
@@ -138,6 +183,9 @@ function CheckoutStages({
   const [sameBilling, setSameBilling] = useState(true);
   const [deliveryMethodId, setDeliveryMethodId] = useState(options.deliveryMethods[0]?.id ?? "");
   const [problems, setProblems] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // After "Edit details" the buyer stays where they were: focus goes to the form's button, not the top of the page.
+  const focusPrimary = useRef(false);
   // The code as typed, and why it was refused; both live beside the code field on the details step.
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState("");
@@ -150,10 +198,13 @@ function CheckoutStages({
   const [paid, setPaid] = useState(false);
   // Set the moment the provider reports the buyer completed payment; never cleared by a timeout.
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+  // The pieces' photos by variant id, kept from the cart when payment starts: capture empties the cart.
+  const [photos, setPhotos] = useState<ResultPhotos>({});
   const [now, setNow] = useState(() => Date.now());
   const resumed = useRef(false);
   const confirmingId = stage.kind === "confirming" ? stage.attempt.id : null;
-  const watchingId = stage.kind === "quote" && stage.attempt.state === "awaiting_payment" ? stage.attempt.id : null;
+  // The quote and the failure screen both leave a payable attempt that another tab, or a late capture, may complete.
+  const watchingId = (stage.kind === "quote" || stage.kind === "failed") && stage.attempt.state === "awaiting_payment" ? stage.attempt.id : null;
   const settledId = stage.kind === "confirmed" || (stage.kind === "review" && (paid || stage.attempt.paid)) ? stage.attempt.id : null;
   const quoteExpiry = stage.kind === "quote" && stage.attempt.quote ? Date.parse(stage.attempt.quote.expiresAt) : null;
   const expired = requote || (quoteExpiry !== null && quoteExpiry <= now);
@@ -204,22 +255,38 @@ function CheckoutStages({
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const code = promoCode.trim();
-    const parsed = checkoutInputSchema.safeParse({ ...readForm(event.currentTarget, sameBilling), ...(code ? { promoCode: code } : {}) });
+    const parsed = checkoutInputSchema.safeParse({ ...readForm(form, sameBilling), ...(code ? { promoCode: code } : {}) });
     if (!parsed.success) {
-      const issues = parsed.error.issues.filter((issue) => issue.path[0] !== "promoCode");
+      // With billing the same as delivery, a delivery problem is not repeated as a billing one.
+      const issues = parsed.error.issues.filter((issue) => issue.path[0] !== "promoCode" && !(sameBilling && issue.path[0] === "billingAddress"));
+      setPromoError(parsed.error.issues.some((issue) => issue.path[0] === "promoCode") ? promoShape : "");
       setProblems([...new Set(issues.map((issue) => fieldLabels[issue.path.join(".")] ?? "Your details"))]);
-      setPromoError(issues.length < parsed.error.issues.length ? promoShape : "");
+      const found: Record<string, string> = {};
+      for (const issue of issues) {
+        const field = fieldOf(issue.path.join("."));
+        const message = fieldProblems[field.replace(/^(shipping|billing)\./, "")];
+        if (message && !found[field]) found[field] = message;
+      }
+      setFieldErrors(found);
+      // Focus the first problem in the order the form asks; a code alone that is malformed takes the focus.
+      const first = [...form.elements].find((element) => element instanceof HTMLElement && "name" in element && typeof element.name === "string" && found[element.name]);
+      ((first ?? (issues.length ? null : form.elements.namedItem("promoCode"))) as HTMLElement | null | undefined)?.focus();
       return;
     }
     setProblems([]);
+    setFieldErrors({});
     setInput(parsed.data);
     await requestQuote(parsed.data, false);
   }
-  async function pay(attempt: CheckoutAttempt) {
+  /** Open Razorpay's window for the attempt; `retry` is set when the buyer tries again from the failure screen. */
+  async function pay(attempt: CheckoutAttempt, retry?: PaymentShortfall) {
     if (!input) return;
     setBusy(true);
     setNotice("");
+    const pictured = Object.fromEntries(cart.items.filter((item) => item.image).map((item) => [item.variantId, item.image]));
+    if (Object.keys(pictured).length > 0) setPhotos((current) => ({ ...current, ...pictured }));
     try {
       const ready = await client.paymentOrder(attempt.id);
       if (!ready.providerOrderId)
@@ -238,7 +305,10 @@ function CheckoutStages({
         setNotice("Your reserved stock is about to be released. Get a new quote to continue. No payment has been taken.");
         return;
       }
-      setStage({ kind: "paying", attempt: ready });
+      setStage({ kind: "paying", attempt: ready, retry });
+      // Standard Checkout keeps its window open after a failed try so the buyer can try again there. Whether one failed
+      // decides what its closing shows: "Payment failed", or "Payment not completed" when the buyer closed it untried.
+      let failedTry = false;
       await openHostedPayment({
         key: options.paymentKeyId,
         order_id: ready.providerOrderId,
@@ -247,7 +317,7 @@ function CheckoutStages({
         name: "Maple Furnishers",
         description: `${cart.itemCount} ${cart.itemCount === 1 ? "item" : "items"}`,
         prefill: { name: input.customer.name, email: input.customer.email, contact: input.customer.phone },
-        theme: { color: "#6b1d14" },
+        theme: { color: "#80241c" },
         ...(holdLeftMs !== null ? { timeout: Math.floor(holdLeftMs / 1000) } : {}),
         handler: (signed) => {
           setPaid(false);
@@ -258,11 +328,10 @@ function CheckoutStages({
         },
         modal: {
           ondismiss: () => {
-            setStage((current) => (current.kind === "paying" ? { kind: "quote", attempt: ready } : current));
-            setNotice("Payment was not completed. You can try again when you're ready. No payment has been taken.");
+            setStage((current) => (current.kind === "paying" ? { kind: "failed", attempt: ready, reason: failedTry ? "failed" : "dismissed" } : current));
           },
         },
-      });
+      }, { onFailure: () => { failedTry = true; } });
     } catch (error) {
       // Keeri refused the hold for the code (the offer stopped, or this customer used it meanwhile). Nothing is held
       // and the attempt is over: back to the details, with the reason beside the code to change or remove.
@@ -272,7 +341,7 @@ function CheckoutStages({
         void leaveAttempt(attempt);
         return;
       }
-      setStage((current) => (current.kind === "paying" ? { kind: "quote", attempt } : current));
+      setStage((current) => (current.kind === "paying" ? (retry ? { kind: "failed", attempt, reason: retry } : { kind: "quote", attempt }) : current));
       if (error instanceof CheckoutClientError) fail(error);
       else setNotice("The payment window couldn't be opened. Please try again. No payment has been taken.");
     } finally {
@@ -289,12 +358,20 @@ function CheckoutStages({
     setStage({ kind: "details" });
     void leaveAttempt(previous).then(() => requestQuote(rest, true));
   }
-  // A new step replaces the form the buyer was at the bottom of; start them at its top.
+  // The quote and the payment window fill in the same page, where the buyer is. A message that replaces the page
+  // (confirming, confirmed, failed, review, closed) starts them at its top.
   const shown = useRef(stage.kind);
   useEffect(() => {
     if (shown.current === stage.kind) return;
     shown.current = stage.kind;
-    if (stage.kind !== "resuming") top.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    if (!["resuming", "details", "quote", "paying"].includes(stage.kind)) top.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    if (stage.kind === "details" && focusPrimary.current) {
+      focusPrimary.current = false;
+      top.current?.querySelector<HTMLElement>("[data-checkout-primary]")?.focus();
+    }
+    // A result screen follows Razorpay's window, whose closing leaves focus nowhere: its heading takes it.
+    if (stage.kind === "confirmed" || stage.kind === "failed")
+      top.current?.querySelector<HTMLElement>("[data-checkout-result-heading]")?.focus({ preventScroll: true });
   }, [stage.kind, top]);
   useEffect(() => {
     if (quoteExpiry === null || quoteExpiry <= now) return;
@@ -308,6 +385,7 @@ function CheckoutStages({
     if (!stored) return;
     let cancelled = false;
     setInput(stored.input);
+    if (stored.photos) setPhotos(stored.photos);
     setPromoCode(stored.input.promoCode ?? "");
     setStage({ kind: "resuming" });
     void (async () => {
@@ -342,10 +420,11 @@ function CheckoutStages({
     };
   }, [client]);
   useEffect(() => {
-    if (stage.kind === "quote" || stage.kind === "paying" || stage.kind === "confirming") {
-      if (input) writeStored({ attemptId: stage.attempt.id, input, submitted: paymentSubmitted });
+    // The failure screen keeps the attempt too: a reload resumes it at the quote, never at a second payment.
+    if (stage.kind === "quote" || stage.kind === "paying" || stage.kind === "failed" || stage.kind === "confirming") {
+      if (input) writeStored({ attemptId: stage.attempt.id, input, submitted: paymentSubmitted, photos });
     } else if (stage.kind !== "resuming") clearStored();
-  }, [stage, input, paymentSubmitted]);
+  }, [stage, input, paymentSubmitted, photos]);
   useEffect(() => {
     // Capture empties the saved cart server-side; show that rather than the pre-order lines.
     if (settledId) void recoverCart();
@@ -424,27 +503,27 @@ function CheckoutStages({
   if (stage.kind === "closed") return <CheckoutClosed />;
   if (stage.kind === "resuming")
     return (
-      <Notice>
-        <p role="status">Checking your checkout…</p>
+      <Notice title="One moment">
+        <p role="status" className="account-muted">Checking your checkout…</p>
       </Notice>
     );
-  if (stage.kind === "confirmed") {
+  // The result screens picture each piece as the cart showed it when payment started, else as it shows it now.
+  const resultPhotos = (): ResultPhotos => ({
+    ...Object.fromEntries(cart.items.filter((item) => item.image).map((item) => [item.variantId, item.image])),
+    ...photos,
+  });
+  if (stage.kind === "confirmed")
     return (
-      <Notice title="Order confirmed">
-        <p>
-          Thank you. Your payment has been received and your order is confirmed. Your order reference is{" "}
-          <strong>{stage.attempt.orderReference}</strong>.
-        </p>
-        <p>We've emailed your confirmation. Keep this reference for any questions about delivery.</p>
-        <div className={buttonRow}>
-          <Link className={solid} href="/collections/all">
-            Continue shopping
-          </Link>
-          {orderLink(stage.attempt.id)}
-        </div>
-      </Notice>
+      <PaymentSuccess attempt={stage.attempt} customer={input ? { name: input.customer.name, email: input.customer.email } : null}
+        photos={resultPhotos()} signedIn={Boolean(account?.prefill)} />
     );
-  }
+  const failure = (payable: CheckoutAttempt, shortfall: PaymentShortfall) => (
+    <PaymentFailure attempt={payable} reason={shortfall} photos={resultPhotos()} busy={busy || stage.kind === "paying"} notice={notice}
+      onRetry={() => void pay(payable, shortfall)} onChooseMethod={() => void pay(payable, shortfall)} />
+  );
+  if (stage.kind === "failed") return failure(stage.attempt, stage.reason);
+  // Behind a window opened again from the failure screen, that screen stays, its buttons waiting.
+  if (stage.kind === "paying" && stage.retry) return failure(stage.attempt, stage.retry);
   if (stage.kind === "review") {
     const received = paid || stage.attempt.paid;
     const submitted = received || paymentSubmitted;
@@ -453,7 +532,7 @@ function CheckoutStages({
       <Notice
         title={received ? "Your payment has been received" : submitted ? "Your payment is still being confirmed" : "This checkout needs a check"}
       >
-        <p>
+        <p className="checkout-notice-text">
           {lapsed
             ? "We couldn't hold your piece in time, so our team is confirming your order by hand. We'll contact you within one business day, and if we can't confirm it we'll refund in full. You don't need to pay again."
             : stage.reason === "timeout"
@@ -464,154 +543,54 @@ function CheckoutStages({
                   ? "Our team is checking this payment and order. You don't need to pay again."
                   : "Our team needs to review this checkout before payment can continue. No payment has been taken."}
         </p>
-        <p>
+        <p className="checkout-notice-text">
+          {stage.attempt.orderNumber ? <>Your order number is <strong>{stage.attempt.orderNumber}</strong>. </> : null}
           Your checkout reference is <strong>{stage.attempt.id}</strong>. Quote it if you contact us.
         </p>
-        <div className={buttonRow}>
+        <div className="account-buttons">
           {submitted && orderLink(stage.attempt.id)}
-          <Link className={solid} href="/contact">
+          <Link className="account-cta" data-fill-button="" href="/contact">
             Contact our team
           </Link>
-          <Link className={outline} href="/cart">
+          <Link className="account-cta" data-variant="quiet" data-fill-button="outline" href="/cart">
             Return to cart
           </Link>
         </div>
       </Notice>
     );
   }
-  if (stage.kind === "confirming" || stage.kind === "paying") {
+  if (stage.kind === "confirming") {
     return (
-      <Notice title={stage.kind === "paying" ? "Complete your payment" : paid ? "Payment received" : "Confirming your payment"}>
-        <p role="status">
-          {stage.kind === "paying"
-            ? "Finish the payment in the secure window. Close it to return here without paying."
-            : paid
-              ? "Confirming your order with our team. This usually takes a moment."
-              : "Waiting for the payment provider to confirm your payment. Please keep this page open."}
+      <Notice title={paid ? "Payment received" : "Confirming your payment"}>
+        <p role="status" className="checkout-notice-text">
+          {paid
+            ? "Confirming your order with our team. This usually takes a moment."
+            : "Waiting for the payment provider to confirm your payment. Please keep this page open."}
         </p>
       </Notice>
     );
   }
-  const layout = "grid grid-cols-[minmax(0,1fr)_360px] items-start gap-12 max-[1001px]:grid-cols-1 max-[1001px]:gap-8";
-  if (stage.kind === "quote") {
-    const quote = stage.attempt.quote;
-    const method = options.deliveryMethods.find((m) => m.id === input?.deliveryMethodId);
-    return (
-      <div className={layout}>
-        <section data-checkout-review className="grid min-w-0 content-start gap-5" aria-labelledby={`${id}-review`}>
-          <h2 id={`${id}-review`} className={heading}>
-            Review your order
-          </h2>
-          {quote ? (
-            <>
-              <QuoteLines items={quote.items} />
-              <QuoteTotals quote={quote} totalPaise={stage.attempt.amountPaise} methodLabel={method?.label} />
-              {quote.promotion && (
-                <p data-promo-applied className={cx(muted, "flex flex-wrap items-center gap-x-3 gap-y-1")}>
-                  <span>
-                    Code <strong className="font-semibold text-[#1c1c1c]">{quote.promotion.code}</strong> applied: {quote.promotion.label}.
-                  </span>
-                  <button type="button" disabled={busy} onClick={() => removeCode(stage.attempt)}
-                    className="cursor-pointer border-0 bg-transparent p-0 text-[12px] leading-[17px] font-medium text-maple underline disabled:cursor-not-allowed disabled:opacity-60">
-                    Remove code
-                  </button>
-                </p>
-              )}
-              <p className={muted}>
-                {expired
-                  ? "This quote has expired. Get a new quote to continue; prices and delivery will be confirmed again."
-                  : `This quote is valid until ${new Date(quote.expiresAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}.`}
-              </p>
-            </>
-          ) : (
-            <p className={muted}>Your order total is {money(stage.attempt.amountPaise)}.</p>
-          )}
-          {notice && (
-            <p className={errorText} role="alert">
-              {notice}
-            </p>
-          )}
-          <div className={buttonRow}>
-            {expired ? (
-              <button
-                className={solid}
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  if (!input) return;
-                  const previous = stage.attempt;
-                  void leaveAttempt(previous).then(() => requestQuote(input, true));
-                }}
-              >
-                Get a new quote
-              </button>
-            ) : (
-              <button className={solid} type="button" disabled={busy} onClick={() => void pay(stage.attempt)}>
-                Pay {money(stage.attempt.amountPaise)}
-              </button>
-            )}
-            <button
-              className={outline}
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                setNotice("");
-                setRequote(false);
-                const previous = stage.attempt;
-                setStage({ kind: "details" });
-                void leaveAttempt(previous);
-              }}
-            >
-              Edit details
-            </button>
-          </div>
-          <p className={muted}>Payment is taken by Razorpay in a secure window. Your card details never reach Maple.</p>
-          {stage.attempt.state === "awaiting_payment" && (
-            <p className={muted}>If you already completed the payment, keep this page open: it checks for confirmation automatically.</p>
-          )}
-        </section>
-        {input && (
-          <aside className={panel}>
-            <h3 className="text-subhead font-bold text-espresso">Delivering to</h3>
-            <p className="text-ui text-espresso">
-              {input.customer.name}
-              <br />
-              {input.shippingAddress.line1}
-              {input.shippingAddress.line2 ? <><br />{input.shippingAddress.line2}</> : null}
-              <br />
-              {input.shippingAddress.city} {input.shippingAddress.pincode}
-            </p>
-            <p className={muted}>
-              {input.customer.email}
-              <br />
-              {input.customer.phone}
-            </p>
-          </aside>
-        )}
-      </div>
-    );
-  }
-  if (cartReady && cart.items.length === 0)
+  if (stage.kind === "details" && cartReady && cart.items.length === 0)
     return (
       <Notice title="Your cart is empty">
-        <p>Add a piece to your cart before checking out.</p>
-        <div className={buttonRow}>
-          <Link href="/collections/all" className={solid}>
+        <p className="checkout-notice-text">Add a piece to your cart before checking out.</p>
+        <div className="account-buttons">
+          <Link href="/collections/all" className="account-cta" data-fill-button="">
             Explore furniture
           </Link>
         </div>
       </Notice>
     );
   const purchasable = !cartReady || (cart.subtotalPaise !== null && cart.items.every((item) => item.cartable));
-  if (!purchasable)
+  if (stage.kind === "details" && !purchasable)
     return (
       <Notice title="Some items need confirmation first">
-        <p>One or more items in your cart need a price or availability check before online payment.</p>
-        <div className={buttonRow}>
-          <Link href="/cart" className={solid}>
+        <p className="checkout-notice-text">One or more items in your cart need a price or availability check before online payment.</p>
+        <div className="account-buttons">
+          <Link href="/cart" className="account-cta" data-fill-button="">
             Review your cart
           </Link>
-          <Link href="/contact" className={outline}>
+          <Link href="/contact" className="account-cta" data-variant="quiet" data-fill-button="outline">
             Ask about these items
           </Link>
         </div>
@@ -624,9 +603,43 @@ function CheckoutStages({
       ...(input ? { pincode: input.shippingAddress.pincode } : {}),
       product: cart.items.map((item) => `${item.title} (${item.variantTitle}) × ${item.quantity}`).join("; ").slice(0, 500),
     });
+  const attempt = stage.kind === "quote" || stage.kind === "paying" ? stage.attempt : null;
   return (
-    <CheckoutDetails id={id} input={input} options={options} deliveryMethodId={deliveryMethodId} onDeliveryMethod={setDeliveryMethodId}
-      sameBilling={sameBilling} onSameBilling={setSameBilling} problems={problems} notice={notice} busy={busy} enquiryHref={unpriced ? enquiryHref : null}
-      promoCode={promoCode} onPromoCode={(code) => { setPromoCode(code); setPromoError(""); }} promoError={promoError} onSubmit={(event) => void submit(event)} />
+    <CheckoutDetails
+      id={id}
+      phase={stage.kind}
+      defaults={defaultsFrom(input, account)}
+      options={options}
+      deliveryMethodId={attempt && input ? input.deliveryMethodId : deliveryMethodId}
+      onDeliveryMethod={setDeliveryMethodId}
+      sameBilling={sameBilling}
+      onSameBilling={setSameBilling}
+      fieldErrors={fieldErrors}
+      problems={problems}
+      notice={notice}
+      busy={busy}
+      enquiryHref={unpriced ? enquiryHref : null}
+      account={account}
+      attempt={attempt}
+      expired={expired}
+      promoCode={promoCode}
+      onPromoCode={(code) => { setPromoCode(code); setPromoError(""); }}
+      promoError={promoError}
+      onRemoveCode={() => attempt && removeCode(attempt)}
+      onSubmit={(event) => void submit(event)}
+      onPay={() => attempt && void pay(attempt)}
+      onRequote={() => {
+        if (!input || !attempt) return;
+        void leaveAttempt(attempt).then(() => requestQuote(input, true));
+      }}
+      onEdit={() => {
+        if (!attempt) return;
+        setNotice("");
+        setRequote(false);
+        focusPrimary.current = true;
+        setStage({ kind: "details" });
+        void leaveAttempt(attempt);
+      }}
+    />
   );
 }

@@ -89,12 +89,15 @@ const transactionalSchema = z.object({
   to: z.email().max(254),
   subject: z.string().min(1).max(200),
   text: z.string().min(1).max(20_000),
+  /** The HTML alternative. An order email with the most pieces a quote allows (50) is under 100 KB. */
+  html: z.string().min(1).max(200_000).optional(),
 });
-/** A plain-text email from the configured sender, with the staff inbox as reply-to. */
+/** An email from the configured sender, with the staff inbox as reply-to: plain text, plus an HTML alternative when
+ * given (mail apps that show no HTML read the text). */
 export async function sendTransactionalEmail(
   config: EnquiryDeliveryConfig,
   key: string,
-  message: { to: string; subject: string; text: string },
+  message: { to: string; subject: string; text: string; html?: string },
   fetchImpl: typeof fetch = fetch,
 ): Promise<EnquiryDeliveryOutcome> {
   const checked = recheckConfig(config);
@@ -102,7 +105,10 @@ export async function sendTransactionalEmail(
   const parsed = transactionalSchema.safeParse({ key, ...message });
   if (!parsed.success) return { status: "failed", code: "provider_rejected" };
   const input = parsed.data;
-  return postEmail(checked, input.key, { from: checked.from, to: [input.to], reply_to: checked.to, subject: input.subject, text: input.text }, fetchImpl);
+  return postEmail(checked, input.key, {
+    from: checked.from, to: [input.to], reply_to: checked.to, subject: input.subject, text: input.text,
+    ...(input.html === undefined ? {} : { html: input.html }),
+  }, fetchImpl);
 }
 
 function recheckConfig(config: EnquiryDeliveryConfig): EnquiryDeliveryConfig | null {

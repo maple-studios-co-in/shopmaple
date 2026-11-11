@@ -13,9 +13,30 @@ export interface HostedPaymentOptions {
   /** Seconds before the window closes itself; set so it never outlives the stock hold. */
   timeout?: number;
   handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
+  /** Called when the window closes without a payment: closed by the buyer, or timed out. */
   modal: { ondismiss: () => void };
 }
-type RazorpayConstructor = new (options: HostedPaymentOptions) => { open(): void };
+/** One failed try (Standard Checkout's `payment.failed`). The window stays open for another; `modal.ondismiss` follows
+ * only when it closes. */
+export interface HostedPaymentFailure {
+  error: {
+    code?: string;
+    description?: string;
+    source?: string;
+    step?: string;
+    reason?: string;
+    metadata?: { order_id?: string; payment_id?: string };
+  };
+}
+/** The events the store listens for on a Razorpay instance, by name. */
+export interface HostedPaymentEvents {
+  "payment.failed": HostedPaymentFailure;
+}
+export interface HostedPayment {
+  open(): void;
+  on<Event extends keyof HostedPaymentEvents>(event: Event, handler: (response: HostedPaymentEvents[Event]) => void): void;
+}
+type RazorpayConstructor = new (options: HostedPaymentOptions) => HostedPayment;
 declare global {
   interface Window {
     Razorpay?: RazorpayConstructor;
@@ -46,7 +67,10 @@ export function loadHostedPayment(): Promise<RazorpayConstructor> {
   return loading;
 }
 
-export async function openHostedPayment(options: HostedPaymentOptions) {
+/** Open Razorpay's window for a server-created order; `onFailure` hears each failed try while it stays open. */
+export async function openHostedPayment(options: HostedPaymentOptions, { onFailure }: { onFailure?: (failure: HostedPaymentFailure) => void } = {}) {
   const Provider = await loadHostedPayment();
-  new Provider(options).open();
+  const checkout = new Provider(options);
+  if (onFailure) checkout.on("payment.failed", onFailure);
+  checkout.open();
 }

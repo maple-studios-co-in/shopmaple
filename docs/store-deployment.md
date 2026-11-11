@@ -74,6 +74,34 @@ Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker c
 
 Independent of checkout. With `KEERI_LEADS_ENABLED=true`, contact, project and bulk enquiries are also queued as Keeri leads and sent to `POST {KEERI_ORIGIN}/api/storefront/leads` with `KEERI_COMMERCE_TOKEN`; the staff email keeps going and links the Keeri lead when there is one. The flag needs valid `KEERI_ORIGIN` and `KEERI_COMMERCE_TOKEN`, or startup fails naming the key. `KEERI_ADMIN_ORIGIN` is optional (defaults to `KEERI_ORIGIN`; production `https://maplefurnishers.keeri.in`). Order: Keeri's leads endpoint and the credential's `leads:write` scope first, then the store with the flag. Rollback is `KEERI_LEADS_ENABLED=false` and a restart. Details in [Keeri leads](keeri-leads.md).
 
+## Enabling customer accounts
+
+Customer accounts (password sign-in with emailed codes for sign-up and resets, order history, saved addresses; see [architecture](architecture.md#customer-accounts)) have their own switch in the API's private environment. They are **off in production** until it is set. While they are off, every `/api/account` route answers 404, `/api/health` reports `accountsEnabled: false`, and `/account` keeps its "not available yet" page. Guest order status is unchanged either way.
+
+| Key | Purpose |
+| --- | --- |
+| `CUSTOMER_ACCOUNTS_ENABLED` | `true` turns accounts on, `false` off. Unset, accounts are on only when `NODE_ENV` is `development` or `test`. Any other `NODE_ENV`, unset included, gets production's rules and is off (fail closed). Any other flag value stops the API at start-up. |
+| `API_TRUST_PROXY_LOOPBACK` | Must be `true` (the API bound to loopback behind the local proxy, as in "Client rate-limit identity" below) when accounts are on in production. Without it every visitor would count as one network, so the API refuses to start. |
+| `ACCOUNT_CODE_SECRET` | 32–256 random characters, private, for example `openssl rand -hex 32`. Keys the HMACs of sign-in codes and of requesting networks. Required in production once accounts are on. Changing it voids codes in flight, but not sessions. Never commit it or reuse another secret. |
+| `ORDER_RESEND_API_KEY`, `ORDER_MAIL_FROM`, `ORDER_MAIL_TO` (each falling back to its `ENQUIRY_*` value) and `WEB_ORIGIN` | Sign-in codes go out through the same Resend sender as order emails. Production with accounts on refuses to start without them. A development API without them prints each code, with a masked email, to its console instead. |
+| `KEERI_MERCHANT_SCOPE` | Optional here. When set, the account pages list only that merchant scope's orders. |
+
+**Limits and alerts.** Networks are an IPv4 address or an IPv6 /64.
+- **Codes emailed:** 3 per email per network in 15 minutes, 10 per email a day, 10 per network an hour, and 300 store-wide an hour.
+- **Failed tries:** 20 per network an hour, and 10 per email a day. Once an email's budget is spent, each new code gets a single try.
+- **Flood guard:** an in-memory guard (20 a minute per network) turns floods away before they reach the database.
+- **Alert:** when the store-wide cap is reached, the API logs one line an hour with no personal data. Alert on it:
+  `[accounts] sign-in email cap reached: 300 codes in the past hour; new codes are held back until the count falls`
+  It means someone is pushing sign-in emails through the store (Resend sending, sender reputation). Codes resume on their own as the hour's count falls.
+- **Cookie:** start sets the HttpOnly sign-in cookie `__Host-maple_signin` (ten minutes). A code works only in the browser that asked for it.
+
+Rollout order: **migrate, then API, then web.**
+1. Apply migrations `20261111140000_customer_accounts` and `20261111140100_customer_passwords` (both additive, safe under the running release) with the release's `prisma migrate deploy`.
+2. Release the API. At start-up it links and numbers any attempts the previous release froze or captured in between, idempotently. Set the keys above together with `CUSTOMER_ACCOUNTS_ENABLED=true`, restart `shopmaple-api`, and confirm `/api/health` reports `accountsEnabled: true`.
+3. Then release the web pages that call `/api/account`.
+
+Rollback: unset the flag (or set `false`) and restart the API. Accounts, sessions and addresses stay in the database, and the additive migration needs no reversal. Order numbers stay assigned and keep appearing in order emails and on the guest status page.
+
 ## Launch checklist (online checkout)
 
 Run in this order; tick each with the date, the person, and where the evidence is saved. Steps marked **owner** need the owner's accounts or a production action that only the owner runs.
@@ -117,7 +145,7 @@ Run in this order; tick each with the date, the person, and where the evidence i
 ## Release sequence
 
 1. Record the fully reviewed and validated Git SHA. Export that exact commit to a new release directory (never copy the dirty working tree). Keep prior releases intact.
-2. Symlink the private environment as the release `.env`, install with `npm ci` on Node22, generate Prisma and apply committed migrations to the isolated shop database. Capture a pre-migration custom-format database dump on subsequent releases.
+2. Symlink the private environment as the release `.env`, install with `npm ci` on Node22, generate Prisma and apply committed migrations to the isolated shop database. Capture a pre-migration custom-format database dump on subsequent releases. Migrations are additive and go first: the running release keeps working on the migrated database, and the API is released before the web pages that depend on it (for example customer accounts: migrate, then API, then web).
 3. Build the release with the production API URL and web origin. The API must be healthy before Next.js static data generation; verify whether product pages are dynamic/cached and rebuild/revalidate after initial catalogue bootstrap if required.
 4. Run API/web on their assigned loopback ports, test health, catalogue counts, a product, menu, cart, security headers, cookies, and that checkout is disabled unless the checkout gate above has been passed and recorded. Never submit live synthetic customer enquiries or orders for a smoke test.
 5. Atomically point `current` to the verified release and restart only `shopmaple-api` and `shopmaple-web` using `deploy/ecosystem.config.cjs`. Keep `shopmaple-db` running. Save PM2 state.
@@ -161,6 +189,6 @@ The user's upstream resolver initially cached NXDOMAIN; after it expired, macOS 
 
 ### Client rate-limit identity
 
-The production API binds only to `127.0.0.1` and opts into `API_TRUST_PROXY_LOOPBACK=true`. Express trusts loopback proxy hops only and selects the nearest untrusted address from right to left. Cloudflare appends the connecting visitor/proxy to `X-Forwarded-For`; the local Next rewrite preserves that chain. Never use blanket `trust proxy=true`, expose the API port, or enable this setting on a public API listener. Startup rejects this setting with any non-loopback `API_HOST`. The enquiry regression test exhausts one visitor's quota, proves a forged earlier address cannot bypass it, and allows a different visitor through.
+The production API binds only to `127.0.0.1` and opts into `API_TRUST_PROXY_LOOPBACK=true`. Express trusts loopback proxy hops only and selects the nearest untrusted address from right to left. Cloudflare appends the connecting visitor/proxy to `X-Forwarded-For`; the local Next rewrite preserves that chain. Never use blanket `trust proxy=true`, expose the API port, or enable this setting on a public API listener. Startup rejects this setting with any non-loopback `API_HOST`. The global 300-a-minute API limit skips loopback requests that carry no `X-Forwarded-For`, so the storefront's own server-side reads, which come from Next on this host, don't share one bucket for every visitor. This relies on the same two facts: the API port is not public, and every browser request arrives with `X-Forwarded-For` added by the tunnel and the Next proxy. If either ever changes, remove that exemption (`apps/api/src/app.ts`). The enquiry regression test exhausts one visitor's quota, proves a forged earlier address cannot bypass it, and allows a different visitor through.
 
 Cloudflare header behavior: https://developers.cloudflare.com/fundamentals/reference/http-headers/#x-forwarded-for . Confirm the actual tunnel/proxy configuration on deployment; this trust setting assumes that trusted ingress.

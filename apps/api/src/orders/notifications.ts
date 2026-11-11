@@ -1,23 +1,28 @@
 import { randomUUID } from "node:crypto";
 import { quoteSnapshotSchema, type QuoteSnapshot } from "@shopmaple/contracts";
+import { formatOrderNumber } from "@shopmaple/contracts/account";
 import { Prisma, type CheckoutAttempt, type OrderNotification, type PrismaClient } from "@prisma/client";
 import {
   sendTransactionalEmail,
   type EnquiryDeliveryConfig,
   type EnquiryDeliveryOutcome,
 } from "../enquiry-delivery-provider.js";
+import { findOrderPhotos, renderOrderEmail, type OrderPhotos } from "./order-email.js";
 
 /**
  * Order emails. A sweep decides which emails an attempt now deserves and records
  * each once (unique per attempt and kind); a leased batch then sends them through
  * Resend with the row id as the idempotency key, so a retry after an uncertain
- * answer can never send twice. Bodies are rendered at send time from the attempt
- * and are plain text: no customer data is copied into the notification row.
+ * answer can never send twice. Bodies are rendered at send time from the attempt,
+ * so no customer data is copied into the notification row: the buyer's emails as
+ * HTML with a plain-text part (order-email.ts), staff alerts as plain text.
  */
 export type NotificationKind = "customer_confirmed" | "customer_received" | "staff_order" | "staff_payment" | "staff_attention";
 interface Options {
   merchantScope: string;
   email: EnquiryDeliveryConfig;
+  /** Customer accounts are on: the buyer's email links the order in their account (see order-email.ts). */
+  accountLinks?: boolean;
   fetch?: typeof fetch;
   now?: () => Date;
   leaseMs?: number;
@@ -115,24 +120,32 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       ? await db.checkoutAttempt.findFirst({ where: { merchantScope, providerOrderId: inbox.providerOrderId } })
       : null;
     if (inbox)
-      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null });
+      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null, photos: new Map() });
     const parsed = attempt ? quoteSnapshotSchema.safeParse(attempt.snapshot) : null;
     const quote = parsed?.success ? parsed.data : null;
     const outbox = attempt
       ? await db.orderOutbox.findUnique({ where: { attemptId_kind: { attemptId: attempt.id, kind: "keeri.order.captured.v2" } } })
       : null;
-    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null });
+    // The pieces' photos, for the buyer's emails only. A failed lookup sends the email with plain tiles, never not at all.
+    const photos: OrderPhotos = attempt && quote && (row.kind === "customer_confirmed" || row.kind === "customer_received")
+      ? await findOrderPhotos(db, attempt, quote).catch(() => {
+          console.error("Order email photos unavailable; sending without them.");
+          return new Map<string, string>();
+        })
+      : new Map();
+    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos });
   }
   function compose(
     kind: NotificationKind,
-    { attempt, quote, inbox, reference, staffOutcome }: {
+    { attempt, quote, inbox, reference, staffOutcome, photos }: {
       attempt: CheckoutAttempt | null;
       quote: QuoteSnapshot | null;
       inbox: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null; workerState: string } | null;
       reference: string | null;
       staffOutcome: string | null;
+      photos: OrderPhotos;
     },
-  ): { to: string; subject: string; text: string } | null {
+  ): { to: string; subject: string; text: string; html?: string } | null {
     // With a code, each line reads at its price before the discount and the discount follows as
     // one line, so the email adds up to what was charged.
     const lines = quote
@@ -154,42 +167,18 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       ? [quote.shippingAddress.line1, quote.shippingAddress.line2, `${quote.shippingAddress.city} ${quote.shippingAddress.pincode}`].filter(Boolean).join(", ")
       : "";
     const total = attempt ? rupees(attempt.amountPaise) : "";
-    const contact = `Questions? Reply to this email or contact us at ${email.adminOrigin}/contact.`;
+    // Maple's own number ("MF-…") once the capture assigned it. Keeri's SO number is internal: customers see it only
+    // on an order confirmed before numbering existed.
+    const orderNumber = attempt?.orderNumber ? formatOrderNumber(attempt.orderNumber) : null;
     if (kind === "customer_confirmed" && attempt && quote && reference)
       return {
         to: quote.customer.email,
-        subject: `Your Maple Furnishers order ${reference} is confirmed`,
-        text: [
-          `Dear ${quote.customer.name},`,
-          "",
-          `Thank you for your order. Your payment of ${total} has been received and your order is confirmed.`,
-          `Order reference: ${reference}`,
-          "",
-          ...lines,
-          deliveryLine,
-          `Total paid: ${total}${quote.gstMode === "included" ? " (including GST)" : ""}`,
-          "",
-          `Delivering to: ${address}`,
-          "",
-          "Our team will contact you to arrange delivery.",
-          contact,
-        ].join("\n"),
+        ...renderOrderEmail({ kind: "confirmed", attempt, quote, orderNumber: orderNumber ?? reference, photos, origin: email.adminOrigin, accountLinks: options.accountLinks }),
       };
     if (kind === "customer_received" && attempt && quote)
       return {
         to: quote.customer.email,
-        subject: "We've received your payment",
-        text: [
-          `Dear ${quote.customer.name},`,
-          "",
-          `We've received your payment of ${total}. Our team is confirming your order by hand and will contact you within one business day.`,
-          "If we can't confirm it, we'll refund in full to your original payment method. You don't need to pay again.",
-          `Checkout reference: ${attempt.id}`,
-          "",
-          ...lines,
-          "",
-          contact,
-        ].join("\n"),
+        ...renderOrderEmail({ kind: "received", attempt, quote, orderNumber, photos, origin: email.adminOrigin, accountLinks: options.accountLinks }),
       };
     if (kind === "staff_order" && attempt && reference)
       return {
@@ -197,6 +186,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
         subject: `New online order ${reference}: ${total}`,
         text: [
           `Keeri order: ${reference}`,
+          ...(orderNumber ? [`Maple order (the customer's number): ${orderNumber}`] : []),
           `Checkout: ${attempt.id}`,
           `Payment: ${attempt.paymentId} (Razorpay order ${attempt.providerOrderId})`,
           `Total: ${total}`,
@@ -213,7 +203,8 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     ];
     const customerLines = quote ? ["", ...lines, "", `Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`] : [];
     const attemptLines = attempt
-      ? [`Checkout: ${attempt.id}`, `State: ${attempt.state}${attempt.failureCode ? ` (${attempt.failureCode})` : ""}`, `Amount: ${total}`,
+      ? [...(orderNumber ? [`Maple order (the customer's number): ${orderNumber}`] : []),
+         `Checkout: ${attempt.id}`, `State: ${attempt.state}${attempt.failureCode ? ` (${attempt.failureCode})` : ""}`, `Amount: ${total}`,
          `Payment recorded on the checkout: ${attempt.paymentId ?? "none"}`, `Razorpay order: ${attempt.providerOrderId ?? "none"}`]
       : [];
     if (kind === "staff_payment" && inbox) {

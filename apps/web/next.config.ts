@@ -64,6 +64,12 @@ const config: NextConfig = {
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
       },
       {
+        // Customer account pages carry a customer's orders and addresses: never stored by browsers or the CDN, as staff
+        // pages are not (owner's spec, 10 Nov 2026). The pages also render per request.
+        source: "/account/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
         // The draft preview frame is embedded only by the same-origin preview shell.
         source: "/admin/preview-frame/:path*",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],

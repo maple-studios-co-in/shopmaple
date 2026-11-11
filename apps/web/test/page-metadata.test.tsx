@@ -22,9 +22,10 @@ test("contact page titles allow the root layout to add the brand once", async ()
 });
 import { resolveContactPage } from "../lib/contact-page-content";
 import { defaultServicePages } from "../lib/service-page-defaults";
-test("the contact page's help is truthful about accounts: none to sign in to, and no order page to send customers to", () => {
+test("the contact page's help is truthful about accounts with them on or off, and sends customers to no order page", () => {
   const answers = resolveContactPage(defaultServicePages.contact).categories.flatMap(category => category.questions.map(question => question.answer)).join("\n");
-  assert.match(answers, /Customer accounts arrive with online checkout/);
+  assert.match(answers, /always check out as a guest/);
+  assert.match(answers, /When online accounts are open/, "no claim that accounts exist, or that they do not");
   assert.doesNotMatch(answers, /My Orders|signup link|sign up through Gmail/i);
 });
 

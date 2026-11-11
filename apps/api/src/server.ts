@@ -10,6 +10,8 @@ import { startEnquiryDeliveryRunner } from "./enquiry-delivery-runner.js";
 import { installShutdown } from "./server-lifecycle.js";
 import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
 import { loadKeeriReviewsConfig } from "./reviews.js";
+import { createSignInCodeSender, loadAccountConfig } from "./account/config.js";
+import { backfillOrderLinks } from "./orders/order-links.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -37,8 +39,16 @@ const keeriLeads = loadKeeriLeadsConfig(process.env);
 const commerceConfig = loadCommerceConfig(process.env);
 // The homepage Instagram feed is off (staff-edited posts) until every private Meta setting is present.
 const instagramFeed = loadInstagramFeedConfig(process.env);
+// Customer accounts: on by default only with NODE_ENV=development or test. Anything else (unset included) is production:
+// off until CUSTOMER_ACCOUNTS_ENABLED=true, which then also needs ACCOUNT_CODE_SECRET, the order mail settings and
+// API_TRUST_PROXY_LOOPBACK=true, or startup fails here. A development API without mail prints codes instead.
+const accountConfig = loadAccountConfig(process.env);
+const accountScope = /^[a-z0-9_-]{1,100}$/.test(process.env.KEERI_MERCHANT_SCOPE ?? "") ? process.env.KEERI_MERCHANT_SCOPE : undefined;
 const db = new PrismaClient();
-const commerce = commerceConfig ? composeCommerce(db, commerceConfig) : null;
+// With accounts on, the buyer's order email opens the order in their account, which works on any device.
+const commerce = commerceConfig ? composeCommerce(db, commerceConfig, { accountLinks: accountConfig !== null }) : null;
+// Orders the previous release froze or captured after the migration ran get their email key and MF number now.
+void backfillOrderLinks(db).catch(() => console.error("Order number catch-up failed; it runs again at the next start."));
 const server = createApp(
   db,
   {
@@ -55,6 +65,13 @@ const server = createApp(
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
     instagramFeed,
+    accounts: accountConfig
+      ? {
+          codeSecret: accountConfig.codeSecret,
+          merchantScope: commerceConfig?.keeri.merchantScope ?? accountScope,
+          sendCode: createSignInCodeSender(accountConfig.email, { production: accountConfig.production }),
+        }
+      : null,
   },
   commerce?.commerce,
 ).listen(env.API_PORT, env.API_HOST, () =>
@@ -63,7 +80,8 @@ const server = createApp(
       env.API_HOST +
       ":" +
       env.API_PORT +
-      (commerce ? " (preview catalogue; checkout enabled)" : " (preview; checkout disabled)"),
+      (commerce ? " (preview catalogue; checkout enabled" : " (preview; checkout disabled") +
+      (accountConfig ? "; customer accounts on)" : "; customer accounts off)"),
   ),
 );
 const deliveryRunner = enquiryDelivery || keeriLeads

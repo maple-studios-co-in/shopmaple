@@ -71,7 +71,7 @@ export const contactCategories = [
       {
         question: "Do I need an account with Maple Furnishers?",
         answer:
-          "Not yet. Customer accounts arrive with online checkout. Until then, the furniture you save stays in your browser and our team looks after your orders: contact us with any question about an order.",
+          "You don't need one: you can always check out as a guest, and your order confirmation comes by email. When online accounts are open, you can create one with your email and a password (we email a code to confirm the address), and it keeps your orders and saved addresses together. Our team looks after every order either way: contact us with any question about an order.",
       },
       {
         question: "How can I change my phone number or my shipping address?",

@@ -59,7 +59,7 @@ const fake = {
   paymentCaptured: true,
   keeriCalls: [] as string[],
   razorpayCalls: [] as string[],
-  emails: [] as Array<{ key: string; to: string[]; subject: string; text: string }>,
+  emails: [] as Array<{ key: string; to: string[]; subject: string; text: string; html?: string }>,
   emailStatus: 200,
   /** The next N Keeri calls get nginx's 502, as during a Keeri restart. */
   keeriRestartCalls: 0,
@@ -139,7 +139,7 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
     if (fake.emailStatus === 409) return Response.json({ name: "invalid_idempotent_request" }, { status: 409 });
     if (fake.emailStatus !== 200) return new Response("provider detail", { status: fake.emailStatus });
     const body = JSON.parse(String(init.body));
-    fake.emails.push({ key: new Headers(init.headers).get("idempotency-key")!, to: body.to, subject: body.subject, text: body.text });
+    fake.emails.push({ key: new Headers(init.headers).get("idempotency-key")!, to: body.to, subject: body.subject, text: body.text, html: body.html });
     return Response.json({ id: "00000000-0000-4000-8000-" + String(fake.emails.length).padStart(12, "0") });
   }
   throw new Error("No live network allowed in tests");
@@ -224,7 +224,7 @@ test("checkout stays disabled unless the explicit flag and every commerce value 
 test("an application without commerce behaves exactly as the preview does today", async () => {
   const preview = createApp(db, appConfig);
   const health = await request(preview).get("/api/health");
-  assert.deepEqual(health.body, { status: "ok", catalogMode: "preview", checkoutEnabled: false });
+  assert.deepEqual(health.body, { status: "ok", catalogMode: "preview", checkoutEnabled: false, accountsEnabled: false });
   const refused = await request(preview).post("/api/checkout").set("Origin", origin).set("Cookie", cookie).set("Idempotency-Key", "x".repeat(10)).send(input);
   assert.equal(refused.status, 503);
   assert.equal(refused.body.code, "CHECKOUT_NOT_AVAILABLE");
@@ -236,7 +236,7 @@ test("an application without commerce behaves exactly as the preview does today"
 test("composed checkout reports itself, publishes only public options, and completes quote, hold, payment and Keeri order", async () => {
   const { app, runWorkers } = checkoutApp();
   const health = await request(app).get("/api/health");
-  assert.deepEqual(health.body, { status: "ok", catalogMode: "preview", checkoutEnabled: true });
+  assert.deepEqual(health.body, { status: "ok", catalogMode: "preview", checkoutEnabled: true, accountsEnabled: false });
   const options = await request(app).get("/api/checkout/options");
   assert.equal(options.status, 200);
   assert.deepEqual(options.body, { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_composition" });
@@ -497,25 +497,40 @@ test("a payment that lands after the Keeri hold lapsed is kept as paid, empties 
   assert.match(staff.text, /refund/i);
   const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
   assert.match(buyer.subject, /received your payment/i);
-  assert.match(buyer.text, /Rs\. 3,835\.00/);
+  assert.match(buyer.text, /₹3,835/);
   assert.match(buyer.text, /refund in full/i);
   assert.doesNotMatch(buyer.text, /pay_comp1|PAID_HOLD_LAPSED|reservation/i);
+  // A lapsed hold is still a paid order: it has Maple's number, which the buyer is given instead of the checkout id.
+  const { orderNumber } = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.ok(orderNumber && orderNumber >= 10001);
+  assert.match(buyer.subject, new RegExp(`MF-${orderNumber}`));
+  assert.match(buyer.text, new RegExp(`Order number: MF-${orderNumber}`));
+  assert.equal(current.body.orderNumber, `MF-${orderNumber}`);
 });
 
-test("a confirmed order emails the buyer once with the Keeri reference and alerts staff", async () => {
+test("a confirmed order emails the buyer once with Maple's order number and alerts staff with Keeri's", async () => {
   const { app, runWorkers } = checkoutApp();
   const frozen = await freeze(app);
   await paymentOrder(app, frozen.body.id);
   await webhook(app);
   await settle(runWorkers);
-  assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "confirmed");
+  const confirmed = await status(app, frozen.body.id);
+  assert.equal(confirmed.body.fulfillmentStatus, "confirmed");
   assert.equal(fake.emails.length, 2);
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.ok(attempt.orderNumber && attempt.orderNumber >= 10001, "numbered from 10001 when the payment was captured");
+  assert.equal(attempt.customerEmailKey, "buyer@example.test", "linked to the buyer's email when the quote froze it");
+  assert.equal(confirmed.body.orderNumber, `MF-${attempt.orderNumber}`, "the order status page shows it");
   const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
-  assert.match(buyer.subject, /SO-1001/);
-  for (const expected of [/Composition Chair/, /Oak/, /× 2/, /Rs\. 3,835\.00/, /Delhivery Surface/, /about 6 days/, /1 Test Street/])
+  assert.match(buyer.subject, new RegExp(`MF-${attempt.orderNumber}`));
+  assert.doesNotMatch(buyer.subject + buyer.text, /SO-1001/, "Keeri's SO number stays internal");
+  // The email's words (orders/order-email.ts): the courier's name and transit days became the delivery window, from
+  // the capture at 15:30 on 1 Jan in India plus Delhivery's six days.
+  for (const expected of [/Composition Chair/, /Oak/, /Quantity 2/, /₹3,835/, /Estimated delivery: 7–11 Jan 2030/, /1 Test Street/])
     assert.match(buyer.text, expected);
   const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
   assert.match(staff.subject, /New online order SO-1001/);
+  assert.match(staff.text, new RegExp(`MF-${attempt.orderNumber}`));
   assert.match(staff.text, /9876543210/);
   assert.notEqual(buyer.key, staff.key);
   await settle(runWorkers);
@@ -618,12 +633,15 @@ test("a promo code is quoted by Keeri, charged at the discounted total and named
   assert.equal((await status(app, frozen.body.id)).body.fulfillmentStatus, "confirmed");
   const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test"))!;
   const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
-  for (const text of [buyer.text, staff.text]) {
-    assert.match(text, /Composition Chair, Oak × 2: Rs\. 3,000\.00/, "the lines before the discount");
-    assert.match(text, /Discount \(DIWALI15\): -Rs\. 450\.00/);
-  }
-  assert.match(buyer.text, /Total paid: Rs\. 3,304\.00/);
+  // The staff alert keeps its plain lines. The buyer's email (order-email.ts, Figma 394:1418) prints each piece before the
+  // discount and the discount as its own line after the subtotal, in rupees as the storefront writes them.
+  assert.match(staff.text, /Composition Chair, Oak × 2: Rs\. 3,000\.00/, "the lines before the discount");
+  assert.match(staff.text, /Discount \(DIWALI15\): -Rs\. 450\.00/);
   assert.match(staff.text, /Total: Rs\. 3,304\.00/);
+  assert.match(buyer.text, /Composition Chair\nOak\nQuantity 2 · ₹3,000\n/, "the lines before the discount");
+  assert.match(buyer.text, /Subtotal: ₹3,000\nDiscount \(DIWALI15\): −₹450\n/);
+  assert.match(buyer.text, /Total paid: ₹3,304\n/);
+  assert.match(buyer.html ?? "", /Discount \(DIWALI15\)[\s\S]*−₹450[\s\S]*₹3,304/);
 });
 
 test("an order without a code has no discount line in its emails", async () => {

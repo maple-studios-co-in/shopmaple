@@ -17,6 +17,9 @@ import { registerInstagramFeedRoutes, type InstagramFeedConfig } from "./instagr
 import { saveEnquiry } from "./enquiries.js";
 import type { KeeriLeadsConfig } from "./keeri-leads.js";
 import { registerReviewRoutes, type KeeriReviewsConfig } from "./reviews.js";
+import { registerAccountRoutes, type AccountOptions } from "./account/routes.js";
+import { registerEmailPreviews } from "./previews.js";
+import { isLoopbackAddress } from "./network.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
 import {
   commerceHttpError,
@@ -47,6 +50,8 @@ export type AppConfig = {
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
   instagramFeed?: InstagramFeedConfig | null;
+  /** Customer accounts (CUSTOMER_ACCOUNTS_ENABLED); null or absent answers every /api/account route with a 404. */
+  accounts?: AccountOptions | null;
 };
 export function createApp(
   db: PrismaClient,
@@ -73,6 +78,12 @@ export function createApp(
       limit: 300,
       standardHeaders: "draft-8",
       legacyHeaders: false,
+      // The storefront's own server-side reads (Next on this host) reach the API from loopback with no
+      // X-Forwarded-For, and would otherwise share ONE bucket for every visitor: busy account pages could make checkout
+      // look closed for everyone. Skipping exactly those is safe because the API listens on loopback only (API_HOST),
+      // and every browser request arrives through the Cloudflare tunnel and the Next proxy, which always add
+      // X-Forwarded-For (docs/store-deployment.md, "Client rate-limit identity"), so a visitor cannot qualify.
+      skip: (req) => isLoopbackAddress(req.socket.remoteAddress) && req.headers["x-forwarded-for"] === undefined,
     }),
   );
   if (commerce) registerPaymentWebhook(app, commerce);
@@ -100,12 +111,15 @@ export function createApp(
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
   registerInstagramFeedRoutes(app, db, config.instagramFeed ?? null, config.secureCookies);
+  if (config.accounts) registerAccountRoutes(app, db, { ...config.accounts, secureCookies: config.secureCookies });
+  registerEmailPreviews(app, config.webOrigin); // NODE_ENV development or test only; production never has the route
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;
     res.json({
       status: "ok",
       catalogMode: config.catalogMode,
       checkoutEnabled: Boolean(commerce),
+      accountsEnabled: Boolean(config.accounts),
     });
   });
   app.get("/api/products", async (req, res) => {

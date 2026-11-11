@@ -132,7 +132,13 @@ export interface ComposedCommerce {
 export function composeCommerce(
   db: PrismaClient,
   config: CommerceConfig,
-  options: { fetch?: Transport; now?: () => Date; keeriRetryDelaysMs?: readonly number[] } = {},
+  options: {
+    fetch?: Transport;
+    now?: () => Date;
+    keeriRetryDelaysMs?: readonly number[];
+    /** Customer accounts are on: the buyer's order email links the order in their account. */
+    accountLinks?: boolean;
+  } = {},
 ): ComposedCommerce {
   const transport = options.fetch;
   const keeriFetch: typeof fetch | undefined = transport
@@ -171,6 +177,7 @@ export function composeCommerce(
   const notifications = createOrderNotifications(db, {
     merchantScope: config.keeri.merchantScope,
     email: config.email,
+    accountLinks: options.accountLinks,
     fetch: transport ? (url, init) => transport(url instanceof Request ? url.url : url, init ?? {}) : undefined,
     now: options.now,
   });

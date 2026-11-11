@@ -1,0 +1,304 @@
+/* Sign-in, sign-up and the password reset (owner's spec, 11 Nov 2026; Figma 392:1652 login, 392:1697 sign-up). Loaded
+   by app/account/(auth)/layout.tsx on top of styles/account.css, whose fields and buttons these forms share.
+
+   Desktop (960px and wider): the photograph and its words on the left (780 of 1440), the form panel on the right (660),
+   filling the screen. The photograph stays in view while a short screen (a laptop at 125%, 1229 x 620) scrolls the form.
+   Sizes are the design's value at 1440 as a share of the screen (value / 14.4 vw), with a floor that still reads and a
+   cap a third larger at 1920, as account.css does.
+   Tablets (600-959px): the photograph becomes a band above the form, which sits in a centred 500px column.
+   Phones (under 600px): a shorter band with the headline only, and the form edge to edge with 20px gutters. */
+.account.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 780fr) minmax(0, 660fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fcfbf8;
+}
+
+/* ---- The photograph and its words ---- */
+.auth .auth-editorial {
+  position: sticky;
+  top: 0;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 560px;
+  padding: clamp(32px, 4.444vw, 85.3px);
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+}
+.auth .auth-editorial-media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.auth .auth-editorial-photo {
+  object-fit: cover;
+  object-position: center;
+}
+.auth .auth-editorial-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26, 23, 18, 0.05) 0%, rgba(26, 23, 18, 0.82) 100%);
+}
+.auth .auth-kicker {
+  margin: 0;
+  font: 400 clamp(11px, 0.833vw, 16px) / 1.4 var(--font-text);
+  text-transform: uppercase;
+}
+.auth .auth-caption {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.389vw, 26.7px);
+  max-width: clamp(320px, 45.278vw, 869.3px);
+}
+.auth .auth-editorial-title {
+  margin: 0;
+  font: 500 clamp(34px, 4.028vw, 77.3px) / 1.4 var(--font-heading);
+}
+.auth .auth-editorial-lead {
+  max-width: clamp(300px, 40.278vw, 773.3px);
+  margin: 0;
+  font: 400 clamp(15px, 1.25vw, 24px) / 1.4 var(--font-text);
+}
+.auth .auth-line {
+  display: block;
+}
+
+/* ---- The form panel ---- */
+.auth .auth-panel {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(32px, 3.333vw, 64px);
+  min-width: 0;
+  padding: clamp(40px, 5.556vw, 106.7px);
+  background: #fcfbf8;
+}
+.auth .auth-panel > * {
+  width: 100%;
+  max-width: clamp(360px, 34.722vw, 666.7px);
+}
+.auth .auth-logo {
+  display: inline-block;
+  width: clamp(116px, 10.069vw, 193.3px);
+  vertical-align: top;
+  border-radius: 2px;
+}
+.auth .auth-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.auth .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 1.667vw, 32px);
+}
+.auth .auth-title {
+  margin: 0;
+  color: var(--account-ink-strong);
+  font: 500 clamp(28px, 2.639vw, 50.7px) / 1.4 var(--font-heading);
+  text-wrap: balance;
+}
+.auth .auth-lead {
+  margin: 0;
+  color: var(--account-muted);
+  font: 400 clamp(15px, 1.111vw, 21.3px) / 1.4 var(--font-text);
+  overflow-wrap: anywhere;
+}
+.auth .auth-names {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.389vw, 26.7px);
+}
+.auth .auth-hint {
+  margin: 0;
+  color: var(--account-muted);
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+}
+.auth .auth-forgot {
+  align-self: flex-start;
+  color: var(--account-ink-strong);
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+  text-decoration: none;
+}
+.auth .auth-switch,
+.auth .auth-terms {
+  margin: 0;
+  color: var(--account-muted);
+  font: 400 clamp(14px, 0.972vw, 18.7px) / 1.4 var(--font-text);
+}
+.auth .auth-switch[data-tone="ink"] {
+  color: var(--account-ink-strong);
+}
+.auth .auth-switch a,
+.auth .auth-aside-line a {
+  color: var(--account-ink-strong);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+.auth .auth-terms a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth .auth-code-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.auth .auth-link-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--account-ink-strong);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.auth .auth-link-button:disabled {
+  color: var(--account-muted);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* ---- The quiet footer under the form ---- */
+.auth .auth-aside {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.25vw, 24px);
+}
+.auth .auth-rule {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--account-rule);
+}
+.auth .auth-aside-line {
+  margin: 0;
+  color: var(--account-ink-strong);
+  font: 400 clamp(14px, 0.972vw, 18.7px) / 1.4 var(--font-text);
+}
+.auth .auth-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px clamp(28px, 4.444vw, 85.3px);
+  margin: 0;
+  color: var(--account-muted);
+  font: 400 clamp(12px, 0.833vw, 16px) / 1.4 var(--font-text);
+}
+.auth .auth-footer-links a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .auth .auth-forgot:hover,
+  .auth .auth-footer-links a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .auth .auth-switch a:hover,
+  .auth .auth-aside-line a:hover {
+    text-decoration-color: currentColor;
+  }
+}
+.auth :is(.auth-logo, .auth-forgot, .auth-switch a, .auth-terms a, .auth-aside-line a, .auth-footer-links a, .auth-link-button):focus-visible {
+  outline: 2px solid var(--account-maple);
+  outline-offset: 3px;
+}
+
+/* ---- Tablets: the photograph is a band above a centred form ---- */
+@media (max-width: 959px) {
+  .account.auth {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .auth .auth-editorial {
+    position: relative;
+    grid-row: 1;
+    height: auto;
+    min-height: clamp(260px, 42vw, 400px);
+    justify-content: space-between;
+    padding: clamp(24px, 5vw, 40px);
+  }
+  .auth .auth-panel {
+    grid-column: 1;
+    grid-row: 2;
+    align-items: center;
+    gap: 32px;
+    padding: 40px clamp(20px, 6vw, 48px) 48px;
+  }
+  .auth .auth-panel > * {
+    max-width: 500px;
+  }
+  .auth .auth-editorial-title {
+    font-size: clamp(30px, 5.2vw, 46px);
+  }
+  .auth .auth-caption,
+  .auth .auth-editorial-lead {
+    max-width: none;
+  }
+  .auth .auth-title {
+    font-size: clamp(28px, 4.4vw, 36px);
+  }
+}
+
+/* ---- Phones: a shorter band with the headline only ---- */
+@media (max-width: 599px) {
+  .auth .auth-editorial {
+    min-height: clamp(200px, 56vw, 260px);
+    padding: 20px;
+  }
+  .auth .auth-editorial-title {
+    font-size: clamp(26px, 7.4vw, 32px);
+    line-height: 1.25;
+  }
+  .auth .auth-editorial-lead,
+  .auth .auth-kicker[data-signature] {
+    display: none;
+  }
+  .auth .auth-caption {
+    gap: 8px;
+  }
+  .auth .auth-panel {
+    align-items: stretch;
+    gap: 28px;
+    padding: 28px 20px 36px;
+  }
+  .auth .auth-logo {
+    width: 104px;
+  }
+  .auth .auth-form {
+    gap: 18px;
+  }
+  .auth .auth-title {
+    font-size: clamp(26px, 7.2vw, 30px);
+  }
+  .auth .auth-code-links {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (max-width: 339px) {
+  .auth .auth-names {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

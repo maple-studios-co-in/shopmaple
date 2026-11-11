@@ -26,7 +26,8 @@ test("a product page's header is marked to stay pinned; every other page's heade
     assert.equal(header.hasAttribute("data-sticky"), true, path);
     assert.equal(header.hasAttribute("data-header"), false, `${path}: still the store's one-row header`);
     assert.ok(header.querySelector(".header-main > .maple-desktop-nav"), `${path}: with its menu`);
-    assert.deepEqual([...header.querySelectorAll(".header-actions button")].map((button) => button.getAttribute("aria-label")),
+    // The account icon is a link to /account (owner's spec, 10 Nov 2026); the others open panels.
+    assert.deepEqual([...header.querySelectorAll(".header-actions :is(button, a)")].map((control) => control.getAttribute("aria-label")),
       ["Search furniture", "Your account", "Saved furniture (0)", "Open cart (0 items)"], `${path}: and every shopping action`);
   }
   for (const path of ["/", "/collections/chairs", "/our-story", "/blogs/recent-stories", "/productsx", "/policies/privacy-policy"])

@@ -65,6 +65,13 @@ test("an unpaid or unknown checkout says so without inventing an order", async (
   });
 });
 
+test("Maple's own order number is shown once it is assigned; Keeri's reference stays internal", async () => {
+  await mount(() => Response.json(status({ fulfillmentStatus: "confirmed", orderReference: "SO-77", orderNumber: "MF-10482" })), () => {
+    assert.match(text(), /Order number MF-10482/);
+    assert.doesNotMatch(text(), /SO-77/);
+  });
+});
+
 test("an order paid with a code shows the lines before it, the code's discount line and the total charged", async () => {
   // 10% off with SAVE10: the chair 4500000 -> 4050000; delivery is never discounted.
   const promoted = { ...quote, items: [{ ...quote.items[0]!, unitPricePaise: 4050000, lineTotalPaise: 4050000, discountPaise: 450000, undiscountedUnitPricePaise: 4500000 }],

@@ -26,10 +26,12 @@ dom.window.HTMLDialogElement.prototype.showModal = function () {
 dom.window.HTMLDialogElement.prototype.close = function () {
   this.removeAttribute("open");
 };
-test("header wishlist opens a working drawer and account support never hands off to Shopify", async () => {
+test("header wishlist opens a working drawer and the account icon opens /account without asking who is signed in", async () => {
   const previous = globalThis.fetch;
-  globalThis.fetch = async () =>
-    Response.json({
+  const asked: string[] = [];
+  globalThis.fetch = async (input) => {
+    asked.push(new URL(String(input), "http://localhost:3003").pathname);
+    return Response.json({
       items: [],
       itemCount: 0,
       subtotalPaise: 0,
@@ -37,6 +39,7 @@ test("header wishlist opens a working drawer and account support never hands off
       checkoutEnabled: false,
       mode: "preview",
     });
+  };
   const root = createRoot(document.getElementById("root")!);
   try {
     await act(async () =>
@@ -64,17 +67,13 @@ test("header wishlist opens a working drawer and account support never hands off
         .click(),
     );
     assert.equal(document.querySelector("dialog[open]"), null);
-    await act(async () =>
-      document
-        .querySelector<HTMLButtonElement>('button[aria-label="Your account"]')!
-        .click(),
-    );
-    const account = document.querySelector("dialog[open]")!;
-    assert.ok(account.querySelector('a[href="/account"]'));
-    assert.equal(
-      account.querySelector('a[href*="shop.maplefurnishers.com"]'),
-      null,
-    );
+    // The account icon is a plain link (owner's spec, 10 Nov 2026): /account shows sign-in, the account or the
+    // not-available page by the API's flag, so the header never fetches the session or loads account code.
+    const account = document.querySelector<HTMLAnchorElement>('a[aria-label="Your account"]');
+    assert.equal(account?.getAttribute("href"), "/account");
+    assert.equal(document.querySelector('button[aria-label="Your account"]'), null, "no modal saying accounts do not exist");
+    assert.equal(document.querySelector('a[href*="shop.maplefurnishers.com"]'), null);
+    assert.deepEqual(asked.filter((path) => path.startsWith("/api/account")), [], "the header never asks who is signed in");
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = previous;

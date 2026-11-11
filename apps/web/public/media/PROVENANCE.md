@@ -62,3 +62,11 @@ From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), f
 
 - `contact/studio.webp`: the opening's consultation studio (node 298:549, raw image 1792 x 768 PNG); `contact/workshop.webp`: the Delhi address's wood finishing (node 298:667, raw image 1536 x 1024 PNG). Re-encoded as WebP at the same sizes. Like the Our Story chapters, they are mock-up renders from the design file, not Maple photographs; replace them under Artwork, Contact, when real ones exist.
 - `contact/phone.svg`, `mail.svg`, `pin.svg` (the ways to reach us) and `truck.svg`, `receipt.svg`, `user.svg`, `shield.svg`, `box.svg` (the help centre's topics): the design's line icons, unchanged SVG exports.
+
+## Account, checkout and email assets (11 November 2026)
+
+Added for the owner's account, checkout and confirmation-template frames of 11 November 2026, all from the owner's Figma file "Maple-Website-Review" (`GJsFInfhys0crdNpQsbUUU`), exported through the Figma connector and re-encoded with sharp.
+
+- `account/login-editorial.webp` and `account/sign-up-editorial.webp` (1536 x 864) are the editorial photographs of the "Maple / Login / Desktop" (node 392:1652) and "Maple / Signup / Desktop" (node 392:1697) frames. Like the hero tiles above, they are mock-up renders from the owner's design file, not Maple photographs.
+- `previews/nola-accent-chair.webp` (800 x 1000) is the Nola chair photograph used in the payment-success, email and WhatsApp frames (nodes 392:1752, 394:1418, 394:1456). Only the local design previews (`?preview=…`, `/api/previews/…`, `/previews/whatsapp`) show it; real orders show the catalogue's own photos.
+- `email/maple-logo.png` (264 x 122) is `footer/maple-logo.webp` above, converted to PNG and flattened onto white for mail apps that cannot show WebP or that darken transparent backgrounds.
