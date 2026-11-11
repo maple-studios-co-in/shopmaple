@@ -18,6 +18,8 @@ The launcher is an operations deployment: install the reviewed scripts under an 
 
 After verification, replace only the existing ShopMaple 02:47 UTC database-only cron with the reviewed fixed-version launcher. Preserve other cron entries and keep a private before/after record. Verify a first complete pair and an isolated restore before claiming the schedule protects media. Actual installation evidence belongs in the release report; source implementation alone does not establish a scheduled job.
 
+Since 12 November 2026 cron runs the backup through the stable launcher `ops/tools/ops/run-backup.sh`, which checks the tool's preconditions, runs the active release's `backup-shopmaple.sh` and records the outcome for the store monitor; a weekly restore drill restores the newest pair into a throwaway cluster. See [operations-backups.md](operations-backups.md).
+
 The job logs a pair identifier on success and fails nonzero on an incomplete run. Separate alert delivery, missing-daily-pair monitoring, retention and an automated off-host destination still need configuration. Do not claim a backup log is a delivered alert or a local disk copy is disaster recovery.
 
 ## Capacity and interrupted jobs
