@@ -114,7 +114,8 @@ test("the sign-in pages: Figma's words, never cached or indexed, closed while ac
     assert.deepEqual(route.metadata?.robots, { index: false, follow: false });
     const { html, seen } = await visit(route, { searchParams: { next: "/checkout" } }, api({ "/api/health": () => Response.json(on) }));
     for (const expected of words) assert.ok(html.includes(expected.replace("&", "&amp;")), expected);
-    assert.deepEqual(seen.map((s) => s.path), ["/api/health"], "no session cookie: nothing else is asked");
+    // Besides the published storefront (the photo is template artwork, 12 Nov 2026), which every page reads.
+    assert.deepEqual(seen.map((s) => s.path), ["/api/health", "/api/content/storefront"], "no session cookie: nothing else is asked");
     assert.match(html, /<main id="main" class="auth-panel"/);
     assert.match(html, /href="\/"[^>]*>← Back to shop/);
     const closed = await visit(route, {}, api({ "/api/health": () => Response.json(off) }));

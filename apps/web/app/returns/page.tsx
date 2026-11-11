@@ -8,5 +8,5 @@ export async function generateMetadata() {
 export default async function ReturnsPage() {
   const published = await getPublishedContent();
   const content = resolveServicePages(published.servicePages).returns;
-  return <ReturnsPageContent content={content} footer={resolveSiteChrome(published.siteChrome).footer} />;
+  return <ReturnsPageContent content={content} footer={resolveSiteChrome(published.siteChrome).footer} media={published.templateMedia} />;
 }

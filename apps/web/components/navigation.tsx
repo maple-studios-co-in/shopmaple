@@ -10,29 +10,19 @@ import products from "../data/navigation-products.json";
 import { shopMoney } from "../lib/format";
 import { recentProduct } from "../lib/search-products";
 import type { ProductCardModel } from "../lib/product-card-model";
+import { defaultMenuArtwork, type MenuArtwork } from "../lib/menu-artwork";
 
-/** The room's card at the start of its mega menu (Figma 256:3836). */
+/** The words on the room's card at the start of its mega menu (Figma 256:3836); its photo is template artwork. */
 const megaFeatures = {
   living: {
     heading: "Designed for every moment.",
     body: "Timeless silhouettes, premium materials and comfort that feels like home.",
-    // A furnished room, as in the design, rather than a piece on its own.
-    image: "/media/home/category-sofas.webp",
-    alt: "A living room with a cream sofa, a wooden coffee table and plants",
   },
   bedroom: {
     heading: "Rest, beautifully made.",
     body: "Beds and bedside pieces made for calm, unhurried rooms.",
-    image: "/media/home/category-beds.webp",
-    alt: "A bedroom with an upholstered green bed and wooden bedside tables",
   },
 } as const;
-/** The photo beside each discovery link, by the link's id; a link the admin adds without one is shown as words alone. */
-const discoveryImages: Record<string, string> = {
-  new: "/media/home/hero-sofas.webp",
-  bestsellers: "/media/home/editorial-flip-runo.webp",
-  look: "/media/home/strip-always-together.webp",
-};
 const iconPaths = {
   sofa: "M4 11V8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5V11M3 11.5A1.5 1.5 0 0 1 4.5 10h0A1.5 1.5 0 0 1 6 11.5V13h12v-1.5a1.5 1.5 0 0 1 3 0V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM5 17v2M19 17v2",
   chair: "M7 10V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V10M5 12.5A1.5 1.5 0 0 1 6.5 11h11a1.5 1.5 0 0 1 1.5 1.5V15H5zM6.5 15l-.5 5M17.5 15l.5 5",
@@ -76,7 +66,8 @@ function CategoryLink({
 }
 export function DesktopNavigation({
   siteChrome = defaultSiteChrome,
-}: { siteChrome?: SiteChrome } = {}) {
+  artwork = defaultMenuArtwork,
+}: { siteChrome?: SiteChrome; /** The menu's pictures, resolved on the server from the published artwork. */ artwork?: MenuArtwork } = {}) {
   const navigation = siteChrome.navigation.filter((item) => item.enabled);
   const [active, setActive] = useState<string | null>(null);
   const nav = useRef<HTMLElement>(null);
@@ -178,8 +169,8 @@ export function DesktopNavigation({
                 {item.feature !== "none" && (
                   <div className="maple-mega-feature">
                     <Image
-                      src={megaFeatures[item.feature].image}
-                      alt={megaFeatures[item.feature].alt}
+                      src={artwork.features[item.feature].image}
+                      alt={artwork.features[item.feature].alt}
                       width={320}
                       height={330}
                       sizes="240px"
@@ -243,8 +234,8 @@ export function DesktopNavigation({
                           }
                           onClick={() => setActive(null)}
                         >
-                          {discoveryImages[link.id] && (
-                            <Image src={discoveryImages[link.id]!} alt="" width={160} height={160} sizes="80px" />
+                          {Object.hasOwn(artwork.discovery, link.id) && (
+                            <Image src={artwork.discovery[link.id]!} alt="" width={160} height={160} sizes="80px" />
                           )}
                           <span>
                             <strong>{link.label}</strong>

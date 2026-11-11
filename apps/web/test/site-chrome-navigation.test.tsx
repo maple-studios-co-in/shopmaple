@@ -282,3 +282,37 @@ test("renamed enquiry links expose the edited label instead of the old default a
     await act(async () => root.unmount());
   }
 });
+
+test("the mega menu shows the pictures staff published (owner, 12 Nov 2026), and the originals without them", async () => {
+  const { defaultSiteChrome } = await import("../lib/site-chrome-defaults");
+  const { resolveMenuArtwork } = await import("../lib/menu-artwork");
+  const upload = (letter: string) => `/media/uploads/${letter.repeat(64)}.webp`;
+  const root = createRoot(document.getElementById("root")!);
+  // The first two menus open with the living and bedroom cards.
+  const open = async (index: number) => {
+    const trigger = document.querySelectorAll<HTMLButtonElement>(".maple-menu-trigger")[index]!;
+    await act(async () => trigger.click());
+  };
+  const discovery = () => [...document.querySelectorAll(".maple-mega-discovery img")].map((img) => img.getAttribute("src"));
+  try {
+    await act(async () => root.render(<DesktopNavigation siteChrome={defaultSiteChrome} />));
+    await open(0);
+    assert.equal(document.querySelector(".maple-mega-feature img")?.getAttribute("src"), "/media/home/category-sofas.webp");
+    assert.deepEqual(discovery(), ["/media/home/hero-sofas.webp", "/media/home/editorial-flip-runo.webp", "/media/home/strip-always-together.webp"]);
+    const artwork = resolveMenuArtwork([
+      { key: "menu-living-feature", image: upload("a"), alt: "Our living room" },
+      { key: "menu-bedroom-feature", image: upload("b"), alt: "Our bedroom" },
+      { key: "menu-discovery-new", image: upload("c"), alt: "" },
+    ]);
+    await act(async () => root.render(<DesktopNavigation siteChrome={defaultSiteChrome} artwork={artwork} />));
+    const feature = document.querySelector(".maple-mega-feature img")!;
+    assert.equal(feature.getAttribute("src"), upload("a"));
+    assert.equal(feature.getAttribute("alt"), "Our living room");
+    assert.deepEqual(discovery(), [upload("c"), "/media/home/editorial-flip-runo.webp", "/media/home/strip-always-together.webp"]);
+    assert.ok([...document.querySelectorAll(".maple-mega-discovery img")].every((img) => img.getAttribute("alt") === ""), "the link's words speak for its photo");
+    await open(1);
+    assert.equal(document.querySelector(".maple-mega-feature img")?.getAttribute("src"), upload("b"));
+  } finally {
+    await act(async () => root.unmount());
+  }
+});

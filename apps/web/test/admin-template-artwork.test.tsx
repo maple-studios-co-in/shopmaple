@@ -69,8 +69,10 @@ test("legacy Artwork browsing shows grouped original placements without creating
   try {
     assert.equal(button("Save draft").disabled, true, "Existing clean drafts remain clean");
     await click("Artwork");
-    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra"]);
-    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 8);
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra",
+      "Main menu", "Sofas page", "Tables page", "Chairs page", "Blog", "Product page", "Help pages", "Sign-in pages"]);
+    // Eight homepage placements, then the editorial's four flip photos (owner, 12 Nov 2026).
+    assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 12);
     await select("Artwork placement", "home-nimbus");
     assert.equal(input("Desktop image URL").value, originalDesktop);
     assert.equal(input("Mobile image URL").value, originalMobile);
@@ -106,6 +108,37 @@ test("legacy Artwork browsing shows grouped original placements without creating
     await click("Homepage"); await fill("Category heading", "Sibling text"); await click("Save draft");
     assert.equal(app.saved().content.templateMedia, undefined);
     assert.equal(container.textContent?.includes("Publish draft"), false, "Editors cannot publish");
+  } finally { await app.close(); }
+});
+
+test("the pictures that were fixed in code are chosen by page, say where they appear, and save as artwork (12 Nov 2026)", async () => {
+  const app = await setup({legacy:true});
+  try {
+    await click("Artwork");
+    await select("Artwork group", "Sofas page");
+    const placements = [...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent);
+    assert.deepEqual(placements.slice(0, 3), ["“Designer Sofa Sets” circle", "“Wooden Sofas” circle", "“Sofa Cum Beds” circle"]);
+    assert.ok(placements.includes("Banner above “Sofas”") && placements.includes("“Grain” icon"));
+    assert.equal(placements.length, 10 + 3 + 4, "every circle, banner and value icon on the page");
+    await select("Artwork placement", "sofas-outdoor-banner");
+    assert.match(container.textContent ?? "", /A wide banner between the product rows on the Sofas page \(\/sofas\), above “Sofas”\. Desktop 2784 × 400 px/);
+    assert.match(container.textContent ?? "", /first photo of the Keeri product “casaba”/, "until an upload, the stand-in photo is named");
+    assert.ok(input("Mobile image URL"), "a banner takes a square phone crop too");
+    await fill("Desktop image URL", image);
+    await fill("Mobile image URL", `/media/uploads/${"b".repeat(64)}.webp`);
+    await fill("Image description", "A sofa on a shaded terrace");
+    await select("Artwork group", "Main menu");
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent),
+      ["Living menu photo", "Bedroom menu photo", "New Arrivals link photo", "Bestsellers link photo", "Complete the Look link photo"]);
+    assert.equal(input("Desktop image URL").value, "/media/home/category-sofas.webp");
+    assert.match(container.textContent ?? "", /Using original artwork/);
+    await select("Artwork group", "Blog");
+    assert.equal(container.querySelectorAll('select[aria-label="Artwork placement"] option').length, 12);
+    await select("Artwork group", "Help pages");
+    assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork placement"] option')].map(o=>o.textContent),
+      ["Privacy policy photo", "Refund policy photo", "Shipping policy photo", "Terms of service photo", "Return & Exchange photo"]);
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateMedia, [{ key: "sofas-outdoor-banner", image, mobileImage: `/media/uploads/${"b".repeat(64)}.webp`, alt: "A sofa on a shaded terrace" }]);
   } finally { await app.close(); }
 });
 
