@@ -63,6 +63,8 @@ for (const [kind, entries, archive] of [
   ['trailing data', [abc], Buffer.from('abcd')],
   ['negative size', [{ ...abc, bytes: -1 }]],
   ['oversized size', [{ ...abc, bytes: 2 ** 40 }]],
+  ['film over the per-file cap', [{ ...abc, name: abc.name.replace('.webp', '.mp4'), bytes: 96 * 1024 * 1024 + 1 }]],
+  ['another file type', [{ ...abc, name: abc.name.replace('.webp', '.mov') }]],
 ]) {
   test(`restore refuses ${kind} before creating destination`, t => {
     const f = fixture(t); crafted(f.bundle, entries, archive);
@@ -129,4 +131,23 @@ test('CLI works when invoked through a release symlink', async t => {
   const run = spawnSync(process.execPath, [alias, 'backup', f.source, f.bundle], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   assert.equal(run.stdout.trim(), '{"files":0,"bytes":0}');
+});
+
+test('films (MP4 and WebM up to 80 MiB) back up and restore byte for byte beside images', t => {
+  const f = fixture(t), image = add(f.source);
+  const films = [Buffer.alloc(80 * 1024 * 1024, 7), Buffer.from('a small webm film')].map((bytes, i) => {
+    const name = `${hash(bytes)}.${i ? 'webm' : 'mp4'}`; writeFileSync(join(f.source, name), bytes, { mode: 0o600 }); return { bytes, name };
+  });
+  const total = image.bytes.length + films.reduce((sum, film) => sum + film.bytes.length, 0);
+  assert.deepEqual(backupMedia(f.source, f.bundle), { files: 3, bytes: total });
+  assert.deepEqual(restoreMediaBackup(f.bundle, f.restored), { files: 3, bytes: total });
+  for (const item of [image, ...films]) assert.equal(hash(readFileSync(join(f.restored, item.name))), hash(item.bytes));
+});
+test('backup refuses a film over the per-file cap and files of other types', async t => {
+  const { openSync, ftruncateSync, closeSync } = await import('node:fs');
+  const f = fixture(t), big = join(f.source, `${'b'.repeat(64)}.mp4`), fd = openSync(big, 'wx', 0o600);
+  ftruncateSync(fd, 96 * 1024 * 1024 + 1); closeSync(fd);
+  assert.throws(() => backupMedia(f.source, f.bundle), /size/i);
+  rmSync(big); writeFileSync(join(f.source, `${hash(Buffer.from('x'))}.mov`), 'x');
+  assert.throws(() => backupMedia(f.source, `${f.bundle}-2`), /name/i);
 });

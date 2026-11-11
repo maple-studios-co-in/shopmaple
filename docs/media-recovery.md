@@ -17,14 +17,14 @@ Database records hold media labels, publication state and references; files hold
 A new, private backup directory contains:
 
 - `media.archive`: raw file bytes concatenated in manifest order, with no tar headers or executable extraction instructions.
-- `manifest.json`: version 1 and ordered `{name, bytes}` entries. Names must be exactly 64 lowercase hexadecimal characters followed by `.webp`; the name's hash must match its bytes.
+- `manifest.json`: version 1 and ordered `{name, bytes}` entries. Names must be exactly 64 lowercase hexadecimal characters followed by `.webp` (an image) or `.mp4`/`.webm` (a film); the name's hash must match its bytes.
 - `SHA256SUMS`: SHA-256 checksums of both archive and manifest, written last as the completion marker.
 
 Files are 0600 and directories 0700. The tool fsyncs files and directories, validates the finished backup, and returns JSON containing file and byte counts. An empty source is a valid zero-file backup. A missing or invalid completion marker means the bundle is incomplete. Interrupted runs remain for operator inspection; rerun using a fresh destination.
 
 Verification checks every checksum, filename, unique path, size and archive boundary before restoration creates a destination. Restoration rechecks each file's digest while writing. It refuses pre-existing destinations, symbolic-link files or path components, non-regular files, traversal, absolute or backslash entry paths, trailing/truncated data, and unsupported versions. Input paths must be normalized absolute paths without symbolic-link ancestors (use `/private/tmp`, not the macOS `/tmp` alias).
 
-Limits are 4,096 files, 32 MiB per file, a 1 GiB archive, and a 1 MiB manifest. The current application quotas are lower. Memory use is bounded by an individual file rather than the full archive. Content-address verification does not decode WebP; image validation belongs to upload processing.
+Limits are 4,096 files, 96 MiB per file, a 4 GiB archive, and a 1 MiB manifest. The current application quotas are lower: 250 MiB of images and 3 GiB of films (80 MiB each). Memory use is bounded by an individual file rather than the full archive, so a film needs up to 80 MiB while it is copied. Content-address verification does not decode WebP or video; validation belongs to upload processing. With a full film library each media archive is about 3.3 GiB, and backups are retained, so check free disk before scheduling them.
 
 Checksums detect corruption; they do not authenticate a bundle against an attacker who can rewrite its checksum file. Use a trusted backup location, preserve provenance and restrict access. Parent directories must not be writable by other users unless protected by the POSIX sticky bit. Do not run alongside untrusted processes using the same OS account, which can race filesystem changes. The tool does not provide encryption, remote storage, retention, database consistency, or an atomic switch of the running application's media root.
 

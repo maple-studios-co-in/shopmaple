@@ -180,3 +180,13 @@ test('capacity loss after the database stage aborts before media writes and is n
   assert.equal(readdirSync(pair).some(name => name.startsWith('media-')), false, 'capacity exhaustion must not start media output');
   noCompletion(options);
 });
+
+test('a pair keeps library films with the images and verifies them', async t => {
+  const { options } = fixture(t); realDatabase(options);
+  for (const [value, extension] of [['film one', 'mp4'], ['film two', 'webm']]) writeFileSync(join(options.mediaSource, `${hash(Buffer.from(value))}.${extension}`), value, { mode: 0o600 });
+  const result = await backupPair(options);
+  assert.equal(result.media.files, 3); assert.equal(result.media.bytes, 20 + 8 + 8);
+  const names = JSON.parse(readFileSync(join(options.backupRoot, options.pairId, result.media.directory, 'manifest.json'), 'utf8')).files.map(entry => entry.name.split('.')[1]).sort();
+  assert.deepEqual(names, ['mp4', 'webm', 'webp']);
+  assert.deepEqual(await verifyPair(join(options.backupRoot, options.pairId), { pgRestorePath: join(options.postgres.binDirectory, 'pg_restore') }), result);
+});
