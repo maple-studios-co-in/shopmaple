@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import React, { act } from "react";
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { storefrontContentSchema, templateFilmsSchema, type TemplateFilms } from "@shopmaple/contracts";
 import { HomeTestimonial } from "../components/home-sections";
 import { AmbientFilm } from "../components/ambient-film";
+import { mountAmbientFilm } from "../lib/home-effects";
 import { CollectionLandingView } from "../components/collection-landing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { resolveNimbusLanding } from "../lib/nimbus-content-defaults";
@@ -42,7 +42,7 @@ test("the testimonial plays its film muted and looping over its poster, and with
 
 test("an ambient film plays only while on screen and never for visitors who ask for reduced motion", async () => {
   for (const reduced of [false, true]) {
-    const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost/" });
+    const dom = new JSDOM(renderToStaticMarkup(<AmbientFilm src={film("a")} label="Film" width={720} height={1280} />), { url: "http://localhost/" });
     const observers: { callback: IntersectionObserverCallback; disconnected: boolean }[] = [];
     class Observer { constructor(public callback: IntersectionObserverCallback) { observers.push(this as unknown as { callback: IntersectionObserverCallback; disconnected: boolean }); } observe() {} disconnect() { (this as unknown as { disconnected: boolean }).disconnected = true; } }
     const played: string[] = [], paused: string[] = [];
@@ -55,17 +55,18 @@ test("an ambient film plays only while on screen and never for visitors who ask 
     });
     Object.defineProperty(dom.window, "matchMedia", { value: () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }) });
     const saved = { window: globalThis.window, document: globalThis.document, IntersectionObserver: globalThis.IntersectionObserver };
-    Object.assign(globalThis, { window: dom.window, document: dom.window.document, IntersectionObserver: Observer, IS_REACT_ACT_ENVIRONMENT: true });
-    const root = createRoot(dom.window.document.getElementById("root")!);
+    Object.assign(globalThis, { window: dom.window, document: dom.window.document, IntersectionObserver: Observer });
+    const video = dom.window.document.querySelector<HTMLVideoElement>("video[data-ambient-film]")!;
+    assert.equal(video.getAttribute("preload"), "metadata", "server markup: only the opening bytes load before it plays");
     try {
-      await act(async () => root.render(<AmbientFilm src={film("a")} label="Film" width={720} height={1280} />));
+      const stop = mountAmbientFilm(video);
       assert.deepEqual(played, [], "nothing plays before it is scrolled to");
-      const seen = (isIntersecting: boolean) => act(async () => observers[0]!.callback([{ isIntersecting } as IntersectionObserverEntry], observers[0] as unknown as IntersectionObserver));
+      const seen = async (isIntersecting: boolean) => observers[0]!.callback([{ isIntersecting, intersectionRatio: isIntersecting ? 1 : 0 } as IntersectionObserverEntry], observers[0] as unknown as IntersectionObserver);
       await seen(true);
       assert.deepEqual(played, reduced ? [] : ["play"], reduced ? "reduced motion keeps the poster" : "it plays once on screen");
       await seen(false);
       assert.deepEqual(paused, reduced ? [] : ["pause"], "and pauses off screen");
-      await act(async () => root.unmount());
+      stop();
       assert.equal(observers[0]!.disconnected, true);
     } finally { Object.assign(globalThis, saved); dom.window.close(); }
   }
