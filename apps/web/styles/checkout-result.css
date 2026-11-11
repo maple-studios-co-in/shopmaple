@@ -121,6 +121,10 @@
 .checkout-page .checkout-result-reference {
   white-space: nowrap;
 }
+/* The full checkout reference is long: it may break anywhere rather than widen a phone's column. */
+.checkout-page .checkout-result-checkout-id {
+  overflow-wrap: anywhere;
+}
 /* "Maple / Collection / Primary action": 300 x 52 at 1440, one under the other. */
 .checkout-page .checkout-result-actions {
   display: flex;

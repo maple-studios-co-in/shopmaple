@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { PaymentFailure, PaymentPending, PaymentSuccess } from "@/components/store/checkout-result";
+import { PaymentFailure, PaymentPending, PaymentSuccess, type PaymentCheck } from "@/components/store/checkout-result";
 import type { CheckoutAttempt } from "./checkout-client";
 
 // Local development only: the screens after Razorpay's window as Figma 392:1752, 392:1806 and 459:1337 draw them, with the
@@ -51,16 +51,17 @@ function sampleAttempt(items: (typeof nola)[], paid: boolean): CheckoutAttempt {
 /** The pending screen with a pretend check: a moment of "Checking…", then still pending. */
 function PendingPreview() {
   const [checking, setChecking] = useState(false);
-  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [lastCheck, setLastCheck] = useState<PaymentCheck | null>(null);
   useEffect(() => {
     if (!checking) return;
     const timer = setTimeout(() => {
       setChecking(false);
-      setCheckedAt(new Date());
+      setLastCheck({ at: new Date(), outcome: "pending" });
     }, 900);
     return () => clearTimeout(timer);
   }, [checking]);
-  return <PaymentPending attempt={sampleAttempt([nola], false)} photos={photos} checking={checking} checkedAt={checkedAt} onCheck={() => setChecking(true)} />;
+  return <PaymentPending attempt={sampleAttempt([nola], false)} photos={photos} checking={checking} lastCheck={lastCheck}
+    watching={false} onCheck={() => setChecking(true)} />;
 }
 
 export function CheckoutResultPreview({ kind }: { kind: ResultPreviewKind }) {

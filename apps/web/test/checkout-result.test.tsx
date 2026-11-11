@@ -405,10 +405,13 @@ test("a payment Razorpay reported but the store has not confirmed shows the pend
     await reportPayment();
     await settle(2);
     assert.equal(result()?.dataset.paymentResult, "pending");
-    assert.match(text(), /Payment in progressWe’re checking your payment\.Your payment is awaiting confirmation from your bank\. Your order details are saved\./);
+    assert.match(text(), /Payment in progressWe’re checking your payment\.Our store is confirming your payment\. Your order details are saved\./);
+    assert.doesNotMatch(text(), /bank/, "the store confirms the payment, not the buyer's bank");
     assert.match(text(), /Awaiting confirmationPayment amount · ₹1,750Please don’t pay again while we verify this transaction\. We’ll email you as soon as the payment status is confirmed\./);
-    // Before Maple's number exists, the reference is the attempt's.
+    // Before Maple's number exists, the reference is the attempt's; the full checkout reference and the order page follow.
     assert.match(text(), /Payment reference · PAY-0B8E1C3A/);
+    assert.match(text(), new RegExp(`Checkout reference · ${attemptId}`));
+    assert.equal(link("View order status")?.getAttribute("href"), `/orders/${attemptId}`);
     assert.match(card(), /^Your order is on hold\./);
     assert.match(card(), /Payment pending\s*₹1,750/);
     assert.equal(link("Contact support")?.getAttribute("href"), "/contact?product=Payment+PAY-0B8E1C3A#contact-enquiry");
@@ -420,6 +423,7 @@ test("a payment Razorpay reported but the store has not confirmed shows the pend
     await settle(2);
     assert.ok(statusCalls(calls).length > before, "the store is asked again");
     assert.match(text(), /Still awaiting confirmation at .+\. We’ll keep checking\./);
+    assert.doesNotMatch(text(), /couldn’t check/);
     assert.equal(result()?.dataset.paymentResult, "pending");
 
     confirm();
@@ -449,8 +453,11 @@ test("when confirmation outlasts the checkout's wait, the pending screen stays a
     assert.ok(statusCalls(calls).length > stopped, "asking again checks the store");
     assert.match(text(), /Still awaiting confirmation at /);
 
-    // The new watch runs out too; a confirmation after it shows once the buyer asks again.
+    // The new watch runs out too, and the answer no longer promises checks that will not come; a confirmation after it
+    // shows once the buyer asks again.
     await settle(10);
+    assert.match(text(), /Still awaiting confirmation at .+\. Check again any time\./);
+    assert.doesNotMatch(text(), /We’ll keep checking/);
     const ranOut = statusCalls(calls).length;
     confirm();
     await settle(4);
@@ -460,6 +467,147 @@ test("when confirmation outlasts the checkout's wait, the pending screen stays a
     await settle(4);
     assert.equal(result()?.dataset.paymentResult, "success");
     assert.equal(orderCalls(calls).length, 1, "never a second payment");
+  } finally { await cleanup(); }
+});
+
+test("a check that cannot reach the store says so, never that the payment is still awaiting confirmation", async () => {
+  cartLines = [chair];
+  const quote = quoteFor([chair], "included");
+  let failure: "network" | "server" | null = null;
+  const { calls, cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(payable(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(payable(quote), { status: 202 });
+    if (call.path === `/api/checkout/${attemptId}`) {
+      if (failure === "network") throw new TypeError("Failed to fetch");
+      if (failure === "server") return new Response("upstream down", { status: 502 });
+      return Response.json(payable(quote));
+    }
+    return new Response(null, { status: 404 });
+  });
+  try {
+    await openPayment();
+    await reportPayment();
+    await settle(2);
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    const status = () => document.querySelector<HTMLElement>(".checkout-result-checked[role='status']")!.textContent;
+
+    failure = "network";
+    await act(async () => button("Check payment status")!.click());
+    await settle(2);
+    assert.equal(status(), "We couldn’t check just now. Please try again in a moment.");
+    assert.doesNotMatch(text(), /Still awaiting confirmation/);
+
+    failure = "server";
+    await act(async () => button("Check payment status")!.click());
+    await settle(2);
+    assert.equal(status(), "We couldn’t check just now. Please try again in a moment.", "a 5xx is a failed check too");
+
+    failure = null;
+    await act(async () => button("Check payment status")!.click());
+    await settle(2);
+    assert.match(status() ?? "", /^Still awaiting confirmation at .+\. We’ll keep checking\.$/, "a real answer replaces the failure");
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    assert.equal(orderCalls(calls).length, 1, "never a second payment");
+    assert.equal(calls.filter((c) => c.path === `/api/checkout/${attemptId}/payment-callback`).length, 1, "checking only reads the status");
+  } finally { await cleanup(); }
+});
+
+test("after the watch runs out, a reload comes back to the pending screen with the order link, never to a fresh checkout", async () => {
+  cartLines = [chair];
+  const quote = quoteFor([chair], "included");
+  const { route, confirm } = slowRoute(quote);
+  const first = await mount(route, { confirmationWindowMs: 40 });
+  try {
+    await openPayment();
+    await reportPayment();
+    await settle(12);
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    const stopped = statusCalls(first.calls).length;
+    await settle(4);
+    assert.equal(statusCalls(first.calls).length, stopped, "the watch has run out");
+    assert.equal(link("View order status")?.getAttribute("href"), `/orders/${attemptId}`, "the way back to the order");
+    assert.match(text(), new RegExp(`Checkout reference · ${attemptId}`));
+    const stored = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
+    assert.equal(stored?.attemptId, attemptId, "the checkout stays saved after the watch runs out");
+    assert.equal(stored?.submitted, true);
+  } finally { await first.cleanup(); }
+
+  const second = await mount(route, { keepStorage: true, confirmationWindowMs: 40 });
+  try {
+    await settle(4);
+    assert.equal(result()?.dataset.paymentResult, "pending", "the reload returns to the pending screen");
+    assert.ok(!document.querySelector("form"), "never the details form with the cart still full");
+    assert.equal(link("View order status")?.getAttribute("href"), `/orders/${attemptId}`);
+    assert.equal(quoteCalls(second.calls).length, 0, "no second quote");
+    assert.equal(orderCalls(second.calls).length, 0, "no second payment");
+    await settle(10);
+    assert.ok(sessionStorage.getItem(storageKey), "still saved once the resumed watch runs out");
+
+    confirm();
+    await act(async () => button("Check payment status")!.click());
+    await settle(6);
+    assert.equal(result()?.dataset.paymentResult, "success", "asking again after the reload still finds the order");
+    assert.equal(orderCalls(second.calls).length, 0, "never a second payment");
+  } finally { await second.cleanup(); }
+});
+
+/** The pending screen, the buyer on its button, then the store's next answer `next`. */
+async function pendingThen(next: (quote: Quote) => object) {
+  cartLines = [chair];
+  const quote = quoteFor([chair], "included");
+  let moved = false;
+  const scrolled: Element[] = [];
+  const original = (window.HTMLElement.prototype as any).scrollIntoView;
+  (window.HTMLElement.prototype as any).scrollIntoView = function (this: Element) { scrolled.push(this); };
+  const { calls, cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(payable(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(payable(quote), { status: 202 });
+    if (call.path === `/api/checkout/${attemptId}`) return Response.json(moved ? next(quote) : payable(quote));
+    return new Response(null, { status: 404 });
+  });
+  await openPayment();
+  await reportPayment();
+  await settle(2);
+  assert.equal(result()?.dataset.paymentResult, "pending");
+  await act(async () => button("Check payment status")!.focus());
+  scrolled.length = 0;
+  moved = true;
+  await settle(6);
+  return {
+    calls, scrolled,
+    cleanup: async () => {
+      (window.HTMLElement.prototype as any).scrollIntoView = original;
+      await cleanup();
+    },
+  };
+}
+
+test("when the store receives the money, the pending screen gives way to the payment-received notice, whose heading takes focus", async () => {
+  const { calls, scrolled, cleanup } = await pendingThen((quote) => attempt(quote, { state: "captured", paid: true, providerOrderId: "order_result1" }));
+  try {
+    assert.equal(result(), null, "the pending screen has gone");
+    assert.match(text(), /Payment receivedConfirming your order with our team\. This usually takes a moment\./);
+    assert.equal(document.activeElement?.tagName, "H1");
+    assert.equal(document.activeElement?.textContent, "Payment received", "focus moves to the notice's heading");
+    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the notice starts at the top");
+    assert.ok(document.querySelector("[role='status']"), "the notice is announced");
+    assert.equal(orderCalls(calls).length, 1);
+  } finally { await cleanup(); }
+});
+
+test("when the store sends the payment to team review, the review notice replaces the pending screen and its heading takes focus", async () => {
+  const { calls, scrolled, cleanup } = await pendingThen((quote) => attempt(quote, { state: "reconciliation_required", providerOrderId: "order_result1" }));
+  try {
+    assert.equal(result(), null, "the pending screen has gone");
+    assert.match(text(), /Your payment is still being confirmed/);
+    assert.match(text(), /Our team is checking this payment and order\. You don't need to pay again\./);
+    assert.equal(document.activeElement?.tagName, "H1");
+    assert.equal(document.activeElement?.textContent, "Your payment is still being confirmed", "focus moves to the notice's heading");
+    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the notice starts at the top");
+    assert.equal(link("View order status")?.getAttribute("href"), `/orders/${attemptId}`);
+    assert.equal(orderCalls(calls).length, 1);
   } finally { await cleanup(); }
 });
 
@@ -509,9 +657,26 @@ test("on a local development server, ?preview=success, success-multi, failure an
 
   const pending = await renderPreview("pending");
   assert.match(pending.html, /data-payment-result="pending"/);
-  assert.match(pending.words, /Payment in progress We’re checking your payment\. Your payment is awaiting confirmation from your bank\. Your order details are saved\. Awaiting confirmation Payment amount · ₹26,400/);
-  assert.match(pending.words, /Please don’t pay again while we verify this transaction\. We’ll email you as soon as the payment status is confirmed\. Check payment status Contact support .*Payment reference · PAY-10482/);
+  assert.match(pending.words, /Payment in progress We’re checking your payment\. Our store is confirming your payment\. Your order details are saved\. Awaiting confirmation Payment amount · ₹26,400/);
+  assert.match(pending.words, /Please don’t pay again while we verify this transaction\. We’ll email you as soon as the payment status is confirmed\. Check payment status Contact support .*View order status Payment reference · PAY-10482 Checkout reference · /);
   assert.match(pending.words, /Your order is on hold\. .*Nola Accent Chair Natural cane · Oak finish · Quantity 1 Subtotal ₹24,900 Delivery ₹1,500 Payment pending ₹26,400 Inclusive of applicable taxes/);
   assert.match(pending.html, /src="\/account\/payment-pending\.svg"/);
   assert.match((await renderPreview("other")).words, /Checkout is not open in this preview/);
+});
+
+test("a production build never shows ?preview=pending (or the other result previews): the closed checkout instead", async () => {
+  const env = process.env as Record<string, string | undefined>;
+  const previous = env.NODE_ENV;
+  env.NODE_ENV = "production";
+  try {
+    for (const preview of ["pending", "success", "failure"]) {
+      const page = await renderPreview(preview);
+      assert.doesNotMatch(page.html, /data-payment-result/, `?preview=${preview} renders no result screen`);
+      assert.doesNotMatch(page.words, /We’re checking your payment|PAY-10482|Nola Accent Chair/);
+      assert.match(page.words, /Checkout is not open in this preview/);
+    }
+  } finally {
+    env.NODE_ENV = previous;
+  }
+  assert.match((await renderPreview("pending")).html, /data-payment-result="pending"/, "a development server still shows it");
 });

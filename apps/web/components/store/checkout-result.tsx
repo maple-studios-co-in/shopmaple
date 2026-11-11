@@ -194,23 +194,37 @@ export function PaymentFailure({ attempt, reason, photos, busy, notice, onRetry,
 /** "Contact support" opens the contact form at the enquiry, about this payment. */
 export const paymentSupportHref = (reference: string) => `/contact?${new URLSearchParams({ product: `Payment ${reference}` })}#contact-enquiry`;
 
+/** What the buyer's last "Check payment status" found: the store answered that the payment is still unconfirmed, or the
+ * store could not be reached. */
+export type PaymentCheck = { at: Date; outcome: "pending" | "error" };
+
+const clock = (at: Date) => at.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+
 /**
- * Payment made but not yet confirmed (Figma 459:1337): Razorpay's window reported a payment and the store is waiting for
- * the bank or Razorpay to confirm it, or confirmation took longer than the checkout waits. The attempt, its stock hold and
- * the details stay, and the buyer is asked not to pay twice. "Check payment status" asks the store again at once
- * (`onCheck`); the store emails the buyer when the payment is confirmed.
+ * Payment made but not yet confirmed (Figma 459:1337): Razorpay's window reported a payment that the store has not
+ * confirmed yet, or confirmation took longer than the checkout waits. The attempt, its stock hold and the details stay,
+ * and the buyer is asked not to pay twice. "Check payment status" asks the store again at once (`onCheck`); "View order
+ * status" and the full checkout reference lead back to the order after the page is left. The store emails the buyer when
+ * the payment is confirmed.
  */
-export function PaymentPending({ attempt, photos, checking, checkedAt, onCheck }: {
+export function PaymentPending({ attempt, photos, checking, lastCheck, watching, onCheck }: {
   attempt: CheckoutAttempt;
   photos: ResultPhotos;
   /** True while a check the buyer asked for is under way. */
   checking: boolean;
-  /** When the buyer's last check came back still pending; null before any. */
-  checkedAt: Date | null;
+  /** What the buyer's last check found; null before any. */
+  lastCheck: PaymentCheck | null;
+  /** True while the checkout still asks the store on its own; once its watch ends, nothing promises more checks. */
+  watching: boolean;
   onCheck: () => void;
 }) {
   const id = useId();
   const reference = paymentReference(attempt);
+  const answer = !lastCheck || checking
+    ? ""
+    : lastCheck.outcome === "error"
+      ? "We couldn’t check just now. Please try again in a moment."
+      : `Still awaiting confirmation at ${clock(lastCheck.at)}. ${watching ? "We’ll keep checking." : "Check again any time."}`;
   return (
     <section className="checkout-result" data-payment-result="pending" aria-labelledby={`${id}-title`}>
       <div className="checkout-result-message">
@@ -220,7 +234,7 @@ export function PaymentPending({ attempt, photos, checking, checkedAt, onCheck }
         <h1 id={`${id}-title`} className="checkout-result-title" tabIndex={-1} data-checkout-result-heading="">
           We’re checking your payment.
         </h1>
-        <p className="checkout-result-lead">Your payment is awaiting confirmation from your bank. Your order details are saved.</p>
+        <p className="checkout-result-lead">Our store is confirming your payment. Your order details are saved.</p>
         <p className="checkout-result-pill">Awaiting confirmation</p>
         <p className="checkout-result-figure">{`Payment amount · ${money(attempt.amountPaise)}`}</p>
         <p className="checkout-result-help">
@@ -232,14 +246,16 @@ export function PaymentPending({ attempt, photos, checking, checkedAt, onCheck }
           </button>
           <Link className="account-cta" data-variant="quiet" data-fill-button="outline" href={paymentSupportHref(reference)}>Contact support</Link>
         </div>
-        {/* The answer to the buyer's own check, read out when it comes back still pending. */}
-        <p className="checkout-result-checked" role="status">
-          {checkedAt && !checking
-            ? `Still awaiting confirmation at ${checkedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}. We’ll keep checking.`
-            : ""}
+        {/* The answer to the buyer's own check. Always mounted, so screen readers hear it when it fills in. */}
+        <p className="checkout-result-checked" role="status">{answer}</p>
+        <p className="checkout-result-links">
+          <Link href={`/orders/${attempt.id}`}>View order status</Link>
         </p>
         <p className="checkout-result-ref">
           Payment reference · <span className="checkout-result-reference">{reference}</span>
+        </p>
+        <p className="checkout-result-ref">
+          Checkout reference · <span className="checkout-result-checkout-id">{attempt.id}</span>
         </p>
       </div>
       <OrderCard title="Your order is on hold." attempt={attempt} photos={photos} totalLabel="Payment pending" photoSizes="(max-width: 999px) 60vw, 20vw" />
