@@ -402,7 +402,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       }} />;
       case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
-      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} />;
+      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired}
+        films={{ value: content.templateFilms, onChange: set("templateFilms"), session, onExpired }} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
       case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />;

@@ -170,7 +170,7 @@ test("reordering to either boundary moves keyboard focus into the moved block", 
 test("cover and body images use the library and private previews", async () => {
   const state = await mount(); const contentTransport = globalThis.fetch;
   const hash = "a".repeat(64); const url = `/media/uploads/${hash}.webp`; const previewUrl = `/api/admin/media/${hash}/preview`;
-  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Reading room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl }], nextCursor: null }) : contentTransport(input, init);
+  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media?kind=image" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Reading room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl }], nextCursor: null }) : contentTransport(input, init);
   try {
     await createArticle();
     await fill("Block 1 text", "Make room for a chair by the window.");

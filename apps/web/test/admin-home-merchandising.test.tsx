@@ -36,7 +36,7 @@ async function setup(options: {conflict?: boolean; catalog?: typeof fetch; legac
   globalThis.fetch = async (input, init) => {
     const path = String(input); calls.push(path);
     if(path.startsWith("/api/products?")) return options.catalog ? options.catalog(input, init) : page(["alpha","bravo","charlie"]);
-    if(path === "/api/admin/media") return Response.json({assets:[{id:"asset1",sha256:"a".repeat(64),label:"Living room",width:100,height:100,bytes:100,mimeType:"image/webp",createdAt:"2026-10-26T00:00:00Z",publicAt:null,url:`/media/uploads/${"a".repeat(64)}.webp`,previewUrl:`/api/admin/media/${"a".repeat(64)}/preview`}],nextCursor:null});
+    if(path === "/api/admin/media?kind=image") return Response.json({assets:[{id:"asset1",sha256:"a".repeat(64),label:"Living room",width:100,height:100,bytes:100,mimeType:"image/webp",createdAt:"2026-10-26T00:00:00Z",publicAt:null,url:`/media/uploads/${"a".repeat(64)}.webp`,previewUrl:`/api/admin/media/${"a".repeat(64)}/preview`}],nextCursor:null});
     assert.equal(path,"/api/admin/content","No automatic publishing or commerce writes");
     if(init?.method === "PUT") {
       assert.equal(new Headers(init.headers).get("X-CSRF-Token"),"c".repeat(64));

@@ -12,12 +12,13 @@ import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
 import { ActionButton, FieldGrid, PanelHeader, Prose, SectionHeading, SelectField } from "./kit";
 import { MediaPicker } from "./media-picker";
+import { TemplateFilmFields, type TemplateFilmFieldsProps } from "./template-film-fields";
 
 const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra"] as const;
 type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
 
 /** The Artwork screen: every page's artwork, chosen by group and placement. */
-export function TemplateArtworkFields(props: Props) {
+export function TemplateArtworkFields({ films, ...props }: Props & { films?: TemplateFilmFieldsProps }) {
   const [group, setGroup] = useState<(typeof groups)[number]>("Homepage");
   return (
     <section aria-label="Template artwork">
@@ -26,6 +27,7 @@ export function TemplateArtworkFields(props: Props) {
         group={<SelectField label="Artwork group" value={group} onChange={event => setGroup(event.target.value as (typeof groups)[number])}>
           {groups.map(item => <NativeSelectOption key={item} value={item}>{item}</NativeSelectOption>)}
         </SelectField>} />
+      {films && <TemplateFilmFields group={group} {...films} />}
     </section>
   );
 }
@@ -67,8 +69,8 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group 
             ? `The original artwork was on Shopify and has left the store. Until you upload one, the store shows the first photo of the Keeri product “${slot.product}”.`
             : "The original artwork was on Shopify and has left the store. Until you upload one, the store leaves this image out."}
         </Notice>}
-        {selected.endsWith("-poster") && <Notice tone="info">
-          Changing this poster replaces the still image; the video stays unchanged.{selected !== "home-workshop-poster" && " The image description also labels the video."}
+        {["home-testimonial-poster", "nimbus-hero-poster", "terra-hero"].includes(selected) && <Notice tone="info">
+          This picture is also the poster of its film: the still shown before the film plays and to visitors who ask for reduced motion. Choose the film itself below.{selected === "home-testimonial-poster" && " The image description also labels the film."}
         </Notice>}
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
         <div className={cn("grid gap-5", responsive && "@xl:grid-cols-2")} key={selected}>

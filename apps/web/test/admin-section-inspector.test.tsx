@@ -60,6 +60,7 @@ async function setup() {
     if (path === "/api/admin/content" && method === "PUT") { puts.push(body); return Response.json({ version: body.expectedVersion + 1, draft: body.content, publishedVersion: 2, updatedAt: "2026-11-01T09:00:00Z" }); }
     if (path === "/api/admin/content/preview" && method === "POST") return Response.json({ token, version: body.expectedVersion, expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() });
     if (path === "/api/admin/content") return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: 2, updatedAt: "2026-10-26T12:00:00Z" });
+    if (path === "/api/admin/media?kind=video") return Response.json({ assets: [testimonialFilm], nextCursor: null });
     if (path.startsWith("/api/products?")) return Response.json({ products: ["loom", "pebble"].map((handle) => ({ id: handle, handle, title: `Product ${handle}`, description: "", category: "chairs", images: [], published: true, source: "fixture", sourceUpdatedAt: "2026-10-26T00:00:00Z", variants: [] })), total: 2, page: 1, limit: 20, mode: "preview", checkoutEnabled: false });
     return Response.json({ products: [], total: 0, page: 1, limit: 24, items: [], mode: "preview", checkoutEnabled: false });
   };
@@ -76,6 +77,8 @@ async function setup() {
   return { puts, close: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
 const card = (key: string) => container.querySelector<HTMLElement>(`[data-section-card="${key}"]`)!;
+const filmSha = "f".repeat(64);
+const testimonialFilm = { id: "film", sha256: filmSha, kind: "video", label: "Customer story", width: 720, height: 1280, bytes: 9_000_000, mimeType: "video/mp4", durationMs: 21_000, faststart: true, createdAt: "2026-11-12T00:00:00Z", publicAt: null, url: `/media/uploads/${filmSha}.mp4`, previewUrl: `/api/admin/media/${filmSha}/preview` };
 
 test("Edit on Cities opens one inspector with its text, artwork, layout and motion, and saving keeps every change", async () => {
   const app = await setup();
@@ -251,5 +254,27 @@ test("Find Your Feel edits its header and labels, and swaps either product throu
     const saved = app.puts[0].content;
     assert.deepEqual(saved.homeDetails.compare, { ...defaultStorefrontContent.homeDetails!.compare, heading: "Two ways to rest", right: { handle: "loom", label: "Loom" } });
     assert.equal(storefrontContentSchema.safeParse(saved).success, true);
+  } finally { await app.close(); }
+});
+
+test("the testimonial's Media tab chooses its film beside its poster, and saving keeps the film with its running time", async () => {
+  const app = await setup();
+  try {
+    await click("Edit Testimonial", card("testimonial"));
+    await openTab("Media");
+    const place = inspector()!.querySelector<HTMLElement>('[data-template-film="home-testimonial"]');
+    assert.ok(place, "the film is chosen where the testimonial is edited");
+    assert.ok(inspector()!.querySelector('select[aria-label="Artwork placement"]'), "beside its poster");
+    await click("Choose film", place!);
+    await until(() => Boolean([...place!.querySelectorAll("button")].find((b) => b.textContent?.includes("Use film"))), "the film list");
+    await act(async () => [...place!.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.includes("Use film"))!.click());
+    await click("Save draft");
+    await until(() => app.puts.length === 1, "the save");
+    assert.deepEqual(app.puts[0].content.templateFilms, [{ key: "home-testimonial", src: testimonialFilm.url, durationMs: 21_000 }]);
+    assert.equal(storefrontContentSchema.safeParse(app.puts[0].content).success, true);
+    await click("Clear film", inspector()!.querySelector<HTMLElement>('[data-template-film="home-testimonial"]')!);
+    await click("Save draft");
+    await until(() => app.puts.length === 2, "the second save");
+    assert.equal(app.puts[1].content.templateFilms, undefined, "clearing the only film leaves no film field");
   } finally { await app.close(); }
 });
