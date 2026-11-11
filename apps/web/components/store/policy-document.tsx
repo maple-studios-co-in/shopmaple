@@ -1,4 +1,5 @@
-import type { EditorialNode } from "@shopmaple/contracts";
+import { templateMediaKeys, type EditorialNode, type TemplateMedia, type TemplateMediaKey } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { StoreContent } from "@/components/store-content";
 import { policyOutline } from "@/lib/policy-outline";
 import { HelpPage, type HelpChrome } from "./help-page";
@@ -18,8 +19,11 @@ const copy = [
  * under the title, and each heading opens a numbered section listed under "On this page". A policy saved
  * without headings has no sections to list, so all of its text reads as the body instead.
  */
-export function PolicyDocument({ slug, title, content, chrome }: { slug: string; title: string; content: EditorialNode[]; chrome: HelpChrome }) {
+export function PolicyDocument({ slug, title, content, chrome, media }: { slug: string; title: string; content: EditorialNode[]; chrome: HelpChrome; media?: TemplateMedia }) {
   const { intro, sections } = policyOutline(content);
+  // The photo is template artwork (policy-<slug>); a policy without a slot keeps its bundled photo.
+  const key = `policy-${slug}`;
+  const photo = (templateMediaKeys as readonly string[]).includes(key) ? resolveTemplateMedia(key as TemplateMediaKey, media) : { image: `/media/policies/${slug}.jpg`, alt: "" };
   const sectioned = sections.length > 0;
   return (
     <HelpPage
@@ -27,7 +31,8 @@ export function PolicyDocument({ slug, title, content, chrome }: { slug: string;
       current={`/policies/${slug}`}
       title={title}
       opening={sectioned && intro.length > 0 ? <StoreContent nodes={intro} /> : undefined}
-      photo={`/media/policies/${slug}.jpg`}
+      photo={photo.image}
+      photoAlt={photo.alt}
     >
       {!sectioned && <div className={`max-w-[800px] pt-8 pb-16 lg:py-16 ${copy}`}><StoreContent nodes={intro} /></div>}
       {sectioned && <div className="flex flex-col gap-8 pt-8 pb-16 lg:grid lg:grid-cols-[260px_minmax(0,800px)] lg:gap-x-12 lg:py-16 xl:gap-x-[88px]">

@@ -34,5 +34,5 @@ export default async function PolicyPage({
   const { policies } = resolveEditorialContent(content.editorialContent);
   const policy = policies[slug];
   if (!policy) notFound();
-  return <PolicyArticle policy={policy} slug={slug} footer={resolveSiteChrome(content.siteChrome).footer} />;
+  return <PolicyArticle policy={policy} slug={slug} footer={resolveSiteChrome(content.siteChrome).footer} media={content.templateMedia} />;
 }
