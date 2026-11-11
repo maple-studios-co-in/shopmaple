@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import { test } from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -80,7 +81,7 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
     assert.equal(explore?.textContent, "Explore the Maple journey");
     assert.equal(explore?.getAttribute("href"), "#maple-journey");
     assert.equal(doc.querySelector("#maple-journey")?.getAttribute("data-story-section"), "journey");
-    assert.match(doc.querySelector(".story-hero-media img")?.getAttribute("src") ?? "", /Frame129\.png/);
+    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), copyOf("files/Frame129.png"));
     // Three principles, each with its drawn icon.
     assert.deepEqual(texts(doc, ".story-principle h3"), ["Handmade", "Unique designs", "Bespoke pieces"]);
     assert.deepEqual(texts(doc, ".story-principle p"), ["Crafted in-house, with care.", "Considered for everyday living.", "Your space. Your finish. Your way."]);
@@ -93,7 +94,7 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
       "The weight of a table that does not wobble after five years. The way a well-upholstered chair holds its shape through an Indian summer. The quiet satisfaction of sitting in something built for your specific room.",
       "Maple began as a family pursuit to build something that lasts. The workshop in Delhi is still where everything happens, and every piece we ship carries the same brief it started with: build it right.",
     ]);
-    assert.match(doc.querySelector(".story-belief-media img")?.getAttribute("src") ?? "", /84351f35cf124a0ab27f853cb96b817f\.thumbnail/);
+    assert.equal(shown(doc.querySelector(".story-belief-media img")?.getAttribute("src")), copyOf("files/preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg"));
     // The journey: seven chapters in a slider, the first in view, chosen by the years under it.
     assert.equal(text(doc, ".story-journey > .story-eyebrow"), "The Maple Journey");
     assert.equal(text(doc, "h2.story-journey-title"), "Built over time. Made for yours.");
@@ -148,7 +149,7 @@ test("published story edits render the selected order and safe text while preser
     assert.equal(text(doc, ".story-invitation h2"), "Talk to the workshop.");
     assert.equal(text(doc, ".story-invitation p"), "Tell us about your room.");
     assert.equal(text(doc, ".story-invitation a"), "Write to us");
-    assert.match(doc.querySelector(".story-hero-media img")?.getAttribute("src") ?? "", /Frame129\.png/);
+    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), copyOf("files/Frame129.png"));
     const metadata = "generateMetadata" in storyRoute
       ? await (storyRoute.generateMetadata as () => Promise<{ title: string }>)()
       : (storyRoute as unknown as { metadata: { title: string } }).metadata;

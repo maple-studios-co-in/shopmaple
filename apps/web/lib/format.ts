@@ -16,8 +16,6 @@ export const categoryNames: Record<string, string> = {
   storage: "Storage",
   outdoors: "Outdoors",
 };
-export const shopFile = (filename: string) =>
-  "https://shop.maplefurnishers.com/cdn/shop/files/" + filename;
 
 // The existing shop displays decimal rupees with international grouping.
 export function shopMoney(paise: number | null) {

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import { test } from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
@@ -72,9 +73,9 @@ test("Nimbus keeps source desktop and mobile artwork paired after next, previous
       const image = room.querySelector("picture img")!;
       const source = room.querySelector("picture source")!;
       assert.equal(image.getAttribute("alt"), alt);
-      assert.equal(new URL(image.getAttribute("src")!).pathname.split("/").at(-1), desktop, `${alt} desktop artwork`);
+      assert.equal(shown(image.getAttribute("src")!), copyOf(`files/${desktop}`), `${alt} desktop artwork`);
       assert.equal(source.getAttribute("media"), "(max-width: 749px)");
-      assert.equal(new URL(source.getAttribute("srcset")!).pathname.split("/").at(-1), mobile, `${alt} mobile artwork`);
+      assert.equal(shown(source.getAttribute("srcset")!), copyOf(`files/${mobile}`), `${alt} mobile artwork`);
     };
     check(0);
     await click(room, "Next room");

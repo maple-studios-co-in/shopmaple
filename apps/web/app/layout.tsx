@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { preconnect } from "react-dom";
 // "Maple / Typography" (Figma 180:639): DM Sans Medium for headings and labels, Red Hat Display for reading text.
 import "@fontsource-variable/dm-sans/opsz.css";
 import "@fontsource-variable/dm-sans/opsz-italic.css";
@@ -63,8 +62,6 @@ export default async function Layout({
   const content = await getPublishedContent();
   const { siteChrome, productHighlights } = content;
   const seo = seoSettings(process.env);
-  // Catalogue photos come straight from Shopify's edge: open the connection while the page is still arriving.
-  preconnect("https://cdn.shopify.com");
   return (
     <html lang="en">
       <body>

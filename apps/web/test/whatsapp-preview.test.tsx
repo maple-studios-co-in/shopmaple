@@ -28,6 +28,8 @@ const nola = {
   variants: [],
 };
 const store = "https://store.maplefurnishers.com";
+// The store's address is a setting (SITE_URL; site-address.ts, #126); unset, it would be the local development address.
+environment.SITE_URL = store;
 const order = `/account/orders/${orderConfirmationSample.orderNumber}`;
 
 async function render(catalogue: () => Response, query?: Record<string, string>) {

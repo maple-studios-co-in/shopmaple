@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import { mock, test } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -11,7 +12,8 @@ import { inBrowser } from "./support/slider-harness";
 // The hero tile is a slider of slides. With no `slides` it is the one film it always was; with
 // slides the staff author each slide's media and words. Slides are server markup (a scroll-snap
 // track that works without script); a lazy island adds dots, autoplay and video control.
-const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
+// The shop film first published on Shopify, played from the store's own copy.
+const film = copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
 const slides: NonNullable<HomeDetails["hero"]["slides"]> = [
   { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/aaa/aaa.mp4?v=1", poster: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "Craftsmen at work", headline: "Made by hand", intro: "In our Delhi workshop." },
   { kind: "image", src: "/media/uploads/" + "b".repeat(64) + ".webp", alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." },

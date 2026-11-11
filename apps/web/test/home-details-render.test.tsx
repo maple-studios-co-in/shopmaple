@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf, shown } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -76,7 +77,7 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.equal(doc.querySelector(".home-project strong")?.textContent, "24 hours");
   assert.ok(doc.querySelector('.home-project-form input[name="email"][required]'));
   assert.ok(doc.querySelector('.home-newsletter-form input[type="email"][required]'));
-  assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
+  assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), copyOf("files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg"));
   assert.ok(doc.querySelector(".home-testimonial video[controls] source"));
 });
 
@@ -100,7 +101,7 @@ test("published detail copy reaches every homepage section and stable keys keep 
   assert.deepEqual(texts(doc, ".home-newsletter h2, .home-newsletter-row > div > p, .home-newsletter h3"), ["Keep in touch", "News from our workshop.", "Get collection news"]);
   assert.deepEqual(texts(doc, ".home-values h3"), ["Lasting frames", "Better with time", "Everyday comfort", "Quiet details"]);
   assert.deepEqual(texts(doc, ".home-values p"), ["Built with care.", "Materials that mature.", "For every day.", "A calm room."]);
-  assert.ok(doc.querySelector(".home-values img")?.getAttribute("src")?.includes("Cover_Image_Maple_5.svg"));
+  assert.equal(shown(doc.querySelector(".home-values img")?.getAttribute("src")), copyOf("files/Cover_Image_Maple_5.svg"));
   assert.deepEqual(texts(doc, ".home-cities header .home-eyebrow, .home-cities h2"), ["Find us near you", "Across India"]);
   assert.equal(doc.querySelector(".home-project h2")?.textContent, "Tell us your idea");
   assert.deepEqual(texts(doc, ".home-project > div > p"), ["Our team replies in two working days with tailored ideas.", "Start with your room."]);

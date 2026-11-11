@@ -1,9 +1,8 @@
 import type { TemplateMedia, TemplateMediaItem } from "@shopmaple/contracts";
-import { shopFile } from "@/lib/format";
 
 /** Shared storefront defaults, without other page templates or staff labels. */
 export const homeTemplateMedia = {
-  "home-workshop-poster": { key: "home-workshop-poster", image: shopFile("preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600"), alt: "Arranging flowers on a Maple sideboard beside a floral armchair" },
+  "home-workshop-poster": { key: "home-workshop-poster", image: "/media/shopify/f8c5b1f5a169bfa954286564273ea1ae.jpg", alt: "Arranging flowers on a Maple sideboard beside a floral armchair" },
   "home-hero-sofas": { key: "home-hero-sofas", image: "/media/home/hero-sofas.webp", alt: "" },
   "home-hero-chairs": { key: "home-hero-chairs", image: "/media/home/hero-chairs.webp", alt: "" },
   "home-hero-tables": { key: "home-hero-tables", image: "/media/home/hero-tables.webp", alt: "" },

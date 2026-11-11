@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { test } from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -67,6 +68,8 @@ async function render(
     globalThis.fetch = previous;
   }
 }
+// The outdoor sofa banner first published on Shopify, now the store's own copy.
+const outdoorBanner = shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/files/2_-_Sofa_web_banner_Outddor_17dc7073-c9f4-44fe-bd25-b79867474b48.png")!;
 test("category defaults preserve original copy, artwork, local collection links, and enquiry-only source products", async () => {
   const doc = await render("sofas");
   assert.equal(doc.querySelector("h1")?.textContent, "Sofas");
@@ -86,7 +89,7 @@ test("category defaults preserve original copy, artwork, local collection links,
   );
   assert.ok(
     [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      n.getAttribute("src")?.includes("2_-_Sofa_web_banner_Outddor"),
+      decodeURIComponent(n.getAttribute("src") ?? "").includes(outdoorBanner),
     ),
   );
   assert.ok(
@@ -141,7 +144,7 @@ test("only published category overrides change the selected page while preservin
   );
   assert.ok(
     [...doc.querySelectorAll(".landing-banner img")].some((n) =>
-      n.getAttribute("src")?.includes("2_-_Sofa_web_banner_Outddor"),
+      decodeURIComponent(n.getAttribute("src") ?? "").includes(outdoorBanner),
     ),
   );
   const tables = await render("tables", content);

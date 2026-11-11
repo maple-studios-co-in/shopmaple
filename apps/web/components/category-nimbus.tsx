@@ -11,22 +11,22 @@ import {
 import { CategoryVideo, CategorySlideshow } from "@/components/category-controls";
 import { HomeProjectForm } from "@/components/home-forms";
 import nimbus from "@/data/landing-nimbus.json";
-import { shopFile } from "@/lib/format";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { resolveNimbusPageContent } from "@/lib/nimbus-content-defaults";
 
 const section = (key: string) => nimbus.sections.find((item) => item.key === key)!;
+// The promise icons: the store's copies of Shopify's Custom_F.svg, Del_mf.svg, Icon_homepage.svg and Maple_Banner_5.svg.
 export const maplePromises = [
-  { title: "Fully Customizable", image: "Custom_F.svg" },
-  { title: "Delivery Across India", image: "Del_mf.svg" },
-  { title: "In-House Crafted in Delhi", image: "Icon_homepage.svg" },
-  { title: "36-Month Warranty", image: "Maple_Banner_5.svg" },
+  { title: "Fully Customizable", image: "/media/shopify/810bf424e7f5965dcc4965652150f519.svg" },
+  { title: "Delivery Across India", image: "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg" },
+  { title: "In-House Crafted in Delhi", image: "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg" },
+  { title: "36-Month Warranty", image: "/media/shopify/5312458c26254d733cd7067921fcd4da.svg" },
 ];
 const promiseImages = {
-  custom: "Custom_F.svg",
-  delivery: "Del_mf.svg",
-  craft: "Icon_homepage.svg",
-  warranty: "Maple_Banner_5.svg",
+  custom: "/media/shopify/810bf424e7f5965dcc4965652150f519.svg",
+  delivery: "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg",
+  craft: "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg",
+  warranty: "/media/shopify/5312458c26254d733cd7067921fcd4da.svg",
 };
 export function MaplePromises({ items }: { items?: NimbusPageContent["promises"] } = {}) {
   const promises = items
@@ -36,7 +36,7 @@ export function MaplePromises({ items }: { items?: NimbusPageContent["promises"]
     <ul className="landing-promises home-container">
       {promises.map((item) => (
         <li key={item.key}>
-          <Image src={shopFile(item.image)} alt="" width={70} height={70} />
+          <Image src={item.image} alt="" width={70} height={70} />
           <span>{item.title}</span>
         </li>
       ))}

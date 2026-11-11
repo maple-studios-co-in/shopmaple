@@ -10,7 +10,6 @@ import type { EditorialNode } from "@shopmaple/contracts";
  */
 export type BodyPicture = { src: string; alt: string; width: number; height: number; focus: string; product?: { name: string; href: string } };
 
-const shopify = (file: string) => `https://cdn.shopify.com/s/files/1/0691/8651/9229/files/${file}`;
 const photo = {
   // Maple's own room photography: the homepage's editorial and Nimbus photos.
   dining: { src: "/media/home/editorial-right.webp", alt: "A woman pouring coffee at a dining table with sunflowers, cream upholstered chairs and a pug", width: 1323, height: 979, focus: "50% 38%" },
@@ -22,12 +21,12 @@ const photo = {
   terra: { src: "/media/home/nimbus-terra.webp", alt: "The Terra sofa set and armchairs around a round walnut table in a sunlit lounge", width: 1600, height: 732, focus: "50% 55%" },
   clouds: { src: "/media/home/nimbus-clouds.webp", alt: "White sofas, lounge chairs and a coffee table set among soft clouds", width: 1537, height: 1023, focus: "50% 55%" },
   // The collection pages' hero photographs (lib/collection-hero-photos.ts), each of a piece the store sells.
-  aria: { src: shopify("2.1_05395d32-eee4-420c-b3fd-d66df462f2bb.png?v=1783922389"), alt: "A grey channel-tufted sofa and two armchairs with blue cushions around a low cream table", width: 1536, height: 1024, focus: "50% 62%", product: { name: "Aria 5-seater sofa", href: "/products/aria-5-seater-sofa" } },
-  orvane: { src: shopify("both_0c29b634-10a2-4ebc-9ca3-28188d47a02d.png?v=1776159321"), alt: "Two houndstooth accent chairs beside a candlelit table under a glowing ring light in a deep green room", width: 1536, height: 1024, focus: "50% 58%", product: { name: "Orvane accent chair", href: "/products/orvane-accent-chair" } },
-  sora: { src: shopify("6.1_1.png?v=1783923471"), alt: "Two olive green sofas on gold legs around a round gold-framed glass coffee table", width: 1587, height: 992, focus: "50% 55%", product: { name: "Sora 5-seater sofa", href: "/products/sora-5-seater-sofa" } },
-  nova: { src: shopify("File_2026-05-27T11_42_27.516Z.webp?v=1780471191"), alt: "A marble-topped dining table on a dark base inlaid with brass, in a warm marble room", width: 1537, height: 1022, focus: "50% 66%", product: { name: "Nova dining table", href: "/products/nova-dining-table" } },
-  aileron: { src: shopify("Gemini_Generated_Image_omfoktomfoktomfo.png?v=1778160420"), alt: "A cream upholstered bed with a tall panelled headboard, pendant lamps and a bench at its foot", width: 2528, height: 1685, focus: "50% 62%", product: { name: "Aileron signature bed", href: "/products/aileron-signature-bed" } },
-  arden: { src: shopify("9D25AA03-9581-46B1-B8BC-749AE7B9A95C.webp?v=1781938509"), alt: "A walnut console cabinet with sculpted handles, a candle and a bowl on top", width: 1254, height: 1254, focus: "50% 58%", product: { name: "Arden console cabinet", href: "/products/arden-console-cabinet" } },
+  aria: { src: "/media/shopify/c09025554b079ad265ea0d42719077c3.png", alt: "A grey channel-tufted sofa and two armchairs with blue cushions around a low cream table", width: 1536, height: 1024, focus: "50% 62%", product: { name: "Aria 5-seater sofa", href: "/products/aria-5-seater-sofa" } },
+  orvane: { src: "/media/shopify/9e1602dd4212fd372cc5fbbcd0c5b769.png", alt: "Two houndstooth accent chairs beside a candlelit table under a glowing ring light in a deep green room", width: 1536, height: 1024, focus: "50% 58%", product: { name: "Orvane accent chair", href: "/products/orvane-accent-chair" } },
+  sora: { src: "/media/shopify/f88892800f54656697ff6700a640d9e1.png", alt: "Two olive green sofas on gold legs around a round gold-framed glass coffee table", width: 1587, height: 992, focus: "50% 55%", product: { name: "Sora 5-seater sofa", href: "/products/sora-5-seater-sofa" } },
+  nova: { src: "/media/shopify/66c083b24e0ef54491acf489379b7333.webp", alt: "A marble-topped dining table on a dark base inlaid with brass, in a warm marble room", width: 1537, height: 1022, focus: "50% 66%", product: { name: "Nova dining table", href: "/products/nova-dining-table" } },
+  aileron: { src: "/media/shopify/7869d06353f7ac93b6be8c8f1d1b9344.png", alt: "A cream upholstered bed with a tall panelled headboard, pendant lamps and a bench at its foot", width: 2528, height: 1685, focus: "50% 62%", product: { name: "Aileron signature bed", href: "/products/aileron-signature-bed" } },
+  arden: { src: "/media/shopify/535a470decf261e38c35acc258c3c4c0.webp", alt: "A walnut console cabinet with sculpted handles, a candle and a bowl on top", width: 1254, height: 1254, focus: "50% 58%", product: { name: "Arden console cabinet", href: "/products/arden-console-cabinet" } },
 } satisfies Record<string, BodyPicture>;
 type Photo = keyof typeof photo;
 

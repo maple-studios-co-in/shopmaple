@@ -23,6 +23,11 @@ const env = z
       .string()
       .refine(isAbsolute, "Media root must be absolute")
       .optional(),
+    SHOPIFY_MEDIA_ROOT: z
+      .string()
+      .refine(isAbsolute, "Shopify media root must be absolute")
+      .optional(),
+    SHOPIFY_MEDIA_FALLBACK: z.enum(["on", "off"]).default("on"),
     CATALOG_MODE: z.literal("preview").default("preview"),
     ADMIN_PREVIEW_SECRET: z.string().min(32).max(256).optional(),
   })
@@ -72,6 +77,7 @@ const server = createApp(
           sendCode: createSignInCodeSender(accountConfig.email, { production: accountConfig.production }),
         }
       : null,
+    shopifyMedia: { root: env.SHOPIFY_MEDIA_ROOT, fallback: env.SHOPIFY_MEDIA_FALLBACK === "on" },
   },
   commerce?.commerce,
 ).listen(env.API_PORT, env.API_HOST, () =>

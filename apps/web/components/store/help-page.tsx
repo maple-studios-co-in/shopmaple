@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { storePath } from "@/lib/site-origins";
 import type { SiteChrome } from "@shopmaple/contracts";
 
 /**
@@ -24,7 +25,8 @@ export function helpChromeFrom(footer: SiteChrome["footer"]): HelpChrome {
 }
 
 const pathOf = (href: string) => {
-  try { return new URL(href, "https://store.maplefurnishers.com").pathname.replace(/(.)\/$/, "$1"); }
+  // A relative link, or one to the store's own address, compares by its path; the base only resolves relative links.
+  try { return new URL(storePath(href) ?? href, "http://local.invalid").pathname.replace(/(.)\/$/, "$1"); }
   catch { return href; }
 };
 

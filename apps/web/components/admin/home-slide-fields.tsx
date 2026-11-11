@@ -54,7 +54,7 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
       <ActionButton icon={Plus} onClick={() => set([shopFilm(), blank()])}>Add hero slide</ActionButton>
       <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">The shop film becomes slide 1 so it keeps playing; the new slide follows it.</p>
     </div> : <>
-      <Notice tone="info">Videos must be hosted at an approved Maple media address (shop.maplefurnishers.com/cdn/shop or a Maple media link). The media library only uploads images, so use it for pictures and video posters.</Notice>
+      <Notice tone="info">Videos must be hosted at a Maple media address (one starting /media/, such as the shop film), or on Shopify until the store's move from Shopify is finished. The media library only uploads images, so use it for pictures and video posters.</Notice>
       <EditableList name="Hero slide" items={rows(slides, known)} identity={row => row.id} min={1} max={6} create={() => ({ id: rowId(), slide: blank() })}
         onChange={next => { known.splice(0, known.length, ...next.map(row => row.id)); set(next.map(row => row.slide)); }}
         render={({ slide, id }, index, edit) => {
