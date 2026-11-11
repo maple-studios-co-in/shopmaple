@@ -51,6 +51,11 @@ export function displayPhone(phone: string) {
   const digits = tenDigits(phone);
   return digits ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : phone;
 }
+/** "+91 98••• ••210": a saved address's number at a glance (Figma 392:1527), whole again when the address is edited. */
+export function maskedPhone(phone: string) {
+  const digits = tenDigits(phone);
+  return digits ? `+91 ${digits.slice(0, 2)}••• ••${digits.slice(7)}` : phone;
+}
 
 /** "1 item", "3 items": pieces, as the API counts them. */
 export function itemCount(count: number) {

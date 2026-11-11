@@ -105,7 +105,7 @@ function lockTimedOut(error: unknown) {
 
 export const publicCustomer = (customer: Customer): AccountCustomer => ({ name: customer.name, email: customer.emailKey, phone: customer.phone });
 const publicAddress = (address: CustomerAddress): AccountAddress => ({
-  id: address.id, name: address.name, line1: address.line1, line2: address.line2 ?? "", city: address.city,
+  id: address.id, label: address.label ?? "", name: address.name, line1: address.line1, line2: address.line2 ?? "", city: address.city,
   state: address.state, pin: address.pin, phone: address.phone, isDefault: address.isDefault,
 });
 
@@ -449,7 +449,7 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
       if (isDefault) await tx.customerAddress.updateMany({ where: { customerId: customer.id, isDefault: true }, data: { isDefault: false } });
       const address = await tx.customerAddress.create({
         data: {
-          customerId: customer.id, name: input.name, line1: input.line1, line2: input.line2 || null, city: input.city,
+          customerId: customer.id, label: input.label || null, name: input.name, line1: input.line1, line2: input.line2 || null, city: input.city,
           state: input.state, pin: input.pin, phone: input.phone, isDefault,
         },
       });
@@ -466,10 +466,16 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
       if (!existing) throw addressNotFound();
       if (input.isDefault)
         await tx.customerAddress.updateMany({ where: { customerId: customer.id, isDefault: true, id: { not: id } }, data: { isDefault: false } });
-      const { line2, isDefault, ...fields } = input;
+      const { label, line2, isDefault, ...fields } = input;
       const address = await tx.customerAddress.update({
         where: { id },
-        data: { ...fields, ...(line2 !== undefined ? { line2: line2 || null } : {}), ...(isDefault ? { isDefault: true } : {}) },
+        // An emptied label or second line is stored as none.
+        data: {
+          ...fields,
+          ...(label !== undefined ? { label: label || null } : {}),
+          ...(line2 !== undefined ? { line2: line2 || null } : {}),
+          ...(isDefault ? { isDefault: true } : {}),
+        },
       });
       return { address: publicAddress(address), addresses: await listed(tx, customer.id) };
     });

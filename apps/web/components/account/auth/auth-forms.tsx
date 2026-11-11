@@ -23,15 +23,15 @@ import { createPreviewTransport } from "@/lib/account/preview";
  * a code always reads the same, so these pages never tell whether an address has an account.
  */
 type Problem = { field: string; message: string } | null;
-const passwordRule = `At least ${passwordMinLength} characters, including a number.`;
+export const passwordRule = `At least ${passwordMinLength} characters, including a number.`;
 const emailProblem = "Enter a valid email address, such as name@example.com.";
-const unreachable = "We couldn’t reach Maple just now. Please try again in a moment.";
-const codeProblems: Record<string, string> = {
+export const unreachable = "We couldn’t reach Maple just now. Please try again in a moment.";
+export const codeProblems: Record<string, string> = {
   CODE_INVALID: "That code isn’t right. Check the latest email from us and try again.",
   CODE_EXPIRED: `That code has expired: codes last ${signInCodeTtlMinutes} minutes. Send a new code and try again.`,
   TOO_MANY_ATTEMPTS: "Too many tries with that code. Send a new code to try again.",
 };
-const failureCode = (failure: unknown) => (failure instanceof AccountRequestError ? failure.code : "");
+export const failureCode = (failure: unknown) => (failure instanceof AccountRequestError ? failure.code : "");
 
 function useAccountClient(preview: boolean) {
   return useMemo(() => createAccountClient(preview ? createPreviewTransport() : undefined), [preview]);
@@ -46,7 +46,7 @@ function useFinish(next: string, preview: boolean) {
 }
 /** Sends a code (the same on the page whatever happened) and holds back another for a short while: the API sends only
  * three per address in fifteen minutes. */
-function useCodeSender(client: AccountClient, purpose: SignInPurpose, cooldownMs: number) {
+export function useCodeSender(client: AccountClient, purpose: SignInPurpose, cooldownMs: number) {
   const [sentAt, setSentAt] = useState(0);
   const [coolingDown, setCoolingDown] = useState(false);
   const [sending, setSending] = useState(false);

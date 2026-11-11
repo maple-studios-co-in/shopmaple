@@ -1,17 +1,18 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { addressInputSchema, maxAddresses, type AccountAddress, type AddressUpdate } from "@shopmaple/contracts/account";
+import { addressInputSchema, addressLabelMaxLength, maxAddresses, type AccountAddress, type AddressUpdate } from "@shopmaple/contracts/account";
 import { indiaStates } from "@/app/checkout/india-states";
 import { AccountRequestError, createAccountClient } from "@/lib/account/client";
-import { displayPhone } from "@/lib/account/format";
+import { displayPhone, maskedPhone } from "@/lib/account/format";
 import { createPreviewTransport } from "@/lib/account/preview";
 import { addressLines, Lines } from "./account-parts";
 
-type FieldName = "name" | "line1" | "line2" | "city" | "state" | "pin" | "phone";
+type FieldName = "label" | "name" | "line1" | "line2" | "city" | "state" | "pin" | "phone";
 /** In the order the form asks them, so the first problem is the first one focused. */
-const fieldOrder: FieldName[] = ["name", "phone", "line1", "line2", "city", "pin", "state"];
+const fieldOrder: FieldName[] = ["label", "name", "phone", "line1", "line2", "city", "pin", "state"];
 const problems: Record<FieldName, string> = {
+  label: `Shorten the place's name to ${addressLabelMaxLength} characters.`,
   name: "Enter the name of the person receiving the delivery.",
   line1: "Enter the house number, building and street.",
   line2: "Shorten the apartment or landmark line.",
@@ -27,9 +28,14 @@ const valueOf = (form: HTMLFormElement, name: string) => {
   const control = form.elements.namedItem(name) as { value?: unknown } | null;
   return typeof control?.value === "string" ? control.value : "";
 };
+/** A card's heading: the place's own name ("Home", "Studio"), else its city. */
+export const addressTitle = (address: Pick<AccountAddress, "label" | "city">) => address.label || address.city;
 
-/** Saved delivery addresses (owner's spec, 10 Nov 2026; no frame, drawn to the account pages' system): add, edit, remove
- * and choose the default, which checkout fills in. At most ten. */
+/**
+ * Saved delivery addresses (Figma 392:1527 "Saved Address"): "Add new address", then a card for each, the default first,
+ * on sage with its badge. Each card is named ("Home", "Studio"), shows who receives the delivery, the address and the
+ * number at a glance, and can be edited, removed (after a check) or made the default, which checkout fills in. At most ten.
+ */
 export function AddressBook({ initial, preview = false }: { initial: AccountAddress[]; preview?: boolean }) {
   const id = useId();
   const client = useMemo(() => createAccountClient(preview ? createPreviewTransport() : undefined), [preview]);
@@ -46,7 +52,7 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
   useEffect(() => {
     if (!focusForm.current || !editing) return;
     focusForm.current = false;
-    form.current?.querySelector<HTMLInputElement>('[name="name"]')?.focus();
+    form.current?.querySelector<HTMLInputElement>('[name="label"]')?.focus();
   }, [editing]);
 
   function fail(failure: unknown) {
@@ -62,6 +68,12 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
     setStatus(null);
     setRemoving(null);
     focusForm.current = true;
+  }
+  function close() {
+    setEditing(null);
+    setErrors({});
+    // Back where the customer started: the button that opens a new form, once it is drawn again.
+    setTimeout(() => addButton.current?.focus(), 0);
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,7 +104,7 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
         if (parsed.data.isDefault && !before.isDefault) changes.isDefault = true;
         if (Object.keys(changes).length > 0) setAddresses((await client.updateAddress(before.id, changes)).addresses);
       }
-      setEditing(null);
+      close();
       setStatus({ tone: "ok", text: "Address saved." });
     } catch (failure) {
       fail(failure);
@@ -105,7 +117,7 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
     setStatus(null);
     try {
       setAddresses((await client.updateAddress(address.id, { isDefault: true })).addresses);
-      setStatus({ tone: "ok", text: "Default address changed." });
+      setStatus({ tone: "ok", text: `${addressTitle(address)} is now your default address.` });
     } catch (failure) {
       fail(failure);
     } finally {
@@ -141,6 +153,8 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
     "aria-invalid": errors[name] ? (true as const) : undefined,
     "aria-describedby": errors[name] ? `${id}-${name}-error` : undefined,
   });
+  // Read after a card's visible words, so each button names its address ("Edit address, Home, 14 Palm Avenue").
+  const which = (address: AccountAddress) => `, ${address.label ? `${address.label}, ` : ""}${address.line1}`;
   return (
     <>
       {status ? (
@@ -149,46 +163,15 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
           {status.signIn ? <> <Link className="account-text-link" href={signInAgain}>Sign in again</Link></> : null}
         </p>
       ) : null}
-      {addresses.length > 0 ? (
-        <ul className="account-address-list">
-          {addresses.map((address) => (
-            <li key={address.id} className="account-panel account-address" data-address={address.id}>
-              <div className="account-address-head">
-                <p className="account-panel-title">{address.name}</p>
-                {address.isDefault ? <span className="account-status" data-status="default">Default</span> : null}
-              </div>
-              <Lines className="account-panel-text" lines={[...addressLines(address), displayPhone(address.phone)]} />
-              {removing === address.id ? (
-                <div className="account-confirm" role="group" aria-labelledby={`${id}-remove-${address.id}`}>
-                  <p id={`${id}-remove-${address.id}`} className="account-confirm-text">Remove this address?</p>
-                  <div className="account-buttons">
-                    <button type="button" className="account-cta" data-fill-button="" disabled={busy} onClick={() => void remove(address)}>Remove address</button>
-                    <button type="button" className="account-cta" data-variant="quiet" data-fill-button="outline" onClick={() => setRemoving(null)}>Keep it</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="account-address-actions">
-                  <button type="button" className="account-text-link" onClick={() => open({ kind: "edit", address })}>
-                    Edit<span className="sr-only">{` ${address.line1}`}</span>
-                  </button>
-                  <button type="button" className="account-text-link" onClick={() => { setRemoving(address.id); setStatus(null); }}>
-                    Remove<span className="sr-only">{` ${address.line1}`}</span>
-                  </button>
-                  {address.isDefault ? null : (
-                    <button type="button" className="account-text-link" disabled={busy} onClick={() => void makeDefault(address)}>
-                      Make default<span className="sr-only">{` ${address.line1}`}</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : null}
       {editing ? (
-        <form key={draft?.id ?? "new"} ref={form} className="account-card account-form" onSubmit={(event) => void save(event)} noValidate aria-labelledby={`${id}-form-title`}>
-          <h2 id={`${id}-form-title`} className="account-card-title">{editing.kind === "new" ? "Add an address" : "Edit address"}</h2>
+        <form key={draft?.id ?? "new"} ref={form} className="account-card account-form account-address-form" onSubmit={(event) => void save(event)} noValidate
+          aria-labelledby={`${id}-form-title`}>
+          <h2 id={`${id}-form-title`} className="account-card-title">{editing.kind === "new" ? "Add an address" : `Edit ${addressTitle(editing.address)}`}</h2>
           <div className="account-fields">
+            <div className="account-field-wide">
+              {field("label", "Name this place (optional)", <input className="account-input" {...control("label")} autoComplete="off" maxLength={addressLabelMaxLength}
+                placeholder="Home, Studio, Office" defaultValue={draft?.label} />)}
+            </div>
             {field("name", "Full name", <input className="account-input" {...control("name")} autoComplete="shipping name" maxLength={120} defaultValue={draft?.name} />)}
             {field("phone", "Mobile number", <input className="account-input" {...control("phone")} type="tel" inputMode="tel" autoComplete="shipping tel-national" maxLength={24}
               placeholder="+91 mobile number" defaultValue={draft ? displayPhone(draft.phone) : undefined} />)}
@@ -219,15 +202,56 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
           <div className="account-buttons">
             <button type="submit" className="account-cta" data-fill-button="" disabled={busy}>{busy ? "Saving…" : "Save address"}</button>
             {addresses.length > 0 ? (
-              <button type="button" className="account-cta" data-variant="quiet" data-fill-button="outline" onClick={() => { setEditing(null); setErrors({}); }}>Cancel</button>
+              <button type="button" className="account-cta" data-variant="quiet" data-fill-button="outline" onClick={close}>Cancel</button>
             ) : null}
           </div>
         </form>
       ) : addresses.length >= maxAddresses ? (
         <p className="account-muted">{`You can save up to ${maxAddresses} addresses. Remove one to add another.`}</p>
       ) : (
-        <button ref={addButton} type="button" className="account-cta" data-variant="quiet" data-fill-button="outline" onClick={() => open({ kind: "new" })}>Add an address</button>
+        <button ref={addButton} type="button" className="account-cta account-address-add" data-fill-button="" onClick={() => open({ kind: "new" })}>
+          Add new address
+        </button>
       )}
+      {addresses.length > 0 ? (
+        <ul className="account-address-list">
+          {addresses.map((address) => (
+            <li key={address.id} className="account-address" data-address={address.id} data-default={address.isDefault ? "" : undefined}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- the design's 28px line icon */}
+              <img className="account-address-icon" src="/account/pin.svg" alt="" width={28} height={28} />
+              <h2 className="account-address-title">{addressTitle(address)}</h2>
+              {address.isDefault ? <p className="account-address-badge">Default address</p> : null}
+              <Lines className="account-address-lines" lines={[address.name, ...addressLines(address), maskedPhone(address.phone)]} />
+              {removing === address.id ? (
+                <div className="account-confirm" role="group" aria-labelledby={`${id}-remove-${address.id}`}>
+                  <p id={`${id}-remove-${address.id}`} className="account-confirm-text">Remove this address?</p>
+                  <div className="account-buttons">
+                    <button type="button" className="account-cta" data-fill-button="" disabled={busy} onClick={() => void remove(address)}>Remove address</button>
+                    <button type="button" className="account-cta" data-variant="quiet" data-fill-button="outline" onClick={() => setRemoving(null)}>Keep it</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="account-address-actions">
+                    <button type="button" className="account-address-link" onClick={() => open({ kind: "edit", address })}>
+                      Edit address<span className="sr-only">{which(address)}</span>
+                    </button>
+                    <span aria-hidden="true">·</span>
+                    <button type="button" className="account-address-link" onClick={() => { setRemoving(address.id); setStatus(null); }}>
+                      Remove<span className="sr-only">{which(address)}</span>
+                    </button>
+                  </p>
+                  {address.isDefault ? null : (
+                    <button type="button" className="account-address-link" disabled={busy} onClick={() => void makeDefault(address)}>
+                      Set as default<span className="sr-only">{which(address)}</span>
+                    </button>
+                  )}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </>
   );
 }

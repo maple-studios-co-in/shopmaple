@@ -48,8 +48,17 @@ test("a phone becomes the +91 form the checkout snapshot stores, whichever way i
 
 const address = { name: "Asha Rao", line1: "12 Lake Road", city: "Pune", state: "27", pin: "411001", phone: "9876543210" };
 test("an address uses checkout's GST state code and PIN rules, with line 2 optional", () => {
-  assert.deepEqual(addressInputSchema.parse(address), { ...address, line2: "", phone: "+919876543210" });
+  assert.deepEqual(addressInputSchema.parse(address), { ...address, label: "", line2: "", phone: "+919876543210" });
   assert.equal(addressInputSchema.parse({ ...address, isDefault: true }).isDefault, true);
+  // A place's own name (Figma 392:1527), optional, trimmed, at most 40 characters.
+  assert.equal(addressInputSchema.parse({ ...address, label: "  Studio " }).label, "Studio");
+  assert.equal(addressInputSchema.safeParse({ ...address, label: "x".repeat(41) }).success, false);
+  assert.deepEqual(addressUpdateSchema.parse({ label: "" }), { label: "" }, "a name can be cleared");
+  // An API from before addresses had names leaves the name out; the web reads that as none, so either may deploy first.
+  const saved = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", name: "Asha Rao", line1: "12 Lake Road", line2: "", city: "Pune", state: "27", pin: "411001",
+    phone: "+919876543210", isDefault: true };
+  const overview = { customer: { name: "Asha Rao", email: "asha@example.com", phone: null }, counts: { orders: 0, addresses: 1 }, latestOrder: null, defaultAddress: saved };
+  assert.equal(accountOverviewResponseSchema.parse(overview).defaultAddress?.label, "");
   for (const [name, change] of [
     ["state 25 (not a GST code)", { state: "25" }], ["state as a name", { state: "Maharashtra" }],
     ["PIN starting with 0", { pin: "011001" }], ["short PIN", { pin: "41100" }],

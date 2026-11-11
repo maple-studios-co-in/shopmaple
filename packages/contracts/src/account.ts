@@ -147,7 +147,11 @@ export const signInVerifyResponseSchema = z.object({ customer: accountCustomerSc
 // Addresses
 // ---------------------------------------------------------------------------------------------------------------------
 
+/** An address's own name: "Home", "Studio" (Figma 392:1527), at most this long. */
+export const addressLabelMaxLength = 40;
 const addressFields = {
+  /** What the customer calls the place ("Home", "Studio"); "" when they gave none. */
+  label: optionalText(addressLabelMaxLength),
   /** Who receives the delivery. */
   name: text(120),
   line1: text(200),
@@ -161,13 +165,14 @@ const addressFields = {
 /** POST /api/account/addresses → 201 AddressMutationResponse, or 409 ADDRESS_LIMIT at ten. The first address is always
  * the default; `isDefault: true` makes a later one the default. */
 export const addressInputSchema = z
-  .object({ ...addressFields, line2: addressFields.line2.default(""), isDefault: z.boolean().optional() })
+  .object({ ...addressFields, label: addressFields.label.default(""), line2: addressFields.line2.default(""), isDefault: z.boolean().optional() })
   .strict();
 
 /** PATCH /api/account/addresses/:id → 200 AddressMutationResponse. Send only what changes. `isDefault: true` makes it the
  * default (the old default stops being one); there is no switching the default off, only choosing another. */
 export const addressUpdateSchema = z
   .object({
+    label: addressFields.label.optional(),
     name: addressFields.name.optional(),
     line1: addressFields.line1.optional(),
     line2: addressFields.line2.optional(),
@@ -180,10 +185,12 @@ export const addressUpdateSchema = z
   .strict()
   .refine((update) => Object.keys(update).length > 0, "Nothing to change");
 
-/** A saved address. `state` is the GST state code; `line2` is "" when there is none. */
+/** A saved address. `state` is the GST state code; `label` and `line2` are "" when there is none. An API from before
+ * addresses had names leaves `label` out, which reads as none, so the API and the web may be deployed in either order. */
 export const accountAddressSchema = z
   .object({
     id: z.uuid(),
+    label: z.string().max(addressLabelMaxLength).default(""),
     name: z.string().max(120),
     line1: z.string().max(200),
     line2: z.string().max(200),
