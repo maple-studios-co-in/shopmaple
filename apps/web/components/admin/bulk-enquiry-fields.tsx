@@ -47,7 +47,7 @@ export function BulkEnquiryFields({ content, onChange }: { content: ServicePages
           fields={step => [["title", `Bulk ${stepLabels[step.key]} step title`, 160], ["body", `Bulk ${stepLabels[step.key]} step body`, 3000, true]]} />
       </ContentPanel>
       <ContentPanel title="Proposal form">
-        <Notice tone="info">The phone number and email beside the form are the footer’s bulk contact, under Navigation & footer. Enquiries carry no files, so the references box opens an email to that address.</Notice>
+        <Notice tone="info">The phone number and email beside the form are the footer’s bulk contact, under Navigation &amp; footer. Enquiries carry no files, so the references box opens an email to that address.</Notice>
         <TextFields value={proposal} onChange={next => patch({ proposal: next })} fields={[
           ["eyebrow", "Bulk proposal eyebrow", 160], ["heading", "Bulk proposal heading", 160, true], ["body", "Bulk proposal introduction", 600, true],
           ["contactHeading", "Bulk conversation heading", 160], ["formHeading", "Bulk form heading", 160],
