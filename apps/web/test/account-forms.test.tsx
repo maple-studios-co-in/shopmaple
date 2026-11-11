@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
-import type { AccountAddress } from "@shopmaple/contracts/account";
+import { addressInputSchema, type AccountAddress } from "@shopmaple/contracts/account";
 
 // Saved addresses (Figma 392:1527 "Saved Address") and the customer's details (392:1585 "Edit Account").
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3000/account/addresses" });
@@ -10,8 +10,10 @@ Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.
   HTMLInputElement: dom.window.HTMLInputElement, HTMLSelectElement: dom.window.HTMLSelectElement, IS_REACT_ACT_ENVIRONMENT: true });
 const { createRoot } = await import("react-dom/client");
 const { AppRouterContext } = await import("next/dist/shared/lib/app-router-context.shared-runtime");
-const { AddressBook } = await import("../components/account/address-book");
-const { AccountDetailsForm, splitName } = await import("../components/account/account-details-form");
+const { AddressBook, newAddressRequest } = await import("../components/account/address-book");
+const { AccountDetailsForm, splitName, tidyName } = await import("../components/account/account-details-form");
+// The API from before addresses had names: the same strict request schema without `label` (main before PR 130).
+const namelessApiSchema = addressInputSchema.omit({ label: true });
 
 const home: AccountAddress = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", label: "Home", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402",
   city: "Bengaluru", state: "29", pin: "560001", phone: "+919876543210", isDefault: true };
@@ -73,8 +75,12 @@ test("each address is a card named for its place, the default first on its own c
     assert.equal(cards()[0]!.querySelector(".account-address-badge")?.textContent, "Default address");
     assert.equal(cards()[1]!.querySelector(".account-address-badge"), null);
     // Who receives it, the address, and the number at a glance (Figma: "+91 98••• ••210").
-    assert.deepEqual([...cards()[0]!.querySelectorAll(".account-address-lines .account-line")].map((line) => line.textContent),
-      ["Aditi Sharma", "14 Palm Avenue, Apartment 402", "Bengaluru, Karnataka 560001", "+91 98••• ••210"]);
+    const lines = [...cards()[0]!.querySelectorAll(".account-address-lines .account-line")];
+    assert.deepEqual(lines.slice(0, 3).map((line) => line.textContent), ["Aditi Sharma", "14 Palm Avenue, Apartment 402", "Bengaluru, Karnataka 560001"]);
+    // The dots are shown, not read out: a screen reader hears "Phone number ending 210".
+    assert.equal(lines[3]!.querySelector('[aria-hidden="true"]')?.textContent, "+91 98••• ••210");
+    assert.equal(lines[3]!.querySelector(".sr-only")?.textContent, "Phone number ending 210");
+    assert.equal(lines.length, 4);
     assert.equal(button(/set as default/i, cards()[0]!), undefined, "the default has nothing to make default");
     assert.match(button(/^edit address/i, cards()[0]!)!.textContent!, /Edit address, Home, 14 Palm Avenue/, "each button names its address");
     await press(/set as default/i, cards()[1]!);
@@ -136,15 +142,84 @@ test("editing sends only what changed, a name included, and removing asks first"
   } finally { await cleanup(); }
 });
 
-test("a place's name is at most 40 characters", async () => {
+test("a place's name is at most 40 characters of plain text", async () => {
   const { calls, cleanup } = await mount(<AddressBook initial={[home]} />, () => new Response(null, { status: 500 }));
   try {
     await press(/^edit address/i, cards()[0]!);
-    fill({ label: "x".repeat(41) });
+    // Too long, or holding a control character (a pasted tab): the same message fits both.
+    for (const label of ["x".repeat(41), "Home\tOffice"]) {
+      fill({ label });
+      await submit();
+      assert.equal(calls.length, 0, JSON.stringify(label));
+      assert.equal(field("label")!.getAttribute("aria-invalid"), "true");
+      assert.equal(description(field("label")).trim(), "Name the place in plain text, up to 40 characters.");
+    }
+  } finally { await cleanup(); }
+});
+
+test("a place left unnamed sends no label, so an API from before addresses had names still saves it", async () => {
+  const blank = { label: "", name: "Aditi Sharma", line1: "22 Hill Road", line2: "", city: "Mumbai", state: "27", pin: "400050", phone: "+919812345678" };
+  assert.equal("label" in newAddressRequest(blank), false, "a blank name is left out");
+  assert.equal(newAddressRequest({ ...blank, label: "Office" }).label, "Office", "a given name is sent");
+  assert.equal(namelessApiSchema.safeParse(newAddressRequest(blank)).success, true, "the older API takes it");
+  assert.equal(namelessApiSchema.safeParse(blank).success, false, "as it would not with an empty label");
+
+  const saved: AccountAddress = { ...studio, id: "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d", line1: "22 Hill Road", city: "Mumbai", state: "27", pin: "400050" };
+  const { calls, cleanup } = await mount(<AddressBook initial={[studio]} />, (call) =>
+    call.method === "POST" ? Response.json({ address: saved, addresses: [studio, saved] }, { status: 201 })
+      : Response.json({ address: { ...studio, city: "Satara" }, addresses: [{ ...studio, city: "Satara" }, saved] }));
+  try {
+    await press(/^add new address$/i);
+    fill({ label: "   ", name: "Aditi Sharma", line1: "22 Hill Road", city: "Mumbai", state: "27", pin: "400050", phone: "98123 45678" });
     await submit();
-    assert.equal(calls.length, 0);
-    assert.equal(field("label")!.getAttribute("aria-invalid"), "true");
-    assert.match(description(field("label")), /40 characters/);
+    await settle();
+    assert.equal(calls[0]!.method, "POST");
+    assert.deepEqual(calls[0]!.body, { name: "Aditi Sharma", line1: "22 Hill Road", line2: "", city: "Mumbai", state: "27", pin: "400050", phone: "+919812345678" });
+    assert.equal(namelessApiSchema.safeParse(calls[0]!.body).success, true);
+
+    // Editing an address an older API returned (no name, read as "") leaves the name out too.
+    await press(/^edit address/i, cards()[0]!);
+    fill({ city: "Satara" });
+    await submit();
+    await settle();
+    assert.deepEqual(calls[1], { method: "PATCH", path: `/api/account/addresses/${studio.id}`, body: { city: "Satara" } });
+  } finally { await cleanup(); }
+});
+
+test("closing the form puts focus back on what opened it, else on the list's heading", async () => {
+  const nine = Array.from({ length: 9 }, (_, index) => ({ ...studio, id: `6a7b8c9d-0e1f-4a2b-9c3d-4e5f6a7b8c${String(index).padStart(2, "0")}`, isDefault: index === 0 }));
+  const tenth: AccountAddress = { ...studio, id: "6a7b8c9d-0e1f-4a2b-9c3d-4e5f6a7b8c99", isDefault: false };
+  const { cleanup } = await mount(<AddressBook initial={nine} />, (call) =>
+    call.method === "POST" ? Response.json({ address: tenth, addresses: [...nine, tenth] }, { status: 201 })
+      : Response.json({ address: { ...nine[3]!, city: "Satara" }, addresses: nine.map((a, i) => (i === 3 ? { ...a, city: "Satara" } : a)) }));
+  try {
+    const editOf = (index: number) => button(/^edit address/i, cards()[index]!);
+    // Cancel from an address's form: back to that address's "Edit address".
+    await press(/^edit address/i, cards()[2]!);
+    await press(/^Cancel$/);
+    await settle(1);
+    assert.ok(document.activeElement === editOf(2), "Cancel: focus is on that address's Edit address");
+    // Saved: the same.
+    await press(/^edit address/i, cards()[3]!);
+    fill({ city: "Satara" });
+    await submit();
+    await settle();
+    assert.ok(document.activeElement === editOf(3), "saved: focus is on that address's Edit address");
+    // Cancel from a new address: back to "Add new address".
+    await press(/^add new address$/i);
+    await press(/^Cancel$/);
+    await settle(1);
+    assert.ok(document.activeElement === button(/^add new address$/i), "focus is on Add new address");
+    // The tenth address saved: "Add new address" is gone, so the list's heading takes focus, never the page itself.
+    await press(/^add new address$/i);
+    fill({ name: "Aditi Sharma", line1: "Studio 3, Lake Road", city: "Pune", state: "27", pin: "411001", phone: "98123 45678" });
+    await submit();
+    await settle();
+    assert.equal(button(/^add new address$/i), undefined);
+    assert.ok(document.activeElement !== document.body, "focus did not fall to the page");
+    assert.equal(document.activeElement?.tagName, "H2");
+    assert.equal(document.activeElement?.textContent, "Saved addresses");
+    assert.equal(document.querySelector(".account-address-list")?.getAttribute("aria-labelledby"), document.activeElement?.id, "it names the list");
   } finally { await cleanup(); }
 });
 
@@ -180,6 +255,34 @@ test("one name is asked as first and last name: the first word, then the rest", 
   assert.deepEqual(splitName("  Aditi   Rao  Sharma "), { first: "Aditi", last: "Rao Sharma" });
   assert.deepEqual(splitName("Aditi"), { first: "Aditi", last: "" });
   assert.deepEqual(splitName(null), { first: "", last: "" });
+  assert.equal(tidyName("  Asha   Rao "), "Asha Rao");
+  assert.equal(tidyName("   "), null);
+  assert.equal(tidyName(null), null);
+});
+
+test("a saved name with extra spaces is not a change, and each name field takes the account's 120 characters", async () => {
+  const customer = { name: "Asha  Rao", email: "asha@example.com", phone: null };
+  const { calls, cleanup } = await mount(<AccountDetailsForm customer={customer} />, (call) => Response.json({ customer: { ...customer, ...call.body } }));
+  try {
+    assert.equal((field("firstName") as HTMLInputElement).value, "Asha");
+    assert.equal((field("lastName") as HTMLInputElement).value, "Rao");
+    await submit();
+    assert.equal(calls.length, 0, "Save with nothing edited sends nothing");
+    assert.match(text(), /No changes to save/);
+
+    assert.equal((field("firstName") as HTMLInputElement).maxLength, 120);
+    assert.equal((field("lastName") as HTMLInputElement).maxLength, 120);
+    // The whole name is still at most 120: each field alone may hold it, together they may not.
+    fill({ firstName: "a".repeat(61), lastName: "b".repeat(61) });
+    await submit();
+    assert.equal(calls.length, 0);
+    assert.equal(field("lastName")!.getAttribute("aria-invalid"), "true");
+    assert.match(description(field("lastName")), /120 characters in all/);
+    fill({ firstName: "a".repeat(120), lastName: "" });
+    await submit();
+    await settle();
+    assert.deepEqual(calls[0]!.body, { name: "a".repeat(120) });
+  } finally { await cleanup(); }
 });
 
 test("your details change the name and phone, the sign-in email stays as it is, and Cancel puts back what is saved", async () => {

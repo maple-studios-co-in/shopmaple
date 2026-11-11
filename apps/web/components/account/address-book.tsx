@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { addressInputSchema, addressLabelMaxLength, maxAddresses, type AccountAddress, type AddressUpdate } from "@shopmaple/contracts/account";
+import { addressInputSchema, addressLabelMaxLength, maxAddresses, type AccountAddress, type AddressInput, type AddressUpdate } from "@shopmaple/contracts/account";
 import { indiaStates } from "@/app/checkout/india-states";
 import { AccountRequestError, createAccountClient } from "@/lib/account/client";
-import { displayPhone, maskedPhone } from "@/lib/account/format";
+import { displayPhone, maskedPhone, maskedPhoneLabel } from "@/lib/account/format";
 import { createPreviewTransport } from "@/lib/account/preview";
 import { addressLines, Lines } from "./account-parts";
 
@@ -12,7 +12,7 @@ type FieldName = "label" | "name" | "line1" | "line2" | "city" | "state" | "pin"
 /** In the order the form asks them, so the first problem is the first one focused. */
 const fieldOrder: FieldName[] = ["label", "name", "phone", "line1", "line2", "city", "pin", "state"];
 const problems: Record<FieldName, string> = {
-  label: `Shorten the place's name to ${addressLabelMaxLength} characters.`,
+  label: `Name the place in plain text, up to ${addressLabelMaxLength} characters.`,
   name: "Enter the name of the person receiving the delivery.",
   line1: "Enter the house number, building and street.",
   line2: "Shorten the apartment or landmark line.",
@@ -31,6 +31,31 @@ const valueOf = (form: HTMLFormElement, name: string) => {
 /** A card's heading: the place's own name ("Home", "Studio"), else its city. */
 export const addressTitle = (address: Pick<AccountAddress, "label" | "city">) => address.label || address.city;
 
+/** The masked number at a glance; a screen reader hears "Phone number ending 210" rather than each "•". */
+function MaskedPhone({ phone }: { phone: string }) {
+  const label = maskedPhoneLabel(phone);
+  if (!label) return <>{phone}</>;
+  return (
+    <>
+      <span aria-hidden="true">{maskedPhone(phone)}</span>
+      <span className="sr-only">{label}</span>
+    </>
+  );
+}
+
+/** What "Save address" posts for a new address. A place left unnamed sends no `label` at all, so an API from before
+ * addresses had names (whose request schema is strict) still takes it; see the release note on accountAddressSchema. */
+export function newAddressRequest({ label, ...rest }: AddressInput): AddressInput {
+  return label ? { label, ...rest } : rest;
+}
+/** What an edit sends: only the fields that changed. A name left as it was (none, on an address an older API returned)
+ * is not sent; `label: ""` goes only to clear a name the address has, which only an API that stores names returned. */
+export function addressChanges(before: AccountAddress, after: AddressInput): AddressUpdate {
+  const changes = Object.fromEntries(fieldOrder.filter((name) => (after[name] ?? "") !== before[name]).map((name) => [name, after[name] ?? ""])) as AddressUpdate;
+  if (after.isDefault && !before.isDefault) changes.isDefault = true;
+  return changes;
+}
+
 /**
  * Saved delivery addresses (Figma 392:1527 "Saved Address"): "Add new address", then a card for each, the default first,
  * on sage with its badge. Each card is named ("Home", "Studio"), shows who receives the delivery, the address and the
@@ -47,6 +72,8 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
   const [status, setStatus] = useState<{ tone: "ok" | "problem"; text: string; signIn?: boolean } | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const listHeading = useRef<HTMLHeadingElement>(null);
   const focusForm = useRef(false);
   // A form the customer opened starts at its first field.
   useEffect(() => {
@@ -69,11 +96,19 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
     setRemoving(null);
     focusForm.current = true;
   }
+  /** Focus, once the page is drawn again, the given control, else the list's heading: "Add new address" is not drawn at
+   * ten addresses, and focus must not fall back to the page itself. */
+  function focusAfterRender(target: () => HTMLElement | null | undefined) {
+    setTimeout(() => (target() ?? listHeading.current)?.focus(), 0);
+  }
   function close() {
+    const from = editing;
     setEditing(null);
     setErrors({});
-    // Back where the customer started: the button that opens a new form, once it is drawn again.
-    setTimeout(() => addButton.current?.focus(), 0);
+    // Back to the control that opened the form: that card's "Edit address", or "Add new address".
+    focusAfterRender(() => from?.kind === "edit"
+      ? list.current?.querySelector<HTMLElement>(`[data-address="${from.address.id}"] [data-edit-address]`)
+      : addButton.current);
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,13 +131,11 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
     setBusy(true);
     try {
       if (editing.kind === "new") {
-        const result = await client.addAddress(parsed.data);
+        const result = await client.addAddress(newAddressRequest(parsed.data));
         setAddresses(result.addresses);
       } else {
-        const before = editing.address;
-        const changes = Object.fromEntries(fieldOrder.filter((name) => parsed.data[name] !== before[name]).map((name) => [name, parsed.data[name]])) as AddressUpdate;
-        if (parsed.data.isDefault && !before.isDefault) changes.isDefault = true;
-        if (Object.keys(changes).length > 0) setAddresses((await client.updateAddress(before.id, changes)).addresses);
+        const changes = addressChanges(editing.address, parsed.data);
+        if (Object.keys(changes).length > 0) setAddresses((await client.updateAddress(editing.address.id, changes)).addresses);
       }
       close();
       setStatus({ tone: "ok", text: "Address saved." });
@@ -131,7 +164,7 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
       setAddresses(await client.deleteAddress(address.id));
       setRemoving(null);
       setStatus({ tone: "ok", text: "Address removed." });
-      addButton.current?.focus();
+      focusAfterRender(() => addButton.current);
     } catch (failure) {
       fail(failure);
     } finally {
@@ -213,15 +246,17 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
           Add new address
         </button>
       )}
+      {/* Named for screen readers; focus lands here when the control that opened a form is gone. */}
+      {addresses.length > 0 ? <h2 ref={listHeading} id={`${id}-list-title`} className="sr-only" tabIndex={-1}>Saved addresses</h2> : null}
       {addresses.length > 0 ? (
-        <ul className="account-address-list">
+        <ul ref={list} className="account-address-list" aria-labelledby={`${id}-list-title`}>
           {addresses.map((address) => (
             <li key={address.id} className="account-address" data-address={address.id} data-default={address.isDefault ? "" : undefined}>
               {/* eslint-disable-next-line @next/next/no-img-element -- the design's 28px line icon */}
               <img className="account-address-icon" src="/account/pin.svg" alt="" width={28} height={28} />
               <h2 className="account-address-title">{addressTitle(address)}</h2>
               {address.isDefault ? <p className="account-address-badge">Default address</p> : null}
-              <Lines className="account-address-lines" lines={[address.name, ...addressLines(address), maskedPhone(address.phone)]} />
+              <Lines className="account-address-lines" lines={[address.name, ...addressLines(address), <MaskedPhone key="phone" phone={address.phone} />]} />
               {removing === address.id ? (
                 <div className="account-confirm" role="group" aria-labelledby={`${id}-remove-${address.id}`}>
                   <p id={`${id}-remove-${address.id}`} className="account-confirm-text">Remove this address?</p>
@@ -233,7 +268,7 @@ export function AddressBook({ initial, preview = false }: { initial: AccountAddr
               ) : (
                 <>
                   <p className="account-address-actions">
-                    <button type="button" className="account-address-link" onClick={() => open({ kind: "edit", address })}>
+                    <button type="button" className="account-address-link" data-edit-address="" onClick={() => open({ kind: "edit", address })}>
                       Edit address<span className="sr-only">{which(address)}</span>
                     </button>
                     <span aria-hidden="true">·</span>

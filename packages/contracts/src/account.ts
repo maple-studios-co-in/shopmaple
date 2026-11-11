@@ -163,13 +163,15 @@ const addressFields = {
 };
 
 /** POST /api/account/addresses → 201 AddressMutationResponse, or 409 ADDRESS_LIMIT at ten. The first address is always
- * the default; `isDefault: true` makes a later one the default. */
+ * the default; `isDefault: true` makes a later one the default. `label` may be left out (it then reads as none), and the
+ * web leaves it out when the customer gives none, because an API from before addresses had names refuses a `label` key. */
 export const addressInputSchema = z
   .object({ ...addressFields, label: addressFields.label.default(""), line2: addressFields.line2.default(""), isDefault: z.boolean().optional() })
   .strict();
 
 /** PATCH /api/account/addresses/:id → 200 AddressMutationResponse. Send only what changes. `isDefault: true` makes it the
- * default (the old default stops being one); there is no switching the default off, only choosing another. */
+ * default (the old default stops being one); there is no switching the default off, only choosing another. `label: ""`
+ * clears a name, which only an address that has one (so only the API that stores them) is ever sent. */
 export const addressUpdateSchema = z
   .object({
     label: addressFields.label.optional(),
@@ -185,8 +187,17 @@ export const addressUpdateSchema = z
   .strict()
   .refine((update) => Object.keys(update).length > 0, "Nothing to change");
 
-/** A saved address. `state` is the GST state code; `label` and `line2` are "" when there is none. An API from before
- * addresses had names leaves `label` out, which reads as none, so the API and the web may be deployed in either order. */
+/**
+ * A saved address. `state` is the GST state code; `label` and `line2` are "" when there is none.
+ *
+ * Release the API (with migration 20261111150000_customer_address_labels) and the web together. While customer accounts
+ * are off nothing reads or writes addresses, so the order does not matter. With accounts on, in a gap between the two:
+ * - web first is safe except for names: an API from before addresses had names leaves `label` out of its answers, which
+ *   reads here as none, and an address added or edited without a name saves, since the web then sends no `label`.
+ *   Giving a place a name is refused (that API's request schemas are strict) until the API is deployed.
+ * - API first is not safe: the old web's address schema is strict too and refuses the `label` the new API answers with,
+ *   so its address pages and overview fail, and checkout stops filling in the address, until the web is deployed.
+ */
 export const accountAddressSchema = z
   .object({
     id: z.uuid(),

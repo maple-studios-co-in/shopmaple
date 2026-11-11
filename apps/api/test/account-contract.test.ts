@@ -54,7 +54,7 @@ test("an address uses checkout's GST state code and PIN rules, with line 2 optio
   assert.equal(addressInputSchema.parse({ ...address, label: "  Studio " }).label, "Studio");
   assert.equal(addressInputSchema.safeParse({ ...address, label: "x".repeat(41) }).success, false);
   assert.deepEqual(addressUpdateSchema.parse({ label: "" }), { label: "" }, "a name can be cleared");
-  // An API from before addresses had names leaves the name out; the web reads that as none, so either may deploy first.
+  // An API from before addresses had names leaves the name out of its answers; the web reads that as none.
   const saved = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", name: "Asha Rao", line1: "12 Lake Road", line2: "", city: "Pune", state: "27", pin: "411001",
     phone: "+919876543210", isDefault: true };
   const overview = { customer: { name: "Asha Rao", email: "asha@example.com", phone: null }, counts: { orders: 0, addresses: 1 }, latestOrder: null, defaultAddress: saved };
@@ -70,6 +70,19 @@ test("an address uses checkout's GST state code and PIN rules, with line 2 optio
   assert.equal(addressUpdateSchema.safeParse({ isDefault: false }).success, false, "a default is replaced, never switched off");
   assert.deepEqual(addressUpdateSchema.parse({ isDefault: true }), { isDefault: true });
   assert.deepEqual(addressUpdateSchema.parse({ line2: "" }), { line2: "" });
+});
+
+test("an address request without a label, as a web from before names (or one given no name) sends, is still taken", () => {
+  // The request a web from before PR 130 sends, and what the web now sends for a place left unnamed: no `label` key.
+  const created = addressInputSchema.parse({ ...address, line2: "Flat 2", isDefault: true });
+  assert.equal(created.label, "", "no name: stored as none");
+  assert.deepEqual(created, { ...address, label: "", line2: "Flat 2", phone: "+919876543210", isDefault: true });
+  assert.deepEqual(addressUpdateSchema.parse({ city: "Satara" }), { city: "Satara" }, "an edit need not mention the name");
+  // That API's own request schema: this one without `label`, strict. It refuses any `label`, even an empty one, which is
+  // why the web leaves `label` out unless the customer gave a name.
+  const namelessApi = addressInputSchema.omit({ label: true });
+  assert.equal(namelessApi.safeParse(address).success, true);
+  assert.equal(namelessApi.safeParse({ ...address, label: "" }).success, false);
 });
 
 const detail: OrderDetail = {

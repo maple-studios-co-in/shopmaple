@@ -25,6 +25,11 @@ export function splitName(name: string | null) {
   const words = name?.trim().split(/\s+/).filter(Boolean) ?? [];
   return { first: words[0] ?? "", last: words.slice(1).join(" ") };
 }
+/** A name with its spaces tidied as the form shows it ("Asha  Rao" → "Asha Rao"); null for none. Saving compares names
+ * this way, so a saved name the fields only tidied is not a change. */
+export const tidyName = (name: string | null) => name?.trim().split(/\s+/).filter(Boolean).join(" ") || null;
+/** The account keeps up to this many characters of name, in all; either field may hold most of it. */
+const nameMaxLength = 120;
 /** Read the named controls directly so the same code runs in browsers and DOM test runners. */
 const valueOf = (form: HTMLFormElement, name: string) => {
   const control = form.elements.namedItem(name) as { value?: unknown } | null;
@@ -58,7 +63,7 @@ export function AccountDetailsForm({ customer, preview = false, resendCooldownMs
     const phone = valueOf(target, "phone");
     const full = [first, last].filter(Boolean).join(" ");
     const found: Partial<Record<FieldName, string>> = {};
-    if (full.length > 120) found[last ? "lastName" : "firstName"] = "Shorten your name to 120 characters in all.";
+    if (full.length > nameMaxLength) found[last ? "lastName" : "firstName"] = `Shorten your name to ${nameMaxLength} characters in all.`;
     const parsedPhone = phone ? accountPhoneSchema.safeParse(phone) : null;
     if (parsedPhone && !parsedPhone.success) found.phone = "Enter a 10-digit mobile number, such as 98765 43210.";
     setErrors(found);
@@ -72,7 +77,8 @@ export function AccountDetailsForm({ customer, preview = false, resendCooldownMs
     const update: AccountProfileUpdate = {};
     const nextName = full || null;
     const nextPhone = parsedPhone?.success ? parsedPhone.data : null;
-    if (nextName !== saved.name) update.name = nextName;
+    // Compared with the saved name as the fields show it, so Save with nothing edited never rewrites "Asha  Rao".
+    if (tidyName(nextName) !== tidyName(saved.name)) update.name = nextName;
     if (nextPhone !== saved.phone) update.phone = nextPhone;
     if (Object.keys(update).length === 0) {
       setStatus({ tone: "ok", text: "No changes to save." });
@@ -116,12 +122,12 @@ export function AccountDetailsForm({ customer, preview = false, resendCooldownMs
         <div className="account-details-names">
           <div className="account-field">
             <label className="account-label" htmlFor={`${id}-firstName`}>First name</label>
-            <input className="account-input" {...control("firstName")} autoComplete="given-name" maxLength={60} defaultValue={name.first} />
+            <input className="account-input" {...control("firstName")} autoComplete="given-name" maxLength={nameMaxLength} defaultValue={name.first} />
             {error("firstName")}
           </div>
           <div className="account-field">
             <label className="account-label" htmlFor={`${id}-lastName`}>Last name</label>
-            <input className="account-input" {...control("lastName")} autoComplete="family-name" maxLength={60} defaultValue={name.last} />
+            <input className="account-input" {...control("lastName")} autoComplete="family-name" maxLength={nameMaxLength} defaultValue={name.last} />
             {error("lastName")}
           </div>
         </div>
