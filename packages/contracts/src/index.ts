@@ -29,6 +29,16 @@ export {
   homeCitiesLayoutSchema,
   templateMediaSchema,
 } from "./content";
+export {
+  pictureSlotKeys,
+  menuPictureKeys,
+  landingBannerKeys,
+  landingTileKeys,
+  landingValueKeys,
+  blogCoverKeys,
+  blogPictureKeys,
+  otherPictureKeys,
+} from "./picture-slots";
 export type {
   StorefrontContent,
   HomeMerchandising,

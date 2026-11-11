@@ -11,6 +11,7 @@ import { homeDetailsSchema } from "./home-details";
 import { nimbusPageContentSchema } from "./nimbus-content";
 import { collectionLandingContentSchema } from "./collection-landing";
 import { templateFilmsSchema } from "./template-films";
+import { pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -110,6 +111,8 @@ export const templateMediaKeys = [
   "home-city-jaipur", "home-city-bengaluru", "home-city-chennai", "home-city-gujarat",
   "home-city-artwork-1", "home-city-artwork-2", "home-city-artwork-3", "home-city-artwork-4",
   "home-city-artwork-5", "home-city-artwork-6", "home-city-artwork-7", "home-city-artwork-8", "home-city-agra",
+  // Pictures fixed in code until the owner made them admin slots (12 Nov 2026): picture-slots.ts.
+  ...pictureSlotKeys,
 ] as const;
 export const templateMediaDecorativeKeys = [
   "home-hero-sofas", "home-hero-chairs", "home-hero-tables", "home-hero-beds",
@@ -117,6 +120,7 @@ export const templateMediaDecorativeKeys = [
   "home-value-quiet-luxury", "home-value-real-living", "home-value-ages-beautifully", "home-value-strength",
   "home-city-artwork-1", "home-city-artwork-2", "home-city-artwork-3", "home-city-artwork-4",
   "home-city-artwork-5", "home-city-artwork-6", "home-city-artwork-7", "home-city-artwork-8",
+  ...pictureSlotDecorativeKeys,
 ] as const;
 export const homeCityKeys = [
   "delhi", "kolkata", "hyderabad", "varanasi", "mumbai", "jaipur", "bengaluru", "chennai", "gujarat",
@@ -134,6 +138,7 @@ export type HomeCitiesLayout = z.infer<typeof homeCitiesLayoutSchema>;
 export const templateMediaResponsiveKeys = [
   "home-nimbus", "nimbus-room-collection", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining", "nimbus-hero-poster",
   "terra-hero",
+  ...pictureSlotResponsiveKeys,
 ] as const;
 export type TemplateMediaKey = typeof templateMediaKeys[number];
 const templateMediaItemSchema = z.object({

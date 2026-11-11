@@ -215,7 +215,7 @@ export function HomePage({ content, photos }: { content: StorefrontDocument; pho
         <CampaignBanner campaign="landing-consoles" compact content={content} />
       </div>
     ),
-    editorial: <HomeEditorial content={details.editorial} />,
+    editorial: <HomeEditorial content={details.editorial} media={content.templateMedia} />,
     compare: (
       <Suspense fallback={<section className="home-compare home-container" aria-label={details.compare.heading} aria-busy="true" data-compare-placeholder />}>
         <HomeCompare content={details.compare} />

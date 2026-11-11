@@ -210,7 +210,7 @@ test("Pull Up A Chair opens its words, link, photos and descriptions, and saving
   try {
     await click("Edit Pull Up A Chair", card("editorial"));
     assert.equal(inspector()?.getAttribute("data-section-inspector"), "editorial");
-    assert.deepEqual(tabs(), [], "one panel: no tabs");
+    assert.deepEqual(tabs(), ["Content", "Media"], "its words and photos, then the four flip photos (owner, 12 Nov 2026)");
     assert.equal(field("Editorial title", inspector()!).value, "Pull up a chair");
     assert.equal(field("Editorial text", inspector()!).value, "There's always something worth staying for.");
     assert.equal(field("Editorial button", inspector()!).value, "Shop Dining");
@@ -221,10 +221,15 @@ test("Pull Up A Chair opens its words, link, photos and descriptions, and saving
     await type("Editorial title", "Stay a while", inspector()!);
     await type("Editorial link", "/collections/chairs", inspector()!);
     await type("Right image description", "Friends at a set table", inspector()!);
+    await openTab("Media");
+    const placements = [...field<HTMLSelectElement>("Artwork placement", inspector()!).options].map((o) => o.textContent);
+    assert.deepEqual(placements, ["Editorial flip photo 1", "Editorial flip photo 2", "Editorial flip photo 3", "Editorial flip photo 4"], "only the flip photos this section draws");
+    await type("Desktop image URL", "/media/uploads/" + "d".repeat(64) + ".webp", inspector()!);
     await click("Save draft");
     await until(() => app.puts.length === 1, "the save");
     const saved = app.puts[0].content;
     assert.deepEqual(saved.homeDetails.editorial, { ...defaultStorefrontContent.homeDetails!.editorial, title: "Stay a while", href: "/collections/chairs", rightAlt: "Friends at a set table" });
+    assert.deepEqual(saved.templateMedia.map((m: { key: string; image: string }) => [m.key, m.image]), [["home-editorial-flip-1", "/media/uploads/" + "d".repeat(64) + ".webp"]]);
     assert.equal(storefrontContentSchema.safeParse(saved).success, true);
   } finally { await app.close(); }
 });

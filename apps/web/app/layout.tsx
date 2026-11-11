@@ -47,6 +47,7 @@ import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
 import { JsonLd } from "@/components/store/json-ld";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
+import { resolveMenuArtwork } from "@/lib/menu-artwork";
 import { organizationStructuredData, seoSettings, siteMetadata, websiteStructuredData } from "@/lib/seo";
 // Read at request time (never baked in at build): the store stays out of search until SEO_INDEXING=on at launch.
 export async function generateMetadata(): Promise<Metadata> {
@@ -59,7 +60,7 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const content = await getPublishedContent();
-  const { siteChrome, productHighlights } = content;
+  const { siteChrome, productHighlights, templateMedia } = content;
   const seo = seoSettings(process.env);
   return (
     <html lang="en">
@@ -67,7 +68,7 @@ export default async function Layout({
         <JsonLd data={[organizationStructuredData(seo, resolveSiteChrome(siteChrome)), websiteStructuredData(seo)]} />
         <ShopProvider>
           <ProductHighlightsProvider value={productHighlights}>
-            <StoreChrome siteChrome={siteChrome}>{children}</StoreChrome>
+            <StoreChrome siteChrome={siteChrome} menuArtwork={resolveMenuArtwork(templateMedia)}>{children}</StoreChrome>
           </ProductHighlightsProvider>
         </ShopProvider>
         <ButtonEffectsIsland />

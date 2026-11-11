@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
+import type { MenuArtwork } from "@/lib/menu-artwork";
 import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
@@ -155,11 +156,12 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
 }
 
 /** The draft page with the draft's own navigation and footer, a slim ribbon, and in-frame links kept on the draft. */
-export function PreviewFrameDocument({ token, version, path, siteChrome, children, navigate, view = "draft" }: {
+export function PreviewFrameDocument({ token, version, path, siteChrome, menuArtwork, children, navigate, view = "draft" }: {
   token: string;
   version: number;
   path: string;
   siteChrome?: SiteChrome;
+  menuArtwork?: MenuArtwork;
   children: ReactNode;
   navigate?: (url: string) => void;
   view?: "draft" | "published";
@@ -176,7 +178,7 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, childre
       data-preview-view={view}
     >
       <PreviewNavigation token={token} navigate={navigate} view={view}>
-        <StoreChromeView path={path} siteChrome={siteChrome}>{children}</StoreChromeView>
+        <StoreChromeView path={path} siteChrome={siteChrome} menuArtwork={menuArtwork}>{children}</StoreChromeView>
         <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${version}` : `Draft preview, not published. Version ${version}`}</p>
       </PreviewNavigation>
       <PreviewFrameBridge path={path} version={version} selectable={view === "draft"} />

@@ -5,22 +5,23 @@ import { CompareIsland } from "@/components/compare-island";
 import { currentHandle } from "@/lib/retired-products";
 import { getProductCards } from "@/lib/catalog";
 import type { ResolvedHomeDetails } from "@/lib/home-details-defaults";
+import type { TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+
+const flipKeys = ["home-editorial-flip-1", "home-editorial-flip-2", "home-editorial-flip-3", "home-editorial-flip-4"] as const;
 
 /**
  * Maple's dining pieces the square photo cuts through, after the staff's own photo: a hard cut every 800 ms,
  * on and on while it is in view, as in the owner's reference recording. Seating and tables only: the owner took the
- * Arden sideboard out (4 Nov 2026), as it is no place to pull up a chair.
+ * Arden sideboard out (4 Nov 2026), as it is no place to pull up a chair. These are the originals; each frame is
+ * template artwork that staff can replace (12 Nov 2026).
  */
-export const editorialFlipFrames = [
-  "/media/home/editorial-flip-runo.webp",
-  "/media/home/editorial-flip-aero.webp",
-  "/media/home/editorial-flip-varyn.webp",
-  "/media/home/editorial-flip-seno.webp",
-] as const;
+export const editorialFlipFrames = flipKeys.map((key) => resolveTemplateMedia(key).image);
 
 /** "Pull up a chair": a square photo with its caption beside one large photo. */
-export function HomeEditorial({ content }: { content: ResolvedHomeDetails["editorial"] }) {
-  const frames = [content.leftImage, ...editorialFlipFrames.filter((src) => src !== content.leftImage)];
+export function HomeEditorial({ content, media }: { content: ResolvedHomeDetails["editorial"]; media?: TemplateMedia }) {
+  // The staff's own photo leads; a frame showing the same picture is not repeated.
+  const frames = [...new Set([content.leftImage, ...flipKeys.map((key) => resolveTemplateMedia(key, media).image)])];
   return (
     <section className="home-editorial home-container" aria-label={content.title} data-editorial>
       <div data-editorial-left>

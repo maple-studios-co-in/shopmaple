@@ -161,3 +161,36 @@ test("clicking into a page does not change the draft, and Reload latest draft sh
     assert.equal(reloaded.view.dom.textContent, "Newer text from another editor.", "the editor shows the reloaded draft, not the discarded local text");
   } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
 });
+
+test("policies and articles take pictures from the media library, as the Pages editor does (owner, 12 Nov 2026)", async () => {
+  const { storefrontContentSchema } = await import("@shopmaple/contracts");
+  const previous = globalThis.fetch;
+  const root = createRoot(container);
+  const upload = `/media/uploads/${"a".repeat(64)}.webp`;
+  let saved: any;
+  globalThis.fetch = async (input, init) => {
+    assert.equal(String(input), "/api/admin/content", "Only the private content endpoint is used");
+    if (init?.method === "PUT") {
+      saved = JSON.parse(String(init.body));
+      return Response.json({ version: 5, draft: saved.content, publishedVersion: 2, updatedAt: "2026-11-12T12:00:00Z" });
+    }
+    return Response.json({ version: 4, draft: defaultStorefrontContent, publishedVersion: 2, updatedAt: "2026-11-12T12:00:00Z" });
+  };
+  try {
+    await act(async () => root.render(<ContentEditor session={{ user: { id: "editor", email: "editor@example.test", role: "editor" }, csrfToken: "c".repeat(64) }} initialContent={defaultStorefrontContent} onExpired={() => assert.fail("Unexpected expiry")} />));
+    await act(async () => button("Policies & blogs").click());
+    await select("article:recent-stories/how-to-measure-furniture-before-ordering-online");
+    const editor = await richText();
+    assert.ok([...container.querySelectorAll('[aria-label="Page text formatting"] button')].some(b => b.textContent === "Image"), "the toolbar offers a picture");
+    await act(async () => { editor.chain().focus("end", { scrollIntoView: false }).setImage({ src: upload, alt: "A tape measure on a sofa arm" }).run(); });
+    assert.ok(container.querySelector(`[aria-label="Editorial preview"] img[alt="A tape measure on a sofa arm"]`), "the preview shows the picture");
+    await act(async () => button("Save draft").click());
+    const article = saved.content.editorialContent.articles[0];
+    const pictures = (nodes: any[]): any[] => nodes.flatMap(node => typeof node === "string" ? [] : node.tag === "img" ? [node] : pictures(node.children));
+    assert.deepEqual(pictures(article.content).map(node => [node.src, node.alt]), [[upload, "A tape measure on a sofa arm"]]);
+    assert.equal(storefrontContentSchema.safeParse(saved.content).success, true, "the picture is valid editorial content");
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous;
+  }
+});

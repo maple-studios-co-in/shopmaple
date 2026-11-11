@@ -50,23 +50,23 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
     const services = resolveServicePages(content.servicePages);
     if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} site={content} /> };
     if (second === "bulk-enquiry") return { title: services.bulk.title, path, node: <BulkEnquiry context={emptyEnquiryContext} content={services.bulk} site={content} /> };
-    if (second === "returns") return { title: services.returns.title, path, node: <ReturnsPageContent content={services.returns} footer={resolveSiteChrome(content.siteChrome).footer} /> };
+    if (second === "returns") return { title: services.returns.title, path, node: <ReturnsPageContent content={services.returns} footer={resolveSiteChrome(content.siteChrome).footer} media={content.templateMedia} /> };
     const page = content.pages.find((page) => page.slug === second);
     return page ? { title: page.title, path, node: <ContentPage page={page} /> } : null;
   }
   if (root === "policies" && second !== undefined && third === undefined) {
     if (!Object.hasOwn(source.policies, second)) return null;
     const policy = resolveEditorialContent(content.editorialContent).policies[second];
-    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} footer={resolveSiteChrome(content.siteChrome).footer} /> } : null;
+    return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} footer={resolveSiteChrome(content.siteChrome).footer} media={content.templateMedia} /> } : null;
   }
   if (root === "blogs" && second !== undefined) {
     if (!source.blogs.some((item) => item.handle === second)) return null;
-    const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+    const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
     const record = blogs.find((item) => item.handle === second);
     if (!record) return null;
-    if (third === undefined) return { title: record.title, path: `/blogs/${second}`, node: <BlogIndex blog={second} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} /> };
+    if (third === undefined) return { title: record.title, path: `/blogs/${second}`, node: <BlogIndex blog={second} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} media={content.templateMedia} /> };
     const post = record.articles.find((item) => item.handle === third);
-    return post ? { title: post.title, path: `/blogs/${second}/${third}`, node: <BlogArticle blog={second} record={record} post={post} shareUrl={absolute(seoSettings(process.env), `/blogs/${second}/${third}`)} /> } : null;
+    return post ? { title: post.title, path: `/blogs/${second}/${third}`, node: <BlogArticle blog={second} record={record} post={post} shareUrl={absolute(seoSettings(process.env), `/blogs/${second}/${third}`)} media={content.templateMedia} /> } : null;
   }
   return null;
 }

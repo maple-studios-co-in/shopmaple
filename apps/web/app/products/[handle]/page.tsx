@@ -9,6 +9,8 @@ import presentationData from "@/data/product-presentation.json";
 import { JsonLd } from "@/components/store/json-ld";
 import { breadcrumbStructuredData, productMetadata, productStructuredData, seoSettings } from "@/lib/seo";
 import { collectionTitles } from "@/lib/collections";
+import { getPublishedContent } from "@/lib/content";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   // A failed catalogue read must not drop the page's robots tag: the error page that follows is never indexed.
@@ -50,6 +52,8 @@ export default async function ProductPage({
   const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
   // Hand-placed white-background cut-outs (local files) for the pieces Keeri has none for, by their unchanged address.
   const presentation = Object.hasOwn(presentationData, handle) ? presentationData[handle as keyof typeof presentationData] : undefined;
+  // The banner's photo is template artwork; only its address and description go to the browser.
+  const { image, alt } = resolveTemplateMedia("product-banner", (await getPublishedContent()).templateMedia);
   const seo = seoSettings(process.env);
   const trail: [string, string][] = [["Home", "/"],
     ...(product.category ? [[collectionTitles[product.category] ?? "Furniture", `/collections/${product.category}`] as [string, string]] : []),
@@ -68,6 +72,7 @@ export default async function ProductPage({
         bundle={bundle}
         bundleQuantities={bundleQuantities}
         serverNow={Date.now()}
+        banner={{ image, alt }}
       >
         <RelatedProducts products={otherPieces(related, product)} />
       </ProductDetail>

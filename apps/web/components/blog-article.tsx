@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createElement, Fragment, Suspense } from "react";
-import type { EditorialNode } from "@shopmaple/contracts";
+import type { EditorialNode, TemplateMedia } from "@shopmaple/contracts";
 import { AuthoredArticleBody } from "@/components/authored-article-body";
 import { StoreContent } from "@/components/store-content";
 import { ContentImage } from "@/components/content-image";
@@ -20,7 +20,7 @@ import { absolute, seoSettings } from "@/lib/seo";
  * off with, else Maple Furnishers) and the article's picture; the text, closing with the byline again and Share, beside
  * a sidebar (share this article, recent articles, related products); then "Explore our collections".
  */
-export function BlogArticle({ blog, record, post, shareUrl }: { blog: string; record: BlogRecord; post: BlogPost; shareUrl: string }) {
+export function BlogArticle({ blog, record, post, shareUrl, media }: { blog: string; record: BlogRecord; post: BlogPost; shareUrl: string; /** The published template artwork, for the collections photo. */ media?: TemplateMedia }) {
   const image = blogImage(blog, post);
   const { author, content } = signOff(post);
   const recent = newestFirst(record.articles).filter((item) => item.handle !== post.handle).slice(0, 3);
@@ -73,7 +73,7 @@ export function BlogArticle({ blog, record, post, shareUrl }: { blog: string; re
           </Suspense>
         </aside>
       </div>
-      <BlogCollections />
+      <BlogCollections media={media} />
     </div>
   );
 }

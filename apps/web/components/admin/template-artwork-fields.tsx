@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { templateMediaDecorativeKeys, templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
+import { pictureSlotGroups } from "@/lib/picture-slot-defaults";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { NativeSelectOption } from "@/components/ui/native-select";
@@ -14,7 +15,7 @@ import { ActionButton, FieldGrid, PanelHeader, Prose, SectionHeading, SelectFiel
 import { MediaPicker } from "./media-picker";
 import { TemplateFilmFields, type TemplateFilmFieldsProps } from "./template-film-fields";
 
-const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra"] as const;
+const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra", ...pictureSlotGroups] as const;
 type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
 
 /** The Artwork screen: every page's artwork, chosen by group and placement. */
@@ -64,6 +65,7 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group 
             {overridden ? "Custom artwork in this draft" : slot.image ? "Using original artwork" : slot.product ? "Using a Keeri product photo" : "No artwork shown"}
           </Badge>
         </div>
+        {slot.help && <Prose className="text-sm">{slot.help}</Prose>}
         {!overridden && !slot.image && <Notice tone="info">
           {slot.product
             ? `The original artwork was on Shopify and has left the store. Until you upload one, the store shows the first photo of the Keeri product “${slot.product}”.`

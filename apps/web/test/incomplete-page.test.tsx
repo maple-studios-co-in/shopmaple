@@ -23,7 +23,8 @@ test("an uncategorized model detail loads without sending an invalid related-cat
     const html = await new Response(stream).text();
     assert.match(html, /Uncategorized Model/);
     assert.match(html, /Price on request/);
-    assert.deepEqual(requests, ["/api/products/model"]);
+    // Then the published storefront, for the banner photo, which is template artwork (12 Nov 2026).
+    assert.deepEqual(requests, ["/api/products/model", "/api/content/storefront"]);
   } finally {
     globalThis.fetch = previous;
   }
