@@ -1,13 +1,15 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { z } from "zod";
-import { enquiryAssigneeListSchema, enquiryStageLabels, type EnquiryAssignee, type EnquiryStage } from "@shopmaple/contracts";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton as SkeletonBlock } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { AdminRequestTimeout, useAdminRequest } from "./use-admin-request";
 
-/** The viewer's local calendar date; the API never guesses a timezone. */
+// Shared admin pieces (notices, skeletons, empty states, bounded reads). The file keeps its old name
+// so open branches that import from it still merge; the CRM screens it was written for are retired.
+
+/** The viewer's local calendar date. */
 export function localToday(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
@@ -20,11 +22,9 @@ export function ageLabel(createdAt: string, today: string) {
   if (days < 28) return `${days}d`;
   return `${Math.floor(days / 7)}w`;
 }
-export type DueState = "overdue" | "today" | "upcoming";
-export function dueState(dueOn: string, today: string): DueState {
-  return dueOn < today ? "overdue" : dueOn === today ? "today" : "upcoming";
-}
-export const dueLabels: Record<DueState, string> = { overdue: "Overdue", today: "Due today", upcoming: "Upcoming" };
+export const ago = (createdAt: string, today: string) => { const age = ageLabel(createdAt, today); return age === "Today" ? "Today" : `${age} ago`; };
+/** What the enquiry list holds, by kind: the store's forms, newsletter signups and reviews Keeri could not take. */
+export const kindLabels: Record<string, string> = { contact: "Contact", project: "Project", bulk: "Bulk", newsletter: "Newsletter", review: "Review" };
 /** Two letters from a staff email's local part: "priya.menon" becomes "PM", "staff" becomes "ST". */
 export function initials(email: string) {
   const parts = email.split("@")[0]!.split(/[._+-]+/).filter(Boolean);
@@ -38,24 +38,6 @@ export function formatDateTime(value: string) {
   return new Date(value).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-const stageTone: Record<string, string> = {
-  new: "bg-neutral-bg text-neutral",
-  contacted: "bg-info-bg text-info",
-  quoted: "bg-warning-bg text-warning",
-  won: "bg-success-bg text-success",
-  lost: "bg-danger-bg text-danger",
-};
-export function StageChip({ stage, children }: { stage: string; children?: ReactNode }) {
-  const label = (enquiryStageLabels as Record<string, string>)[stage] ?? stage;
-  return <Badge variant="secondary" data-stage={stage} className={cn("rounded-md border-0 font-semibold", stageTone[stage] ?? stageTone.new)}>{label}{children}</Badge>;
-}
-export function Avatar({ email, title, className }: { email: string; title?: string; className?: string }) {
-  return <span data-avatar title={title ?? email} aria-label={title ?? email} className={cn("inline-grid size-7 shrink-0 place-items-center rounded-[9px] bg-primary text-2xs font-bold tracking-[0.04em] text-primary-foreground", className)}>{initials(email)}</span>;
-}
-const dueTone: Record<DueState, string> = { overdue: "bg-danger-bg text-danger", today: "bg-warning-bg text-warning", upcoming: "bg-neutral-bg text-neutral" };
-export function DueBadge({ state, children }: { state: DueState; children?: ReactNode }) {
-  return <Badge variant="secondary" data-due={state} className={cn("rounded-md border-0 font-semibold tabular-nums", dueTone[state])}>{children ?? dueLabels[state]}</Badge>;
-}
 /** Placeholder rows, tiles or cards shaped like the content that is loading. */
 export function Skeleton({ rows = 3, variant = "row" }: { rows?: number; variant?: "row" | "tile" | "card" }) {
   return <div aria-hidden="true" className={cn("grid gap-3", variant === "tile" && "grid-cols-2 sm:grid-cols-3", variant === "card" && "sm:grid-cols-2")}>
@@ -80,9 +62,15 @@ const noticeTone = {
 export function Notice({ tone, children, className, ...props }: { tone: "error" | "status" | "info"; children: ReactNode; className?: string } & Record<`data-${string}`, unknown>) {
   return <p role={tone === "error" ? "alert" : tone === "status" ? "status" : undefined} data-notice={tone} {...props} className={cn("flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-xs leading-relaxed font-medium [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-2", noticeTone[tone], className)}>{children}</p>;
 }
+/** An error notice with an optional retry beside it. */
+export function RetryNotice({ children, label = "Try again", disabled, onRetry }: { children: ReactNode; label?: string; disabled?: boolean; onRetry?: () => void }) {
+  return <div className="flex flex-wrap items-center gap-2"><Notice tone="error" className="flex-1">{children}</Notice>
+    {onRetry && <Button type="button" size="sm" variant="outline" disabled={disabled} onClick={onRetry}>{label}</Button>}</div>;
+}
+export const isDenied = (status: number) => status === 401 || status === 403;
 
 export type ReadResult<T> = { ok: true; value: T } | { ok: false; denied: 401 | 403 } | { ok: false; denied?: undefined; message: string };
-/** One bounded, validated admin read with the three outcomes every CRM panel has to handle. */
+/** One bounded, validated admin read with the three outcomes every admin panel has to handle. */
 export async function readJson<T>(request: ReturnType<typeof useAdminRequest>, path: string, schema: z.ZodType<T>, failure: string, body?: object, csrfToken?: string): Promise<ReadResult<T>> {
   try {
     const response = await request(path, body && csrfToken ? writeOptions(csrfToken, body) : { cache: "no-store", credentials: "same-origin" });
@@ -96,30 +84,3 @@ export async function readJson<T>(request: ReturnType<typeof useAdminRequest>, p
 export function writeOptions(csrfToken: string, body: object): RequestInit {
   return { method: "POST", cache: "no-store", credentials: "same-origin", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken }, body: JSON.stringify(body) };
 }
-
-/** Every active staff member with enquiry access, keyed by id, for assignee names and avatars. */
-export function useDirectory(onDenied: (status: number) => void) {
-  const request = useAdminRequest();
-  const [staff, setStaff] = useState<Map<string, EnquiryAssignee>>(new Map());
-  const denied = useRef(onDenied);
-  denied.current = onDenied;
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const found = new Map<string, EnquiryAssignee>();
-      let cursor: string | null = null;
-      for (let page = 0; page < 5; page++) {
-        const result: ReadResult<z.infer<typeof enquiryAssigneeListSchema>> = await readJson(request, `/api/admin/enquiries/assignees?limit=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, enquiryAssigneeListSchema, "Staff directory");
-        if (!active) return;
-        if (!result.ok) { if (result.denied) denied.current(result.denied); break; }
-        for (const item of result.value.items) found.set(item.id, item);
-        cursor = result.value.nextCursor;
-        if (!cursor) break;
-      }
-      if (active) setStaff(found);
-    })();
-    return () => { active = false; };
-  }, [request]);
-  return staff;
-}
-export const stageOptions = Object.entries(enquiryStageLabels) as Array<[EnquiryStage, string]>;

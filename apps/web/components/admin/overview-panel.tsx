@@ -4,7 +4,6 @@ import { ExternalLink } from "lucide-react";
 import type { StorefrontContent } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CrmSummary } from "./crm-summary";
 import type { StaffSession } from "./dashboard";
 import { PanelHeader } from "./kit";
 
@@ -23,10 +22,9 @@ function StatTile({ label, value, note }: { label: string; value: ReactNode; not
   );
 }
 
-export function OverviewPanel({ content, session, onExpired, version, publishedVersion, dirty }: {
+export function OverviewPanel({ content, session, version, publishedVersion, dirty }: {
   content: StorefrontContent;
   session: StaffSession;
-  onExpired: () => void;
   version: number | null;
   publishedVersion: number | null;
   dirty: boolean;
@@ -40,7 +38,6 @@ export function OverviewPanel({ content, session, onExpired, version, publishedV
         <StatTile label="Campaigns" value={content.campaigns.length} note="editable" />
         <StatTile label="Informational pages" value={content.pages.length} note={content.pages.length === 1 ? "page" : "pages"} />
       </div>
-      {session.user.canManageEnquiries === true && <div className="mt-8"><CrmSummary session={session} onExpired={onExpired} /></div>}
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card className="gap-3 py-5 shadow-xs">
           <CardHeader className="px-5"><CardTitle className="text-base"><h3>Publishing</h3></CardTitle></CardHeader>

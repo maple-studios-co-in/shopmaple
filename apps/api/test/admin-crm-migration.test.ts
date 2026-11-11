@@ -61,14 +61,6 @@ test("CRM migration backfills contacts from existing enquiries, maps reviewed to
     assert.equal(rerun.status, 0, `Migration SQL must be idempotent: ${rerun.stderr}`);
     assert.equal(Number((await db.$queryRawUnsafe<Array<{ count: bigint }>>(`SELECT count(*) AS count FROM "Contact"`))[0]!.count), 3);
     assert.deepEqual(await linked(), rows);
-    // An enquiry written by an old instance during a non-atomic swap has no contact: the re-runnable backfill links it.
-    const straggler = `enq_${randomUUID()}`;
-    await db.$executeRawUnsafe(`INSERT INTO "Enquiry" ("id","idempotencyHash","payloadHash","kind","name","email","phone","message","context","status","version","createdAt") VALUES ('${straggler}','i5','p','contact','Straggler','ASHA@example.invalid','','Synthetic','${context}','new',0,'2026-10-06T00:00:00Z')`);
-    const { backfillContacts } = await import("../src/contacts-backfill.js");
-    const first = await backfillContacts(db);
-    assert.deepEqual(first, { contactsCreated: 0, enquiriesLinked: 1 });
-    assert.equal((await linked()).find(row => row.id === straggler)?.contactId, asha.id, "the straggler joins Asha by email");
-    assert.deepEqual(await backfillContacts(db), { contactsCreated: 0, enquiriesLinked: 0 }, "a second run changes nothing");
     assert.equal(await db.followUpTask.count(), 0);
     // The status check constraint rejects the retired legacy value.
     await assert.rejects(db.$executeRawUnsafe(`UPDATE "Enquiry" SET "status"='reviewed' WHERE "id"='${ids[1]}'`), /check constraint|violates/i);

@@ -5,7 +5,6 @@ import { z } from "zod";
 import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
 import { isKeeriLeadKind, type KeeriLeadsConfig } from "./keeri-leads.js";
 import { HttpError } from "./cart.js";
-import { ensureContact } from "./contacts.js";
 const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
 export async function saveEnquiry(db:PrismaClient,raw:unknown,key:unknown,config:EnquiryDeliveryConfig|null=null,keeri:KeeriLeadsConfig|null=null):Promise<{created:boolean;receipt:EnquiryReceipt}>{
  const idempotencyHash=hash(z.uuid().parse(key));
@@ -18,8 +17,8 @@ export async function saveEnquiry(db:PrismaClient,raw:unknown,key:unknown,config
   return {created:true,receipt:receipt("enq_"+randomUUID())};
  try {
   const saved=await db.$transaction(async tx => {
-   const contactId=await ensureContact(tx,input);
-   const enquiry=await tx.enquiry.create({data:{id:"enq_"+randomUUID(),idempotencyHash,payloadHash,...input,contactId}});
+   // No store contact any more: Keeri holds the customer, so the enquiry is the only copy kept here.
+   const enquiry=await tx.enquiry.create({data:{id:"enq_"+randomUUID(),idempotencyHash,payloadHash,...input}});
    // A signup is a list entry rather than a person waiting for an answer: it does not email the team.
    if(config&&input.kind!=="newsletter") await tx.enquiryDelivery.create({data:{enquiryId:enquiry.id,configurationHash:config.fingerprint,nextAttemptAt:new Date()}});
    // A person waiting for an answer also becomes a Keeri lead; the local row stays as the fallback.

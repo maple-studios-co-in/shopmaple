@@ -18,7 +18,6 @@ async function setup(options: { role?: "editor" | "publisher"; canManageEnquirie
   const root = createRoot(container);
   globalThis.fetch = async (input) => {
     const path = String(input);
-    if (path.startsWith("/api/admin/crm/")) return Response.json({ stages: { new: 0, contacted: 0, quoted: 0, won: 0, lost: 0 }, overdueTasks: 0, dueTodayTasks: 0, newLastSevenDays: 0 });
     assert.equal(path, "/api/admin/content", `Unexpected request ${path}`);
     return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: options.publishedVersion === undefined ? 2 : options.publishedVersion, updatedAt: "2026-10-26T12:00:00Z" });
   };

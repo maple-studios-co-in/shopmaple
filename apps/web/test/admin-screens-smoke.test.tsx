@@ -27,7 +27,7 @@ const screens: [string, RegExp][] = [
   ["Policies & blogs", /^Policies & blogs$/],
   ["Category pages", /^Category pages$/],
   ["Media", /^Media library$/],
-  ["Enquiries", /^Customer enquiries$/],
+  ["Enquiries", /^Website enquiries$/],
   ["History", /^Revision history$/],
 ];
 
@@ -40,9 +40,7 @@ test("each screen renders its heading on the shell without raising an alert", as
     if (path === "/api/admin/content/revisions") return Response.json({ revisions: [{ id: "r1", version: 4, action: "save", actorEmail: "priya.menon@example.test", createdAt: "2026-10-26T12:00:00Z" }] });
     if (path.startsWith("/api/admin/media")) return Response.json({ assets: [], nextCursor: null });
     if (path.startsWith("/api/products?")) return Response.json({ products: [], total: 0, page: 1, limit: 20, mode: "preview", checkoutEnabled: false });
-    if (path.startsWith("/api/admin/crm/summary")) return Response.json({ stages: { new: 0, contacted: 0, quoted: 0, won: 0, lost: 0 }, overdueTasks: 0, dueTodayTasks: 0, newLastSevenDays: 0 });
-    if (path.startsWith("/api/admin/enquiries/assignees")) return Response.json({ items: [], nextCursor: null });
-    if (path.startsWith("/api/admin/enquiries")) return Response.json({ items: [], nextCursor: null });
+    if (path === "/api/admin/enquiries") return Response.json({ items: [], nextCursor: null, keeriLeadsUrl: "https://maplefurnishers.keeri.in/leads" });
     if (path === "/api/admin/instagram-feed") return Response.json({ configured: false, status: "not_configured", lastAttemptAt: null, lastSuccessAt: null, errorCode: null, tokenExpiresAt: null, dataAccessExpiresAt: null, posts: [] });
     assert.fail(`Unexpected request ${path}`);
   };

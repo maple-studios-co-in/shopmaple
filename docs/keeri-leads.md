@@ -1,6 +1,6 @@
 # Enquiries as Keeri leads
 
-Contact, project and bulk enquiries from the website can also be sent to Keeri as leads, so staff work them in the Keeri CRM. Newsletter signups and reviews never go to Keeri. The enquiry is always saved in the store first and stays in Admin → Enquiries as the fallback, whatever Keeri answers.
+Contact, project and bulk enquiries from the website are sent to Keeri as leads, and staff work them in the Keeri CRM: replies, assignment and follow-ups all happen there (the store's own CRM was retired on 11 November 2026, see [admin CRM (retired)](admin-crm.md)). Newsletter signups and reviews never go to Keeri. The enquiry is always saved in the store first and stays, read-only, in Admin → Enquiries, whatever Keeri answers.
 
 ## How it works
 
@@ -15,7 +15,7 @@ The email alert keeps going. Each cycle runs Keeri first, and an alert waits unt
 
 ## Store admin
 
-The enquiry's delivery panel shows the Keeri lead as pending, created, matched or failed, the attempts and last status code, and an "Open in Keeri" link once there is a lead. "Retry Keeri lead" brings forward a waiting retry, as "Retry notification" does for the email; both are audited.
+Admin → Enquiries is a read-only list headed "Website enquiries are handled in Keeri. Open a lead there to reply, assign or follow up.", linked to `{KEERI_ADMIN_ORIGIN}/leads`. Each row shows the reference, kind, time and the lead's state (pending, created, matched or failed) with "Open in Keeri" once there is a lead. The enquiry's delivery panel adds the attempts and last status code. "Retry Keeri lead" brings forward a waiting retry, as "Retry notification" does for the email; both are audited. A lead that has failed for good (a final refusal, or attempts or the 23-hour window used up) cannot be retried from the admin: add it in Keeri by hand from the enquiry's details.
 
 ## Configuration
 

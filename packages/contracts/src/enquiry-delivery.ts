@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { enquiryAdminIdSchema } from "./enquiry-admin";
+import { enquiryAdminIdSchema, keeriLeadStates, keeriLeadUrlSchema } from "./enquiry-admin";
 /** Which outbox row a staff retry is for; the staff email unless it names the Keeri lead. */
 export const enquiryDeliveryTargets = ["email", "keeri"] as const;
 export const enquiryDeliveryRetryInputSchema = z.object({
@@ -8,8 +8,6 @@ export const enquiryDeliveryRetryInputSchema = z.object({
 }).strict();
 const deliveryStatusSchema = z.enum(["queued", "sending", "retry_wait", "accepted", "failed", "uncertain"]);
 const deliveryErrorCodeSchema = z.enum(["rate_limited", "provider_busy", "provider_unavailable", "network_error", "invalid_response", "provider_rejected", "configuration_error", "idempotency_conflict", "configuration_changed", "retry_window_expired", "attempts_exhausted"]);
-/** What staff see of a lead: still being sent, a new Keeri lead, an existing one Keeri matched, or stopped. */
-export const keeriLeadStates = ["pending", "created", "matched", "failed"] as const;
 export const enquiryDeliveryResponseSchema = z.object({
   enquiryId: enquiryAdminIdSchema,
   enabled: z.boolean(),
@@ -35,7 +33,7 @@ export const enquiryDeliveryResponseSchema = z.object({
       errorCode: deliveryErrorCodeSchema.nullable(),
       canRetry: z.boolean(),
       /** The lead in the Keeri admin, once Keeri has it. */
-      leadUrl: z.string().max(600).regex(/^https:\/\/[a-z0-9.-]{1,253}(?::[0-9]{1,5})?\/leads\/[A-Za-z0-9_:-]{1,200}$/).nullable(),
+      leadUrl: keeriLeadUrlSchema.nullable(),
     }).strict().nullable(),
   }).strict().optional(),
 }).strict();

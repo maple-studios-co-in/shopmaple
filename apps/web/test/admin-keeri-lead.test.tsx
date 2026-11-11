@@ -9,8 +9,8 @@ const { EnquiryInbox } = await import("../components/admin/enquiry-inbox");
 const container = document.getElementById("root")!;
 const page = document.body;
 const session = { user: { id: "staff", email: "staff@example.invalid", role: "editor" as const, canManageEnquiries: true }, csrfToken: "a".repeat(64) };
-const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", status: "new", version: 0, assignedToId: null, contactId: null, name: "Synthetic", product: "", createdAt: "2026-10-26T00:00:00.000Z" };
-const detail = { ...row, email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, reviews: [] };
+const row = { id: "enq_00000000-0000-4000-8000-000000000001", kind: "contact", createdAt: "2026-10-26T00:00:00.000Z", keeri: null };
+const detail = { id: row.id, kind: row.kind, name: "Synthetic", email: "synthetic@example.invalid", phone: "", message: "Synthetic enquiry", context: { product: "", variant: "", sku: "", pincode: "" }, createdAt: row.createdAt };
 const email = { status: "accepted", version: 2, attempts: 1, nextAttemptAt: null, acceptedAt: "2026-10-26T00:01:00.000Z", errorCode: null, canRetry: false };
 const lead = { state: "pending", status: "queued", version: 0, attempts: 0, nextAttemptAt: "2026-10-26T00:00:00.000Z", acceptedAt: null, errorCode: null, canRetry: false, leadUrl: null };
 const response = (keeri: unknown) => ({ enquiryId: row.id, enabled: true, delivery: email, ...(keeri === undefined ? {} : { keeri }) });
@@ -21,8 +21,7 @@ function transport(delivery: (path: string, options?: RequestInit) => unknown) {
   return async (url: string | URL | Request, options?: RequestInit) => {
     const path = String(url);
     if (path.includes("/delivery")) return Response.json(delivery(path, options));
-    if (path.includes("/assignees") || path.includes("/activity")) return Response.json({ items: [], nextCursor: null });
-    return Response.json(path.includes(row.id) ? detail : { items: [row], nextCursor: null });
+    return Response.json(path.includes(row.id) ? detail : { items: [row], nextCursor: null, keeriLeadsUrl: null });
   };
 }
 async function mount() { const root = createRoot(container); await act(async () => root.render(<EnquiryInbox session={session} onExpired={() => {}}/>)); await click("Open enquiry"); return root; }
