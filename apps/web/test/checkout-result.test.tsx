@@ -11,7 +11,8 @@ import CheckoutPage from "../app/checkout/page";
 import { estimatedArrival } from "../app/checkout/delivery-estimate";
 import { formatDayRange } from "../lib/account/format";
 
-// The screens after Razorpay's window: payment received (Figma 392:1752) and payment not taken (392:1806).
+// The screens after Razorpay's window: payment received (Figma 392:1752), payment not taken (392:1806) and payment
+// awaiting confirmation (459:1337).
 const dom = new JSDOM("<!doctype html><div id='root'></div>", { url: "http://localhost:3000/checkout" });
 Object.assign(globalThis, { window: dom.window, self: dom.window, document: dom.window.document,
   localStorage: dom.window.localStorage, sessionStorage: dom.window.sessionStorage,
@@ -85,7 +86,7 @@ function paidRoute(quote: Quote, orderNumber: string | null = "MF-10482") {
     return new Response(null, { status: 404 });
   };
 }
-async function mount(route: (call: Call) => Response | Promise<Response>, extra: { keepStorage?: boolean; account?: Account } = {}) {
+async function mount(route: (call: Call) => Response | Promise<Response>, extra: { keepStorage?: boolean; account?: Account; confirmationWindowMs?: number } = {}) {
   if (!extra.keepStorage) { sessionStorage.clear(); localStorage.clear(); }
   razorpay = null;
   (window as any).Razorpay = FakeRazorpay;
@@ -101,7 +102,7 @@ async function mount(route: (call: Call) => Response | Promise<Response>, extra:
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider>
-    <CheckoutFlow options={options} pollIntervalMs={5} account={extra.account} />
+    <CheckoutFlow options={options} pollIntervalMs={5} account={extra.account} confirmationWindowMs={extra.confirmationWindowMs} />
   </ShopProvider></AppRouterContext.Provider>));
   return { calls, cleanup: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
@@ -137,6 +138,21 @@ async function completePayment() {
 }
 const orderCalls = (calls: Call[]) => calls.filter((c) => c.path === `/api/checkout/${attemptId}/payment-order`);
 const quoteCalls = (calls: Call[]) => calls.filter((c) => c.path === "/api/checkout" && c.method === "POST");
+const statusCalls = (calls: Call[]) => calls.filter((c) => c.path === `/api/checkout/${attemptId}` && c.method === "GET");
+/** A checkout whose payment Razorpay reports but the store confirms only once `confirm()` is called. */
+function slowRoute(quote: Quote) {
+  let confirmedNow = false;
+  const route = (call: Call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(payable(quote));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(payable(quote), { status: 202 });
+    if (call.path === `/api/checkout/${attemptId}`) return Response.json(confirmedNow ? confirmed(quote) : payable(quote));
+    return new Response(null, { status: 404 });
+  };
+  return { route, confirm: () => { confirmedNow = true; } };
+}
+const reportPayment = () =>
+  act(async () => { providerWindow().options.handler({ razorpay_payment_id: "pay_pending1", razorpay_order_id: "order_result1", razorpay_signature: "d".repeat(64) }); });
 
 test("the success screen tells the order number, the email and the estimate, and links to the order and the shop", async () => {
   cartLines = [chair];
@@ -231,7 +247,8 @@ test("the pieces' photos survive the cart that capture empties, through a reload
     await openPayment();
     await act(async () => { providerWindow().options.handler({ razorpay_payment_id: "pay_result2", razorpay_order_id: "order_result1", razorpay_signature: "e".repeat(64) }); });
     await settle(2);
-    assert.match(text(), /Confirming your payment/);
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    assert.match(text(), /We’re checking your payment\./);
     assert.ok(sessionStorage.getItem(storageKey), "the attempt in flight survives a reload");
   } finally { await cleanup(); }
   assert.deepEqual(cartLines, [], "capture emptied the cart");
@@ -378,6 +395,74 @@ test("from the failure screen a reload resumes the same attempt, and a payment c
   } finally { await cleanup(); }
 });
 
+test("a payment Razorpay reported but the store has not confirmed shows the pending screen; asking again checks at once", async () => {
+  cartLines = [chair];
+  const quote = quoteFor([chair], "included");
+  const { route, confirm } = slowRoute(quote);
+  const { calls, cleanup } = await mount(route);
+  try {
+    await openPayment();
+    await reportPayment();
+    await settle(2);
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    assert.match(text(), /Payment in progressWe’re checking your payment\.Your payment is awaiting confirmation from your bank\. Your order details are saved\./);
+    assert.match(text(), /Awaiting confirmationPayment amount · ₹1,750Please don’t pay again while we verify this transaction\. We’ll email you as soon as the payment status is confirmed\./);
+    // Before Maple's number exists, the reference is the attempt's.
+    assert.match(text(), /Payment reference · PAY-0B8E1C3A/);
+    assert.match(card(), /^Your order is on hold\./);
+    assert.match(card(), /Payment pending\s*₹1,750/);
+    assert.equal(link("Contact support")?.getAttribute("href"), "/contact?product=Payment+PAY-0B8E1C3A#contact-enquiry");
+    assert.ok(document.activeElement?.hasAttribute("data-checkout-result-heading"), "the heading takes focus after Razorpay's window");
+    assert.match(document.querySelector<HTMLImageElement>(".checkout-result-icon")!.getAttribute("src")!, /payment-pending\.svg$/);
+
+    const before = statusCalls(calls).length;
+    await act(async () => button("Check payment status")!.click());
+    await settle(2);
+    assert.ok(statusCalls(calls).length > before, "the store is asked again");
+    assert.match(text(), /Still awaiting confirmation at .+\. We’ll keep checking\./);
+    assert.equal(result()?.dataset.paymentResult, "pending");
+
+    confirm();
+    await settle(6);
+    assert.equal(result()?.dataset.paymentResult, "success", "the watch carries on and shows the confirmed order");
+    assert.equal(orderCalls(calls).length, 1, "never a second payment");
+  } finally { await cleanup(); }
+});
+
+test("when confirmation outlasts the checkout's wait, the pending screen stays and asking again watches once more", async () => {
+  cartLines = [chair];
+  const quote = quoteFor([chair], "excluded");
+  const { route, confirm } = slowRoute(quote);
+  const { calls, cleanup } = await mount(route, { confirmationWindowMs: 40 });
+  try {
+    await openPayment();
+    await reportPayment();
+    await settle(12);
+    assert.equal(result()?.dataset.paymentResult, "pending", "the pending screen, not a notice");
+    assert.doesNotMatch(text(), /Still awaiting confirmation at/, "nothing was asked yet");
+    const stopped = statusCalls(calls).length;
+    await settle(4);
+    assert.equal(statusCalls(calls).length, stopped, "the watch has stopped");
+
+    await act(async () => button("Check payment status")!.click());
+    await settle(2);
+    assert.ok(statusCalls(calls).length > stopped, "asking again checks the store");
+    assert.match(text(), /Still awaiting confirmation at /);
+
+    // The new watch runs out too; a confirmation after it shows once the buyer asks again.
+    await settle(10);
+    const ranOut = statusCalls(calls).length;
+    confirm();
+    await settle(4);
+    assert.equal(statusCalls(calls).length, ranOut, "nothing more is asked after the new watch");
+    assert.equal(result()?.dataset.paymentResult, "pending");
+    await act(async () => button("Check payment status")!.click());
+    await settle(4);
+    assert.equal(result()?.dataset.paymentResult, "success");
+    assert.equal(orderCalls(calls).length, 1, "never a second payment");
+  } finally { await cleanup(); }
+});
+
 /** The checkout page as a local development server renders it while the API keeps checkout closed. */
 async function renderPreview(preview: string) {
   const previous = globalThis.fetch;
@@ -396,7 +481,7 @@ async function renderPreview(preview: string) {
   }
 }
 
-test("on a local development server, ?preview=success, success-multi and failure show the screens with the sample order", async () => {
+test("on a local development server, ?preview=success, success-multi, failure and pending show the screens with the sample order", async () => {
   const success = await renderPreview("success");
   assert.match(success.html, /data-payment-result="success"/);
   assert.match(success.words, /Thank you, Aditi\. Your order is confirmed\. We’ve sent the details to aditi\.sharma@example\.com\./);
@@ -421,5 +506,12 @@ test("on a local development server, ?preview=success, success-multi and failure
   assert.match(failure.html, /src="\/account\/payment-failed\.svg"/);
 
   assert.match((await renderPreview("failure-dismissed")).words, /Payment wasn’t completed\. .*Payment not completed/);
+
+  const pending = await renderPreview("pending");
+  assert.match(pending.html, /data-payment-result="pending"/);
+  assert.match(pending.words, /Payment in progress We’re checking your payment\. Your payment is awaiting confirmation from your bank\. Your order details are saved\. Awaiting confirmation Payment amount · ₹26,400/);
+  assert.match(pending.words, /Please don’t pay again while we verify this transaction\. We’ll email you as soon as the payment status is confirmed\. Check payment status Contact support .*Payment reference · PAY-10482/);
+  assert.match(pending.words, /Your order is on hold\. .*Nola Accent Chair Natural cane · Oak finish · Quantity 1 Subtotal ₹24,900 Delivery ₹1,500 Payment pending ₹26,400 Inclusive of applicable taxes/);
+  assert.match(pending.html, /src="\/account\/payment-pending\.svg"/);
   assert.match((await renderPreview("other")).words, /Checkout is not open in this preview/);
 });

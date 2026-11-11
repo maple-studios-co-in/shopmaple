@@ -7,8 +7,8 @@ import { firstName, formatDayRange } from "@/lib/account/format";
 import { money } from "@/lib/format";
 import { ProductImage } from "./product-image";
 
-// The screens after Razorpay's window (Figma 392:1752 "Payment Success" and 392:1806 "Payment Failure"): the message
-// beside the order card, inside the checkout shell. Styles: styles/checkout-result.css.
+// The screens after Razorpay's window (Figma 392:1752 "Payment Success", 392:1806 "Payment Failure" and 459:1337 "Payment
+// Pending"): the message beside the order card, inside the checkout shell. Styles: styles/checkout-result.css.
 
 /** Why the failure screen shows: a try failed in Razorpay's window, or the window was closed without one. */
 export type PaymentShortfall = "failed" | "dismissed";
@@ -187,6 +187,62 @@ export function PaymentFailure({ attempt, reason, photos, busy, notice, onRetry,
         </p>
       </div>
       <OrderCard title="Your bag is saved." attempt={attempt} photos={photos} totalLabel="Total to pay" photoSizes="(max-width: 999px) 60vw, 20vw" />
+    </section>
+  );
+}
+
+/** "Contact support" opens the contact form at the enquiry, about this payment. */
+export const paymentSupportHref = (reference: string) => `/contact?${new URLSearchParams({ product: `Payment ${reference}` })}#contact-enquiry`;
+
+/**
+ * Payment made but not yet confirmed (Figma 459:1337): Razorpay's window reported a payment and the store is waiting for
+ * the bank or Razorpay to confirm it, or confirmation took longer than the checkout waits. The attempt, its stock hold and
+ * the details stay, and the buyer is asked not to pay twice. "Check payment status" asks the store again at once
+ * (`onCheck`); the store emails the buyer when the payment is confirmed.
+ */
+export function PaymentPending({ attempt, photos, checking, checkedAt, onCheck }: {
+  attempt: CheckoutAttempt;
+  photos: ResultPhotos;
+  /** True while a check the buyer asked for is under way. */
+  checking: boolean;
+  /** When the buyer's last check came back still pending; null before any. */
+  checkedAt: Date | null;
+  onCheck: () => void;
+}) {
+  const id = useId();
+  const reference = paymentReference(attempt);
+  return (
+    <section className="checkout-result" data-payment-result="pending" aria-labelledby={`${id}-title`}>
+      <div className="checkout-result-message">
+        {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
+        <img className="checkout-result-icon" src="/account/payment-pending.svg" alt="" width={64} height={64} />
+        <p className="checkout-result-eyebrow">Payment in progress</p>
+        <h1 id={`${id}-title`} className="checkout-result-title" tabIndex={-1} data-checkout-result-heading="">
+          We’re checking your payment.
+        </h1>
+        <p className="checkout-result-lead">Your payment is awaiting confirmation from your bank. Your order details are saved.</p>
+        <p className="checkout-result-pill">Awaiting confirmation</p>
+        <p className="checkout-result-figure">{`Payment amount · ${money(attempt.amountPaise)}`}</p>
+        <p className="checkout-result-help">
+          Please don’t pay again while we verify this transaction. We’ll email you as soon as the payment status is confirmed.
+        </p>
+        <div className="checkout-result-actions">
+          <button type="button" className="account-cta" data-fill-button="" disabled={checking} aria-busy={checking || undefined} onClick={onCheck}>
+            {checking ? "Checking…" : "Check payment status"}
+          </button>
+          <Link className="account-cta" data-variant="quiet" data-fill-button="outline" href={paymentSupportHref(reference)}>Contact support</Link>
+        </div>
+        {/* The answer to the buyer's own check, read out when it comes back still pending. */}
+        <p className="checkout-result-checked" role="status">
+          {checkedAt && !checking
+            ? `Still awaiting confirmation at ${checkedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}. We’ll keep checking.`
+            : ""}
+        </p>
+        <p className="checkout-result-ref">
+          Payment reference · <span className="checkout-result-reference">{reference}</span>
+        </p>
+      </div>
+      <OrderCard title="Your order is on hold." attempt={attempt} photos={photos} totalLabel="Payment pending" photoSizes="(max-width: 999px) 60vw, 20vw" />
     </section>
   );
 }

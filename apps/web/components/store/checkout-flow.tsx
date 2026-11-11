@@ -14,7 +14,7 @@ import {
 } from "@/app/checkout/checkout-client";
 import { openHostedPayment } from "@/app/checkout/razorpay";
 import { CheckoutDetails, type CheckoutDefaults } from "./checkout-details";
-import { PaymentFailure, PaymentSuccess, type PaymentShortfall, type ResultPhotos } from "./checkout-result";
+import { PaymentFailure, PaymentPending, PaymentSuccess, type PaymentShortfall, type ResultPhotos } from "./checkout-result";
 
 type Stage =
   | { kind: "details" }
@@ -198,6 +198,12 @@ function CheckoutStages({
   const [paid, setPaid] = useState(false);
   // Set the moment the provider reports the buyer completed payment; never cleared by a timeout.
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+  // The pending screen's "Check payment status": a check under way, when the last one came back still pending, and a
+  // count whose change starts the confirmation watch afresh.
+  const [checking, setChecking] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [checks, setChecks] = useState(0);
+  const checkRequested = useRef(false);
   // The pieces' photos by variant id, kept from the cart when payment starts: capture empties the cart.
   const [photos, setPhotos] = useState<ResultPhotos>({});
   const [now, setNow] = useState(() => Date.now());
@@ -363,14 +369,20 @@ function CheckoutStages({
   const shown = useRef(stage.kind);
   useEffect(() => {
     if (shown.current === stage.kind) return;
+    const previous = shown.current;
     shown.current = stage.kind;
-    if (!["resuming", "details", "quote", "paying"].includes(stage.kind)) top.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
+    // The pending screen stays up while its watch times out and is asked again (confirming ↔ review): the buyer stays
+    // where they are, on the button they pressed.
+    const waiting = ["confirming", "review"];
+    const stays = waiting.includes(previous) && waiting.includes(stage.kind);
+    if (!waiting.includes(stage.kind)) setCheckedAt(null);
+    if (!stays && !["resuming", "details", "quote", "paying"].includes(stage.kind)) top.current?.scrollIntoView?.({ block: "start", behavior: "smooth" });
     if (stage.kind === "details" && focusPrimary.current) {
       focusPrimary.current = false;
       top.current?.querySelector<HTMLElement>("[data-checkout-primary]")?.focus();
     }
     // A result screen follows Razorpay's window, whose closing leaves focus nowhere: its heading takes it.
-    if (stage.kind === "confirmed" || stage.kind === "failed")
+    if (!stays && ["confirmed", "failed", ...waiting].includes(stage.kind))
       top.current?.querySelector<HTMLElement>("[data-checkout-result-heading]")?.focus({ preventScroll: true });
   }, [stage.kind, top]);
   useEffect(() => {
@@ -466,11 +478,19 @@ function CheckoutStages({
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = Date.now() + confirmationWindowMs;
+    // A check the buyer asked for is answered once the store replies, whatever it says.
+    const settle = () => {
+      if (!checkRequested.current) return;
+      checkRequested.current = false;
+      setChecking(false);
+      setCheckedAt(new Date());
+    };
     const tick = async () => {
       if (cancelled) return;
       try {
         const current = await client.status(confirmingId);
         if (cancelled) return;
+        settle();
         if (current.paid) setPaid(true);
         if (current.fulfillmentStatus === "confirmed" && current.orderReference) {
           setStage({ kind: "confirmed", attempt: current });
@@ -481,6 +501,8 @@ function CheckoutStages({
           return;
         }
       } catch (error) {
+        if (cancelled) return;
+        settle();
         if (error instanceof CheckoutClientError && error.kind === "closed") {
           setStage({ kind: "closed" });
           return;
@@ -498,7 +520,15 @@ function CheckoutStages({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [confirmingId, client, pollIntervalMs, confirmationWindowMs]);
+    // `checks` changes when the buyer asks again: the watch starts afresh, with a check at once and a new window.
+  }, [confirmingId, checks, client, pollIntervalMs, confirmationWindowMs]);
+  /** "Check payment status" on the pending screen: ask the store now, and watch for confirmation for another window. */
+  function checkAgain(attempt: CheckoutAttempt) {
+    checkRequested.current = true;
+    setChecking(true);
+    if (stage.kind === "confirming") setChecks((count) => count + 1);
+    else setStage({ kind: "confirming", attempt });
+  }
 
   if (stage.kind === "closed") return <CheckoutClosed />;
   if (stage.kind === "resuming")
@@ -524,10 +554,15 @@ function CheckoutStages({
   if (stage.kind === "failed") return failure(stage.attempt, stage.reason);
   // Behind a window opened again from the failure screen, that screen stays, its buttons waiting.
   if (stage.kind === "paying" && stage.retry) return failure(stage.attempt, stage.retry);
+  // A payment made but not yet confirmed (Figma 459:1337), while the checkout watches for it and after its watch ran out.
+  const pending = (attempt: CheckoutAttempt) => (
+    <PaymentPending attempt={attempt} photos={resultPhotos()} checking={checking} checkedAt={checkedAt} onCheck={() => checkAgain(attempt)} />
+  );
   if (stage.kind === "review") {
     const received = paid || stage.attempt.paid;
     const submitted = received || paymentSubmitted;
     const lapsed = stage.attempt.state === "paid_hold_lapsed";
+    if (stage.reason === "timeout" && submitted && !received && !lapsed) return pending(stage.attempt);
     return (
       <Notice
         title={received ? "Your payment has been received" : submitted ? "Your payment is still being confirmed" : "This checkout needs a check"}
@@ -560,13 +595,10 @@ function CheckoutStages({
     );
   }
   if (stage.kind === "confirming") {
+    if (!paid) return pending(stage.attempt);
     return (
-      <Notice title={paid ? "Payment received" : "Confirming your payment"}>
-        <p role="status" className="checkout-notice-text">
-          {paid
-            ? "Confirming your order with our team. This usually takes a moment."
-            : "Waiting for the payment provider to confirm your payment. Please keep this page open."}
-        </p>
+      <Notice title="Payment received">
+        <p role="status" className="checkout-notice-text">Confirming your order with our team. This usually takes a moment.</p>
       </Notice>
     );
   }

@@ -264,10 +264,12 @@ test("a payment the buyer completed is never described as unpaid when confirmati
     await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_slow", razorpay_order_id: "order_slow", razorpay_signature: "f".repeat(64) }); });
     await settle(12);
-    assert.match(text(), /still confirming/i);
-    assert.match(text(), /don.t need to pay again|do not pay again/i);
+    // The pending screen (Figma 459:1337): still being checked, never unpaid, and the buyer asked not to pay twice.
+    assert.equal(document.querySelector("[data-payment-result]")?.getAttribute("data-payment-result"), "pending");
+    assert.match(text(), /We’re checking your payment\..*Awaiting confirmation/);
+    assert.match(text(), /don.t pay again/i);
     assert.doesNotMatch(text(), /No payment has been taken/);
-    assert.match(text(), new RegExp(attemptId));
+    assert.match(text(), new RegExp(`Payment reference · PAY-${attemptId.slice(0, 8).toUpperCase()}`));
     assert.ok(!button(pay));
   } finally { await cleanup(); }
 });
@@ -289,7 +291,7 @@ test("a refresh while confirming resumes the same attempt, then empties the cart
     await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_resume", razorpay_order_id: "order_resume", razorpay_signature: "f".repeat(64) }); });
     await settle(4);
-    assert.match(text(), /confirming/i);
+    assert.equal(document.querySelector("[data-payment-result]")?.getAttribute("data-payment-result"), "pending", "the payment awaits confirmation");
     assert.ok(sessionStorage.getItem(storageKey), "the in-flight attempt survives a reload");
   } finally { await first.cleanup(); }
   confirmed = true;
