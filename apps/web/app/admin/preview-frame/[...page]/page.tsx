@@ -16,6 +16,8 @@ import "@/styles/our-story.css";
 import "@/styles/contact-page.css";
 // And Bulk Enquiry (Figma 298:924, owner 10 Nov 2026).
 import "@/styles/bulk-enquiry.css";
+// And the collection pages, Nimbus and Terra (Figma 311:548, 311:921; owner 10 Nov 2026).
+import "@/styles/collection-landing.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {

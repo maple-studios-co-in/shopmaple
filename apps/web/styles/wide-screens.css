@@ -29,9 +29,6 @@
   .page-section.cart-page {
     max-width: calc(820px + 2 * var(--wide-gutter));
   }
-  .landing-nimbus-bento {
-    max-width: none;
-  }
   .maple-footer-contact {
     padding-inline: var(--wide-gutter);
   }

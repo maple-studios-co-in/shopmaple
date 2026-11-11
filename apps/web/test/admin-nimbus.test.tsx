@@ -51,49 +51,51 @@ for (const conflict of [false, true]) test(`staff edit and position Nimbus secti
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Our Story page title"]')?.value,"Our Story");
     await selectPage("nimbus");
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus page title"]')?.value,"The Nimbus Collection");
-    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus introduction heading"]')?.value,"Introducing nimbus");
-    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus Bedroom tile title"]')?.value,"Bedroom");
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Nimbus point of view heading"]')?.value,"Comfort is\nthe starting point.");
+    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus room link 3"]')?.value,"Bedroom");
     const panels=[...container.querySelectorAll<HTMLDetailsElement>('[aria-label="Nimbus page content"] details')];
-    assert.equal(panels.length,8);
+    assert.equal(panels.length,10,"one panel per region of the redesign");
     for(const panel of panels){assert.equal(panel.open,false);await act(async()=>panel.querySelector<HTMLElement>("summary")!.click());assert.equal(panel.open,true);}
     for(const [label,value] of [
       ["Nimbus page title","Nimbus, made for you"],
-      ["Nimbus introduction heading","Meet Nimbus"],
-      ["Nimbus introduction body","Comfort for your home."],
-      ["Nimbus Bedroom tile title","Rest with Nimbus"],
-      ["Nimbus origin body","<img src=x onerror=alert(1)> A considered collection."],
-      ["Nimbus principles heading","Our principles"],
-      ["Nimbus Cloud comfort title","Comfort first"],
-      ["Nimbus Living room slide label","Living with Nimbus"],
-      ["Nimbus series heading","Explore the series"],
-      ["Nimbus project heading","Tell us your idea"],
-      ["Nimbus Customization promise","Made around you"],
+      ["Nimbus point of view heading","Meet Nimbus"],
+      ["Nimbus point of view text","Comfort for your home."],
+      ["Nimbus room link 3","Rest with Nimbus"],
+      ["Nimbus origin text","<img src=x onerror=alert(1)> A considered collection."],
+      ["Nimbus feeling heading","Our principles"],
+      ["Nimbus feeling card 1 title","Comfort first"],
+      ["Nimbus material note 1","Layered upholstery"],
+      ["Nimbus edit heading","Explore the series"],
+      ["Nimbus consultation heading","Tell us your idea"],
+      ["Nimbus promise 1","Made around you, always"],
     ]) await fill(label!,value!);
-    const move=button("Move Nimbus Introduction up");
+    const move=button("Move Nimbus Room links up");
     move.focus();await act(async()=>move.click());
     assert.equal(document.activeElement,move,"Section movement keeps keyboard focus");
     assert.equal(move.disabled,true,"First section cannot move further up");
-    const hero=container.querySelector<HTMLInputElement>('[aria-label="Show Nimbus Hero film"]')!;
+    const hero=container.querySelector<HTMLInputElement>('[aria-label="Show Nimbus Opening"]')!;
     await act(async()=>hero.click());
     await selectPage("story");
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Our Story page title"]')?.value,"Our Story");
     await selectPage("nimbus");
-    assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus introduction heading"]')?.value,"Meet Nimbus","Switching pages must preserve edits");
+    assert.equal(container.querySelector<HTMLTextAreaElement>('[aria-label="Nimbus point of view heading"]')?.value,"Meet Nimbus","Switching pages must preserve edits");
     await act(async()=>button("Save draft").click());
     assert.ok(saved);assert.equal(saved.expectedVersion,4);
     const page=saved.content.nimbusPage;
     assert.equal(page.title,"Nimbus, made for you");
-    assert.deepEqual(page.sections.slice(0,2),[{key:"intro",enabled:true},{key:"hero",enabled:false}]);
-    assert.equal(page.sections.length,9);
-    assert.equal(page.intro.body,"Comfort for your home.");
-    assert.equal(page.roomTiles.find((tile:any)=>tile.key==="bedroom").title,"Rest with Nimbus");
+    assert.deepEqual(page.sections.slice(0,2),[{key:"room-nav",enabled:true},{key:"hero",enabled:false}]);
+    assert.equal(page.sections.length,10);
+    assert.equal(page.philosophy.heading,"Meet Nimbus");
+    assert.equal(page.philosophy.body,"Comfort for your home.");
+    assert.equal(page.roomNav[2].label,"Rest with Nimbus");
     assert.equal(page.origin.body,"<img src=x onerror=alert(1)> A considered collection.");
-    assert.equal(page.principles.heading,"Our principles");
-    assert.equal(page.principles.items.find((item:any)=>item.key==="comfort").title,"Comfort first");
-    assert.equal(page.roomSlides.find((slide:any)=>slide.key==="living").label,"Living with Nimbus");
-    assert.equal(page.series.heading,"Explore the series");
-    assert.equal(page.project.heading,"Tell us your idea");
-    assert.equal(page.promises.find((item:any)=>item.key==="custom").title,"Made around you");
+    assert.equal(page.feeling.heading,"Our principles");
+    assert.equal(page.feeling.items[0].title,"Comfort first");
+    assert.equal(page.material.notes[0].label,"Layered upholstery");
+    assert.equal(page.pieces.heading,"Explore the series");
+    assert.equal(page.consultation.heading,"Tell us your idea");
+    assert.equal(page.promise[0].label,"Made around you, always");
+    assert.equal(page.intro,undefined,"the redesign's copy, not the original template's");
     assert.equal(container.querySelector<HTMLInputElement>('[aria-label="Nimbus page title"]')?.value,"Nimbus, made for you","Conflict must preserve local input");
     assert.match(container.textContent??"",conflict?/another editor|changed|conflict/i:/Draft saved/);
     assert.match(container.textContent??"",/Published version 2/);

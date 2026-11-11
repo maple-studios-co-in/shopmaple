@@ -6,16 +6,15 @@ import { JSDOM } from "jsdom";
 import Home from "../app/page";
 import ProductPage from "../app/products/[handle]/page";
 import { CategoryLanding, CategoryProducts } from "../components/category-landing";
-import { NimbusLanding } from "../components/category-nimbus";
+import { NimbusCollection } from "../components/nimbus-collection";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductCard } from "../components/product-card";
 import { RelatedProducts } from "../components/store/related-products";
 import { ProductDetail } from "../components/product-detail";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { defaultCategoryPages } from "../lib/category-content-defaults";
-import { resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
+import { nimbusPieceHandles, resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
 import categories from "../data/landing-categories.json";
-import nimbus from "../data/landing-nimbus.json";
 import source from "../data/landing-catalog.json";
 
 const card = (handle: string) => ({ id: handle, handle, title: `Live ${handle}`, image: "https://example.com/chair.jpg", pricePaise: 1234500, compareAtPaise: 1500000, priceFrom: true, otherOptionsOnRequest: true, optionCount: 2, category: null, optionNames: [] as string[], optionThumbs: [] as never[] });
@@ -186,17 +185,18 @@ test("failed category catalogue remains an error instead of masquerading as sour
   await fixture(async () => { await assert.rejects(CategoryProducts({ handles: [Object.keys(source)[0]!] })); }, { unavailable: true });
 });
 
-test("Nimbus reads only series handles and hidden series reads none", async () => {
-  const handles = nimbus.sections.find(s => s.key === "product_list_fTpw38")!.handles;
+// The Nimbus redesign (Figma 311:548, 10 Nov 2026) reads its edit's eight pieces in one compact batch.
+test("Nimbus reads only its edit's handles and a hidden edit reads none", async () => {
+  const handles = [...nimbusPieceHandles];
   await fixture(async requests => {
-    const doc = await documentFor(<NimbusLanding />);
-    assert.deepEqual(links(doc), handles.map(h => `/products/${h}`));
+    const doc = await documentFor(<NimbusCollection site={defaultStorefrontContent} />);
+    assert.deepEqual([...doc.querySelectorAll("[data-collection-piece] h3 a")].map(n => n.getAttribute("href")), handles.map(h => `/products/${h}`));
     assert.deepEqual(requests.map(u => [u.pathname, u.searchParams.get("handles")]), [["/api/catalogue/cards", handles.join(",")]]);
   });
   const content = resolveNimbusPageContent();
-  content.sections.find(s => s.key === "series")!.enabled = false;
+  content.sections.find(s => s.key === "pieces")!.enabled = false;
   await fixture(async requests => {
-    await documentFor(<NimbusLanding content={content} />);
+    await documentFor(<NimbusCollection site={{ ...defaultStorefrontContent, nimbusPage: content }} />);
     assert.equal(requests.length, 0);
   });
 });

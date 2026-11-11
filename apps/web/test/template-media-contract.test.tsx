@@ -52,15 +52,26 @@ test("template fallback resolution preserves original assets and caller labels w
   original.image = "/media/mutated.webp";
   assert.equal(resolveTemplateMedia("home-workshop-poster").image, copyOf("https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600"));
   assert.equal(resolveTemplateMedia("nimbus-room-living", [], "Evening lounge").alt, "Evening lounge");
-  assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "Living Room");
+  // The Nimbus redesign (10 Nov 2026) gave the living room tile's slot to its sofas card.
+  assert.equal(resolveTemplateMedia("nimbus-room-living").alt, "A cream modular sectional around a round travertine table in a sunlit room above the clouds");
   const override = [{ key: "home-newsletter" as const, image: "/media/override.webp", alt: "Updated room" }];
   const selected = resolveTemplateMedia("home-newsletter", override, "Ignored fallback");
   assert.deepEqual(selected, { key: "home-newsletter", image: "/media/override.webp", alt: "Updated room" });
   selected.alt = "Mutated";
   assert.equal(override[0]!.alt, "Updated room");
   // Our Story's redesign (10 Nov 2026) traded the film poster for the belief photo and added seven chapter photos; the
-  // contact redesign added two photos and the Bulk Enquiry redesign five (54 + 2 + 5).
-  assert.equal(templateMediaSlots.length, 61);
+  // contact redesign added two photos, the Bulk Enquiry redesign five and the Terra Collection fourteen (54 + 2 + 5 + 14);
+  // the Nimbus redesign retired its project photo (- 1); its room slideshow's photos stay for the homepage hero.
+  assert.equal(templateMediaSlots.length, 74);
+  assert.deepEqual(templateMediaSlots.filter(slot => slot.group === "Nimbus").map(slot => [slot.key, slot.image]), [
+    ["nimbus-hero-poster", "/media/nimbus-collection/hero.webp"], ["nimbus-origin", "/media/nimbus-collection/origin.webp"],
+    ["nimbus-craft-poster", "/media/nimbus-collection/detail.webp"], ["nimbus-room-living", "/media/nimbus-collection/sofas.webp"],
+    ["nimbus-room-collection", "/media/nimbus-collection/accent-chairs.webp"], ["nimbus-room-dining", "/media/nimbus-collection/tables.webp"],
+    ["nimbus-room-bedroom", "/media/nimbus-collection/beds.webp"],
+    ["nimbus-slide-living", copyOf("https://shop.maplefurnishers.com/cdn/shop/files/livingroom.png?v=1779440214")],
+    ["nimbus-slide-bedroom", copyOf("https://shop.maplefurnishers.com/cdn/shop/files/NIMBUS_bedroom.png?v=1779439068")],
+    ["nimbus-slide-dining", copyOf("https://shop.maplefurnishers.com/cdn/shop/files/nimbus_dinning.png?v=1779439066")],
+  ]);
   assert.deepEqual(templateMediaSlots.filter(slot => slot.key.startsWith("bulk-")).map(slot => [slot.key, slot.image]), [
     ["bulk-hero", "/media/bulk-enquiry/hero.webp"], ["bulk-step-meet", "/media/bulk-enquiry/step-meet.webp"],
     ["bulk-step-design", "/media/bulk-enquiry/step-design.webp"], ["bulk-step-deliver", "/media/bulk-enquiry/step-deliver.webp"],

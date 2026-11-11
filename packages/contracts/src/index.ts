@@ -240,6 +240,7 @@ export type { CheckoutInput, QuoteRequest, QuoteSnapshot, Promotion } from "./ch
 
 export * from "./category-content";
 export * from "./story-content";
+export * from "./collection-landing";
 export * from "./nimbus-content";
 export * from "./enquiry-admin";
 
