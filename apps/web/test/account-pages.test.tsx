@@ -22,7 +22,7 @@ const accountsOff = () => Response.json({ code: "NOT_FOUND", message: "Not found
 const address = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru",
   state: "29", pin: "560001", phone: "+919876543210", isDefault: true };
 const summary = { number: "MF-10482", placedAt: "2026-11-10T06:30:00.000Z", status: "confirmed", statusLabel: "Confirmed", itemCount: 1, totalPaise: 2640000,
-  firstItem: { title: "Nola Accent Chair", variant: "Natural cane · Oak finish", imageUrl: "https://cdn.shopify.com/s/files/1/0001/nola.jpg" } };
+  firstItem: { title: "Nola Accent Chair", variant: "Natural cane · Oak finish", imageUrl: "https://store.maplefurnishers.com/media/keeri/nola_01.webp" } };
 const overview = { customer: { name: "Aditi Sharma", email: "aditi.sharma@example.com", phone: "+919876543210" }, counts: { orders: 3, addresses: 2 },
   latestOrder: summary, defaultAddress: address };
 const detail = {

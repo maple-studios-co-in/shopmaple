@@ -85,15 +85,13 @@ function OrderMedia({ photo }: { photo: string | null }) {
 
 /**
  * The product's first photo as a data URL cut to its slot, or null when it can't be read. next/og draws with sharp when
- * sharp is installed, and sharp's SVG renderer leaves an embedded WebP blank (Shopify serves WebP), so the photo is
+ * sharp is installed, and sharp's SVG renderer leaves an embedded WebP blank (Keeri's photos are WebP), so the photo is
  * handed over as a JPEG. Without sharp, next/og draws with resvg, which reads the original.
  */
 async function productPhoto(source: string | undefined): Promise<string | null> {
   if (!source || !URL.canParse(source)) return null;
   const url = new URL(source);
   if (url.protocol !== "https:") return null;
-  // Shopify's CDN scales on request; the slot is 504px wide.
-  if (url.hostname === "cdn.shopify.com") url.searchParams.set("width", String(photoWidth * 2));
   try {
     const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const type = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "";

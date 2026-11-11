@@ -25,7 +25,7 @@ const storageKey = "maple-checkout-attempt-v1";
 type Line = { variantId: string; title: string; variantTitle: string; pricePaise: number; quantity: number; image: string };
 const chair: Line = { variantId: "keeri:maple:chair-v", title: "Oak Chair", variantTitle: "Natural", pricePaise: 150000, quantity: 1, image: "/media/home/category-accent-chair.webp" };
 const table: Line = { variantId: "keeri:maple:table-v", title: "Teak Side Table", variantTitle: "Default Title", pricePaise: 90000, quantity: 2,
-  image: "https://cdn.shopify.com/s/files/1/0000/0001/files/teak-table.jpg" };
+  image: "https://store.maplefurnishers.com/media/keeri/teak-table_01.webp" };
 // What /api/cart answers; capture empties it.
 let cartLines: Line[] = [];
 const cartBody = () => ({

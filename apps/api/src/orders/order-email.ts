@@ -106,17 +106,6 @@ function webUrl(raw: string | undefined) {
     return null;
   }
 }
-// Shopify's CDN resizes and re-encodes by URL (the storefront's convention: isShopifyImage in apps/web/lib/image-loading).
-const shopifyImage = /^https:\/\/(?:cdn\.shopify\.com\/s\/files\/|shop\.maplefurnishers\.com\/cdn\/shop\/)/;
-/** The slot's 120×150 at twice the size, cropped to fill it, as a baseline JPEG: Outlook for Windows shows no WebP. */
-function emailSized(url: URL) {
-  const sized = new URL(url.href);
-  sized.searchParams.set("width", "240");
-  sized.searchParams.set("height", "300");
-  sized.searchParams.set("crop", "center");
-  sized.searchParams.set("format", "jpg");
-  return sized.href;
-}
 /** For an unquoted CSS url(): the characters that would end it are percent-encoded. */
 const cssUrl = (href: string) => href.replace(/[\s'"()\\]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 
@@ -212,9 +201,7 @@ const phoneStyles = `@media screen and (max-width:600px){
 function photoCell(raw: string | undefined, title: string) {
   const box = `width:120px;height:150px;background-color:${sand};`;
   const url = webUrl(raw);
-  if (url && shopifyImage.test(url.href))
-    return `<td class="m-photo" width="120" height="150" valign="top" bgcolor="${sand}" style="${box}"><img class="m-photo" src="${esc(emailSized(url))}" width="120" height="150" alt="${esc(title)}" style="display:block;${box}border:0;outline:none;font-family:${redHat};font-size:12px;color:${muted};"></td>`;
-  // Not resizable by URL (Keeri serves WebP only), so a background cropped to fill the tile: Gmail, Apple Mail and
+  // Keeri photos are WebP and not resizable by URL, so a background cropped to fill the tile: Gmail, Apple Mail and
   // Outlook.com draw it, and Outlook for Windows, which has neither WebP nor CSS backgrounds, keeps the plain tile.
   if (url)
     return `<td class="m-photo" width="120" height="150" valign="top" bgcolor="${sand}" role="img" aria-label="${esc(title)}" style="${box}background-image:url(${esc(cssUrl(url.href))});background-size:cover;background-position:center center;background-repeat:no-repeat;font-size:0;line-height:0;">&nbsp;</td>`;

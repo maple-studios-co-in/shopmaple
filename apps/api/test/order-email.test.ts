@@ -30,7 +30,7 @@ function render(changes: Partial<OrderEmailInput> = {}) {
     attempt: { id: attemptId, amountPaise: 2640000, capturedAt: new Date("2026-11-10T05:30:00.000Z") },
     quote: quoteWith(),
     orderNumber: "MF-10482",
-    photos: new Map([[nola.variantId, "https://cdn.shopify.com/s/files/1/0001/files/nola.jpg?v=3"]]),
+    photos: new Map([[nola.variantId, "https://store.maplefurnishers.com/media/keeri/nola_01.webp"]]),
     origin,
     ...changes,
   });
@@ -114,14 +114,14 @@ test("every string from the customer or the catalogue is escaped", () => {
       shippingAddress: { ...address, line1: `<img src=x onerror=alert(1)>`, line2: `Flat 'B' & "C"`, city: "Pune <b>" },
       items: [{ ...nola, title: `Chair <b>bold</b> & "quoted"`, variantTitle: `Oak's <i>finish</i>` }],
     }),
-    photos: new Map([[nola.variantId, `https://cdn.shopify.com/s/files/1/0001/files/a"b'c.jpg?x=<y>`]]),
+    photos: new Map([[nola.variantId, `https://store.maplefurnishers.com/media/keeri/a"b'c.webp?x=<y>`]]),
   });
   for (const raw of ["<script", "<img src=x", "<b>", "<i>", `"quoted"`, "Flat 'B'", `a"b'c`, "<y>"])
     assert.ok(!html.includes(raw), `unescaped: ${raw}`);
   for (const escaped of [
     "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;", "&lt;img src=x onerror=alert(1)&gt;", "Flat &#39;B&#39; &amp; &quot;C&quot;",
     "Pune &lt;b&gt;", "Chair &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;", "Oak&#39;s &lt;i&gt;finish&lt;/i&gt;",
-    'alt="Chair &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;"',
+    'aria-label="Chair &lt;b&gt;bold&lt;/b&gt; &amp; &quot;quoted&quot;"',
   ])
     assert.ok(html.includes(escaped), `not escaped as expected: ${escaped}`);
   // The plain-text part is not HTML and keeps the words as typed.
@@ -137,17 +137,17 @@ test("several pieces repeat the piece row; a missing photo leaves a plain tile, 
   const { html, text } = render({
     quote: quoteWith({ items: pieces, subtotalPaise: 4340050 }),
     photos: new Map([
-      [pieces[0]!.variantId, "https://shop.maplefurnishers.com/cdn/shop/files/nola.png?v=9"],
+      [pieces[0]!.variantId, "https://store.maplefurnishers.com/media/keeri/nola_09.webp"],
       [pieces[2]!.variantId, "https://store.maplefurnishers.com/media/keeri/lamp_01.webp"],
     ]),
   });
   assert.equal(count(html, "YOUR PIECE"), 3);
   for (const words of [">Nola Accent Chair<", ">Ari Side Table<", "Walnut<br>Quantity 2", ">₹15,000<", ">Lumen Lamp<", ">₹3,500.50<"])
     assert.ok(html.includes(words), words);
-  // Shopify's photo as a 240×300 JPEG crop; Keeri's WebP as a filled background Outlook skips; the second piece a tile.
-  assert.equal(count(html, '<img class="m-photo"'), 1);
-  assert.ok(html.includes('src="https://shop.maplefurnishers.com/cdn/shop/files/nola.png?v=9&amp;width=240&amp;height=300&amp;crop=center&amp;format=jpg"'));
-  assert.equal(count(html, "background-image:url("), 1);
+  // Keeri's WebP photos as filled backgrounds Outlook skips; the second piece a tile.
+  assert.equal(count(html, '<img class="m-photo"'), 0);
+  assert.equal(count(html, "background-image:url("), 2);
+  assert.ok(html.includes("background-image:url(https://store.maplefurnishers.com/media/keeri/nola_09.webp);background-size:cover;"));
   assert.ok(html.includes("background-image:url(https://store.maplefurnishers.com/media/keeri/lamp_01.webp);background-size:cover;"));
   assert.ok(html.includes('role="img" aria-label="Lumen Lamp"'));
   assert.match(html, /<td class="m-photo" width="120" height="150" valign="top" bgcolor="#f1f0e9" style="width:120px;height:150px;background-color:#f1f0e9;font-size:0;line-height:0;">&nbsp;<\/td><td class="m-gap"[^>]*>\n<p[^>]*>YOUR PIECE<\/p>\n<p class="m-title"[^>]*>Ari Side Table</);
@@ -236,7 +236,7 @@ test("the payment-received email keeps its own wording in the same shell and nev
 
 test("the HTML is built for mail apps: tables, a fluid 680px column, Outlook's fixed one, and phone rules", () => {
   const { html } = render();
-  assert.doesNotMatch(html, /display:\s*(?:flex|grid)|<script|position:/i);
+  assert.doesNotMatch(html, /display:\s*(?:flex|grid)|<script|(?<![\w-])position:/i);
   assert.ok(html.includes('style="width:100%;max-width:680px;margin:0 auto;"'));
   assert.ok(html.includes('<!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="680" align="center"><tr><td><![endif]-->'));
   assert.ok(html.includes("@media screen and (max-width:600px){"));
@@ -258,7 +258,7 @@ test("the HTML is built for mail apps: tables, a fluid 680px column, Outlook's f
 
 test("an order with the most pieces a quote allows stays under Gmail's clipping size and the send limit", () => {
   const items = Array.from({ length: 50 }, (_, n) => ({ ...nola, variantId: `keeri:maple:piece-${n}`, title: `A rather long piece name, number ${n}` }));
-  const photos = new Map(items.map((item) => [item.variantId, `https://cdn.shopify.com/s/files/1/0001/files/${item.variantId.slice(12)}.jpg?v=1`]));
+  const photos = new Map(items.map((item) => [item.variantId, `https://store.maplefurnishers.com/media/keeri/${item.variantId.slice(12)}.webp`]));
   const { html, text } = render({ quote: quoteWith({ items }), photos });
   assert.equal(count(html, "YOUR PIECE"), 50);
   assert.ok(html.length < 102_000, `${html.length} characters`);

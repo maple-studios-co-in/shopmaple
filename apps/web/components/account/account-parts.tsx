@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { AccountAddress } from "@shopmaple/contracts/account";
-import { isShopifyImage, shopifySized } from "@/lib/image-loading";
 import { stateName } from "@/lib/account/format";
 
 // Pieces the account pages share (Figma 392:1255, 392:1338, 392:1432). Styles: styles/account.css, scoped to `.account`.
@@ -19,12 +18,12 @@ export function AccountHeading({ title, lead }: { title: string; lead?: ReactNod
 
 /** A piece's photo, filling its frame; a plain frame when the catalogue has none. Only this site's own files and https
  * photos are drawn. The piece's name is printed beside it, so the photo itself is decorative. */
-export function OrderPhoto({ src, slot }: { src: string | null; slot: number }) {
+export function OrderPhoto({ src }: { src: string | null; slot?: number }) {
   const safe = src && (src.startsWith("https://") || (src.startsWith("/") && !src.startsWith("//"))) ? src : null;
   if (!safe) return <span className="account-photo" data-empty="" aria-hidden="true" />;
   return (
     // eslint-disable-next-line @next/next/no-img-element -- catalogue photos from any of the store's hosts, sized by CSS
-    <img className="account-photo" src={isShopifyImage(safe) ? shopifySized(safe, slot) : safe} alt="" loading="lazy" decoding="async" />
+    <img className="account-photo" src={safe} alt="" loading="lazy" decoding="async" />
   );
 }
 

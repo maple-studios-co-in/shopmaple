@@ -21,7 +21,7 @@ const nola = {
   title: "Nola",
   description: "",
   category: "chairs",
-  images: ["https://cdn.shopify.com/s/files/1/0001/nola.webp"],
+  images: ["https://store.maplefurnishers.com/media/keeri/nola_01.webp"],
   published: true,
   source: "keeri",
   sourceUpdatedAt: "2026-11-01T00:00:00.000Z",

@@ -29,7 +29,7 @@ const quote: QuoteSnapshot = {
   delivery: { source: "carrier", carrierPriced: true, fallbackReason: null,
     carrier: { provider: "shiprocket", courierId: 51, courierName: "Delhivery Surface", estimatedDays: 14, chargeWeightGrams: 12000 } },
 };
-const photo = "https://cdn.shopify.com/s/files/1/0001/files/nola-oak.jpg?v=17";
+const photo = "https://store.maplefurnishers.com/media/keeri/nola-oak_17.webp";
 const attemptId = "11111111-2222-4333-8444-555555555555";
 const captured = {
   id: attemptId, cartId: "cart-1", merchantScope: "maple-store", idempotencyKey: "key-1", receipt: "receipt-1", snapshot: quote,
@@ -188,8 +188,8 @@ test("customer_confirmed goes out as HTML with a plain-text part, under the same
   assert.match(html, />10 NOVEMBER 2026</);
   assert.match(html, />24–28 Nov 2026</);
   assert.ok(html.includes(`href="https://store.maple.example.com/orders/${attemptId}"`), "the order status page");
-  // The catalogue photo, as Shopify's 240×300 JPEG crop.
-  assert.ok(html.includes('src="https://cdn.shopify.com/s/files/1/0001/files/nola-oak.jpg?v=17&amp;width=240&amp;height=300&amp;crop=center&amp;format=jpg"'));
+  // The catalogue photo, Keeri's WebP as a filled background.
+  assert.ok(html.includes("background-image:url(https://store.maplefurnishers.com/media/keeri/nola-oak_17.webp);background-size:cover;"));
   assert.doesNotMatch(html + text, /SO-1001|pay_unit1|Rs\./, "Keeri's number and the payment id stay internal; money is in rupees");
   for (const line of ["Order number: MF-10482", "Order date: 10 November 2026", "Nola Accent Chair", "Quantity 1 · ₹24,900",
     "Total paid: ₹26,400", "Estimated delivery: 24–28 Nov 2026", "14 Palm Avenue, Apartment 402", "Bengaluru, Karnataka 560001"])
