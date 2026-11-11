@@ -26,9 +26,10 @@ function app(mediaRoot: string | null = root) {
 const film = (bytes: Buffer, type = "video/mp4", http = request(app())) => http.post("/api/admin/media/films").set("Origin", origin).set("Cookie", `shop_admin=${token}`)
   .set("X-CSRF-Token", digest("csrf:" + token)).set("Content-Type", type).set("X-Media-Label", encodeURIComponent("Workshop film")).send(bytes);
 const publish = (content: unknown) => db.$transaction(tx => prepareMediaForPublication(tx, content, root));
-const binary = (res: import("http").IncomingMessage, done: (error: Error | null, body: Buffer) => void) => {
+/** Collects a response body as bytes (supertest's own parsers would read a film as text). */
+const binary = ((res: import("http").IncomingMessage, done: (error: Error | null, body: Buffer) => void) => {
   const chunks: Buffer[] = []; res.on("data", chunk => chunks.push(chunk)); res.on("end", () => done(null, Buffer.concat(chunks)));
-};
+}) as unknown as Parameters<ReturnType<ReturnType<typeof request>["get"]>["parse"]>[0];
 before(async () => {
   root = await mkdtemp(join(tmpdir(), "shop-film-test-"));
   const admin = await db.shopAdmin.create({ data: { email: `films-${randomBytes(6).toString("hex")}@example.invalid`, passwordHash: "unused-test-password-hash", role: "publisher" } }); staffId = admin.id;
