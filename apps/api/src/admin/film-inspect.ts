@@ -89,7 +89,8 @@ async function inspectMp4(file: FileHandle, size: number): Promise<FilmFacts> {
   const index = await readAt(file, moov.offset, moov.size);
   if (index.length !== moov.size) throw new FilmInvalid();
   for (const box of boxes(index, moov.header, index.length)) {
-    if (box.type === "mvhd" && box.end - box.start >= 20) {
+    // A version 1 header holds 64-bit times, so it needs 32 bytes to reach the duration; version 0 needs 20.
+    if (box.type === "mvhd" && box.end - box.start >= (index[box.start] === 1 ? 32 : 20)) {
       const version = index[box.start]!;
       const timescale = index.readUInt32BE(box.start + (version === 1 ? 20 : 12));
       const duration = version === 1 ? (box.end - box.start >= 32 ? Number(index.readBigUInt64BE(box.start + 24)) : 0) : index.readUInt32BE(box.start + 16);

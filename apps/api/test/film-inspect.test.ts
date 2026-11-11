@@ -47,6 +47,15 @@ test("a cut-off or padded film is not a film", async () => {
   await assert.rejects(inspect(ftypOnly, "mp4"), FilmInvalid);
 });
 
+test("a version 1 movie header too short to hold its times is skipped, not a server error", async () => {
+  const box = (type: string, body: Buffer) => { const head = Buffer.alloc(8); head.writeUInt32BE(body.length + 8); head.write(type, 4, "latin1"); return Buffer.concat([head, body]); };
+  const tkhd = Buffer.alloc(84); tkhd.writeUInt32BE(640 * 65536, 76); tkhd.writeUInt32BE(360 * 65536, 80);
+  const mvhd = Buffer.alloc(20); mvhd[0] = 1; // version 1, cut off before its timescale and duration end
+  const film = Buffer.concat([box("ftyp", Buffer.from("isomisom", "latin1")), box("moov", Buffer.concat([box("trak", box("tkhd", tkhd)), box("mvhd", mvhd)])), box("mdat", Buffer.alloc(64))]);
+  const facts = await inspect(film, "mp4");
+  assert.equal(facts.durationMs, null); assert.equal(facts.width, 640);
+});
+
 test("byte ranges follow RFC 9110 for one range and fall back to the whole file otherwise", () => {
   assert.deepEqual(byteRange("bytes=0-99", 1000), { start: 0, end: 99 });
   assert.deepEqual(byteRange("bytes=0-", 1000), { start: 0, end: 999 });

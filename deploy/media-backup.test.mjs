@@ -133,6 +133,17 @@ test('CLI works when invoked through a release symlink', async t => {
   assert.equal(run.stdout.trim(), '{"files":0,"bytes":0}');
 });
 
+test('uploads still arriving, or left by a restart mid-upload, are left out of the backup rather than failing it', t => {
+  const f = fixture(t), a = add(f.source);
+  writeFileSync(join(f.source, '.film-0b6f5c1e-3a52-4c8e-9d7e-2f1a6b9c4d10.part'), 'half a film', { mode: 0o600 });
+  writeFileSync(join(f.source, '.upload-0b6f5c1e-3a52-4c8e-9d7e-2f1a6b9c4d11.tmp'), 'half an image', { mode: 0o600 });
+  assert.deepEqual(backupMedia(f.source, f.bundle), { files: 1, bytes: a.bytes.length });
+  assert.deepEqual(restoreMediaBackup(f.bundle, f.restored), { files: 1, bytes: a.bytes.length });
+  assert.deepEqual(readdirSync(f.restored), [a.name]);
+  writeFileSync(join(f.source, '.other'), 'x', { mode: 0o600 });
+  assert.throws(() => backupMedia(f.source, join(f.root, 'second')), /Invalid media filename/, 'anything else unexpected still stops the backup');
+});
+
 test('films (MP4 and WebM up to 80 MiB) back up and restore byte for byte beside images', t => {
   const f = fixture(t), image = add(f.source);
   const films = [Buffer.alloc(80 * 1024 * 1024, 7), Buffer.from('a small webm film')].map((bytes, i) => {
