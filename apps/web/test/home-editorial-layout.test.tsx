@@ -44,7 +44,7 @@ test("editorial restyling preserves the complete original testimonial, without t
     ]);
     assert.equal(doc.querySelector("figcaption")?.textContent, "Anjali Gupta — Verified Customer");
     assert.equal(doc.querySelector(".home-review-stars"), null, "the stars were typed in, not data; the Impact Layout frame has none");
-    assert.equal(doc.querySelectorAll("video").length, 0, "the film was on Shopify and films cannot be uploaded yet");
+    assert.equal(doc.querySelectorAll("video").length, 0, "the film was on Shopify, and no library film is chosen here");
     assert.equal(doc.querySelector(".home-testimonial img"), null, "no poster still without an upload");
   } finally { dom.window.close(); }
 });

@@ -39,7 +39,7 @@ test("the testimonial leads with one large quote and its author; the full review
   const testimonial = section(await renderHome(showing("testimonial")), "testimonial");
   assert.equal(text(testimonial.querySelector("[data-quote-text]")), "Getting our sofa made by Maple was a completely hassle-free experience.");
   assert.equal(text(testimonial.querySelector("[data-quote-author]")), "Anjali Gupta — Verified Customer");
-  // The customer film was on Shopify and left the store (11 Nov 2026); films cannot be uploaded yet.
+  // The customer film was on Shopify and left the store (11 Nov 2026); without a film chosen in the library there is none.
   assert.equal(testimonial.querySelector("video"), null, "no film below the quote");
   assert.equal(testimonial.querySelectorAll("blockquote p").length, 4, "and so does the full review");
   assert.equal(testimonial.querySelector(".home-review-stars"), null, "no star rating: the admin has no rating to show");

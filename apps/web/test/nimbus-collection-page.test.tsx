@@ -77,7 +77,7 @@ function assertDesign(doc: Document) {
   assert.equal(discover.textContent?.replace("→", "").trim(), "Discover Nimbus");
   assert.equal(discover.getAttribute("href"), "#nimbus-pieces", "the button glides to the edit");
   assert.ok(doc.getElementById("nimbus-pieces"), "the edit carries the anchor");
-  // No film link: Nimbus's films were Shopify files, and films cannot be uploaded yet (owner, 11 Nov 2026).
+  // No film link: Nimbus's films were Shopify files (owner, 11 Nov 2026), and the design's document chooses no library film.
   assert.equal(hero.querySelector("[data-collection-film]"), null);
 
   const rooms = region(doc, "room-nav");
