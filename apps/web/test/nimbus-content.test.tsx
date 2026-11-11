@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
+import { shown } from "./support/rendered-src";
+import { cardFixture } from "./support/catalogue-fixtures";
 import { test } from "node:test";
 import React, { act, Children, isValidElement, type ReactNode } from "react";
 import { renderToReadableStream, renderToStaticMarkup } from "react-dom/server";
@@ -7,9 +8,11 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import * as nimbusRoute from "../app/nimbus-collection/page";
 import { NimbusLanding, MaplePromises } from "../components/category-nimbus";
+import { NimbusWithArtwork } from "../components/artwork-pages";
 import { CategorySlideshow } from "../components/category-controls";
 import { CategoryValues } from "../components/category-landing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { ShopProvider } from "../components/shop-provider";
 
 const nimbusEdit = () => ({
   title: "Nimbus for your home",
@@ -43,13 +46,16 @@ const nimbusEdit = () => ({
     { key: "delivery", title: "At your door" }, { key: "custom", title: "Made for you" },
   ],
 });
+/** Each listed Keeri product's own photo, as the catalogue's cards carry it. */
+const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
 async function withResponse(body: unknown, run: () => Promise<void>) {
   const previous = globalThis.fetch;
   const requests: { url: string; cache?: RequestCache }[] = [];
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, cache: init?.cache });
-    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ products: [], published: true });
+    if (new URL(url).pathname === "/api/catalogue/cards") return Response.json({ published: true,
+      products: (new URL(url).searchParams.get("handles") ?? "").split(",").map(handle => ({ ...cardFixture(handle), image: photo(handle) })) });
     if (!url.endsWith("/api/content/storefront")) throw new Error("Unexpected endpoint");
     if (body === "offline") throw new Error("offline");
     return body === null ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json(body);
@@ -61,7 +67,8 @@ async function withResponse(body: unknown, run: () => Promise<void>) {
   } finally { globalThis.fetch = previous; }
 }
 async function renderPage() {
-  return new JSDOM(await new Response(await renderToReadableStream(await nimbusRoute.default())).text()).window.document;
+  // The series rail draws real product cards now (no fallback cards), which read the shop's cart context.
+  return new JSDOM(await new Response(await renderToReadableStream(<ShopProvider>{await nimbusRoute.default()}</ShopProvider>)).text()).window.document;
 }
 async function metadata() {
   return "generateMetadata" in nimbusRoute
@@ -72,7 +79,7 @@ function regions(doc: Document) {
   return [...doc.querySelector(".landing-nimbus")!.children].map(n => n.className);
 }
 
-test("Nimbus defaults preserve Shopify copy, element order, media and enquiry-only products", async () => {
+test("Nimbus defaults keep their copy and element order, with Keeri photos for the artwork and only listed products", async () => {
   await withResponse(null, async () => {
     const doc = await renderPage();
     assert.equal(doc.querySelector("h1")?.textContent, "The Nimbus Collection");
@@ -81,10 +88,18 @@ test("Nimbus defaults preserve Shopify copy, element order, media and enquiry-on
     assert.match(doc.querySelector(".landing-nimbus-origin")?.textContent ?? "", /cloud\.\n\nNimbus was shaped/);
     assert.equal(doc.querySelector(".landing-nimbus-principles h2")?.textContent, "THE NIMBUS PRINCIPLES");
     assert.deepEqual([...doc.querySelectorAll(".landing-values h3")].map(n => n.textContent), ["Cloud Like Comfort", "Soft Silhouettes", "Airy Luxury", "Modern Spaces"]);
-    assert.deepEqual(regions(doc), ["sr-only", "landing-video landing-nimbus-hero", "landing-nimbus-intro home-container", "landing-nimbus-bento", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-slideshow", "landing-series home-container", "landing-products home-products home-container", "landing-project home-container", "landing-promises home-container"]);
-    assert.equal(doc.querySelectorAll(".landing-source-product").length, 12);
-    assert.equal(doc.querySelector('.landing-source-product a[href^="/products/"]'), null);
-    assert.ok(doc.querySelector('.landing-source-product a[href^="/contact?product="]'));
+    // The films were on Shopify: the hero and the rooms grid's large tile are stills of Keeri products.
+    assert.deepEqual(regions(doc), ["sr-only", "landing-video landing-still landing-nimbus-hero", "landing-nimbus-intro home-container", "landing-nimbus-bento", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-slideshow", "landing-series home-container", "landing-products home-products home-container", "landing-project home-container", "landing-promises home-container"]);
+    assert.equal(doc.querySelector("video"), null);
+    assert.equal(shown(doc.querySelector(".landing-nimbus-hero img")?.getAttribute("src")), photo("geometric-grotto"));
+    assert.equal(shown(doc.querySelector(".landing-nimbus-bento > [data-nimbus-still] img")?.getAttribute("src")), photo("aether-table"));
+    assert.equal(shown(doc.querySelector(".landing-nimbus-origin img")?.getAttribute("src")), photo("virelle"));
+    assert.equal(shown(doc.querySelector(".landing-project img")?.getAttribute("src")), photo("mela"));
+    assert.equal(doc.querySelector(".landing-values img"), null, "the principles' icons were Shopify files");
+    assert.equal(doc.querySelector(".landing-promises img"), null, "the promises' icons were Shopify files");
+    assert.equal(doc.querySelectorAll(".landing-source-product").length, 0, "no fallback cards");
+    assert.equal(doc.querySelectorAll(".landing-products [data-card-name]").length, 12, "the twelve series pieces, now Keeri products");
+    assert.ok(doc.querySelector('.landing-products [data-card-name][href="/products/avelon"]'), "a retired series piece's Keeri replacement (aeris-living-room-set → avelon)");
     assert.equal((await metadata()).title, "The Nimbus Collection");
   });
 });
@@ -103,18 +118,18 @@ test("published Nimbus copy renders safely with selected order and stable artwor
     assert.equal(doc.querySelector(".landing-nimbus-principles h2")?.textContent, "What matters");
     assert.equal(doc.querySelector(".landing-values h3")?.textContent, "Room to live");
     assert.equal(doc.querySelector(".landing-values p")?.textContent, "Space for you.");
-    assert.equal(shown(doc.querySelector(".landing-values img")?.getAttribute("src")), copyOf("files/Maple_Banner_12.svg"));
+    assert.equal(doc.querySelector(".landing-values img"), null);
     assert.equal(doc.querySelector(".landing-series p")?.textContent, "Our collection");
     assert.equal(doc.querySelector(".landing-series h2")?.textContent, "Explore the series");
     assert.equal(doc.querySelector(".landing-project h2")?.textContent, "Tell us your plans");
     assert.equal(doc.querySelector(".landing-project p")?.textContent, "We are here to help.");
     assert.equal(doc.querySelector(".landing-promises span")?.textContent, "Our assurance");
-    assert.equal(shown(doc.querySelector(".landing-promises img")?.getAttribute("src")), copyOf("files/Maple_Banner_5.svg"));
+    assert.equal(doc.querySelector(".landing-promises img"), null);
     const tiles = [...doc.querySelectorAll(".landing-nimbus-tiles a")];
     assert.deepEqual(tiles.map(n => n.getAttribute("href")), ["/collections/dining-room-nimbus", "/collections/bedroom-nimbus", "/collections/living-room-nimbus", "/collections/nimbus"]);
     assert.deepEqual(tiles.map(n => n.querySelector("h3")?.textContent), ["Gather here", "Rest here", "Unwind here", undefined]);
-    assert.deepEqual(tiles.map(n => shown(n.querySelector("img")?.getAttribute("src"))), ["Chairs.svg", "ChatGPT_Image_Apr_24_2026_03_29_31_AM.png", "Untitled_design_6.svg", "Chairs_1.png"].map(file => copyOf(`files/${file}`)));
-    assert.equal(shown(tiles[3]!.querySelector("source")?.getAttribute("srcset")), copyOf("files/Chairs_3.png"));
+    // Each room tile shows a Keeri Nimbus product's photo until staff upload their own.
+    assert.deepEqual(tiles.map(n => shown(n.querySelector("img")?.getAttribute("src"))), ["radiance-table", "elara-bed", "alpine", "virelle-chair"].map(photo));
     assert.deepEqual(regions(doc), ["sr-only", "landing-project home-container", "landing-nimbus-intro home-container", "landing-media-content landing-nimbus-origin", "landing-nimbus-principles", "landing-nimbus-bento", "landing-slideshow", "landing-promises home-container", "landing-series home-container", "landing-products home-products home-container"]);
     assert.equal((await metadata()).title, "Nimbus for your home");
   });
@@ -157,21 +172,19 @@ function slideshow(node: ReactNode): React.ReactElement | undefined {
 test("reordered renamed Nimbus rooms keep each desktop/mobile pair through carousel navigation", async () => {
   await withResponse({ version: 2, content: { ...defaultStorefrontContent, nimbusPage: nimbusEdit() } }, async () => {
     const page = await nimbusRoute.default();
-    const island = slideshow((NimbusLanding as (props: unknown) => React.ReactElement)(page.props));
+    const landing = await (NimbusWithArtwork as (props: unknown) => Promise<React.ReactElement>)(page.props);
+    const island = slideshow((NimbusLanding as (props: unknown) => React.ReactElement)(landing.props));
     assert.ok(island);
     const dom = new JSDOM('<!doctype html><div id="root"></div>');
     Object.assign(globalThis, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
     const root = createRoot(document.getElementById("root")!);
     try {
       await act(async () => root.render(island));
-      for (const [label, desktop, mobile] of [
-        ["Shared meals", "nimbus_dinning.png", "WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg"],
-        ["Slow evenings", "livingroom.png", "WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg"],
-        ["Restful nights", "NIMBUS_bedroom.png", "bedroom.png"],
-      ]) {
+      // Each room's Keeri stand-in photo serves both crops until staff upload a desktop and a mobile picture.
+      for (const [label, product] of [["Shared meals", "meridian-table"], ["Slow evenings", "aurevo"], ["Restful nights", "altura-table"]]) {
         assert.equal(document.querySelector("picture img")?.getAttribute("alt"), label);
-        assert.equal(shown(document.querySelector("picture img")!.getAttribute("src")!), copyOf(`files/${desktop}`));
-        assert.equal(shown(document.querySelector("picture source")!.getAttribute("srcset")!), copyOf(`files/${mobile}`));
+        assert.equal(shown(document.querySelector("picture img")!.getAttribute("src")!), photo(product!));
+        assert.equal(shown(document.querySelector("picture source")!.getAttribute("srcset")!), photo(product!));
         await act(async () => document.querySelector<HTMLButtonElement>('button[aria-label="Next room"]')!.click());
       }
     } finally { await act(async () => root.unmount()); dom.window.close(); }

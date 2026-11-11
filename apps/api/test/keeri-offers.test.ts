@@ -4,7 +4,6 @@ import { productSchema } from "@shopmaple/contracts";
 import { adaptKeeriExportV2 } from "../src/keeri.js";
 import { planCatalogueUnion } from "../src/catalogue-union.js";
 import { buildKeeriQuery, fetchKeeriExport, KeeriFetchError } from "../src/keeri-fetch.js";
-import { shopifyFixture } from "./fixtures/shopify-admin.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";
 
 const offer = { label: "15% off", code: "DIWALI15", startsAt: "2026-10-20T00:00:00.000Z", endsAt: "2026-11-20T00:00:00.000Z" };
@@ -12,7 +11,7 @@ function fixtures() {
   const k = v2Fixture();
   k.publicMedia = [];
   k.models[0]!.variants[0]!.sku = "CHAIR-OAK";
-  return { s: shopifyFixture(), k };
+  return { k };
 }
 
 test("the store asks Keeri for the offers level, the product-page level plus each model's offer", () => {
@@ -61,15 +60,22 @@ test("an offer that is not Keeri's shape fails the export rather than showing a 
   }
 });
 
-test("a listing merged from a Keeri model takes that model's offer, and the product contract keeps it", () => {
-  const { s, k } = fixtures();
+test("a former Shopify listing takes its Keeri model's offer, and the product contract keeps it", () => {
+  const { k } = fixtures();
   (k.models[0] as any).offer = offer;
-  const plan = planCatalogueUnion(s, k, "maple");
-  assert.equal(plan.report.mergedModels, 1);
+  const existing = {
+    products: [productSchema.parse({ id: "preview-101", handle: "real-chair", title: "Real chair", description: "", category: "chairs", images: [], published: true,
+      source: "shopify-preview", sourceUpdatedAt: "2026-10-25T09:00:00Z",
+      variants: [{ id: "preview-201", title: "Oak", sku: null, pricePaise: null, compareAtPaise: null, available: false, stockPolicy: "unverified" }] })],
+    productBindings: [{ source: "keeri:maple", externalId: "keeri:maple:model1", targetId: "preview-101" }],
+    variantBindings: [{ source: "keeri:maple", externalId: "keeri:maple:variant1", targetId: "preview-201" }],
+  };
+  const plan = planCatalogueUnion(k, "maple", existing);
+  assert.equal(plan.report.formerShopifyListings, 1);
   const merged = plan.products[0]!;
-  assert.equal(merged.id, "preview-101", "the Shopify listing");
+  assert.equal(merged.id, "preview-101", "the former listing's store id");
   assert.deepEqual(merged.offer, offer);
   assert.deepEqual(productSchema.parse(merged).offer, offer);
   (k.models[0] as any).offer = null;
-  assert.equal(planCatalogueUnion(s, k, "maple").products[0]!.offer, null);
+  assert.equal(planCatalogueUnion(k, "maple", existing).products[0]!.offer, null);
 });

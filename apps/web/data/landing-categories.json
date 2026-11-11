@@ -4,11 +4,7 @@
     "description": "A sofa is not just the most used piece in a living room. It is where the home slows down.\nFrom morning coffee to family conversations, movie nights, guests, celebrations, and quiet moments alone, the sofa becomes the centre of everyday living. At Maple Furnishers, we design sofa sets that bring comfort, durability, and quiet luxury into your home.\nExplore premium sofa sets for living rooms in different sizes, from compact 2-seater sofas to spacious 8-seater sofa sets. Each piece can be customised in fabric, finish, size, and seating style to match your space and lifestyle.\nOur sofas are crafted in-house using quality materials, strong frames, refined upholstery, and carefully selected finishes. Choose from fabric options such as velvet, leatherette, cotton, polyester, and more, designed to balance comfort, style, and long-term use.\nWhether you want a modern sofa, luxury sofa set, wooden sofa, recliner sofa, or a fully customised design, Maple helps you create a piece that feels personal to your home.\nBring home a sofa that looks beautiful on day one and feels even better with time.",
     "sections": [
       {
-        "type": "banner",
-        "desktop": "/media/shopify/ee29d11008f049843f08b02d4aaa8dc0.png",
-        "mobile": "/media/shopify/6ea691bdb0f6320d06d61eddee661300.png",
-        "width": 1392,
-        "height": 350
+        "type": "banner"
       },
       {
         "type": "categories",
@@ -16,62 +12,58 @@
           {
             "href": "/collections/sofa-set-designs",
             "title": "Designer Sofa Sets",
-            "image": "/media/shopify/7fdda9b6ffca192da7843c0e5f64f358.png"
+            "product": "arbor-sofa"
           },
           {
             "href": "/collections/wooden-sofas",
             "title": "Wooden Sofas",
-            "image": "/media/shopify/25994e1b071aeff59a0a111bbc22f9a9.png"
+            "product": "atrio-sofa"
           },
           {
             "href": "/collections/sofa-cum-beds",
             "title": "Sofa Cum Beds",
-            "image": "/media/shopify/6e64ba42e2d8ce7b15ee5415a46aa15a.png"
+            "product": "soltera-daybed"
           },
           {
             "href": "/collections/recliners",
             "title": "Recliners",
-            "image": "/media/shopify/fe2abeb90d9d5cd537ba0c7e4f52fba9.png"
+            "product": "verdant"
           },
           {
             "href": "/collections/l-shape-sofa",
             "title": "L Shape Sofa",
-            "image": "/media/shopify/1ec393054255feac2174abe66b8cd28f.png"
+            "product": "eira-sofa"
           },
           {
             "href": "/collections/fabric-sofas",
             "title": "Fabric Sofas",
-            "image": "/media/shopify/7113ecc8db55c1400537a6625714ddb6.png"
+            "product": "elara-sofa"
           },
           {
             "href": "/collections/chesterfield-sofas",
             "title": "Chesterfield Sofas",
-            "image": "/media/shopify/8ca3ff01fa4ff1194be7169f3835a215.png"
+            "product": "alina"
           },
           {
             "href": "/collections/3-seater-sofas",
             "title": "3 Seater Sofas",
-            "image": "/media/shopify/44e43b6b84c691d8398836d542feb315.png"
+            "product": "astraea"
           },
           {
             "href": "/collections/2-seater-sofas",
             "title": "2 Seater Sofas",
-            "image": "/media/shopify/2a6b1b4eb720340aada82cacaf7c5ae8.png"
+            "product": "lyra"
           },
           {
             "href": "/collections/bedroom-sofa",
             "title": "Bedroom Sofa",
-            "image": "/media/shopify/7ff7eb397e3202a9bd5a24af08e7752b.png"
+            "product": "arboris-sofa"
           }
         ],
         "columns": 5
       },
       {
-        "type": "banner",
-        "desktop": "/media/shopify/81f14ac801d9608fd57b865b755d5b87.png",
-        "mobile": "/media/shopify/15dd024d4ee2da1a7a3c94e85db274ac.png",
-        "width": 2784,
-        "height": 400
+        "type": "banner"
       },
       {
         "type": "products",
@@ -79,19 +71,18 @@
         "collection": "5-seater-sofa",
         "viewAll": false,
         "handles": [
-          "sora-5-seater-sofa",
-          "estelle-5-seater-sofa",
-          "zaria-5-seater-sofa",
-          "nysa-5-seater-sofa",
-          "vivienne-5-seater-sofa"
+          "sora",
+          "estelle",
+          "zaria",
+          "nysa",
+          "vivienne"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/474b4040d833c9079ed98ffd8f3c5209.png",
-        "mobile": "/media/shopify/aedd199c445068923f5ec4f299545a33.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "casaba"
       },
       {
         "type": "products",
@@ -99,20 +90,19 @@
         "collection": "sofas",
         "viewAll": false,
         "handles": [
-          "selene-2-seater-sofa",
-          "alcyone-7-seater-sofa",
-          "vesper-7-seater-sofa",
-          "rhea-7-seater-sofa",
-          "eira-7-seater-sofa",
-          "vela-7-seater-sofa"
+          "selene",
+          "alcyone",
+          "vesper",
+          "rhea",
+          "eira-sofa",
+          "vela-sofa"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/e944a2bc09ffcc44dcd3307cbfb23774.png",
-        "mobile": "/media/shopify/2839639ff602fe7f59e366b9a791f8da.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "arboris-sofa"
       },
       {
         "type": "products",
@@ -130,10 +120,9 @@
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/1a3c1a79f3dfc0a62d14e5a3a4759d4e.png",
-        "mobile": "/media/shopify/d47a4d253c64ca9f6c6e119f839cc220.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "verdant"
       },
       {
         "type": "products",
@@ -141,12 +130,12 @@
         "collection": "7-seater-sofa",
         "viewAll": false,
         "handles": [
-          "alcyone-7-seater-sofa",
-          "vesper-7-seater-sofa",
-          "rhea-7-seater-sofa",
-          "eira-7-seater-sofa",
-          "vela-7-seater-sofa",
-          "alina-7-seater-sofa"
+          "alcyone",
+          "vesper",
+          "rhea",
+          "eira-sofa",
+          "vela-sofa",
+          "alina"
         ]
       },
       {
@@ -161,22 +150,18 @@
         "type": "values",
         "items": [
           {
-            "image": "/media/shopify/921bfb4698329af16379c1fc7055cea0.svg",
             "title": "Grain",
             "body": "Where nature begins the story — raw, real, and rooted in beauty."
           },
           {
-            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Edge",
             "body": "Precision that defines perfection. Every line, intentional."
           },
           {
-            "image": "/media/shopify/6ec9710d1a949658c7aa73f856d283e6.svg",
             "title": "Fabric",
             "body": "Softness you can feel before you even touch it."
           },
           {
-            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Polish",
             "body": "The quiet glow of craftsmanship perfected."
           }
@@ -191,12 +176,12 @@
         "collection": "center-tables-1",
         "viewAll": false,
         "handles": [
-          "kynor-sofa-table",
-          "xarvo-sofa-table",
-          "veylo-sofa-table",
-          "elrik-sofa-table",
-          "zayro-sofa-table",
-          "noryx-sofa-table"
+          "kynor",
+          "xarvo",
+          "veylo",
+          "elrik",
+          "zayro",
+          "noryx"
         ]
       }
     ]
@@ -206,11 +191,7 @@
     "description": "Discover timeless craftsmanship and contemporary elegance with Maple Furnishers’ exclusive Tables Collection. From sophisticated bar tables and stylish side tables to luxurious dining tables and modern sofa tables, our range is designed to complement every corner of your home. Crafted with premium materials, refined finishes, and attention to detail, each piece blends functionality with aesthetic appeal. Whether you’re creating a cozy dining space, an elegant living room, or a statement entertainment area, Maple Furnishers offers versatile designs that bring warmth, style, and durability to your interiors.",
     "sections": [
       {
-        "type": "banner",
-        "desktop": "/media/shopify/74cd9fc91e5fa85b720bf29159efe1b1.png",
-        "mobile": "/media/shopify/0437017cd1470b6e76bc86de26ba6dd2.png",
-        "width": 2784,
-        "height": 700
+        "type": "banner"
       },
       {
         "type": "categories",
@@ -218,42 +199,38 @@
           {
             "href": "/collections/side-table",
             "title": "Side Table",
-            "image": "/media/shopify/8becbace84cb38e911b5528d874d2e5e.webp"
+            "product": "norik"
           },
           {
             "href": "/collections/dinings",
             "title": "Dinings",
-            "image": "/media/shopify/373186ec527eec85f57d9e5984df8d1c.svg"
+            "product": "varyn"
           },
           {
             "href": "/collections/bar",
             "title": "Bar",
-            "image": "/media/shopify/1af35189f19ee0bb8c8cdfb72c333dfb.webp"
+            "product": "arvo"
           },
           {
             "href": "/collections/consoles",
             "title": "Consoles",
-            "image": "/media/shopify/0af63e1e2f3d04d65b85090b6a82ff19.webp"
+            "product": "geometric-grotto"
           },
           {
             "href": "/collections/sofa-table",
             "title": "Sofa Table",
-            "image": "/media/shopify/4a3641b8fc72dfd7d57671735b522070.webp"
+            "product": "voren"
           },
           {
             "href": "/collections/tv-media-units",
             "title": "TV & Media Units",
-            "image": "/media/shopify/2df9f5458d15e4b15493c329065448f1.webp"
+            "product": "morik"
           }
         ],
         "columns": 6
       },
       {
-        "type": "banner",
-        "desktop": "/media/shopify/1fa4458ba09aad58ceac4627c7463de0.png",
-        "mobile": "/media/shopify/251de56b748c765fa77e9c85520eaef7.png",
-        "width": 2784,
-        "height": 700
+        "type": "banner"
       },
       {
         "type": "products",
@@ -261,20 +238,19 @@
         "collection": "tables",
         "viewAll": true,
         "handles": [
-          "aven-side-table",
-          "cirque-luxe-marble-dining-table-emperador-gold",
+          "aven-table",
+          "elvo",
           "elora",
           "elowen-1",
           "elowen-3",
-          "elrik-sofa-table"
+          "elrik"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/1e0d0ad90184ad534e6e707e081ba64f.png",
-        "mobile": "/media/shopify/6fbef8a7aa0da7744e70bc9053eb59e0.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "terreno-table"
       },
       {
         "type": "products",
@@ -282,20 +258,19 @@
         "collection": "dining",
         "viewAll": false,
         "handles": [
-          "varyn-dining-table",
-          "veyro-dining-table",
-          "nova-dining-table",
-          "velor-dining-table",
-          "seno-dining-table",
-          "runo-dining-table"
+          "varyn",
+          "veyro",
+          "nova",
+          "velor",
+          "seno",
+          "runo"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/7def4a95439df33329019f21cc42952a.png",
-        "mobile": "/media/shopify/30928598f1823098dff2056c85098512.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "altura-table"
       },
       {
         "type": "products",
@@ -303,20 +278,19 @@
         "collection": "side-table",
         "viewAll": false,
         "handles": [
-          "veya-1",
+          "altura-table",
           "elowen-3",
           "elowen-1",
-          "orven-side-table",
-          "aven-side-table",
-          "zenvo-side-table"
+          "orven",
+          "aven-table",
+          "zenvo"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/12656f950af58ffb2160d1c2fec239ee.png",
-        "mobile": "/media/shopify/37f4340c6a16b0779eb661be223e71b1.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "arcana-table"
       },
       {
         "type": "products",
@@ -324,20 +298,19 @@
         "collection": "sofa-table",
         "viewAll": false,
         "handles": [
-          "oryx-sofa-table",
-          "velon-sofa-table",
-          "zarek-sofa-table",
-          "kyvik-sofa-table",
-          "noryx-sofa-table",
-          "elrik-sofa-table"
+          "oryx",
+          "velon",
+          "zarek",
+          "kyvik",
+          "noryx",
+          "elrik"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/9ef91e48c00b1e035aea9786d1236163.png",
-        "mobile": "/media/shopify/0b0338d299fc382a1a4701be0a922cf2.png",
         "width": 1392,
-        "height": 350
+        "height": 350,
+        "product": "tylo"
       },
       {
         "type": "products",
@@ -345,12 +318,12 @@
         "collection": "console-tables",
         "viewAll": false,
         "handles": [
-          "tavik-console-table",
-          "lyro-console-table",
-          "zovik-console-table",
-          "ovalo-modern-console-walnut-white",
-          "oslo-retro-console-walnut-ivory",
-          "winston-wooden-console-table-with-brass-trim-mirror"
+          "tavik",
+          "lyro",
+          "zovik",
+          "kova",
+          "rovyn",
+          "avro"
         ]
       },
       {
@@ -365,22 +338,18 @@
         "type": "values",
         "items": [
           {
-            "image": "/media/shopify/92d3be8e403dddf68de05a5f1404f9d4.svg",
             "title": "Quiet Luxury",
             "body": "Furniture that doesn’t shout, but makes the room feel complete"
           },
           {
-            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Built for Real Living",
             "body": "Not made only for photographs. Made for everyday comfort and use"
           },
           {
-            "image": "/media/shopify/8a4d8dfa23cb366a932e3020010e74a8.svg",
             "title": "Ages Beautifully",
             "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
           },
           {
-            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Strength You Don’t See",
             "body": "A solid frame, lasting structure, and details that stay quiet for years."
           }
@@ -395,7 +364,7 @@
         "collection": "chairs",
         "viewAll": false,
         "handles": [
-          "naro-dining-chair",
+          "naro",
           "arven",
           "vellora",
           "elowen-2",
@@ -410,11 +379,7 @@
     "description": "Chairs do more than complete a room — they shape the way a space feels. Whether placed around a dining table, beside a coffee corner, or as a statement piece in the living room, the right chair brings together comfort, style, and everyday functionality.\nAt Maple Furnishers, our chair collection is designed to suit the evolving needs of contemporary Indian homes. Each piece is carefully crafted with a focus on ergonomic comfort, refined detailing, and enduring quality using premium woods, fabrics, and finishes.\nFrom sleek modern silhouettes to rich upholstered designs, our range offers versatile options for dining, lounging, working, and entertaining. With customizable fabrics, finishes, and designs, you can create seating that reflects your personal taste and complements your interiors effortlessly.\nBuilt with precision and designed to be lived in every day, Maple chairs combine timeless aesthetics with dependable craftsmanship creating pieces that remain comfortable, elegant, and relevant for years to come.",
     "sections": [
       {
-        "type": "banner",
-        "desktop": "/media/shopify/fec9dc9534e3b9a21e52af641f8a5858.png",
-        "mobile": "/media/shopify/7388cec950fc20c54435c5c65a5345e6.png",
-        "width": 2784,
-        "height": 700
+        "type": "banner"
       },
       {
         "type": "categories",
@@ -422,42 +387,38 @@
           {
             "href": "/collections/accent-chair",
             "title": "Accent Chair",
-            "image": "/media/shopify/f2a5541ee4fca87a26df1314486c279c.png"
+            "product": "avero"
           },
           {
             "href": "/collections/bedroom-chair",
             "title": "Bedroom Chair",
-            "image": "/media/shopify/118f4393b584785685baae5780b68da6.png"
+            "product": "noir-haven"
           },
           {
             "href": "/collections/dining-chair",
             "title": "Dining Chair",
-            "image": "/media/shopify/c594a3548795154d16e2601a1ed598f0.png"
+            "product": "miro"
           },
           {
             "href": "/collections/iconic-bar-chair",
             "title": "Iconic/Bar Chair",
-            "image": "/media/shopify/fcdc4b1d167c211c1d1608396e1fc01e.png"
+            "product": "bodega-chair"
           },
           {
             "href": "/collections/lounge-wing-chair",
             "title": "Lounge/Wing Chair",
-            "image": "/media/shopify/90c81123b5e8cae4c9a03a5202db67fb.png"
+            "product": "arbor"
           },
           {
             "href": "/collections/rocking-chair",
             "title": "Rocking Chair",
-            "image": "/media/shopify/51ffd0c65f009959742e981939812bf1.png"
+            "product": "arvon"
           }
         ],
         "columns": 6
       },
       {
-        "type": "banner",
-        "desktop": "/media/shopify/694e4d9cb9dae5077778042650ebb03e.png",
-        "mobile": "/media/shopify/f3056183c638b268bf76f862bf506e41.png",
-        "width": 2764,
-        "height": 478
+        "type": "banner"
       },
       {
         "type": "products",
@@ -475,10 +436,9 @@
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/dac1b896e06eee7ede380bdd4e6d9e0d.png",
-        "mobile": "/media/shopify/c8c491944fe1c8e0a827bf76a12ac097.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "soltera-chair"
       },
       {
         "type": "products",
@@ -486,20 +446,19 @@
         "collection": "bestseller-chairs",
         "viewAll": false,
         "handles": [
-          "orlen-accent-chair",
-          "luma-haven-accent-chair",
-          "orvane-accent-chair",
-          "valen-accent-chair",
+          "orlen",
+          "luma-haven",
+          "orvane",
+          "valen",
           "tara",
-          "elyra-accent-chair"
+          "elyra-accent-chair-ivory-mocha-walnut"
         ]
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/c3b76e77772b8343c154afd8a840e4a2.png",
-        "mobile": "/media/shopify/fdbbdd27937fc9c498acc5e3638c358d.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "remy"
       },
       {
         "type": "products",
@@ -517,10 +476,9 @@
       },
       {
         "type": "banner",
-        "desktop": "/media/shopify/ef03bf86516063c0cf6f8a10e291d47c.png",
-        "mobile": "/media/shopify/2a0a8a53b52549a40289321c1a4ef933.png",
         "width": 2784,
-        "height": 400
+        "height": 400,
+        "product": "ambra-chair"
       },
       {
         "type": "products",
@@ -528,7 +486,7 @@
         "collection": "chairs",
         "viewAll": false,
         "handles": [
-          "naro-dining-chair",
+          "naro",
           "arven",
           "vellora",
           "elowen-2",
@@ -548,22 +506,18 @@
         "type": "values",
         "items": [
           {
-            "image": "/media/shopify/92d3be8e403dddf68de05a5f1404f9d4.svg",
             "title": "Quiet Luxury",
             "body": "Furniture that doesn’t shout, but makes the room feel complete"
           },
           {
-            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Built for Real Living",
             "body": "Not made only for photographs. Made for everyday comfort and use"
           },
           {
-            "image": "/media/shopify/8a4d8dfa23cb366a932e3020010e74a8.svg",
             "title": "Ages Beautifully",
             "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
           },
           {
-            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Strength You Don’t See",
             "body": "A solid frame, lasting structure, and details that stay quiet for years."
           }
@@ -578,12 +532,12 @@
         "collection": "center-tables-1",
         "viewAll": false,
         "handles": [
-          "kynor-sofa-table",
-          "xarvo-sofa-table",
-          "veylo-sofa-table",
-          "elrik-sofa-table",
-          "zayro-sofa-table",
-          "noryx-sofa-table"
+          "kynor",
+          "xarvo",
+          "veylo",
+          "elrik",
+          "zayro",
+          "noryx"
         ]
       }
     ]

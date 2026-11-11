@@ -5,7 +5,7 @@ import {
   catalogueHandleSchema, cataloguePageSchema, catalogueCardResponseSchema, catalogueCardsResponseSchema,
   categories, relatedCatalogueCardsResponseSchema,
   collectionQuery, filterCollection, facetCounts,
-  toProductCard, canOrder, pricedVariants, sourceTaxonomySchema, catalogueImageSchema,
+  toProductCard, canOrder, pricedVariants, sourceTaxonomySchema,
 } from "@shopmaple/contracts";
 import { collectionTitles, collectionMembers, collectionCategories } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "./cart.js";
@@ -41,9 +41,9 @@ const collectionSelect = {
 const cache = "public, max-age=30, s-maxage=60";
 // The two catalogue texts the listing's Material and Size filters read; anything else stored there is ignored.
 const catalogueText = z.object({ materials: z.string().nullable().optional(), dimensions: z.string().nullable().optional() }).nullable();
-/** The listing hero's photo and featured piece: the first member with its own photo (https, or the store's copy), in the collection's order. */
+/** The listing hero's photo and featured piece: the first member with its own https photo, in the collection's order. */
 function coverOf(members: Parameters<typeof toProductCard>[0][]) {
-  const first = members.find(product => product.images[0] !== undefined && catalogueImageSchema.safeParse(product.images[0]).success);
+  const first = members.find(product => product.images[0]?.startsWith("https://"));
   if (!first) return null;
   const card = toProductCard(first);
   return { image: first.images[0]!, title: first.title, handle: first.handle, pricePaise: card.pricePaise, priceFrom: card.priceFrom };

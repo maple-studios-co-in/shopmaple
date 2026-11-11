@@ -200,11 +200,8 @@ test("product variants update price, gallery and enquiry while delivery stays an
   await mount(
     <AppRouterContext.Provider value={router}>
       <ProductDetail
-        product={product}
-        presentation={{
-          variantImages: { blue: product.images[0]!, red: product.images[1]! },
-          reviewLabel: "No reviews",
-        }}
+        // Each option's own photo, as Keeri sends it (the hand-made Shopify mapping is gone).
+        product={{ ...product, variants: product.variants.map((v) => ({ ...v, images: v.id === "blue" ? [product.images[0]!] : v.id === "red" ? [product.images[1]!] : [] })) }}
       />
     </AppRouterContext.Provider>,
     async () => {
@@ -259,13 +256,13 @@ test("hero keeps product discovery clear and plays the latest shop film on its o
     } },
   });
   try {
-    await mount(<Hero content={{ ...defaultHomeDetails.hero, slides: [{ kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0", poster: "https://shop.maplefurnishers.com/cdn/shop/files/poster.jpg", alt: "Workshop", headline: "Timeless Craftsmanship for Modern Living", intro: "Handcrafted." }] }} />, async () => {
+    await mount(<Hero content={{ ...defaultHomeDetails.hero, slides: [{ kind: "video", src: "/media/films/workshop.mp4", poster: "/media/uploads/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.webp", alt: "Workshop", headline: "Timeless Craftsmanship for Modern Living", intro: "Handcrafted." }] }} />, async () => {
       await act(async () => new Promise((resolve) => setTimeout(resolve, 1700)));
       const video = document.querySelector("video")!;
       assert.equal(
         video.getAttribute("src"),
-        "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0",
-        "the shop's latest hero film",
+        "/media/films/workshop.mp4",
+        "the staff's hero film",
       );
       assert.equal(video.paused, false, "the film plays on its own");
       assert.match(

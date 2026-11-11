@@ -12,7 +12,7 @@ export const blogTitles: Record<string, string> = {
   avelia: "Avelia",
   vellora: "Vellora",
 };
-const photo = (handle: string) => `https://cdn.shopify.com/s/files/1/0691/8651/9229/files/${handle}.jpg`;
+const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
 
 /** A synthetic catalogue product with one made-to-order option. */
 export const blogProduct = (handle: string, pricePaise: number | null): Product => ({

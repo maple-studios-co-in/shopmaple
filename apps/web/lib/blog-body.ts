@@ -4,7 +4,7 @@ import type { EditorialNode } from "@shopmaple/contracts";
  * The photographs through an imported article (owner, 10 Nov 2026): "first the image then its related text, then the
  * second image then its related text, then the third" — three pictures, each 16:9, each opening the part of the story
  * it shows. The imported articles carry no pictures beyond the hero, so each is given Maple's own room photography,
- * chosen for its parts, and the text is divided into three where it turns to a new point: never after a lead-in that
+ * chosen for its parts (the six product photographs once among them were Shopify files and left the store on 11 Nov 2026), and the text is divided into three where it turns to a new point: never after a lead-in that
  * ends in a colon, inside a run of bullets, or under a heading.
  * `focus` is where the 16:9 frame holds the picture; `product` names the piece it shows, when it is one of the store's.
  */
@@ -20,30 +20,23 @@ const photo = {
   varyn: { src: "/media/home/editorial-flip-varyn.webp", alt: "A round walnut dining table with sage upholstered chairs in warm evening light", width: 800, height: 800, focus: "50% 58%" },
   terra: { src: "/media/home/nimbus-terra.webp", alt: "The Terra sofa set and armchairs around a round walnut table in a sunlit lounge", width: 1600, height: 732, focus: "50% 55%" },
   clouds: { src: "/media/home/nimbus-clouds.webp", alt: "White sofas, lounge chairs and a coffee table set among soft clouds", width: 1537, height: 1023, focus: "50% 55%" },
-  // The collection pages' hero photographs (lib/collection-hero-photos.ts), each of a piece the store sells.
-  aria: { src: "/media/shopify/c09025554b079ad265ea0d42719077c3.png", alt: "A grey channel-tufted sofa and two armchairs with blue cushions around a low cream table", width: 1536, height: 1024, focus: "50% 62%", product: { name: "Aria 5-seater sofa", href: "/products/aria-5-seater-sofa" } },
-  orvane: { src: "/media/shopify/9e1602dd4212fd372cc5fbbcd0c5b769.png", alt: "Two houndstooth accent chairs beside a candlelit table under a glowing ring light in a deep green room", width: 1536, height: 1024, focus: "50% 58%", product: { name: "Orvane accent chair", href: "/products/orvane-accent-chair" } },
-  sora: { src: "/media/shopify/f88892800f54656697ff6700a640d9e1.png", alt: "Two olive green sofas on gold legs around a round gold-framed glass coffee table", width: 1587, height: 992, focus: "50% 55%", product: { name: "Sora 5-seater sofa", href: "/products/sora-5-seater-sofa" } },
-  nova: { src: "/media/shopify/66c083b24e0ef54491acf489379b7333.webp", alt: "A marble-topped dining table on a dark base inlaid with brass, in a warm marble room", width: 1537, height: 1022, focus: "50% 66%", product: { name: "Nova dining table", href: "/products/nova-dining-table" } },
-  aileron: { src: "/media/shopify/7869d06353f7ac93b6be8c8f1d1b9344.png", alt: "A cream upholstered bed with a tall panelled headboard, pendant lamps and a bench at its foot", width: 2528, height: 1685, focus: "50% 62%", product: { name: "Aileron signature bed", href: "/products/aileron-signature-bed" } },
-  arden: { src: "/media/shopify/535a470decf261e38c35acc258c3c4c0.webp", alt: "A walnut console cabinet with sculpted handles, a candle and a bowl on top", width: 1254, height: 1254, focus: "50% 58%", product: { name: "Arden console cabinet", href: "/products/arden-console-cabinet" } },
 } satisfies Record<string, BodyPicture>;
 type Photo = keyof typeof photo;
 
 /** Each story's three photographs, in the order of the parts they open. */
 const storyPhotos: Record<string, Photo[]> = {
-  "how-to-measure-furniture-before-ordering-online": ["sora", "runo", "aria"],
-  "what-should-be-finalised-first-furniture-flooring-or-lighting": ["terra", "aria", "orvane"],
-  "furniture-delivery-access-guide-will-your-furniture-actually-fit-through-the-door": ["sora", "aileron", "arden"],
-  "best-wood-for-furniture-in-indian-climate-humidity-heat-and-maintenance": ["arden", "pedestal", "varyn"],
-  "standard-dining-table-size-guide-for-indian-homes": ["nova", "runo", "seno"],
-  "why-every-successful-cafe-has-three-types-of-seating": ["aero", "dining", "orvane"],
-  "how-luxury-hotels-design-seating-that-makes-guests-stay-longer": ["terra", "orvane", "clouds"],
-  "luxury-furniture-trends-2026-what-defined-the-first-half-of-the-year-and-what-will-shape-the-months-ahead": ["clouds", "aileron", "sora"],
-  "how-to-identify-quality-furniture-before-you-buy": ["arden", "aria", "pedestal"],
-  "space-saving-furniture-ideas-for-small-homes": ["varyn", "aero", "arden"],
+  "how-to-measure-furniture-before-ordering-online": ["dining", "runo", "terra"],
+  "what-should-be-finalised-first-furniture-flooring-or-lighting": ["terra", "dining", "clouds"],
+  "furniture-delivery-access-guide-will-your-furniture-actually-fit-through-the-door": ["dining", "clouds", "runo"],
+  "best-wood-for-furniture-in-indian-climate-humidity-heat-and-maintenance": ["runo", "pedestal", "varyn"],
+  "standard-dining-table-size-guide-for-indian-homes": ["pedestal", "runo", "seno"],
+  "why-every-successful-cafe-has-three-types-of-seating": ["aero", "dining", "clouds"],
+  "how-luxury-hotels-design-seating-that-makes-guests-stay-longer": ["terra", "clouds", "dining"],
+  "luxury-furniture-trends-2026-what-defined-the-first-half-of-the-year-and-what-will-shape-the-months-ahead": ["clouds", "dining", "pedestal"],
+  "how-to-identify-quality-furniture-before-you-buy": ["runo", "terra", "pedestal"],
+  "space-saving-furniture-ideas-for-small-homes": ["varyn", "aero", "runo"],
 };
-const otherStories: Photo[] = ["dining", "aria", "terra"];
+const otherStories: Photo[] = ["dining", "terra", "pedestal"];
 
 export function storyPictures(handle: string): BodyPicture[] {
   return (storyPhotos[handle] ?? otherStories).map((name) => photo[name]);

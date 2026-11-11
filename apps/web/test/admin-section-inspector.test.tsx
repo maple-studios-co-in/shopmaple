@@ -234,9 +234,9 @@ test("Find Your Feel edits its header and labels, and swaps either product throu
     assert.equal(field("Compare eyebrow", inspector()!).value, "Find your feel");
     assert.equal(field("Compare heading", inspector()!).value, "Two ways to unwind");
     assert.match(field("Compare lede", inspector()!).value, /^Explore distinct silhouettes/);
-    assert.equal(field("Left product label", inspector()!).value, "Aera");
+    assert.equal(field("Left product label", inspector()!).value, "Avelon");
     assert.equal(field("Right product label", inspector()!).value, "Caro");
-    assert.match(inspector()!.querySelector("[data-compare-side='left']")!.textContent!, /aera-swivel-lounge-chair/);
+    assert.match(inspector()!.querySelector("[data-compare-side='left']")!.textContent!, /avelon-chair/);
     assert.match(inspector()!.querySelector("[data-compare-side='right']")!.textContent!, /caro/);
     assert.equal(inspector()!.querySelector('[aria-label="Product catalog"]'), null, "the search opens on request");
     await type("Compare heading", "Two ways to rest", inspector()!);

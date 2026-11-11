@@ -9,7 +9,7 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 
 // "Find your feel" (Figma 1049:27656): two catalogue photos either side of a divider. It renders
 // fully from the server's HTML; the divider is a CSS variable until the drag script arrives.
-const card = (handle: string, image: string | null = `https://cdn.shopify.com/s/files/1/0691/8651/9229/files/${handle}.jpg`) => ({ id: handle, handle, title: `Chair ${handle}`, image, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
+const card = (handle: string, image: string | null = `https://store.maplefurnishers.com/media/keeri/${handle}.webp`) => ({ id: handle, handle, title: `Chair ${handle}`, image, pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 type Options = { edit?: (content: typeof defaultStorefrontContent) => void; cards?: (handle: string) => ReturnType<typeof card> | null; failCards?: boolean };
 async function renderHome({ edit, cards = (handle) => card(handle), failCards = false }: Options = {}) {
@@ -52,12 +52,13 @@ test("Find your feel shows the header and a card with the two products' catalogu
   assert.equal(text(section.querySelector("[data-compare-eyebrow]")), "Find your feel");
   assert.equal(text(section.querySelector("h2")), "Two ways to unwind");
   assert.equal(text(section.querySelector("[data-compare-lede]")), "Explore distinct silhouettes and choose the one that feels at home in your space.");
-  assert.ok(requested.includes("aera-swivel-lounge-chair,caro"), "both products are read in one catalogue call, as the rail does");
+  // The default's Aera lounge chair left the store with Shopify; its Keeri replacement, Avelon, is compared instead.
+  assert.ok(requested.includes("avelon-chair,caro"), "both products are read in one catalogue call, as the rail does");
   const left = section.querySelector('[data-compare-pane="left"]')!;
   const right = section.querySelector('[data-compare-pane="right"]')!;
-  assert.match(source(left.querySelector("img")), /files\/aera-swivel-lounge-chair\.jpg/);
-  assert.match(source(right.querySelector("img")), /files\/caro\.jpg/);
-  assert.equal(text(left.querySelector("[data-compare-label]")), "Aera");
+  assert.match(source(left.querySelector("img")), /keeri\/avelon-chair\.webp/);
+  assert.match(source(right.querySelector("img")), /keeri\/caro\.webp/);
+  assert.equal(text(left.querySelector("[data-compare-label]")), "Avelon");
   assert.equal(text(right.querySelector("[data-compare-label]")), "Caro");
 });
 
@@ -69,7 +70,7 @@ test("the divider is a slider that starts a quarter in, the old piece on a quart
   const grip = section.querySelector('[role="slider"]');
   assert.ok(grip, "with a slider grip");
   assert.ok(section.querySelector("[data-compare-divider]")!.contains(grip));
-  assert.equal(grip.getAttribute("aria-label"), "Compare Aera and Caro");
+  assert.equal(grip.getAttribute("aria-label"), "Compare Avelon and Caro");
   assert.equal(grip.getAttribute("aria-valuemin"), "0");
   assert.equal(grip.getAttribute("aria-valuemax"), "100");
   assert.equal(grip.getAttribute("aria-valuenow"), "25");
@@ -87,9 +88,26 @@ test("the admin's header, products and labels are what the card shows", async ()
   assert.equal(text(section.querySelector("h2")), "Sit or sink");
   assert.equal(text(section.querySelector("[data-compare-lede]")), "Two moods.");
   assert.ok(requested.includes("compare-edit-a,compare-edit-b"));
-  assert.match(source(section.querySelector('[data-compare-pane="left"] img')), /compare-edit-a\.jpg/);
+  assert.match(source(section.querySelector('[data-compare-pane="left"] img')), /compare-edit-a\.webp/);
   assert.equal(text(section.querySelector('[data-compare-pane="right"] [data-compare-label]')), "Firm");
   assert.equal(section.querySelector('[role="slider"]')!.getAttribute("aria-label"), "Compare Soft and Firm");
+});
+
+// Content published before 11 Nov 2026 may still name the retired Aera chair: it is compared through its Keeri
+// replacement under that product's own name; a retired product without a replacement leaves no section.
+test("a published side naming a retired product shows its Keeri replacement, labelled with the replacement's name", async () => {
+  const { doc, requested } = await renderHome({ edit: (content) => {
+    content.homeDetails!.compare = { ...content.homeDetails!.compare!, left: { handle: "aera-swivel-lounge-chair", label: "Aera" }, right: { handle: "compare-retired-r", label: "Caro" } };
+  } });
+  const section = compareSection(doc)!;
+  assert.ok(requested.includes("avelon-chair,compare-retired-r"));
+  assert.ok(!requested.some((handles) => handles.includes("aera-swivel-lounge-chair")), "the retired address is never asked for");
+  assert.equal(text(section.querySelector('[data-compare-pane="left"] [data-compare-label]')), "Chair avelon-chair", "the replacement's own title, not the retired label");
+  assert.equal(text(section.querySelector('[data-compare-pane="right"] [data-compare-label]')), "Caro");
+  const none = await renderHome({ edit: (content) => {
+    content.homeDetails!.compare = { ...content.homeDetails!.compare!, left: { handle: "loft-bench", label: "Loft" }, right: { handle: "compare-retired-b", label: "Beta" } };
+  } });
+  assert.equal(compareSection(none.doc)?.querySelector("[data-compare]") ?? null, null);
 });
 
 test("a product the catalogue does not have leaves no section, never a half", async () => {

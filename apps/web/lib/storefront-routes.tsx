@@ -3,10 +3,8 @@ import { categoryPageSlugs, type CategoryPageSlug } from "@shopmaple/contracts";
 import { BlogArticle } from "@/components/blog-article";
 import { BlogIndex } from "@/components/blog-index";
 import { CategoryLanding } from "@/components/category-landing";
-import { NimbusLanding } from "@/components/category-nimbus";
-import { StoryLanding } from "@/components/category-story";
+import { HomeWithArtwork, NimbusWithArtwork, StoryWithArtwork } from "@/components/artwork-pages";
 import { ContentPage } from "@/components/content-page";
-import { HomePage } from "@/components/home-page";
 import { PolicyArticle } from "@/components/policy-page";
 import { BulkEnquiry, Contact, ReturnsPageContent, emptyEnquiryContext } from "@/components/service-pages";
 import source from "@/data/store-content.json";
@@ -30,7 +28,7 @@ export type StorefrontRoute = { title: string; path: string; node: ReactNode };
 export function renderStorefrontRoute(segments: readonly string[], content: StorefrontDocument): StorefrontRoute | null {
   const [root, second, third, ...rest] = segments.filter(Boolean);
   if (rest.length > 0) return null;
-  if (root === undefined || (root === "home" && second === undefined)) return { title: "Home", path: "/", node: <HomePage content={content} /> };
+  if (root === undefined || (root === "home" && second === undefined)) return { title: "Home", path: "/", node: <HomeWithArtwork content={content} /> };
   if (root === "pages" && second !== undefined && third === undefined) {
     const path = `/${second}`;
     if ((categoryPageSlugs as readonly string[]).includes(second)) {
@@ -38,10 +36,10 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
       return { title: resolveCategoryPageContent(slug, content.landingPages).title, path, node: <CategoryLanding slug={slug} content={content} /> };
     }
     if (second === "our-story") {
-      return { title: resolveStoryPageContent(content.storyPage).title, path, node: <StoryLanding content={content.storyPage} media={content.templateMedia} /> };
+      return { title: resolveStoryPageContent(content.storyPage).title, path, node: <StoryWithArtwork content={content} /> };
     }
     if (second === "nimbus-collection") {
-      return { title: resolveNimbusPageContent(content.nimbusPage).title, path, node: <NimbusLanding content={content.nimbusPage} media={content.templateMedia} /> };
+      return { title: resolveNimbusPageContent(content.nimbusPage).title, path, node: <NimbusWithArtwork content={content} /> };
     }
     const services = resolveServicePages(content.servicePages);
     if (second === "contact") return { title: services.contact.title, path, node: <Contact context={emptyEnquiryContext} content={services.contact} site={content} /> };

@@ -3,7 +3,8 @@ import { test } from "node:test";
 import { homeDetailsSchema } from "@shopmaple/contracts";
 import { defaultHomeDetails } from "../lib/home-details-defaults";
 
-const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/abc/abc.mp4?v=0";
+// A film on a Maple media address; Shopify's are no longer accepted (owner, 11 Nov 2026).
+const film = "/media/films/workshop.mp4";
 const still = "/media/uploads/" + "a".repeat(64) + ".webp";
 const heroSlide = { kind: "image", src: still, alt: "A sofa", headline: "Made to order", intro: "In our Delhi workshop." };
 const videoSlide = { kind: "video", src: film, poster: still, alt: "The workshop", headline: "Hand finished", intro: "Every piece." };
@@ -37,6 +38,9 @@ test("hero slides reject a video without a poster, unapproved media hosts and un
   assert.equal(ok(withHero([noPoster])), false, "a video needs a poster image");
   assert.equal(ok(withHero([{ ...heroSlide, src: "https://example.com/a.jpg" }])), false);
   assert.equal(ok(withHero([{ ...videoSlide, src: "http://shop.maplefurnishers.com/cdn/shop/a.mp4" }])), false);
+  assert.equal(ok(withHero([{ ...videoSlide, src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/abc/abc.mp4?v=0" }])), false, "a film on Shopify");
+  assert.equal(ok(withHero([{ ...videoSlide, poster: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/p.jpg" }])), false, "a poster on Shopify");
+  assert.equal(ok(withHero([{ ...videoSlide, src: "/media/shopify/0123456789abcdef0123456789abcdef.mp4" }])), false, "an older copy path");
   assert.equal(ok(withHero([{ ...videoSlide, poster: "https://evil.example/p.jpg" }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, kind: "audio" }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, extra: "x" }])), false);

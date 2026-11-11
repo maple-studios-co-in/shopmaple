@@ -6,8 +6,9 @@ import { JSDOM } from "jsdom";
 import Home from "../app/page";
 import { ShopProvider } from "../components/shop-provider";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { shown } from "./support/rendered-src";
 
-const originalBestsellers = ["aera-swivel-lounge-chair", "aero-dining-chair", "aileron-signature-bed", "aileron-upholstered-bench", "alcyone-7-seater-sofa", "alina-7-seater-sofa"];
+const originalBestsellers = ["avelon-chair", "aero-dining-chair", "aileron", "aileron-bench", "alcyone", "alina"];
 const originalChairs = ["caro", "ario", "nola", "tara", "arno", "rollo"];
 function product(handle: string, pricePaise = 2360000, published = true) {
   return {
@@ -16,17 +17,18 @@ function product(handle: string, pricePaise = 2360000, published = true) {
     variants: [{ id: `${handle}-natural`, title: "Natural", sku: handle.toUpperCase(), pricePaise, compareAtPaise: null, available: false, stockPolicy: "unverified" }],
   };
 }
+const upload = (letter: string) => `/media/uploads/${letter.repeat(64)}.webp`;
 const customMerchandising = () => ({
   bestsellers: ["custom-second", "missing-product", "private-product", "broken-product", "custom-first"],
   chairs: ["custom-chair-two", "custom-chair-one"],
   categories: [
-    { key: "beds-card", title: "Restful beds", collectionHandle: "beds", image: "https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", alt: "A restful bedroom", enabled: true },
-    { key: "hidden-card", title: "Hidden sofas", collectionHandle: "sofas", image: "https://shop.maplefurnishers.com/cdn/shop/collections/sofas.webp", alt: "Hidden sofa", enabled: false },
-    { key: "chairs-card", title: "Everyday seats", collectionHandle: "dining-chair", image: "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp", alt: "Handcrafted dining seats", enabled: true },
+    { key: "beds-card", title: "Restful beds", collectionHandle: "beds", image: upload("1"), alt: "A restful bedroom", enabled: true },
+    { key: "hidden-card", title: "Hidden sofas", collectionHandle: "sofas", image: upload("2"), alt: "Hidden sofa", enabled: false },
+    { key: "chairs-card", title: "Everyday seats", collectionHandle: "dining-chair", image: upload("3"), alt: "Handcrafted dining seats", enabled: true },
   ],
   offers: [
-    { key: "value-card", title: "Furniture for your room", collectionHandle: "best-buy-under-rs-50-000", image: "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp", alt: "Discover our furniture offer", enabled: true },
-    { key: "hidden-offer", title: "Hidden clearance", collectionHandle: "clearance-sale", image: "https://shop.maplefurnishers.com/cdn/shop/collections/clearance.webp", alt: "Hidden offer", enabled: false },
+    { key: "value-card", title: "Furniture for your room", collectionHandle: "best-buy-under-rs-50-000", image: upload("4"), alt: "Discover our furniture offer", enabled: true },
+    { key: "hidden-offer", title: "Hidden clearance", collectionHandle: "clearance-sale", image: upload("5"), alt: "Hidden offer", enabled: false },
   ],
 });
 let renderNumber = 0;
@@ -110,8 +112,7 @@ test("category and offer images describe their different responsive slots withou
   // Offers: 70% mobile rail cards, four desktop columns, with existing gaps/padding.
   assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("sizes"),
     "(max-width:749px) calc(70vw - 22.4px), (min-width:1440px) 328px, calc((100vw - 128px) / 4)");
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"),
-    "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+  assert.equal(shown(doc.querySelector(".home-offer-tiles img")?.getAttribute("src")), upload("4"));
 });
 
 test("legacy published homepage preserves original collection copy, media, links and both product orders", async () => {
@@ -124,7 +125,7 @@ test("legacy published homepage preserves original collection copy, media, links
   assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/clearance-sale", "/collections/minimum-60-off", "/collections/best-buy-under-rs-50-000", "/collections/furniture-store-under-rs-25-000"]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles img", "alt"), ["Clearance Sale", "Minimum 30% Off", "Best Buy Under Rs.50,000", "Furniture Store under Rs. 25,000"]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles img", "src").map((src) => decodeURIComponent(new URL(src!, "http://x").searchParams.get("url") ?? src!)), ["clearance-sale", "minimum-30", "best-buy-50k", "furniture-25k"].map((key) => `/media/home/offer-${key}.webp`));
-  assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/aera-swivel-lounge-chair", "/products/aero-dining-chair", "/products/aileron-signature-bed", "/products/aileron-upholstered-bench", "/products/alcyone-7-seater-sofa", "/products/alina-7-seater-sofa"]);
+  assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), originalBestsellers.map(handle => `/products/${handle}`));
   assert.deepEqual(attributes(doc, '[data-home-section="chairs"] [data-card-name]', "href"), ["/products/caro", "/products/ario", "/products/nola", "/products/tara", "/products/arno", "/products/rollo"]);
 });
 
@@ -135,10 +136,10 @@ test("published tiles follow saved order, visibility, full image URLs and access
   assert.deepEqual(attributes(doc, ".managed-home-section", "data-home-section"), ["offers", "categories"]);
   assert.deepEqual(texts(doc, ".home-categories h3"), ["Restful beds", "Everyday seats"]);
   assert.deepEqual(attributes(doc, ".home-categories > a", "href"), ["/collections/beds", "/collections/dining-chair"]);
-  assert.deepEqual(attributes(doc, ".home-categories img", "src"), ["https://shop.maplefurnishers.com/cdn/shop/collections/beds.webp?v=2", "https://shop.maplefurnishers.com/cdn/shop/collections/seats.webp"]);
+  assert.deepEqual(attributes(doc, ".home-categories img", "src").map(shown), [upload("1"), upload("3")]);
   assert.deepEqual(attributes(doc, ".home-categories img", "alt"), ["A restful bedroom", "Handcrafted dining seats"]);
   assert.deepEqual(attributes(doc, ".home-offer-tiles > a", "href"), ["/collections/best-buy-under-rs-50-000"]);
-  assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/collections/value.webp");
+  assert.equal(shown(doc.querySelector(".home-offer-tiles img")?.getAttribute("src")), upload("4"));
   assert.equal(doc.querySelector(".home-offer-tiles img")?.getAttribute("alt"), "Discover our furniture offer");
   assert.equal(doc.querySelector("[data-product-card]"), null);
 });
@@ -157,6 +158,16 @@ test("published rails preserve product order, omit missing, unavailable and unpu
   assert.deepEqual(texts(doc, '[data-home-section="chairs"] [data-card-price]'), ["Rs. 9,000.00", "Rs. 8,500.00"]);
   assert.ok(requests.every(({ method, url }) => method === "GET" && /^\/api\/(content\/storefront|instagram\/feed|catalogue\/cards)$/.test(url)), "Rendering only reads published content and catalogue data");
   assert.equal(doc.querySelector('[href="/checkout"], button[name="checkout"]'), null);
+});
+
+// The products that existed only on Shopify left the store (11 Nov 2026): a published list that still names one shows its
+// Keeri replacement once, and one without a replacement is left out.
+test("a published rail that names a retired product shows its Keeri replacement once, or leaves it out", async () => {
+  const merchandising = customMerchandising();
+  merchandising.bestsellers = ["sora-5-seater-sofa", "sora", "nova-dining-table", "loft-bench", "aera-swivel-lounge-chair"];
+  // The catalogue here would still answer for the retired addresses: the page must not ask for them.
+  const { doc } = await renderHome({ merchandising, products: Object.fromEntries(["sora", "nova", "avelon-chair", "loft-bench", "sora-5-seater-sofa"].map(handle => [handle, product(handle)])) });
+  assert.deepEqual(attributes(doc, '[data-home-section="bestsellers"] [data-card-name]', "href"), ["/products/sora", "/products/nova", "/products/avelon-chair"]);
 });
 
 test("explicitly empty merchandising keeps rails honestly empty without restoring legacy products or tiles", async () => {

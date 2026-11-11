@@ -109,32 +109,8 @@ export function StoreContent({ nodes, previewUploads = false }: { nodes: Content
                 style={{ width: "100%", height: "auto" }}
               />
             );
-          // Any other picture must be an absolute Shopify address (imported content the server has not copied yet).
-          let url: URL | null = null;
-          try {
-            url = node.src ? new URL(node.src) : null;
-          } catch {
-            return null;
-          }
-          if (
-            !url ||
-            url.protocol !== "https:" ||
-            !["shop.maplefurnishers.com", "cdn.shopify.com"].includes(
-              url.hostname,
-            )
-          )
-            return null;
-          return (
-            <Image
-              key={index}
-              src={url.href}
-              alt={node.alt || ""}
-              width={1200}
-              height={800}
-              sizes="(max-width:749px) 92vw, 860px"
-              style={{ width: "100%", height: "auto" }}
-            />
-          );
+          // Any other picture is left out: the store shows only its own media (no Shopify files, owner 11 Nov 2026).
+          return null;
         }
         if (!tags.has(node.tag)) return null;
         const tag = node.tag === "h1" ? "h2" : node.tag;

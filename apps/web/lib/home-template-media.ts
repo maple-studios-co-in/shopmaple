@@ -2,7 +2,9 @@ import type { TemplateMedia, TemplateMediaItem } from "@shopmaple/contracts";
 
 /** Shared storefront defaults, without other page templates or staff labels. */
 export const homeTemplateMedia = {
-  "home-workshop-poster": { key: "home-workshop-poster", image: "/media/shopify/f8c5b1f5a169bfa954286564273ea1ae.jpg", alt: "Arranging flowers on a Maple sideboard beside a floral armchair" },
+  // The hero's first still. Its original (the shop film's poster) was on Shopify; until staff upload one the hero shows
+  // a Keeri product's photo instead (template-media-defaults.ts, `product`).
+  "home-workshop-poster": { key: "home-workshop-poster", image: "", alt: "Maple furniture" },
   "home-hero-sofas": { key: "home-hero-sofas", image: "/media/home/hero-sofas.webp", alt: "" },
   "home-hero-chairs": { key: "home-hero-chairs", image: "/media/home/hero-chairs.webp", alt: "" },
   "home-hero-tables": { key: "home-hero-tables", image: "/media/home/hero-tables.webp", alt: "" },

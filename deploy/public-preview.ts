@@ -1,12 +1,22 @@
 import { catalogueImportSchema } from "@shopmaple/contracts";
 import { Prisma, type PrismaClient } from "@prisma/client";
 
+/**
+ * The committed public snapshot (apps/api/data/preview-catalog.json): Keeri products as the store lists them, with
+ * their store identities (`keeri:<tenant>:<id>`), so a later catalogue sync updates the same rows. Keeri is the store's
+ * only product source (owner, 11 Nov 2026).
+ */
+export function isKeeriPreviewSnapshot(parsed: { source: string; products: { id: string; source: string; variants: { id: string }[] }[] }) {
+  const source = parsed.products[0]?.source ?? "";
+  return parsed.source === "keeri-store-snapshot" && /^keeri:[a-z0-9]{1,64}$/.test(source) &&
+    parsed.products.every(p => p.source === source && p.id.startsWith(`${source}:`) &&
+      p.variants.every(v => v.id.startsWith(`${source}:`)));
+}
+
 export function preparePublicPreview(input: unknown) {
   const parsed = catalogueImportSchema.parse(input);
-  if (parsed.source !== "shopify-preview" || parsed.products.some(p =>
-    p.source !== "shopify-preview" || !/^preview-[0-9]+$/.test(p.id) ||
-    p.variants.some(v => !/^preview-[0-9]+$/.test(v.id))))
-    throw new Error("Only reviewed Shopify preview identities are allowed");
+  if (!isKeeriPreviewSnapshot(parsed))
+    throw new Error("Only the reviewed Keeri preview snapshot's identities are allowed");
   return { ...parsed, products: parsed.products.map(p => ({ ...p,
     variants: p.variants.map(v => ({ ...v, available: false, stockPolicy: "unverified" as const })),
   })) };

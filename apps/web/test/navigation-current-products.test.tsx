@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
+import { shown } from "./support/rendered-src";
 import { test, type TestContext } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -13,10 +13,12 @@ Object.assign(dom.window, { matchMedia: () => ({ matches: false, addEventListene
 dom.window.HTMLElement.prototype.scrollTo = () => {};
 dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
 dom.window.HTMLDialogElement.prototype.close = function () { this.open = false; };
-const handles = ["veyra-chest-of-drawers", "rowan-bookcase", "elion-storage-cabinet", "arden-console-cabinet", "morik-media-unit", "zylen-media-unit"];
+// The six featured pieces are Keeri products (the original six existed only on Shopify and left the store, 11 Nov 2026).
+const handles = ["aileron-chest", "arboris-bookcase", "radiance-cabinet", "arcana-console", "morik", "zylen"];
+const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}-front.webp`;
 function product(handle: string, pricePaise: number | null = 123400) {
   const result = cardEnvelope(handle, "Current catalogue name");
-  return { ...result, product: { ...result.product, pricePaise, compareAtPaise: pricePaise !== null && pricePaise < 150000 ? 150000 : null } };
+  return { ...result, product: { ...result.product, image: photo(handle), pricePaise, compareAtPaise: pricePaise !== null && pricePaise < 150000 ? 150000 : null } };
 }
 type Product = ReturnType<typeof product>;
 type Request = { handle: string; signal?: AbortSignal | null; resolve: (response: Response) => void };
@@ -53,13 +55,13 @@ test("menu waits for current publication and prices while retaining curated orde
     assert.deepEqual(app.requests.map(r => r.handle), handles);
     await resolveAll(app.requests);
     assert.deepEqual(cards().map(a => a.getAttribute("href")), handles.slice(0, 4).map(h => `/products/${h}`));
-    assert.match(cards()[0]!.textContent!, /Veyra Chest of Drawers/);
+    assert.match(cards()[0]!.textContent!, /Aileron Chest/);
     assert.match(cards()[0]!.textContent!, /1,234/);
     assert.match(cards()[0]!.querySelector("del")!.textContent!, /1,500/);
     assert.doesNotMatch(cards()[0]!.textContent!, /76,700|82,600/);
-    assert.equal(shown(cards()[0]!.querySelector("img")!.getAttribute("src")), copyOf("files/f64f78cc692eed394c40922a3594286a.webp"));
+    assert.equal(shown(cards()[0]!.querySelector("img")!.getAttribute("src")), photo("aileron-chest"), "the piece's own catalogue photo");
     await click("Living Room");
-    assert.deepEqual(cards().map(a => a.getAttribute("href")), ["/products/morik-media-unit", "/products/zylen-media-unit"]);
+    assert.deepEqual(cards().map(a => a.getAttribute("href")), ["/products/morik", "/products/zylen"]);
     assert.equal(app.requests.length, 6, "drilldown reuses this opening's current records");
   } finally { await app.close(); }
 });
@@ -75,6 +77,19 @@ test("missing and invalid records never become menu links or source-price fallba
     assert.equal(cards().length, 0);
     assert.ok(document.querySelector('[aria-label="Featured furniture"] [role="alert"]'));
     await click("Living Room"); assert.equal(cards().length, 2, "valid independent products remain visible");
+  } finally { await app.close(); }
+});
+
+// The menu's artwork is each piece's own photo from the catalogue; a listed piece without one is left out, never drawn
+// from a stored address.
+test("a listed piece without a catalogue photo is left out of the menu", async t => {
+  const app = await setup(t); try {
+    await resolveAll(app.requests, handle => {
+      const p = product(handle);
+      return Response.json(handle === handles[1] ? { ...p, product: { ...p.product, image: null } } : p);
+    });
+    assert.deepEqual(cards().map(a => a.getAttribute("href")), [handles[0], handles[2], handles[3]].map(h => `/products/${h}`));
+    assert.equal(cards().every(a => !/shopify/.test(a.innerHTML)), true);
   } finally { await app.close(); }
 });
 
@@ -101,7 +116,7 @@ test("stalled bodies time out and retry only failures while preserving loaded ca
       handle === handles[1] ? new Response(null,{status:404}) : Response.json(product(handle)));
     await act(async () => t.mock.timers.tick(6000));
     assert.equal(app.requests[0]!.signal?.aborted, true);
-    assert.deepEqual(cards().map(a=>a.getAttribute("href")), ["/products/elion-storage-cabinet", "/products/arden-console-cabinet"]);
+    assert.deepEqual(cards().map(a=>a.getAttribute("href")), ["/products/radiance-cabinet", "/products/arcana-console"]);
     await click("Retry featured furniture");
     assert.equal(app.requests.length, 7); assert.equal(app.requests[6]!.handle, handles[0]);
     assert.equal(cards().length, 2, "retry preserves successful cards");

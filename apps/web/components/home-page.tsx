@@ -4,7 +4,7 @@ import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CampaignBanner } from "@/components/campaign-banner";
-import { Hero } from "@/components/hero";
+import { Hero, heroArtworkProducts } from "@/components/hero";
 import { ProductCard } from "@/components/product-card";
 import { HomeCarousel } from "@/components/home-carousel";
 import { HomeScrollRail } from "@/components/home-scroll-rail";
@@ -26,7 +26,8 @@ import { getProductCards } from "@/lib/catalog";
 import type { StorefrontDocument } from "@/lib/content";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
-import { rasterShopifyArtwork } from "@/lib/shopify-artwork";
+import { currentHandles } from "@/lib/retired-products";
+import type { ProductPhotos } from "@/lib/template-media-defaults";
 
 /** The bundled offer artwork (public/media/home/offer-*.webp) draws its own arrow; staff uploads do not. */
 const bundledOffer = (src: string) => src.startsWith("/media/home/offer-");
@@ -45,7 +46,7 @@ function CollectionTiles({
         <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })}>
           <div>
             <Image
-              src={rasterShopifyArtwork(item.image)}
+              src={item.image}
               alt={item.alt}
               fill
               sizes={className.includes("categories")
@@ -129,15 +130,26 @@ function RailPlaceholder({ label }: { label: string }) {
   return <section className="home-products home-container" aria-label={label} aria-busy="true" data-rail-placeholder />;
 }
 
-/** The homepage assembled from one content document: the published snapshot for visitors, a draft for staff previews. */
-export function HomePage({ content }: { content: StorefrontDocument }) {
+/** The artwork placements the hero reads: its opening still and its four category tiles. */
+const heroMedia = (content: StorefrontDocument) => content.templateMedia?.filter(item =>
+  item.key === "home-workshop-poster" || item.key.startsWith("home-hero-"));
+
+/** The Keeri products whose photos the homepage's artwork needs where staff have uploaded none (lib/product-photos.ts). */
+export function homeArtworkProducts(content: StorefrontDocument): string[] {
+  if (!content.homeSections.some((section) => section.key === "hero" && section.enabled)) return [];
+  return heroArtworkProducts(resolveHomeDetails(content.homeDetails).hero, heroMedia(content));
+}
+
+/**
+ * The homepage assembled from one content document: the published snapshot for visitors, a draft for staff previews.
+ * `photos` holds the Keeri product photos that stand in for artwork staff have not uploaded (homeArtworkProducts).
+ */
+export function HomePage({ content, photos }: { content: StorefrontDocument; photos?: ProductPhotos }) {
   const copy = content.homeCopy;
   const details = resolveHomeDetails(content.homeDetails);
   const merchandising = resolveHomeMerchandising(content.homeMerchandising);
   const sections: Record<string, ReactNode> = {
-    hero: <Hero content={details.hero} media={content.templateMedia?.filter(item =>
-      item.key === "home-workshop-poster" || item.key.startsWith("home-hero-")
-    )} />,
+    hero: <Hero content={details.hero} media={heroMedia(content)} photos={photos} />,
     announcement: <CampaignBanner campaign="landing-announcement" layout="strip" content={content} eager />,
     difference: <HomeDifference content={details.difference} media={content.templateMedia} />,
     categories: (
@@ -175,7 +187,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     bestsellers: (
       <Suspense fallback={<RailPlaceholder label="Bestsellers" />}>
         <HomeProducts
-          handles={merchandising.bestsellers}
+          handles={currentHandles(merchandising.bestsellers)}
           heading={copy.bestsellersHeading}
           label="Bestsellers"
           browseHref="/collections/all"
@@ -188,7 +200,7 @@ export function HomePage({ content }: { content: StorefrontDocument }) {
     chairs: (
       <Suspense fallback={<RailPlaceholder label="Chair collection" />}>
         <HomeProducts
-          handles={merchandising.chairs}
+          handles={currentHandles(merchandising.chairs)}
           heading={copy.chairsHeading ?? "Chairs"}
           label="Chair collection"
           // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.

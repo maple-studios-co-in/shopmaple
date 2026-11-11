@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ownSitePath, primarySiteUrl, siteOrigins } from "@shopmaple/contracts";
-import { approvedCatalogueImage } from "../src/shopify-catalogue.js";
+import { approvedCatalogueImage } from "../src/catalogue-images.js";
 import { storeOrigins } from "../src/site.js";
 
 test("the store's address is SITE_URL, then WEB_ORIGIN, then the local development address", () => {
@@ -30,6 +30,24 @@ test("Keeri photos on either of the store's addresses are approved catalogue ima
     assert.equal(approvedCatalogueImage("https://other.example/media/keeri/photo1.webp"), false);
     process.env.SITE_ALIASES = "";
     assert.equal(approvedCatalogueImage("https://store.maplefurnishers.com/media/keeri/photo1.webp"), false);
+  } finally {
+    for (const key of ["SITE_URL", "SITE_ALIASES", "WEB_ORIGIN"]) { if (before[key] === undefined) delete process.env[key]; else process.env[key] = before[key]; }
+  }
+});
+
+test("Shopify's files are never catalogue images, only Keeri photos on the store's own address", () => {
+  const before = { ...process.env };
+  try {
+    Object.assign(process.env, { SITE_URL: "https://store.maplefurnishers.com", SITE_ALIASES: "https://shop.maplefurnishers.com", WEB_ORIGIN: "https://store.maplefurnishers.com" });
+    assert.equal(approvedCatalogueImage("https://store.maplefurnishers.com/media/keeri/photo1.webp"), true);
+    for (const shopify of [
+      "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/chair.jpg",
+      "https://shop.maplefurnishers.com/cdn/shop/files/chair.jpg",
+      "https://maple.myshopify.com/cdn/shop/files/chair.jpg",
+      "/media/shopify/0123456789abcdef0123456789abcdef.jpg",
+      "https://store.maplefurnishers.com/media/shopify/0123456789abcdef0123456789abcdef.jpg",
+      "https://store.maplefurnishers.com/media/keeri/photo1.webp?v=1",
+    ]) assert.equal(approvedCatalogueImage(shopify), false, shopify);
   } finally {
     for (const key of ["SITE_URL", "SITE_ALIASES", "WEB_ORIGIN"]) { if (before[key] === undefined) delete process.env[key]; else process.env[key] = before[key]; }
   }

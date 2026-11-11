@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { copyOf, shown } from "./support/shopify-copy";
+import { shown } from "./support/rendered-src";
+import { cardFixture } from "./support/catalogue-fixtures";
 import { test } from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -45,9 +46,15 @@ const storyEdit = () => ({
   invitationBody: "Tell us about your room.",
   invitationCta: "Write to us",
 });
+/** Each listed Keeri product's own photo, as the catalogue's cards carry it. */
+const photo = (handle: string) => `https://store.maplefurnishers.com/media/keeri/${handle}.webp`;
 async function withResponse(body: unknown, run: () => Promise<void>) {
   const previous = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
+    // The opening and belief photos stand in from Keeri products' cards until staff upload their own.
+    const url = new URL(String(input));
+    if (url.pathname === "/api/catalogue/cards")
+      return Response.json({ published: true, products: (url.searchParams.get("handles") ?? "").split(",").map(handle => ({ ...cardFixture(handle), image: photo(handle) })) });
     assert.ok(String(input).endsWith("/api/content/storefront"));
     assert.equal(init?.cache, "no-store");
     if (body === "offline") throw new Error("offline");
@@ -70,7 +77,8 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
   await withResponse(null, async () => {
     const doc = await renderPage();
     assert.deepEqual(order(doc), ["hero", "principles", "belief-film", "journey", "cities", "invitation"]);
-    // Opening: eyebrow, two-line title, tagline, introduction and a button down to the journey, beside Maple's own photo.
+    // Opening: eyebrow, two-line title, tagline, introduction and a button down to the journey, beside a photo (its Shopify
+    // original left the store on 11 Nov 2026; a Keeri product's photo stands in until staff upload one).
     assert.match(text(doc, ".story-hero .story-eyebrow") ?? "", /^Our Story\s*\/\s*Made in Delhi$/);
     assert.equal(doc.querySelectorAll("h1").length, 1);
     assert.equal(text(doc, "h1.story-hero-title"), "Made different,by design.");
@@ -81,7 +89,7 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
     assert.equal(explore?.textContent, "Explore the Maple journey");
     assert.equal(explore?.getAttribute("href"), "#maple-journey");
     assert.equal(doc.querySelector("#maple-journey")?.getAttribute("data-story-section"), "journey");
-    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), copyOf("files/Frame129.png"));
+    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), photo("luca"));
     // Three principles, each with its drawn icon.
     assert.deepEqual(texts(doc, ".story-principle h3"), ["Handmade", "Unique designs", "Bespoke pieces"]);
     assert.deepEqual(texts(doc, ".story-principle p"), ["Crafted in-house, with care.", "Considered for everyday living.", "Your space. Your finish. Your way."]);
@@ -94,7 +102,7 @@ test("Our Story draws the owner's redesign (Figma 293:1093) from the bundled cop
       "The weight of a table that does not wobble after five years. The way a well-upholstered chair holds its shape through an Indian summer. The quiet satisfaction of sitting in something built for your specific room.",
       "Maple began as a family pursuit to build something that lasts. The workshop in Delhi is still where everything happens, and every piece we ship carries the same brief it started with: build it right.",
     ]);
-    assert.equal(shown(doc.querySelector(".story-belief-media img")?.getAttribute("src")), copyOf("files/preview_images/84351f35cf124a0ab27f853cb96b817f.thumbnail.0000000000_2500x.jpg"));
+    assert.equal(shown(doc.querySelector(".story-belief-media img")?.getAttribute("src")), photo("varin"));
     // The journey: seven chapters in a slider, the first in view, chosen by the years under it.
     assert.equal(text(doc, ".story-journey > .story-eyebrow"), "The Maple Journey");
     assert.equal(text(doc, "h2.story-journey-title"), "Built over time. Made for yours.");
@@ -149,7 +157,7 @@ test("published story edits render the selected order and safe text while preser
     assert.equal(text(doc, ".story-invitation h2"), "Talk to the workshop.");
     assert.equal(text(doc, ".story-invitation p"), "Tell us about your room.");
     assert.equal(text(doc, ".story-invitation a"), "Write to us");
-    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), copyOf("files/Frame129.png"));
+    assert.equal(shown(doc.querySelector(".story-hero-media img")?.getAttribute("src")), photo("luca"));
     const metadata = "generateMetadata" in storyRoute
       ? await (storyRoute.generateMetadata as () => Promise<{ title: string }>)()
       : (storyRoute as unknown as { metadata: { title: string } }).metadata;
@@ -248,4 +256,16 @@ test("story contract accepts bounded content and rejects unknown, duplicate and 
   assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, pages: [{
     slug: "our-story", title: "Override", description: "", body: "", banner: null,
   }] }).success, false);
+});
+
+test("without an upload or a listed Keeri photo the opening and belief keep their words and draw no picture", async () => {
+  const { StoryLanding } = await import("../components/category-story");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const doc = new JSDOM(renderToStaticMarkup(<StoryLanding />)).window.document;
+  assert.equal(doc.querySelector(".story-hero-media"), null);
+  assert.equal(doc.querySelector(".story-belief-media"), null);
+  assert.equal(text(doc, "h1.story-hero-title"), "Made different,by design.");
+  assert.equal(text(doc, ".story-belief .story-eyebrow"), "Our Belief");
+  const uploaded = new JSDOM(renderToStaticMarkup(<StoryLanding media={[{ key: "story-hero", image: "/media/uploads/" + "e".repeat(64) + ".webp", alt: "Our workshop" }]} photos={new Map([["luca", photo("luca")]])} />)).window.document;
+  assert.ok(shown(uploaded.querySelector(".story-hero-media img")?.getAttribute("src")).includes("e".repeat(64)), "an upload wins over the Keeri photo");
 });

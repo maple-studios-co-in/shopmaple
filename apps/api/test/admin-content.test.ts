@@ -298,10 +298,10 @@ test("hero slides and extra Nimbus collections save and publish; unapproved medi
         cities: { eyebrow: "Delivery", heading: "Across India" },
         project: { heading: "Your project", introBefore: "Reply within ", responseTime: "two days", introAfter: " with ideas.", body: "Tell us more." },
     };
-    // An approved shop picture: library uploads are covered by home-details-media.test.ts, which publishes real assets.
-    const upload = "https://shop.maplefurnishers.com/cdn/shop/files/slide.webp?v=1";
+    // A bundled store picture: library uploads are covered by home-details-media.test.ts, which publishes real assets.
+    const upload = "/media/home/slide.webp";
     const heroSlides = [
-        { kind: "video", src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4?v=0", poster: upload, alt: "Workshop", headline: "Made by hand", intro: "In Delhi." },
+        { kind: "video", src: "/media/films/workshop.mp4", poster: upload, alt: "Workshop", headline: "Made by hand", intro: "In Delhi." },
         { kind: "image", src: upload, alt: "A sofa", headline: "Sofas", intro: "Built to last." },
     ];
     const nimbusSlides = [{ heading: "Terra", tagline: "Warm", features: ["a", "b", "c", "d"], cta: "Shop Terra", href: "/collections/terra", image: upload, alt: "Terra" }];
@@ -316,6 +316,10 @@ test("hero slides and extra Nimbus collections save and publish; unapproved medi
     const version = (await publisher.agent.get("/api/admin/content")).body.version;
     for (const invalid of [
         { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[1], src: "https://example.com/a.jpg" }] } },
+        // Shopify's files are no longer store media (owner, 11 Nov 2026), whichever address names them.
+        { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[0], src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4?v=0" }] } },
+        { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[1], src: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/slide.webp" }] } },
+        { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[1], src: "/media/shopify/0123456789abcdef0123456789abcdef.webp" }] } },
         { ...withSlides, hero: { ...withSlides.hero, slides: [{ ...heroSlides[0], poster: undefined }] } },
         { ...withSlides, hero: { ...withSlides.hero, slides: [] } },
         { ...withSlides, hero: { ...withSlides.hero, slides: Array(7).fill(heroSlides[1]) } },

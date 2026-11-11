@@ -6,8 +6,8 @@ The visual and content authority is the owner's existing [Maple Shopify storefro
 
 - `navigation.json` was extracted from the public storefront header on 25 October 2026. It preserves the five top-level labels and source links, the four Living Room columns with 27 links, and the three Bedroom columns with 13 links. Living Room and Bedroom are disclosure controls in the implementation.
 - The owner's exported `sections/header-group.json`, retained outside version control under `reference/shopify-153432359101/theme/` in the original workspace, corroborates the Red Hat Display menu treatment, gray submenu links (`#555`), black desktop headings and thin dividers. Its Liquid implementation was not copied into the running application.
-- `navigation-products.json` records titles, original Shopify CDN image URLs, prices and compare-at prices from public `/products/{handle}.js` responses on the same date. Amounts are integer paise. The main mobile menu shows Veyra Chest of Drawers, Rowan Bookcase, Elion Storage Cabinet and Arden Console Cabinet; the Living Room submenu shows Morik Media Unit and Zylen Media Unit. Bedroom has no featured-product rail.
-- These six product cards use Next.js image optimization and link to their exact Shopify product URLs. Their prices are a dated public snapshot, with no live availability claim or additional catalogue import implied.
+- `navigation-products.json` names the six featured pieces and their menu titles. Since 11 Nov 2026 they are Keeri products (the original six existed only on Shopify and left the store): Aileron Chest, Arboris Bookcase, Radiance Cabinet and Arcana Console in the main mobile menu, Morik and Zylen Media Units in the Living Room submenu. Bedroom has no featured-product rail.
+- Each card shows the piece's own photo, price and address from the live catalogue when the menu opens; a piece the catalogue does not list is left out.
 
 ## Destination adaptations
 

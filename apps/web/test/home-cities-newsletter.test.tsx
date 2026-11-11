@@ -179,14 +179,16 @@ test("a fresh homepage shows the newsletter where the numbers were, right above 
   assert.equal(doc.querySelector("[data-stat-band]"), null, "the numbers band is gone from the page");
 });
 
-test("the band carries the admin's words, the brand's mark behind them, and the frame's labelled email box", () => {
-  const doc = parse(<HomeNewsletter />);
+test("the band carries the admin's words, an uploaded mark behind them, and the frame's labelled email box", () => {
+  // The bundled mark was a Shopify file (left the store 11 Nov 2026): the band shows a mark only once staff upload one.
+  assert.equal(parse(<HomeNewsletter />).querySelector("[data-newsletter-mark]"), null);
+  const doc = parse(<HomeNewsletter media={[{ key: "home-newsletter", image: "/media/uploads/" + "a".repeat(64) + ".webp", alt: "Maple Furnishers" }]} />);
   const band = doc.querySelector(".home-newsletter")!;
   assert.equal(text(band.querySelector("h2")), "Soft presence. Strong craftsmanship.");
   assert.equal(text(band.querySelector("h2 + p")), "Furniture made for rooms that feel as good as they look.");
   assert.equal(text(band.querySelector("h3")), "New Collections. Early Access. No Noise.");
   const mark = band.querySelector<HTMLElement>("[data-newsletter-mark]")!;
-  assert.ok(mark.querySelector("img"), "the logo watermark");
+  assert.ok(mark.querySelector("img"), "the uploaded watermark");
   const email = band.querySelector<HTMLInputElement>('form input[type="email"]')!;
   assert.equal(email.placeholder, "Email address");
   assert.equal(email.required, true);
