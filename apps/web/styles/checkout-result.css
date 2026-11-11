@@ -1,5 +1,6 @@
-/* The payment result after Razorpay's window (Figma 392:1752 "Payment Success", 392:1806 "Payment Failure"): the message
-   beside the order card, on a sage panel when paid and a warm one when not. Drawn by components/store/checkout-result.tsx
+/* The payment result after Razorpay's window (Figma 392:1752 "Payment Success", 392:1806 "Payment Failure", 459:1337
+   "Payment Pending"): the message beside the order card, on a sage panel when paid and a warm one when not (a sandier
+   one while the payment awaits confirmation). Drawn by components/store/checkout-result.tsx
    inside the checkout page (.checkout-page in styles/account.css), whose padding is the frame's 80px panel padding at
    1440; loaded by app/checkout/layout.tsx. Sizes are the design's at 1440px as a share of the screen (value / 14.4 vw),
    down to a floor that reads on a phone and up to a third larger at 1920, as styles/account.css draws them. The card
@@ -14,12 +15,17 @@
 .checkout-page:has([data-payment-result="failed"]) {
   background: #f8f6f1;
 }
+.chrome-main:has([data-payment-result="pending"]),
+.checkout-page:has([data-payment-result="pending"]) {
+  background: #f6f4ed;
+}
 /* The shell's brand bar above them, as each frame draws it: Maple red when paid, the quiet beige when not. */
 .chrome:has([data-payment-result="success"]) .chrome-brand {
   background: #80241c;
   color: #fff;
 }
-.chrome:has([data-payment-result="failed"]) .chrome-brand {
+.chrome:has([data-payment-result="failed"]) .chrome-brand,
+.chrome:has([data-payment-result="pending"]) .chrome-brand {
   background: #efede7;
   color: #68665f;
 }
@@ -65,7 +71,8 @@
 .checkout-page .checkout-result-title > span {
   display: block;
 }
-.checkout-page [data-payment-result="failed"] .checkout-result-title {
+.checkout-page [data-payment-result="failed"] .checkout-result-title,
+.checkout-page [data-payment-result="pending"] .checkout-result-title {
   font-size: clamp(28px, 2.639vw, 50.7px);
 }
 .checkout-page .checkout-result-lead {
@@ -90,6 +97,12 @@
   background: rgba(242, 20, 1, 0.23);
   color: #741a14;
 }
+/* "Status / Awaiting confirmation": 220 wide at 1440, on sand. */
+.checkout-page [data-payment-result="pending"] .checkout-result-pill {
+  min-width: clamp(190px, 15.278vw, 293.3px);
+  background: #eee5cf;
+  color: #741a14;
+}
 .checkout-page .checkout-result-label {
   color: var(--account-muted);
   font: var(--account-small);
@@ -107,6 +120,10 @@
 }
 .checkout-page .checkout-result-reference {
   white-space: nowrap;
+}
+/* The full checkout reference is long: it may break anywhere rather than widen a phone's column. */
+.checkout-page .checkout-result-checkout-id {
+  overflow-wrap: anywhere;
 }
 /* "Maple / Collection / Primary action": 300 x 52 at 1440, one under the other. */
 .checkout-page .checkout-result-actions {
@@ -135,6 +152,23 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+/* "Payment reference · PAY-10482" under the buttons. */
+.checkout-page .checkout-result-ref {
+  color: var(--account-ink);
+  font: var(--account-small);
+}
+/* What a check the buyer asked for found. Empty, it stays a live region but takes no room in the column. */
+.checkout-page .checkout-result-checked {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.checkout-page .checkout-result-checked:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 
 /* ---- The order card ---- */
 .checkout-page .checkout-result-card {
@@ -152,12 +186,13 @@
   color: var(--account-ink);
   font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
 }
-/* One piece: its photo whole, across the card and 300 tall at 1440 (180 on the failure screen). */
+/* One piece: its photo whole, across the card and 300 tall at 1440 (180 on the failure and pending screens). */
 .checkout-page .checkout-result-photo {
   position: relative;
   height: clamp(200px, 20.833vw, 400px);
 }
-.checkout-page [data-payment-result="failed"] .checkout-result-photo {
+.checkout-page [data-payment-result="failed"] .checkout-result-photo,
+.checkout-page [data-payment-result="pending"] .checkout-result-photo {
   height: clamp(140px, 12.5vw, 240px);
 }
 .checkout-page .checkout-result-photo img {
@@ -252,7 +287,8 @@
   .checkout-page .checkout-result-photo {
     height: clamp(220px, 40vw, 320px);
   }
-  .checkout-page [data-payment-result="failed"] .checkout-result-photo {
+  .checkout-page [data-payment-result="failed"] .checkout-result-photo,
+  .checkout-page [data-payment-result="pending"] .checkout-result-photo {
     height: clamp(160px, 24vw, 220px);
   }
 }

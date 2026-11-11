@@ -17,10 +17,10 @@ const samplePrefill: CheckoutPrefill = { email: "aditi.sharma@example.com", name
 /**
  * Local development only, while the API keeps checkout closed: `/checkout?preview=design` shows the page with sample
  * delivery methods as a guest sees it, `?preview=signed-in` as a signed-in customer's, filled in, and `?preview=quote`
- * priced, with the delivery charge, the estimate and the total (Figma 394:1310). `?preview=success` and `?preview=failure`
- * show the screens after payment (Figma 392:1752 and 392:1806), `?preview=success-multi` the first with two pieces and
- * `?preview=failure-dismissed` the second for a payment window closed untried. Continuing fails as the closed API
- * refuses it; production builds never take this path.
+ * priced, with the delivery charge, the estimate and the total (Figma 394:1310). `?preview=success`, `?preview=failure`
+ * and `?preview=pending` show the screens after payment (Figma 392:1752, 392:1806 and 459:1337), `?preview=success-multi`
+ * the first with two pieces and `?preview=failure-dismissed` the second for a payment window closed untried. Continuing
+ * fails as the closed API refuses it; production builds never take this path.
  */
 async function designPreview(searchParams: Promise<{ preview?: string | string[] }> | undefined) {
   if (process.env.NODE_ENV === "production") return null;
@@ -28,7 +28,7 @@ async function designPreview(searchParams: Promise<{ preview?: string | string[]
   if (preview === "design") return <CheckoutFlow options={sampleOptions} account={{ enabled: true, prefill: null }} />;
   if (preview === "signed-in") return <CheckoutFlow options={sampleOptions} account={{ enabled: true, prefill: samplePrefill }} />;
   if (preview === "quote") return <CheckoutQuotePreview />;
-  if (preview === "success" || preview === "success-multi" || preview === "failure" || preview === "failure-dismissed")
+  if (preview === "success" || preview === "success-multi" || preview === "failure" || preview === "failure-dismissed" || preview === "pending")
     return <CheckoutResultPreview kind={preview} />;
   return null;
 }

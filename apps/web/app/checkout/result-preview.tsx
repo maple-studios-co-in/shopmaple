@@ -1,12 +1,14 @@
 "use client";
-import { PaymentFailure, PaymentSuccess } from "@/components/store/checkout-result";
+import { useEffect, useState } from "react";
+import { PaymentFailure, PaymentPending, PaymentSuccess, type PaymentCheck } from "@/components/store/checkout-result";
 import type { CheckoutAttempt } from "./checkout-client";
 
-// Local development only: the screens after Razorpay's window as Figma 392:1752 and 392:1806 draw them, with the quote
-// preview's sample order (quote-preview.tsx). `?preview=success` is the paid order, `?preview=success-multi` the same with
-// two pieces, `?preview=failure` a failed try and `?preview=failure-dismissed` a window closed untried. Nothing here talks
-// to the API; the failure screen's buttons do nothing.
-export type ResultPreviewKind = "success" | "success-multi" | "failure" | "failure-dismissed";
+// Local development only: the screens after Razorpay's window as Figma 392:1752, 392:1806 and 459:1337 draw them, with the
+// quote preview's sample order (quote-preview.tsx). `?preview=success` is the paid order, `?preview=success-multi` the same
+// with two pieces, `?preview=failure` a failed try, `?preview=failure-dismissed` a window closed untried and
+// `?preview=pending` a payment awaiting confirmation. Nothing here talks to the API; the failure screen's buttons do nothing,
+// and the pending screen's "Check payment status" pretends a check that finds the payment still pending.
+export type ResultPreviewKind = "success" | "success-multi" | "failure" | "failure-dismissed" | "pending";
 
 const nola = { variantId: "keeri:preview:nola-oak", productId: "keeri:preview:nola", title: "Nola Accent Chair", variantTitle: "Natural cane · Oak finish", sku: null,
   quantity: 1, unitPricePaise: 2490000, lineTotalPaise: 2490000, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 10 } };
@@ -41,9 +43,25 @@ function sampleAttempt(items: (typeof nola)[], paid: boolean): CheckoutAttempt {
     },
     fulfillmentStatus: paid ? "confirmed" : "pending",
     orderReference: paid ? "SO-PREVIEW" : null,
-    // The frames' order number, and so the failure frame's reference PAY-10482.
+    // The frames' order number, and so their reference PAY-10482.
     orderNumber: "MF-10482",
   };
+}
+
+/** The pending screen with a pretend check: a moment of "Checking…", then still pending. */
+function PendingPreview() {
+  const [checking, setChecking] = useState(false);
+  const [lastCheck, setLastCheck] = useState<PaymentCheck | null>(null);
+  useEffect(() => {
+    if (!checking) return;
+    const timer = setTimeout(() => {
+      setChecking(false);
+      setLastCheck({ at: new Date(), outcome: "pending" });
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [checking]);
+  return <PaymentPending attempt={sampleAttempt([nola], false)} photos={photos} checking={checking} lastCheck={lastCheck}
+    watching={false} onCheck={() => setChecking(true)} />;
 }
 
 export function CheckoutResultPreview({ kind }: { kind: ResultPreviewKind }) {
@@ -51,6 +69,8 @@ export function CheckoutResultPreview({ kind }: { kind: ResultPreviewKind }) {
     <div data-store data-checkout>
       {kind === "success" || kind === "success-multi" ? (
         <PaymentSuccess attempt={sampleAttempt(kind === "success" ? [nola] : [nola, aero], true)} customer={customer} photos={photos} signedIn={false} />
+      ) : kind === "pending" ? (
+        <PendingPreview />
       ) : (
         <PaymentFailure attempt={sampleAttempt([nola], false)} reason={kind === "failure" ? "failed" : "dismissed"} photos={photos} busy={false}
           onRetry={() => {}} onChooseMethod={() => {}} />
