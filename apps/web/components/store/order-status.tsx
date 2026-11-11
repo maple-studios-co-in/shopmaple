@@ -82,7 +82,10 @@ export function OrderStatus({ attemptId, pollIntervalMs = 5000 }: { attemptId: s
         <h2 className={heading}>{title}</h2>
         <p className="text-ui text-espresso">{body}</p>
         <p className="text-ui text-espresso">
-          {attempt.orderReference ? (
+          {/* Maple's own number once the payment is captured (owner, 10 Nov 2026); Keeri's reference stays internal. */}
+          {attempt.orderNumber ? (
+            <>Order number <strong>{attempt.orderNumber}</strong></>
+          ) : attempt.orderReference ? (
             <>Order reference <strong>{attempt.orderReference}</strong></>
           ) : (
             <>Checkout reference <strong>{attempt.id}</strong></>

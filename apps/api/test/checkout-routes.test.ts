@@ -146,12 +146,15 @@ test("status responses carry the public quote, payment key and fulfilment fields
     id: attemptId, cartId: "cart", merchantScope: "routes", idempotencyKey: "routes-request-1", receipt: "sm_routes", snapshot,
     catalogueBindings: null, amountPaise: 105000, currency: "INR", state: "captured", reservationId: "hold", reservationExpiresAt: new Date(),
     providerOrderId: "order_routes", paymentId: "pay_routes", capturedAt: new Date(), failureCode: null, createdAt: new Date(), updatedAt: new Date(),
+    customerEmailKey: "buyer@example.test", orderNumber: 10482,
     fulfillmentStatus: "confirmed", orderReference: "SO-42",
   };
   const app = createApp(db, { ...config, checkout }, service({ getAttempt: async () => attempt as never }));
   const response = await request(app).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
   assert.equal(response.status, 200);
-  assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderReference", "paid", "payBy", "payWithinSeconds", "providerOrderId", "quote", "state"]);
+  assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderNumber", "orderReference", "paid", "payBy", "payWithinSeconds", "providerOrderId", "quote", "state"]);
+  // Maple's own number is what the order status page shows the customer (owner, 10 Nov 2026).
+  assert.equal(response.body.orderNumber, "MF-10482");
   assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "delivery", "expiresAt", "gstMode", "items", "promotion", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
   assert.equal(response.body.quote.promotion, null, "no code applied");
   assert.deepEqual(response.body.quote.delivery, { courierName: "Bluedart", estimatedDays: 4 });

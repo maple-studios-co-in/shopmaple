@@ -92,6 +92,60 @@ sequenceDiagram
   Browser->>Browser: Clear pending intent only after confirmation and reconciliation
 ```
 
+## Customer accounts
+
+Added 11 November 2026 (owner's spec, 10 Nov). Shoppers sign in with an email and password at `/account/login` (Figma 392:1652), create an account at `/account/sign-up` (392:1697) and reset a forgotten password at `/account/forgot-password`. Sign-up and the reset both finish with a one-time code sent by email (six digits, valid ten minutes), which proves the address is theirs before the password is kept: orders are found by email, so an unproven address must never reach them. An account without a password (made by a code alone) still signs in by code until it sets one. There is no SMS. A signed-in customer sees their paid orders under Maple's own `MF-<n>` numbers, keeps up to ten delivery addresses, and edits their name and phone. The JSON API lives under `/api/account`. Its contract is `packages/contracts/src/account.ts`, imported only by the subpath `@shopmaple/contracts/account`, never from the package index, which ships in the homepage's script. The guest cart-cookie status path is unchanged.
+
+**Data (migrations `20261111140000_customer_accounts` and `20261111140100_customer_passwords`, both additive).**
+
+| Table / column | Holds |
+| --- | --- |
+| `Customer` | `emailKey` (unique, lowercased and trimmed like the snapshot's email), optional `name` and `phone` (+91 form), and `passwordHash` / `passwordSetAt` (scrypt N=2^15, r=8, p=3 with a 16-byte salt, stored as `scrypt$15$8$3$salt$key`; set only by a verify whose code proved the email). Created by the first successful verify. |
+| `CustomerLoginChallenge` | One emailed code: HMAC-SHA256 of the code (bound to the challenge and email) and of the requesting network (IPv4 address or IPv6 /64), keyed by `ACCOUNT_CODE_SECRET`; SHA-256 of the sign-in cookie of the browser that asked; expiry, tries (0–5, CHECK) and use. Counted for the sign-in limits, pruned after two days. |
+| `CustomerSignInFailure` | One failed verify: email, hashed network, and whether it was a wrong code for a live code of the browser's own. Counted for the failed-try budgets, pruned after two days. |
+| `CustomerSession` | SHA-256 of a 32-byte random cookie token, customer (cascade), creation, expiry (30 days) and last seen. |
+| `CustomerAddress` | Name, lines, city, GST state code, PIN, +91 phone, default flag. At most ten per customer, and exactly one default whenever any exist. Both rules are kept under a row lock on the customer. |
+| `CheckoutAttempt.customerEmailKey`, `.orderNumber`, `maple_order_number_seq` | The link from a paid attempt to the account, and the `MF-` number assigned in the capture transaction. See [order flow](order-flow.md#customer-accounts-and-maple-order-numbers-11-nov-2026). |
+
+Orders are linked by email, not by customer id. A paid attempt whose `customerEmailKey` equals the account's `emailKey` belongs to that account. Guest orders placed before the first sign-in therefore appear once the email is verified.
+
+**Security.** The model follows the staff auth module: hashed credentials, constant-time comparison, database-counted limits, cookie flags, and an Origin check on every write.
+- `POST /sign-in/start` always answers `202 { ok: true }` with a sign-in cookie, whether the email is known, new or over a limit. The code is delivered after the response, so timing does not show whether a limit was hit.
+- **Networks** are an IPv4 address, or an IPv6 /64 (one household or phone holds a whole /64). `::ffff:a.b.c.d` counts as the IPv4 address. See `apps/api/src/network.ts`.
+- **Codes emailed**, counted in PostgreSQL under transaction advisory locks (class 7702, email key then network), so they hold across processes and restarts:
+  - 3 per email from one network in 15 minutes;
+  - 10 per email a day;
+  - 10 per network an hour;
+  - 300 store-wide an hour. Reaching this cap writes one log line an hour per process, `[accounts] sign-in email cap reached: …`, with no personal data, for staff to alert on. The cap is soft: concurrent starts for different emails can pass it slightly.
+- **Sign-in cookie.** Start sets a random HttpOnly cookie, `__Host-maple_signin` in production or `maple_signin` in development, SameSite=Lax, Path=/, ten minutes. Only its SHA-256 is stored, on the code it came with.
+  - Verify finds the code by email and that cookie, so only the browser that asked can try it.
+  - Asking again in the same browser voids that browser's earlier code only. Another browser's start voids nothing.
+  - A successful verify clears the cookie.
+- **Failed tries** are recorded in `CustomerSignInFailure`:
+  - 20 an hour per network for any failed verify;
+  - 10 a day per email for wrong codes on real codes, across all of that email's codes. Once that is spent, each code gets a single try, so an attacker still gets at most about 20 guesses per email per day. A code nobody has tried yet keeps that try, so outsiders who spend the budget on codes they requested themselves cannot lock out a customer who hasn't mistyped.
+  - Each code also keeps its own five-try cap. Verifies for one email run one at a time under an advisory lock, so tries and budgets cannot be raced.
+  - Wrong, used or missing codes answer `CODE_INVALID`, then `CODE_EXPIRED` or `TOO_MANY_ATTEMPTS`, with nothing more.
+- **Passwords** (`POST /sign-in/password`):
+  - A new password needs 8 to 128 characters with a digit (the sign-up frame's rule). It is checked before the code, so a bad one never spends a try, and is hashed before the verify transaction, so the hashing never holds its lock.
+  - An unknown email, an account without a password and a wrong password all answer `CREDENTIALS_INVALID`, after the same scrypt work (a decoy hash), so neither the answer nor its timing tells which emails have accounts.
+  - Wrong passwords count in `CustomerSignInFailure` with wrong codes: 20 an hour per network and 10 a day per email, after which even the right password waits (`TOO_MANY_ATTEMPTS`). "Forgot password?" still works, because a fresh code always keeps its first try, and proving the email clears its failures.
+  - Setting a password by code (sign-up or reset) signs out every other session of the account. A sign-up for an address that already has a password says so only in the email, never on the page.
+- **Connections.** Start, verify and password sign-in sit behind an in-memory per-network guard: 20 a minute each, applied before any database work. A start still answers 202, and a verify answers `TOO_MANY_ATTEMPTS`. Their transactions use `SET LOCAL lock_timeout = '2s'`, so a pile-up waiting on one email's lock gives up instead of holding pooled connections. A start that gives up still answers 202.
+- Sessions use the cookie `__Host-maple_account` in production (Secure) or `maple_account` in development. HttpOnly, SameSite=Lax, Path=/, 30 days. Signing in again rotates the browser's session. Sign-out deletes the row and clears the cookie. A missing, forged, expired or signed-out cookie gets 401 and is cleared.
+- Another customer's order or address is a 404, identical to one that does not exist, so numbers and ids cannot be probed.
+- Order details mask the delivery phone on the server: `+91 ••••• •3210` (U+2022 bullets, ordinary spaces, the last four digits). An order is visible to whoever controls the email typed at checkout. The customer's own profile phone and saved addresses stay full.
+- All input is validated with zod. Responses are `private, no-store`. Logs carry no personal data: the development code log masks the email.
+- The API's global limit of 300 a minute skips loopback requests that carry no `X-Forwarded-For`, which are the storefront's own server-side reads. Otherwise every visitor would share one bucket. Browser traffic always carries the header (see [store deployment](store-deployment.md#client-rate-limit-identity)).
+
+**Flag and configuration.** `CUSTOMER_ACCOUNTS_ENABLED` is an API env value; `true` turns accounts on. Unset, accounts are on only when `NODE_ENV` is `development` or `test`. Any other value, unset included, gets production's rules and is **off** (fail closed). When accounts are off, every `/api/account` route is a 404, and `/api/health` reports `accountsEnabled` beside `checkoutEnabled`.
+- In production, accounts that are on also need all of these, or the API refuses to start:
+  - `ACCOUNT_CODE_SECRET` (32–256 random characters);
+  - the order mail settings (`ORDER_*`, falling back to `ENQUIRY_*`);
+  - `API_TRUST_PROXY_LOOPBACK=true`, without which every visitor would count as one network.
+- A local API needs `NODE_ENV=development` for accounts. Without mail it prints each code, with a masked email, to its console. It never does that in production.
+- Rollout order: migrate, then API, then web. See [store deployment](store-deployment.md#enabling-customer-accounts).
+
 ---
 
 ## Historical implementation snapshot — 25 October 2026
@@ -195,7 +249,7 @@ Browser requests use Next's `/api/:path*` rewrite; there are no Next route handl
 
 | Method and path | Current behavior | Boundary |
 | --- | --- | --- |
-| `GET /api/health` | Checks PostgreSQL with `SELECT 1`; returns status, preview mode and `checkoutEnabled`, true only when the commerce service is composed. | Database reachability, not integration readiness. |
+| `GET /api/health` | Checks PostgreSQL with `SELECT 1`; returns status, preview mode, `checkoutEnabled` (true only when the commerce service is composed) and `accountsEnabled` (customer accounts switched on). | Database reachability, not integration readiness. |
 | `GET /api/products` | Published products/variants; optional query/category/sort/page/limit. Maximum page size 50. | Public cacheable read model. |
 | `GET /api/products/:handle` | One published product or 404. | Public cacheable read model. |
 | `GET /api/cart` | Guest's persisted cart or an empty cart. | Opaque cookie; private/no-store. |
@@ -203,7 +257,7 @@ Browser requests use Next's `/api/:path*` rewrite; there are no Next route handl
 | `POST /api/enquiries` | Validates and saves contact, bulk or project enquiry; requires UUID `Idempotency-Key`. Returns 201 or 200 for replay. | Origin check, body/rate limits, private/no-store. Returns `notificationSent: false`. |
 | `POST /api/checkout` | Returns 503 `CHECKOUT_NOT_AVAILABLE` unless checkout is composed; then freezes a Keeri quote for the guest cart. | No provider call or order is created through this endpoint. |
 
-Without the commerce configuration the running server exposes no order-status, options or gateway-webhook route. When composed, the same service adds checkout creation, `GET /api/checkout/options`, provider-order creation, owned status and exact-byte signed webhook intake; see [checkout HTTP boundary](checkout-http.md) and the checkout gate in [store deployment](store-deployment.md). Refund, customer-login and staff-enquiry endpoints remain absent. There is no public enquiry read endpoint.
+Without the commerce configuration the running server exposes no order-status, options or gateway-webhook route. When composed, the same service adds checkout creation, `GET /api/checkout/options`, provider-order creation, owned status and exact-byte signed webhook intake; see [checkout HTTP boundary](checkout-http.md) and the checkout gate in [store deployment](store-deployment.md). Refund and staff-enquiry endpoints remain absent. Customer sign-in, order history and addresses exist under `/api/account` once `CUSTOMER_ACCOUNTS_ENABLED` is on (see [customer accounts](#customer-accounts)). There is no public enquiry read endpoint.
 
 ## 4. Data ownership and persistence
 
@@ -213,6 +267,7 @@ Without the commerce configuration the running server exposes no order-status, o
 | Public catalogue | Shop Maple `Product`, `Variant` | Read model with source identity, publication and source timestamp. Prices are integer paise; public currency is INR. |
 | Import progress | `CatalogueSyncState` | Tenant source, capture timestamp and validated-payload digest; detects stale or conflicting snapshots. |
 | Guest cart | `Cart`, `CartItem` | Database holds SHA-256 of a 32-byte random guest token; cookie expires after 30 days. Cart uses current catalogue prices. |
+| Customer accounts | `Customer`, `CustomerLoginChallenge`, `CustomerSession`, `CustomerAddress` | Password sign-in (scrypt), with emailed codes proving the address at sign-up and reset; only HMACs of codes/networks, scrypt hashes of passwords and SHA-256 of session tokens are stored. Orders link by `CheckoutAttempt.customerEmailKey`. See [customer accounts](#customer-accounts). |
 | Enquiry | `Enquiry` | Validated contact/context data plus hashed idempotency key and payload digest. No team notification or staff workflow yet. |
 | Logical online order | `CheckoutAttempt` | Frozen items, quantities, prices, charges, policy ID, merchant scope, reservation, gateway IDs and state. There is not yet a separate complete customer/fulfilment order model. |
 | Payment-event acceptance | `PaymentWebhookInbox` | Authenticated event metadata and body digest, not raw payment payload/signature. Unique per merchant/event and merchant/digest. |

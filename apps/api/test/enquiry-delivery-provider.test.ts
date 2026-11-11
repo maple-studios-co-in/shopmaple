@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadEnquiryDeliveryConfig, sendEnquiryAlert, type EnquiryAlert } from "../src/enquiry-delivery-provider.js";
+import { loadEnquiryDeliveryConfig, sendEnquiryAlert, sendTransactionalEmail, type EnquiryAlert } from "../src/enquiry-delivery-provider.js";
 
 const env = {
   ENQUIRY_DELIVERY_ENABLED: "true",
@@ -141,6 +141,27 @@ test("invalid alert or configuration cannot reach the transport", async () => {
   }
   assert.deepEqual(await sendEnquiryAlert({ ...config, to: "elsewhere@example.com" }, alert, transport), { status: "failed", code: "configuration_error" });
   assert.equal(calls, 0, "invalid data is rejected before outbound transport");
+});
+
+// Catches dropping an order email's HTML part, sending an empty or unbounded one, or adding one nobody asked for.
+test("a transactional email carries its HTML part beside the text, only when it has one", async () => {
+  const config = loadEnquiryDeliveryConfig(env)!;
+  const bodies: Array<Record<string, unknown>> = [];
+  const transport: typeof fetch = async (_url, options) => {
+    bodies.push(JSON.parse(String(options?.body)));
+    return jsonResponse(200, { id: providerId });
+  };
+  const message = { to: "buyer@example.com", subject: "Your order is confirmed", text: "Plain words" };
+  const html = "<!DOCTYPE html><p>Rich words ₹24,900</p>";
+  assert.deepEqual(await sendTransactionalEmail(config, "order/n1", { ...message, html }, transport), { status: "accepted", providerId });
+  assert.deepEqual(await sendTransactionalEmail(config, "order/n2", message, transport), { status: "accepted", providerId });
+  assert.deepEqual(bodies, [
+    { from: "alerts@example.com", to: ["buyer@example.com"], reply_to: "staff@example.com", subject: "Your order is confirmed", text: "Plain words", html },
+    { from: "alerts@example.com", to: ["buyer@example.com"], reply_to: "staff@example.com", subject: "Your order is confirmed", text: "Plain words" },
+  ]);
+  for (const bad of ["", "x".repeat(200_001)])
+    assert.deepEqual(await sendTransactionalEmail(config, "order/n3", { ...message, html: bad }, transport), { status: "failed", code: "provider_rejected" });
+  assert.equal(bodies.length, 2, "a refused HTML part never reaches the provider");
 });
 
 // Catches unbounded response allocation and trusting a large provider response containing hidden content.

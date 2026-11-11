@@ -1,0 +1,1218 @@
+/* The account pages and the checkout (owner's spec, 10 Nov 2026): Figma 392:1255 (My account), 392:1338 (orders),
+   392:1432 (an order) and 394:1310 (checkout), with sign-in, addresses and details drawn to the same system. Loaded by
+   app/account/layout.tsx and app/checkout/layout.tsx. Drawn at the design's 1440px: each size is the design's value at
+   1440 as a share of the screen (value / 14.4 vw), down to a floor that still reads, and up to a third larger at 1920,
+   as the contact page does. Regions fold by the page's own width (container queries). Every rule hangs off `.account`
+   or `.checkout-page`, so nothing leaks to the rest of the store when this sheet stays loaded after a visit. */
+:is(.account, .checkout-page) {
+  --account-maple: #80241c;
+  --account-ink: #272822;
+  --account-ink-strong: #1c1c1c;
+  --account-muted: #756d68;
+  --account-rule: #e4ded8;
+  --account-field: #d8d1c7;
+  --account-quiet-line: #d6d5ce;
+  --account-panel: #f6f3ef;
+  --account-gutter: clamp(20px, 5.556vw, 106.7px);
+  --account-gap: clamp(20px, 1.944vw, 37.3px);
+  --account-card-pad: clamp(18px, 1.944vw, 37.3px);
+  --account-text: 400 clamp(15px, 1.111vw, 21.3px) / 1.4 var(--font-text);
+  --account-small: 400 clamp(13px, 0.972vw, 18.7px) / 1.4 var(--font-text);
+  --account-fine: 400 clamp(12px, 0.833vw, 16px) / 1.4 var(--font-text);
+  container: account / inline-size;
+  color: var(--account-ink);
+  font-family: var(--font-text);
+}
+.account {
+  background: #fcfcfa;
+}
+.checkout-page {
+  background: #fff;
+}
+:is(.account, .checkout-page) p {
+  margin: 0;
+}
+
+/* ---- Words ---- */
+:is(.account, .checkout-page) :is(.account-eyebrow, .checkout-steps) {
+  margin: 0;
+  color: var(--account-muted);
+  font: var(--account-fine);
+  text-transform: uppercase;
+}
+:is(.account, .checkout-page) :is(.account-title, .checkout-title) {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(30px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
+  text-wrap: balance;
+}
+:is(.account, .checkout-page) :is(.account-lead, .checkout-lead) {
+  color: var(--account-muted);
+  font: var(--account-text);
+}
+:is(.account, .checkout-page) .account-muted {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+:is(.account, .checkout-page) :is(.account-hint, .account-fineprint) {
+  color: var(--account-muted);
+  font: var(--account-fine);
+}
+:is(.account, .checkout-page) .account-field-error {
+  margin: 0;
+  color: var(--account-maple);
+  font: 500 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+}
+:is(.account, .checkout-page) .account-text-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--account-maple);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+:is(.account, .checkout-page) .account-text-link:disabled {
+  color: var(--account-muted);
+  cursor: default;
+  opacity: 1;
+}
+
+/* ---- Buttons: Maple red, or quiet with a line (Figma "Maple / Collection / Primary action"); they fill from the
+   pointer like every button on the site (styles/button-fill.css). ---- */
+:is(.account, .checkout-page) .account-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(46px, 3.611vw, 69.3px);
+  min-width: clamp(160px, 15.278vw, 293.3px);
+  margin: 0;
+  padding: 0 clamp(20px, 1.944vw, 37.3px);
+  border: 1px solid var(--account-maple);
+  border-radius: 6px;
+  background: var(--account-maple);
+  color: #fff;
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.45 var(--font-text);
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+:is(.account, .checkout-page) .account-cta[data-variant="quiet"] {
+  border-color: var(--account-quiet-line);
+  background: transparent;
+  color: var(--account-ink);
+}
+:is(.account, .checkout-page) .account-cta[data-width="full"] {
+  width: 100%;
+}
+:is(.account, .checkout-page) .account-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+:is(.account, .checkout-page) .account-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(12px, 1.389vw, 26.7px);
+}
+
+/* ---- Fields (Figma "Maple / Forms / Input"): a label over a white, lined box ---- */
+:is(.account, .checkout-page) .account-label {
+  margin: 0;
+  padding: 0;
+  color: #292622;
+  font: 400 clamp(14px, 0.972vw, 18.7px) / 1.43 var(--font-text);
+}
+:is(.account, .checkout-page) .account-input {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(12px, 1.111vw, 21.3px);
+  border: 1px solid var(--account-field);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--account-ink-strong);
+  font: 400 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+}
+:is(.account, .checkout-page) .account-input::placeholder {
+  color: #77716c;
+  opacity: 1;
+}
+:is(.account, .checkout-page) .account-input:focus-visible {
+  outline: 2px solid var(--account-maple);
+  outline-offset: 0;
+  border-color: var(--account-maple);
+}
+:is(.account, .checkout-page) .account-input[aria-invalid="true"] {
+  border-color: var(--account-maple);
+}
+:is(.account, .checkout-page) .account-input:disabled,
+:is(.account, .checkout-page) .account-input[readonly] {
+  background: #f8f6f2;
+  color: var(--account-ink);
+  opacity: 1;
+  cursor: default;
+}
+:is(.account, .checkout-page) .account-select {
+  appearance: none;
+  padding-right: 2.6em;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2380241c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 1em center / 0.75em auto no-repeat;
+  cursor: pointer;
+}
+:is(.account, .checkout-page) .account-select:disabled {
+  background-color: #f8f6f2;
+}
+:is(.account, .checkout-page) :is(.account-field, .checkout-field-group) {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.694vw, 13.3px);
+  min-width: 0;
+}
+:is(.account, .checkout-page) :is(.account-fields, .checkout-fields) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(18px, 1.667vw, 32px) clamp(16px, 1.667vw, 32px);
+}
+:is(.account, .checkout-page) :is(.account-field-wide, .checkout-field-group[data-wide]) {
+  grid-column: 1 / -1;
+}
+:is(.account, .checkout-page) .account-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--account-ink-strong);
+  font: var(--account-small);
+  cursor: pointer;
+}
+:is(.account, .checkout-page) .account-check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--account-maple);
+  cursor: pointer;
+}
+:is(.account, .checkout-page) .account-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--account-gap);
+}
+:is(.account, .checkout-page) .account-status-line {
+  font: var(--account-small);
+}
+:is(.account, .checkout-page) .account-status-line[data-tone="problem"] {
+  color: var(--account-maple);
+}
+
+/* ---- Panels and cards ---- */
+:is(.account, .checkout-page) :is(.account-card, .account-notice) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.528vw, 29.3px);
+  padding: var(--account-card-pad);
+  border: 1px solid var(--account-rule);
+  border-radius: 12px;
+  background: #fff;
+}
+:is(.account, .checkout-page) .account-card.account-form {
+  align-items: stretch;
+}
+:is(.account, .checkout-page) .account-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  min-width: 0;
+  padding: var(--account-card-pad);
+  background: var(--account-panel);
+}
+:is(.account, .checkout-page) :is(.account-card-title, .account-section-title, .account-notice-title, .account-empty-title) {
+  margin: 0;
+  color: var(--account-ink-strong);
+  font: 500 clamp(21px, 1.736vw, 33.3px) / 1.4 var(--font-heading);
+}
+:is(.account, .checkout-page) .account-section-title {
+  color: var(--account-ink);
+  font-size: clamp(20px, 1.667vw, 32px);
+}
+:is(.account, .checkout-page) .account-empty-title {
+  font-size: clamp(19px, 1.458vw, 28px);
+}
+:is(.account, .checkout-page) .account-panel-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(19px, 1.528vw, 29.3px) / 1.4 var(--font-heading);
+}
+:is(.account, .checkout-page) .account-panel-text {
+  color: var(--account-muted);
+  font: var(--account-text);
+  overflow-wrap: anywhere;
+}
+:is(.account, .checkout-page) .account-line {
+  display: block;
+}
+:is(.account, .checkout-page) .account-rule,
+:is(.account, .checkout-page) .checkout-rule {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--account-rule);
+}
+
+/* ---- The account layout (Figma 392:1255): the navigation, then the page ---- */
+.account-layout {
+  display: grid;
+  grid-template-columns: clamp(200px, 16.667vw, 320px) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(32px, 4.444vw, 85.3px);
+  padding: clamp(36px, 5.556vw, 106.7px) var(--account-gutter);
+}
+.account-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(14px, 1.25vw, 24px);
+  min-width: 0;
+  padding: clamp(18px, 1.667vw, 32px) clamp(12px, 1.111vw, 21.3px);
+  overflow: hidden;
+  background: #f4f3ee;
+}
+.account-nav-icon {
+  display: block;
+  width: clamp(32px, 2.778vw, 53.3px);
+  height: auto;
+}
+.account .account-nav-hello {
+  color: var(--account-ink);
+  font: 500 clamp(21px, 1.806vw, 34.7px) / 1.4 var(--font-heading);
+  overflow-wrap: anywhere;
+}
+.account .account-nav-note {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.account .account-nav-rule {
+  align-self: stretch;
+  height: 1px;
+  margin: 0 calc(-1 * clamp(12px, 1.111vw, 21.3px)) 0 0;
+  border: 0;
+  background: var(--account-rule);
+}
+.account .account-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.25vw, 24px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account .account-nav-link {
+  color: var(--account-muted);
+  font: 400 clamp(15px, 1.181vw, 22.7px) / 1.4 var(--font-text);
+  text-decoration: none;
+}
+.account .account-nav-link:hover,
+.account .account-nav-link[aria-current] {
+  color: var(--account-ink);
+}
+.account .account-nav-link[aria-current="page"] {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+.account .account-nav-signout {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--account-muted);
+  font: var(--account-small);
+  cursor: pointer;
+}
+.account .account-nav-signout:hover {
+  color: var(--account-ink);
+}
+.account-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--account-gap);
+  min-width: 0;
+}
+.account-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--account-gap);
+}
+
+/* ---- The overview ---- */
+.account .account-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 1.667vw, 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account .account-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  min-width: 0;
+  padding: var(--account-card-pad);
+  border-radius: 12px;
+  background: #f3f2ee;
+}
+.account .account-shortcut[data-tone="sage"] {
+  background: #e8ede4;
+}
+.account .account-shortcut[data-tone="stone"] {
+  background: #efede6;
+}
+.account-shortcut-icon {
+  display: block;
+  width: clamp(24px, 1.944vw, 37.3px);
+  height: auto;
+}
+.account .account-shortcut-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
+}
+.account .account-shortcut-note {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.account .account-shortcut .account-cta {
+  min-width: 0;
+  margin-top: auto;
+}
+.account .account-latest-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 60fr) minmax(0, 40fr);
+  gap: 16px;
+  width: 100%;
+  font: var(--account-text);
+}
+.account .account-latest-number {
+  color: var(--account-muted);
+}
+.account .account-latest-status {
+  color: var(--account-ink-strong);
+}
+.account .account-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.667vw, 32px);
+}
+
+/* A piece in an order: its photo filling a 104 x 120 frame, its name and options, its price. */
+.account .account-item {
+  display: grid;
+  grid-template-columns: clamp(80px, 7.222vw, 138.7px) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: clamp(16px, 1.667vw, 32px);
+  width: 100%;
+}
+.account .account-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 104 / 120;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+  background: #efebe4;
+}
+.account .account-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.694vw, 13.3px);
+  min-width: 0;
+}
+.account .account-item-title {
+  color: var(--account-ink-strong);
+  font: 500 clamp(18px, 1.458vw, 28px) / 1.4 var(--font-heading);
+  overflow-wrap: anywhere;
+}
+.account .account-item-meta {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.account .account-item-price {
+  min-width: clamp(90px, 11.111vw, 213.3px);
+  color: var(--account-ink);
+  font: 500 clamp(17px, 1.389vw, 26.7px) / 1.4 var(--font-heading);
+  white-space: nowrap;
+}
+
+/* ---- The order list (Figma 392:1338) ---- */
+.account .account-order-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: clamp(14px, 1.389vw, 26.7px);
+}
+.account .account-order-search {
+  flex: 0 1 clamp(320px, 40.278vw, 773.3px);
+}
+.account .account-order-search .account-input {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.account .account-order-controls .account-cta {
+  min-width: clamp(140px, 12.5vw, 240px);
+}
+.account .account-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px clamp(20px, 2.222vw, 42.7px);
+}
+.account .account-tab {
+  display: inline-flex;
+  gap: 0.5em;
+  margin: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--account-muted);
+  font: var(--account-text);
+  font-size: clamp(14px, 1.042vw, 20px);
+  cursor: pointer;
+}
+.account .account-tab[aria-selected="true"] {
+  color: var(--account-ink-strong);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+.account .account-tab:hover {
+  color: var(--account-ink-strong);
+}
+.account .account-orders {
+  overflow: hidden;
+  border: 1px solid #e4e3dd;
+  border-radius: 12px;
+  background: #fff;
+}
+.account .account-orders-head,
+.account .account-order-row {
+  display: grid;
+  grid-template-columns: minmax(0, 370fr) minmax(0, 140fr) minmax(0, 160fr) minmax(0, 130fr);
+  gap: clamp(14px, 1.667vw, 32px);
+  padding: clamp(16px, 1.667vw, 32px);
+}
+.account .account-orders-head {
+  background: #efeee8;
+  color: var(--account-muted);
+  font: 400 clamp(11px, 0.764vw, 14.7px) / 1.4 var(--font-text);
+  text-transform: uppercase;
+}
+.account .account-orders-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account .account-order-row {
+  position: relative;
+  align-items: start;
+  border-bottom: 1px solid var(--account-rule);
+}
+.account .account-order-row:last-child {
+  border-bottom: 0;
+}
+.account .account-order-row:hover {
+  background: #fcfbf9;
+}
+.account .account-order-item {
+  display: grid;
+  grid-template-columns: clamp(56px, 4.722vw, 90.7px) minmax(0, 1fr);
+  gap: clamp(12px, 1.25vw, 24px);
+  align-items: start;
+}
+.account .account-order-item .account-photo {
+  aspect-ratio: 68 / 84;
+}
+.account .account-order-name {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.556vw, 10.7px);
+  min-width: 0;
+}
+.account .account-order-number {
+  color: var(--account-ink-strong);
+  font: 500 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-heading);
+}
+.account .account-order-title {
+  color: var(--account-ink-strong);
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-text);
+  overflow-wrap: anywhere;
+}
+.account .account-order-link {
+  color: var(--account-muted);
+  font: var(--account-fine);
+  text-decoration: none;
+}
+/* The whole row opens the order. */
+.account .account-order-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.account .account-order-link:hover,
+.account .account-order-link:focus-visible {
+  color: var(--account-ink);
+  text-decoration: underline;
+}
+.account .account-order-date {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.account .account-order-total {
+  color: var(--account-ink-strong);
+  font: 500 clamp(15px, 1.111vw, 21.3px) / 1.4 var(--font-heading);
+  white-space: nowrap;
+}
+.account .account-status {
+  display: inline-block;
+  min-width: min(100%, clamp(110px, 11.111vw, 213.3px));
+  padding: clamp(7px, 0.694vw, 13.3px) clamp(10px, 0.694vw, 13.3px);
+  border-radius: 20px;
+  background: #edf2e9;
+  color: #4d634c;
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+}
+.account .account-status[data-status="confirming"] {
+  background: #f6efe2;
+  color: #725427;
+}
+.account .account-status[data-status="delivered"] {
+  background: #edf1ef;
+  color: #4e625e;
+}
+.account .account-status[data-status="cancelled"] {
+  background: #f0efeb;
+  color: #6f6a62;
+}
+.account .account-status[data-status="default"] {
+  min-width: 0;
+  padding-block: 4px;
+  background: #fff;
+  color: var(--account-ink);
+}
+.account .account-orders-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: clamp(24px, 2.222vw, 42.7px) clamp(16px, 1.667vw, 32px);
+}
+.account .account-orders-count {
+  color: var(--account-muted);
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+}
+
+/* ---- One order (Figma 392:1432) ---- */
+.account .account-badge {
+  align-self: flex-start;
+  padding: clamp(8px, 0.694vw, 13.3px);
+  background: var(--account-panel);
+  color: var(--account-ink);
+  font: var(--account-fine);
+  text-transform: uppercase;
+}
+.account .account-badge[data-status="cancelled"] {
+  background: #f0efeb;
+}
+.account .account-journey {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(14px, 1.667vw, 32px);
+  margin: 0;
+  padding: var(--account-card-pad);
+  background: #edf1eb;
+  list-style: none;
+}
+.account .account-journey-step {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.833vw, 16px);
+  min-width: 0;
+}
+.account-journey-icon {
+  display: block;
+  width: clamp(24px, 1.944vw, 37.3px);
+  height: auto;
+}
+.account .account-journey-step[data-step-state="upcoming"] .account-journey-icon {
+  opacity: 0.75;
+}
+.account .account-journey-title {
+  color: var(--account-ink);
+  font: 500 clamp(16px, 1.181vw, 22.7px) / 1.4 var(--font-heading);
+}
+.account .account-journey-number {
+  margin-right: 0.35em;
+}
+.account .account-journey-note {
+  color: var(--account-muted);
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+}
+.account .account-order-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--account-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account .account-order-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 520fr) minmax(0, 424fr);
+  align-items: start;
+  gap: clamp(20px, 2.222vw, 42.7px);
+}
+.account .account-delivery {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.25vw, 24px);
+  min-width: 0;
+}
+.account .account-delivery-address {
+  color: var(--account-muted);
+  font: var(--account-text);
+  overflow-wrap: anywhere;
+}
+.account .account-delivery-estimate {
+  color: var(--account-ink-strong);
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-text);
+}
+:is(.account, .checkout-page) .account-totals {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.25vw, 24px);
+  width: 100%;
+  margin: 0;
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-text);
+}
+:is(.account, .checkout-page) .account-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+:is(.account, .checkout-page) .account-totals dt {
+  color: var(--account-muted);
+}
+:is(.account, .checkout-page) .account-totals dd {
+  margin: 0;
+  color: var(--account-ink-strong);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+:is(.account, .checkout-page) .account-totals-total {
+  padding-top: clamp(12px, 1.25vw, 24px);
+  border-top: 1px solid var(--account-rule);
+}
+.account .account-payment-reference {
+  color: var(--account-muted);
+  font: 400 clamp(13px, 0.903vw, 17.3px) / 1.4 var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Saved addresses and details ---- */
+.account .account-address-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 1.667vw, 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.account .account-address-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.account .account-address-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px clamp(16px, 1.667vw, 32px);
+  margin-top: auto;
+  font: var(--account-small);
+}
+.account .account-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.account .account-confirm-text {
+  color: var(--account-ink-strong);
+  font: var(--account-small);
+  font-weight: 600;
+}
+.account .account-readonly {
+  padding: clamp(12px, 1.111vw, 21.3px) 0;
+  color: var(--account-ink-strong);
+  font: 400 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+/* ---- The emailed code (sign-up and password reset; the sign-in pages themselves are styles/account-auth.css) ---- */
+.account .account-code-input {
+  letter-spacing: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- When the account cannot be loaded ---- */
+.account-problem {
+  padding: clamp(36px, 5.556vw, 106.7px) var(--account-gutter);
+}
+.account-problem .account-notice {
+  max-width: 720px;
+}
+
+/* ---- The checkout (Figma 394:1310): one page, the order beside it ---- */
+.checkout-page {
+  padding: clamp(36px, 5.556vw, 106.7px) var(--account-gutter);
+}
+.checkout-single,
+.checkout-heading {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 2.222vw, 42.7px);
+}
+.checkout-page .checkout-steps ol {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checkout-page .checkout-steps li + li::before {
+  content: "/";
+  margin: 0 0.4em;
+}
+.checkout-page .checkout-steps a {
+  color: inherit;
+  text-decoration: none;
+}
+.checkout-page .checkout-steps a:hover {
+  text-decoration: underline;
+}
+.checkout-page .checkout-steps [aria-current="step"] {
+  color: var(--account-ink);
+}
+.checkout-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 720fr) minmax(0, 480fr);
+  align-items: start;
+  gap: clamp(32px, 5.556vw, 106.7px);
+}
+.checkout-page .checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 1.667vw, 32px);
+  min-width: 0;
+}
+.checkout-page .checkout-section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 1.667vw, 32px);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+/* A floated legend is no longer drawn on the fieldset's edge: it joins the column like the heading of step 03. */
+.checkout-page .checkout-section-title {
+  float: left;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--account-ink);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
+}
+.checkout-page h2.checkout-section-title {
+  float: none;
+}
+.checkout-page .checkout-step-number {
+  margin-right: 0.6em;
+}
+.checkout-page .checkout-account-note {
+  color: var(--account-ink);
+  font: var(--account-small);
+}
+.checkout-page .checkout-phone {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--account-field);
+  border-radius: 5px;
+  background: #fff;
+}
+.checkout-page .checkout-phone:focus-within {
+  outline: 2px solid var(--account-maple);
+  border-color: var(--account-maple);
+}
+.checkout-page .checkout-phone:has(:disabled) {
+  background: #f8f6f2;
+}
+.checkout-page .checkout-phone-prefix {
+  padding-left: clamp(12px, 1.111vw, 21.3px);
+  color: var(--account-muted);
+  font: 400 clamp(16px, 1.111vw, 21.3px) / 1.375 var(--font-text);
+}
+.checkout-page .checkout-phone .account-input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  padding-left: 0.5em;
+}
+.checkout-page .checkout-phone:has([aria-invalid="true"]) {
+  border-color: var(--account-maple);
+}
+.checkout-page .checkout-billing {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.25vw, 24px);
+  margin: 0;
+  padding: var(--account-card-pad);
+  border: 1px solid var(--account-rule);
+}
+.checkout-page .checkout-billing > legend {
+  float: left;
+  width: 100%;
+}
+.checkout-page .checkout-options {
+  display: grid;
+  gap: clamp(12px, 1.111vw, 21.3px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.checkout-page .checkout-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.833vw, 16px);
+  padding: clamp(18px, 1.667vw, 32px);
+  border: 1px solid transparent;
+  background: var(--account-panel);
+}
+.checkout-page label.checkout-option {
+  padding-left: calc(clamp(18px, 1.667vw, 32px) + 30px);
+  cursor: pointer;
+}
+.checkout-page label.checkout-option[data-chosen] {
+  border-color: var(--account-maple);
+}
+.checkout-page .checkout-option input[type="radio"] {
+  position: absolute;
+  top: calc(clamp(18px, 1.667vw, 32px) + 0.2em);
+  left: clamp(18px, 1.667vw, 32px);
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--account-maple);
+}
+.checkout-page .checkout-option-title {
+  color: var(--account-ink);
+  font: 500 clamp(17px, 1.25vw, 24px) / 1.4 var(--font-heading);
+}
+.checkout-page .checkout-option-note {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+.checkout-page .checkout-option-meta {
+  color: var(--account-muted);
+  font: var(--account-fine);
+}
+.checkout-page .checkout-payment {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 0.972vw, 18.7px);
+  padding: clamp(18px, 1.667vw, 32px);
+  border: 1px solid var(--account-maple);
+}
+.checkout-payment img {
+  display: block;
+  width: clamp(24px, 1.944vw, 37.3px);
+  height: auto;
+}
+.checkout-page .checkout-payment-title {
+  color: var(--account-ink);
+  font: 500 clamp(17px, 1.319vw, 25.3px) / 1.4 var(--font-heading);
+}
+.checkout-page .checkout-payment-ways {
+  color: var(--account-muted);
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.4 var(--font-text);
+  white-space: pre-wrap;
+}
+.checkout-page .checkout-quote-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font: var(--account-small);
+}
+.checkout-page .checkout-summary {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 1.667vw, 32px);
+  min-width: 0;
+  padding: var(--account-card-pad);
+  background: var(--account-panel);
+}
+.checkout-page .checkout-summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.checkout-page .checkout-summary-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(22px, 1.806vw, 34.7px) / 1.4 var(--font-heading);
+}
+.checkout-page .checkout-lines {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 1.667vw, 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checkout-page .checkout-line {
+  display: grid;
+  gap: clamp(14px, 1.667vw, 32px);
+}
+/* One piece: its photo across the panel, 424 x 320 as the frame draws it, then its name. */
+.checkout-page .checkout-line-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 424 / 320;
+  overflow: hidden;
+  background: #efebe4;
+}
+.checkout-page .checkout-line-photo img {
+  object-fit: cover;
+}
+.checkout-page .checkout-line-text {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 0.833vw, 16px);
+  min-width: 0;
+}
+.checkout-page .checkout-line-title {
+  color: var(--account-ink-strong);
+  font: 500 clamp(19px, 1.667vw, 32px) / 1.4 var(--font-heading);
+}
+/* Several pieces: a row each, the photo small beside the name, the line's price at the end. */
+.checkout-page .checkout-lines[data-count="many"] .checkout-line {
+  grid-template-columns: clamp(56px, 4.722vw, 90.7px) minmax(0, 1fr) auto;
+  align-items: start;
+}
+.checkout-page .checkout-lines[data-count="many"] .checkout-line-photo {
+  aspect-ratio: 68 / 84;
+}
+.checkout-page .checkout-lines[data-count="many"] .checkout-line-title {
+  font-size: clamp(16px, 1.181vw, 22.7px);
+}
+.checkout-page .checkout-line-price {
+  color: var(--account-ink-strong);
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-text);
+  white-space: nowrap;
+}
+.checkout-page .checkout-edit-bag {
+  align-self: flex-start;
+  font: var(--account-small);
+}
+.checkout-page .checkout-help {
+  color: var(--account-ink);
+  font: 400 clamp(15px, 1.042vw, 20px) / 1.4 var(--font-text);
+}
+/* A message that takes the page's place (confirming, confirmed, review). */
+.checkout-page .checkout-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.528vw, 29.3px);
+  max-width: 760px;
+}
+.checkout-page .checkout-notice-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(28px, 2.5vw, 48px) / 1.3 var(--font-heading);
+}
+.checkout-page .checkout-notice-text {
+  color: var(--account-ink);
+  font: var(--account-text);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Narrower windows ---- */
+/* Below a laptop the account navigation becomes a strip across the top, and the order beside the checkout goes under it. */
+@container account (max-width: 999px) {
+  .account-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 20px;
+    padding: 12px 16px;
+  }
+  .account-nav-icon,
+  .account .account-nav-note,
+  .account .account-nav-rule {
+    display: none;
+  }
+  .account .account-nav-hello {
+    width: 100%;
+    font-size: 19px;
+  }
+  .account .account-nav-links {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+  }
+  .account .account-nav-link,
+  .account .account-nav-signout {
+    font-size: 15px;
+  }
+  .checkout-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container account (max-width: 859px) {
+  .account .account-shortcuts,
+  .account .account-pair,
+  .account .account-address-list,
+  .account .account-order-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account .account-journey {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* A phone: the navigation is one line that scrolls; the order rows become cards; fields stack. */
+@container account (max-width: 639px) {
+  .account-nav {
+    flex-wrap: nowrap;
+    margin-inline: calc(-1 * var(--account-gutter));
+    padding-inline: var(--account-gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .account .account-nav-hello {
+    display: none;
+  }
+  .account .account-nav-links {
+    flex-wrap: nowrap;
+  }
+  .account .account-nav-link,
+  .account .account-nav-signout {
+    white-space: nowrap;
+  }
+  .account .account-orders-head {
+    display: none;
+  }
+  .account .account-order-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 16px;
+  }
+  .account .account-order-item {
+    grid-column: 1 / -1;
+  }
+  .account .account-order-date {
+    grid-column: 1;
+  }
+  .account .account-order-status {
+    grid-column: 1;
+  }
+  .account .account-order-total {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    align-self: center;
+  }
+  .account .account-status {
+    min-width: 0;
+  }
+  .account .account-item {
+    grid-template-columns: 80px minmax(0, 1fr);
+  }
+  .account .account-item-price {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .account .account-latest-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .account :is(.account-fields),
+  .checkout-page .checkout-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account .account-journey {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .account .account-journey-step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 2px;
+  }
+  .account .account-journey-icon {
+    grid-row: 1 / span 2;
+  }
+  .account .account-order-controls .account-cta,
+  .account .account-order-search {
+    flex: 1 1 100%;
+  }
+  .account .account-buttons .account-cta {
+    flex: 1 1 100%;
+  }
+  .checkout-page .checkout-lines[data-count="one"] .checkout-line-photo {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.account, .checkout-page) * {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---- A promo code in the order summary (main's #120 on the one-page checkout, Figma 394:1310): the box before the
+   quote, then the code applied with a way to remove it; the discount is its own line in the totals. ---- */
+:is(.account, .checkout-page) .checkout-promo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+:is(.account, .checkout-page) .checkout-promo-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-transform: uppercase;
+}
+:is(.account, .checkout-page) .checkout-promo-input::placeholder {
+  text-transform: none;
+}
+:is(.account, .checkout-page) .checkout-promo-applied {
+  margin: 0;
+}
+:is(.account, .checkout-page) .checkout-promo-applied strong {
+  color: var(--account-ink-strong);
+  font-weight: 600;
+}
+:is(.account, .checkout-page) .checkout-discount {
+  color: #2f6b32;
+}

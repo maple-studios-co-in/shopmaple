@@ -62,6 +62,8 @@ export interface ReservationPort {
 import { OrderFlowError } from "./errors.js";
 import { KeeriCommerceError, promoRefusalCodes } from "../keeri-commerce.js";
 import { sellablePolicy } from "./eligibility.js";
+import { emailKey } from "./order-links.js";
+import { nextOrderNumber, snapshotEmailKey } from "./order-links.js";
 export { OrderFlowError } from "./errors.js";
 import { resolveCatalogueBindings, sameCatalogueBindings, storedCatalogueBindings, revalidateCatalogueBindings } from "./catalogue-bindings.js";
 interface Options {
@@ -444,6 +446,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
               catalogueBindings: initial.bindings as unknown as Prisma.InputJsonObject,
               amountPaise: s.totalPaise,
               currency: "INR",
+              // Customer accounts list paid attempts by this key (trimmed and lowercased, order-links.ts).
+              customerEmailKey: emailKey(s.customer.email),
             },
           });
         });
@@ -866,6 +870,12 @@ export function createOrderService(db: PrismaClient, options: Options) {
             data: { revision: { increment: 1 } },
           });
         };
+        // Maple's order number ("MF-…") is assigned here, once, with the captured payment; an attempt frozen by an
+        // earlier release also gains its customer email key now.
+        const orderLinks = async () => ({
+          orderNumber: current.orderNumber ?? (await nextOrderNumber(tx)),
+          customerEmailKey: current.customerEmailKey ?? snapshotEmailKey(current.snapshot),
+        });
         if (
           !holdLive ||
           lateNow ||
@@ -880,6 +890,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
               paymentId: inbox.paymentId,
               capturedAt: now(),
               failureCode: "PAID_HOLD_LAPSED",
+              ...(await orderLinks()),
             },
           });
           await clearCart();
@@ -892,6 +903,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
             paymentId: inbox.paymentId,
             capturedAt: now(),
             failureCode: null,
+            ...(await orderLinks()),
           },
         });
         await clearCart();

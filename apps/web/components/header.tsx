@@ -19,7 +19,6 @@ export function Header({
 }: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean } = {}) {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
-    [account, setAccount] = useState(false),
     [wishlist, setWishlist] = useState(false),
     [mobile, setMobile] = useState(false);
   return (
@@ -67,13 +66,11 @@ export function Header({
             >
               <Search />
             </button>
-            <button
-              className="icon-button account-button"
-              aria-label="Your account"
-              onClick={() => setAccount(true)}
-            >
+            {/* The account page itself decides what to show (sign-in, the account, or not available yet, by the API's flag),
+                so the header never asks who is signed in (owner's spec, 10 Nov 2026). */}
+            <Link className="icon-button account-button" href="/account" aria-label="Your account">
               <UserRound />
-            </button>
+            </Link>
             <button
               className="icon-button favourite-link"
               onClick={() => setWishlist(true)}
@@ -98,27 +95,6 @@ export function Header({
         </div>
       </header>
       {search && <SearchDialog onClose={() => setSearch(false)} />}
-      <Modal
-        open={account}
-        onClose={() => setAccount(false)}
-        title="Your Maple account"
-      >
-        <p>Online sign-in and order history are not available here yet.</p>
-        <nav className="account-actions" aria-label="Account support">
-          <Link href="/account" onClick={() => setAccount(false)}>
-            Account <span>Orders, profile and addresses →</span>
-          </Link>
-          <Link href="/favourites" onClick={() => setAccount(false)}>
-            Wishlist <span>View your saved items →</span>
-          </Link>
-          <Link
-            href="/contact?product=Order%20support"
-            onClick={() => setAccount(false)}
-          >
-            Help Center <span>Contact support →</span>
-          </Link>
-        </nav>
-      </Modal>
       <Modal
         open={wishlist}
         onClose={() => setWishlist(false)}

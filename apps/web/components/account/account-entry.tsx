@@ -1,6 +1,8 @@
 import Link from "next/link";
-export const metadata = { title: "Account" };
-export default function AccountPage() {
+
+/** Accounts switched off (`/api/health` → `accountsEnabled: false`): the page the store has shown until now, unchanged.
+ * Signed out, the account pages lead to /account/login (Figma 392:1652) instead. */
+export function AccountUnavailable() {
   return (
     <section className="editorial-page account-page">
       <h1>Account</h1>

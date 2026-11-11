@@ -42,6 +42,26 @@ Before any new capture, the service checks reservation validity and expiry. It f
 
 The final serializable transaction rechecks order state and reservation expiry, records the unique payment identity, sets `captured`, removes the paid lines from the guest cart (and bumps its revision) so the same goods cannot be quoted again, inserts the unique outbox entry and marks the inbox processed. Database failures roll back those changes. Concurrent workers and duplicate events produce one capture and one handoff. The handoff payload contains the frozen snapshot, merchant/provider/payment identity, amount and reservation ID. It contains no fabricated customer/address data.
 
+## Customer accounts and Maple order numbers (11 Nov 2026)
+
+Migration `20261111140000_customer_accounts` is additive. It adds two nullable `CheckoutAttempt` columns, the `maple_order_number_seq` sequence and the customer tables described in [architecture](architecture.md#customer-accounts). The previous release keeps working because it never reads them.
+
+- **`customerEmailKey`.** `freezeCart` sets it when the quote freezes the attempt. It is the snapshot's customer email, lowercased and trimmed (`emailKey`). Legacy version 1 snapshots carry no customer and stay `NULL`. The capture transaction fills it if it is still empty, for attempts an older release froze.
+- **`orderNumber`.** This is Maple's own number, shown as `MF-<n>`. It comes from `nextval('maple_order_number_seq')`, an integer sequence that starts at 10001 and never cycles. It is assigned inside the serializable capture transaction in `processWebhook`, together with `paymentId` and `capturedAt`. Both payment outcomes get one: `captured`, and `paid_hold_lapsed` (paid, but confirmed or refunded by hand). An attempt that already has a number keeps it, so a replayed or duplicate event never renumbers it. A retried or rolled-back transaction can leave a gap in the sequence, but a number is never reused. Keeri's SO number (`OrderOutbox.externalOrderId`) stays internal.
+- **Backfill.** The migration links existing version 2 attempts to their email. It numbers attempts already paid, in `capturedAt` order. `backfillOrderLinks` in `apps/api/src/orders/order-links.ts` repeats both statements, idempotently, every time the API starts. That covers attempts the previous release froze or captured between the migration and the new API starting. Neither statement names `"catalogueBindings"`, so its immutability trigger stays quiet.
+
+**What a customer sees.** A signed-in customer sees the attempts whose `customerEmailKey` equals their `Customer.emailKey`, in the paid states `captured` and `paid_hold_lapsed`, with a number. When `KEERI_MERCHANT_SCOPE` is set, only that scope counts. `reconciliation_required` is left out on purpose: in `service.ts` it never holds a verified payment. It marks an uncertain hold, provider order or release, and when Razorpay later confirms a payment for it, the worker moves it to `paid_hold_lapsed`, where it appears. Any other order number, including another customer's, answers the same 404 as one that does not exist.
+
+The customer-facing status is derived from today's data, as `getAttempt` does:
+- `confirmed`: `captured`, and the `keeri.order.captured.v2` outbox entry is `delivered` with an SO number.
+- `confirming`: every other paid order, including a failed Keeri delivery and `paid_hold_lapsed`, which is confirmed by hand.
+- `cancelled`: reserved and not produced yet.
+- `delivered`: reserved for when staff status exists.
+
+The journey marks Confirmed done (with the Keeri acceptance time) or current, and Preparing, Dispatched and Delivered as upcoming. The delivery estimate counts from the capture day in India. It adds the longest made-to-order lead time and the courier's estimated days, with a three-day window (`estimateSpreadDays`, an owner decision to confirm). It is null when either figure is unknown.
+
+**Emails and status.** `customer_confirmed` and `customer_received` show `MF-<n>` once it is assigned. They fall back to the old Keeri reference or checkout id only for an attempt captured before numbering existed. Staff emails keep the Keeri SO and checkout ids and add the Maple number. The guest status response (`GET /api/checkout/:attemptId`, through the cart cookie as before) gains `orderNumber: "MF-…" | null`. The signed-in owner can also open the order on any device through `GET /api/account/orders/:number`.
+
 ## Remaining activation work
 
 - Integrate and validate real inventory reservation/expiry/consumption across channels, including last-item contention and delayed payments.
@@ -62,5 +82,7 @@ npx tsx --env-file=.env --test --test-concurrency=1 apps/api/test/orders.test.ts
 npm test --workspace=@shopmaple/api
 npx tsc --noEmit -p apps/api/tsconfig.json
 ```
+
+Customer accounts and order numbers: `apps/api/test/account-unit.test.ts` and `account-contract.test.ts` run without PostgreSQL. `account-db.test.ts` needs `TEST_DATABASE_URL`. It covers sign-in by code and by password, sign-up, password resets, sessions, the adversarial cases, orders, addresses, the flag, capture numbering and the start-up catch-up. `checkout-composition.test.ts` checks the MF number in the customer emails and on the status page.
 
 This is local service/database evidence, not provider sandbox, live payment, inventory concurrency or Keeri delivery validation. See `docs/payments.md` for the underlying gateway contract and provider references.

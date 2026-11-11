@@ -222,9 +222,99 @@ model CheckoutAttempt {
   paymentId String? @unique
   capturedAt DateTime?
   failureCode String?
+  /// The customer's email from the quote snapshot, lowercased and trimmed (Customer.emailKey's form). Set when the quote
+  /// freezes the attempt; customer accounts list paid attempts by it. Null for legacy (version 1) snapshots.
+  customerEmailKey String?
+  /// Maple's order number (shown as "MF-<n>"), from the maple_order_number_seq sequence (START 10001). Assigned once,
+  /// inside the transaction that records the captured payment, and never reused.
+  orderNumber Int? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([cartId, idempotencyKey])
+  @@index([customerEmailKey])
+}
+
+/// A shopper who signs in with an emailed one-time code (customer accounts, 10 Nov 2026). Created by the first
+/// successful sign-in. Orders are linked by email, not by id: a paid CheckoutAttempt whose customerEmailKey equals
+/// emailKey is this customer's.
+model Customer {
+  id String @id @default(uuid())
+  /// Lowercased and trimmed: the same key as the checkout snapshot's email (CheckoutAttempt.customerEmailKey).
+  emailKey String @unique
+  name String?
+  /// +91 and ten digits, as the checkout snapshot normalises it.
+  phone String?
+  /// scrypt (see account/security.ts), set only after an emailed code proved the address; null: sign in by code only.
+  passwordHash String?
+  passwordSetAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions CustomerSession[]
+  addresses CustomerAddress[]
+}
+
+/// One emailed sign-in code. Only an HMAC-SHA256 of the code is kept (keyed by ACCOUNT_CODE_SECRET), and of the
+/// requesting network (an IPv4 address or IPv6 /64). Rows are counted for the sign-in limits and pruned after two days.
+model CustomerLoginChallenge {
+  id String @id @default(uuid())
+  emailKey String
+  codeHash String
+  ipHash String
+  /// SHA-256 of the sign-in cookie of the browser that asked: only that browser can try this code.
+  nonceHash String
+  expiresAt DateTime
+  attempts Int @default(0)
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([emailKey, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+}
+
+/// One failed sign-in try, for the failed-try budgets: 20 an hour per network (every failure), and 10 a day per email
+/// (`wrongCode`: wrong digits for a live code of the browser's own). Pruned after two days.
+model CustomerSignInFailure {
+  id String @id @default(uuid())
+  emailKey String
+  ipHash String
+  wrongCode Boolean
+  createdAt DateTime @default(now())
+  @@index([ipHash, createdAt])
+  @@index([emailKey, createdAt])
+  @@index([createdAt])
+}
+
+/// A signed-in browser. The cookie carries 32 random bytes; only their SHA-256 is stored.
+model CustomerSession {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  lastSeenAt DateTime @default(now())
+  @@index([customerId])
+  @@index([expiresAt])
+}
+
+/// A saved delivery address: at most ten per customer, and exactly one default whenever any exist (kept by the account
+/// service under a lock on the customer row).
+model CustomerAddress {
+  id String @id @default(uuid())
+  customerId String
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name String
+  line1 String
+  line2 String?
+  city String
+  /// The GST state code checkoutAddressSchema uses (e.g. "27").
+  state String
+  pin String
+  phone String
+  isDefault Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([customerId, updatedAt])
 }
 
 model PaymentWebhookInbox {

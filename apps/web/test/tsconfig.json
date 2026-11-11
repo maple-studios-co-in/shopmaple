@@ -5,6 +5,7 @@
     "paths": {
       "@/*": ["../*"],
       "next/image": ["./support/next-image.tsx"],
+      "next/headers": ["./support/next-headers.ts"],
       "server-only": ["./support/server-only.ts"]
     }
   }

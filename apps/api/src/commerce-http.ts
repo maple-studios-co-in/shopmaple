@@ -1,4 +1,5 @@
 import { checkoutInputSchema, quoteSnapshotSchema } from "@shopmaple/contracts";
+import { formatOrderNumber } from "@shopmaple/contracts/account";
 import express, { type Express, type Request } from "express";
 import type { CheckoutAttempt } from "@prisma/client";
 import { z } from "zod";
@@ -86,6 +87,8 @@ function publicAttempt(
         }
       : {}),
     id: attempt.id,
+    // Maple's order number ("MF-…"), assigned when the payment is captured; null until then.
+    orderNumber: attempt.orderNumber ? formatOrderNumber(attempt.orderNumber) : null,
     state: attempt.state,
     amountPaise: attempt.amountPaise,
     currency: attempt.currency,

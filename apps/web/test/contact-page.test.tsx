@@ -134,7 +134,7 @@ test("the live store's copy, published unchanged from the original template, rea
   });
   const account = resolveContactPage(live).categories.find(category => category.key === "account")!;
   assert.equal(account.questions[0]!.question, "Do I need an account with Maple Furnishers?");
-  assert.match(account.questions[0]!.answer, /^Not yet\. Customer accounts arrive with online checkout\./);
+  assert.match(account.questions[0]!.answer, /^You don't need one: you can always check out as a guest/);
 });
 
 test("staff wording, order and visibility stay; new regions join an older list where the redesign puts them", async () => {

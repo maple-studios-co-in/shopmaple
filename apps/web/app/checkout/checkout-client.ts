@@ -9,6 +9,16 @@ export const checkoutOptionsSchema = z.object({
   paymentKeyId: z.string().regex(/^rzp_(test|live)_[A-Za-z0-9]+$/),
 });
 export type CheckoutOptions = z.infer<typeof checkoutOptionsSchema>;
+/** A signed-in customer's contact and default address, filled into the form (owner's spec, 10 Nov 2026). */
+export type CheckoutPrefill = {
+  email: string;
+  name: string;
+  /** The +91 form the account keeps. */
+  phone: string;
+  address: { line1: string; line2: string; city: string; stateCode: string; pincode: string } | null;
+};
+/** Whether customer accounts are on (`/api/health` → `accountsEnabled`), and who is signed in, if anyone. */
+export type CheckoutAccount = { enabled: boolean; prefill: CheckoutPrefill | null };
 const money = z.number().int().min(0);
 export const checkoutAttemptSchema = z.object({
   id: z.uuid(),
@@ -52,6 +62,8 @@ export const checkoutAttemptSchema = z.object({
     .optional(),
   fulfillmentStatus: z.enum(["pending", "confirmed", "review_required"]).optional(),
   orderReference: z.string().nullable().optional(),
+  /** Maple's own order number ("MF-10482"), assigned when the payment is captured; Keeri's reference stays internal. */
+  orderNumber: z.string().regex(/^MF-[1-9][0-9]{0,9}$/).nullable().optional(),
   /** When the payment window must close: two minutes before Keeri's stock hold lapses. */
   payBy: z.iso.datetime({ offset: true }).nullable().optional(),
   /** The same window in seconds from now on the server's clock; preferred over `payBy`. */

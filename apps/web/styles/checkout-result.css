@@ -1,0 +1,279 @@
+/* The payment result after Razorpay's window (Figma 392:1752 "Payment Success", 392:1806 "Payment Failure"): the message
+   beside the order card, on a sage panel when paid and a warm one when not. Drawn by components/store/checkout-result.tsx
+   inside the checkout page (.checkout-page in styles/account.css), whose padding is the frame's 80px panel padding at
+   1440; loaded by app/checkout/layout.tsx. Sizes are the design's at 1440px as a share of the screen (value / 14.4 vw),
+   down to a floor that reads on a phone and up to a third larger at 1920, as styles/account.css draws them. The card
+   goes under the message on a narrow window; the buttons span a phone. */
+
+/* The panel: the page, and the shell's main area around it, so a tall window shows no band above the footer. */
+.chrome-main:has([data-payment-result="success"]),
+.checkout-page:has([data-payment-result="success"]) {
+  background: #f3f6ef;
+}
+.chrome-main:has([data-payment-result="failed"]),
+.checkout-page:has([data-payment-result="failed"]) {
+  background: #f8f6f1;
+}
+/* The shell's brand bar above them, as each frame draws it: Maple red when paid, the quiet beige when not. */
+.chrome:has([data-payment-result="success"]) .chrome-brand {
+  background: #80241c;
+  color: #fff;
+}
+.chrome:has([data-payment-result="failed"]) .chrome-brand {
+  background: #efede7;
+  color: #68665f;
+}
+
+/* ---- The two columns: 640 and 560 with 80 between at 1440 ---- */
+.checkout-page .checkout-result {
+  display: grid;
+  grid-template-columns: minmax(0, 640fr) minmax(0, 560fr);
+  align-items: start;
+  gap: clamp(32px, 5.556vw, 106.7px);
+  max-width: 1706.7px;
+  margin: 0 auto;
+  color: var(--account-ink);
+}
+.checkout-page .checkout-result-message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+  min-width: 0;
+}
+.checkout-page .checkout-result-icon {
+  display: block;
+  width: clamp(48px, 4.444vw, 85.3px);
+  height: auto;
+}
+.checkout-page .checkout-result-eyebrow {
+  color: var(--account-muted);
+  font: var(--account-fine);
+  text-transform: uppercase;
+}
+.checkout-page .checkout-result-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(30px, 2.778vw, 53.3px) / 1.4 var(--font-heading);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+/* The heading takes focus when the screen replaces the page; it is not a control, so it draws no ring. */
+.checkout-page .checkout-result-title:focus {
+  outline: none;
+}
+.checkout-page .checkout-result-title > span {
+  display: block;
+}
+.checkout-page [data-payment-result="failed"] .checkout-result-title {
+  font-size: clamp(28px, 2.639vw, 50.7px);
+}
+.checkout-page .checkout-result-lead {
+  color: var(--account-muted);
+  font: var(--account-text);
+  overflow-wrap: anywhere;
+}
+/* "Status / ORDER #MF-10482" and "Status / PAYMENT FAILED": 160 and 120 wide at 1440, wider for longer words. */
+.checkout-page .checkout-result-pill {
+  min-width: clamp(140px, 11.111vw, 213.3px);
+  max-width: 100%;
+  padding: clamp(8px, 0.694vw, 13.3px) clamp(10px, 0.694vw, 13.3px);
+  border-radius: 999px;
+  background: #e2ecd9;
+  color: var(--account-ink);
+  font: var(--account-fine);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.checkout-page [data-payment-result="failed"] .checkout-result-pill {
+  min-width: clamp(110px, 8.333vw, 160px);
+  background: rgba(242, 20, 1, 0.23);
+  color: #741a14;
+}
+.checkout-page .checkout-result-label {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+/* The estimate, and the amount still to pay. */
+.checkout-page .checkout-result-figure {
+  color: var(--account-ink);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.checkout-page .checkout-result-help {
+  max-width: 93.75%;
+  color: var(--account-muted);
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.4 var(--font-text);
+}
+.checkout-page .checkout-result-reference {
+  white-space: nowrap;
+}
+/* "Maple / Collection / Primary action": 300 x 52 at 1440, one under the other. */
+.checkout-page .checkout-result-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(16px, 1.667vw, 32px);
+}
+.checkout-page .checkout-result-actions .account-cta {
+  width: clamp(240px, 20.833vw, 400px);
+  max-width: 100%;
+}
+.checkout-page .checkout-result-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: clamp(10px, 0.972vw, 18.7px);
+  color: var(--account-ink);
+  font: var(--account-small);
+}
+.checkout-page .checkout-result-links a {
+  color: inherit;
+  text-decoration: none;
+}
+.checkout-page .checkout-result-links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ---- The order card ---- */
+.checkout-page .checkout-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 1.667vw, 32px);
+  min-width: 0;
+  padding: clamp(20px, 2.222vw, 42.7px);
+  border: 1px solid #e2e4dc;
+  border-radius: 16px;
+  background: #fff;
+}
+.checkout-page .checkout-result-card-title {
+  margin: 0;
+  color: var(--account-ink);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
+}
+/* One piece: its photo whole, across the card and 300 tall at 1440 (180 on the failure screen). */
+.checkout-page .checkout-result-photo {
+  position: relative;
+  height: clamp(200px, 20.833vw, 400px);
+}
+.checkout-page [data-payment-result="failed"] .checkout-result-photo {
+  height: clamp(140px, 12.5vw, 240px);
+}
+.checkout-page .checkout-result-photo img {
+  object-fit: contain;
+}
+.checkout-page .checkout-result-piece {
+  color: var(--account-ink-strong);
+  font: 500 clamp(20px, 1.667vw, 32px) / 1.4 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.checkout-page .checkout-result-meta {
+  color: var(--account-muted);
+  font: var(--account-small);
+}
+/* Several pieces: a row each, a small photo, the name and the line's price, as the checkout's own summary lists them. */
+.checkout-page .checkout-result-lines {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 1.389vw, 26.7px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checkout-page .checkout-result-line {
+  display: grid;
+  grid-template-columns: clamp(56px, 4.722vw, 90.7px) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: clamp(12px, 1.111vw, 21.3px);
+}
+.checkout-page .checkout-result-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 68 / 84;
+  overflow: hidden;
+  background: #efebe4;
+}
+.checkout-page .checkout-result-thumb img {
+  object-fit: cover;
+}
+.checkout-page .checkout-result-line-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.checkout-page .checkout-result-line-title {
+  color: var(--account-ink-strong);
+  font: 500 clamp(16px, 1.181vw, 22.7px) / 1.4 var(--font-heading);
+  overflow-wrap: break-word;
+}
+.checkout-page .checkout-result-line-price {
+  color: var(--account-ink-strong);
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.4 var(--font-text);
+  white-space: nowrap;
+}
+/* The totals: the label, then the amount where the frame starts it (62% across), a rule over the total. */
+.checkout-page .checkout-result-totals {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 1.667vw, 32px);
+  margin: 0;
+}
+.checkout-page .checkout-result-totals > div {
+  display: grid;
+  grid-template-columns: minmax(0, 62fr) minmax(max-content, 38fr);
+  column-gap: clamp(12px, 1.111vw, 21.3px);
+  font: 400 clamp(14px, 1.042vw, 20px) / 1.4 var(--font-text);
+}
+.checkout-page .checkout-result-totals dt {
+  color: var(--account-muted);
+}
+.checkout-page .checkout-result-totals dd {
+  margin: 0;
+  color: var(--account-ink-strong);
+  white-space: nowrap;
+}
+.checkout-page .checkout-result-totals > .checkout-result-total:not(:first-child) {
+  padding-top: clamp(16px, 1.667vw, 32px);
+  border-top: 1px solid var(--account-rule);
+}
+.checkout-page .checkout-result-fine {
+  color: var(--account-muted);
+  font: var(--account-fine);
+}
+
+/* ---- Narrower windows ---- */
+/* The page under 880px wide (a window under about 1000px): the card goes under the message, its photo a little taller. */
+@container account (max-width: 879px) {
+  .checkout-page .checkout-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .checkout-page .checkout-result-photo {
+    height: clamp(220px, 40vw, 320px);
+  }
+  .checkout-page [data-payment-result="failed"] .checkout-result-photo {
+    height: clamp(160px, 24vw, 220px);
+  }
+}
+/* A phone: the buttons span the column, and the two links are easier to tap. */
+@container account (max-width: 639px) {
+  .checkout-page .checkout-result-actions {
+    align-self: stretch;
+    align-items: stretch;
+  }
+  .checkout-page .checkout-result-actions .account-cta {
+    width: 100%;
+  }
+  .checkout-page .checkout-result-help {
+    max-width: none;
+  }
+  .checkout-page .checkout-result-links a {
+    padding-block: 4px;
+  }
+}
+
+/* A code's discount line reads in the green main's checkout uses (checkout-parts.tsx). */
+.checkout-result-totals [data-discount-line] dd {
+  color: #2f6b32;
+}

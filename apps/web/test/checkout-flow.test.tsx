@@ -27,17 +27,27 @@ const quote = {
 const attempt = (extra: Record<string, unknown> = {}) => ({ id: attemptId, state: "reservation_required", amountPaise: 383500, currency: "INR",
   paid: false, providerOrderId: null, quote, fulfillmentStatus: "pending", orderReference: null, ...extra });
 type Call = { method: string; path: string; headers: Headers; body: any };
-type Razorpay = { options: any; opened: number };
+type Razorpay = { options: any; opened: number; events: Record<string, (response: unknown) => void> };
 let razorpay: Razorpay | null = null;
 class FakeRazorpay {
-  constructor(public options: any) { razorpay = { options, opened: 0 }; }
+  constructor(public options: any) { razorpay = { options, opened: 0, events: {} }; }
+  on(event: string, handler: (response: unknown) => void) { razorpay!.events[event] = handler; }
   open() { razorpay!.opened++; }
 }
 const field = (name: string) => document.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
 const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === label);
 const text = () => document.getElementById("root")!.textContent ?? "";
+// The single page's primary action carries the server total once the quote is in (Figma 394:1310).
+const pay = "Continue to payment · ₹3,835";
+const payButton = () => {
+  const found = button(pay);
+  assert.ok(found, `"${pay}" is offered`);
+  return found!;
+};
+const link = (label: string) => [...document.querySelectorAll<HTMLAnchorElement>("a")].find((a) => a.textContent === label);
 const storageKey = "maple-checkout-attempt-v1";
-async function mount(route: (call: Call) => Response | Promise<Response>, extra: { confirmationWindowMs?: number; keepStorage?: boolean } = {}) {
+type Account = { enabled: boolean; prefill: { email: string; name: string; phone: string; address: { line1: string; line2: string; city: string; stateCode: string; pincode: string } | null } | null };
+async function mount(route: (call: Call) => Response | Promise<Response>, extra: { confirmationWindowMs?: number; keepStorage?: boolean; account?: Account } = {}) {
   if (!extra.keepStorage) { sessionStorage.clear(); localStorage.clear(); }
   razorpay = null;
   (window as any).Razorpay = FakeRazorpay;
@@ -53,7 +63,7 @@ async function mount(route: (call: Call) => Response | Promise<Response>, extra:
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider>
-    <CheckoutFlow options={options} pollIntervalMs={5} confirmationWindowMs={extra.confirmationWindowMs} />
+    <CheckoutFlow options={options} pollIntervalMs={5} confirmationWindowMs={extra.confirmationWindowMs} account={extra.account} />
   </ShopProvider></AppRouterContext.Provider>));
   return { calls, cleanup: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
@@ -99,7 +109,7 @@ test("details are validated locally and sent once as a normalized quote request 
     assert.match(text(), /250/);
     assert.match(text(), /585/);
     assert.match(text(), /3,835/);
-    assert.ok(button("Pay ₹3,835"), "the pay button carries the server total");
+    assert.ok(button(pay), "the pay button carries the server total");
   } finally { await cleanup(); }
 });
 
@@ -133,7 +143,7 @@ test("payment opens the hosted provider with the server order and confirms the K
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     const created = calls.find((c) => c.path === `/api/checkout/${attemptId}/payment-order`)!;
     assert.equal(created.method, "POST");
     assert.deepEqual(created.body, {});
@@ -147,9 +157,9 @@ test("payment opens the hosted provider with the server order and confirms the K
     assert.equal(typeof razorpay!.options.handler, "function");
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow1", razorpay_order_id: "order_flow1", razorpay_signature: "f".repeat(64) }); });
     await settle(12);
-    assert.match(text(), /SO-1001/);
-    assert.match(text(), /confirmed/i);
-    assert.ok(!button("Pay ₹3,835"), "a confirmed order cannot be paid twice");
+    assert.match(text(), /Order #SO-1001/, "without Maple's number yet, the order is told by its reference");
+    assert.match(text(), /Payment received[\s\S]*Something beautiful is on its way\.[\s\S]*Your order is confirmed\./);
+    assert.ok(!button(pay), "a confirmed order cannot be paid twice");
     assert.ok(polls >= 3);
     assert.ok(calls.every((c) => c.path !== "/api/webhooks/razorpay"), "the browser never posts payment evidence itself");
   } finally { await cleanup(); }
@@ -165,19 +175,24 @@ test("a dismissed payment can be retried, and a blocked checkout is explained wi
         : Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow2" }));
     return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow2" }));
   });
+  // Closing the window shows the failure screen (Figma 392:1806), whose "Try payment again" reopens it.
+  const retry = () => {
+    const found = button("Try payment again");
+    assert.ok(found, "the buyer can retry after closing the provider window");
+    return found!;
+  };
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.modal.ondismiss(); });
     assert.match(text(), /not completed/i);
-    assert.ok(button("Pay ₹3,835"), "the buyer can retry after closing the provider window");
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => retry().click());
     assert.equal(calls.filter((c) => c.path === `/api/checkout/${attemptId}/payment-order`).length, 2);
     assert.equal(razorpay!.opened, 1, "a retry constructs a fresh provider session");
     await act(async () => { razorpay!.options.modal.ondismiss(); });
     blocked = true;
     const opens = (razorpay as Razorpay | null)?.opened;
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => retry().click());
     assert.match(text(), /requires review/);
     assert.equal(razorpay!.opened, opens, "a blocked checkout never opens the provider window");
   } finally { await cleanup(); }
@@ -195,18 +210,18 @@ test("an expired quote is refreshed with a new idempotency key and service outag
   try {
     await submitDetails();
     assert.match(text(), /expired/i);
-    assert.ok(!button("Pay ₹3,835"), "an expired quote cannot be paid");
+    assert.ok(!button(pay), "an expired quote cannot be paid");
     await act(async () => button("Get a new quote")!.click());
     const keys = calls.filter((c) => c.path === "/api/checkout").map((c) => c.headers.get("Idempotency-Key"));
     assert.equal(keys.length, 2);
     assert.notEqual(keys[0], keys[1], "a replayed key would return the same expired attempt");
-    assert.ok(button("Pay ₹3,835"));
+    assert.ok(button(pay));
     await act(async () => button("Edit details")!.click());
     fill({ "shipping.line2": "Second floor" });
     await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
     assert.match(text(), /couldn't confirm pricing and delivery/);
     assert.match(text(), /No payment has been taken/);
-    assert.ok(!button("Pay ₹3,835"));
+    assert.ok(!button(pay));
   } finally { await cleanup(); }
 });
 
@@ -218,13 +233,13 @@ test("a captured payment that needs staff review is reported honestly with the c
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow3", razorpay_order_id: "order_flow3", razorpay_signature: "f".repeat(64) }); });
     await settle(8);
     assert.match(text(), /payment (has been|was) received/i);
     assert.match(text(), /review/i);
     assert.match(text(), new RegExp(attemptId));
-    assert.ok(!button("Pay ₹3,835"));
+    assert.ok(!button(pay));
   } finally { await cleanup(); }
 });
 
@@ -246,14 +261,14 @@ test("a payment the buyer completed is never described as unpaid when confirmati
   }, { confirmationWindowMs: 40 });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_slow", razorpay_order_id: "order_slow", razorpay_signature: "f".repeat(64) }); });
     await settle(12);
     assert.match(text(), /still confirming/i);
     assert.match(text(), /don.t need to pay again|do not pay again/i);
     assert.doesNotMatch(text(), /No payment has been taken/);
     assert.match(text(), new RegExp(attemptId));
-    assert.ok(!button("Pay ₹3,835"));
+    assert.ok(!button(pay));
   } finally { await cleanup(); }
 });
 
@@ -269,13 +284,14 @@ test("a refresh while confirming resumes the same attempt, then empties the cart
     return new Response(null, { status: 404 });
   };
   const first = await mount(route);
-  await submitDetails();
-  await act(async () => button("Pay ₹3,835")!.click());
-  await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_resume", razorpay_order_id: "order_resume", razorpay_signature: "f".repeat(64) }); });
-  await settle(4);
-  assert.match(text(), /confirming/i);
-  assert.ok(sessionStorage.getItem(storageKey), "the in-flight attempt survives a reload");
-  await first.cleanup();
+  try {
+    await submitDetails();
+    await act(async () => payButton().click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_resume", razorpay_order_id: "order_resume", razorpay_signature: "f".repeat(64) }); });
+    await settle(4);
+    assert.match(text(), /confirming/i);
+    assert.ok(sessionStorage.getItem(storageKey), "the in-flight attempt survives a reload");
+  } finally { await first.cleanup(); }
   confirmed = true;
   const second = await mount(route, { keepStorage: true });
   try {
@@ -289,16 +305,23 @@ test("a refresh while confirming resumes the same attempt, then empties the cart
 });
 
 test("leaving a payable attempt releases its hold and the next quote uses a new key", async () => {
+  let orders = 0;
   const { calls, cleanup } = await mount((call) => {
     if (call.path === "/api/checkout") return Response.json(attempt());
-    if (call.path.endsWith("/payment-order")) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_leave" }));
+    // The second window would outlive the stock hold, so trying again from the failure screen returns to the quote.
+    if (call.path.endsWith("/payment-order"))
+      return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_leave", ...(++orders > 1 ? { payWithinSeconds: 30 } : {}) }));
     if (call.path.endsWith("/release")) return Response.json(attempt({ state: "abandoned", providerOrderId: "order_leave" }));
     return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_leave" }));
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.modal.ondismiss(); });
+    const firstWindow = razorpay;
+    await act(async () => button("Try payment again")!.click());
+    assert.equal(razorpay, firstWindow, "no second window that would outlive the hold");
+    assert.match(text(), /about to be released/);
     await act(async () => button("Edit details")!.click());
     await settle(2);
     const releases = calls.filter((c) => c.path === `/api/checkout/${attemptId}/release`);
@@ -364,7 +387,7 @@ test("the payment window closes before the stock hold and the signed callback is
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     assert.ok(razorpay!.options.timeout > 280 && razorpay!.options.timeout <= 300, `timeout ${razorpay!.options.timeout}`);
     const signed = { razorpay_payment_id: "pay_flow3", razorpay_order_id: "order_flow3", razorpay_signature: "a".repeat(64) };
     await act(async () => { razorpay!.options.handler(signed); });
@@ -382,7 +405,7 @@ test("a hold too close to lapsing asks for a new quote instead of opening paymen
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     assert.equal(razorpay, null, "no payment window that would outlive the hold");
     assert.match(text(), /new quote/i);
   } finally { await cleanup(); }
@@ -397,7 +420,7 @@ test("a delivery Shiprocket cannot price offers an enquiry instead of payment", 
     const enquiry = document.querySelector<HTMLAnchorElement>("[data-checkout-enquiry]")!;
     assert.match(enquiry.href, /\/contact\?/);
     assert.match(decodeURIComponent(enquiry.href), /400001/);
-    assert.ok(!button("Pay ₹3,835"));
+    assert.ok(!button(pay));
   } finally { await cleanup(); }
 });
 
@@ -410,7 +433,7 @@ test("a payment received after the hold lapsed is acknowledged with the refund p
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow5", razorpay_order_id: "order_flow5", razorpay_signature: "b".repeat(64) }); });
     await settle(12);
     assert.match(text(), /payment has been received/i);
@@ -429,7 +452,7 @@ test("a confirmed order links to its status page", async () => {
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow6", razorpay_order_id: "order_flow6", razorpay_signature: "c".repeat(64) }); });
     await settle(12);
     assert.match(text(), /SO-2002/);
@@ -446,24 +469,154 @@ test("the payment window length comes from the server, not the buyer's clock", a
   });
   try {
     await submitDetails();
-    await act(async () => button("Pay ₹3,835")!.click());
+    await act(async () => payButton().click());
     assert.equal(razorpay!.options.timeout, 200);
   } finally { await cleanup(); }
 });
 
-test("each new checkout step brings the buyer back to the top of the checkout", async () => {
+test("the quote fills in the same page without a jump, and the confirmation starts at the top", async () => {
+  // One page (Figma 394:1310): the delivery charge, the estimate and the total appear beside the button the buyer pressed.
+  // A message that replaces the page (confirming, confirmed, review) still brings them back to the top.
   const scrolled: Element[] = [];
   const original = (window.HTMLElement.prototype as any).scrollIntoView;
   (window.HTMLElement.prototype as any).scrollIntoView = function (this: Element) { scrolled.push(this); };
-  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }));
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path.endsWith("/payment-order")) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_jump" }));
+    return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_jump" }));
+  });
   try {
     assert.equal(scrolled.length, 0, "the first view does not jump");
     await submitDetails();
-    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the review starts at the top, not where the button was");
+    assert.equal(scrolled.length, 0, "the quote appears where the buyer is");
+    await act(async () => payButton().click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_jump", razorpay_order_id: "order_jump", razorpay_signature: "d".repeat(64) }); });
+    assert.ok(scrolled.some((el) => el.hasAttribute("data-checkout")), "the confirmation starts at the top, not where the button was");
   } finally {
     (window.HTMLElement.prototype as any).scrollIntoView = original;
     await cleanup();
   }
+});
+
+test("the details are one page: contact, the delivery address, then delivery and payment, beside the order", async () => {
+  const { cleanup } = await mount(() => new Response(null, { status: 404 }));
+  try {
+    assert.match(text(), /01\s*Contact details[\s\S]*02\s*Delivery address[\s\S]*03\s*Delivery & payment/);
+    const delivery = document.querySelector("[data-checkout-delivery]");
+    assert.ok(delivery, "the delivery choice sits in step 03");
+    assert.match(delivery!.textContent!, /Standard delivery[\s\S]*White glove delivery/);
+    assert.match(delivery!.textContent!, /PIN code/, "before the quote, the charge is promised from the PIN, not invented");
+    assert.doesNotMatch(delivery!.textContent!, /₹/);
+    assert.ok(button("Calculate delivery and total"), "the first press prices delivery and the total");
+    assert.ok(![...document.querySelectorAll("button")].some((b) => /Continue to payment/.test(b.textContent ?? "")), "nothing to pay before a quote");
+    assert.match(document.querySelector("[data-checkout-payment]")?.textContent ?? "", /Pay securely online[\s\S]*UPI/);
+    const summary = document.querySelector("[data-checkout-summary]")!.textContent!;
+    for (const expected of [/Your order/, /2 items/, /Oak Chair/, /Natural/, /Subtotal/, /3,000/]) assert.match(summary, expected);
+    assert.equal(link("Speak with Maple.")?.getAttribute("href"), "/contact");
+    assert.equal(link("Terms of Service")?.getAttribute("href"), "/policies/terms-of-service");
+    assert.equal(link("Privacy Policy")?.getAttribute("href"), "/policies/privacy-policy");
+    for (const name of ["email", "firstName", "shipping.line1", "shipping.city", "shipping.pincode", "phone"]) {
+      const control = field(name) as HTMLInputElement;
+      assert.ok(control.labels?.[0]?.textContent, `${name} has a label`);
+    }
+  } finally { await cleanup(); }
+});
+
+test("one piece's photo is the summary's largest picture, so it loads at once instead of lazily", async () => {
+  line.image = "/media/home/category-accent-chair.webp";
+  const { cleanup } = await mount(() => new Response(null, { status: 404 }));
+  try {
+    const photo = document.querySelector<HTMLImageElement>("[data-checkout-summary] .checkout-line-photo img");
+    assert.ok(photo, "the piece is pictured");
+    assert.equal(photo!.getAttribute("loading"), "eager");
+    assert.equal(photo!.getAttribute("fetchPriority"), "high");
+  } finally {
+    line.image = "";
+    await cleanup();
+  }
+});
+
+test("once quoted, the page shows the delivery charge and estimate in place and locks what was quoted", async () => {
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt({ quote: shiprocketQuote })) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    const delivery = document.querySelector("[data-checkout-delivery]")?.textContent ?? "";
+    assert.match(delivery, /Standard delivery · ₹250/);
+    assert.match(delivery, /Estimated arrival · \d{1,2}[\s\S]*(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}/);
+    assert.doesNotMatch(delivery, /White glove delivery/, "only the chosen way is shown once priced");
+    const summary = document.querySelector("[data-checkout-summary]")!.textContent!;
+    assert.match(summary, /Delivery\s*₹250/);
+    assert.match(summary, /GST\s*₹585/);
+    assert.match(summary, /Total to pay\s*₹3,835/);
+    assert.ok(button(pay));
+    assert.ok(button("Edit details"));
+    assert.equal((field("shipping.pincode") as HTMLInputElement).disabled, true, "the quoted address cannot drift from the quote");
+    await act(async () => button("Edit details")!.click());
+    assert.equal((field("shipping.pincode") as HTMLInputElement).disabled, false);
+    assert.equal((field("shipping.pincode") as HTMLInputElement).value, "400001", "what was entered stays");
+  } finally { await cleanup(); }
+});
+
+test("a field the page rejects is marked and described on the field itself", async () => {
+  const { calls, cleanup } = await mount(() => new Response(null, { status: 404 }));
+  try {
+    fill({ ...details, email: "buyer@", "shipping.pincode": "40001" });
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    assert.equal(calls.filter((c) => c.path === "/api/checkout").length, 0);
+    for (const name of ["email", "shipping.pincode"]) {
+      const control = field(name);
+      assert.equal(control.getAttribute("aria-invalid"), "true", name);
+      const words = (control.getAttribute("aria-describedby") ?? "").split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
+      assert.notEqual(words.trim(), "", `${name} says what is wrong`);
+    }
+    assert.equal(document.activeElement, field("email"), "focus goes to the first problem");
+  } finally { await cleanup(); }
+});
+
+test("with accounts on, a guest may sign in and come back; a signed-in customer finds their details filled in", async () => {
+  let { cleanup } = await mount(() => new Response(null, { status: 404 }), { account: { enabled: true, prefill: null } });
+  try {
+    assert.match(text(), /Already have an account\?/);
+    assert.equal(link("Sign in")?.getAttribute("href"), "/account/login?next=%2Fcheckout");
+  } finally { await cleanup(); }
+  const prefill = { email: "aditi.sharma@example.com", name: "Aditi Sharma", phone: "+919876543210",
+    address: { line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru", stateCode: "29", pincode: "560001" } };
+  let calls: Call[];
+  ({ calls, cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }), { account: { enabled: true, prefill } }));
+  try {
+    const values = Object.fromEntries(["email", "firstName", "lastName", "phone", "shipping.line1", "shipping.line2", "shipping.city", "shipping.stateCode", "shipping.pincode"]
+      .map((name) => [name, field(name).value]));
+    assert.deepEqual(values, { email: "aditi.sharma@example.com", firstName: "Aditi", lastName: "Sharma", phone: "9876543210", "shipping.line1": "14 Palm Avenue",
+      "shipping.line2": "Apartment 402", "shipping.city": "Bengaluru", "shipping.stateCode": "29", "shipping.pincode": "560001" });
+    assert.equal(link("Sign in"), undefined, "no sign-in offer once signed in");
+    assert.match(text(), /aditi\.sharma@example\.com/);
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    const posted = calls.find((c) => c.path === "/api/checkout");
+    assert.ok(posted, "the prefilled details are enough to quote");
+    assert.deepEqual(posted!.body.customer, { name: "Aditi Sharma", email: "aditi.sharma@example.com", phone: "+919876543210" });
+    assert.equal(posted!.body.shippingAddress.stateCode, "29");
+  } finally { await cleanup(); }
+  ({ cleanup } = await mount(() => new Response(null, { status: 404 })));
+  try {
+    assert.doesNotMatch(text(), /Sign in|Already have an account/, "with accounts off, nothing offers a sign-in");
+  } finally { await cleanup(); }
+});
+
+test("a confirmed order is told by Maple's order number, never Keeri's reference", async () => {
+  const { cleanup } = await mount((call) => {
+    if (call.path === "/api/checkout") return Response.json(attempt());
+    if (call.path === `/api/checkout/${attemptId}/payment-order`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow8" }));
+    if (call.path === `/api/checkout/${attemptId}/payment-callback`) return Response.json(attempt({ state: "awaiting_payment", providerOrderId: "order_flow8" }), { status: 202 });
+    return Response.json(attempt({ state: "captured", paid: true, providerOrderId: "order_flow8", fulfillmentStatus: "confirmed", orderReference: "SO-3003", orderNumber: "MF-10482" }));
+  });
+  try {
+    await submitDetails();
+    await act(async () => payButton().click());
+    await act(async () => { razorpay!.options.handler({ razorpay_payment_id: "pay_flow8", razorpay_order_id: "order_flow8", razorpay_signature: "e".repeat(64) }); });
+    await settle(12);
+    assert.match(text(), /MF-10482/);
+    assert.doesNotMatch(text(), /SO-3003/);
+  } finally { await cleanup(); }
 });
 
 /* ── Promo codes ─────────────────────────────────────────────────────────────── */
@@ -481,22 +634,22 @@ const promoError = () => document.querySelector("[data-promo-error]")?.textConte
 const typeCode = (value: string) => act(async () => fill({ promoCode: value }));
 const quoteRequests = (calls: Call[]) => calls.filter((c) => c.path === "/api/checkout" && c.method === "POST");
 
-test("a code entered with the details is sent with the quote, and the review shows the discount and the discounted total", async () => {
+test("a code entered with the details is sent with the quote, and the summary shows the discount and the discounted total", async () => {
   const { calls, cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(promotedAttempt()) : new Response(null, { status: 404 }));
   try {
     assert.match(text(), /Have a code\?/);
     await typeCode(" diwali15 ");
     await submitDetails();
     assert.equal(quoteRequests(calls)[0]!.body.promoCode, "DIWALI15");
-    const totals = document.querySelector("[data-checkout-review] dl")!.textContent!;
-    assert.match(totals, /Subtotal₹3,000/, "the lines before the discount");
-    assert.match(totals, /Discount \(DIWALI15\)−₹450/);
-    assert.match(totals, /Total₹3,304/);
-    assert.ok(button("Pay ₹3,304"), "the buyer pays the discounted total");
+    const totals = document.querySelector("[data-checkout-summary]")!.textContent!;
+    assert.match(totals, /Subtotal\s*₹3,000/, "the lines before the discount");
+    assert.match(totals, /Discount \(DIWALI15\)\s*−₹450/);
+    assert.match(totals, /Total to pay\s*₹3,304/);
+    assert.ok(button("Continue to payment · ₹3,304"), "the buyer pays the discounted total");
   } finally { await cleanup(); }
 });
 
-test("without a code the quote request carries none and the review has no discount line", async () => {
+test("without a code the quote request carries none and the summary has no discount line", async () => {
   const { calls, cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 }));
   try {
     await submitDetails();
@@ -512,13 +665,13 @@ test("removing an applied code quotes again without it, under a new key", async 
   try {
     await typeCode("DIWALI15");
     await submitDetails();
-    assert.ok(button("Pay ₹3,304"));
+    assert.ok(button("Continue to payment · ₹3,304"));
     await act(async () => button("Remove code")!.click());
     await settle();
     const [first, second] = quoteRequests(calls);
     assert.equal("promoCode" in second!.body, false);
     assert.notEqual(second!.headers.get("Idempotency-Key"), first!.headers.get("Idempotency-Key"));
-    assert.ok(button("Pay ₹3,835"), "back to the full price");
+    assert.ok(button("Continue to payment · ₹3,835"), "back to the full price");
     assert.doesNotMatch(text(), /Discount/);
   } finally { await cleanup(); }
 });
@@ -534,13 +687,13 @@ test("a code Keeri refuses is explained next to the field, and the buyer can rem
     await typeCode("NOPE99");
     await submitDetails();
     assert.equal(promoError(), "We don't recognise that code. No payment has been taken.");
-    assert.ok(document.querySelector("form"), "still on the details step");
+    assert.ok(button("Calculate delivery and total"), "still on the details step");
     await act(async () => button("Remove code")!.click());
     assert.equal(field("promoCode").value, "");
     assert.equal(promoError(), "");
     await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
     assert.equal("promoCode" in quoteRequests(calls).at(-1)!.body, false);
-    assert.ok(button("Pay ₹3,835"));
+    assert.ok(button("Continue to payment · ₹3,835"));
   } finally { await cleanup(); }
 });
 
@@ -564,16 +717,16 @@ test("a hold refused for the code brings the buyer back to the details with its 
   try {
     await typeCode("DIWALI15");
     await submitDetails();
-    await act(async () => button("Pay ₹3,304")!.click());
+    await act(async () => button("Continue to payment · ₹3,304")!.click());
     assert.equal(razorpay, null);
-    assert.ok(document.querySelector("form"), "back on the details step");
+    assert.ok(button("Calculate delivery and total"), "back on the details step");
     assert.equal(promoError(), "That code has already been used with this phone number or email. No payment has been taken.");
     assert.equal(field("promoCode").value, "DIWALI15", "the code stays for the buyer to change or remove");
     assert.equal(sessionStorage.getItem(storageKey), null, "the refused attempt is not resumed");
   } finally { await cleanup(); }
 });
 
-test("an item that can no longer be bought online is explained instead of a review", async () => {
+test("an item that can no longer be bought online is explained instead of a quote", async () => {
   const message = "An item in your cart can no longer be bought online. Remove it or send us an enquiry. No payment has been taken.";
   const { cleanup } = await mount(() => Response.json({ code: "ITEM_NOT_BUYABLE", message }, { status: 422 }));
   try {
