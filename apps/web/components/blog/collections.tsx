@@ -4,17 +4,21 @@ import { ContentImage } from "@/components/content-image";
 import { ProductImage } from "@/components/store/product-image";
 import { blogCollectionTiles, tileName } from "@/lib/blog";
 import { blogProductCards } from "./bestsellers";
+import type { TemplateMedia } from "@shopmaple/contracts";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
 /**
  * "Explore our collections" under the article (Figma 268:4925): a Maple room photo beside the invitation, Shop Now,
  * and the design's four pieces as tiles. The tiles come from the catalogue; when it cannot be read they are left out
  * and Shop Now still leads to the whole collection.
  */
-export function BlogCollections() {
+export function BlogCollections({ media }: { media?: TemplateMedia } = {}) {
+  // The room photo is template artwork (blog-collections-photo).
+  const photo = resolveTemplateMedia("blog-collections-photo", media);
   return (
     <section data-blog-collections className="blog-collections" aria-labelledby="blog-collections-title">
       <div className="blog-collections-photo">
-        <ContentImage data-collections-photo src="/media/home/editorial-right.webp" alt="" fill sizes="(max-width: 899px) calc(100vw - 32px), 50vw" />
+        <ContentImage data-collections-photo src={photo.image} alt={photo.alt} fill sizes="(max-width: 899px) calc(100vw - 32px), 50vw" />
       </div>
       <div className="blog-collections-copy">
         <p data-collections-eyebrow className="blog-collections-eyebrow">Maple Furnishers</p>

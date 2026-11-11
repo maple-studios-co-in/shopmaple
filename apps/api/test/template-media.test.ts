@@ -71,6 +71,26 @@ test("draft template images stay private and publishing hidden artwork exposes b
   }
 });
 
+test("the pictures that were fixed in code publish as artwork: menu, category pages, blog, Help and sign-in pages (12 Nov 2026)", async () => {
+  // One upload: the file uploads are rate limited (10 a minute) and the other tests here need theirs.
+  const asset = await upload("#c0d0e0");
+  const templateMedia = [
+    { key: "sofas-outdoor-banner", image: asset.url, mobileImage: asset.url, alt: "A sofa on a shaded terrace" },
+    { key: "menu-living-feature", image: asset.url, alt: "Our living room" },
+    { key: "tables-tile-bar", image: asset.url, alt: "A walnut bar table" },
+    { key: "chairs-value-strength", image: asset.url, alt: "" },
+    { key: "blog-cover-best-wood", image: asset.url, alt: "Walnut and teak planks" },
+    { key: "policy-return-exchange", image: asset.url, alt: "" },
+    { key: "auth-sign-up", image: asset.url, alt: "" },
+  ];
+  assert.equal(templateMediaSchema.safeParse([{ ...templateMedia[0], mobileImage: undefined }]).success, false, "a banner needs its phone crop");
+  const version = await save(templateMedia);
+  assert.equal((await http.get(asset.url)).status, 404, "drafts stay private");
+  assert.equal((await publish(version)).status, 200);
+  assert.deepEqual((await http.get("/api/content/storefront")).body.content.templateMedia, templateMedia);
+  assert.equal((await http.get(asset.url)).status, 200, "public once published");
+});
+
 test("missing template upload references reject publication atomically", async () => {
   const asset = await upload("#304050");
   const version = await save([{ key: "home-nimbus", image: asset.url, mobileImage: `/media/uploads/${"f".repeat(64)}.webp`, alt: "Nimbus" }]);

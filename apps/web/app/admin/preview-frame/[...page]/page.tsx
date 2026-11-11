@@ -7,6 +7,7 @@ import { readThumbnailSection } from "@/lib/live-preview";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
 import { thumbnailContent } from "@/lib/section-thumbnails";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
+import { resolveMenuArtwork } from "@/lib/menu-artwork";
 import "@/styles/admin.css";
 // A blog page previews with its own styles, as the storefront's blog route loads them.
 import "@/styles/blog.css";
@@ -63,7 +64,7 @@ export default async function PreviewFrame({ params, searchParams }: {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no storefront page at this address to preview." }} />;
   }
   return (
-    <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} view={published ? "published" : "draft"}>
+    <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} menuArtwork={resolveMenuArtwork(content.templateMedia)} view={published ? "published" : "draft"}>
       <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
     </PreviewFrameDocument>
   );

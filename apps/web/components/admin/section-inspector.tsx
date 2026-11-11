@@ -41,6 +41,7 @@ const artwork: Partial<Record<HomeSectionKey, (key: string) => boolean>> = {
   nimbus: (key) => key === "home-nimbus",
   newsletter: (key) => key === "home-newsletter",
   testimonial: (key) => key === "home-testimonial-poster",
+  editorial: (key) => key.startsWith("home-editorial-flip-"),
 };
 const motion: Partial<Record<HomeSectionKey, [keyof Motion, string, boolean]>> = {
   ticker: ["autoplayTicker", "Automatically move the homepage ticker", true],

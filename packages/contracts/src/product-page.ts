@@ -42,7 +42,7 @@ export const productMediaSchema = z.object({
 export type ProductMedia = z.infer<typeof productMediaSchema>;
 
 export const reviewSources = ["online_order", "showroom", "whatsapp", "google", "other"] as const;
-const reviewPhotoUrl = z.string().regex(/^https:\/\/store\.maplefurnishers\.com\/media\/keeri-review\/[A-Za-z0-9_-]{1,64}\.webp$/);
+const reviewPhotoUrl = z.string().regex(/^https:\/\/(?:store|shop)\.maplefurnishers\.com\/media\/keeri-review\/[A-Za-z0-9_-]{1,64}\.webp$/);
 export const productReviewSchema = z.object({
   id: line(64),
   rating: z.number().int().min(1).max(5),

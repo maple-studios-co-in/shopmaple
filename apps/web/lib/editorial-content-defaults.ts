@@ -1,4 +1,4 @@
-import type { AuthoredArticle, AuthoredBlock, EditorialContent, EditorialNode } from "@shopmaple/contracts";
+import { blogCoverKeys, type AuthoredArticle, type AuthoredBlock, type EditorialContent, type EditorialNode, type TemplateMedia } from "@shopmaple/contracts";
 import source from "@/data/store-content.json";
 import blogIndex from "@/data/blog-index.json";
 
@@ -6,7 +6,12 @@ type ResolvedArticle = Omit<(typeof source.blogs)[number]["articles"][number], "
 type ResolvedBlog = { handle: string; title: string; articles: ResolvedArticle[] };
 type ResolvedEditorialContent = { policies: Record<string, { title: string; content: EditorialNode[] }>; blogs: ResolvedBlog[] };
 export const defaultEditorialContent: EditorialContent = { policies: [], blogs: [], articles: [] };
-export function resolveEditorialContent(value?: EditorialContent, authoredArticles?: readonly AuthoredArticle[]): ResolvedEditorialContent {
+/**
+ * The policies and blogs as published: the imported originals with staff's edits, then staff's own articles. `media` is
+ * the published template artwork: an imported article whose cover slot (picture-slots.ts) staff filled shows that
+ * picture as its cover, in place of its own artwork (owner, 12 Nov 2026).
+ */
+export function resolveEditorialContent(value?: EditorialContent, authoredArticles?: readonly AuthoredArticle[], media?: TemplateMedia): ResolvedEditorialContent {
   const result = structuredClone({ policies: source.policies, blogs: source.blogs }) as unknown as ResolvedEditorialContent;
   const listing = blogIndex as Record<string, Record<string, { excerpt: string }>>;
   for (const blog of result.blogs) {
@@ -20,6 +25,9 @@ export function resolveEditorialContent(value?: EditorialContent, authoredArticl
         article.excerpt = edit.excerpt;
         article.content = structuredClone(edit.content);
       }
+      const coverKey = Object.hasOwn(blogCoverKeys, article.handle) ? blogCoverKeys[article.handle as keyof typeof blogCoverKeys] : undefined;
+      const cover = coverKey && media?.find(item => item.key === coverKey);
+      if (cover) article.cover = { src: cover.image, alt: cover.alt };
     }
   }
   for (const article of authoredArticles ?? []) {
