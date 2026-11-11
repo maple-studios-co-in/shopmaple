@@ -51,6 +51,17 @@ export function displayPhone(phone: string) {
   const digits = tenDigits(phone);
   return digits ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : phone;
 }
+/** "+91 98••• ••210": a saved address's number at a glance (Figma 392:1527), whole again when the address is edited. */
+export function maskedPhone(phone: string) {
+  const digits = tenDigits(phone);
+  return digits ? `+91 ${digits.slice(0, 2)}••• ••${digits.slice(7)}` : phone;
+}
+/** "Phone number ending 210": how a screen reader says the masked number, instead of reading out each "•". Null for a
+ * number that is not masked (not a +91 mobile number), which is read as it is shown. */
+export function maskedPhoneLabel(phone: string) {
+  const digits = tenDigits(phone);
+  return digits ? `Phone number ending ${digits.slice(7)}` : null;
+}
 
 /** "1 item", "3 items": pieces, as the API counts them. */
 export function itemCount(count: number) {

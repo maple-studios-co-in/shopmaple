@@ -8,9 +8,9 @@ import { readAddresses, readOverview } from "@/lib/account/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Saved addresses", robots: { index: false, follow: false } };
-const heading = <AccountHeading title="Saved addresses." lead="Where your pieces come home. Your default address fills in at checkout." />;
+const heading = <AccountHeading title="Your addresses." lead="A familiar place for every delivery." />;
 
-/** Saved delivery addresses (owner's spec, 10 Nov 2026; no frame): add, edit, remove and choose the default. */
+/** Saved delivery addresses (Figma 392:1527 "Saved Address"): add, edit, remove and choose the default, which checkout fills in. */
 export default async function AccountAddressesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const preview = accountPreview(await searchParams);
   if (preview)

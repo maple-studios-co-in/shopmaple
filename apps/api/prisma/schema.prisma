@@ -303,6 +303,8 @@ model CustomerAddress {
   id String @id @default(uuid())
   customerId String
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// What the customer calls the place ("Home", "Studio"); null when they gave none.
+  label String?
   name String
   line1 String
   line2 String?

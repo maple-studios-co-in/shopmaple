@@ -515,6 +515,19 @@ test("addresses: at most ten, exactly one default, and another customer's addres
   assert.equal(afterMove.address.line2, "Flat 2");
   assert.equal(afterMove.addresses[0]!.id, second.address.id, "the default is listed first");
 
+  // A place's name (Figma 392:1527: "Home", "Studio"): none until given, kept trimmed, and cleared when emptied.
+  assert.equal(first.address.label, "", "an address saved without a name has none");
+  const named = addressMutationResponseSchema.parse((await add(asha.cookie, address(4, { label: "  Studio  " }))).body);
+  assert.equal(named.address.label, "Studio");
+  const renamed = await request(api).patch(`/api/account/addresses/${named.address.id}`).set("Origin", origin).set("Cookie", asha.cookie).send({ label: "Home" });
+  assert.equal(addressMutationResponseSchema.parse(renamed.body).address.label, "Home");
+  const unnamed = await request(api).patch(`/api/account/addresses/${named.address.id}`).set("Origin", origin).set("Cookie", asha.cookie).send({ label: "" });
+  assert.equal(addressMutationResponseSchema.parse(unnamed.body).address.label, "");
+  assert.equal((await db.customerAddress.findUniqueOrThrow({ where: { id: named.address.id } })).label, null, "an emptied name is stored as none");
+  const tooLong = await request(api).patch(`/api/account/addresses/${named.address.id}`).set("Origin", origin).set("Cookie", asha.cookie).send({ label: "x".repeat(41) });
+  assert.equal(tooLong.status, 400);
+  await request(api).delete(`/api/account/addresses/${named.address.id}`).set("Origin", origin).set("Cookie", asha.cookie);
+
   // Ravi cannot see, change or delete Asha's address, and gets the same 404 as for an address that does not exist.
   const ghost = await request(api).patch(`/api/account/addresses/${randomUUID()}`).set("Origin", origin).set("Cookie", ravi.cookie).send({ name: "x" });
   assert.equal(ghost.status, 404);

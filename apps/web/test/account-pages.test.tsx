@@ -19,7 +19,7 @@ const off = { ...on, accountsEnabled: false };
 const signedOut = () => Response.json({ code: "ACCOUNT_AUTH_REQUIRED", message: "Sign in to continue." }, { status: 401 });
 const accountsOff = () => Response.json({ code: "NOT_FOUND", message: "Not found." }, { status: 404 });
 
-const address = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru",
+const address = { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", label: "Home", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru",
   state: "29", pin: "560001", phone: "+919876543210", isDefault: true };
 const summary = { number: "MF-10482", placedAt: "2026-11-10T06:30:00.000Z", status: "confirmed", statusLabel: "Confirmed", itemCount: 1, totalPaise: 2640000,
   firstItem: { title: "Nola Accent Chair", variant: "Natural cane · Oak finish", imageUrl: "https://store.maplefurnishers.com/media/keeri/nola_01.webp" } };
@@ -217,12 +217,16 @@ test("an order whose GST is added shows it as its own line", async () => {
 test("saved addresses and account details load for the signed-in customer", async () => {
   setRequestCookies({ maple_account: "session-token" });
   const addresses = await visit(addressesRoute, {}, api({ "/api/account": () => Response.json(overview), "/api/account/addresses": () => Response.json({ addresses: [address] }) }));
-  for (const expected of ["Saved addresses.", "14 Palm Avenue", "Bengaluru, Karnataka 560001", "Default"]) assert.ok(addresses.html.includes(expected), expected);
+  for (const expected of ["Your addresses.", "A familiar place for every delivery.", "Add new address", "Home", "14 Palm Avenue", "Bengaluru, Karnataka 560001", "+91 98••• ••210", "Default address"]) assert.ok(addresses.html.includes(expected), expected);
   const details = await visit(detailsRoute, {}, api({ "/api/account": () => Response.json(overview) }));
-  assert.ok(details.html.includes("Account details."));
-  assert.match(details.html, /<input[^>]*name="name"[^>]*value="Aditi Sharma"|<input[^>]*value="Aditi Sharma"[^>]*name="name"/);
+  assert.ok(details.html.includes("Your details."));
+  assert.ok(details.html.includes("Keep your account up to date."));
+  assert.match(details.html, /<input[^>]*name="firstName"[^>]*value="Aditi"|<input[^>]*value="Aditi"[^>]*name="firstName"/);
+  assert.match(details.html, /<input[^>]*name="lastName"[^>]*value="Sharma"|<input[^>]*value="Sharma"[^>]*name="lastName"/);
   assert.ok(details.html.includes("aditi.sharma@example.com"));
   assert.doesNotMatch(details.html, /<input[^>]*name="email"/, "the sign-in email is not an editable field");
+  assert.match(details.html, /<input[^>]*type="email"[^>]*readOnly=""|<input[^>]*readOnly=""[^>]*type="email"/i, "it is shown read-only");
+  for (const words of ["Password &amp; security", "Change password", "Save changes", "Cancel"]) assert.ok(details.html.includes(words), words);
   const out = await visit(detailsRoute, {}, api({ "/api/account": signedOut }));
   assert.equal(out.redirect, "/account/login?next=%2Faccount%2Fdetails");
 });
@@ -232,8 +236,8 @@ test("outside production, ?preview=design shows every page with sample data and 
     [accountRoute, {}, "Hello, Aditi."],
     [ordersRoute, {}, "Showing 3 orders"],
     [orderRoute, { params: { number: "MF-10482" } }, "Order #MF-10482"],
-    [addressesRoute, {}, "Saved addresses."],
-    [detailsRoute, {}, "Account details."],
+    [addressesRoute, {}, "Your addresses."],
+    [detailsRoute, {}, "Your details."],
   ] as Array<[Route, { params?: Record<string, string> }, string]>) {
     const { html, seen } = await visit(route, { ...props, searchParams: { preview: "design" } }, api({}));
     assert.deepEqual(seen, [], expected);

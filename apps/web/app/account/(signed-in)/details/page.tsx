@@ -8,9 +8,9 @@ import { readOverview } from "@/lib/account/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Account details", robots: { index: false, follow: false } };
-const heading = <AccountHeading title="Account details." lead="How we greet you, and how our team reaches you about your orders." />;
+const heading = <AccountHeading title="Your details." lead="Keep your account up to date." />;
 
-/** The customer's name and mobile number, with the sign-in email shown read-only (owner's spec, 10 Nov 2026; no frame). */
+/** The customer's name and mobile number, the sign-in email shown read-only, and a password change (Figma 392:1585). */
 export default async function AccountDetailsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const preview = accountPreview(await searchParams);
   if (preview) {

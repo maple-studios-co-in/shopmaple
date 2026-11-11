@@ -18,11 +18,12 @@ export const previewHref = (path: string, preview: boolean) => (preview ? `${pat
 // The frames' customer (Figma 392:1255): Aditi in Bengaluru, a chair, three orders. The photo is the site's own.
 const photo = "/media/previews/nola-accent-chair.webp";
 const customer: AccountCustomer = { name: "Aditi Sharma", email: "aditi.sharma@example.com", phone: "+919876543210" };
+// Her two addresses as the saved-address frame shows them (Figma 392:1527): Home, the default, and her Studio.
 export const sampleAddresses: AccountAddress[] = [
-  { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru", state: "29",
-    pin: "560001", phone: "+919876543210", isDefault: true },
-  { id: "6a7b8c9d-0e1f-4a2b-9c3d-4e5f6a7b8c9d", name: "Rohan Sharma", line1: "Studio 3, Lake Road", line2: "", city: "Pune", state: "27", pin: "411001",
-    phone: "+919812345678", isDefault: false },
+  { id: "3f1d2c4b-5a6e-4f70-8a9b-0c1d2e3f4a5b", label: "Home", name: "Aditi Sharma", line1: "14 Palm Avenue", line2: "Apartment 402", city: "Bengaluru",
+    state: "29", pin: "560001", phone: "+919876543210", isDefault: true },
+  { id: "6a7b8c9d-0e1f-4a2b-9c3d-4e5f6a7b8c9d", label: "Studio", name: "Aditi Sharma", line1: "22 Lakeview Road", line2: "Floor 2", city: "Bengaluru",
+    state: "29", pin: "560038", phone: "+919876543210", isDefault: false },
 ];
 const item = { title: "Nola Accent Chair", variant: "Natural cane · Oak finish", imageUrl: photo };
 export const sampleOrders: OrderSummary[] = [
