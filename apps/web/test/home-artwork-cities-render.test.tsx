@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { renderToReadableStream } from "react-dom/server";
@@ -59,9 +60,9 @@ async function render(body: unknown) {
 const cityImages = ".home-city-track img";
 const attrs = (doc: Document, selector: string, name: string) => [...doc.querySelectorAll(selector)].map(n => n.getAttribute(name));
 function assertOriginal(doc: Document) {
-  assert.deepEqual(attrs(doc, ".home-difference img", "src"), difference.map(file => files + file));
+  assert.deepEqual(attrs(doc, ".home-difference img", "src"), difference.map(file => copyOf(files + file)));
   assert.deepEqual(attrs(doc, ".home-difference img", "alt"), ["", "", "", ""]);
-  assert.deepEqual(attrs(doc, ".home-values img", "src"), values.map(([, file]) => files + file));
+  assert.deepEqual(attrs(doc, ".home-values img", "src"), values.map(([, file]) => copyOf(files + file)));
   assert.deepEqual(attrs(doc, ".home-values img", "alt"), ["", "", "", ""]);
   assert.deepEqual(attrs(doc, cityImages, "src"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([key]) => `/media/cities/${key}.webp`));
   assert.deepEqual(attrs(doc, cityImages, "alt"), cities.filter(([key]) => !key.startsWith("artwork-")).map(([, , alt]) => alt));
@@ -114,9 +115,9 @@ test("published reordered values and cities retain keyed artwork and hide disabl
     }));
     assert.deepEqual(attrs(doc, cityImages, "src"), custom
       ? ["/media/city-agra.webp", "/media/city-artwork-8.webp", "/media/city-delhi.webp"]
-      : ["/media/cities/agra.webp", files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg", "/media/cities/delhi.webp"]);
+      : ["/media/cities/agra.webp", copyOf(files + "engaged_2_f055519a-d518-4ed3-9409-2b2a8924295a.svg"), "/media/cities/delhi.webp"]);
     assert.deepEqual(attrs(doc, cityImages, "alt"), custom ? ["Artwork agra", "Artwork artwork-8", "Artwork delhi"] : ["Agra", "", "Delhi"]);
-    assert.equal(doc.querySelector(".home-values img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : files + "Cover_Image_Maple_5.svg");
+    assert.equal(doc.querySelector(".home-values img")?.getAttribute("src"), custom ? "/media/value-strength.webp" : copyOf(files + "Cover_Image_Maple_5.svg"));
     assert.equal(doc.querySelector(".home-values h3")?.textContent, "Strength You Don’t See");
     assert.ok(doc.querySelector('[data-cities-rail][aria-label="Cities served"]'));
   }

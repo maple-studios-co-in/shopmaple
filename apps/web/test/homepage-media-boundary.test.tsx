@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React, { Children, isValidElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -20,10 +21,10 @@ const partial: TemplateMedia = [
 test("homepage islands retain exact default art and resolve partial overrides by slot", () => {
   for (const media of [undefined, partial]) {
     const doc = new JSDOM(renderToStaticMarkup(<><Hero media={media} /><HomeNimbus media={media} /></>)).window.document;
-    assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600");
+    assert.equal(doc.querySelector(".hero-film img")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/files/preview_images/f9239e922cef45df9972f1dac1b89e0a.thumbnail.0000000000.jpg?v=1792990295&width=1600"));
     assert.equal(doc.querySelector(".hero-film img")?.getAttribute("alt"), "Arranging flowers on a Maple sideboard beside a floral armchair");
     // The latest shop film plays on its own; only its metadata loads before playback (owner, 2026-11-01).
-    assert.equal(doc.querySelector(".hero-film video")?.getAttribute("src"), "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
+    assert.equal(doc.querySelector(".hero-film video")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0"));
     assert.equal(doc.querySelector(".hero-film video")?.getAttribute("preload"), "metadata");
     assert.deepEqual([...doc.querySelectorAll(".category-tile img")].map(node => node.getAttribute("src")), [
       "/media/home/hero-sofas.webp", media ? "/media/custom-chair.webp" : "/media/home/hero-chairs.webp",

@@ -6,6 +6,7 @@ import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-r
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
+import { withProductImages } from "@/lib/shopify-copies";
 import { JsonLd } from "@/components/store/json-ld";
 import { breadcrumbStructuredData, productMetadata, productStructuredData, seoSettings } from "@/lib/seo";
 import { collectionTitles } from "@/lib/collections";
@@ -49,8 +50,8 @@ export default async function ProductPage({
     .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
   const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
   const presentation =
-    product.source === "shopify-preview"
-      ? presentationData[handle as keyof typeof presentationData]
+    product.source === "shopify-preview" && Object.hasOwn(presentationData, handle)
+      ? withProductImages(presentationData[handle as keyof typeof presentationData], product.images)
       : undefined;
   const seo = seoSettings(process.env);
   const trail: [string, string][] = [["Home", "/"],

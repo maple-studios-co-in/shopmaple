@@ -79,7 +79,7 @@ test("hero: editing a slide's kind, media, description and words, and a video's 
     await choose("Hero slide 2 kind", "video");
     assert.equal(slides()![1]!.kind, "video");
     assert.ok(field("Hero slide 2 poster address"), "a video needs a poster");
-    assert.match(container.textContent ?? "", /approved Maple media address/);
+    assert.match(container.textContent ?? "", /Maple media address \(one starting \/media\/, such as the shop film\)/);
     assert.match(container.textContent ?? "", /media library only uploads images/);
     await fill("Hero slide 2 media address", "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4");
     await fill("Hero slide 2 poster address", upload);

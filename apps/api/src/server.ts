@@ -21,6 +21,11 @@ const env = z
       .string()
       .refine(isAbsolute, "Media root must be absolute")
       .optional(),
+    SHOPIFY_MEDIA_ROOT: z
+      .string()
+      .refine(isAbsolute, "Shopify media root must be absolute")
+      .optional(),
+    SHOPIFY_MEDIA_FALLBACK: z.enum(["on", "off"]).default("on"),
     CATALOG_MODE: z.literal("preview").default("preview"),
     ADMIN_PREVIEW_SECRET: z.string().min(32).max(256).optional(),
   })
@@ -55,6 +60,7 @@ const server = createApp(
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
     instagramFeed,
+    shopifyMedia: { root: env.SHOPIFY_MEDIA_ROOT, fallback: env.SHOPIFY_MEDIA_FALLBACK === "on" },
   },
   commerce?.commerce,
 ).listen(env.API_PORT, env.API_HOST, () =>

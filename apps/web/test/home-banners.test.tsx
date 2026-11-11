@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import React from "react";
@@ -107,8 +108,8 @@ test("homepage includes source Instagram posts; the original customer testimonia
       .querySelector(".home-testimonial video")
       ?.getAttribute("poster");
     assert.ok(
-      poster && !poster.includes("_small.jpg") && poster.includes("width=960"),
-      "Customer video needs the verified full-resolution poster",
+      poster === copyOf("files/preview_images/aee33cd277cb42e7804bfce64be22297.thumbnail.0000000000.jpg"),
+      "Customer video needs the verified full-resolution poster (the store's copy of Shopify's original)",
     );
   } finally {
     globalThis.fetch = previousFetch;

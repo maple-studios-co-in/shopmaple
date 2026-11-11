@@ -3,6 +3,7 @@ import { productPdpContentSchema } from "./product-pdp-content";
 import { categories } from "./catalogue-cards";
 import { enquiryKinds } from "./enquiry-admin";
 import { productPageSchema, variantProductPageSchema } from "./product-page";
+import { shopifyMediaPathPattern } from "./shopify-media-path";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
@@ -40,8 +41,11 @@ export type {
   CampaignContent,
   ContentPage,
 } from "./content";
-/** A public https address; shared by product and variant photos. */
-const httpsUrl = z.url().refine((url) => new URL(url).protocol === "https:");
+/**
+ * A product or variant photo: a public https address, or the store's own copy of a Shopify file
+ * (`/media/shopify/<name>`, see shopify-media-path.ts).
+ */
+const httpsUrl = z.union([z.string().regex(shopifyMediaPathPattern), z.url().refine((url) => URL.canParse(url) && new URL(url).protocol === "https:")]);
 /** A readable address segment ("dark-walnut"); shared by product handles and variant slugs. */
 const addressPart = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 export const variantSchema = z.object({
@@ -260,3 +264,5 @@ export * from "./catalogue-collections";
 // the storefront bundle every page loads.
 export * from "./crm";
 export * from "./instagram-feed";
+export * from "./shopify-media-path";
+export * from "./site-address";

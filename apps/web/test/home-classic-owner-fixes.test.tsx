@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -10,7 +11,8 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 // The owner's fixes on the classic homepage (2026-11-01): the latest shop film plays on its own
 // with no controls, Instagram points at @maplefurnishers, and Bestsellers scrolls without
 // arrows or a "View all" link.
-const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
+// The shop film first published on Shopify, played from the store's own copy.
+const film = copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0");
 const card = (handle: string) => ({ id: handle, handle, title: `Chair ${handle}`, image: "https://cdn.shopify.com/s/files/1/0691/8651/9229/files/a.jpg", pricePaise: 2500000, compareAtPaise: null, priceFrom: false, otherOptionsOnRequest: false, optionCount: 1, category: null, optionNames: [] as string[] });
 
 async function renderHome() {

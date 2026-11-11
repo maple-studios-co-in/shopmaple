@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { copyOf } from "./support/shopify-copy";
 import test from "node:test";
 import React from "react";
 import { JSDOM } from "jsdom";
@@ -37,7 +38,7 @@ test("the hero is a bento: the film tile with its headline and four category til
   assert.ok(hero.querySelector("[data-hero-bento]"), "bento container");
   assert.equal(text(hero.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
   assert.equal(text(hero.querySelector("[data-hero-intro]")), "Handcrafted furniture that brings elegance to every corner of your home.");
-  assert.equal(hero.querySelector("[data-hero-film] video")?.getAttribute("src")?.includes("f9239e922cef45df9972f1dac1b89e0a"), true, "the owner's film still plays in the large tile");
+  assert.equal(hero.querySelector("[data-hero-film] video")?.getAttribute("src"), copyOf("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4"), "the owner's film still plays in the large tile");
   const tiles = [...hero.querySelectorAll("[data-hero-tile]")];
   assert.deepEqual(tiles.map((tile) => tile.getAttribute("data-hero-tile")), ["sofas", "chairs", "tables", "beds"]);
   assert.deepEqual(tiles.map((tile) => text(tile.querySelector("[data-hero-tile-title]"))), ["Sofas", "Chairs", "Tables", "Beds"]);

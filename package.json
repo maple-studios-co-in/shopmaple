@@ -19,7 +19,7 @@
     "test": "npm run test --workspaces --if-present && npm run test:deploy",
     "test:homepage-payload": "node scripts/check-homepage-payload.mjs",
     "test:not-found-status": "node scripts/check-not-found-status.mjs",
-    "test:deploy": "tsx --test deploy/public-preview.test.ts deploy/bootstrap-shop-admin.test.ts && node --test deploy/media-backup.test.mjs deploy/ecosystem.test.mjs deploy/warm-image-cache.test.mjs && node --env-file=.env --test deploy/paired-backup.test.mjs deploy/backup-module-import.test.mjs",
+    "test:deploy": "tsx --test deploy/public-preview.test.ts deploy/bootstrap-shop-admin.test.ts deploy/migrate-shopify-media.test.ts deploy/shopify-media-repo.test.ts && node --test deploy/media-backup.test.mjs deploy/ecosystem.test.mjs deploy/warm-image-cache.test.mjs && node --env-file=.env --test deploy/paired-backup.test.mjs deploy/backup-module-import.test.mjs",
     "test:deploy:db": "tsx --env-file=.env --test deploy/public-preview.db.test.ts deploy/bootstrap-shop-admin.db.test.ts && node --env-file=.env --import tsx --test deploy/paired-recovery.db.test.mjs",
     "db:generate": "npm run db:generate -w @shopmaple/api",
     "db:migrate": "npm run db:migrate -w @shopmaple/api",

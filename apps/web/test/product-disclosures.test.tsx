@@ -99,6 +99,13 @@ test("source paragraphs, emphasis, newlines, headings and ordered and unordered 
 });
 
 test("approved links keep source text and owned Shopify links navigate locally", async () => {
+  // The store's settings during the move: shop. and store. are both its own address (docs/shopify-media-migration.md).
+  const before = { SITE_URL: process.env.SITE_URL, SITE_ALIASES: process.env.SITE_ALIASES };
+  Object.assign(process.env, { SITE_URL: "https://shop.maplefurnishers.com", SITE_ALIASES: "https://store.maplefurnishers.com" });
+  try { await owned(); }
+  finally { for (const [key, value] of Object.entries(before)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; } }
+});
+async function owned() {
   await mount(captured({ type: "root", children: [{ type: "paragraph", children: [
     { type: "link", url: "https://shop.maplefurnishers.com/pages/contact?product=chair#delivery", children: [{ type: "text", value: "Delivery help" }] },
     { type: "link", url: "/care", title: null, target: null, children: [{ type: "text", value: "Care" }] },
@@ -112,7 +119,7 @@ test("approved links keep source text and owned Shopify links navigate locally",
     assert.match(links[2]?.rel ?? "", /noopener/);
     assert.equal(links[2]?.title, "Care guide");
   });
-});
+}
 
 test("malicious source text stays literal and unsafe link destinations are inert", async () => {
   const unsafe = ["javascript:alert(1)", "data:text/html,bad", "//evil.example/path", "/\\evil.example/path", "https://example.com/\npath", "https://user:password@example.com/path"];

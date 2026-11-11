@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { shopifyMediaPath } from "@shopmaple/contracts/shopify-media";
 import { test } from "node:test";
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -8,7 +9,8 @@ import { Hero } from "../components/hero";
 
 // The owner's choice (2026-11-01): the latest shop film plays on its own, muted and looping, with
 // no play or pause control. A shopper who asks for reduced motion sees the still poster.
-const film = "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0";
+// The shop film first published on Shopify, played from the store's own copy.
+const film = shopifyMediaPath("https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/f9239e922cef45df9972f1dac1b89e0a/f9239e922cef45df9972f1dac1b89e0a.HD-1080p-2.5Mbps-98879340.mp4?v=0")!;
 
 async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement, browser: { plays: number; reduce(value: boolean): Promise<void>; unmount(): Promise<void>; listeners: () => number }) => Promise<void>) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: "http://localhost" });

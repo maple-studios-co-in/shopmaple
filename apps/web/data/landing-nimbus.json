@@ -5,17 +5,17 @@
       "type": "hero-section",
       "texts": [],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/453715fe42df4f5fa8dc558f518b08ad.thumbnail.0000000000_small.jpg?v=1783143693",
-        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/3b1b192f7b064d9c92271dcea887b26e.thumbnail.0000000000_small.jpg?v=1782971263"
+        "/media/shopify/808bb0a276ff83f922c0a2d9692f0e4c.jpg",
+        "/media/shopify/9e491ff3e45bb4077bc4afaa6f8d3109.jpg"
       ],
       "videos": [
         {
-          "poster": "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/453715fe42df4f5fa8dc558f518b08ad.thumbnail.0000000000_small.jpg?v=1783143693",
-          "src": "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/453715fe42df4f5fa8dc558f518b08ad/453715fe42df4f5fa8dc558f518b08ad.HD-720p-3.0Mbps-88094202.mp4?v=0"
+          "poster": "/media/shopify/808bb0a276ff83f922c0a2d9692f0e4c.jpg",
+          "src": "/media/shopify/9b1d4d150927b7bdfce5badcf3352242.mp4"
         },
         {
-          "poster": "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/3b1b192f7b064d9c92271dcea887b26e.thumbnail.0000000000_small.jpg?v=1782971263",
-          "src": "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/3b1b192f7b064d9c92271dcea887b26e/3b1b192f7b064d9c92271dcea887b26e.HD-1080p-3.3Mbps-87921481.mp4?v=0"
+          "poster": "/media/shopify/9e491ff3e45bb4077bc4afaa6f8d3109.jpg",
+          "src": "/media/shopify/edb864062538f55f77761c4fffbc074a.mp4"
         }
       ],
       "handles": [],
@@ -38,25 +38,25 @@
       "type": "_blocks",
       "texts": [],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401",
-        "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401",
-        "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPT_Image_Apr_24_2026_03_29_31_AM.png?v=1776981641",
-        "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPT_Image_Apr_24_2026_03_29_31_AM.png?v=1776981641",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Untitled_design_6.svg?v=1776965752",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Untitled_design_6.svg?v=1776965752",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Chairs.svg?v=1776966454",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Chairs.svg?v=1776966454",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Chairs_1.png?v=1777021036",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Chairs_3.png?v=1777021173"
+        "/media/shopify/24a2821818462dab1523f6acf8597641.jpg",
+        "/media/shopify/24a2821818462dab1523f6acf8597641.jpg",
+        "/media/shopify/2f645dfbf3ca451f9fc9db1e5dfbe121.png",
+        "/media/shopify/2f645dfbf3ca451f9fc9db1e5dfbe121.png",
+        "/media/shopify/bbed2f55984a03cf7de04d8cc50e2612.svg",
+        "/media/shopify/bbed2f55984a03cf7de04d8cc50e2612.svg",
+        "/media/shopify/487b331e96d4a14f45c95bb34efecad5.svg",
+        "/media/shopify/487b331e96d4a14f45c95bb34efecad5.svg",
+        "/media/shopify/e3b91f1efae4846d38d9e5a78b11d2d8.png",
+        "/media/shopify/92e67b956ebb2ba8e1f8dec6f1e95011.png"
       ],
       "videos": [
         {
-          "poster": "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401",
-          "src": "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/a1971b26aefb4007b0261fc8f95a7b55/a1971b26aefb4007b0261fc8f95a7b55.HD-720p-1.6Mbps-83728678.mp4?v=0"
+          "poster": "/media/shopify/24a2821818462dab1523f6acf8597641.jpg",
+          "src": "/media/shopify/054c8dd457d00dead2acf0d4044f7140.mp4"
         },
         {
-          "poster": "https://shop.maplefurnishers.com/cdn/shop/files/preview_images/a1971b26aefb4007b0261fc8f95a7b55.thumbnail.0000000000_small.jpg?v=1778316401",
-          "src": "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/a1971b26aefb4007b0261fc8f95a7b55/a1971b26aefb4007b0261fc8f95a7b55.HD-720p-1.6Mbps-83728678.mp4?v=0"
+          "poster": "/media/shopify/24a2821818462dab1523f6acf8597641.jpg",
+          "src": "/media/shopify/054c8dd457d00dead2acf0d4044f7140.mp4"
         }
       ],
       "handles": [],
@@ -80,7 +80,7 @@
         "Every collection at Maple begins with a question. For Nimbus, that question was a simple one: what would furniture feel like if comfort were the starting point rather than something added on at the end? The answer arrived the way the best ideas tend to, quietly and completely, and it looked like the inside of a cloud.Nimbus was shaped by watching how people actually inhabit their spaces. The searching for a room that breathes. The relief of a chair that does not demand a particular posture. The slow pleasure of a sofa that improves with use rather than declining from the day it arrives. These are not decorating ambitions. They are the way a well-considered home actually feels, and that feeling is what every piece in the Nimbus range was designed to create."
       ],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/Untitled_design_35.png?height=1024&v=1779725875"
+        "/media/shopify/2f9f44ea09003c7dfb74b552ed494a96.png"
       ],
       "videos": [],
       "handles": [],
@@ -120,10 +120,10 @@
         "The quiet glow of craftsmanship perfected."
       ],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/Icon_2_6b87a74e-a88c-45fc-af1e-7a09dca35023.svg?v=1779521474",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Maple_Banner_10.svg?v=1779521626",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Maple_Banner_11.svg?v=1779521741",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Maple_Banner_12.svg?v=1779521834"
+        "/media/shopify/fe3143ebb46bf3e4c09f7f52833f3a1a.svg",
+        "/media/shopify/259d95e458f3b9dc70ee156f8bddf61d.svg",
+        "/media/shopify/77b6db614de06a668209603ee559c61e.svg",
+        "/media/shopify/16cd30994d3028d638a33a2621fda8ef.svg"
       ],
       "videos": [],
       "handles": [],
@@ -143,12 +143,12 @@
       "type": "slideshow",
       "texts": [],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/WhatsApp_Image_2026-06-02_at_12.15.11_AM_2.jpg?v=1780342962",
-        "https://shop.maplefurnishers.com/cdn/shop/files/livingroom.png?v=1779440214",
-        "https://shop.maplefurnishers.com/cdn/shop/files/bedroom.png?v=1780257906",
-        "https://shop.maplefurnishers.com/cdn/shop/files/NIMBUS_bedroom.png?v=1779439068",
-        "https://shop.maplefurnishers.com/cdn/shop/files/WhatsApp_Image_2026-06-02_at_12.15.11_AM.jpg?v=1780342962",
-        "https://shop.maplefurnishers.com/cdn/shop/files/nimbus_dinning.png?v=1779439066"
+        "/media/shopify/fd5c1b366167308981619e166e8c54dd.jpg",
+        "/media/shopify/6b5b1a9d37e2908d35b27b39981a272f.png",
+        "/media/shopify/f7b4a4db86347f8e2adbf9b55ede9841.png",
+        "/media/shopify/2b59c1bcfde2068f1741b8edc4bb7241.png",
+        "/media/shopify/b8fa48031856d4bb4465eea27ce2ea53.jpg",
+        "/media/shopify/5f199d875f699eda485d50110d50d2bc.png"
       ],
       "videos": [],
       "handles": [],
@@ -171,65 +171,65 @@
       "type": "product-list",
       "texts": [],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame223.webp?v=1778922820",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame224.webp?v=1778922820",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame232.webp?v=1778922820",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame230.webp?v=1778922820",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame24.webp?v=1778922359",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame25.webp?v=1778922359",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame23.webp?v=1778922358",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame39.webp?v=1778922359",
-        "https://shop.maplefurnishers.com/cdn/shop/files/diamentions4.webp?v=1778922360",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame99_1.png?v=1778219356",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame95_1.png?v=1778219356",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame98_1.png?v=1778219356",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame101_1.png?v=1778219356",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame100_1.png?v=1778219356",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame83_8934a00d-a77f-4c62-ae4f-fc6824e6a404.png?v=1778218975",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame87_1.png?v=1778218975",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame85_1.png?v=1778218975",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame84_284f459d-a101-4d37-822c-9ca3ae46bbee.png?v=1778218975",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame86_1.png?v=1778218979",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame89_2.png?v=1778218649",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame75_1.png?v=1778218649",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame93.png?v=1778218649",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame92.png?v=1778218651",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame91.png?v=1778218649",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame78.png?v=1778218250",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame75_a6e86fdb-a4e0-4f20-9658-a09c4978bcc3.png?v=1778218250",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame79_591faefa-3e52-4ce5-9b9a-2049b46bb085.png?v=1778218250",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame80_9057a2f1-fb20-4c62-a65c-30b6143bec1c.png?v=1778218249",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame81_f100cdbd-fe9c-4a11-b097-f804bd5ec04b.png?v=1778218249",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame57_1.png?v=1778174946",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame58_ab288ca3-21ab-48ea-ac89-3e7f90fad35b.png?v=1778174946",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame61_d37719a0-2ccd-4a6b-bcbb-8b3f4d2e2ced.png?v=1778174947",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame59_41fba6d2-d53c-44f8-97b3-bc90e4ae86bd.png?v=1778174946",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame60.png?v=1778174946",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame66_6a174867-094c-408f-af50-fb79e04e3788.png?v=1778173577",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame64_4eebfac2-fd08-4fe2-8c1f-b289de65d653.png?v=1778173576",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame67_25ffdd39-5a9c-4dfc-990a-e3db56d94549.png?v=1778173576",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame65_b4f110ba-5a82-4bb1-825b-01c5979c29c4.png?v=1778173576",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame68_f5ad1987-b0f0-4fe0-94b0-5d1764acc173.png?v=1778173576",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame53.png?v=1778162146",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame56_1.png?v=1778162146",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame55.png?v=1778162146",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame54.png?v=1778162146",
-        "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageApr15_2026_01_54_25PM.png?v=1778162145",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame51_3111d8df-15cd-4006-9816-c3f921168c4e.png?v=1778161419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame52.png?v=1778161419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame50_7c112c58-d438-465b-a439-a9d7450fcdf7.png?v=1778161419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame49_2_20301a62-a240-4031-8f1c-140f62c6a8f4.png?v=1778161418",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame20_1_14e691da-2cfa-4902-bb83-2568f32851ea.png?v=1778161419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame20_1.png?v=1778160419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/ChatGPTImageApr15_2026_09_27_16AM_1.png?v=1778160419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Gemini_Generated_Image_omfoktomfoktomfo.png?v=1778160420",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame18.png?v=1778160419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame19.png?v=1778160419",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame13.png?v=1778155910",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame14_1.png?v=1778155910",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame9.png?v=1778155910",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame10.png?v=1778155910",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Frame11.png?v=1778155912"
+        "/media/shopify/0e412e6507ebd7dbf58144c26d64268d.webp",
+        "/media/shopify/05105eb03e692c76e2cd71c1555b924d.webp",
+        "/media/shopify/a9e2f7ef4745c38f399e0066aecae281.webp",
+        "/media/shopify/d17ef46039a338e0d47a6e873934a8a3.webp",
+        "/media/shopify/24c3b61fd0529fe30ec09ab95916f8f5.webp",
+        "/media/shopify/613efdfd6dfa15b5cae06b3951c53d2a.webp",
+        "/media/shopify/2c48253853a8e948b0a810fd6fc415f4.webp",
+        "/media/shopify/65beaaacad5ea006711de2a70bada361.webp",
+        "/media/shopify/4bab5a4991c089ac456a0b233f3a82bb.webp",
+        "/media/shopify/ed290e1cf164777f98e61e9d120a12e8.png",
+        "/media/shopify/5f435dfc4de8b76e295706eb11c97e76.png",
+        "/media/shopify/544f689316a0073821fc5563f357db9e.png",
+        "/media/shopify/687991a28de665798fe8b5d1be9b3f69.png",
+        "/media/shopify/bc5ebb752e800658c5453b95ae8f720b.png",
+        "/media/shopify/a163fff1a982d09ee411fe19ba4ba5ff.png",
+        "/media/shopify/f722fc2a7672661d692192e10e7d376f.png",
+        "/media/shopify/4f577a229032f13c3de8eb7a800e6e5d.png",
+        "/media/shopify/736fec55cee43b99047ca5d24d6835e7.png",
+        "/media/shopify/4031084484efb57c234ccd92a04339fb.png",
+        "/media/shopify/6d2e9fd5dddcb833cfbe1b36f058db85.png",
+        "/media/shopify/d52a4bdca5248b417a91a8a0efb8b113.png",
+        "/media/shopify/f60823c363acac472f68fe8fa335a617.png",
+        "/media/shopify/6099fff13ac078a1251a502272644fb3.png",
+        "/media/shopify/7cfaba59f4f4951d266d7fa994a56427.png",
+        "/media/shopify/10f5157da4dcc20e9e109701aafc569d.png",
+        "/media/shopify/c7c3fd652ddb6a18a47082e9609cb769.png",
+        "/media/shopify/5da4aa80f62c08c1d9d6f61c821bfcdf.png",
+        "/media/shopify/b17b7841503512550b4fff42b94b5125.png",
+        "/media/shopify/b6937c4760a3cdf11274c7af20262a19.png",
+        "/media/shopify/4a677de00e5e3809b8d6c7f7f29f90a1.png",
+        "/media/shopify/363e47fbe5389d8c7a7bec9f6e1ae3ae.png",
+        "/media/shopify/01cbcfde2470a36754c13256ba3c4c4a.png",
+        "/media/shopify/de446b0451813e82025661077739e5bb.png",
+        "/media/shopify/32b784cf29678e636b7e74c898e4580d.png",
+        "/media/shopify/f443155720329d95d9ad8ba32fb478f0.png",
+        "/media/shopify/b9d4530f488ab74edba62fabc122d483.png",
+        "/media/shopify/22793a83ad50f4a91aaab2e0fc83d062.png",
+        "/media/shopify/0435eb455c5627cc16cb425e5c977e7f.png",
+        "/media/shopify/cebc2639a99544013be9e10328bcee68.png",
+        "/media/shopify/2e1698886471a33aaf579c166dd59f08.png",
+        "/media/shopify/4b6025b2e1c8dcab499c0316daecab89.png",
+        "/media/shopify/24c831983c04a3ba23b537b009a0a29c.png",
+        "/media/shopify/d1983ce7ce8b65c8b597d19ab8fe8c54.png",
+        "/media/shopify/af502bb854b3e4137b777a0a88609185.png",
+        "/media/shopify/54aa8a740d27e786c6d3078c1c912009.png",
+        "/media/shopify/2bf90306c2dad6dbd1e17c0e8958c6b5.png",
+        "/media/shopify/65daff7f33f8cad8f74ff0329c3b4110.png",
+        "/media/shopify/7f5234ee78e290142827e17123b0bc8e.png",
+        "/media/shopify/59c22754f90a58504b995b97dd6caf57.png",
+        "/media/shopify/5258b2e9515e2415b0197584707bd436.png",
+        "/media/shopify/176ce59e45a20bece17b85ed85bb9cf6.png",
+        "/media/shopify/7869d06353f7ac93b6be8c8f1d1b9344.png",
+        "/media/shopify/28ab5885971f4675ba570c1385bf6102.png",
+        "/media/shopify/b330c79f9bd7cbbddcda12aa22132ba5.png",
+        "/media/shopify/e96576bd5718fadf0203b99a0d90264c.png",
+        "/media/shopify/0c558e2de0ac25bbb3981f21512c0599.png",
+        "/media/shopify/88949d74f42ff234d98118d8ddd0df4c.png",
+        "/media/shopify/6b17e9d2e62d8294c6db55643d37eaed.png",
+        "/media/shopify/ab227f9543fb6534308cca933b3e6822.png"
       ],
       "videos": [],
       "handles": [
@@ -256,7 +256,7 @@
         "Whether you have a question about our products, custom orders, or collaborations — our team is here to help."
       ],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/image_7.png?v=1778317065"
+        "/media/shopify/be192ea2275ac141e8354266e35dfc70.png"
       ],
       "videos": [],
       "handles": [],
@@ -281,10 +281,10 @@
         "36-Month Warranty"
       ],
       "images": [
-        "https://shop.maplefurnishers.com/cdn/shop/files/Custom_F.svg?v=1776070107",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Del_mf.svg?v=1776070922",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Icon_homepage.svg?v=1779436197",
-        "https://shop.maplefurnishers.com/cdn/shop/files/Maple_Banner_5.svg?v=1779436331"
+        "/media/shopify/810bf424e7f5965dcc4965652150f519.svg",
+        "/media/shopify/42b9439f8a75c7802e6999788a0a24e5.svg",
+        "/media/shopify/3c07f1e8f8eca3f099f998ed76c98ae9.svg",
+        "/media/shopify/5312458c26254d733cd7067921fcd4da.svg"
       ],
       "videos": [],
       "handles": [],

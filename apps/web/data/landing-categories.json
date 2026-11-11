@@ -5,8 +5,8 @@
     "sections": [
       {
         "type": "banner",
-        "desktop": "1_Sofa_web_banner_Occasion_1.png",
-        "mobile": "1_Sofa_Mobile_banner_Occasionl.png",
+        "desktop": "/media/shopify/ee29d11008f049843f08b02d4aaa8dc0.png",
+        "mobile": "/media/shopify/6ea691bdb0f6320d06d61eddee661300.png",
         "width": 1392,
         "height": 350
       },
@@ -16,60 +16,60 @@
           {
             "href": "/collections/sofa-set-designs",
             "title": "Designer Sofa Sets",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Sofa_set.png?v=1776249000"
+            "image": "/media/shopify/7fdda9b6ffca192da7843c0e5f64f358.png"
           },
           {
             "href": "/collections/wooden-sofas",
             "title": "Wooden Sofas",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Wooden_Sofa.png?v=1776247851"
+            "image": "/media/shopify/25994e1b071aeff59a0a111bbc22f9a9.png"
           },
           {
             "href": "/collections/sofa-cum-beds",
             "title": "Sofa Cum Beds",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_20.png?v=1776247665"
+            "image": "/media/shopify/6e64ba42e2d8ce7b15ee5415a46aa15a.png"
           },
           {
             "href": "/collections/recliners",
             "title": "Recliners",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_19.png?v=1776247512"
+            "image": "/media/shopify/fe2abeb90d9d5cd537ba0c7e4f52fba9.png"
           },
           {
             "href": "/collections/l-shape-sofa",
             "title": "L Shape Sofa",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/L_shape_sofa.png?v=1776248195"
+            "image": "/media/shopify/1ec393054255feac2174abe66b8cd28f.png"
           },
           {
             "href": "/collections/fabric-sofas",
             "title": "Fabric Sofas",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Fabric_Sofas.png?v=1776248870"
+            "image": "/media/shopify/7113ecc8db55c1400537a6625714ddb6.png"
           },
           {
             "href": "/collections/chesterfield-sofas",
             "title": "Chesterfield Sofas",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Chesterfield.png?v=1776248511"
+            "image": "/media/shopify/8ca3ff01fa4ff1194be7169f3835a215.png"
           },
           {
             "href": "/collections/3-seater-sofas",
             "title": "3 Seater Sofas",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageApr27_2025_09_20_42PM.png?v=1776249398"
+            "image": "/media/shopify/44e43b6b84c691d8398836d542feb315.png"
           },
           {
             "href": "/collections/2-seater-sofas",
             "title": "2 Seater Sofas",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_26.png?v=1776249363"
+            "image": "/media/shopify/2a6b1b4eb720340aada82cacaf7c5ae8.png"
           },
           {
             "href": "/collections/bedroom-sofa",
             "title": "Bedroom Sofa",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_16_d3d49430-cb5a-493e-8cf5-eb94d060881a.png?v=1777277928"
+            "image": "/media/shopify/7ff7eb397e3202a9bd5a24af08e7752b.png"
           }
         ],
         "columns": 5
       },
       {
         "type": "banner",
-        "desktop": "2_-_Sofa_web_banner_Occasion_e1a561f6-0ea9-4de8-9df5-3efb1ece7e87.png",
-        "mobile": "2_-_Sofa_Mobile_banner_Occasionl_9b793796-3dc9-427d-a28d-0b0484fe8dc1.png",
+        "desktop": "/media/shopify/81f14ac801d9608fd57b865b755d5b87.png",
+        "mobile": "/media/shopify/15dd024d4ee2da1a7a3c94e85db274ac.png",
         "width": 2784,
         "height": 400
       },
@@ -88,8 +88,8 @@
       },
       {
         "type": "banner",
-        "desktop": "2_-_Sofa_web_banner_Outddor_17dc7073-c9f4-44fe-bd25-b79867474b48.png",
-        "mobile": "2_-_Sofa_Mobile_banner_Outdoor_2375edf8-48f2-4a7a-83fd-2516fc6e307d.png",
+        "desktop": "/media/shopify/474b4040d833c9079ed98ffd8f3c5209.png",
+        "mobile": "/media/shopify/aedd199c445068923f5ec4f299545a33.png",
         "width": 2784,
         "height": 400
       },
@@ -109,8 +109,8 @@
       },
       {
         "type": "banner",
-        "desktop": "2_-_Sofa_web_banner_Bedroom_18e4633f-045c-42b7-a2cf-bc67177c59a7.png",
-        "mobile": "2_-_Sofa_Mobile_banner_Bedroom_a3f4a36e-2de4-44ca-b0e1-db1ff9e6a315.png",
+        "desktop": "/media/shopify/e944a2bc09ffcc44dcd3307cbfb23774.png",
+        "mobile": "/media/shopify/2839639ff602fe7f59e366b9a791f8da.png",
         "width": 2784,
         "height": 400
       },
@@ -130,8 +130,8 @@
       },
       {
         "type": "banner",
-        "desktop": "2_-_Sofa_web_banner_Living_room_a10a44d9-f04b-4c14-8469-f6adf14f229e.png",
-        "mobile": "2_-_Sofa_Mobile_banner_Living_room_eae1abfd-c5e3-48e6-8e6e-6ecf274daf85.png",
+        "desktop": "/media/shopify/1a3c1a79f3dfc0a62d14e5a3a4759d4e.png",
+        "mobile": "/media/shopify/d47a4d253c64ca9f6c6e119f839cc220.png",
         "width": 2784,
         "height": 400
       },
@@ -161,22 +161,22 @@
         "type": "values",
         "items": [
           {
-            "image": "Cover_Image_Maple_3.svg",
+            "image": "/media/shopify/921bfb4698329af16379c1fc7055cea0.svg",
             "title": "Grain",
             "body": "Where nature begins the story — raw, real, and rooted in beauty."
           },
           {
-            "image": "Cover_Image_Maple_2.svg",
+            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Edge",
             "body": "Precision that defines perfection. Every line, intentional."
           },
           {
-            "image": "Cover_Image_Maple_4.svg",
+            "image": "/media/shopify/6ec9710d1a949658c7aa73f856d283e6.svg",
             "title": "Fabric",
             "body": "Softness you can feel before you even touch it."
           },
           {
-            "image": "Cover_Image_Maple_5.svg",
+            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Polish",
             "body": "The quiet glow of craftsmanship perfected."
           }
@@ -207,8 +207,8 @@
     "sections": [
       {
         "type": "banner",
-        "desktop": "1Table_web_banner_Occasionl_8035619e-9062-4852-9257-b6b482b37c59.png",
-        "mobile": "1Table_Mobile_banner_Occasionl_bf7e6e02-7db8-44c4-ac8e-245c787f1a95.png",
+        "desktop": "/media/shopify/74cd9fc91e5fa85b720bf29159efe1b1.png",
+        "mobile": "/media/shopify/0437017cd1470b6e76bc86de26ba6dd2.png",
         "width": 2784,
         "height": 700
       },
@@ -218,40 +218,40 @@
           {
             "href": "/collections/side-table",
             "title": "Side Table",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_6.webp?v=1780689228"
+            "image": "/media/shopify/8becbace84cb38e911b5528d874d2e5e.webp"
           },
           {
             "href": "/collections/dinings",
             "title": "Dinings",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.svg?v=1780689685"
+            "image": "/media/shopify/373186ec527eec85f57d9e5984df8d1c.svg"
           },
           {
             "href": "/collections/bar",
             "title": "Bar",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_7.webp?v=1780690251"
+            "image": "/media/shopify/1af35189f19ee0bb8c8cdfb72c333dfb.webp"
           },
           {
             "href": "/collections/consoles",
             "title": "Consoles",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_8.webp?v=1780690666"
+            "image": "/media/shopify/0af63e1e2f3d04d65b85090b6a82ff19.webp"
           },
           {
             "href": "/collections/sofa-table",
             "title": "Sofa Table",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_9.webp?v=1780691008"
+            "image": "/media/shopify/4a3641b8fc72dfd7d57671735b522070.webp"
           },
           {
             "href": "/collections/tv-media-units",
             "title": "TV & Media Units",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Cover_Image_Maple_10.webp?v=1780691418"
+            "image": "/media/shopify/2df9f5458d15e4b15493c329065448f1.webp"
           }
         ],
         "columns": 6
       },
       {
         "type": "banner",
-        "desktop": "2_Table_web_banner_Occasionl_24519f91-7602-419c-8b42-d47082e7bafb.png",
-        "mobile": "2Table_Mobile_banner_Occasionl_d1a08b22-3403-4f5d-b7eb-45ae9d5dfc73.png",
+        "desktop": "/media/shopify/1fa4458ba09aad58ceac4627c7463de0.png",
+        "mobile": "/media/shopify/251de56b748c765fa77e9c85520eaef7.png",
         "width": 2784,
         "height": 700
       },
@@ -271,8 +271,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Table_web_banner_Outddor_5c4232f3-b7cf-4ea4-9085-70fbde3096e6.png",
-        "mobile": "Table_Mobile_banner_Outdoor_03bdf84a-672b-47b4-a97a-eb45ad6312f1.png",
+        "desktop": "/media/shopify/1e0d0ad90184ad534e6e707e081ba64f.png",
+        "mobile": "/media/shopify/6fbef8a7aa0da7744e70bc9053eb59e0.png",
         "width": 2784,
         "height": 400
       },
@@ -292,8 +292,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Table_web_banner_bedroom_dee1a8ee-914c-4a2c-8335-2c1d484c8011.png",
-        "mobile": "Table_Mobile_banner_Bedroom_e872b1ba-4cfc-494c-a734-a1a979d3f922.png",
+        "desktop": "/media/shopify/7def4a95439df33329019f21cc42952a.png",
+        "mobile": "/media/shopify/30928598f1823098dff2056c85098512.png",
         "width": 2784,
         "height": 400
       },
@@ -313,8 +313,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Table_web_banner_bedroom_1_14a6d7d3-c3cf-4590-b74c-518047b640c4.png",
-        "mobile": "Table_Mobile_banner_Bedroom_1.png",
+        "desktop": "/media/shopify/12656f950af58ffb2160d1c2fec239ee.png",
+        "mobile": "/media/shopify/37f4340c6a16b0779eb661be223e71b1.png",
         "width": 2784,
         "height": 400
       },
@@ -334,8 +334,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Web_banner_Dining_Table_Set.png",
-        "mobile": "Mobile_banner_Dining_Table_Set.png",
+        "desktop": "/media/shopify/9ef91e48c00b1e035aea9786d1236163.png",
+        "mobile": "/media/shopify/0b0338d299fc382a1a4701be0a922cf2.png",
         "width": 1392,
         "height": 350
       },
@@ -365,22 +365,22 @@
         "type": "values",
         "items": [
           {
-            "image": "Icon_maple_3.svg",
+            "image": "/media/shopify/92d3be8e403dddf68de05a5f1404f9d4.svg",
             "title": "Quiet Luxury",
             "body": "Furniture that doesn’t shout, but makes the room feel complete"
           },
           {
-            "image": "Cover_Image_Maple_2.svg",
+            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Built for Real Living",
             "body": "Not made only for photographs. Made for everyday comfort and use"
           },
           {
-            "image": "Icon_maple_1.svg",
+            "image": "/media/shopify/8a4d8dfa23cb366a932e3020010e74a8.svg",
             "title": "Ages Beautifully",
             "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
           },
           {
-            "image": "Cover_Image_Maple_5.svg",
+            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Strength You Don’t See",
             "body": "A solid frame, lasting structure, and details that stay quiet for years."
           }
@@ -411,8 +411,8 @@
     "sections": [
       {
         "type": "banner",
-        "desktop": "1Chir_web_banner_Occasionl_3a97833b-120c-4740-a312-ec1f4d090d9e.png",
-        "mobile": "1Chair_Mobile_banner_Occasionl_abc9ba01-bb03-47b8-b404-cf2e37509e86.png",
+        "desktop": "/media/shopify/fec9dc9534e3b9a21e52af641f8a5858.png",
+        "mobile": "/media/shopify/7388cec950fc20c54435c5c65a5345e6.png",
         "width": 2784,
         "height": 700
       },
@@ -422,40 +422,40 @@
           {
             "href": "/collections/accent-chair",
             "title": "Accent Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM.png?v=1776235338"
+            "image": "/media/shopify/f2a5541ee4fca87a26df1314486c279c.png"
           },
           {
             "href": "/collections/bedroom-chair",
             "title": "Bedroom Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Bedroom_Chair.png?v=1776247016"
+            "image": "/media/shopify/118f4393b584785685baae5780b68da6.png"
           },
           {
             "href": "/collections/dining-chair",
             "title": "Dining Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Dining_Chairs_bac53a57-f5ab-4af0-beec-7ca279851dc3.png?v=1776235600"
+            "image": "/media/shopify/c594a3548795154d16e2601a1ed598f0.png"
           },
           {
             "href": "/collections/iconic-bar-chair",
             "title": "Iconic/Bar Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Bar_chair.png?v=1776246640"
+            "image": "/media/shopify/fcdc4b1d167c211c1d1608396e1fc01e.png"
           },
           {
             "href": "/collections/lounge-wing-chair",
             "title": "Lounge/Wing Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/ChatGPTImageJun18_2025_08_27_31PM_51b94d48-f9ef-48b0-912f-81334c0a61d7.png?v=1776246868"
+            "image": "/media/shopify/90c81123b5e8cae4c9a03a5202db67fb.png"
           },
           {
             "href": "/collections/rocking-chair",
             "title": "Rocking Chair",
-            "image": "https://shop.maplefurnishers.com/cdn/shop/collections/Rocking_Chair.png?v=1776236017"
+            "image": "/media/shopify/51ffd0c65f009959742e981939812bf1.png"
           }
         ],
         "columns": 6
       },
       {
         "type": "banner",
-        "desktop": "2_Chair_web_banner_Occasionl_288bd690-f49d-4785-b840-ea4fc0a87e40.png",
-        "mobile": "2_Chair_Mobile_banner_Occasionl_d52a82fa-6acd-4efa-a031-7ab377557193.png",
+        "desktop": "/media/shopify/694e4d9cb9dae5077778042650ebb03e.png",
+        "mobile": "/media/shopify/f3056183c638b268bf76f862bf506e41.png",
         "width": 2764,
         "height": 478
       },
@@ -475,8 +475,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Chairs_web_banner_Outddor_b48281ef-c42e-4c88-85cc-7ddef0e31af6.png",
-        "mobile": "Chair_Mobile_banner_Outdoor_287d024a-95e7-4fb3-80e5-583ca4b8db1e.png",
+        "desktop": "/media/shopify/dac1b896e06eee7ede380bdd4e6d9e0d.png",
+        "mobile": "/media/shopify/c8c491944fe1c8e0a827bf76a12ac097.png",
         "width": 2784,
         "height": 400
       },
@@ -496,8 +496,8 @@
       },
       {
         "type": "banner",
-        "desktop": "2_-_Sofa_web_banner_Bedroom_0c605e04-a498-4dca-ab2a-e6bc67118458.png",
-        "mobile": "2_-_Sofa_Mobile_banner_Bedroom_8389ee92-1652-4f28-a61a-822305d6eb4c.png",
+        "desktop": "/media/shopify/c3b76e77772b8343c154afd8a840e4a2.png",
+        "mobile": "/media/shopify/fdbbdd27937fc9c498acc5e3638c358d.png",
         "width": 2784,
         "height": 400
       },
@@ -517,8 +517,8 @@
       },
       {
         "type": "banner",
-        "desktop": "Sofa_Mobile_banner_Living_room_2.png",
-        "mobile": "Sofa_Mobile_banner_Living_room_1.png",
+        "desktop": "/media/shopify/ef03bf86516063c0cf6f8a10e291d47c.png",
+        "mobile": "/media/shopify/2a0a8a53b52549a40289321c1a4ef933.png",
         "width": 2784,
         "height": 400
       },
@@ -548,22 +548,22 @@
         "type": "values",
         "items": [
           {
-            "image": "Icon_maple_3.svg",
+            "image": "/media/shopify/92d3be8e403dddf68de05a5f1404f9d4.svg",
             "title": "Quiet Luxury",
             "body": "Furniture that doesn’t shout, but makes the room feel complete"
           },
           {
-            "image": "Cover_Image_Maple_2.svg",
+            "image": "/media/shopify/4ef943542c1f7a6948ae8af5cc0f7f58.svg",
             "title": "Built for Real Living",
             "body": "Not made only for photographs. Made for everyday comfort and use"
           },
           {
-            "image": "Icon_maple_1.svg",
+            "image": "/media/shopify/8a4d8dfa23cb366a932e3020010e74a8.svg",
             "title": "Ages Beautifully",
             "body": "Wood grains deepen. Fabrics soften. The piece becomes better with time"
           },
           {
-            "image": "Cover_Image_Maple_5.svg",
+            "image": "/media/shopify/a4a985392ec76c0175aba4f59c879ede.svg",
             "title": "Strength You Don’t See",
             "body": "A solid frame, lasting structure, and details that stay quiet for years."
           }

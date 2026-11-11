@@ -345,7 +345,9 @@ test("the bundle's summary card stands as tall as the pieces beside it", () => {
 
 // ---- 8. Photos that load sooner ----
 
-test("a room page's circles and banners come from Shopify's resizer, not the store's own", async () => {
+// 11 Nov 2026: Shopify's files are the store's own copies now (/media/shopify), resized by the store's optimizer, so the
+// page no longer depends on Shopify's resizer, which goes when the plan is cancelled.
+test("a room page's circles and banners are the store's own copies, resized by its own optimizer, not Shopify's", async () => {
   const previous = globalThis.fetch;
   globalThis.fetch = async (url) =>
     String(url).endsWith("/api/content/storefront") ? Response.json({ code: "CONTENT_NOT_PUBLISHED" }, { status: 404 }) : Response.json({ products: [], published: true });
@@ -353,13 +355,19 @@ test("a room page's circles and banners come from Shopify's resizer, not the sto
     const stream = await renderToReadableStream(<ShopProvider><CategoryLanding slug="sofas" /></ShopProvider>);
     await stream.allReady;
     const doc = new JSDOM(await new Response(stream).text()).window.document;
-    // The test image stand-in (support/next-image.tsx) marks a custom loader; the resizing itself runs in the browser.
+    // The test image stand-in (support/next-image.tsx) marks a custom loader; the store's optimizer is the default one.
     const circles = [...doc.querySelectorAll("a[data-landing-category] img")];
     assert.ok(circles.length >= 6);
-    for (const circle of circles) assert.equal(circle.getAttribute("data-loader"), "custom", circle.getAttribute("src") ?? "");
+    for (const circle of circles) {
+      assert.equal(circle.getAttribute("data-loader"), null, circle.getAttribute("src") ?? "");
+      assert.match(circle.getAttribute("src") ?? "", /^\/media\/shopify\/[a-f0-9]{32}\.(?:png|webp|jpg)$/);
+    }
     const banners = [...doc.querySelectorAll(".landing-banner img")];
     assert.ok(banners.length > 0, "the page has a picture banner");
-    for (const banner of banners) assert.equal(banner.getAttribute("data-loader"), "custom", banner.getAttribute("src") ?? "");
+    for (const banner of banners) {
+      assert.equal(banner.getAttribute("data-loader"), null, banner.getAttribute("src") ?? "");
+      assert.match(banner.getAttribute("src") ?? "", /^\/media\/shopify\/[a-f0-9]{32}\.png$/);
+    }
   } finally {
     globalThis.fetch = previous;
   }

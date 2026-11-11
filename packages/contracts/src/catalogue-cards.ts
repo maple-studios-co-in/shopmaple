@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { catalogueImageSchema } from "./shopify-media-path";
 
 export const categories = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"] as const;
 export const catalogueHandleSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200);
 const priceSchema = z.number().int().min(0).max(1_000_000_000).nullable();
-const isHttps = (value: string) => { try { return new URL(value).protocol === "https:"; } catch { return false; } };
-const httpsImage = z.url().max(4096).refine(isHttps);
+/** An https photo, or the store's own copy of a Shopify file (/media/shopify/<name>). */
+const httpsImage = catalogueImageSchema;
 // One option's thumbnail: its own first photo (null when it has none) and its readable ?variant= address.
 export const optionThumbSchema = z.object({
   name: z.string().min(1).max(80),

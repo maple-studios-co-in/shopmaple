@@ -1,13 +1,20 @@
 import { z } from "zod";
-import { productSchema, productRichTextSchema, type ProductPdpContent } from "@shopmaple/contracts";
+import { productSchema, productRichTextSchema, shopifyMediaPathPattern, siteHosts, type ProductPdpContent } from "@shopmaple/contracts";
+import { storeOrigins } from "./site.js";
+/**
+ * A catalogue photo the store may show: a Keeri photo on one of the store's own addresses (SITE_URL, SITE_ALIASES), the
+ * store's own copy of a Shopify file (/media/shopify/<name>), or a file still on Shopify.
+ */
 export function approvedCatalogueImage(value: string) {
+  if (shopifyMediaPathPattern.test(value)) return true;
+  if (!URL.canParse(value)) return false;
   const u = new URL(value);
   return (
     u.protocol === "https:" &&
     !u.username &&
     !u.password &&
     !u.port &&
-    ((u.hostname === "store.maplefurnishers.com" && /^\/media\/keeri\/[A-Za-z0-9_-]{1,64}\.webp$/.test(u.pathname) && !u.search && !u.hash) ||
+    ((siteHosts(storeOrigins()).includes(u.host) && /^\/media\/keeri\/[A-Za-z0-9_-]{1,64}\.webp$/.test(u.pathname) && !u.search && !u.hash) ||
       (u.hostname === "cdn.shopify.com" && u.pathname.startsWith("/s/files/")) ||
       (u.hostname === "shop.maplefurnishers.com" &&
         u.pathname.startsWith("/cdn/shop/")))

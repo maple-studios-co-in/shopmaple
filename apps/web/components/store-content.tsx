@@ -1,6 +1,7 @@
 import { createElement, Fragment } from "react";
-import { managedUpload, storeMedia } from "@shopmaple/contracts";
+import { managedUpload, siteHosts, storeMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
+import { storeOrigins } from "@/lib/site-origins";
 export type ContentNode =
   | string
   | {
@@ -41,12 +42,10 @@ const tags = new Set([
 ]);
 function destination(href: string) {
   try {
-    const url = new URL(href, "https://store.maplefurnishers.com");
-    if (
-      url.hostname === "shop.maplefurnishers.com" ||
-      url.hostname === "store.maplefurnishers.com"
-    )
-      // The old shop's /pages/<slug> is /<slug> here.
+    // A relative link, or one to the store's own addresses (SITE_URL, SITE_ALIASES), is a path here; the old shop's
+    // /pages/<slug> is /<slug> here. The base only resolves relative links.
+    const url = new URL(href, "https://local.invalid");
+    if (url.host === "local.invalid" || siteHosts(storeOrigins()).includes(url.host))
       return url.pathname.replace(/^\/pages\//, "/") + url.search + url.hash;
     if (
       url.hostname.endsWith(".myshopify.com") ||
@@ -110,11 +109,10 @@ export function StoreContent({ nodes, previewUploads = false }: { nodes: Content
                 style={{ width: "100%", height: "auto" }}
               />
             );
+          // Any other picture must be an absolute Shopify address (imported content the server has not copied yet).
           let url: URL | null = null;
           try {
-            url = node.src
-              ? new URL(node.src, "https://store.maplefurnishers.com")
-              : null;
+            url = node.src ? new URL(node.src) : null;
           } catch {
             return null;
           }

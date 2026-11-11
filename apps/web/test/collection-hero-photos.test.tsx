@@ -10,11 +10,11 @@ import { CollectionHero } from "../components/store/collection-hero";
 const doc = (node: React.ReactElement) => new JSDOM(renderToStaticMarkup(node)).window.document;
 const intro = { heading: "Made for slow evenings.", noun: "sofa" };
 
-test("every kind of piece and the whole range has its own hero photo, wide enough and from the catalogue's CDN", () => {
+test("every kind of piece and the whole range has its own hero photo, wide enough and the store's own copy of the catalogue photo", () => {
   for (const key of ["all", "sofas", "chairs", "tables", "beds", "storage"]) {
     const [photo] = heroPhotosFor(key);
     assert.ok(photo, key);
-    assert.match(photo!.image, /^https:\/\/cdn\.shopify\.com\//, key);
+    assert.match(photo!.image, /^\/media\/shopify\/[a-f0-9]{32}\.(?:png|webp|jpg)$/, key);
     assert.ok(photo!.width >= 1200, `${key} is at least 1200px wide`);
   }
   assert.deepEqual(heroPhotosFor("king-size-beds"), [], "a collection of its own keeps its first photo");
