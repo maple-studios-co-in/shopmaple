@@ -60,6 +60,12 @@ The customer-facing status is derived from today's data, as `getAttempt` does:
 
 The journey marks Confirmed done (with the Keeri acceptance time) or current, and Preparing, Dispatched and Delivered as upcoming. The delivery estimate counts from the capture day in India. It adds the longest made-to-order lead time and the courier's estimated days, with a three-day window (`estimateSpreadDays`, an owner decision to confirm). It is null when either figure is unknown.
 
+**Payment emails.** Before any order exists, the buyer hears of a payment that did not complete, once per checkout (`orders/notifications.ts`, Figma 488:1339 and 488:1390):
+- `customer_payment_failed`, "Your payment didn't go through": Razorpay reported a `payment.failed` on the checkout's order in the past two days, the latest failure is at least 10 minutes old (a buyer still trying in Razorpay's window is left alone), nothing on that order says a payment worked (no success callback, capture or authorization), no capture is recorded, and the buyer has not started another checkout since (same cart or same email). It links back to `/checkout`.
+- `customer_payment_pending`, "We're checking your payment": Razorpay's window reported a success at least 5 minutes ago (within two days) that the payment worker is still confirming, and nothing is captured. It links the order status page. A capture later sends the usual confirmation.
+
+Each quotes Razorpay's payment id (`pay_…`) as its reference, which staff find in the Razorpay dashboard. Neither alerts staff, and reconciliation cases stay with staff. Just before sending, each is checked again; one that is no longer true (the payment went through, a newer checkout began) is recorded as `skipped` and never sent.
+
 **Emails and status.** `customer_confirmed` and `customer_received` show `MF-<n>` once it is assigned. They fall back to the old Keeri reference or checkout id only for an attempt captured before numbering existed. Staff emails keep the Keeri SO and checkout ids and add the Maple number. The guest status response (`GET /api/checkout/:attemptId`, through the cart cookie as before) gains `orderNumber: "MF-…" | null`. The signed-in owner can also open the order on any device through `GET /api/account/orders/:number`.
 
 ## Remaining activation work

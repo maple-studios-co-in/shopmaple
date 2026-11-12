@@ -49,6 +49,31 @@ test("development and test serve the real order email with the frame's sample or
   assert.equal((await request(app).get(path).query({ kind: "shipped" })).status, 400);
 });
 
+test("development and test serve the payment emails with the frame's sample order", async () => {
+  const app = appUnder("development");
+  const payment = "/api/previews/emails/payment";
+  const failed = await request(app).get(payment);
+  assert.equal(failed.status, 200);
+  assert.match(failed.headers["content-type"]!, /^text\/html; charset=utf-8/);
+  assert.equal(failed.headers["cache-control"], "no-store");
+  assert.match(failed.headers["content-security-policy"]!, /^default-src 'none'; img-src 'self' http:\/\/localhost:3000 https: data:;/);
+  for (const words of ["<title>Your payment didn&#39;t go through</title>", ">PAYMENT UNSUCCESSFUL<", "Your payment<br>didn’t go through.",
+    ">REFERENCE pay_Nx10482AdQwRtY<", ">10 NOVEMBER 2026<", ">Nola Accent Chair<", ">Amount to pay<", ">₹26,400<",
+    'href="http://localhost:3000/checkout"', "background-image:url(http://localhost:3000/media/previews/nola-accent-chair.webp)"])
+    assert.ok(failed.text.includes(words), words);
+  const pending = await request(app).get(payment).query({ kind: "pending" });
+  assert.equal(pending.status, 200);
+  for (const words of [">PAYMENT PENDING<", "A moment while we<br>check your payment.", ">Payment pending<",
+    'href="http://localhost:3000/orders/00000000-0000-4000-8000-000000010482"'])
+    assert.ok(pending.text.includes(words), words);
+  const text = await request(app).get(payment).query({ kind: "pending", format: "text" });
+  assert.match(text.headers["content-type"]!, /^text\/plain; charset=utf-8/);
+  assert.match(text.text, /^A moment while we check your payment\.\n\nHi Aditi, we’re waiting for confirmation from your bank\./);
+  assert.equal((await request(app).get(payment).query({ kind: "refunded" })).status, 400);
+  for (const nodeEnv of ["production", undefined])
+    assert.equal((await request(appUnder(nodeEnv)).get(payment)).status, 404, String(nodeEnv));
+});
+
 test("production, an unset NODE_ENV or anything else has no preview route at all", async () => {
   for (const nodeEnv of ["production", undefined, "staging", ""]) {
     for (const query of [{}, { format: "text" }, { kind: "received" }]) {

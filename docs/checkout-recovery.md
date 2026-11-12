@@ -14,6 +14,16 @@ Never refund or re-raise an order from the email alone. Confirm the payment in t
 Keeri restarts now and then (a deploy, or its memory limit), and is unreachable for a few seconds when it does. The quote, hold, hold check and hold release calls each retry nginx's 502/504 or a failed connection for about six seconds before giving up. Keeri's own errors are not retried. So a restart during "Pay" no longer leaves a `RESERVATION_UNCERTAIN` attempt behind. A longer outage still fails as before.
 5. The buyer gets "Your Maple Furnishers order SO-… is confirmed"; staff get "New online order SO-…".
 
+A payment that does not complete is the buyer's to hear about, not staff's. Razorpay's failure report, or a success that is still unconfirmed after five minutes, sends the buyer "Your payment didn't go through" or "We're checking your payment" (see `docs/order-flow.md`).
+
+## When a buyer replies to a payment email
+
+Both emails ask the buyer to reply with their reference, which is Razorpay's payment id (`pay_…`).
+
+1. Razorpay dashboard → Payments → search the reference.
+2. **Failed**: the store took no money, and the page shows Razorpay's reason. If the buyer's bank shows a debit, the bank returns it on its own; if it has not, raise it with Razorpay support quoting the payment id. The buyer can return to checkout and pay again.
+3. **Authorized** or **Captured**: the order completes on its own and the buyer is emailed. A captured payment with no order is one of the cases below.
+
 ## Cases that need staff
 
 | What the email says | Checkout state / code | What happened | What to do |

@@ -1,13 +1,14 @@
-import type { Express } from "express";
+import type { Express, Response } from "express";
 import { quoteSnapshotSchema } from "@shopmaple/contracts";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import { z } from "zod";
-import { renderOrderEmail } from "./orders/order-email.js";
+import { renderOrderEmail, renderPaymentEmail, type OrderEmail } from "./orders/order-email.js";
 
 /**
  * Development previews of the customer emails: the real templates rendered with the owner's sample order (Figma
  * 394:1418). GET /api/previews/emails/order-confirmation shows the confirmation; `?kind=received` the "payment
- * received" email; `?format=text` either one's plain-text part.
+ * received" email. GET /api/previews/emails/payment shows "payment unsuccessful" (Figma 488:1339); `?kind=pending`
+ * "payment pending" (488:1390). `?format=text` gives any of them as its plain-text part.
  *
  * Registered only when NODE_ENV is development or test. Anything else, unset included, is production (the rule the
  * account settings use), and gets no route at all: the API's ordinary 404.
@@ -19,10 +20,11 @@ export function registerEmailPreviews(app: Express, webOrigin: string, nodeEnv =
     kind: z.enum(["confirmed", "received"]).default("confirmed"),
     format: z.enum(["html", "text"]).default("html"),
   });
-  app.get("/api/previews/emails/order-confirmation", (req, res) => {
-    const { kind, format } = query.parse(req.query);
-    // As a store with customer accounts on sends it: "View your order" opens the order in the buyer's account.
-    const email = renderOrderEmail({ kind, ...sampleOrder(origin), accountLinks: true });
+  const paymentQuery = z.object({
+    kind: z.enum(["failed", "pending"]).default("failed"),
+    format: z.enum(["html", "text"]).default("html"),
+  });
+  function send(res: Response, email: OrderEmail, format: "html" | "text") {
     res.set("Cache-Control", "no-store");
     if (format === "text") {
       res.type("text/plain; charset=utf-8").send(email.text);
@@ -34,6 +36,17 @@ export function registerEmailPreviews(app: Express, webOrigin: string, nodeEnv =
       `default-src 'none'; img-src 'self' ${origin} https: data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; base-uri 'none'; form-action 'none'`,
     );
     res.type("html").send(email.html);
+  }
+  app.get("/api/previews/emails/order-confirmation", (req, res) => {
+    const { kind, format } = query.parse(req.query);
+    // As a store with customer accounts on sends it: "View your order" opens the order in the buyer's account.
+    send(res, renderOrderEmail({ kind, ...sampleOrder(origin), accountLinks: true }), format);
+  });
+  app.get("/api/previews/emails/payment", (req, res) => {
+    const { kind, format } = paymentQuery.parse(req.query);
+    const { attempt, quote, photos } = sampleOrder(origin);
+    // Reported the morning of the sample order, under a Razorpay-shaped payment id.
+    send(res, renderPaymentEmail({ kind, attempt, quote, photos, origin, paymentId: "pay_Nx10482AdQwRtY", at: attempt.capturedAt }), format);
   });
 }
 
