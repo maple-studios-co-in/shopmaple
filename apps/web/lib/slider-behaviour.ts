@@ -1,3 +1,5 @@
+import { chooseFilmSource } from "./film-source";
+
 /**
  * Everything a homepage slider does with script. The slides, dots and the scroll-snap track are server
  * markup that already works without it (swipe, scroll, read); this file is loaded after hydration
@@ -11,7 +13,8 @@
  *   [data-slider-focus-opens]  opens its slide's panel when focused
  *
  * Videos play only while their slide is current, muted and looping, and never under reduced motion. A video carries
- * `data-playing` while it plays, so its stylesheet can show the slide's poster picture at every other time.
+ * `data-playing` while it plays, so its stylesheet can show the slide's poster picture at every other time. A video with
+ * a phone film gets the cut for the screen first (lib/film-source.ts).
  */
 export function mountSlider(root: HTMLElement): () => void {
   const track = root.querySelector<HTMLElement>("[data-slider-track]");
@@ -95,6 +98,7 @@ export function mountSlider(root: HTMLElement): () => void {
   };
   const onMotion = () => { show(); schedule(); };
   const videos = [...root.querySelectorAll("video")];
+  for (const video of videos) chooseFilmSource(video);
   const onPlaying = (event: Event) => (event.target as HTMLElement).setAttribute("data-playing", "");
   const onStopped = (event: Event) => (event.target as HTMLElement).removeAttribute("data-playing");
 

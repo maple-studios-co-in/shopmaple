@@ -207,6 +207,28 @@ test("publication checks film fields as films and image fields as images", async
   assert.equal((await request(app()).get(poster)).status, 200);
 });
 
+test("a phone film (mobileSrc) is a film field of its own: checked as a film and published with its slot", async () => {
+  const main = await film(mp4Film({ seed: 41, width: 960, height: 960 })); assert.equal(main.status, 201);
+  const phone = await film(mp4Film({ seed: 42, width: 720, height: 1280 })); assert.equal(phone.status, 201);
+  const imageBytes = await sharp({ create: { width: 10, height: 10, channels: 3, background: "#741a14" } }).png().toBuffer();
+  const image = await request(app()).post("/api/admin/media").set("Origin", origin).set("Cookie", `shop_admin=${token}`).set("X-CSRF-Token", digest("csrf:" + token)).set("Content-Type", "image/png").send(imageBytes);
+  assert.equal(image.status, 201); const poster = image.body.asset.url as string;
+  const code = (e: unknown, expected: string) => e instanceof HttpError && e.code === expected;
+  // A picture, or a film that is not in the library, is never a phone film; and nothing is published when one is wrong.
+  await assert.rejects(publish({ templateFilms: [{ key: "home-testimonial", src: main.body.asset.url, mobileSrc: poster }] }), (e: unknown) => code(e, "MEDIA_REFERENCE_INVALID"));
+  await assert.rejects(publish({ templateFilms: [{ key: "home-testimonial", src: main.body.asset.url, mobileSrc: `/media/uploads/${"8".repeat(64)}.mp4` }] }), (e: unknown) => code(e, "MEDIA_REFERENCE_MISSING"));
+  await assert.rejects(publish({ homeDetails: { hero: { slides: [{ kind: "video", src: main.body.asset.url, mobileSrc: poster, poster }] } } }), (e: unknown) => code(e, "MEDIA_REFERENCE_INVALID"));
+  for (const asset of [main.body.asset, phone.body.asset]) assert.equal((await db.shopMediaAsset.findUniqueOrThrow({ where: { id: asset.id } })).publicAt, null);
+  // A hero video slide publishes its film, its phone film and its poster together.
+  await publish({ homeDetails: { hero: { slides: [{ kind: "video", src: main.body.asset.url, mobileSrc: phone.body.asset.url, poster, alt: "Diwali", headline: "Decked for Diwali", intro: "Up to 40% off" }] } } });
+  for (const url of [main.body.asset.url, phone.body.asset.url, poster]) assert.equal((await request(app()).get(url)).status, 200, url);
+  // A template film's phone film is published with it.
+  const later = await film(mp4Film({ seed: 43, width: 720, height: 1280 })); assert.equal(later.status, 201);
+  assert.equal((await request(app()).get(later.body.asset.url)).status, 404, "private until published");
+  await publish({ templateFilms: [{ key: "nimbus-hero", src: main.body.asset.url, mobileSrc: later.body.asset.url }] });
+  assert.equal((await request(app()).get(later.body.asset.url)).status, 200);
+});
+
 test("publication refuses a film whose file is gone or has changed size", async () => {
   const uploaded = await film(mp4Film({ seed: 13 })); assert.equal(uploaded.status, 201); const asset = uploaded.body.asset;
   const path = join(root, `${asset.sha256}.mp4`), saved = await readFile(path);

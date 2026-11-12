@@ -2,10 +2,8 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { mountAmbientFilm } from "@/lib/ambient-film";
+import { phoneFilmQuery as phoneQuery } from "@/lib/film-source";
 import type { CollectionClip, CollectionFilm as Film } from "@/lib/collection-landing";
-
-/** Phones (up to 749px) get a portrait cut, as the opening photo has its phone crop. */
-const phoneQuery = "(max-width: 749px)";
 
 /**
  * The opening's clip (owner, 12 Nov 2026), muted and looping over the opening photo, which stays beneath it as the

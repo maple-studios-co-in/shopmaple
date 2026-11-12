@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { SliderDots } from "@/components/slider-dots";
 import { SliderIsland } from "@/components/slider-island";
+import { filmSourceProps } from "@/lib/film-source";
 import { heroHeadline, heroIntro } from "@/lib/hero-film";
 import { resolveHomeTemplateMedia } from "@/lib/home-template-media";
 import { defaultHomeDetails } from "@/lib/home-details-defaults";
@@ -12,7 +13,7 @@ import { artworkProducts, resolveArtwork, type ProductPhotos } from "@/lib/templ
 /** How long a slide stays before the next one, unless the shopper hovers or focuses the tile. */
 const autoplayMs = 6000;
 
-type Slide = { kind: "image" | "video"; video?: string; image?: string; alt: string; headline: string; intro: string };
+type Slide = { kind: "image" | "video"; video?: string; phoneVideo?: string; image?: string; alt: string; headline: string; intro: string };
 
 /** The default slides' four stills: the opening still, then the Nimbus slideshow's three rooms. */
 const defaultStills = ["home-workshop-poster", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining"] as const;
@@ -22,7 +23,8 @@ function authoredSlides(content: HomeDetails["hero"]): Slide[] {
   return (content.slides ?? []).flatMap((slide): Slide[] => {
     const image = slide.kind === "video" ? slide.poster : slide.src;
     if (!slide.src || !image) return [];
-    return [{ kind: slide.kind, video: slide.kind === "video" ? slide.src : undefined, image, alt: slide.alt, headline: slide.headline, intro: slide.intro }];
+    const video = slide.kind === "video" ? { video: slide.src, ...(slide.mobileSrc ? { phoneVideo: slide.mobileSrc } : {}) } : {};
+    return [{ kind: slide.kind, ...video, image, alt: slide.alt, headline: slide.headline, intro: slide.intro }];
   });
 }
 
@@ -87,8 +89,9 @@ export function Hero({
             >
               {slide.image && <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} />}
               {/* The poster is the picture above; the film covers it only once playing (lib/slider-behaviour.ts), so visitors
-                  who ask for reduced motion, or whose browser has not run the slider yet, see the poster. */}
-              {slide.video && <video src={slide.video} muted loop playsInline preload={i === 0 ? "metadata" : "none"} aria-hidden="true" data-hero-video="" />}
+                  who ask for reduced motion, or whose browser has not run the slider yet, see the poster. A slide with a
+                  phone film leaves the choice of cut to the slider's script (lib/film-source.ts). */}
+              {slide.video && <video {...filmSourceProps(slide.video, slide.phoneVideo)} muted loop playsInline preload={i === 0 ? "metadata" : "none"} aria-hidden="true" data-hero-video="" />}
               <div className="hero-introduction">
                 <h2 data-hero-headline>{slide.headline}</h2>
                 <p data-hero-intro>{slide.intro}</p>

@@ -5,7 +5,7 @@ import type { StorefrontDocument } from "./content";
 
 /** A library upload: a WebP image, or a film (MP4 or WebM), which the staff preview route streams with byte ranges. */
 const uploadPattern = /^\/media\/uploads\/([a-f0-9]{64})\.(?:webp|mp4|webm)$/;
-const imageKeys = new Set(["image", "mobileImage", "desktopImage", "src", "poster", "leftImage", "rightImage"]);
+const imageKeys = new Set(["image", "mobileImage", "desktopImage", "src", "mobileSrc", "poster", "leftImage", "rightImage"]);
 const staffCookieNames = new Set(["shop_admin", "__Host-shop_admin"]);
 export { previewTokenPattern };
 const draftSchema = z.object({
@@ -22,7 +22,7 @@ export type DraftPreview =
 /**
  * Points library uploads at the staff-only media preview route so unpublished images and films
  * render and play for signed-in staff. Only media fields change; prose that mentions a path does not.
- * The keys here (a film is a `src`) cover the same fields that `prepareMediaForPublication` in
+ * The keys here (a film is a `src`, its phone film a `mobileSrc`) cover the same fields that `prepareMediaForPublication` in
  * apps/api/src/admin/media.ts walks explicitly when a draft is published; change both together.
  */
 export function previewMediaContent<T>(content: T): T {

@@ -1,5 +1,5 @@
 "use client";
-import { templateFilmKeys, type TemplateFilmKey, type TemplateFilms } from "@shopmaple/contracts";
+import { templateFilmKeys, type TemplateFilm, type TemplateFilmKey, type TemplateFilms } from "@shopmaple/contracts";
 import { Card } from "@/components/ui/card";
 import { resolveTemplateFilm } from "@/lib/template-films";
 import type { StaffSession } from "./dashboard";
@@ -28,18 +28,30 @@ export const filmPlaces: Record<TemplateFilmKey, { label: string; group: "Homepa
 type Props = { value?: TemplateFilms; onChange: (value: TemplateFilms | undefined) => void; session: StaffSession; onExpired: () => void };
 export type TemplateFilmFieldsProps = Props;
 
-/** One place's film, chosen from the media library's films (never an image); clearing it removes the film. */
+/** What staff read under the phone film picker of every film slot. */
+export const phoneFilmHint = "Optional. Phones and other screens up to 749px wide play this cut instead, for example a 9:16 version of the film. Without one, they play the film above.";
+
+/**
+ * One place's film, chosen from the media library's films (never an image), and beside it an optional phone film (a
+ * portrait cut) for screens up to 749px wide. Clearing the film removes the place's film and its phone film.
+ */
 export function TemplateFilmField({ place, value, onChange, session, onExpired }: Props & { place: TemplateFilmKey }) {
   const { label, description } = filmPlaces[place];
+  const current = resolveTemplateFilm(place, value);
   const others = (value ?? []).filter(film => film.key !== place);
   const save = (next: TemplateFilms) => onChange(next.length ? next : undefined);
+  const put = (film: TemplateFilm) => save([...others, film].sort((a, b) => templateFilmKeys.indexOf(a.key) - templateFilmKeys.indexOf(b.key)));
   return (
     <Card className="gap-3 px-5 py-5 shadow-xs sm:px-6" data-template-film={place}>
       <SectionHeading className="m-0" description={description}>{label}</SectionHeading>
-      <MediaPicker accept="video" label={label} value={resolveTemplateFilm(place, value)?.src ?? ""} session={session} onExpired={onExpired}
-        onPick={asset => save([...others, { key: place, src: asset.url, ...(asset.durationMs ? { durationMs: asset.durationMs } : {}) }]
-          .sort((a, b) => templateFilmKeys.indexOf(a.key) - templateFilmKeys.indexOf(b.key)))}
+      <MediaPicker accept="video" label={label} value={current?.src ?? ""} session={session} onExpired={onExpired}
+        onPick={asset => put({ key: place, src: asset.url, ...(current?.mobileSrc ? { mobileSrc: current.mobileSrc } : {}), ...(asset.durationMs ? { durationMs: asset.durationMs } : {}) })}
         onChange={url => { if (!url) save(others); }} />
+      {current && <div className="grid gap-2" data-phone-film={place}>
+        <MediaPicker accept="video" label={`${label} for phones`} value={current.mobileSrc ?? ""} session={session} onExpired={onExpired}
+          onChange={mobileSrc => { const { mobileSrc: _cleared, ...film } = current; put(mobileSrc ? { ...film, mobileSrc } : film); }} />
+        <p className="text-xs text-muted-foreground">{phoneFilmHint}</p>
+      </div>}
     </Card>
   );
 }

@@ -4,6 +4,7 @@
  * (components/collection-landing-client.tsx; owner, 12 Nov 2026). Kept apart from the homepage's other motion so a
  * collection page loads only this.
  */
+import { chooseFilmSource } from "./film-source";
 
 /** Calls `onChange` with whether `element` is at least `ratio` in view; without IntersectionObserver it counts as always in view. */
 export function watchVisibility(element: Element, ratio: number, onChange: (visible: boolean) => void) {
@@ -18,9 +19,11 @@ export function watchVisibility(element: Element, ratio: number, onChange: (visi
 
 /**
  * Plays `player` muted while a quarter of it is in view and pauses it otherwise. Under reduced motion it never starts, and
- * asking for less motion mid-film brings the poster back rather than leaving a frame.
+ * asking for less motion mid-film brings the poster back rather than leaving a frame. A film with a phone cut gets the
+ * cut for the screen first (lib/film-source.ts).
  */
 export function mountAmbientFilm(player: HTMLVideoElement): () => void {
+  chooseFilmSource(player);
   const reduced = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   let visible = false;
   const update = () => {

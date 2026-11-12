@@ -44,7 +44,8 @@ async function setup(options: { conflict?: boolean; legacy?: boolean; role?: "ed
   const calls: string[] = [];
   globalThis.fetch = async (url, init) => {
     const path = String(url); calls.push(`${init?.method ?? "GET"} ${path}`);
-    if (path === "/api/admin/media?kind=video") return Response.json({assets:[{id:"film",sha256:"f".repeat(64),kind:"video",label:"Terra film",width:null,height:null,bytes:2_000_000,mimeType:"video/webm",durationMs:null,faststart:null,createdAt:"2026-11-12T00:00:00Z",publicAt:null,url:`/media/uploads/${"f".repeat(64)}.webm`,previewUrl:`/api/admin/media/${"f".repeat(64)}/preview`}],nextCursor:null});
+    if (path === "/api/admin/media?kind=video") return Response.json({assets:[{id:"film",sha256:"f".repeat(64),kind:"video",label:"Terra film",width:null,height:null,bytes:2_000_000,mimeType:"video/webm",durationMs:null,faststart:null,createdAt:"2026-11-12T00:00:00Z",publicAt:null,url:`/media/uploads/${"f".repeat(64)}.webm`,previewUrl:`/api/admin/media/${"f".repeat(64)}/preview`},
+      {id:"phone",sha256:"e".repeat(64),kind:"video",label:"Terra phone cut",width:720,height:1280,bytes:6_300_000,mimeType:"video/mp4",durationMs:15_000,faststart:true,createdAt:"2026-11-12T00:00:00Z",publicAt:null,url:`/media/uploads/${"e".repeat(64)}.mp4`,previewUrl:`/api/admin/media/${"e".repeat(64)}/preview`}],nextCursor:null});
     if (path === "/api/admin/media?kind=image") return Response.json({assets:[{id:"asset",sha256:"a".repeat(64),label:"Living room",width:100,height:100,bytes:100,mimeType:"image/webp",createdAt:"2026-10-26T00:00:00Z",publicAt:null,url:image,previewUrl:preview}],nextCursor:null});
     if (path === "/api/admin/content/publish") {
       assert.equal(options.role, "publisher");
@@ -308,5 +309,37 @@ test("Artwork offers each page's film with its photos: the testimonial under Hom
     await click("Save draft");
     assert.deepEqual(app.saved().content.templateFilms, [{ key: "terra-hero", src: `/media/uploads/${"f".repeat(64)}.webm` }], "a film without a known running time is saved without one");
     assert.deepEqual(app.saved().content.templateMedia, [sibling], "the artwork placements are untouched");
+  } finally { await app.close(); }
+});
+
+test("each film slot takes an optional phone film beside its film: saved with it, kept when the film changes, cleared with it", async () => {
+  const app = await setup();
+  const main = `/media/uploads/${"f".repeat(64)}.webm`, phone = `/media/uploads/${"e".repeat(64)}.mp4`;
+  const wait = () => act(async () => new Promise(resolve => setTimeout(resolve, 20)));
+  const use = (scope: ParentNode, label: string) => click(`Use film: ${label}`, scope);
+  try {
+    await click("Artwork");
+    await select("Artwork group", "Terra");
+    const place = () => container.querySelector<HTMLElement>('[data-template-film="terra-hero"]')!;
+    assert.equal(place().querySelector("[data-phone-film]"), null, "no phone film until the slot has a film");
+    await click("Choose film", place()); await wait();
+    await use(place(), "Terra film");
+    const phoneSlot = () => place().querySelector<HTMLElement>('[data-phone-film="terra-hero"]')!;
+    assert.ok(phoneSlot(), "the phone film picker appears beside the chosen film");
+    assert.match(phoneSlot().textContent ?? "", /749px/, "staff read which screens play it");
+    assert.ok(phoneSlot().querySelector('[data-media-picker="video"]'), "a film picker: it lists films only");
+    await click("Choose film", phoneSlot()); await wait();
+    await use(phoneSlot(), "Terra phone cut");
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateFilms, [{ key: "terra-hero", src: main, mobileSrc: phone }]);
+    assert.ok(phoneSlot().querySelector(`video[src="/api/admin/media/${"e".repeat(64)}/preview"]`), "the phone film previews privately");
+    await click("Clear film", phoneSlot());
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateFilms, [{ key: "terra-hero", src: main }], "clearing the phone film leaves the film");
+    await click("Choose film", phoneSlot()); await wait();
+    await use(phoneSlot(), "Terra phone cut");
+    await click("Clear film", place());
+    await click("Save draft");
+    assert.equal(app.saved().content.templateFilms, undefined, "clearing the film clears its phone film too");
   } finally { await app.close(); }
 });
