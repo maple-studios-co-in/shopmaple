@@ -92,14 +92,17 @@ export function CollectionLandingFields({ name, title, value, onChange, descript
       {heads("pieces", "edit")}
       {page.pieces.lead !== undefined && field("edit lead", page.pieces.lead, para, text => set("pieces", { ...page.pieces, lead: text }), true)}
       {page.pieces.items.flatMap((item, index) => {
+        // A catalogue product is drawn as the store's own product card, with the catalogue's name, rating and price
+        // (owner, 12 Nov 2026), so it has no words to write here. A concept's name, line and link are staff copy.
+        if (item.title === undefined) return [];
         const change = (patch: Partial<typeof item>) => set("pieces", { ...page.pieces, items: at(page.pieces.items, index, { ...item, ...patch }) });
-        // A catalogue product keeps its own name; a concept's is staff copy.
         return [
-          ...(item.title !== undefined ? [field(`edit card ${index + 1} title`, item.title, line, text => change({ title: text }))] : []),
+          field(`edit card ${index + 1} title`, item.title, line, text => change({ title: text })),
           field(`edit card ${index + 1} line`, item.line, line, text => change({ line: text })),
         ];
       })}
-      {field("edit card link", page.pieces.link, line, text => set("pieces", { ...page.pieces, link: text }))}
+      {page.pieces.items.some(item => item.title !== undefined) &&
+        field("edit card link", page.pieces.link, line, text => set("pieces", { ...page.pieces, link: text }))}
       {page.pieces.cta !== undefined && field("edit button", page.pieces.cta, line, text => set("pieces", { ...page.pieces, cta: text }))}
     </FieldGrid>,
     consultation: <FieldGrid>

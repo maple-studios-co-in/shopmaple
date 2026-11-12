@@ -1,4 +1,5 @@
 import type { CollectionSectionKey } from "@shopmaple/contracts";
+import type { ProductCardModel } from "@/lib/product-card-model";
 
 /**
  * The collection landing template (Figma 311:548 "Maple / Nimbus Collection / Desktop" and 311:921 "Maple / Terra
@@ -28,6 +29,8 @@ export type CollectionLanding = {
     media: CollectionMedia;
     /** "Watch collection film / 00:08": opens the film staff chose (Artwork → Nimbus / Terra) over the page; absent without one. */
     film?: CollectionFilm;
+    /** The page's own clip, looping muted over the photo (Terra's lobby); absent without one, and the photo stands alone. */
+    clip?: CollectionClip;
   };
   /** "01 Living / 02 Dining / 03 Bedroom": numbered from 01 in order. Each goes to a collection or a room below. */
   roomNav: CollectionLink[];
@@ -41,16 +44,16 @@ export type CollectionLanding = {
     heading: string;
     items: CollectionRoom[];
   };
-  /** "How it feels": three cards, each an icon, a title and a line. */
+  /** "How it feels": three cards, each an illustration, a title and a line. */
   feeling: {
     eyebrow: string;
     heading: string;
-    items: { icon: CollectionIcon; title: string; body: string }[];
+    items: { art: CollectionArt; title: string; body: string }[];
   };
-  /** The detail photo, the material story, three icon notes and a maple button. */
+  /** The detail photo, the material story, three illustrated notes and a maple button. */
   material: CollectionCopy & {
     media: CollectionMedia;
-    notes: { icon: CollectionIcon; label: string }[];
+    notes: { art: CollectionArt; label: string }[];
     cta: CollectionLink;
   };
   /** "Explore by collection": four editorial cards in two rows, wide then narrow, then narrow then wide. */
@@ -71,8 +74,8 @@ export type CollectionLanding = {
     /** The store's customer email (footer settings), drawn as a mailto link. */
     email: string;
   };
-  /** The Maple promise strip: three icon labels. */
-  promise: { icon: CollectionIcon; label: string }[];
+  /** The Maple promise strip: three illustrated labels. */
+  promise: { art: CollectionArt; label: string }[];
 };
 
 /** An eyebrow, a heading and a line of copy. */
@@ -112,6 +115,18 @@ export type CollectionFilm = {
   poster: string;
 };
 
+/**
+ * The opening's clip (owner, 12 Nov 2026): a short, silent, single shot that loops muted over the opening photo, which
+ * stays beneath it as the still. It is not the collection film: that one may carry the logo and titles, and opens over
+ * the page from its link. Bundled with the page (`/media/<page>-collection/opening.mp4`, public/media/PROVENANCE.md).
+ */
+export type CollectionClip = {
+  /** The landscape clip, for screens wider than a phone. */
+  src: string;
+  /** A 9:16 cut for phones (up to 749px wide), as the opening photo has its phone crop. */
+  mobileSrc?: string;
+};
+
 /** One of Terra's settings: photo, number and label, heading, line, tags and an enquiry button. */
 export type CollectionRoom = {
   /** The anchor the room navigation can point at ("terra-lobby"). */
@@ -146,7 +161,11 @@ export type CollectionPieces = {
   cta?: CollectionLink;
 };
 
-/** A card in the edit: square photo, name, "Living / Sectional seating", link. */
+/**
+ * A card in the edit, as the homepage's cards look (owner, 12 Nov 2026). A real product is drawn as the store's own
+ * product card (photo, save, name, rating, price) from `card`. A concept is drawn in that card's frame (white, the sand
+ * hairline, rounded, the square photo) with its name, "Living / Sectional seating" and its link instead of a price.
+ */
 export type CollectionPiece = {
   /** The product's name from the catalogue, or the concept's. */
   title: string;
@@ -154,9 +173,28 @@ export type CollectionPiece = {
   line: string;
   href: string;
   media: CollectionMedia;
+  /** The catalogue's card for a real product (Nimbus), drawn as the homepage draws it. */
+  card?: ProductCardModel;
 };
 
-/** The design's line icons (Lucide shapes drawn at 1.3px). */
-export type CollectionIcon =
-  | "armchair" | "bed-double" | "cloud" | "feather" | "hammer" | "hand" | "layers" | "leaf"
-  | "mountain" | "palette" | "ruler" | "sofa" | "table-2" | "tree-pine" | "truck" | "wind";
+/** The collection cards' line icons (Lucide shapes drawn at 1.3px, as the design's "Icon / sofa" layers are). */
+export type CollectionIcon = "armchair" | "bed-double" | "sofa" | "table-2" | "tree-pine";
+
+/**
+ * One of the design's duotone illustrations ("Maple / Editorial duotone", Figma 311:548 and 311:921; owner, 12 Nov 2026):
+ * a maple-and-sand SVG bundled under public/media/collection-icons, decorative beside the words it illustrates.
+ */
+export type CollectionArt = `/media/collection-icons/${string}.svg`;
+/** The promise strip's three illustrations, the same on every collection page. */
+export const promiseArt: readonly CollectionArt[] = [
+  "/media/collection-icons/promise-bespoke.svg", "/media/collection-icons/promise-craft.svg", "/media/collection-icons/promise-delivery.svg",
+];
+
+/**
+ * A saved card whose words are still an earlier design's follows the design's current words; a word staff changed stays.
+ * Field by field, so a card whose title staff rewrote still takes the new line under it.
+ */
+export function followDesign<T extends Record<string, string>>(item: T | undefined, was: T, now: T) {
+  if (!item) return;
+  for (const key of Object.keys(was) as (keyof T)[]) if (item[key] === was[key]) item[key] = now[key];
+}

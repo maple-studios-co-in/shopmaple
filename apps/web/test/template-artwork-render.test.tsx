@@ -96,8 +96,9 @@ async function checkArtwork(edited: boolean, fallback = false) {
       if (edited) { if (mobile) assert.equal(source, responsive(key) ? `/media/${key}-small.webp` : null, `${key} mobile`); }
       else if (mobile) assert.equal(source, mobile, `${key} mobile`);
     }
-    // No film anywhere: they were Shopify files, and these documents choose no library film.
-    assert.equal(doc.querySelector("video"), null, `${page} draws no film`);
+    // No film anywhere: they were Shopify files, and these documents choose no library film. (A collection opening's own
+    // clip is not a film: collection-opening-clip.test.tsx.)
+    assert.equal(doc.querySelector("video:not([data-collection-clip])"), null, `${page} draws no film`);
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");

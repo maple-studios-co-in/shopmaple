@@ -10,7 +10,7 @@ import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
 // The showroom's approved map search; the address shown is the footer's, which staff keep current.
-const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015")}`;
+const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("A-2/57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015")}`;
 const topicIcons: Record<ContactPageContent["categories"][number]["key"], string> = {
   tracking: "/media/contact/truck.svg",
   payment: "/media/contact/receipt.svg",

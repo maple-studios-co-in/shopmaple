@@ -84,13 +84,13 @@ test("a draft still holding the original Nimbus copy opens on the redesign and s
     assert.equal(field("Nimbus point of view heading").value, "Comfort is\nthe starting point.");
     assert.equal(field("Nimbus room link 1").value, "Our lounge");
     assert.equal(field("Nimbus origin text").value, "Shaped by how people live.");
-    assert.equal(field("Nimbus edit card 3 line").value, "Living / Centre tables");
+    // The edit's products are the store's own product cards (owner, 12 Nov 2026): no line or link words to write.
+    assert.equal(container.querySelector('[aria-label="Nimbus edit card 3 line"], [aria-label="Nimbus edit card link"]'), null);
     assert.equal(field("Nimbus consultation button").value, "Start a conversation");
     assert.equal(button("Save draft").disabled, true, "opening the page changes nothing");
 
     await fill("Nimbus opening heading", "Softly,\nhome.");
     await fill("Nimbus feeling card 2 title", "Space to breathe");
-    await fill("Nimbus edit card 1 line", "Living / Modular seating");
     await fill("Nimbus consultation button", "Talk to us");
     await fill("Nimbus promise 3", "Delivered across India");
     await act(async () => (field("Show Nimbus Material story") as HTMLInputElement).click());
@@ -105,7 +105,7 @@ test("a draft still holding the original Nimbus copy opens on the redesign and s
     for (const retired of ["intro", "roomTiles", "principles", "roomSlides", "series", "project", "promises"]) assert.equal(page[retired], undefined, retired);
     assert.equal(page.hero.heading, "Softly,\nhome.");
     assert.equal(page.feeling.items[1].title, "Space to breathe");
-    assert.equal(page.pieces.items[0].line, "Living / Modular seating");
+    assert.equal(page.pieces.items[0].line, "Living / Sectional seating", "a product's saved line is kept as it was");
     assert.equal(page.consultation.cta, "Talk to us");
     assert.deepEqual(page.promise.map((item: { label: string }) => item.label), ["Made around you", "Crafted in Delhi", "Delivered across India"]);
     assert.equal(page.roomNav[0].label, "Our lounge");

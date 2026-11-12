@@ -61,6 +61,20 @@ From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), f
 - Enlarged 1.5 times with sharp (Lanczos, then light sharpening) and saved as WebP: `terra-collection/origin.webp` (node 315:623) and `detail.webp` (the material story, node 311:1004), 1536 x 1536 from raw images 1024 x 1024 PNG.
 - `terra-collection/hero-mobile.webp` (1215 x 2160): a 972 x 1728 portrait crop of the enlarged hero (the sofa, stone table and walnut chair), enlarged 1.25 times with sharp (Lanczos, then light sharpening), for the phone layout, where the opening stands about 9:16; the frame has no phone design.
 
+## Nimbus opening clip (12 November 2026)
+
+The owner's Nimbus film (fabric swatches, the sofas' soft forms, sketches, a bed among clouds), sent as `Nimbus (1).MP4` on 12 November 2026 to loop in the Nimbus page's opening. It is separate from the collection film staff chose in Artwork, which the film link opens. The source was H.264 Main, 2036 x 1018 at 30 fps, 24.7 seconds, with a stereo music track, 15.4 MB. It was re-encoded with ffmpeg (libx264, High profile, CRF 25, preset slow, 8-bit yuv420p, BT.709, moov at the front so it plays while it downloads), and the sound was dropped because the opening plays muted:
+
+- `nimbus-collection/opening.mp4`: 1920 x 830, 4.6 MB. The bottom 138 rows (of 1018) are cut away, because they carry the film's "NIMBUS" corner title. The opening's crop would halve that title, and it would sit under the WhatsApp button.
+- `nimbus-collection/opening-portrait.mp4`: 572 x 1018, 1.7 MB. A 9:16 cut for phones from the middle of each frame (x = 732), which leaves the corner title out.
+
+## Terra opening clip (12 November 2026)
+
+The owner's 8-second clip of the Terra lobby (curved olive sofa, walnut ring chairs, olive trees), one shot with no titles or logo, sent as `Terra.mp4` on 12 November 2026 to loop in the Terra page's opening. It is separate from the collection film that staff chose in Artwork, which the film link opens. The source was HEVC Main 10 (10-bit), 1920 x 1080 at 24 fps with no sound, 11.3 MB. Chrome on many Windows PCs and every Firefox cannot play HEVC, so it was re-encoded with ffmpeg (libx264, High profile, CRF 23, preset slow, 8-bit yuv420p, BT.709, moov at the front so it plays while it downloads, no audio track):
+
+- `terra-collection/opening.mp4`: 1920 x 1080, 4.1 MB.
+- `terra-collection/opening-portrait.mp4`: 608 x 1080, 1.2 MB. A 9:16 cut for phones, taken from x = 616 of each frame so the sofa and table stay in view as the camera moves.
+
 ## Bulk Enquiry (10 November 2026)
 
 From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), page node 298:924, exported through the Figma connector on 10 November 2026:
@@ -82,3 +96,11 @@ Added for the owner's account, checkout and confirmation-template frames of 11 N
 - `account/login-editorial.webp` and `account/sign-up-editorial.webp` (1536 x 864) are the editorial photographs of the "Maple / Login / Desktop" (node 392:1652) and "Maple / Signup / Desktop" (node 392:1697) frames. Like the hero tiles above, they are mock-up renders from the owner's design file, not Maple photographs.
 - `previews/nola-accent-chair.webp` (800 x 1000) is the Nola chair photograph used in the payment-success, email and WhatsApp frames (nodes 392:1752, 394:1418, 394:1456). Only the local design previews (`?preview=…`, `/api/previews/…`, `/previews/whatsapp`) show it; real orders show the catalogue's own photos.
 - `email/maple-logo.png` (264 x 122) is `footer/maple-logo.webp` above, converted to PNG and flattened onto white for mail apps that cannot show WebP or that darken transparent backgrounds.
+
+## Collection illustrations (12 November 2026)
+
+From the owner's updated frames "Maple / Nimbus Collection / Desktop" (node 311:548) and "Maple / Terra Collection / Desktop" (node 311:921) in the Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), exported through the Figma connector as SVG and kept unchanged: the design's "Maple / Editorial duotone" illustrations in maple and sand.
+
+- `collection-icons/nimbus-comfort.svg`, `nimbus-airy.svg`, `nimbus-quiet.svg` and `terra-grounded.svg`, `terra-tactile.svg`, `terra-nature.svg` (112 x 112): the "How it feels" cards.
+- `collection-icons/nimbus-fabric.svg`, `nimbus-chair.svg`, `nimbus-swatch.svg` and `terra-timber.svg`, `terra-weave.svg`, `terra-stone.svg` (40 x 40): the material notes.
+- `collection-icons/promise-bespoke.svg`, `promise-craft.svg`, `promise-delivery.svg` (40 x 40): the promise strip both pages share.

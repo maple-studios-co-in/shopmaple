@@ -55,7 +55,7 @@ export const defaultContactPage: ResolvedContactPage = {
   reach: {
     call: { title: "Call us", note: "Speak to the Maple team" },
     write: { title: "Write to us", note: "For questions and support" },
-    visit: { title: "Find us in Delhi", detail: "Kirti Nagar, New Delhi", note: "A-2/56–57, W.H.S, Delhi 110015" },
+    visit: { title: "Find us in Delhi", detail: "Kirti Nagar, New Delhi", note: "A-2/57, W.H.S, Delhi 110015" },
   },
   enquiryEyebrow: "Start a conversation",
   enquiryHeading: "Let’s shape\nsomething personal.",

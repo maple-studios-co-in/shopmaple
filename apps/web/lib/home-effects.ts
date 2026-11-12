@@ -20,6 +20,10 @@
  * stage's numbers still switch collections.
  */
 
+import { mountAmbientFilm, watchVisibility } from "./ambient-film";
+
+export { mountAmbientFilm };
+
 /** How long one picture of the editorial flipbook stays, as in the reference recording. */
 export const flipIntervalMs = 800;
 const typeMs = 75;
@@ -43,17 +47,6 @@ export function typedSlice(runs: TypedRuns, count: number): TypedRuns {
 }
 
 const reducedMotion = () => typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** Calls `onChange` with whether `element` is at least `ratio` in view; without IntersectionObserver it counts as always in view. */
-function watchVisibility(element: Element, ratio: number, onChange: (visible: boolean) => void) {
-  if (typeof IntersectionObserver !== "function") { onChange(true); return () => {}; }
-  const observer = new IntersectionObserver((entries) => {
-    const entry = entries[entries.length - 1];
-    if (entry) onChange(entry.isIntersecting && entry.intersectionRatio >= ratio);
-  }, { threshold: [0, ratio] });
-  observer.observe(element);
-  return () => observer.disconnect();
-}
 
 export function mountStage(root: HTMLElement, reduced = reducedMotion()): () => void {
   const slides = [...root.querySelectorAll<HTMLElement>("[data-stage-slide]")];
@@ -357,24 +350,6 @@ export function mountMarquee(root: HTMLElement, reduced = reducedMotion()): () =
 export function mountReveal(element: HTMLElement): () => void {
   const stopWatching = watchVisibility(element, 0.2, (seen) => { if (seen) element.setAttribute("data-revealed", ""); });
   return () => { stopWatching(); element.setAttribute("data-revealed", ""); };
-}
-
-/**
- * Plays `player` muted while a quarter of it is in view and pauses it otherwise. Under reduced motion it never starts, and
- * asking for less motion mid-film brings the poster back rather than leaving a frame.
- */
-export function mountAmbientFilm(player: HTMLVideoElement): () => void {
-  const reduced = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
-  let visible = false;
-  const update = () => {
-    if (visible && !reduced?.matches) { player.muted = true; void player.play()?.catch(() => {}); return; }
-    if (player.paused) return;
-    player.pause();
-    if (reduced?.matches) player.load();
-  };
-  const stopWatching = watchVisibility(player, 0.25, (seen) => { visible = seen; update(); });
-  reduced?.addEventListener?.("change", update);
-  return () => { stopWatching(); reduced?.removeEventListener?.("change", update); };
 }
 
 /** Attaches every homepage effect found under `root`; returns one function that detaches them all. */

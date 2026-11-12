@@ -149,9 +149,20 @@
   width: clamp(40px, 3.611vw, 69.3px);
   height: clamp(40px, 3.611vw, 69.3px);
 }
-.collection .collection-icon-28 {
-  width: clamp(24px, 1.944vw, 37.3px);
-  height: clamp(24px, 1.944vw, 37.3px);
+/* The design's duotone illustrations ("Maple / Editorial duotone", 12 Nov 2026): 112px on the feeling cards and 40px beside
+   a material note or a promise at 1440, scaled with the page like the rest of the sheet. */
+.collection .collection-art {
+  display: block;
+  flex: none;
+  object-fit: contain;
+}
+.collection .collection-art-112 {
+  width: clamp(80px, 7.778vw, 149.3px);
+  height: clamp(80px, 7.778vw, 149.3px);
+}
+.collection .collection-art-40 {
+  width: clamp(32px, 2.778vw, 53.3px);
+  height: clamp(32px, 2.778vw, 53.3px);
 }
 
 /* ---- Photos fill their frames: the frame's shape is the design's, the crop is the photo's ---- */
@@ -207,6 +218,20 @@
   inset: 0;
   /* The design's shade, a touch deeper behind the words on the left so the small lines stay legible over bright cloud. */
   background: linear-gradient(90deg, rgb(20 15 10 / 0.14), rgb(20 15 10 / 0) 55%), rgb(20 15 10 / 0.23);
+}
+/* The opening's clip (components/collection-landing-client.tsx) lies over the photo, under the shade, and shows only once
+   it plays; until then, and for visitors who ask for reduced motion, the photo is the opening. */
+.collection-hero-clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s var(--collection-ease);
+}
+.collection-hero-clip[data-playing] {
+  opacity: 1;
 }
 .collection-hero-copy {
   display: flex;
@@ -439,9 +464,6 @@ html:has(.collection-film[open]) {
   color: #000;
   font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
 }
-.collection-notes .collection-icon {
-  color: var(--collection-maple);
-}
 
 /* ---- Terra's settings: photo and narrative alternating sides ---- */
 .collection-rooms {
@@ -600,7 +622,7 @@ html:has(.collection-film[open]) {
   padding-block: var(--collection-pad-96);
   background: var(--collection-sand);
 }
-.collection-pieces[data-mode="concepts"] :is(.collection-eyebrow, .collection-lead, .collection-piece-line) {
+.collection-pieces[data-mode="concepts"] :is(.collection-eyebrow, .collection-lead) {
   color: var(--collection-muted-on-sand);
 }
 .collection .collection-lead {
@@ -618,30 +640,55 @@ html:has(.collection-film[open]) {
   column-gap: var(--collection-gap-24);
   row-gap: var(--collection-gap-28);
 }
+/* The cards are the homepage's (owner, 12 Nov 2026). A real product is the store's own product card
+   (components/store/product-card.tsx); a concept takes that card's frame and type: white, the sand hairline, 8px corners
+   and the light shadow, the square photo with 12px corners on cream, then the name in bold, its line, and its link
+   where a product shows its price. */
+.collection-piece-product {
+  display: flex;
+  min-width: 0;
+}
+.collection-piece-product > [data-product-card] {
+  flex: 1;
+  min-width: 0;
+}
 .collection-piece {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--collection-gap-16);
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e1d9d0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(41 37 31 / 0.08);
 }
 .collection-piece-photo {
-  align-self: stretch;
   aspect-ratio: 1;
-  border-radius: clamp(8px, 0.833vw, 16px);
+  border-radius: 12px;
+  background: #f0eae3;
+}
+.collection-piece-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px;
 }
 .collection .collection-piece-title {
-  color: var(--collection-maple);
-  font: 500 clamp(18px, 1.458vw, 28px) / 1.15 var(--font-heading);
+  color: #29251f;
+  font: 700 15px / 1.45 var(--font-text);
 }
 .collection .collection-piece-line {
-  color: var(--collection-muted);
-  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+  color: #746c62;
+  font: 400 13px / 1.45 var(--font-text);
 }
 .collection .collection-piece-more {
-  color: var(--collection-maple);
-  font: 400 clamp(13px, 0.972vw, 18.7px) / 1.45 var(--font-text);
+  margin-top: auto;
+  padding-top: 2px;
+  color: #741a14;
+  font: 700 13px / 1.45 var(--font-text);
   background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
   transition: background-size 0.6s var(--collection-ease);
 }
@@ -818,5 +865,36 @@ html:has(.collection-film[open]) {
   }
   .collection :is(.collection-card, .collection-piece) img {
     scale: none !important;
+  }
+}
+
+/* ---- Spacing as the homepage's (owner, 12 Nov 2026), by the site's rule in section-rhythm.css: 30px between sections
+   and the homepage's 40px side margins (16px on phones). A section without a colour of its own carries no padding above
+   or below, so what it shows sits 30px from its neighbours; a band of colour keeps 40px inside. The opening stays edge
+   to edge. This replaces each page's frame spacing above, Terra's included. ---- */
+.collection {
+  --collection-gutter: 40px;
+}
+.collection > [data-collection-section] + [data-collection-section] {
+  margin-top: 30px;
+}
+.collection[data-collection] :is(.collection-room-nav, .collection-philosophy, .collection-origin, .collection-material, .collection-browse) {
+  padding-block: 0;
+}
+.collection[data-collection] :is(.collection-rooms, .collection-feeling, .collection-pieces, .collection-consultation, .collection-promise) {
+  padding-block: 40px;
+}
+/* The edit's cards sit as the category pages set the same cards: four across, 24px apart; two across on phones, 16px. */
+.collection .collection-piece-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+@media (max-width: 749px) {
+  .collection {
+    --collection-gutter: 16px;
+  }
+  .collection .collection-piece-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
   }
 }

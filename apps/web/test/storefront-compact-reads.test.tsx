@@ -204,7 +204,9 @@ test("Nimbus reads only its edit's handles and a hidden edit reads none", async 
   const handles = [...nimbusPieceHandles];
   await fixture(async requests => {
     const doc = await documentFor(<NimbusCollection site={defaultStorefrontContent} />);
-    assert.deepEqual([...doc.querySelectorAll("[data-collection-piece] h3 a")].map(n => n.getAttribute("href")), handles.map(h => `/products/${h}`));
+    // A real product is drawn as the store's own card (its name link), a concept as the edit's own card (its title link).
+    const names = doc.querySelectorAll("[data-collection-piece] a[data-card-name], [data-collection-piece] h3 a");
+    assert.deepEqual([...names].map(n => n.getAttribute("href")), handles.map(h => `/products/${h}`));
     assert.deepEqual(requests.map(u => [u.pathname, u.searchParams.get("handles")]), [["/api/catalogue/cards", handles.join(",")]]);
   });
   const content = resolveNimbusPageContent();

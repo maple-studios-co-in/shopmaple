@@ -142,7 +142,7 @@ test("Complete the look picks other rooms for the piece and never the piece itse
 test("the showroom box gives the real address and leads to the store's page, with the store's promises on a strip", async () => {
   await mount((doc) => {
     const showroom = hook(doc, "data-showroom")!;
-    assert.match(text(showroom)!, /^Visit the Maple Furnishers showroom A-2\/56 - 57, W\.H\.S, Kirti Nagar, New Delhi 110015 View store information$/);
+    assert.match(text(showroom)!, /^Visit the Maple Furnishers showroom A-2\/57, W\.H\.S, Kirti Nagar, New Delhi 110015 View store information$/);
     assert.equal(showroom.querySelector("a")?.getAttribute("href"), "/contact");
     assert.equal(hook(doc, "data-pickup"), null, "Pickup times the store has not published are not promised");
     assert.deepEqual([...doc.querySelectorAll("[data-assurances] li")].map(text), ["Delivery across India", "Defects and transit damage", "36 Months warranty"]);

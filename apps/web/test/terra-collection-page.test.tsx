@@ -116,12 +116,16 @@ test("the frame's words, sections and links resolve for the template", () => {
     assert.equal(contentLinkSchema.safeParse(item.href).success, true, item.href);
   }
   assert.deepEqual(terra.browse.items.map(item => item.icon), ["armchair", "bed-double", "table-2", "tree-pine"]);
-  assert.deepEqual(terra.feeling.items.map(item => [item.icon, item.title]), [["mountain", "Grounded"], ["hand", "Tactile"], ["leaf", "Connected"]]);
-  assert.deepEqual(terra.material.notes.map(note => [note.icon, note.label]), [["tree-pine", "Natural timber"], ["layers", "Tactile weave"], ["mountain", "Warm stone"]]);
+  // The design's duotone illustrations (Figma 311:921, 12 Nov 2026).
+  assert.deepEqual(terra.feeling.items.map(item => [item.art, item.title, item.body]), [
+    ["/media/collection-icons/terra-grounded.svg", "Grounded", "Calm, generous forms."], ["/media/collection-icons/terra-tactile.svg", "Tactile", "Texture you can feel."],
+    ["/media/collection-icons/terra-nature.svg", "Open-air living", "Woven seating for outdoor spaces."],
+  ]);
+  assert.deepEqual(terra.material.notes.map(note => [note.art, note.label]), [["/media/collection-icons/terra-timber.svg", "Natural timber"], ["/media/collection-icons/terra-weave.svg", "Tactile weave"], ["/media/collection-icons/terra-stone.svg", "Warm stone"]]);
   assert.deepEqual([terra.material.cta.label, terra.material.cta.href], ["Explore customization", "/contact?product=Terra+customization#contact-enquiry"]);
   assert.deepEqual([terra.consultation.cta.label, terra.consultation.cta.href], ["Start a conversation", "/contact?product=The+Terra+Collection#contact-enquiry"]);
   assert.ok(terra.pieces.items.every(piece => piece.href.startsWith("/contact?product=") && piece.href.endsWith("#contact-enquiry")));
-  assert.deepEqual(terra.promise.map(item => [item.icon, item.label]), [["ruler", "Made around you"], ["hammer", "Crafted in Delhi"], ["truck", "Delivery across India"]]);
+  assert.deepEqual(terra.promise.map(item => [item.art, item.label]), [["/media/collection-icons/promise-bespoke.svg", "Made around you"], ["/media/collection-icons/promise-craft.svg", "Crafted in Delhi"], ["/media/collection-icons/promise-delivery.svg", "Delivery across India"]]);
 });
 
 test("contact details come from the footer settings and photos from Terra's artwork slots", () => {

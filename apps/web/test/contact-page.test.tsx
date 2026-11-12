@@ -19,7 +19,7 @@ import { installUiDom, press } from "./support/ui-dom";
 // The contact page from Figma 298:511 "Maple / Contact / Desktop" (owner, 10 Nov 2026): the introduction and its photo,
 // three ways to reach us, the enquiry, the help centre and the Delhi workshop, between the store's own header and footer.
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015")}`;
+const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("A-2/57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015")}`;
 const receipt = { reference: "enq_00000000-0000-4000-8000-000000000000", mode: "preview", notificationSent: false };
 const texts = (root: ParentNode, selector: string) => [...root.querySelectorAll(selector)].map(node => node.textContent?.trim());
 
@@ -78,7 +78,7 @@ test("the contact page draws Figma 298:511's five regions with the store's own c
     assert.equal(find.getAttribute("target"), "_blank");
     assert.match(find.getAttribute("rel") ?? "", /noreferrer/);
     assert.equal(find.textContent?.replace(/\s*\(opens.*\)$/, ""), "Kirti Nagar, New Delhi");
-    assert.deepEqual(texts(doc, ".contact-way-note"), ["Speak to the Maple team", "For questions and support", "A-2/56–57, W.H.S, Delhi 110015"]);
+    assert.deepEqual(texts(doc, ".contact-way-note"), ["Speak to the Maple team", "For questions and support", "A-2/57, W.H.S, Delhi 110015"]);
     assert.deepEqual([...doc.querySelectorAll(".contact-way img")].map(img => [img.getAttribute("src"), img.getAttribute("alt")]),
       [["/media/contact/phone.svg", ""], ["/media/contact/mail.svg", ""], ["/media/contact/pin.svg", ""]]);
     // The enquiry: its guidance, the way to Bulk Enquiry, and one form.
@@ -105,7 +105,7 @@ test("the contact page draws Figma 298:511's five regions with the store's own c
     assert.deepEqual(answers.map(item => item.hasAttribute("open")), [true, false, false, false, false]);
     assert.doesNotMatch(doc.body.textContent ?? "", /My Orders|in your Maple account/, "no account the store does not have");
     // The Delhi workshop: the footer's address, the design's photo and directions in a new tab.
-    assert.deepEqual(texts(doc, ".contact-visit address span"), ["A-2/56 - 57, W.H.S, Kirti Nagar,", "New Delhi, Delhi, 110015"]);
+    assert.deepEqual(texts(doc, ".contact-visit address span"), ["A-2/57, W.H.S, Kirti Nagar,", "New Delhi, Delhi, 110015"]);
     assert.equal(doc.querySelector(".contact-visit-media img")?.getAttribute("src"), "/media/contact/workshop.webp");
     const directions = doc.querySelector<HTMLAnchorElement>(".contact-visit a")!;
     assert.equal(directions.getAttribute("href"), maps);
