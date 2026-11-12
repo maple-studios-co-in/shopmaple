@@ -82,3 +82,11 @@ Added for the owner's account, checkout and confirmation-template frames of 11 N
 - `account/login-editorial.webp` and `account/sign-up-editorial.webp` (1536 x 864) are the editorial photographs of the "Maple / Login / Desktop" (node 392:1652) and "Maple / Signup / Desktop" (node 392:1697) frames. Like the hero tiles above, they are mock-up renders from the owner's design file, not Maple photographs.
 - `previews/nola-accent-chair.webp` (800 x 1000) is the Nola chair photograph used in the payment-success, email and WhatsApp frames (nodes 392:1752, 394:1418, 394:1456). Only the local design previews (`?preview=…`, `/api/previews/…`, `/previews/whatsapp`) show it; real orders show the catalogue's own photos.
 - `email/maple-logo.png` (264 x 122) is `footer/maple-logo.webp` above, converted to PNG and flattened onto white for mail apps that cannot show WebP or that darken transparent backgrounds.
+
+## Collection illustrations (12 November 2026)
+
+From the owner's updated frames "Maple / Nimbus Collection / Desktop" (node 311:548) and "Maple / Terra Collection / Desktop" (node 311:921) in the Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), exported through the Figma connector as SVG and kept unchanged: the design's "Maple / Editorial duotone" illustrations in maple and sand.
+
+- `collection-icons/nimbus-comfort.svg`, `nimbus-airy.svg`, `nimbus-quiet.svg` and `terra-grounded.svg`, `terra-tactile.svg`, `terra-nature.svg` (112 x 112): the "How it feels" cards.
+- `collection-icons/nimbus-fabric.svg`, `nimbus-chair.svg`, `nimbus-swatch.svg` and `terra-timber.svg`, `terra-weave.svg`, `terra-stone.svg` (40 x 40): the material notes.
+- `collection-icons/promise-bespoke.svg`, `promise-craft.svg`, `promise-delivery.svg` (40 x 40): the promise strip both pages share.

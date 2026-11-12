@@ -3,7 +3,7 @@ import {
   type NimbusPageContent, type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import nimbus from "@/data/landing-nimbus.json";
-import type { CollectionIcon, CollectionLanding, CollectionMedia } from "@/lib/collection-landing";
+import { followDesign, promiseArt, type CollectionArt, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { collectionFilm, withFilm } from "@/lib/template-films";
@@ -78,7 +78,7 @@ export const defaultNimbusPage: CollectionLandingContent = {
     items: [
       { title: "Cloud-like comfort", body: "Sink in. Stay awhile." },
       { title: "Room to breathe", body: "Light, open, effortless." },
-      { title: "Quiet luxury", body: "Refined in every detail." },
+      { title: "Sculpted silhouettes", body: "Soft curves. Considered proportions." },
     ],
   },
   material: {
@@ -176,6 +176,8 @@ export function resolveNimbusPageContent(value?: NimbusPageContent): CollectionL
   delete page.rooms;
   page.hero.film ??= defaultNimbusPage.hero.film;
   page.pieces.cta ??= defaultNimbusPage.pieces.cta;
+  // The third feeling card was "Quiet luxury" until the design changed on 12 Nov 2026.
+  followDesign(page.feeling.items[2], { title: "Quiet luxury", body: "Refined in every detail." }, defaultNimbusPage.feeling.items[2]!);
   page.pieces.items = defaultNimbusPage.pieces.items.map((item, index) => ({ line: page.pieces.items[index]?.line ?? item.line }));
   return page;
 }
@@ -202,9 +204,9 @@ const browse: readonly { icon: CollectionIcon; href: string; media: TemplateMedi
   { icon: "table-2", href: "/collections/tables", media: "nimbus-room-dining" },
   { icon: "bed-double", href: "/collections/beds", media: "nimbus-room-bedroom" },
 ];
-const feelingIcons: readonly CollectionIcon[] = ["cloud", "wind", "feather"];
-const noteIcons: readonly CollectionIcon[] = ["layers", "armchair", "palette"];
-const promiseIcons: readonly CollectionIcon[] = ["ruler", "hammer", "truck"];
+/** The design's duotone illustrations (Figma 311:548, 12 Nov 2026): comfort, air and a sculpted chair; fabric, chair and swatch. */
+const feelingArt: readonly CollectionArt[] = ["/media/collection-icons/nimbus-comfort.svg", "/media/collection-icons/nimbus-airy.svg", "/media/collection-icons/nimbus-quiet.svg"];
+const noteArt: readonly CollectionArt[] = ["/media/collection-icons/nimbus-fabric.svg", "/media/collection-icons/nimbus-chair.svg", "/media/collection-icons/nimbus-swatch.svg"];
 /** The contact form, opened at the enquiry with its subject ("Your enquiry is about …"). */
 const enquiry = (subject: string) => `/contact?${new URLSearchParams({ product: subject })}#contact-enquiry`;
 
@@ -237,13 +239,13 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: roomLinks[index]! })),
     philosophy: { ...page.philosophy },
     origin: { ...page.origin, media: media("nimbus-origin") },
-    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, icon: feelingIcons[index]! })) },
+    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, art: feelingArt[index]! })) },
     material: {
       eyebrow: page.material.eyebrow,
       heading: page.material.heading,
       body: page.material.body,
       media: media("nimbus-craft-poster"),
-      notes: page.material.notes.map((note, index) => ({ icon: noteIcons[index]!, label: note.label })),
+      notes: page.material.notes.map((note, index) => ({ art: noteArt[index]!, label: note.label })),
       cta: { label: page.material.cta, href: enquiry("Nimbus customization") },
     },
     browse: {
@@ -271,6 +273,6 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       cta: { label: page.consultation.cta, href: enquiry(page.title) },
       email: resolveSiteChrome(site.siteChrome).footer.customerEmail,
     },
-    promise: page.promise.map((item, index) => ({ icon: promiseIcons[index]!, label: item.label })),
+    promise: page.promise.map((item, index) => ({ art: promiseArt[index]!, label: item.label })),
   };
 }

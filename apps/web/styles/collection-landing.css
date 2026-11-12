@@ -149,9 +149,20 @@
   width: clamp(40px, 3.611vw, 69.3px);
   height: clamp(40px, 3.611vw, 69.3px);
 }
-.collection .collection-icon-28 {
-  width: clamp(24px, 1.944vw, 37.3px);
-  height: clamp(24px, 1.944vw, 37.3px);
+/* The design's duotone illustrations ("Maple / Editorial duotone", 12 Nov 2026): 112px on the feeling cards and 40px beside
+   a material note or a promise at 1440, scaled with the page like the rest of the sheet. */
+.collection .collection-art {
+  display: block;
+  flex: none;
+  object-fit: contain;
+}
+.collection .collection-art-112 {
+  width: clamp(80px, 7.778vw, 149.3px);
+  height: clamp(80px, 7.778vw, 149.3px);
+}
+.collection .collection-art-40 {
+  width: clamp(32px, 2.778vw, 53.3px);
+  height: clamp(32px, 2.778vw, 53.3px);
 }
 
 /* ---- Photos fill their frames: the frame's shape is the design's, the crop is the photo's ---- */
@@ -438,9 +449,6 @@ html:has(.collection-film[open]) {
   gap: var(--collection-gap-16);
   color: #000;
   font: 400 clamp(15px, 1.181vw, 22.7px) / 1.45 var(--font-text);
-}
-.collection-notes .collection-icon {
-  color: var(--collection-maple);
 }
 
 /* ---- Terra's settings: photo and narrative alternating sides ---- */

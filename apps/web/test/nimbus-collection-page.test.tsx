@@ -98,9 +98,14 @@ function assertDesign(doc: Document) {
   const feeling = region(doc, "feeling");
   assert.equal(feeling.querySelector("[data-collection-eyebrow]")?.textContent, "How it feels");
   assert.equal(feeling.querySelector("h2")?.textContent, "Soft. Airy. Weightless.");
-  assert.deepEqual(texts(feeling, "h3"), ["Cloud-like comfort", "Room to breathe", "Quiet luxury"]);
-  assert.deepEqual(texts(feeling, "li p"), ["Sink in. Stay awhile.", "Light, open, effortless.", "Refined in every detail."]);
-  assert.equal(feeling.querySelectorAll("li svg").length, 3, "an icon on each card");
+  assert.deepEqual(texts(feeling, "h3"), ["Cloud-like comfort", "Room to breathe", "Sculpted silhouettes"]);
+  assert.deepEqual(texts(feeling, "li p"), ["Sink in. Stay awhile.", "Light, open, effortless.", "Soft curves. Considered proportions."]);
+  // The design's duotone illustrations (12 Nov 2026), decorative beside the words: 112px on the cards, 40px by notes and promises.
+  const art = (root: ParentNode, size: number) => [...root.querySelectorAll<HTMLImageElement>(`img.collection-art-${size}`)]
+    .map(img => [img.getAttribute("src"), img.getAttribute("alt"), img.getAttribute("width")]);
+  assert.deepEqual(art(feeling, 112), ["/media/collection-icons/nimbus-comfort.svg", "/media/collection-icons/nimbus-airy.svg", "/media/collection-icons/nimbus-quiet.svg"].map(src => [src, "", "112"]));
+  assert.equal(feeling.querySelectorAll("svg").length, 0, "no line icons left on the cards");
+  assert.deepEqual(art(doc, 40).map(([src]) => src), ["/media/collection-icons/nimbus-fabric.svg", "/media/collection-icons/nimbus-chair.svg", "/media/collection-icons/nimbus-swatch.svg", "/media/collection-icons/promise-bespoke.svg", "/media/collection-icons/promise-craft.svg", "/media/collection-icons/promise-delivery.svg"]);
 
   const material = region(doc, "material");
   assert.equal(material.querySelector("[data-collection-eyebrow]")?.textContent, "The details you live with");

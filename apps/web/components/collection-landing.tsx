@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
-import {
-  Armchair, BedDouble, Cloud, Feather, Hammer, Hand, Layers, Leaf, Mountain, Palette, Ruler, Sofa, Table2, TreePine, Truck, Wind,
-  type LucideIcon,
-} from "lucide-react";
+import { Armchair, BedDouble, Sofa, Table2, TreePine, type LucideIcon } from "lucide-react";
 import type { CollectionSectionKey } from "@shopmaple/contracts";
 import { CollectionFilm } from "@/components/collection-landing-client";
 import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
-import type { CollectionIcon, CollectionLanding, CollectionLink, CollectionMedia } from "@/lib/collection-landing";
+import type { CollectionArt, CollectionIcon, CollectionLanding, CollectionLink, CollectionMedia } from "@/lib/collection-landing";
 
 /**
  * The collection landing template (Figma 311:548 Nimbus, 311:921 Terra; owner, 10 Nov 2026), between the store's own
@@ -15,15 +12,17 @@ import type { CollectionIcon, CollectionLanding, CollectionLink, CollectionMedia
  * from the page; this file only lays them out. Styles: styles/collection-landing.css, scoped to `.collection`.
  */
 
-// The design's line icons are Lucide's shapes drawn 1.3px wide at 28 and 52px; the sheet scales them with the page.
-const icons: Record<CollectionIcon, LucideIcon> = {
-  armchair: Armchair, "bed-double": BedDouble, cloud: Cloud, feather: Feather, hammer: Hammer, hand: Hand, layers: Layers,
-  leaf: Leaf, mountain: Mountain, palette: Palette, ruler: Ruler, sofa: Sofa, "table-2": Table2, "tree-pine": TreePine,
-  truck: Truck, wind: Wind,
-};
-function Icon({ name, size }: { name: CollectionIcon; size: 28 | 52 }) {
+// The collection cards' line icons are Lucide's shapes drawn 1.3px wide at 52px; the sheet scales them with the page.
+const icons: Record<CollectionIcon, LucideIcon> = { armchair: Armchair, "bed-double": BedDouble, sofa: Sofa, "table-2": Table2, "tree-pine": TreePine };
+function Icon({ name }: { name: CollectionIcon }) {
   const Glyph = icons[name];
-  return <Glyph className={`collection-icon collection-icon-${size}`} size={size} strokeWidth={1.3} absoluteStrokeWidth aria-hidden="true" focusable="false" />;
+  return <Glyph className="collection-icon collection-icon-52" size={52} strokeWidth={1.3} absoluteStrokeWidth aria-hidden="true" focusable="false" />;
+}
+/** The design's duotone illustrations: 112px on the feeling cards, 40px beside a note or a promise. Decorative: the words
+ * beside them say it. */
+function Art({ src, size }: { src: CollectionArt; size: 40 | 112 }) {
+  // eslint-disable-next-line @next/next/no-img-element -- a bundled SVG drawn at the design's size
+  return <img className={`collection-art collection-art-${size}`} src={src} alt="" width={size} height={size} loading="lazy" decoding="async" />;
 }
 
 /** The design writes its links' arrow after the words; screen readers hear the words alone. */
@@ -155,7 +154,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
         <ul className="collection-feeling-cards">
           {page.feeling.items.map((item, index) => (
             <li className="collection-feeling-card" key={index}>
-              <Icon name={item.icon} size={52} />
+              <Art src={item.art} size={112} />
               <h3 className="collection-feeling-title">{item.title}</h3>
               <p className="collection-feeling-text">{item.body}</p>
             </li>
@@ -174,7 +173,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
           <p className="collection-text" data-collection-body="">{page.material.body}</p>
           <ul className="collection-notes">
             {page.material.notes.map((note, index) => (
-              <li key={index}><Icon name={note.icon} size={28} /><span>{note.label}</span></li>
+              <li key={index}><Art src={note.art} size={40} /><span>{note.label}</span></li>
             ))}
           </ul>
           <Button link={page.material.cta} />
@@ -192,7 +191,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
                 {/* On a phone the frame is 4:3 and a 16:9 photo covers it at ~1.33× its width: ask for that much. */}
                 <Photo media={card.media} sizes="(max-width: 699px) calc((100vw - 40px) * 1.34), 53vw" />
               </div>
-              <Icon name={card.icon} size={52} />
+              <Icon name={card.icon} />
               <h3 className="collection-card-title"><Go href={card.href} className="collection-card-link">{card.title}</Go></h3>
               <p className="collection-card-more" data-collection-link="" aria-hidden="true">{page.browse.linkLabel}</p>
             </li>
@@ -238,7 +237,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
     promise: () => (
       <section className="collection-promise" id={id("promise")} data-collection-section="promise" aria-label="The Maple promise">
         <ul>
-          {page.promise.map((item, index) => <li key={index}><Icon name={item.icon} size={28} /><span>{item.label}</span></li>)}
+          {page.promise.map((item, index) => <li key={index}><Art src={item.art} size={40} /><span>{item.label}</span></li>)}
         </ul>
       </section>
     ),

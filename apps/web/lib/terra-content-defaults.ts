@@ -1,5 +1,5 @@
 import { collectionSectionKeys, type CollectionLandingContent, type StorefrontContent, type TemplateMediaKey } from "@shopmaple/contracts";
-import type { CollectionIcon, CollectionLanding, CollectionMedia } from "@/lib/collection-landing";
+import { followDesign, promiseArt, type CollectionArt, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { collectionFilm, withFilm } from "@/lib/template-films";
@@ -44,7 +44,7 @@ export const defaultTerraPage: CollectionLandingContent = {
     items: [
       { title: "Grounded", body: "Calm, generous forms." },
       { title: "Tactile", body: "Texture you can feel." },
-      { title: "Connected", body: "Closer to the outdoors." },
+      { title: "Open-air living", body: "Woven seating for outdoor spaces." },
     ],
   },
   material: {
@@ -97,9 +97,9 @@ const browse: readonly { icon: CollectionIcon; href: string }[] = [
   { icon: "table-2", href: "/tables" },
   { icon: "tree-pine", href: "/collections/outdoor-furnitures" },
 ];
-const feelingIcons: readonly CollectionIcon[] = ["mountain", "hand", "leaf"];
-const noteIcons: readonly CollectionIcon[] = ["tree-pine", "layers", "mountain"];
-const promiseIcons: readonly CollectionIcon[] = ["ruler", "hammer", "truck"];
+/** The design's duotone illustrations (Figma 311:921, 12 Nov 2026): a grounded sofa, a woven throw, a terrace chair by a plant; timber, weave and stone. */
+const feelingArt: readonly CollectionArt[] = ["/media/collection-icons/terra-grounded.svg", "/media/collection-icons/terra-tactile.svg", "/media/collection-icons/terra-nature.svg"];
+const noteArt: readonly CollectionArt[] = ["/media/collection-icons/terra-timber.svg", "/media/collection-icons/terra-weave.svg", "/media/collection-icons/terra-stone.svg"];
 /** The four concepts have a photo each; the template's edit allows more cards than Terra has photos for. */
 const pieceKeys = ["terra-piece-1", "terra-piece-2", "terra-piece-3", "terra-piece-4"] as const satisfies readonly TemplateMediaKey[];
 const roomKeys = ["terra-room-1", "terra-room-2", "terra-room-3"] as const satisfies readonly TemplateMediaKey[];
@@ -117,7 +117,10 @@ const splitTags = (tags: string) => tags.split("/").map(tag => tag.trim()).filte
 
 /** Terra's saved words, or the frame's for revisions saved before the page existed. */
 export function resolveTerraPageContent(value?: CollectionLandingContent): CollectionLandingContent {
-  return structuredClone(value ?? defaultTerraPage);
+  const page = structuredClone(value ?? defaultTerraPage);
+  // The third feeling card was "Connected" until the design changed on 12 Nov 2026.
+  followDesign(page.feeling.items[2], { title: "Connected", body: "Closer to the outdoors." }, defaultTerraPage.feeling.items[2]!);
+  return page;
 }
 
 /**
@@ -159,11 +162,11 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
         media: media(roomKeys[index]!),
       })),
     },
-    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, icon: feelingIcons[index]! })) },
+    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, art: feelingArt[index]! })) },
     material: {
       ...page.material,
       media: media("terra-detail"),
-      notes: page.material.notes.map((note, index) => ({ icon: noteIcons[index]!, label: note.label })),
+      notes: page.material.notes.map((note, index) => ({ art: noteArt[index]!, label: note.label })),
       // A customization enquiry, as Nimbus's same button asks about "Nimbus customization".
       cta: { label: page.material.cta, href: terraEnquiryHref("Terra customization") },
     },
@@ -189,6 +192,6 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
       cta: { label: page.consultation.cta, href: terraEnquiryHref(page.title) },
       email: resolveSiteChrome(site.siteChrome).footer.customerEmail,
     },
-    promise: page.promise.map((item, index) => ({ icon: promiseIcons[index]!, label: item.label })),
+    promise: page.promise.map((item, index) => ({ art: promiseArt[index]!, label: item.label })),
   };
 }
