@@ -41,6 +41,7 @@ export const collectionTitles: Record<string, string> = {
   "furniture-store-under-rs-25-000": "Furniture Under Rs. 25,000",
   dining: "Dining Tables",
   "console-tables": "Console Tables",
+  "kids-beds": "Kids Beds",
 };
 // Functional collections augment Shopify membership from explicit Keeri taxonomy.
 // Campaigns, bestsellers and price promotions retain their curated membership.
@@ -65,6 +66,10 @@ function taxonomyMember(product: CollectionProduct, handle: string) {
     case "tv-media-units": return type === "table" && category === "tv & media units";
     case "fabric-beds": return type === "bed" && sub === "fabric beds";
     case "solid-wood-beds": return type === "bed" && sub === "solid wood beds";
+    // Keeri files kids' beds under Beds › Bedroom › Kids Beds, and cribs under their own type.
+    case "kids-beds": return type === "bed" && sub === "kids beds" || type === "crib";
+    // The menu's Outdoors link: the old Shopify list plus every Keeri piece of type Outdoors.
+    case "outdoor-furnitures": return type === "outdoor";
     case "3-seater-sofa": return type === "sofa" && category === "3 seater";
     case "5-seater-sofa": return type === "sofa" && category === "5 seater";
     case "7-seater-sofa": return type === "sofa" && ["7 seater", "7+ seater"].includes(category);
@@ -99,7 +104,7 @@ const familyCollections: Record<string, string[]> = {
   chairs: ["dining-chair", "accent-chair", "arm-chair", "lounge-wing-chair", "rocking-chair"],
   tables: ["dining", "dinings", "center-tables", "side-table", "console-tables", "tv-media-units"],
   sofas: ["3-seater-sofa", "5-seater-sofa", "7-seater-sofa", "l-shape-sofa", "fabric-sofas", "wooden-sofas"],
-  beds: ["king-size-beds", "queen-size-beds", "fabric-beds", "solid-wood-beds"],
+  beds: ["king-size-beds", "queen-size-beds", "fabric-beds", "solid-wood-beds", "kids-beds"],
 };
 /**
  * A collection whose pieces all share one category lists that category's collections, with how many pieces each holds

@@ -67,7 +67,8 @@ test("canonical Keeri product types fill missing publication categories without 
     ["table", "tables"], ["tables", "tables"],
     ["sofa", "sofas"], ["sofas", "sofas"],
     ["bed", "beds"], [" Beds ", "beds"],
-    ["storage", "storage"], ["outdoors", "outdoors"],
+    ["storage", "storage"], ["Storage", "storage"], ["outdoors", "outdoors"], ["Outdoors", "outdoors"],
+    ["chest", "storage"], ["bookcase", "storage"], ["cabinet", "storage"], ["crib", "beds"],
   ] as const) {
     const data = v2Fixture();
     data.publication[0]!.category = null;

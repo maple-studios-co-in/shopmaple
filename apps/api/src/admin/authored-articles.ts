@@ -1,16 +1,12 @@
 import type { Prisma } from "@prisma/client";
 import { articleHandles, blogHandles, policySlugs, categories, type EditorialNode, type StorefrontContent } from "@shopmaple/contracts";
-import { sourceCollections } from "@shopmaple/contracts/catalogue-registry";
+import { collectionTitles } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "../cart.js";
 
-// Match the storefront's source collection registry and established category aliases.
+// Every collection the storefront serves: its page opens exactly the handles collectionTitles names (source
+// collections, categories and the established aliases), so a link may point at any of them and at nothing else.
 // Source JSON is bundled by tsup; this does not depend on a running web process.
-const collectionHandles = new Set([
-  ...Object.keys(sourceCollections), ...categories, "all", "sofas-and-chairs", "5-seater-sofa", "7-seater-sofa",
-  "chair-collection", "center-tables-1", "side-table", "sofa-table", "bestseller-chairs", "arm-chair",
-  "dining-chair", "center-tables", "accent-chair", "dinings", "clearance-sale", "minimum-60-off",
-  "best-buy-under-rs-50-000", "furniture-store-under-rs-25-000", "dining", "console-tables",
-]);
+const collectionHandles = new Set([...Object.keys(collectionTitles), ...categories, "all"]);
 const originalPages = ["contact", "bulk-enquiry", "chairs", "tables", "sofas", "nimbus-collection", "our-story", "returns"];
 
 function enabledChromePaths(content: StorefrontContent): string[] {

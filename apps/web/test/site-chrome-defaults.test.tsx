@@ -21,13 +21,10 @@ test("original chrome is a publishable strict document and independent editor co
   const published = customChrome();
   resolveSiteChrome(published).footer.shopLinks[0]!.label = "Another draft";
   assert.equal(published.footer.shopLinks[0]!.label, "Meet Maple");
+  // Kids Beds has its own collection (owner, 12 Nov 2026); before it, the link asked for an enquiry.
   const kids = next.navigation[1]!.columns[0]!.links[4]!;
-  assert.equal(
-    new URL(chromeHref(kids), "https://maple.invalid").searchParams.get(
-      "product",
-    ),
-    "Kids Beds",
-  );
+  assert.equal(kids.label, "Kids Beds");
+  assert.equal(chromeHref(kids), "/collections/kids-beds");
 });
 test("only validated published chrome reaches consumers; old, draft, malformed and failed reads preserve defaults", async () => {
   const published = await readPublishedContent(async () =>
