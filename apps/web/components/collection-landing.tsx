@@ -210,7 +210,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
           {page.pieces.items.map((piece, index) => piece.card ? (
             // A real product: the store's own card, exactly as the homepage draws it (owner, 12 Nov 2026).
             <li className="collection-piece-product" key={index} data-collection-piece="">
-              <ProductCard product={piece.card} imageSizes="(max-width: 749px) 48vw, 24vw" className="h-full" />
+              <ProductCard product={piece.card} imageSizes="(max-width: 749px) 48vw, 24vw" />
             </li>
           ) : (
             <li className="collection-piece" key={index} data-collection-piece="">
