@@ -7,6 +7,8 @@ import { AccountHeading, addressLines, Lines, OrderPhoto } from "./account-parts
 const badges: Record<OrderStatus, string> = {
   confirmed: "Order confirmed",
   confirming: "Payment received",
+  preparing: "Being prepared",
+  dispatched: "Order dispatched",
   delivered: "Order delivered",
   cancelled: "Order cancelled",
 };
@@ -15,6 +17,9 @@ const stepState = { done: "Done", current: "In progress", upcoming: "Coming up" 
 /** The line under a step: when it happened, or what comes next (Figma 392:1432). */
 function stepNote(step: OrderJourneyStep, order: OrderDetail) {
   if (step.state === "done") return step.at ? formatDate(step.at) : "Done";
+  if (order.status === "cancelled") return "Not reached";
+  if (step.key === "delivered" && step.state === "current")
+    return order.estimate ? `On its way · Est. ${formatDayRange(order.estimate.from, order.estimate.to, { month: "short", year: false })}` : "On its way";
   switch (step.key) {
     case "confirmed":
       return "We’re confirming it";
@@ -36,6 +41,19 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
     <>
       <AccountHeading title={`Order #${order.number}`} lead={`Placed ${formatDate(order.placedAt)} · ${itemCount(order.itemCount)}`} />
       <p className="account-badge" data-status={order.status}>{badges[order.status]}</p>
+      {order.cancellation ? (
+        // A cancelled order: when, and where its refund stands. The journey below keeps what it had reached.
+        <section className="account-panel" data-order-cancelled="" aria-label="Cancellation">
+          <p className="account-section-title">{`Cancelled on ${formatDate(order.cancellation.cancelledAt)}`}</p>
+          {order.refund ? (
+            <p className="account-muted">
+              {order.refund.status === "refunded"
+                ? `Refund of ${money(order.refund.amountPaise)} issued${order.refund.refundedAt ? ` on ${formatDate(order.refund.refundedAt)}` : ""}. Banks usually take 5 to 7 working days to show it.`
+                : `We’re refunding ${money(order.refund.amountPaise)} to your original payment method.`}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
       <ol className="account-journey" aria-label="Order journey">
         {order.journey.map((step, index) => (
           <li key={step.key} className="account-journey-step" data-step-state={step.state} aria-current={step.state === "current" ? "step" : undefined}>
@@ -68,12 +86,16 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           <h2 id="account-delivery" className="account-section-title">Coming home to</h2>
           {/* The API sends the delivery phone already masked ("+91 ••••• •3210"); it is shown as it comes. */}
           <Lines className="account-delivery-address" lines={[delivery.name, ...addressLines(delivery), delivery.phone]} />
-          {order.estimate ? (
+          {order.status === "cancelled" || order.status === "delivered" ? null : order.estimate ? (
             <p className="account-delivery-estimate">{`Estimated delivery · ${formatDayRange(order.estimate.from, order.estimate.to, { month: "short" })}`}</p>
           ) : (
             <p className="account-delivery-estimate">We’ll confirm your delivery date with you.</p>
           )}
-          <p className="account-muted">We’ll share tracking when your order is dispatched.</p>
+          {order.status === "cancelled" || order.status === "delivered" ? null : (
+            <p className="account-muted">
+              {order.status === "dispatched" ? "Your order is with the courier. Our team will contact you to arrange delivery." : "We’ll share tracking when your order is dispatched."}
+            </p>
+          )}
         </section>
         <section className="account-panel account-payment" aria-labelledby="account-payment">
           <h2 id="account-payment" className="account-section-title">Payment summary</h2>

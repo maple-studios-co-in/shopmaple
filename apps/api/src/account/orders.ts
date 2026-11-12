@@ -8,10 +8,12 @@ import {
   type OrderStatus,
   type OrderSummary,
 } from "@shopmaple/contracts/account";
+import type { OrderProgress } from "../orders/keeri-events.js";
 
 /**
- * A customer's view of their paid orders (owner's spec, 10 Nov 2026). Status and journey are derived from today's data:
- * there is no staff status screen yet, so only "Confirmed" can become true.
+ * A customer's view of their paid orders (owner's spec, 10 Nov 2026). Status and journey are derived when read: the
+ * store's own records say whether Keeri accepted the order, and Keeri's order updates (orders/keeri-events.ts) say how
+ * far it has got since (preparing, dispatched, delivered, cancelled, refunded).
  *
  * Which attempts are orders: `captured` and `paid_hold_lapsed`, the two states that hold a payment Razorpay confirmed.
  * `reconciliation_required` is left out on purpose: in orders/service.ts it never carries a verified payment (it marks an
@@ -28,12 +30,16 @@ export type PaidOrder = {
   paymentId: string;
   snapshot: QuoteSnapshot;
   outbox: OrderOutboxView | null;
+  /** What Keeri has reported since it accepted the order; null when it has said nothing. */
+  progress?: OrderProgress | null;
 };
 
 /** Confirmed once Keeri accepted the order (the same test as the order status page); any other paid order is still
- * being confirmed, including one whose hold lapsed and is being confirmed by hand. */
-export function customerOrderStatus(state: string, outbox: OrderOutboxView | null): OrderStatus {
-  return state === "captured" && outbox?.state === "delivered" && Boolean(outbox.externalOrderId) ? "confirmed" : "confirming";
+ * being confirmed, including one whose hold lapsed and is being confirmed by hand. A confirmed order then follows
+ * Keeri's updates. An order Keeri never accepted has no updates to follow, so they are not read for it. */
+export function customerOrderStatus(state: string, outbox: OrderOutboxView | null, progress?: OrderProgress | null): OrderStatus {
+  if (!(state === "captured" && outbox?.state === "delivered" && Boolean(outbox.externalOrderId))) return "confirming";
+  return progress?.stage ?? "confirmed";
 }
 
 const indiaOffsetMs = (5 * 60 + 30) * 60_000;
@@ -63,12 +69,25 @@ export function deliveryEstimate(snapshot: QuoteSnapshot, capturedAt: Date): { f
 }
 
 const journeyLabels = { confirmed: "Confirmed", preparing: "Preparing", dispatched: "Dispatched", delivered: "Delivered" } as const;
-/** Confirmed is done (with when) once true, and current while the team confirms; the rest stay upcoming for now. */
-export function orderJourney(status: OrderStatus, confirmedAt: Date | null): OrderJourneyStep[] {
-  return orderJourneyKeys.map((key): OrderJourneyStep => {
-    if (key !== "confirmed") return { key, label: journeyLabels[key], state: "upcoming", at: null };
-    if (status === "confirmed") return { key, label: journeyLabels[key], state: "done", at: confirmedAt?.toISOString() ?? null };
-    return { key, label: journeyLabels[key], state: status === "confirming" ? "current" : "upcoming", at: null };
+/**
+ * The four steps. Confirmed is done (with when) once Keeri accepted the order, and current while the team confirms.
+ * After that the steps follow Keeri's updates: a step is done with the time Keeri gave, the step under way is current
+ * (Preparing while it is made or packed, Delivered while it is with the courier), and the rest are upcoming. A step
+ * Keeri skipped (dispatched with no production step) is done without a time. A cancelled order keeps what it reached.
+ */
+export function orderJourney(status: OrderStatus, confirmedAt: Date | null, progress?: OrderProgress | null): OrderJourneyStep[] {
+  const reached = status === "cancelled"
+    ? (progress?.deliveredAt ? 3 : progress?.dispatchedAt ? 2 : progress?.preparingAt ? 1 : 0)
+    : { confirming: -1, confirmed: 0, preparing: 1, dispatched: 2, delivered: 3, cancelled: 0 }[status];
+  const times = [confirmedAt, progress?.preparingAt ?? null, progress?.dispatchedAt ?? null, progress?.deliveredAt ?? null];
+  return orderJourneyKeys.map((key, index): OrderJourneyStep => {
+    const label = journeyLabels[key];
+    if (status === "confirming") return { key, label, state: index === 0 ? "current" : "upcoming", at: null };
+    // Preparing is under way, not finished, until the order is dispatched.
+    const underWay = status !== "cancelled" && ((status === "preparing" && index === 1) || (status === "dispatched" && index === 3));
+    if (underWay) return { key, label, state: "current", at: null };
+    if (index <= reached) return { key, label, state: "done", at: times[index]?.toISOString() ?? null };
+    return { key, label, state: "upcoming", at: null };
   });
 }
 
@@ -88,7 +107,7 @@ export function maskPhone(phone: string) {
 export type OrderImages = ReadonlyMap<string, string>;
 
 export function toOrderSummary(order: PaidOrder, images: OrderImages): OrderSummary {
-  const status = customerOrderStatus(order.state, order.outbox);
+  const status = customerOrderStatus(order.state, order.outbox, order.progress);
   const first = order.snapshot.items[0]!;
   return {
     number: formatOrderNumber(order.orderNumber),
@@ -104,7 +123,9 @@ export function toOrderSummary(order: PaidOrder, images: OrderImages): OrderSumm
 export function toOrderDetail(order: PaidOrder, images: OrderImages): OrderDetail {
   const summary = toOrderSummary(order, images);
   const s = order.snapshot;
-  const confirmedAt = summary.status === "confirmed" ? (order.outbox?.deliveredAt ?? order.capturedAt) : null;
+  const confirmedAt = summary.status === "confirming" ? null : (order.outbox?.deliveredAt ?? order.capturedAt);
+  // Keeri's updates count only for an order it accepted.
+  const progress = summary.status === "confirming" ? null : (order.progress ?? null);
   return {
     ...summary,
     items: s.items.map((item) => ({
@@ -132,6 +153,10 @@ export function toOrderDetail(order: PaidOrder, images: OrderImages): OrderDetai
     },
     payment: { label: "Paid online", reference: order.paymentId },
     estimate: deliveryEstimate(s, order.capturedAt),
-    journey: orderJourney(summary.status, confirmedAt),
+    cancellation: progress?.cancelledAt ? { cancelledAt: progress.cancelledAt.toISOString() } : null,
+    refund: progress?.refund
+      ? { status: progress.refund.status, amountPaise: progress.refund.amountPaise, refundedAt: progress.refund.refundedAt?.toISOString() ?? null }
+      : null,
+    journey: orderJourney(summary.status, confirmedAt, progress),
   };
 }

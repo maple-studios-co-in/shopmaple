@@ -242,17 +242,20 @@ export const orderNumberSchema = z.string().regex(/^MF-[1-9][0-9]{0,9}$/);
 
 /** `confirmed`: Keeri accepted the order. `confirming`: paid, and the team is confirming it (or reviewing it by hand).
  * `cancelled`: none yet; kept for later. `delivered`: reserved for when delivery is tracked; never sent yet. */
-export const orderStatuses = ["confirmed", "confirming", "cancelled", "delivered"] as const;
+/** `preparing` and `dispatched` come from Keeri's order updates (in production or ready, then handed to the courier). */
+export const orderStatuses = ["confirmed", "confirming", "preparing", "dispatched", "cancelled", "delivered"] as const;
 export type OrderStatus = (typeof orderStatuses)[number];
 export const orderStatusLabels = {
   confirmed: "Confirmed",
   confirming: "Confirming",
+  preparing: "Preparing",
+  dispatched: "Dispatched",
   cancelled: "Cancelled",
   delivered: "Delivered",
 } as const satisfies Record<OrderStatus, string>;
 /** How the order list's tabs group statuses. */
 export const orderStatusTabs = {
-  inProgress: ["confirmed", "confirming"],
+  inProgress: ["confirmed", "confirming", "preparing", "dispatched"],
   delivered: ["delivered"],
   cancelled: ["cancelled"],
 } as const satisfies Record<string, readonly OrderStatus[]>;
@@ -281,9 +284,9 @@ export const orderSummarySchema = z
   .strict();
 
 export const orderJourneyKeys = ["confirmed", "preparing", "dispatched", "delivered"] as const;
-/** One step of the order journey. Today only Confirmed can be done (with `at`, when it was confirmed); while the order
- * is being confirmed it is `current`. Preparing, Dispatched and Delivered stay `upcoming` until staff status exists;
- * Delivered goes with the order's `estimate`. */
+/** One step of the order journey. A step is `done` (with `at`, when it happened) once Keeri reports it, and `current`
+ * while it is under way: Confirmed while the team confirms the order, Preparing while it is made or packed, Delivered
+ * once it is with the courier. Delivered goes with the order's `estimate` until it is done. */
 export const orderJourneyStepSchema = z
   .object({
     key: z.enum(orderJourneyKeys),
@@ -326,6 +329,10 @@ export const orderDetailSchema = z
     /** The delivery window in India's calendar, from the made-to-order lead time and the courier's estimate counted from
      * `placedAt`; null when either is unknown. */
     estimate: z.object({ from: day, to: day }).strict().nullable(),
+    /** When Keeri cancelled the order; null otherwise. The journey then stops where it had got to. */
+    cancellation: z.object({ cancelledAt: dateTime }).strict().nullable(),
+    /** The refund for a cancelled order: `pending` until staff record it, then `refunded` with the day. Null when none. */
+    refund: z.object({ status: z.enum(["pending", "refunded"]), amountPaise: money, refundedAt: dateTime.nullable() }).strict().nullable(),
     /** Always the four steps, in order: confirmed, preparing, dispatched, delivered. */
     journey: z
       .array(orderJourneyStepSchema)

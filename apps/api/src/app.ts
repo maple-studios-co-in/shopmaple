@@ -28,6 +28,7 @@ import {
   type CheckoutOptions,
   type CommerceHttpService,
 } from "./commerce-http.js";
+import { ingestKeeriOrderEvent, registerKeeriOrderEvents, type KeeriOrderEventsConfig } from "./orders/keeri-events.js";
 
 export type AppConfig = {
   webOrigin: string;
@@ -46,6 +47,8 @@ export type AppConfig = {
   keeriLeads?: KeeriLeadsConfig | null;
   /** Where the product page's reviews go; null or absent keeps them in the admin's inbox until the credential is present. */
   keeriReviews?: KeeriReviewsConfig | null;
+  /** Keeri's signed order updates (status, delivery, cancellation, refund); without it the route does not exist. */
+  keeriOrderEvents?: (KeeriOrderEventsConfig & { now?: () => Date }) | null;
   /** Public checkout options; only meaningful together with an injected commerce service. */
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
@@ -87,6 +90,10 @@ export function createApp(
     }),
   );
   if (commerce) registerPaymentWebhook(app, commerce);
+  if (config.keeriOrderEvents) {
+    const { merchantScope, now } = config.keeriOrderEvents;
+    registerKeeriOrderEvents(app, config.keeriOrderEvents, (rawBody) => ingestKeeriOrderEvent(db, merchantScope, rawBody), now);
+  }
   registerMediaRoutes(app, db, config);
   registerReviewRoutes(app, db, { webOrigin: config.webOrigin, keeri: config.keeriReviews, enquiryDelivery: config.enquiryDelivery });
   app.use("/api/admin/content", express.json({ limit: "128kb" }));

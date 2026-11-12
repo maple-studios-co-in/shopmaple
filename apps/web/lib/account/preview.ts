@@ -52,6 +52,8 @@ export function sampleOrderDetail(number: string): OrderDetail {
     totals: { subtotalPaise: 2490000, deliveryPaise: 150000, taxPaise: 379831, totalPaise: 2640000, taxIncluded: true },
     payment: { label: "Paid online", reference: "pay_PreviewQX1a2b" },
     estimate: { from: "2026-11-24", to: "2026-11-28" },
+    cancellation: null,
+    refund: null,
     journey: [
       { key: "confirmed", label: "Confirmed", state: "done", at: "2026-11-10T06:35:00.000Z" },
       { key: "preparing", label: "Preparing", state: "upcoming", at: null },

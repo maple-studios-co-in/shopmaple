@@ -89,3 +89,28 @@ test("an order without a code has no discount line", async () => {
     assert.equal(document.querySelector("[data-discount-line]"), null);
   });
 });
+
+test("a confirmed order follows Keeri's updates: preparing, dispatched, delivered, and a cancellation with its refund", async () => {
+  const confirmed = { fulfillmentStatus: "confirmed", orderReference: "SO-77", orderNumber: "MF-10482" };
+  for (const [stage, expected] of [
+    ["preparing", /We're preparing your order/], ["dispatched", /Order dispatched/], ["delivered", /Order delivered/],
+    [null, /Order confirmed/], [undefined, /Order confirmed/],
+  ] as const)
+    await mount(() => Response.json(status({ ...confirmed, ...(stage === undefined ? {} : { orderStage: stage }) })), () => {
+      assert.match(text(), expected, String(stage));
+      assert.match(text(), /MF-10482/);
+    });
+  await mount(() => Response.json(status({ ...confirmed, orderStage: "cancelled", refund: { status: "pending", amountPaise: 4750000 } })), () => {
+    assert.match(text(), /Order cancelled/);
+    assert.match(text(), /We're refunding ₹47,500 to your original payment method/);
+    assert.doesNotMatch(text(), /Order confirmed/);
+  });
+  await mount(() => Response.json(status({ ...confirmed, orderStage: "cancelled", refund: { status: "refunded", amountPaise: 4750000 } })), () =>
+    assert.match(text(), /Your refund of ₹47,500 has been issued/));
+  await mount(() => Response.json(status({ ...confirmed, orderStage: "cancelled", refund: null })), () => {
+    assert.match(text(), /This order has been cancelled\./);
+    assert.doesNotMatch(text(), /refund/i);
+  });
+  // An order Keeri has not confirmed never shows a stage, whatever the response carries.
+  await mount(() => Response.json(status({ orderStage: "delivered" })), () => assert.doesNotMatch(text(), /Order delivered/));
+});

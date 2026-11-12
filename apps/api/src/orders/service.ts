@@ -5,6 +5,7 @@ import {
   type QuoteSnapshot,
 } from "@shopmaple/contracts";
 import { createHash, randomUUID } from "node:crypto";
+import { loadOrderProgress } from "./keeri-events.js";
 import {
   Prisma,
   type PrismaClient,
@@ -955,8 +956,13 @@ export function createOrderService(db: PrismaClient, options: Options) {
       attempt.state === "captured" &&
       outbox?.state === "delivered" &&
       Boolean(outbox.externalOrderId);
+    // How far the order has got since Keeri accepted it, from Keeri's own updates; null until it says anything.
+    const progress = confirmed
+      ? ((await loadOrderProgress(db, merchantScope, [outbox!.externalOrderId!])).get(outbox!.externalOrderId!) ?? null)
+      : null;
     return {
       ...attempt,
+      orderProgress: progress,
       fulfillmentStatus: confirmed
         ? "confirmed"
         : outbox?.state === "failed" ||

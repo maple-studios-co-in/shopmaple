@@ -139,3 +139,7 @@ used, including on the former merged listings.
 - **Rollback caveat:** the rename is a data change. The previous release has no alias routes, so after a rollback the old `keeri-<id>` addresses return 404 while the readable ones keep working. Roll the code forward rather than back, or accept the broken old links until it is redeployed.
 - Known gap: the search dialog's "recently viewed" list drops a renamed product until it is viewed again.
 - The homepage script budget (`scripts/check-homepage-payload.mjs`, 79,500 gzip bytes) is nearly used up: main is at 79,473 and this change at 79,496.
+
+## Order progress back from Keeri
+
+The catalogue and orders flow from the store's requests. One flow runs the other way: Keeri posts signed order updates (status, delivery, cancellation, refund) to `POST /api/integrations/keeri/order-events`, and the buyer's order pages read them. See [order flow](order-flow.md#order-progress-from-keeri-13-nov-2026) and [deployment](store-deployment.md#order-progress-from-keeri).

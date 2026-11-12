@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { CheckoutClientError, createCheckoutClient, type CheckoutAttempt } from "@/app/checkout/checkout-client";
+import { money } from "@/lib/format";
 import { buttonRow, heading, muted, outline, panel, QuoteLines, QuoteTotals, solid } from "./checkout-parts";
 
 type View = { kind: "loading" } | { kind: "missing" } | { kind: "error" } | { kind: "ready"; attempt: CheckoutAttempt };
@@ -9,8 +10,22 @@ type View = { kind: "loading" } | { kind: "missing" } | { kind: "error" } | { ki
 /** What the buyer is told about one checkout. Never claims an order Keeri has not confirmed,
  * and never tells a buyer whose payment Razorpay confirmed that nothing was paid. */
 function headline(attempt: CheckoutAttempt): { title: string; body: string } {
-  if (attempt.fulfillmentStatus === "confirmed" && attempt.orderReference)
+  if (attempt.fulfillmentStatus === "confirmed" && attempt.orderReference) {
+    // A confirmed order follows Keeri's updates (preparing, dispatched, delivered, cancelled and its refund).
+    if (attempt.orderStage === "cancelled") {
+      const refund = attempt.refund
+        ? attempt.refund.status === "refunded"
+          ? ` Your refund of ${money(attempt.refund.amountPaise)} has been issued. Banks usually take 5 to 7 working days to show it.`
+          : ` We're refunding ${money(attempt.refund.amountPaise)} to your original payment method.`
+        : "";
+      return { title: "Order cancelled", body: `This order has been cancelled.${refund}` };
+    }
+    if (attempt.orderStage === "delivered") return { title: "Order delivered", body: "Your order has been delivered. We hope it feels at home." };
+    if (attempt.orderStage === "dispatched")
+      return { title: "Order dispatched", body: "Your order is on its way. Our team will contact you to arrange delivery." };
+    if (attempt.orderStage === "preparing") return { title: "We're preparing your order", body: "Your order is confirmed and being made ready. We'll tell you when it is dispatched." };
     return { title: "Order confirmed", body: "Your payment has been received and your order is confirmed. Our team will contact you to arrange delivery." };
+  }
   if (attempt.state === "paid_hold_lapsed")
     return {
       title: "Your payment has been received",

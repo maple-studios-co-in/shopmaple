@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { after, before, beforeEach, test } from "node:test";
 import { Prisma, PrismaClient } from "@prisma/client";
 import request from "supertest";
@@ -91,6 +91,7 @@ beforeEach(async () => {
   await db.$executeRawUnsafe(`DO $$ BEGIN IF to_regclass('"CustomerSignInFailure"') IS NOT NULL THEN DELETE FROM "CustomerSignInFailure"; END IF; END $$`);
   await db.customer.deleteMany();
   await db.orderNotification.deleteMany();
+  await db.keeriOrderEvent.deleteMany();
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
   await db.checkoutAttempt.deleteMany();
@@ -679,6 +680,56 @@ test("start-up catch-up numbers and links what the previous release captured, on
 });
 
 // ---- Passwords (Figma 392:1652 login, 392:1697 sign-up; 11 Nov 2026) -------------------------------------------------
+
+test("Keeri's signed order updates move a confirmed order on the account pages, once each, within the store's scope", async () => {
+  const secret = "keeri-order-events-db-test-secret-32";
+  await paidAttempt({ email: "asha@example.com", orderNumber: 10001, state: "captured", capturedAt: new Date(clock.getTime() - 3_600_000), confirmed: true });
+  const api = app({ keeriOrderEvents: { secret, merchantScope: "maple-store", now: () => new Date(clock) } }, { merchantScope: "maple-store" });
+  const asha = await signIn(api, "asha@example.com");
+  const post = (payload: Record<string, unknown>) => {
+    const body = JSON.stringify({ externalOrderId: "SO-77", ...payload });
+    const t = Math.floor(clock.getTime() / 1000);
+    return request(api).post("/api/integrations/keeri/order-events").set("Content-Type", "application/json")
+      .set("X-Keeri-Signature", `t=${t},v1=${createHmac("sha256", secret).update(`${t}.${body}`).digest("hex")}`).send(body);
+  };
+  const detail = async () => orderDetailSchema.parse((await request(api).get("/api/account/orders/MF-10001").set("Cookie", asha.cookie)).body);
+  const at = (minutes: number) => new Date(clock.getTime() - minutes * 60_000).toISOString();
+  assert.equal((await detail()).status, "confirmed", "nothing from Keeri yet");
+
+  const making = { event: "order.status_changed", status: "in_production", previousStatus: "confirmed", changedAt: at(50) };
+  assert.deepEqual((await post(making)).body, { accepted: true, outcome: "stored" });
+  assert.deepEqual((await post(making)).body, { accepted: true, outcome: "duplicate" }, "Keeri's retry of the same event");
+  assert.equal(await db.keeriOrderEvent.count(), 1);
+  let order = await detail();
+  assert.deepEqual([order.status, order.statusLabel, order.journey[1]!.state], ["preparing", "Preparing", "current"]);
+
+  await post({ event: "order.status_changed", status: "dispatched", previousStatus: "in_production", changedAt: at(30) });
+  order = await detail();
+  assert.deepEqual(order.journey.map((step) => [step.key, step.state, step.at]), [
+    ["confirmed", "done", new Date(clock.getTime() - 3_540_000).toISOString()], ["preparing", "done", at(50)], ["dispatched", "done", at(30)], ["delivered", "current", null],
+  ]);
+  const list = orderListResponseSchema.parse((await request(api).get("/api/account/orders").set("Cookie", asha.cookie)).body);
+  assert.deepEqual(list.orders.map((entry) => [entry.number, entry.status]), [["MF-10001", "dispatched"]]);
+
+  await post({ event: "order.status_changed", status: "delivered", previousStatus: "dispatched", changedAt: at(10) });
+  await post({ event: "order.delivered", deliveredAt: at(10) });
+  order = await detail();
+  assert.deepEqual([order.status, order.journey[3]!.state, order.journey[3]!.at, order.cancellation, order.refund], ["delivered", "done", at(10), null, null]);
+
+  // Another store's events for the same Keeri id are not this store's.
+  await db.keeriOrderEvent.updateMany({ data: { merchantScope: "maple-staging" } });
+  assert.equal((await detail()).status, "confirmed");
+
+  // A cancellation and its refund.
+  await db.keeriOrderEvent.deleteMany();
+  await post({ event: "order.status_changed", status: "cancelled", previousStatus: "confirmed", changedAt: at(8) });
+  await post({ event: "order.cancelled", reason: "Out of fabric", cancelledAt: at(8), refund: { status: "pending", amountPaise: 350_000 } });
+  order = await detail();
+  assert.deepEqual([order.status, order.cancellation, order.refund], ["cancelled", { cancelledAt: at(8) }, { status: "pending", amountPaise: 350_000, refundedAt: null }]);
+  await post({ event: "order.refunded", amountPaise: 350_000, refundedAt: at(2), gatewayRefundId: "rfnd_1", creditNoteNumber: "CN-1" });
+  assert.deepEqual((await detail()).refund, { status: "refunded", amountPaise: 350_000, refundedAt: at(2) });
+  assert.equal(JSON.stringify(await detail()).includes("Out of fabric"), false, "the staff reason stays in Keeri");
+});
 
 const startFor = async (target: App, email: string, purpose: "sign-in" | "sign-up" | "reset", client: Browser = browser()) =>
   keep(client, await from(request(target).post("/api/account/sign-in/start"), client).send({ email, purpose }));

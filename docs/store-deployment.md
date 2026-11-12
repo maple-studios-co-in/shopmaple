@@ -108,6 +108,22 @@ Rollout order: **migrate, then API, then web.**
 
 Rollback: unset the flag (or set `false`) and restart the API. Accounts, sessions and addresses stay in the database, and the additive migration needs no reversal. Order numbers stay assigned and keep appearing in order emails and on the guest status page.
 
+## Order progress from Keeri
+
+Keeri reports each store order's status moves, delivery, cancellation and refund to the store ([order flow](order-flow.md#order-progress-from-keeri-13-nov-2026)). Until both sides are configured, Keeri keeps its events queued and the order pages stop at "Confirmed".
+
+| Where | Key | Purpose |
+| --- | --- | --- |
+| Store API (`store.env`) | `KEERI_DELIVERY_WEBHOOK_SECRET` | 32–512 random characters, private, for example `openssl rand -hex 32`. Keeri signs every event with it. Unset, the route does not exist. A short value, or a value without `KEERI_MERCHANT_SCOPE`, stops the API at start-up. |
+| Keeri (`keeri.env`) | `STOREFRONT_WEBHOOKS` | A JSON array with one entry for this store: `{"tenantId": "<Keeri tenant id>", "merchantScope": "<the store's KEERI_MERCHANT_SCOPE>", "secret": "<the same secret>", "endpoints": {"default": "https://shop.maplefurnishers.com/api/integrations/keeri/order-events"}}`. |
+
+Rollout order: **migrate and release the store first, then set the two keys.**
+1. Release the store. `prisma migrate deploy` applies `20261113100000_keeri_order_events` (a new table only).
+2. Put the same secret in both files, restart `shopmaple-api`, then restart Keeri. Never print or paste the secret.
+3. Keeri's "Store order updates" job (Settings → Background jobs) sends what it has queued within five minutes, oldest first. An event that waited with "no endpoint configured" is retried on the hour.
+
+Check: move a test order's status in Keeri, wait for the job, and open the order on the store. Rollback: unset the store's key and restart the API; Keeri queues again and nothing is lost for about a day and a half.
+
 ## Launch checklist (online checkout)
 
 Run in this order; tick each with the date, the person, and where the evidence is saved. Steps marked **owner** need the owner's accounts or a production action that only the owner runs.

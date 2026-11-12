@@ -13,7 +13,7 @@ const { AppRouterContext } = await import("next/dist/shared/lib/app-router-conte
 const { OrderHistory } = await import("../components/account/order-history");
 
 const order = (number: string, status: OrderSummary["status"], title: string, placedAt: string): OrderSummary => ({
-  number, placedAt, status, statusLabel: { confirmed: "Confirmed", confirming: "Confirming", delivered: "Delivered", cancelled: "Cancelled" }[status],
+  number, placedAt, status, statusLabel: { confirmed: "Confirmed", confirming: "Confirming", preparing: "Preparing", dispatched: "Dispatched", delivered: "Delivered", cancelled: "Cancelled" }[status],
   itemCount: 1, totalPaise: 2640000, firstItem: { title, variant: "Natural cane · Oak finish", imageUrl: null },
 });
 const orders = [

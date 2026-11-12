@@ -3,6 +3,7 @@ import { formatOrderNumber } from "@shopmaple/contracts/account";
 import express, { type Express, type Request } from "express";
 import type { CheckoutAttempt } from "@prisma/client";
 import { z } from "zod";
+import type { OrderProgress } from "./orders/keeri-events.js";
 import { HttpError } from "./cart.js";
 import { OrderFlowError, type createOrderService } from "./orders/service.js";
 import { PaymentGatewayError } from "./payments/razorpay.js";
@@ -53,6 +54,7 @@ function publicAttempt(
   attempt: CheckoutAttempt & {
     fulfillmentStatus?: string;
     orderReference?: string | null;
+    orderProgress?: OrderProgress | null;
   },
 ) {
   const quote = quoteSnapshotSchema.safeParse(attempt.snapshot);
@@ -84,6 +86,11 @@ function publicAttempt(
       ? {
           fulfillmentStatus: attempt.fulfillmentStatus ?? "pending",
           orderReference: attempt.orderReference ?? null,
+          // Where a confirmed order stands, from Keeri's updates: null until Keeri reports a move past "confirmed".
+          orderStage: attempt.orderProgress?.stage ?? null,
+          refund: attempt.orderProgress?.refund
+            ? { status: attempt.orderProgress.refund.status, amountPaise: attempt.orderProgress.refund.amountPaise }
+            : null,
         }
       : {}),
     id: attempt.id,

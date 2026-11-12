@@ -152,7 +152,8 @@ test("status responses carry the public quote, payment key and fulfilment fields
   const app = createApp(db, { ...config, checkout }, service({ getAttempt: async () => attempt as never }));
   const response = await request(app).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
   assert.equal(response.status, 200);
-  assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderNumber", "orderReference", "paid", "payBy", "payWithinSeconds", "providerOrderId", "quote", "state"]);
+  assert.deepEqual(Object.keys(response.body).sort(), ["amountPaise", "currency", "fulfillmentStatus", "id", "orderNumber", "orderReference", "orderStage", "paid", "payBy", "payWithinSeconds", "providerOrderId", "quote", "refund", "state"]);
+  assert.deepEqual([response.body.orderStage, response.body.refund], [null, null], "Keeri has reported nothing yet");
   // Maple's own number is what the order status page shows the customer (owner, 10 Nov 2026).
   assert.equal(response.body.orderNumber, "MF-10482");
   assert.deepEqual(Object.keys(response.body.quote).sort(), ["currency", "delivery", "expiresAt", "gstMode", "items", "promotion", "shippingPaise", "subtotalPaise", "taxPaise", "totalPaise"]);
@@ -161,4 +162,10 @@ test("status responses carry the public quote, payment key and fulfilment fields
   assert.deepEqual(response.body.quote.items[0].fulfilment, { kind: "made_to_order", leadTimeDays: 21 });
   assert.equal(response.body.orderReference, "SO-42");
   assert.doesNotMatch(JSON.stringify(response.body), /buyer@example|400001|sm_routes|hold|chargeWeight|courierId/);
+
+  // Keeri's order updates reach the status page as a stage and, for a cancelled order, its refund. No dates or reasons.
+  const cancelled = { ...attempt, orderProgress: { stage: "cancelled", preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: new Date(),
+    refund: { status: "pending", amountPaise: 105000, refundedAt: null } } };
+  const moved = await request(createApp(db, { ...config, checkout }, service({ getAttempt: async () => cancelled as never }))).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
+  assert.deepEqual([moved.body.orderStage, moved.body.refund], ["cancelled", { status: "pending", amountPaise: 105000 }]);
 });

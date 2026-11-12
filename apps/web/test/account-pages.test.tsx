@@ -32,6 +32,8 @@ const detail = {
   totals: { subtotalPaise: 2490000, deliveryPaise: 150000, taxPaise: 379831, totalPaise: 2640000, taxIncluded: true },
   payment: { label: "Paid online", reference: "pay_QX1a2b3c4d" },
   estimate: { from: "2026-11-24", to: "2026-11-28" },
+  cancellation: null,
+  refund: null,
   journey: [
     { key: "confirmed", label: "Confirmed", state: "done", at: "2026-11-10T06:35:00.000Z" },
     { key: "preparing", label: "Preparing", state: "upcoming", at: null },
@@ -202,6 +204,37 @@ test("an order opens by its number for its owner, and anything else is a plain n
   assert.doesNotMatch(html, /9876543210/, "the full phone number is not printed");
   assert.match(html, /aria-current="step"|data-step-state="done"/);
   assert.match(html, /href="\/contact\?product=[^"]*MF-10482/);
+});
+
+test("the order page follows Keeri's updates: dispatched shows what is done and what is on its way; a cancelled order shows its refund", async () => {
+  setRequestCookies({ maple_account: "session-token" });
+  const open = (order: Record<string, unknown>) => visit(orderRoute, { params: { number: "MF-10482" } },
+    api({ "/api/account": () => Response.json(overview), "/api/account/orders/MF-10482": () => Response.json(order) }));
+  const step = (key: string, label: string, state: string, at: string | null) => ({ key, label, state, at });
+  const dispatched = { ...detail, status: "dispatched", statusLabel: "Dispatched", journey: [
+    step("confirmed", "Confirmed", "done", "2026-11-10T06:31:00.000Z"), step("preparing", "Preparing", "done", null),
+    step("dispatched", "Dispatched", "done", "2026-11-20T06:00:00.000Z"), step("delivered", "Delivered", "current", null)] };
+  const sent = (await open(dispatched)).html;
+  for (const expected of ["Order dispatched", "20 Nov 2026", "On its way · Est. 24–28 Nov", "Your order is with the courier", "Estimated delivery · 24–28 Nov 2026"])
+    assert.ok(sent.includes(expected), expected);
+  assert.doesNotMatch(sent, /We’ll share tracking when your order is dispatched|data-order-cancelled/);
+
+  const delivered = { ...dispatched, status: "delivered", statusLabel: "Delivered",
+    journey: dispatched.journey.map((entry) => (entry.key === "delivered" ? step("delivered", "Delivered", "done", "2026-11-25T08:00:00.000Z") : entry)) };
+  const arrived = (await open(delivered)).html;
+  assert.ok(arrived.includes("Order delivered") && arrived.includes("25 Nov 2026"));
+  assert.doesNotMatch(arrived, /Estimated delivery|with the courier|aria-current="step"/);
+
+  const cancelled = { ...detail, status: "cancelled", statusLabel: "Cancelled", cancellation: { cancelledAt: "2026-11-12T05:00:00.000Z" },
+    refund: { status: "pending", amountPaise: 2640000, refundedAt: null },
+    journey: [step("confirmed", "Confirmed", "done", "2026-11-10T06:31:00.000Z"), step("preparing", "Preparing", "upcoming", null),
+      step("dispatched", "Dispatched", "upcoming", null), step("delivered", "Delivered", "upcoming", null)] };
+  const stopped = (await open(cancelled)).html;
+  for (const expected of ["Order cancelled", "Cancelled on 12 Nov 2026", "We’re refunding ₹26,400 to your original payment method.", "Not reached"])
+    assert.ok(stopped.includes(expected), expected);
+  assert.doesNotMatch(stopped, /Estimated delivery|Est\. 24|Up next|Tracking to follow|share tracking/);
+  const refunded = (await open({ ...cancelled, refund: { status: "refunded", amountPaise: 2640000, refundedAt: "2026-11-13T09:00:00.000Z" } })).html;
+  assert.ok(refunded.includes("Refund of ₹26,400 issued on 13 Nov 2026."));
 });
 
 test("an order whose GST is added shows it as its own line", async () => {

@@ -12,6 +12,7 @@ import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.
 import { loadKeeriReviewsConfig } from "./reviews.js";
 import { createSignInCodeSender, loadAccountConfig } from "./account/config.js";
 import { backfillOrderLinks } from "./orders/order-links.js";
+import { loadKeeriOrderEventsConfig } from "./orders/keeri-events.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -44,6 +45,9 @@ const instagramFeed = loadInstagramFeedConfig(process.env);
 // API_TRUST_PROXY_LOOPBACK=true, or startup fails here. A development API without mail prints codes instead.
 const accountConfig = loadAccountConfig(process.env);
 const accountScope = /^[a-z0-9_-]{1,100}$/.test(process.env.KEERI_MERCHANT_SCOPE ?? "") ? process.env.KEERI_MERCHANT_SCOPE : undefined;
+// Order progress from Keeri: off until KEERI_DELIVERY_WEBHOOK_SECRET is set (with a merchant scope), and Keeri keeps
+// its events queued until then.
+const keeriOrderEvents = loadKeeriOrderEventsConfig(process.env, commerceConfig?.keeri.merchantScope ?? accountScope);
 const db = new PrismaClient();
 // With accounts on, the buyer's order email opens the order in their account, which works on any device.
 const commerce = commerceConfig ? composeCommerce(db, commerceConfig, { accountLinks: accountConfig !== null }) : null;
@@ -64,6 +68,7 @@ const server = createApp(
     keeriReviews: loadKeeriReviewsConfig(process.env),
     catalogueMedia: process.env.KEERI_ORIGIN && process.env.KEERI_CATALOGUE_TOKEN ? { origin: process.env.KEERI_ORIGIN, token: process.env.KEERI_CATALOGUE_TOKEN } : undefined,
     checkout: commerce?.checkout,
+    keeriOrderEvents,
     instagramFeed,
     accounts: accountConfig
       ? {
