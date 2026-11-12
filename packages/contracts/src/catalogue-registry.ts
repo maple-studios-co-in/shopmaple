@@ -42,6 +42,7 @@ export const collectionTitles: Record<string, string> = {
   dining: "Dining Tables",
   "console-tables": "Console Tables",
   "kids-beds": "Kids Beds",
+  "office-chairs": "Office Chairs",
 };
 // Functional collections augment Shopify membership from explicit Keeri taxonomy.
 // Campaigns, bestsellers and price promotions retain their curated membership.
@@ -55,6 +56,8 @@ function taxonomyMember(product: CollectionProduct, handle: string) {
     case "chair-collection": return type === "chair";
     case "dining-chair": case "dining-chairs-1": return type === "chair" && category === "dining";
     case "arm-chair": return type === "chair" && category === "arm";
+    // Keeri files office chairs as Chair › Office Chairs (category code OFC).
+    case "office-chairs": return type === "chair" && category === "office chairs";
     case "accent-chair": return type === "chair" && category === "accent";
     case "rocking-chair": case "rocking-chairs": return type === "chair" && category === "rocking";
     case "lounge-wing-chair": return type === "chair" && (category === "lounge" || category === "accent" && ["lou", "win"].includes(sub));
@@ -101,7 +104,7 @@ export function collectionMembers<T extends CollectionProduct>(products: T[], ha
 // The listing's Category filter (frame 1:1139: "Dining chairs +", "Accent chairs +"): the collections a category's
 // pieces are split into, each opened in turn.
 const familyCollections: Record<string, string[]> = {
-  chairs: ["dining-chair", "accent-chair", "arm-chair", "lounge-wing-chair", "rocking-chair"],
+  chairs: ["dining-chair", "accent-chair", "arm-chair", "lounge-wing-chair", "rocking-chair", "office-chairs"],
   tables: ["dining", "dinings", "center-tables", "side-table", "console-tables", "tv-media-units"],
   sofas: ["3-seater-sofa", "5-seater-sofa", "7-seater-sofa", "l-shape-sofa", "fabric-sofas", "wooden-sofas"],
   beds: ["king-size-beds", "queen-size-beds", "fabric-beds", "solid-wood-beds", "kids-beds"],

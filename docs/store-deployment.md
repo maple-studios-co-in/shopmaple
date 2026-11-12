@@ -55,18 +55,24 @@ The API composes live checkout only when `CHECKOUT_ENABLED=true` **and** every k
 | `RAZORPAY_KEY_SECRET` | Server-only gateway secret for order creation and captured-payment verification. |
 | `RAZORPAY_WEBHOOK_SECRET` | Server-only secret configured on the `POST /api/webhooks/razorpay` endpoint in the Razorpay dashboard. |
 | `CHECKOUT_DELIVERY_METHODS` | JSON array of `{ "id", "label" }` pairs. Each `id` must exist in the reviewed Keeri delivery policy with `carrierPriced: true`; labels are what buyers see. Amounts and tax come only from the Keeri quote, and only a Shiprocket-priced delivery line can be paid. |
-| `ENQUIRY_RESEND_API_KEY`, `ENQUIRY_MAIL_FROM`, `ENQUIRY_MAIL_TO` (or `ORDER_RESEND_API_KEY`, `ORDER_MAIL_FROM`, `ORDER_MAIL_TO`) | Order emails: the buyer's confirmation and staff "new order" / "needs attention" alerts. Each `ORDER_*` key overrides its `ENQUIRY_*` counterpart. The sender domain must be verified in Resend. |
+| `ENQUIRY_RESEND_API_KEY`, `ENQUIRY_MAIL_FROM`, `ENQUIRY_MAIL_TO` (or `ORDER_RESEND_API_KEY`, `ORDER_MAIL_FROM`, `ORDER_MAIL_TO`) | Order emails: the buyer's confirmation, the buyer's "payment unsuccessful" and "payment pending" emails, and staff "new order" / "needs attention" alerts. Each `ORDER_*` key overrides its `ENQUIRY_*` counterpart. The sender domain must be verified in Resend. |
 | `WEB_ORIGIN` | The public store origin, used for links in order emails (already set for the API). |
 
 Gates before `CHECKOUT_ENABLED=true` on the VPS, in order:
 
 1. Keeri: the commerce-scoped credential exists, `STOREFRONT_COMMERCE_POLICIES` holds exactly one reviewed policy for this tenant and merchant scope, and the delivery method ids above match it.
-2. Razorpay: test-mode keys first. The webhook endpoint `https://store.maplefurnishers.com/api/webhooks/razorpay` is registered with the `payment.captured` and `order.paid` events and the same webhook secret. Confirm the merchant, capture settings and that the Tunnel passes the request body uncompressed.
+2. Razorpay: test-mode keys first. The webhook endpoint `https://store.maplefurnishers.com/api/webhooks/razorpay` is registered with the `payment.captured`, `order.paid`, `payment.failed` and `payment.authorized` events and the same webhook secret. The last two only drive the buyer's payment emails: `payment.failed` sends "payment unsuccessful", and `payment.authorized` keeps it from a buyer whose later try went through. Without them no such email is sent, and orders are unaffected. Confirm the merchant, capture settings and that the Tunnel passes the request body uncompressed.
 3. Sandbox evidence: a complete test-mode purchase on the deployed host reaches `fulfillmentStatus: confirmed` with a Keeri order reference, a forged webhook returns 401, and a dismissed payment leaves the attempt payable. Record the attempt ids; never use a real card.
 4. Operations: the order worker (every 5 seconds inside `shopmaple-api`, 90-second row leases) is observed processing inbox, outbox and notification rows; the staff "needs attention" email arrives for `reconciliation_required` and `paid_hold_lapsed` attempts, failed Keeri deliveries and unmatched payments (see `docs/checkout-recovery.md`); the backup/restore gate above has been repeated with commerce tables populated.
 5. Only then switch to live Razorpay keys and set `CHECKOUT_ENABLED=true`, restart `shopmaple-api`, and verify `/api/health` reports `checkoutEnabled: true` and `/checkout` renders the form. Rollback is removing the flag and restarting; in-flight attempts stay in the database for reconciliation.
 
 A merged pull request, a passing local suite or a green CI run is none of these gates.
+
+### Payment emails (migrate, then API)
+
+1. Apply migration `20261112100000_payment_status_emails` with the release's `prisma migrate deploy`. It widens the email table's allowed kinds and states and adds two indexes, so it is safe under the running release.
+2. Release the API. If it starts before the migration, the payment emails wait (logged as `Payment email sweep failed`) and every other email carries on.
+3. In the Razorpay dashboard, add `payment.failed` and `payment.authorized` to the webhook's events (above).
 
 Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker cycles, stops accepting connections, then waits for any in-flight enquiry or order cycle to finish before disconnecting the database and exiting, so a PM2 restart drains a whole cycle (bounded by the Keeri and Razorpay timeouts, about 30 s worst case; `kill_timeout` is 10 s, so PM2 may SIGKILL first). A hard kill is still safe: every inbox and outbox row is processed under a 90-second lease and a killed worker's lease simply expires, after which the next cycle retries the row. Paid goods are removed from the guest cart inside the capture transaction, and a cart with a payable attempt cannot be quoted again until that attempt is released, so a retry never produces a second order for the same payment.
 
@@ -120,7 +126,7 @@ Run in this order; tick each with the date, the person, and where the evidence i
 - [ ] After a catalogue sync, the count of purchasable variants is what the owner expects (owner runs on the VPS: `SELECT count(*) FROM "Variant" WHERE available AND published;`). A variant is purchasable only when Keeri sells it **and** the store's price equals Keeri's MRP; a mismatch keeps it enquiry-only. Fix the price on whichever side is wrong.
 
 **Razorpay (owner)**
-- [ ] Test-mode keys in `store.env`; webhook `https://store.maplefurnishers.com/api/webhooks/razorpay` (later the `shop.` host) registered for `payment.captured` and `order.paid` with `RAZORPAY_WEBHOOK_SECRET`.
+- [ ] Test-mode keys in `store.env`; webhook `https://store.maplefurnishers.com/api/webhooks/razorpay` (later the `shop.` host) registered for `payment.captured`, `order.paid`, `payment.failed` and `payment.authorized` with `RAZORPAY_WEBHOOK_SECRET`.
 - [ ] Payment capture is **automatic** in Razorpay settings (the store only accepts captured payments).
 
 **Email (owner)**

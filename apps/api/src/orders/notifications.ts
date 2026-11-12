@@ -7,7 +7,7 @@ import {
   type EnquiryDeliveryConfig,
   type EnquiryDeliveryOutcome,
 } from "../enquiry-delivery-provider.js";
-import { findOrderPhotos, renderOrderEmail, type OrderPhotos } from "./order-email.js";
+import { findOrderPhotos, renderOrderEmail, renderPaymentEmail, type OrderPhotos } from "./order-email.js";
 
 /**
  * Order emails. A sweep decides which emails an attempt now deserves and records
@@ -17,7 +17,36 @@ import { findOrderPhotos, renderOrderEmail, type OrderPhotos } from "./order-ema
  * so no customer data is copied into the notification row: the buyer's emails as
  * HTML with a plain-text part (order-email.ts), staff alerts as plain text.
  */
-export type NotificationKind = "customer_confirmed" | "customer_received" | "staff_order" | "staff_payment" | "staff_attention";
+export type NotificationKind =
+  | "customer_confirmed" | "customer_received" | "customer_payment_failed" | "customer_payment_pending"
+  | "staff_order" | "staff_payment" | "staff_attention";
+type PaymentKind = Extract<NotificationKind, "customer_payment_failed" | "customer_payment_pending">;
+const isPaymentKind = (kind: string): kind is PaymentKind => kind === "customer_payment_failed" || kind === "customer_payment_pending";
+/** The buyer's emails, which show the pieces' photos. */
+const buyerKinds = new Set<string>(["customer_confirmed", "customer_received", "customer_payment_failed", "customer_payment_pending"]);
+
+/** A failed payment rests this long before the buyer hears of it: Razorpay's window lets them try again at once, and a
+ * retry that works, or a fresh checkout, must win. */
+const failedRestMs = 10 * 60_000;
+/** A payment Razorpay's window called a success may stay unconfirmed this long before the buyer is told it is pending;
+ * Razorpay normally captures within seconds. */
+const pendingRestMs = 5 * 60_000;
+/** Payment events older than this never start an email: a backlog after an outage, or events from before this shipped. */
+const paymentEventWindowMs = 2 * 24 * 3_600_000;
+
+// The checkout's Razorpay order exists and no payment has been captured on it: it is still payable, or was let go
+// unpaid. Staff cases (reconciliation) are left to staff.
+const payable = Prisma.sql`a."state" IN ('awaiting_payment', 'releasing', 'abandoned') AND a."capturedAt" IS NULL
+  AND a."paymentId" IS NULL AND a."providerOrderId" IS NOT NULL`;
+// Nothing says a payment on that order worked: no success callback from Razorpay's window, no capture, no authorization.
+const noPaymentWorked = Prisma.sql`NOT EXISTS (SELECT 1 FROM "PaymentWebhookInbox" s WHERE s."merchantScope" = a."merchantScope"
+  AND s."providerOrderId" = a."providerOrderId" AND s."eventType" IN ('checkout.callback', 'payment.captured', 'order.paid', 'payment.authorized'))`;
+// The buyer has not started another checkout since, from the same bag or the same email: that one speaks for them now.
+const noNewerCheckout = Prisma.sql`NOT EXISTS (SELECT 1 FROM "CheckoutAttempt" b WHERE b."merchantScope" = a."merchantScope"
+  AND b."createdAt" > a."createdAt" AND (b."cartId" = a."cartId" OR b."customerEmailKey" = a."customerEmailKey"))`;
+// Razorpay's window reported a success that the payment worker is still confirming (not captured, not handed to staff).
+const callbackUnconfirmed = Prisma.sql`EXISTS (SELECT 1 FROM "PaymentWebhookInbox" c WHERE c."merchantScope" = a."merchantScope"
+  AND c."providerOrderId" = a."providerOrderId" AND c."eventType" = 'checkout.callback' AND c."state" = 'pending')`;
 interface Options {
   merchantScope: string;
   email: EnquiryDeliveryConfig;
@@ -29,6 +58,8 @@ interface Options {
   retryDelayMs?: number;
   maxAttempts?: number;
 }
+
+type Message = { to: string; subject: string; text: string; html?: string };
 
 const rupees = (paise: number) =>
   "Rs. " + new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(paise / 100);
@@ -49,7 +80,10 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
   /** Record the emails each attempt and payment now deserves. Idempotent: each query
    * skips subjects that already have the email of its kind, so the scan stays small.
    * Three staff kinds keep the cases apart: `staff_order` (confirmed), `staff_payment`
-   * (money was taken and needs a person) and `staff_attention` (no money, a leftover hold). */
+   * (money was taken and needs a person) and `staff_attention` (no money, a leftover hold).
+   * Before any order, the buyer hears of a payment that failed (`customer_payment_failed`)
+   * or that Razorpay's window called a success but is still unconfirmed
+   * (`customer_payment_pending`), once each per checkout. */
   async function sweep() {
     const unsent = (kind: NotificationKind) => Prisma.sql`NOT EXISTS (SELECT 1 FROM "OrderNotification" n
       WHERE n."merchantScope" = a."merchantScope" AND n."subjectId" = a."id" AND n."kind" = ${kind})`;
@@ -82,6 +116,42 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
           AND n."kind" = 'staff_payment' AND n."subjectId" = 'inbox:' || p."id")
       LIMIT 200`;
     for (const payment of payments) await want(`inbox:${payment.id}`, ["staff_payment"]);
+    // The buyer's payment emails come last, and a fault in them never holds back the order emails and staff alerts
+    // above, nor this cycle's sends: it is logged and retried next cycle.
+    await sweepPayments(unsent, isV2).catch((error: unknown) => {
+      const code = error && typeof error === "object" && "code" in error ? ` (${String(error.code)})` : "";
+      console.error(`Payment email sweep failed${code}; it is retried next cycle.`);
+    });
+  }
+  /** Before any order: the payment emails each checkout now deserves (see `sweep`). Each query starts from Razorpay's
+   * recent reports, so the scan stays small however many checkouts were ever left unpaid. */
+  async function sweepPayments(unsent: (kind: NotificationKind) => Prisma.Sql, isV2: (snapshot: unknown) => boolean) {
+    const at = now().getTime();
+    const since = new Date(at - paymentEventWindowMs).toISOString();
+    // Only a v2 checkout has the snapshot the buyer's emails are drawn from.
+    const v2 = Prisma.sql`a."snapshot"->>'version' = '2'`;
+    // Razorpay reported a failed payment on the checkout's order within the window, the latest of them has rested
+    // (a buyer still trying is left alone), and nothing since says a payment worked or a new checkout began.
+    const failed = await db.$queryRaw<Array<{ id: string; snapshot: unknown }>>`
+      SELECT a."id", a."snapshot" FROM "CheckoutAttempt" a
+      WHERE a."merchantScope" = ${merchantScope}
+        AND a."providerOrderId" IN (SELECT f."providerOrderId" FROM "PaymentWebhookInbox" f WHERE f."merchantScope" = ${merchantScope}
+          AND f."eventType" = 'payment.failed' AND f."receivedAt" > ${since}::timestamp)
+        AND ${v2} AND ${payable} AND ${noPaymentWorked} AND ${noNewerCheckout}
+        AND NOT EXISTS (SELECT 1 FROM "PaymentWebhookInbox" f WHERE f."merchantScope" = a."merchantScope"
+          AND f."providerOrderId" = a."providerOrderId" AND f."eventType" = 'payment.failed'
+          AND f."receivedAt" > ${new Date(at - failedRestMs).toISOString()}::timestamp)
+        AND ${unsent("customer_payment_failed")} LIMIT 200`;
+    for (const a of failed) if (isV2(a.snapshot)) await want(a.id, ["customer_payment_failed"]);
+    // Razorpay's window reported a success that has stayed unconfirmed past the rest, within the window.
+    const pending = await db.$queryRaw<Array<{ id: string; snapshot: unknown }>>`
+      SELECT a."id", a."snapshot" FROM "CheckoutAttempt" a
+      WHERE a."merchantScope" = ${merchantScope}
+        AND a."providerOrderId" IN (SELECT c."providerOrderId" FROM "PaymentWebhookInbox" c WHERE c."merchantScope" = ${merchantScope}
+          AND c."eventType" = 'checkout.callback' AND c."state" = 'pending'
+          AND c."receivedAt" > ${since}::timestamp AND c."receivedAt" <= ${new Date(at - pendingRestMs).toISOString()}::timestamp)
+        AND ${v2} AND ${payable} AND ${unsent("customer_payment_pending")} LIMIT 200`;
+    for (const a of pending) if (isV2(a.snapshot)) await want(a.id, ["customer_payment_pending"]);
   }
 
   async function claim(): Promise<OrderNotification | undefined> {
@@ -107,11 +177,22 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     });
   }
 
-  async function render(row: OrderNotification) {
+  /** Whether a payment email is still true as it is sent, however long a retry kept it waiting: a payment that went
+   * through since, a newer checkout, or a case handed to staff stops it. */
+  async function stillTrue(kind: PaymentKind, attemptId: string) {
+    const rows = await db.$queryRaw<Array<{ id: string }>>`
+      SELECT a."id" FROM "CheckoutAttempt" a
+      WHERE a."merchantScope" = ${merchantScope} AND a."id" = ${attemptId} AND ${payable}
+        AND ${kind === "customer_payment_failed" ? Prisma.sql`${noPaymentWorked} AND ${noNewerCheckout}` : callbackUnconfirmed}`;
+    return rows.length > 0;
+  }
+
+  async function render(row: OrderNotification): Promise<Message | null | "superseded"> {
     const attemptId = row.subjectId.startsWith("inbox:") ? null : row.subjectId;
     const attempt = attemptId
       ? await db.checkoutAttempt.findFirst({ where: { id: attemptId, merchantScope } })
       : null;
+    if (attempt && isPaymentKind(row.kind) && !(await stillTrue(row.kind, attempt.id))) return "superseded";
     const inbox = !attemptId
       ? await db.paymentWebhookInbox.findFirst({ where: { id: row.subjectId.slice(6), merchantScope } })
       : null;
@@ -120,32 +201,41 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       ? await db.checkoutAttempt.findFirst({ where: { merchantScope, providerOrderId: inbox.providerOrderId } })
       : null;
     if (inbox)
-      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null, photos: new Map() });
+      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null, photos: new Map(), payment: null });
     const parsed = attempt ? quoteSnapshotSchema.safeParse(attempt.snapshot) : null;
     const quote = parsed?.success ? parsed.data : null;
     const outbox = attempt
       ? await db.orderOutbox.findUnique({ where: { attemptId_kind: { attemptId: attempt.id, kind: "keeri.order.captured.v2" } } })
       : null;
+    // The Razorpay report a payment email is about: the latest failure, or the success callback still being confirmed.
+    const payment = attempt?.providerOrderId && isPaymentKind(row.kind)
+      ? await db.paymentWebhookInbox.findFirst({
+          where: { merchantScope, providerOrderId: attempt.providerOrderId, eventType: row.kind === "customer_payment_failed" ? "payment.failed" : "checkout.callback" },
+          orderBy: [{ receivedAt: "desc" }, { id: "desc" }],
+          select: { paymentId: true, receivedAt: true },
+        })
+      : null;
     // The pieces' photos, for the buyer's emails only. A failed lookup sends the email with plain tiles, never not at all.
-    const photos: OrderPhotos = attempt && quote && (row.kind === "customer_confirmed" || row.kind === "customer_received")
+    const photos: OrderPhotos = attempt && quote && buyerKinds.has(row.kind)
       ? await findOrderPhotos(db, attempt, quote).catch(() => {
           console.error("Order email photos unavailable; sending without them.");
           return new Map<string, string>();
         })
       : new Map();
-    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos });
+    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos, payment });
   }
   function compose(
     kind: NotificationKind,
-    { attempt, quote, inbox, reference, staffOutcome, photos }: {
+    { attempt, quote, inbox, reference, staffOutcome, photos, payment }: {
       attempt: CheckoutAttempt | null;
       quote: QuoteSnapshot | null;
       inbox: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null; workerState: string } | null;
       reference: string | null;
       staffOutcome: string | null;
       photos: OrderPhotos;
+      payment: { paymentId: string | null; receivedAt: Date } | null;
     },
-  ): { to: string; subject: string; text: string; html?: string } | null {
+  ): Message | null {
     // With a code, each line reads at its price before the discount and the discount follows as
     // one line, so the email adds up to what was charged.
     const lines = quote
@@ -179,6 +269,14 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       return {
         to: quote.customer.email,
         ...renderOrderEmail({ kind: "received", attempt, quote, orderNumber, photos, origin: email.adminOrigin, accountLinks: options.accountLinks }),
+      };
+    if (isPaymentKind(kind) && attempt && quote && payment)
+      return {
+        to: quote.customer.email,
+        ...renderPaymentEmail({
+          kind: kind === "customer_payment_failed" ? "failed" : "pending",
+          attempt, quote, paymentId: payment.paymentId, at: payment.receivedAt, photos, origin: email.adminOrigin,
+        }),
       };
     if (kind === "staff_order" && attempt && reference)
       return {
@@ -259,12 +357,18 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     new Date(now().getTime() + Math.min(3_600_000, retryDelayMs * 2 ** Math.max(0, attempts - 1)));
   /** Send up to `size` due emails. A provider outage never affects the order itself. */
   async function runBatch(size = 10) {
-    const stats = { claimed: 0, sent: 0, retried: 0, failed: 0 };
+    const stats = { claimed: 0, sent: 0, retried: 0, failed: 0, skipped: 0 };
     for (let i = 0; i < size; i++) {
       const row = await claim();
       if (!row) break;
       stats.claimed++;
       const message = await render(row).catch(() => null);
+      if (message === "superseded") {
+        // No longer true (the payment went through, or a newer checkout took over): never sent, and nothing for staff.
+        await finish(row, { state: "skipped", failureCode: "SUPERSEDED" });
+        stats.skipped++;
+        continue;
+      }
       if (!message) {
         await finish(row, { state: "failed", failureCode: "NOTHING_TO_SEND" });
         stats.failed++;

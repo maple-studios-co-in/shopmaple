@@ -44,16 +44,24 @@ type World = {
   outbox?: { state: string; externalOrderId: string | null; failureCode: string | null };
   inbox?: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null; workerState: string };
   variants?: () => Array<{ id: string; images: string[]; product: { published: boolean; images: string[] } }>;
+  /** The Razorpay report a payment email quotes: the latest failure, or the success callback. */
+  payment?: { eventType: string; paymentId: string | null; receivedAt: Date };
+  /** The answer to a payment email's last check that it is still true (default yes). */
+  stillTrue?: boolean;
 };
 
 function fakeDb(world: World, rows: object[], finished: object[]) {
   return {
-    $queryRaw: async () => rows.splice(0, 1),
+    // The claim first; a later raw query is a payment email's check that it is still true.
+    $queryRaw: async () => (rows.length ? rows.splice(0, 1) : world.stillTrue === false ? [] : [{ id: attemptId }]),
     checkoutAttempt: {
       findFirst: async ({ where }: { where: { id?: string; providerOrderId?: string } }) =>
         world.attempts.find((a) => (where.id ? a.id === where.id : a.providerOrderId === where.providerOrderId)) ?? null,
     },
-    paymentWebhookInbox: { findFirst: async ({ where }: { where: { id: string } }) => (world.inbox?.id === where.id ? world.inbox : null) },
+    paymentWebhookInbox: {
+      findFirst: async ({ where }: { where: { id?: string; eventType?: string } }) =>
+        where.eventType ? (world.payment?.eventType === where.eventType ? world.payment : null) : world.inbox?.id === where.id ? world.inbox : null,
+    },
     orderOutbox: { findUnique: async () => world.outbox ?? null },
     orderNotification: { updateMany: async (update: object) => { finished.push(update); return { count: 1 }; } },
     variantSourceIdentity: { findMany: async () => [] },
@@ -65,8 +73,8 @@ function fakeDb(world: World, rows: object[], finished: object[]) {
   } as unknown as PrismaClient;
 }
 
-/** Sends one notification of `kind` and returns the Resend payload it produced. */
-async function sendOne(kind: string, subjectId: string, world: World) {
+/** Runs one notification of `kind` through a batch: what it counted, sent and recorded. */
+async function runOne(kind: string, subjectId: string, world: World) {
   const payloads: Array<Record<string, unknown>> = [];
   const finished: object[] = [];
   const transport: typeof fetch = async (_url, init) => {
@@ -79,7 +87,12 @@ async function sendOne(kind: string, subjectId: string, world: World) {
     merchantScope: "maple-store", email, fetch: transport, now: () => new Date("2026-11-10T06:00:00.000Z"),
   });
   const stats = await notifications.runBatch(1);
-  assert.deepEqual(stats, { claimed: 1, sent: 1, retried: 0, failed: 0 });
+  return { stats, payloads, finished };
+}
+/** Sends one notification of `kind` and returns the Resend payload it produced. */
+async function sendOne(kind: string, subjectId: string, world: World) {
+  const { stats, payloads } = await runOne(kind, subjectId, world);
+  assert.deepEqual(stats, { claimed: 1, sent: 1, retried: 0, failed: 0, skipped: 0 });
   assert.equal(payloads.length, 1);
   return payloads[0]!;
 }
@@ -218,4 +231,59 @@ test("a photo lookup that fails still sends the email, with a plain tile", async
   const html = String(payload.html);
   assert.doesNotMatch(html, /<img class="m-photo"|background-image/);
   assert.match(html, /<td class="m-photo" width="120" height="150" valign="top" bgcolor="#f1f0e9"[^>]*>&nbsp;<\/td>/);
+});
+
+// Before any order: the checkout's Razorpay order took no payment.
+const unpaid = { ...captured, state: "awaiting_payment", paymentId: null as unknown as string, capturedAt: null as unknown as Date, orderNumber: null };
+const reportedAt = new Date("2026-11-10T05:20:00.000Z");
+
+test("customer_payment_failed goes to the buyer as HTML and text, quoting the failed payment", async () => {
+  const payload = await sendOne("customer_payment_failed", attemptId, {
+    attempts: [unpaid], payment: { eventType: "payment.failed", paymentId: "pay_failed1", receivedAt: reportedAt },
+  });
+  assert.deepEqual(Object.keys(payload).sort(), ["from", "html", "reply_to", "subject", "text", "to"]);
+  assert.deepEqual(payload.to, ["aditi.sharma@example.com"]);
+  assert.equal(payload.reply_to, "staff@maple.example.com", "a reply reaches the team");
+  assert.equal(payload.subject, "Your payment didn't go through");
+  const html = String(payload.html);
+  const text = String(payload.text);
+  for (const words of [">PAYMENT UNSUCCESSFUL<", ">REFERENCE pay_failed1<", ">10 NOVEMBER 2026<", ">Amount to pay<", ">₹26,400<",
+    'href="https://store.maple.example.com/checkout"', "Reply with reference pay_failed1 if you need help."])
+    assert.ok(html.includes(words), words);
+  // The catalogue photo, as the order emails show it.
+  assert.ok(html.includes("background-image:url(https://store.maplefurnishers.com/media/keeri/nola-oak_17.webp);"));
+  assert.match(text, /^Your payment didn’t go through\.\n\nHi Aditi, we couldn’t complete your payment\./);
+  assert.ok(text.includes("Reference: pay_failed1\nDate: 10 November 2026"));
+  assert.doesNotMatch(html + text, /Rs\.|MF-|order_unit1/, "money in rupees; no order number or Razorpay order id");
+});
+
+test("customer_payment_pending goes to the buyer and links the order status page", async () => {
+  const payload = await sendOne("customer_payment_pending", attemptId, {
+    attempts: [unpaid], payment: { eventType: "checkout.callback", paymentId: "pay_waiting1", receivedAt: reportedAt },
+  });
+  assert.deepEqual(payload.to, ["aditi.sharma@example.com"]);
+  assert.equal(payload.subject, "We're checking your payment");
+  const html = String(payload.html);
+  for (const words of [">PAYMENT PENDING<", ">REFERENCE pay_waiting1<", ">Payment pending<", ">No need to pay again.<",
+    `href="https://store.maple.example.com/orders/${attemptId}"`, "Still pending? Reply to this email with reference pay_waiting1."])
+    assert.ok(html.includes(words), words);
+});
+
+test("a payment email that is no longer true is never sent and leaves nothing for staff", async () => {
+  for (const kind of ["customer_payment_failed", "customer_payment_pending"]) {
+    const { stats, payloads, finished } = await runOne(kind, attemptId, {
+      attempts: [unpaid], stillTrue: false,
+      payment: { eventType: kind === "customer_payment_failed" ? "payment.failed" : "checkout.callback", paymentId: "pay_x1", receivedAt: reportedAt },
+    });
+    assert.deepEqual(stats, { claimed: 1, sent: 0, retried: 0, failed: 0, skipped: 1 }, kind);
+    assert.equal(payloads.length, 0, kind);
+    assert.deepEqual((finished[0] as { data: object }).data, { state: "skipped", failureCode: "SUPERSEDED", leaseToken: null, leaseExpiresAt: null }, kind);
+  }
+});
+
+test("a payment email without its Razorpay report is not sent", async () => {
+  const { stats, payloads, finished } = await runOne("customer_payment_failed", attemptId, { attempts: [unpaid] });
+  assert.deepEqual(stats, { claimed: 1, sent: 0, retried: 0, failed: 1, skipped: 0 });
+  assert.equal(payloads.length, 0);
+  assert.equal((finished[0] as { data: { failureCode: string } }).data.failureCode, "NOTHING_TO_SEND");
 });

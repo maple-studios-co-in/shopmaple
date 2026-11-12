@@ -93,6 +93,11 @@
             "title": "Sofa Chairs",
             "href": "/collections/sofa-chairs",
             "parent": false
+          },
+          {
+            "title": "Office Chairs",
+            "href": "/collections/office-chairs",
+            "parent": false
           }
         ]
       },

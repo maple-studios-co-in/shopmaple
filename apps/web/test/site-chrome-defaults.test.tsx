@@ -25,6 +25,10 @@ test("original chrome is a publishable strict document and independent editor co
   const kids = next.navigation[1]!.columns[0]!.links[4]!;
   assert.equal(kids.label, "Kids Beds");
   assert.equal(chromeHref(kids), "/collections/kids-beds");
+  // Office Chairs (owner, 12 Nov 2026) closes the Living Room menu's Chairs column.
+  const office = next.navigation[0]!.columns[1]!.links.at(-1)!;
+  assert.equal(office.label, "Office Chairs");
+  assert.equal(chromeHref(office), "/collections/office-chairs");
 });
 test("only validated published chrome reaches consumers; old, draft, malformed and failed reads preserve defaults", async () => {
   const published = await readPublishedContent(async () =>

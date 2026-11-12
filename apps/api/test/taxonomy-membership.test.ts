@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { collectionMembers } from "@shopmaple/contracts/catalogue-registry";
+import { collectionCategories, collectionMembers } from "@shopmaple/contracts/catalogue-registry";
 import type { CollectionProduct } from "@shopmaple/contracts";
 
 type Taxonomy = { productType: string; category: string | null; subCategory: string | null };
@@ -70,4 +70,20 @@ test("kids beds take only Keeri's kids' beds and cribs", () => {
     product("chair", { productType: "chair", category: "Bedroom sofa chair", subCategory: "Kids Beds" }),
   ];
   assert.deepEqual(handles(products, "kids-beds"), ["cot", "crib"]);
+});
+
+// Office Chairs (owner, 12 Nov 2026): Keeri files them as Chair › Office Chairs (code OFC). They join the chairs
+// family's Category filter and stay out of the dining chairs.
+test("office chairs take only Keeri chairs filed under Office Chairs", () => {
+  const products = [
+    product("ergo", { productType: "Chair", category: "Office Chairs", subCategory: null }),
+    product("task", { productType: " chairs ", category: " OFFICE CHAIRS ", subCategory: "OFC" }),
+    product("dining", { productType: "Chair", category: "Dining", subCategory: null }),
+    product("desk", { productType: "Table", category: "Office Chairs", subCategory: null }, "tables"),
+    product("untagged"),
+  ];
+  assert.deepEqual(handles(products, "office-chairs"), ["ergo", "task"]);
+  assert.deepEqual(handles(products, "dining-chair"), ["dining"]);
+  const filter = collectionCategories(products.filter((item) => item.category === "chairs"), "office-chairs");
+  assert.deepEqual(filter.find((item) => item.handle === "office-chairs"), { handle: "office-chairs", title: "Office Chairs", count: 2, current: true, kind: "collection" });
 });
