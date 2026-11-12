@@ -32,8 +32,10 @@ function ArtworkLayer({
       style={{
         left: `${(layer.x / width) * 100}%`,
         top: `${(layer.y / height) * 100}%`,
-        width: `${(layer.width / width) * 100}%`,
-        height: `${(layer.height / height) * 100}%`,
+        // Each slice reaches 1px past its edge: at percentage sizes the edges fall between pixels, and without the overlap
+        // a hairline of the dark background shows where two slices meet. The scene clips the outer edges.
+        width: `calc(${(layer.width / width) * 100}% + 1px)`,
+        height: `calc(${(layer.height / height) * 100}% + 1px)`,
       }}
     >
       <Image src={layer.src} alt="" fill sizes={mobile ? "50vw" : "25vw"} {...(eager ? { loading: "eager" as const } : {})} />
