@@ -3,7 +3,7 @@ import {
   type NimbusPageContent, type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import nimbus from "@/data/landing-nimbus.json";
-import { followDesign, promiseArt, type CollectionArt, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
+import { followDesign, promiseArt, type CollectionArt, type CollectionClip, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
@@ -193,6 +193,9 @@ export const nimbusPieceHandles = [
 /** A piece as the catalogue has it: its own name, photo and page, and its whole product card when there is one. */
 export type NimbusPiece = { title: string; image: string; href: string; card?: ProductCardModel };
 
+/** The opening's clip (owner, 12 Nov 2026): the Nimbus film's 25 seconds of fabric, form and softness, looping muted over
+ * the opening photo, with a 9:16 cut for phones (public/media/PROVENANCE.md). */
+const openingClip: CollectionClip = { src: "/media/nimbus-collection/opening.mp4", mobileSrc: "/media/nimbus-collection/opening-portrait.mp4" };
 /** The rooms' own Nimbus collections (data/navigation.json, the source collections). */
 const roomLinks = ["/collections/living-room-nimbus", "/collections/dining-room-nimbus", "/collections/bedroom-nimbus"];
 /**
@@ -235,6 +238,7 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       // "Discover Nimbus" glides to the edit; with the edit hidden it opens the whole collection.
       cta: { label: page.hero.cta, href: sections.includes("pieces") ? "#nimbus-pieces" : "/collections/nimbus" },
       media: hero,
+      clip: openingClip,
       ...withFilm(collectionFilm("nimbus-hero", site.templateFilms, { label: page.hero.film ?? defaultNimbusPage.hero.film!, title: `${page.title} film`, poster: hero.src })),
     },
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: roomLinks[index]! })),

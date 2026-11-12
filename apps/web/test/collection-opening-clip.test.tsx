@@ -14,14 +14,15 @@ import { installUiDom } from "./support/ui-dom";
 
 // The openings' clips (owner, 12 Nov 2026): a short, silent, single-shot clip loops muted over the opening photo. It is the
 // page's own, apart from the collection film staff choose in Artwork, which may carry titles and the logo and opens from
-// its link. Terra has its lobby clip; Nimbus has none yet, and its opening keeps the still photo.
+// its link. Terra loops its lobby; Nimbus its film of fabric and soft forms.
 const clip = { src: "/media/terra-collection/opening.mp4", mobileSrc: "/media/terra-collection/opening-portrait.mp4" };
+const nimbusClip = { src: "/media/nimbus-collection/opening.mp4", mobileSrc: "/media/nimbus-collection/opening-portrait.mp4" };
 const doc = (node: React.ReactElement) => new JSDOM(renderToStaticMarkup(node)).window.document;
 const site = () => structuredClone(defaultStorefrontContent);
 
-test("Terra opens with its own clip whatever film staff chose for the link; Nimbus has none yet", () => {
+test("each page opens with its own clip, whatever film staff chose for the link", () => {
   assert.deepEqual(resolveTerraLanding(site()).hero.clip, clip);
-  assert.equal("clip" in resolveNimbusLanding(site()).hero, false);
+  assert.deepEqual(resolveNimbusLanding(site()).hero.clip, nimbusClip);
   const films: TemplateFilms = [{ key: "terra-hero", src: `/media/uploads/${"d".repeat(64)}.mp4`, durationMs: 13_084 }];
   const terra = resolveTerraLanding({ ...site(), templateFilms: films });
   assert.deepEqual(terra.hero.clip, clip, "the clip stays the page's own");
@@ -43,7 +44,8 @@ test("the clip lies over the opening photo, silent and decorative, and loads not
   assert.equal(video.getAttribute("tabindex"), "-1");
   assert.equal(video.hasAttribute("src"), false);
   assert.equal(page.querySelectorAll("video").length, 1, "no film chosen: the clip alone");
-  assert.equal(doc(<CollectionLandingView page={resolveNimbusLanding(site())} />).querySelector("video"), null, "Nimbus keeps its still photo");
+  const nimbus = doc(<CollectionLandingView page={resolveNimbusLanding(site())} />);
+  assert.equal(nimbus.querySelectorAll(".collection-hero-media video[data-collection-clip]").length, 1, "Nimbus loops its own clip too");
 });
 
 test("the clip plays muted once in view, its portrait cut on a phone, and never for visitors who ask for reduced motion", async () => {
@@ -81,9 +83,10 @@ test("the clip plays muted once in view, its portrait cut on a phone, and never 
   } finally { Object.assign(globalThis, { IntersectionObserver: saved }); }
 });
 
-test("Terra's clip is web-safe: H.264 in MP4 that starts while it downloads, within its size budget", () => {
-  for (const [file, budget] of [["opening.mp4", 5_000_000], ["opening-portrait.mp4", 1_600_000]] as const) {
-    const bytes = readFileSync(new URL(`../public/media/terra-collection/${file}`, import.meta.url));
+test("the clips are web-safe: H.264 in MP4 with no sound, starting while they download, within their size budget", () => {
+  for (const page of ["terra", "nimbus"]) for (const [file, budget] of [["opening.mp4", 5_000_000], ["opening-portrait.mp4", 2_000_000]] as const) {
+    const bytes = readFileSync(new URL(`../public/media/${page}-collection/${file}`, import.meta.url));
+    assert.ok(!bytes.includes("soun"), `${page} ${file}: no sound track, as it only ever plays muted`);
     assert.equal(bytes.toString("latin1", 4, 8), "ftyp", `${file}: an MP4`);
     assert.ok(bytes.length < budget, `${file}: ${bytes.length} bytes`);
     assert.ok(bytes.includes("avc1"), `${file}: H.264, which every browser plays`);

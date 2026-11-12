@@ -61,6 +61,13 @@ From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), f
 - Enlarged 1.5 times with sharp (Lanczos, then light sharpening) and saved as WebP: `terra-collection/origin.webp` (node 315:623) and `detail.webp` (the material story, node 311:1004), 1536 x 1536 from raw images 1024 x 1024 PNG.
 - `terra-collection/hero-mobile.webp` (1215 x 2160): a 972 x 1728 portrait crop of the enlarged hero (the sofa, stone table and walnut chair), enlarged 1.25 times with sharp (Lanczos, then light sharpening), for the phone layout, where the opening stands about 9:16; the frame has no phone design.
 
+## Nimbus opening clip (12 November 2026)
+
+The owner's Nimbus film (fabric swatches, the sofas' soft forms, sketches, a bed among clouds), sent as `Nimbus (1).MP4` on 12 November 2026 to loop in the Nimbus page's opening. It is separate from the collection film staff chose in Artwork, which the film link opens. The source was H.264 Main, 2036 x 1018 at 30 fps, 24.7 seconds, with a stereo music track, 15.4 MB. It was re-encoded with ffmpeg (libx264, High profile, CRF 25, preset slow, 8-bit yuv420p, BT.709, moov at the front so it plays while it downloads), and the sound was dropped because the opening plays muted:
+
+- `nimbus-collection/opening.mp4`: 1920 x 830, 4.6 MB. The bottom 138 rows (of 1018) are cut away, because they carry the film's "NIMBUS" corner title. The opening's crop would halve that title, and it would sit under the WhatsApp button.
+- `nimbus-collection/opening-portrait.mp4`: 572 x 1018, 1.7 MB. A 9:16 cut for phones from the middle of each frame (x = 732), which leaves the corner title out.
+
 ## Terra opening clip (12 November 2026)
 
 The owner's 8-second clip of the Terra lobby (curved olive sofa, walnut ring chairs, olive trees), one shot with no titles or logo, sent as `Terra.mp4` on 12 November 2026 to loop in the Terra page's opening. It is separate from the collection film that staff chose in Artwork, which the film link opens. The source was HEVC Main 10 (10-bit), 1920 x 1080 at 24 fps with no sound, 11.3 MB. Chrome on many Windows PCs and every Firefox cannot play HEVC, so it was re-encoded with ffmpeg (libx264, High profile, CRF 23, preset slow, 8-bit yuv420p, BT.709, moov at the front so it plays while it downloads, no audio track):
