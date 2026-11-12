@@ -39,6 +39,18 @@ const aborted = (error: unknown) => error instanceof Error && error.name === "Ab
 /** Films are stored as uploaded, so they must already play on the web (docs/media-library.md); 80 MB each (owner, 12 Nov 2026). */
 export const maxFilmBytes = 80 * 1024 * 1024;
 const acceptedTypes: Record<MediaKind, string[]> = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/webm"] };
+/** Extensions offered beside the types: some file pickers (the macOS one in embedded browsers) grey out every file for a type-only list. */
+const acceptedExtensions: Record<MediaKind, string[]> = { image: [".jpg", ".jpeg", ".png", ".webp"], video: [".mp4", ".m4v", ".webm"] };
+const typeByExtension: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm" };
+/**
+ * The file's type as the upload sends it: the browser's own when it is one we take, else the one its extension names
+ * (some browsers report no type, or QuickTime's, for an .mp4). The server still checks the bytes themselves.
+ */
+export function uploadType(file: Pick<File, "name" | "type">, kind: MediaKind): string | null {
+ if (acceptedTypes[kind].includes(file.type)) return file.type;
+ const named = typeByExtension[file.name.toLowerCase().split(".").pop() ?? ""];
+ return named && acceptedTypes[kind].includes(named) ? named : null;
+}
 const descriptions = {
  image: "Upload JPEG, PNG or WebP images up to 8 MiB. Images stay private until you publish content that uses them.",
  video: "Upload MP4 or WebM films up to 80 MB, ready for the web. Films stay private until you publish content that uses them.",
@@ -56,7 +68,7 @@ function sendFilm(file: File, csrfToken: string, onProgress: (fraction: number) 
  return new Promise((resolve, reject) => {
   const request = new XMLHttpRequest();
   request.open("POST", "/api/admin/media/films");
-  request.setRequestHeader("Content-Type", file.type);
+  request.setRequestHeader("Content-Type", uploadType(file, "video") ?? file.type);
   request.setRequestHeader("X-CSRF-Token", csrfToken);
   request.setRequestHeader("X-Media-Label", encodeURIComponent(file.name.slice(0, 160)));
   request.timeout = 11 * 60_000;
@@ -116,7 +128,8 @@ export function MediaLibrary({ session, onExpired, onSelect, accept, heading: He
  useEffect(() => { active.current = true; void load(); return () => { active.current = false; filmRequest.current.abort?.(); }; }, [send, accept]);
  async function upload(file: File) {
   const film = uploadKind === "video";
-  if (!acceptedTypes[uploadKind].includes(file.type) || file.size > (film ? maxFilmBytes : 8 * 1024 * 1024)) {
+  const type = uploadType(file, uploadKind);
+  if (!type || file.size > (film ? maxFilmBytes : 8 * 1024 * 1024)) {
    setUploadError(film ? "Choose an MP4 or WebM film up to 80 MB." : "Choose a JPEG, PNG or WebP image up to 8 MiB."); return;
   }
   setUploading(file.name); setUploadError(""); setProgress(film ? 0 : null);
@@ -124,7 +137,7 @@ export function MediaLibrary({ session, onExpired, onSelect, accept, heading: He
    let status: number, body: unknown;
    if (film) ({ status, body } = await sendFilm(file, session.csrfToken, fraction => { if (active.current) setProgress(fraction); }, filmRequest.current));
    else {
-    const headers = { "Content-Type": file.type, "X-CSRF-Token": session.csrfToken, "X-Media-Label": encodeURIComponent(file.name.slice(0, 160)) };
+    const headers = { "Content-Type": type, "X-CSRF-Token": session.csrfToken, "X-Media-Label": encodeURIComponent(file.name.slice(0, 160)) };
     const response = await send("/api/admin/media", { method: "POST", credentials: "same-origin", headers, body: file });
     status = response.status; body = await response.json().catch(() => null);
    }
@@ -209,7 +222,7 @@ export function MediaLibrary({ session, onExpired, onSelect, accept, heading: He
      {filmUpload ? <Clapperboard aria-hidden="true" strokeWidth={1.5} className="mb-1 size-6 text-primary" /> : <ImageUp aria-hidden="true" strokeWidth={1.5} className="mb-1 size-6 text-primary" />}
      <span className="text-sm font-medium text-foreground">{filmUpload ? "Upload film" : "Upload image"}</span>
      <span id={hint} className="text-xs text-muted-foreground">Choose a file from your computer</span>
-     <input type="file" aria-label={filmUpload ? "Upload film" : "Upload image"} aria-describedby={hint} className="sr-only" accept={acceptedTypes[uploadKind].join(",")} disabled={uploading !== null}
+     <input type="file" aria-label={filmUpload ? "Upload film" : "Upload image"} aria-describedby={hint} className="sr-only" accept={[...acceptedTypes[uploadKind], ...acceptedExtensions[uploadKind]].join(",")} disabled={uploading !== null}
       onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void upload(file); }} />
     </label>
     {uploading !== null && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground">

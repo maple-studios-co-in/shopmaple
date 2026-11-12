@@ -5,7 +5,7 @@ import { installUiDom } from "./support/ui-dom";
 // The upload control lives in a Radix dialog, which needs the browser APIs jsdom lacks.
 const dom = installUiDom("http://localhost:3000");
 const { createRoot } = await import("react-dom/client");
-const { MediaLibrary } = await import("../components/admin/media-library");
+const { MediaLibrary, uploadType } = await import("../components/admin/media-library");
 const { MediaPicker } = await import("../components/admin/media-picker");
 const session = { user: { id: "staff", email: "editor@example.invalid", role: "editor" as const }, csrfToken: "a".repeat(64) };
 const asset = { id: "asset", sha256: "a".repeat(64), label: "Living room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url: `/media/uploads/${"a".repeat(64)}.webp`, previewUrl: `/api/admin/media/${"a".repeat(64)}/preview` };
@@ -85,6 +85,21 @@ test("invalid or oversized uploads are rejected before transport", async () => {
    assert.ok(document.querySelector('[role="alert"]'));
   }
   assert.equal(uploads,0);
+ } finally { await ui.dispose(); }
+});
+test("files are recognised by extension when the browser gives no type, and the picker offers extensions too", async () => {
+ // Owner, 12 Nov 2026: the macOS picker in the desktop app's browser greyed out .mp4 films for a type-only accept list.
+ assert.equal(uploadType({ name: "Nimbus Tour.MP4", type: "" }, "video"), "video/mp4");
+ assert.equal(uploadType({ name: "tour.m4v", type: "video/x-m4v" }, "video"), "video/mp4");
+ assert.equal(uploadType({ name: "tour.webm", type: "" }, "video"), "video/webm");
+ assert.equal(uploadType({ name: "tour.mov", type: "video/quicktime" }, "video"), null, "QuickTime stays refused");
+ assert.equal(uploadType({ name: "photo.jpg", type: "" }, "image"), "image/jpeg");
+ assert.equal(uploadType({ name: "film.mp4", type: "video/mp4" }, "image"), null, "a film is never taken as an image");
+ assert.equal(uploadType({ name: "photo.png", type: "image/png" }, "image"), "image/png");
+ const ui = await render(<MediaLibrary session={session} onExpired={() => {}} />, async () => Response.json({ assets: [], nextCursor: null }));
+ try {
+  const input = (await openUpload(ui.container))!;
+  for (const part of ["image/jpeg", ".jpg", ".jpeg", ".png", ".webp"]) assert.ok(input.accept.split(",").includes(part), part);
  } finally { await ui.dispose(); }
 });
 test("pagination appends the next page without losing previous images", async () => {
@@ -219,7 +234,7 @@ test("films upload through the streaming route with progress and appear with the
  try {
   const input = (await openFilmUpload(ui.container))!;
   assert.ok(input, "the library offers a film upload");
-  assert.equal(input.getAttribute("accept"), "video/mp4,video/webm");
+  assert.equal(input.getAttribute("accept"), "video/mp4,video/webm,.mp4,.m4v,.webm");
   assert.match(document.querySelector('[role="dialog"]')?.textContent ?? "", /MP4 \(H\.264\) or WebM up to 80 MB/);
   const file = new File([new Uint8Array([0, 0, 0, 24])], "workshop.mp4", { type: "video/mp4" });
   Object.defineProperty(input, "files", { value: [file], configurable: true });
