@@ -28,6 +28,9 @@ export interface AuthenticatedWebhook {
   eventType: string;
   paymentId?: string;
   orderId?: string;
+  /** Set, with the ids, on `payment.failed` and `payment.authorized`: kept for the buyer's payment emails
+   * (orders/notifications.ts) and never verified or acted on, because only a capture is work for the payment worker. */
+  informational?: true;
 }
 type ErrorCode =
   | "MISSING_CONFIGURATION"
@@ -334,21 +337,25 @@ export function createRazorpayGateway(
       bodySha256: createHash("sha256").update(rawBody).digest("hex"),
       eventType: event.event,
     };
-    // All other authenticated events are non-actionable here (including refunds).
+    const wrapper = record(event.payload) ? event.payload.payment : undefined;
+    const payment = record(wrapper) ? wrapper.entity : undefined;
+    const ids =
+      record(payment) &&
+      payment.entity === "payment" &&
+      validId(payment.id, "pay") &&
+      validId(payment.order_id, "order")
+        ? { paymentId: payment.id, orderId: payment.order_id }
+        : null;
+    // A capture is the only actionable event, and must name its payment and order.
     if (event.event === "payment.captured" || event.event === "order.paid") {
-      const wrapper = record(event.payload) ? event.payload.payment : undefined;
-      const payment = record(wrapper) ? wrapper.entity : undefined;
-      if (
-        !record(payment) ||
-        payment.entity !== "payment" ||
-        !validId(payment.id, "pay") ||
-        !validId(payment.order_id, "order")
-      ) {
-        throw new PaymentGatewayError("INVALID_WEBHOOK");
-      }
-      result.paymentId = payment.id;
-      result.orderId = payment.order_id;
+      if (!ids) throw new PaymentGatewayError("INVALID_WEBHOOK");
+      return { ...result, ...ids };
     }
+    // A failed or authorized payment only informs the buyer's emails. One without an order (not from this
+    // checkout) is kept like any other event, never refused: Razorpay disables a webhook that keeps failing.
+    if ((event.event === "payment.failed" || event.event === "payment.authorized") && ids)
+      return { ...result, ...ids, informational: true };
+    // All other authenticated events are non-actionable here (including refunds).
     return result;
   }
 

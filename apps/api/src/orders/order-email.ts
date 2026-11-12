@@ -4,9 +4,10 @@ import { z } from "zod";
 import { deliveryEstimate, indiaDay } from "../account/orders.js";
 
 /**
- * The buyer's order emails as HTML, with a plain-text part that says the same things: the confirmation (Figma 394:1418,
- * "Maple / Email Template / Order Confirmation") and, in the same shell, "payment received, we're confirming it by
- * hand". What changes per order follows the content guide (Figma 394:1477).
+ * The buyer's emails as HTML, with a plain-text part that says the same things, all in one layout: the confirmation
+ * (Figma 394:1418, "Maple / Email Template / Order Confirmation") and "payment received, we're confirming it by hand";
+ * then, before any order exists, "payment unsuccessful" (488:1339) and "payment pending" (488:1390). What changes per
+ * order follows the content guide (Figma 394:1477).
  *
  * This is email HTML, not web HTML: nested tables and inline styles only (no flex or grid), a fluid column that is at
  * most 680px wide (fixed at 680 for Outlook for Windows through conditional comments), and one embedded media query
@@ -32,6 +33,22 @@ export type OrderEmailInput = {
   accountLinks?: boolean;
 };
 export type OrderEmail = { subject: string; html: string; text: string };
+
+/** `failed`: Razorpay reported a payment failed and nothing was paid since. `pending`: Razorpay's window reported
+ * success, but the payment is not confirmed as captured yet. */
+export type PaymentEmailKind = "failed" | "pending";
+export type PaymentEmailInput = {
+  kind: PaymentEmailKind;
+  attempt: Pick<CheckoutAttempt, "id" | "amountPaise">;
+  quote: QuoteSnapshot;
+  /** Razorpay's id for the payment ("pay_…"): the reference the buyer quotes. Null shows the checkout's own id. */
+  paymentId: string | null;
+  /** When Razorpay reported it: the day shown beside the reference. */
+  at: Date;
+  photos: OrderPhotos;
+  /** The storefront's origin, for the logo and every link. */
+  origin: string;
+};
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Words, numbers and dates
@@ -228,78 +245,109 @@ function button(href: string, words: string) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The email
+// The layout every buyer email shares
 // ---------------------------------------------------------------------------------------------------------------------
 
-export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, origin, accountLinks = false }: OrderEmailInput): OrderEmail {
+/** The storefront pages every email links to, and its logo. */
+function storeLinks(origin: string) {
   const base = new URL(origin).origin;
-  const links = {
-    order: accountLinks && orderNumber && /^MF-[1-9][0-9]{0,9}$/.test(orderNumber)
-      ? `${base}/account/orders/${orderNumber}`
-      : `${base}/orders/${encodeURIComponent(attempt.id)}`,
+  return {
+    base,
     contact: `${base}/contact`,
     privacy: `${base}/policies/privacy-policy`,
     logo: `${base}/media/email/maple-logo.png`,
   };
+}
+type StoreLinks = ReturnType<typeof storeLinks>;
+
+/** The buyer's name as checkout took it, and the first word of it to greet them by ("Aditi"). */
+function buyer(quote: QuoteSnapshot) {
   const name = quote.customer.name.trim();
-  const firstName = name.split(/\s+/)[0] ?? name;
-  const total = inr(attempt.amountPaise);
-  const confirmed = kind === "confirmed";
+  return { name, firstName: name.split(/\s+/)[0] ?? name };
+}
 
-  const subject = confirmed
-    ? `Your Maple Furnishers order${orderNumber ? ` ${orderNumber}` : ""} is confirmed`
-    : orderNumber ? `We've received your payment for order ${orderNumber}` : "We've received your payment";
-  const pill = confirmed ? "ORDER CONFIRMED" : "PAYMENT RECEIVED";
-  const heading = confirmed ? ["Good things are", "coming home."] : ["We’ve received", "your payment."];
-  const intro = confirmed
-    ? `Hi ${firstName}, your Maple order is confirmed. Here’s everything you need to know.`
-    : `Hi ${firstName}, we’ve received your payment of ${total}. Our team is confirming your order by hand and will contact you within one business day.`;
-  const reference = orderNumber ? `ORDER #${orderNumber}` : `REFERENCE ${attempt.id}`;
-  const placed = attempt.capturedAt ? longDate(attempt.capturedAt) : "";
-
-  // The window is a promise of sorts, so only a confirmed order states one.
-  const estimate = confirmed && attempt.capturedAt ? deliveryEstimate(quote, attempt.capturedAt) : null;
-  const arrival = estimate ? dayRange(estimate.from, estimate.to) : null;
-  const included = quote.gstMode === "included";
-  const amounts: Array<[string, string]> = [
-    // With a code, the lines read before its discount and the discount follows as one line, so the email adds up to
-    // what was charged (main's #120, as the staff email words it).
+/** The receipt's lines above the total, as [name (HTML), amount]. With a code, the lines read before its discount and
+ * the discount follows as one line, so the email adds up to what was charged (main's #120, as the staff email words it). */
+function receiptLines(quote: QuoteSnapshot): Array<[string, string]> {
+  return [
     ["Subtotal", inr(quote.subtotalPaise + (quote.promotion?.discountPaise ?? 0))],
     ...(quote.promotion ? [[`Discount (${esc(quote.promotion.code)})`, `−${inr(quote.promotion.discountPaise)}`] as [string, string]] : []),
     ["Delivery", quote.shippingPaise ? inr(quote.shippingPaise) : "Free"],
-    ...(included ? [] : [["GST", inr(quote.taxPaise)] as [string, string]]),
+    ...(quote.gstMode === "included" ? [] : [["GST", inr(quote.taxPaise)] as [string, string]]),
   ];
-  // Razorpay's payment method (UPI, card) is never stored, so the frame's "Paid via UPI" can only say "online".
-  const paidNote = `Paid online · ${included ? "Inclusive of applicable taxes" : "GST is added as shown"}`;
-  const address = quote.shippingAddress;
-  const addressLines = [
-    name,
-    [address.line1, address.line2].filter(Boolean).join(", "),
-    `${address.city}, ${stateNames[address.stateCode] ?? address.stateCode} ${address.pincode}`,
-  ];
-  const nextHeading = confirmed ? "Next stop: your home." : "What happens next.";
-  const nextLabel = confirmed ? "ESTIMATED DELIVERY" : "IF WE CAN’T CONFIRM IT";
-  // Neutral while the order is unconfirmed: it may yet be refunded rather than delivered.
-  const addressLabel = confirmed ? "Delivering to" : "Delivery address";
-  const nextNote = confirmed
-    ? arrival ? "Tracking will follow when your order is dispatched." : "We’ll confirm your delivery date with you. Tracking will follow when your order is dispatched."
-    : "We’ll refund in full to your original payment method. You don’t need to pay again.";
-  // The inbox's one-line preview. Without a delivery window it is the content guide's own line (Figma 394:1477).
-  const preheader = confirmed
-    ? arrival
-      ? `${orderNumber ? `Order ${orderNumber}` : "Your order"} is confirmed. Estimated delivery ${arrival}.`
-      : "A beautiful choice. Here are your order details."
-    : `We’ve received your payment of ${total}. Our team is confirming your order by hand.`;
+}
+/** How the line under the total words tax, as the quote charged it. */
+const taxNote = (quote: QuoteSnapshot) => (quote.gstMode === "included" ? "Inclusive of applicable taxes" : "GST is added as shown");
 
+/** The pieces, for the plain-text part. */
+function pieceLines(quote: QuoteSnapshot) {
+  return [
+    quote.items.length === 1 ? "Your piece" : "Your pieces",
+    ...quote.items.flatMap((item, index) => [
+      ...(index ? [""] : []),
+      item.title,
+      item.variantTitle,
+      `Quantity ${item.quantity} · ${inr(item.lineTotalPaise + (item.discountPaise ?? 0))}`,
+    ]),
+  ];
+}
+/** The button, the line of help, the sign-off and the footer, for the plain-text part. */
+function closingLines(action: { href: string; words: string }, help: string, links: StoreLinks) {
+  return [
+    `${action.words}: ${action.href}`,
+    "",
+    help,
+    "",
+    "With care,",
+    "The Maple team",
+    "",
+    "Maple Furnishers · Thoughtful furniture. Made for your everyday.",
+    `Contact us: ${links.contact}`,
+    `Privacy policy: ${links.privacy}`,
+  ];
+}
+
+/**
+ * One email's words, colours and links, for the layout the order frame (394:1418) and the payment frames (488:1339,
+ * 488:1390) share: the logo, a status chip, the heading and greeting, the reference and day, the receipt with its
+ * shaded total, a tinted block of two columns, one button, a line of help, the sign-off and the footer.
+ * Every field is plain text, escaped here, unless it says HTML; HTML fields carry the template's own words only.
+ */
+type Layout = {
+  subject: string;
+  /** The inbox's one-line preview. */
+  preheader: string;
+  /** The status chip: its words (HTML), colours and width in the frame; `centred` sets the words in the middle and on
+   * one line, as the payment frames draw them. */
+  chip: { html: string; background: string; colour: string; width: number; centred?: boolean };
+  /** The heading's lines (HTML), broken where the frame breaks them. */
+  heading: string[];
+  intro: string;
+  /** "ORDER #MF-10482" or "REFERENCE pay_…", beside the day. */
+  reference: string;
+  /** The day the reference belongs to ("10 November 2026"), shown in capitals; empty without one. */
+  day: string;
+  quote: QuoteSnapshot;
+  photos: OrderPhotos;
+  /** The receipt's lines above the total (`receiptLines`). */
+  amounts: Array<[string, string]>;
+  /** The shaded total: its colour, its words and the amount. */
+  band: { background: string; label: string; amount: string };
+  /** The small line under the total. */
+  note: string;
+  /** The tinted block: its colour, its heading and its two columns (HTML), side by side and one under the other on phones. */
+  next: { background: string; heading: string; left: string; right: string };
+  action: { href: string; words: string };
+  help: string;
+  links: StoreLinks;
+};
+
+function layout({ subject, preheader, chip, heading, intro, reference, day, quote, photos, amounts, band, note, next, action, help, links }: Layout) {
   const pieces = quote.items.map((item) => `<tr><td style="padding-top:20px;">${pieceRow(item, photos.get(item.variantId))}</td></tr>`).join("\n");
-  const next = confirmed
-    ? `${label(nextLabel)}
-<p style="margin:10px 0 0 0;${type(dmSans, 20, 28, ink, 500)}">${esc(arrival ?? "To be confirmed")}</p>
-<p style="margin:10px 0 0 0;${type(redHat, 14, 20, muted)}">${arrival ? "Tracking will follow when<br>your order is dispatched." : esc(nextNote)}</p>`
-    : `${label(nextLabel)}
-<p style="margin:10px 0 0 0;${type(redHat, 14, 20, ink)}">${esc(nextNote)}</p>`;
-
-  const html = `<!DOCTYPE html>
+  const chipCell = chip.centred
+    ? `<td align="center" bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}text-align:center;white-space:nowrap;">`
+    : `<td bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}">`;
+  return `<!DOCTYPE html>
 <html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
 <meta charset="utf-8">
@@ -334,10 +382,10 @@ ${phoneStyles}
 <tr>${ruleCell}</tr>
 <tr><td class="m-intro" bgcolor="${white}" style="padding:40px 40px 28px 40px;background-color:${white};">
 <table ${table} width="100%" style="width:100%;">
-<tr><td><table ${table} width="174" style="width:174px;"><tr><td bgcolor="#edf2e9" style="padding:10px;border-radius:20px;background-color:#edf2e9;${type(redHat, 11, 15, "#49634d")}">✓&nbsp; ${pill}</td></tr></table></td></tr>
+<tr><td><table ${table} width="${chip.width}" style="width:${chip.width}px;"><tr>${chipCell}${chip.html}</td></tr></table></td></tr>
 <tr><td style="padding-top:16px;"><h1 class="m-h1" style="margin:0;${type(dmSans, 38, 53, "#272822", 500)}">${heading.join("<br>")}</h1></td></tr>
 <tr><td style="padding-top:16px;"><p style="margin:0;${type(redHat, 16, 22, muted)}">${esc(intro)}</p></td></tr>
-<tr><td style="padding-top:16px;"><table ${table} width="100%" style="width:100%;"><tr><td valign="top" style="width:54%;${type(redHat, 12, 17, ink)}">${esc(reference)}</td><td valign="top" style="${type(redHat, 12, 17, muted)}">${esc(placed.toUpperCase())}</td></tr></table></td></tr>
+<tr><td style="padding-top:16px;"><table ${table} width="100%" style="width:100%;"><tr><td valign="top" style="width:54%;${type(redHat, 12, 17, ink)}">${esc(reference)}</td><td valign="top" style="${type(redHat, 12, 17, muted)}">${esc(day.toUpperCase())}</td></tr></table></td></tr>
 </table>
 </td></tr>
 <tr><td class="m-receipt" bgcolor="${white}" style="padding:8px 40px 32px 40px;background-color:${white};">
@@ -348,25 +396,24 @@ ${pieces}
 <tr><td style="padding-top:20px;"><table ${table} width="100%" style="width:100%;">
 ${amounts.map(([item, amount], index) => amountRow(item, amount, index === 0)).join("\n")}
 </table></td></tr>
-<tr><td style="padding-top:20px;"><table ${table} width="100%" bgcolor="#f3f4ef" style="width:100%;background-color:#f3f4ef;"><tr><td class="m-band" style="padding:20px;"><table ${table} width="100%" style="width:100%;"><tr><td class="m-label m-total-label" valign="top" style="width:63.571%;${type(dmSans, 20, 28, ink, 500)}">Total paid</td><td class="m-amount m-total" valign="top" style="${type(dmSans, 24, 34, ink, 500)}white-space:nowrap;">${esc(total)}</td></tr></table></td></tr></table></td></tr>
-<tr><td style="padding-top:20px;"><p style="margin:0;${type(redHat, 12, 17, muted)}">${esc(paidNote)}</p></td></tr>
+<tr><td style="padding-top:20px;"><table ${table} width="100%" bgcolor="${band.background}" style="width:100%;background-color:${band.background};"><tr><td class="m-band" style="padding:20px;"><table ${table} width="100%" style="width:100%;"><tr><td class="m-label m-total-label" valign="top" style="width:63.571%;${type(dmSans, 20, 28, ink, 500)}">${esc(band.label)}</td><td class="m-amount m-total" valign="top" style="${type(dmSans, 24, 34, ink, 500)}white-space:nowrap;">${esc(band.amount)}</td></tr></table></td></tr></table></td></tr>
+<tr><td style="padding-top:20px;"><p style="margin:0;${type(redHat, 12, 17, muted)}">${esc(note)}</p></td></tr>
 </table>
 </td></tr>
-<tr><td class="m-next" bgcolor="${sand}" style="padding:40px 40px 20px 40px;background-color:${sand};">
-<h2 class="m-h2" style="margin:0;${type(dmSans, 24, 34, ink, 500)}">${esc(nextHeading)}</h2>
+<tr><td class="m-next" bgcolor="${next.background}" style="padding:40px 40px 20px 40px;background-color:${next.background};">
+<h2 class="m-h2" style="margin:0;${type(dmSans, 24, 34, ink, 500)}">${esc(next.heading)}</h2>
 <table ${table} width="100%" style="width:100%;"><tr><td style="padding-top:20px;font-size:0;line-height:0;">
 <!--[if mso]><table ${table} width="600"><tr><td width="282" valign="top"><![endif]--><div class="m-column" style="display:inline-block;width:100%;max-width:282px;vertical-align:top;"><table ${table} width="100%" style="width:100%;"><tr><td class="m-column-gap" valign="top" style="padding:0 32px 20px 0;">
-${next}
+${next.left}
 </td></tr></table></div><!--[if mso]></td><td width="318" valign="top"><![endif]--><div class="m-column" style="display:inline-block;width:100%;max-width:318px;vertical-align:top;"><table ${table} width="100%" style="width:100%;"><tr><td valign="top" style="padding:0 0 20px 0;">
-${label(addressLabel.toUpperCase())}
-<p style="margin:10px 0 0 0;${type(redHat, 14, 20, ink)}word-break:break-word;">${addressLines.map(esc).join("<br>")}</p>
+${next.right}
 </td></tr></table></div><!--[if mso]></td></tr></table><![endif]-->
 </td></tr></table>
 </td></tr>
 <tr><td class="m-block" bgcolor="${white}" style="padding:40px;background-color:${white};">
 <table ${table} width="100%" style="width:100%;">
-<tr><td>${button(esc(links.order), "View your order")}</td></tr>
-<tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 14, 20, muted)}">Need a hand? Reply to this email. We’re here to help.</p></td></tr>
+<tr><td>${button(esc(action.href), esc(action.words))}</td></tr>
+<tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 14, 20, muted)}">${esc(help)}</p></td></tr>
 <tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 15, 21, ink)}">With care,<br>The Maple team</p></td></tr>
 </table>
 </td></tr>
@@ -382,6 +429,87 @@ ${label(addressLabel.toUpperCase())}
 </body>
 </html>
 `;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The order emails
+// ---------------------------------------------------------------------------------------------------------------------
+
+export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, origin, accountLinks = false }: OrderEmailInput): OrderEmail {
+  const links = storeLinks(origin);
+  const orderLink = accountLinks && orderNumber && /^MF-[1-9][0-9]{0,9}$/.test(orderNumber)
+    ? `${links.base}/account/orders/${orderNumber}`
+    : `${links.base}/orders/${encodeURIComponent(attempt.id)}`;
+  const { name, firstName } = buyer(quote);
+  const total = inr(attempt.amountPaise);
+  const confirmed = kind === "confirmed";
+
+  const subject = confirmed
+    ? `Your Maple Furnishers order${orderNumber ? ` ${orderNumber}` : ""} is confirmed`
+    : orderNumber ? `We've received your payment for order ${orderNumber}` : "We've received your payment";
+  const pill = confirmed ? "ORDER CONFIRMED" : "PAYMENT RECEIVED";
+  const heading = confirmed ? ["Good things are", "coming home."] : ["We’ve received", "your payment."];
+  const intro = confirmed
+    ? `Hi ${firstName}, your Maple order is confirmed. Here’s everything you need to know.`
+    : `Hi ${firstName}, we’ve received your payment of ${total}. Our team is confirming your order by hand and will contact you within one business day.`;
+  const reference = orderNumber ? `ORDER #${orderNumber}` : `REFERENCE ${attempt.id}`;
+  const placed = attempt.capturedAt ? longDate(attempt.capturedAt) : "";
+
+  // The window is a promise of sorts, so only a confirmed order states one.
+  const estimate = confirmed && attempt.capturedAt ? deliveryEstimate(quote, attempt.capturedAt) : null;
+  const arrival = estimate ? dayRange(estimate.from, estimate.to) : null;
+  const amounts = receiptLines(quote);
+  // Razorpay's payment method (UPI, card) is never stored, so the frame's "Paid via UPI" can only say "online".
+  const paidNote = `Paid online · ${taxNote(quote)}`;
+  const address = quote.shippingAddress;
+  const addressLines = [
+    name,
+    [address.line1, address.line2].filter(Boolean).join(", "),
+    `${address.city}, ${stateNames[address.stateCode] ?? address.stateCode} ${address.pincode}`,
+  ];
+  const nextHeading = confirmed ? "Next stop: your home." : "What happens next.";
+  const nextLabel = confirmed ? "ESTIMATED DELIVERY" : "IF WE CAN’T CONFIRM IT";
+  // Neutral while the order is unconfirmed: it may yet be refunded rather than delivered.
+  const addressLabel = confirmed ? "Delivering to" : "Delivery address";
+  const nextNote = confirmed
+    ? arrival ? "Tracking will follow when your order is dispatched." : "We’ll confirm your delivery date with you. Tracking will follow when your order is dispatched."
+    : "We’ll refund in full to your original payment method. You don’t need to pay again.";
+  // The inbox's one-line preview. Without a delivery window it is the content guide's own line (Figma 394:1477).
+  const preheader = confirmed
+    ? arrival
+      ? `${orderNumber ? `Order ${orderNumber}` : "Your order"} is confirmed. Estimated delivery ${arrival}.`
+      : "A beautiful choice. Here are your order details."
+    : `We’ve received your payment of ${total}. Our team is confirming your order by hand.`;
+
+  const next = confirmed
+    ? `${label(nextLabel)}
+<p style="margin:10px 0 0 0;${type(dmSans, 20, 28, ink, 500)}">${esc(arrival ?? "To be confirmed")}</p>
+<p style="margin:10px 0 0 0;${type(redHat, 14, 20, muted)}">${arrival ? "Tracking will follow when<br>your order is dispatched." : esc(nextNote)}</p>`
+    : `${label(nextLabel)}
+<p style="margin:10px 0 0 0;${type(redHat, 14, 20, ink)}">${esc(nextNote)}</p>`;
+  const deliverTo = `${label(addressLabel.toUpperCase())}
+<p style="margin:10px 0 0 0;${type(redHat, 14, 20, ink)}word-break:break-word;">${addressLines.map(esc).join("<br>")}</p>`;
+  const action = { href: orderLink, words: "View your order" };
+  const help = "Need a hand? Reply to this email. We’re here to help.";
+
+  const html = layout({
+    subject,
+    preheader,
+    chip: { html: `✓&nbsp; ${pill}`, background: "#edf2e9", colour: "#49634d", width: 174 },
+    heading,
+    intro,
+    reference,
+    day: placed,
+    quote,
+    photos,
+    amounts,
+    band: { background: "#f3f4ef", label: "Total paid", amount: total },
+    note: paidNote,
+    next: { background: sand, heading: nextHeading, left: next, right: deliverTo },
+    action,
+    help,
+    links,
+  });
 
   const text = [
     heading.join(" "),
@@ -391,13 +519,7 @@ ${label(addressLabel.toUpperCase())}
     orderNumber ? `Order number: ${orderNumber}` : `Checkout reference: ${attempt.id}`,
     ...(placed ? [`Order date: ${placed}`] : []),
     "",
-    quote.items.length === 1 ? "Your piece" : "Your pieces",
-    ...quote.items.flatMap((item, index) => [
-      ...(index ? [""] : []),
-      item.title,
-      item.variantTitle,
-      `Quantity ${item.quantity} · ${inr(item.lineTotalPaise + (item.discountPaise ?? 0))}`,
-    ]),
+    ...pieceLines(quote),
     "",
     ...amounts.map(([item, amount]) => `${item}: ${amount}`),
     `Total paid: ${total}`,
@@ -410,17 +532,108 @@ ${label(addressLabel.toUpperCase())}
     `${addressLabel}:`,
     ...addressLines,
     "",
-    `View your order: ${links.order}`,
-    "",
-    "Need a hand? Reply to this email. We’re here to help.",
-    "",
-    "With care,",
-    "The Maple team",
-    "",
-    "Maple Furnishers · Thoughtful furniture. Made for your everyday.",
-    `Contact us: ${links.contact}`,
-    `Privacy policy: ${links.privacy}`,
+    ...closingLines(action, help, links),
   ].join("\n");
 
   return { subject, html, text };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The payment emails
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * The buyer's payment emails, in the order emails' layout: "payment unsuccessful" (Figma 488:1339, "Maple / Email
+ * Template / Payment Failure") and "payment pending" (Figma 488:1390). No order exists yet, so there is no order number
+ * and no delivery promise; the reference is Razorpay's id for the payment, which the buyer quotes and staff find in the
+ * Razorpay dashboard. When each one is sent is decided in notifications.ts.
+ */
+export function renderPaymentEmail({ kind, attempt, quote, paymentId, at, photos, origin }: PaymentEmailInput): OrderEmail {
+  const links = storeLinks(origin);
+  const { firstName } = buyer(quote);
+  const total = inr(attempt.amountPaise);
+  const reference = paymentId ?? attempt.id;
+  const day = longDate(at);
+  const failed = kind === "failed";
+
+  const words = failed
+    ? {
+        subject: "Your payment didn't go through",
+        preheader: `We couldn’t complete your payment of ${total}. Your piece is saved, so you can try again.`,
+        chip: { html: "PAYMENT UNSUCCESSFUL", background: "#ffd7d7", colour: "#80241c", width: 172, centred: true },
+        heading: ["Your payment", "didn’t go through."],
+        intro: `Hi ${firstName}, we couldn’t complete your payment. Your chosen piece and checkout details are saved, so you can try again.`,
+        band: "Amount to pay",
+        note: `Payment not completed · ${taxNote(quote)}`,
+        tint: "#f4f1ec",
+        nextHeading: "Let’s get you back on track.",
+        left: { label: "Next step", title: "Return to checkout.", body: "Try again or choose a different payment method." },
+        right: { label: "If money was debited", body: `Check your payment status before retrying. Reply with reference ${reference} if you need help.` },
+        action: { href: `${links.base}/checkout`, words: "Return to checkout" },
+        help: "Need help completing your order? Reply to this email.",
+      }
+    : {
+        subject: "We're checking your payment",
+        preheader: `We’re waiting for your bank to confirm your payment of ${total}. No need to pay again.`,
+        chip: { html: "PAYMENT PENDING", background: "#f2d284", colour: "#4a3401", width: 131, centred: true },
+        heading: ["A moment while we", "check your payment."],
+        intro: `Hi ${firstName}, we’re waiting for confirmation from your bank. Your order details are saved while we verify your payment.`,
+        band: "Payment pending",
+        note: `Payment confirmation pending · ${taxNote(quote)}`,
+        tint: "#f5f1e7",
+        nextHeading: "What happens next?",
+        left: { label: "Please wait", title: "No need to pay again.", body: "We’ll email you once your bank confirms the result." },
+        right: { label: "Your order", body: "Your order is not yet confirmed. Delivery details will follow after successful payment." },
+        // The status page in the browser that paid; elsewhere it says it cannot find the order and offers contact.
+        action: { href: `${links.base}/orders/${encodeURIComponent(attempt.id)}`, words: "Check payment status" },
+        help: `Still pending? Reply to this email with reference ${reference}.`,
+      };
+  const amounts = receiptLines(quote);
+  const left = `${label(words.left.label.toUpperCase())}
+<p style="margin:10px 0 0 0;${type(dmSans, 20, 28, ink, 500)}">${esc(words.left.title)}</p>
+<p style="margin:10px 0 0 0;${type(redHat, 14, 20, muted)}">${esc(words.left.body)}</p>`;
+  const right = `${label(words.right.label.toUpperCase())}
+<p style="margin:10px 0 0 0;${type(redHat, 14, 20, ink)}word-break:break-word;">${esc(words.right.body)}</p>`;
+
+  const html = layout({
+    subject: words.subject,
+    preheader: words.preheader,
+    chip: words.chip,
+    heading: words.heading,
+    intro: words.intro,
+    reference: `REFERENCE ${reference}`,
+    day,
+    quote,
+    photos,
+    amounts,
+    band: { background: "#f5f4f0", label: words.band, amount: total },
+    note: words.note,
+    next: { background: words.tint, heading: words.nextHeading, left, right },
+    action: words.action,
+    help: words.help,
+    links,
+  });
+
+  const text = [
+    words.heading.join(" "),
+    "",
+    words.intro,
+    "",
+    `Reference: ${reference}`,
+    ...(day ? [`Date: ${day}`] : []),
+    "",
+    ...pieceLines(quote),
+    "",
+    ...amounts.map(([item, amount]) => `${item}: ${amount}`),
+    `${words.band}: ${total}`,
+    words.note,
+    "",
+    words.nextHeading,
+    `${words.left.label}: ${words.left.title} ${words.left.body}`,
+    `${words.right.label}: ${words.right.body}`,
+    "",
+    ...closingLines(words.action, words.help, links),
+  ].join("\n");
+
+  return { subject: words.subject, html, text };
 }

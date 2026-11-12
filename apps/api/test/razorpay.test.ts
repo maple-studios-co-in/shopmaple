@@ -388,6 +388,27 @@ test("signed malformed webhooks fail and unsupported events remain non-actionabl
   );
 });
 
+test("failed and authorized payments carry their ids as information only, and one outside a checkout is still accepted", () => {
+  const gateway = gatewayWith(null);
+  const sign = (raw: Buffer) => createHmac("sha256", config.webhookSecret).update(raw).digest("hex");
+  for (const name of ["payment.failed", "payment.authorized"]) {
+    const raw = Buffer.from(JSON.stringify({ entity: "event", event: name, payload: { payment: { entity: { ...payment, status: "failed", captured: false } } } }));
+    const event = gateway.authenticateWebhook(raw, sign(raw), "event_info");
+    assert.equal(event.eventType, name);
+    assert.equal(event.paymentId, callback.razorpay_payment_id);
+    assert.equal(event.orderId, expected.orderId);
+    assert.equal(event.informational, true, "never the worker's to verify");
+  }
+  const captured = Buffer.from(JSON.stringify({ entity: "event", event: "payment.captured", payload: { payment: { entity: payment } } }));
+  assert.equal("informational" in gateway.authenticateWebhook(captured, sign(captured), "event_capture"), false);
+  // A failed payment without an order (not from this checkout) is kept like any other event; refusing it would make
+  // Razorpay retry, and in the end disable the webhook.
+  const orphan = Buffer.from(JSON.stringify({ entity: "event", event: "payment.failed", payload: { payment: { entity: { ...payment, order_id: null } } } }));
+  const event = gateway.authenticateWebhook(orphan, sign(orphan), "event_orphan");
+  assert.equal(event.paymentId, undefined);
+  assert.equal(event.informational, undefined);
+});
+
 test("upstream errors are sanitized and order creation is never automatically retried", async () => {
   for (const status of [400, 401, 429, 500]) {
     await assert.rejects(

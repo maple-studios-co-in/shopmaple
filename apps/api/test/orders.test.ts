@@ -230,6 +230,22 @@ test("failed, authorized and out-of-order events cannot downgrade an already cap
   assert.equal(await db.orderOutbox.count(), 1);
 });
 
+test("failed and authorized payments keep their ids for the buyer's emails but are never the worker's to verify", async () => {
+  const { flow, attempt } = await awaiting();
+  for (const [name, paymentId] of [["payment.failed", "pay_declined1"], ["payment.authorized", "pay_authorized1"]] as const) {
+    const event = webhook("order_fixture1", paymentId, name);
+    const inbox = await flow.ingestWebhook(event.body, event.signature, name.replaceAll(".", "-"));
+    assert.equal(inbox.state, "ignored", name);
+    assert.equal(inbox.paymentId, paymentId, name);
+    assert.equal(inbox.providerOrderId, "order_fixture1", name);
+    assert.ok(inbox.processedAt, name);
+    assert.equal((await flow.processWebhook(inbox.id)).state, "ignored", name);
+  }
+  // No payment was fetched or verified, and the checkout still waits for one.
+  assert.equal((await db.checkoutAttempt.findUniqueOrThrow({ where: { id: attempt.id } })).state, "awaiting_payment");
+  assert.equal(await db.orderOutbox.count(), 0);
+});
+
 test("mismatched, authorized and refunded fetched payments require reconciliation without a handoff", async () => {
   const { flow, attempt } = await awaiting();
   for (const [index, override] of [{ amount: 1 }, { order_id: "order_wrong" }, { status: "authorized", captured: false }, { amount_refunded: 1 }].entries()) {

@@ -654,6 +654,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
     }
     const found = await existing();
     if (found) return found;
+    // Only a capture is work for the payment worker. A failed or authorized payment keeps its ids, which the buyer's
+    // payment emails read (notifications.ts), and is otherwise ignored like every other event.
+    const work = Boolean(authenticated.paymentId) && !authenticated.informational;
     try {
       return await db.paymentWebhookInbox.create({
         data: {
@@ -663,8 +666,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
           eventType: authenticated.eventType,
           providerOrderId: authenticated.orderId,
           paymentId: authenticated.paymentId,
-          state: authenticated.paymentId ? "pending" : "ignored",
-          processedAt: authenticated.paymentId ? null : now(),
+          state: work ? "pending" : "ignored",
+          processedAt: work ? null : now(),
         },
       });
     } catch (error) {
