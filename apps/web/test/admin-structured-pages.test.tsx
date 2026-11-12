@@ -121,7 +121,7 @@ test("editing the body saves rich text in place of blocks and keeps the original
 test("a picture from the media library goes into the page with its description and previews privately", async () => {
   const state = await mount(); const transport = globalThis.fetch;
   const hash = "a".repeat(64); const url = `/media/uploads/${hash}.webp`; const previewUrl = `/api/admin/media/${hash}/preview`;
-  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Reading room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl }], nextCursor: null }) : transport(input, init);
+  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media?kind=image" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Reading room", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl }], nextCursor: null }) : transport(input, init);
   try {
     await richText();
     await click("Image");
@@ -139,7 +139,7 @@ test("a picture from the media library goes into the page with its description a
 test("opening and cancelling the picture panel does not move where the next picture goes", async () => {
   const state = await mount(); const transport = globalThis.fetch;
   const hash = "c".repeat(64); const url = `/media/uploads/${hash}.webp`;
-  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Hall", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl: `/api/admin/media/${hash}/preview` }], nextCursor: null }) : transport(input, init);
+  globalThis.fetch = async (input, init) => String(input) === "/api/admin/media?kind=image" ? Response.json({ assets: [{ id: "asset", sha256: hash, label: "Hall", width: 120, height: 80, bytes: 400, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url, previewUrl: `/api/admin/media/${hash}/preview` }], nextCursor: null }) : transport(input, init);
   try {
     await richText();
     await click("Image"); await click("Cancel");

@@ -14,6 +14,7 @@ import { HomeDetailFields, type HomeDetailSection } from "./home-details-fields"
 import { HomeMerchandisingFields, type MerchandisingPart } from "./home-merchandising-fields";
 import { CheckField, FieldGrid, PanelHeader } from "./kit";
 import { ArtworkSlots } from "./template-artwork-fields";
+import { TemplateFilmField } from "./template-film-fields";
 
 type Copy = StorefrontContent["homeCopy"];
 type Motion = StorefrontContent["motion"];
@@ -87,7 +88,12 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
         session={session} onExpired={onExpired} onScheduleEditingChange={onScheduleEditingChange} />}
       {section === "instagram" && <InstagramFields embedded content={content} onChange={edit} session={session} onExpired={onExpired} />}
     </>,
-    ...(media.length ? { Media: <ArtworkSlots keys={media} value={content.templateMedia} onChange={(templateMedia) => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} /> } : {}),
+    ...(media.length ? { Media: <>
+      <ArtworkSlots keys={media} value={content.templateMedia} onChange={(templateMedia) => edit({ ...content, templateMedia })} session={session} onExpired={onExpired} />
+      {/* The testimonial plays a film of its own (owner, 12 Nov 2026), chosen beside its poster. */}
+      {section === "testimonial" && <div className="mt-6"><TemplateFilmField place="home-testimonial" value={content.templateFilms}
+        onChange={(templateFilms) => edit({ ...content, templateFilms })} session={session} onExpired={onExpired} /></div>}
+    </> } : {}),
     ...(section === "cities" ? { Layout: <HomeCitiesLayoutFields value={content.homeCitiesLayout} onChange={(homeCitiesLayout) => edit({ ...content, homeCitiesLayout })} /> } : {}),
     ...(moving ? { Motion: <div className="grid gap-3">
       <CheckField label={moving[1]} checked={content.motion[moving[0]] ?? moving[2]}

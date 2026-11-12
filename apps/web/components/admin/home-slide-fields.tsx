@@ -19,6 +19,9 @@ function rows<T>(slides: readonly T[], known: string[]): Row<T>[] {
   return slides.map((slide, i) => ({ id: (known[i] ??= rowId()), slide }));
 }
 
+/** A film from the media library, as a video slide's `src` is. */
+const isFilm = (src: string) => /^\/media\/uploads\/[a-f0-9]{64}\.(?:mp4|webm)$/.test(src);
+
 /** An object without the properties whose text is empty (an optional address that was cleared). */
 function withoutEmpty<T extends object>(value: T, keys: (keyof T)[]): T {
   const next = { ...value };
@@ -35,19 +38,30 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
     onChange(next.length ? { ...rest, slides: next } : rest);
   };
   const blank = (): HeroSlide => ({ kind: "image", src: "", alt: "", headline: "", intro: "" });
-  const picker = (label: string, slot: "src" | "poster", slide: HeroSlide, edit: (slide: HeroSlide) => void) => session && onExpired && (
+  const picker = (label: string, slot: "src" | "poster" | "film", slide: HeroSlide, edit: (slide: HeroSlide) => void) => session && onExpired && (
     <div data-slide-picker={slot}>
-      <MediaPicker label={label} value={(slot === "src" ? slide.src : slide.poster) ?? ""} session={session} onExpired={onExpired}
-        onChange={url => edit(withoutEmpty({ ...slide, [slot]: url }, ["poster"]))} />
+      <MediaPicker label={label} value={(slot === "poster" ? slide.poster : slide.src) ?? ""} session={session} onExpired={onExpired} accept={slot === "film" ? "video" : "image"}
+        onChange={url => edit(withoutEmpty({ ...slide, [slot === "poster" ? "poster" : "src"]: url }, ["poster"]))} />
     </div>
   );
+  /**
+   * Changing a slide's kind keeps its pictures where they still fit: an image slide's picture becomes the video's poster
+   * and back. A film is never an image slide's picture, nor a picture a video's film.
+   */
+  const rekind = (slide: HeroSlide, kind: HeroSlide["kind"]): HeroSlide => {
+    if (kind === slide.kind) return slide;
+    const film = isFilm(slide.src);
+    return kind === "video"
+      ? withoutEmpty({ ...slide, kind, src: film ? slide.src : "", poster: slide.poster || (film ? "" : slide.src) }, ["poster"])
+      : withoutEmpty({ ...slide, kind, src: !film && slide.src ? slide.src : slide.poster ?? "", poster: "" }, ["poster"]);
+  };
   return <Subsection title="Hero slides"
-    description="Slides of the large hero tile, with a dot for each. With none, the hero shows four stills: the Workshop video poster and the three Nimbus slideshow rooms (your uploads, else photos of Keeri products). Videos play on their own, muted, and stop for visitors who ask for reduced motion.">
+    description="Slides of the large hero tile, with a dot for each. With none, the hero shows four stills: the Workshop video poster and the three Nimbus slideshow rooms (your uploads, else photos of Keeri products). A video slide plays a film from the media library on its own, muted, over its poster; visitors who ask for reduced motion see the poster.">
     {!slides ? <div>
       <ActionButton icon={Plus} onClick={() => set([blank()])}>Add hero slide</ActionButton>
       <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">Your slides replace the default stills.</p>
     </div> : <>
-      <Notice tone="info">Videos must be hosted at a Maple media address (one starting /media/). The media library only uploads images, so use it for pictures and video posters.</Notice>
+      <Notice tone="info">For a video slide, upload the film (MP4 or WebM, up to 80 MB, exported for the web) in the media library and choose it with its poster picture below.</Notice>
       <EditableList name="Hero slide" items={rows(slides, known)} identity={row => row.id} min={1} max={6} create={() => ({ id: rowId(), slide: blank() })}
         onChange={next => { known.splice(0, known.length, ...next.map(row => row.id)); set(next.map(row => row.slide)); }}
         render={({ slide, id }, index, edit) => {
@@ -55,16 +69,16 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
           const video = slide.kind === "video";
           return <>
             <FieldGrid>
-              <SelectField label={`${name} kind`} value={slide.kind} onChange={event => change({ ...slide, kind: event.currentTarget.value as HeroSlide["kind"] })}>
+              <SelectField label={`${name} kind`} value={slide.kind} onChange={event => change(rekind(slide, event.currentTarget.value as HeroSlide["kind"]))}>
                 <option value="image">Image</option>
                 <option value="video">Video</option>
               </SelectField>
-              {textField(`${name} media address`, slide.src, 1000, src => change({ ...slide, src }))}
-              {video && textField(`${name} poster address`, slide.poster ?? "", 1000, poster => change(withoutEmpty({ ...slide, poster }, ["poster"])))}
+              {!video && textField(`${name} media address`, slide.src, 1000, src => change({ ...slide, src }))}
               {textFields(slide, [[ "alt", `${name} image description`, 200], ["headline", `${name} headline`, 120], ["intro", `${name} intro`, 300, true]], change)}
-              <Hint>{video ? "The poster shows while the video loads and for visitors who ask for reduced motion." : "Paste an approved address, or choose from the media library below."}</Hint>
+              <Hint>{video ? "Choose the film and its poster below. The poster shows while the film loads and for visitors who ask for reduced motion." : "Paste an approved address, or choose from the media library below."}</Hint>
             </FieldGrid>
-            {picker(`${name} picture`, video ? "poster" : "src", slide, change)}
+            {video && picker(`${name} film`, "film", slide, change)}
+            {picker(video ? `${name} poster` : `${name} picture`, video ? "poster" : "src", slide, change)}
           </>;
         }} />
       <div><ActionButton icon={X} onClick={() => set([])}>Use the default stills</ActionButton></div>

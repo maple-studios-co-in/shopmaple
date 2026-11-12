@@ -4,8 +4,12 @@ import { constants, closeSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openS
 import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const filename = /^[a-f0-9]{64}\.webp$/;
-const maxFile = 32 * 1024 * 1024, maxArchive = 1024 * 1024 * 1024, maxFiles = 4096;
+// Library images (.webp) and films (.mp4/.webm, owner 12 Nov 2026), each named by the SHA-256 of its bytes.
+const filename = /^[a-f0-9]{64}\.(?:webp|mp4|webm)$/;
+/** Uploads still arriving (or left by a restart mid-upload): the API's own temporary files, never part of a backup. */
+const arriving = /^\.(?:upload-[0-9a-f-]{36}\.tmp|film-[0-9a-f-]{36}\.part)$/;
+// Films are up to 80 MiB each and 3 GiB in all beside 250 MiB of images; the caps leave room above the app's quotas.
+const maxFile = 96 * 1024 * 1024, maxArchive = 4 * 1024 * 1024 * 1024, maxFiles = 4096;
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const fail = message => { throw new Error(message); };
 
@@ -59,7 +63,7 @@ function newDirectory(path) {
   directory(dirname(path)); mkdirSync(path, { mode: 0o700 });
 }
 function snapshot(source) {
-  return readdirSync(source).sort().map(name => {
+  return readdirSync(source).filter(name => !arriving.test(name)).sort().map(name => {
     if (!filename.test(name)) fail('Invalid media filename; stop uploads before backup.');
     const stat = lstatSync(join(source, name));
     if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maxFile) fail('Invalid media file or size.');

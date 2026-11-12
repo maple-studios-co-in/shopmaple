@@ -63,29 +63,61 @@ test("hero: with no slides staff see the default stills are in use, and adding a
   } finally { await close(); }
 });
 
-test("hero: editing a slide's kind, media, description and words, and a video's poster", async () => {
+test("hero: editing a slide's kind, media, description and words; a video slide takes a film and a poster", async () => {
   const close = await mount("hero");
   try {
     await click("Add hero slide");
     assert.equal(field("Hero slide 1 kind")!.value, "image", "a new slide is an image");
-    assert.equal(field("Hero slide 1 poster address"), null, "an image has no poster field");
     await fill("Hero slide 1 media address", upload);
     await fill("Hero slide 1 image description", "A walnut sofa");
     await fill("Hero slide 1 headline", "Sofas that last");
     await fill("Hero slide 1 intro", "Built to be lived in.");
     await choose("Hero slide 1 kind", "video");
     assert.equal(slides()![0]!.kind, "video");
-    assert.ok(field("Hero slide 1 poster address"), "a video needs a poster");
-    assert.match(container.textContent ?? "", /Maple media address \(one starting \/media\/\)/);
+    assert.equal(field("Hero slide 1 media address"), null, "a video's film is chosen from the library, never typed");
+    assert.deepEqual(slides()![0], { kind: "video", src: "", poster: upload, alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." },
+      "the slide's picture becomes the video's poster, and the film is still to choose");
+    assert.equal(container.querySelectorAll('[data-slide-picker="film"] [data-media-picker="video"]').length, 1, "a film picker");
+    assert.equal(container.querySelectorAll('[data-slide-picker="poster"] [data-media-picker="image"]').length, 1, "and a poster picker");
     assert.doesNotMatch(container.textContent ?? "", /Shopify/, "staff are never told to host on Shopify");
-    assert.match(container.textContent ?? "", /media library only uploads images/);
-    await fill("Hero slide 1 media address", "/media/films/workshop.mp4");
-    await fill("Hero slide 1 poster address", upload);
-    assert.deepEqual(slides()![0], { kind: "video", src: "/media/films/workshop.mp4", poster: upload, alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." });
-    assert.equal(homeDetailsSchema.safeParse(latest).success, true, "what staff entered is valid content");
-    await fill("Hero slide 1 media address", "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/x/x.mp4");
-    assert.equal(homeDetailsSchema.safeParse(latest).success, false, "a film on Shopify is no longer valid content");
+    assert.doesNotMatch(container.textContent ?? "", /only uploads images/, "the library takes films now");
+    assert.match(container.textContent ?? "", /MP4 or WebM, up to 80 MB/);
+    await choose("Hero slide 1 kind", "image");
+    await choose("Hero slide 1 kind", "video");
+    const film = "/media/uploads/" + "f".repeat(64) + ".mp4";
+    const candidate = homeDetailsSchema.safeParse({ ...latest, hero: { ...latest!.hero, slides: [{ ...slides()![0]!, src: film }] } });
+    assert.equal(candidate.success, true, JSON.stringify(candidate.error?.issues));
+    await choose("Hero slide 1 kind", "image");
+    assert.deepEqual(slides()![0], { kind: "image", src: upload, alt: "A walnut sofa", headline: "Sofas that last", intro: "Built to be lived in." }, "back to an image, the poster is its picture again");
   } finally { await close(); }
+});
+
+test("hero: a video slide's film comes from the library's films, and its poster from its images", async () => {
+  const film = "/media/uploads/" + "f".repeat(64) + ".mp4";
+  const requested: string[] = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = async input => {
+    requested.push(String(input));
+    return String(input).endsWith("kind=video")
+      ? Response.json({ assets: [{ id: "film1", sha256: "f".repeat(64), kind: "video", label: "Workshop film", width: 1920, height: 1080, bytes: 5_000_000, mimeType: "video/mp4", durationMs: 8000, faststart: true, createdAt: "2026-11-12T00:00:00Z", publicAt: null, url: film, previewUrl: `/api/admin/media/${"f".repeat(64)}/preview` }], nextCursor: null })
+      : Response.json({ assets: [{ id: "asset1", sha256: "a".repeat(64), label: "Living room", width: 100, height: 100, bytes: 100, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url: upload, previewUrl: `/api/admin/media/${"a".repeat(64)}/preview` }], nextCursor: null });
+  };
+  const close = await mount("hero");
+  try {
+    await click("Add hero slide");
+    await choose("Hero slide 1 kind", "video");
+    await act(async () => container.querySelector<HTMLElement>('[data-slide-picker="film"] button')!.click());
+    await act(async () => new Promise(resolve => setTimeout(resolve, 20)));
+    assert.deepEqual(requested, ["/api/admin/media?kind=video"], "the film picker lists films only");
+    await click("Use film: Workshop film");
+    assert.equal(slides()![0]!.src, film);
+    await act(async () => container.querySelector<HTMLElement>('[data-slide-picker="poster"] button')!.click());
+    await act(async () => new Promise(resolve => setTimeout(resolve, 20)));
+    assert.equal(requested.at(-1), "/api/admin/media?kind=image", "the poster picker lists images only");
+    await click("Use image: Living room");
+    assert.deepEqual(slides()![0], { kind: "video", src: film, poster: upload, alt: "", headline: "", intro: "" });
+    assert.ok(container.querySelector(`[data-slide-picker="film"] video[src="/api/admin/media/${"f".repeat(64)}/preview"]`), "the chosen film previews privately");
+  } finally { globalThis.fetch = previous; await close(); }
 });
 
 test("hero: slides move, are removed down to one, stop at six, and can go back to the default stills", async () => {
@@ -114,7 +146,7 @@ test("hero: slides move, are removed down to one, stop at six, and can go back t
 test("hero: an image slide can take its picture from the media library", async () => {
   const previous = globalThis.fetch;
   globalThis.fetch = async input => {
-    assert.equal(String(input), "/api/admin/media");
+    assert.equal(String(input), "/api/admin/media?kind=image", "an image picker lists images only");
     return Response.json({ assets: [{ id: "asset1", sha256: "a".repeat(64), label: "Living room", width: 100, height: 100, bytes: 100, mimeType: "image/webp", createdAt: "2026-10-26T00:00:00Z", publicAt: null, url: upload, previewUrl: `/api/admin/media/${"a".repeat(64)}/preview` }], nextCursor: null });
   };
   const close = await mount("hero");

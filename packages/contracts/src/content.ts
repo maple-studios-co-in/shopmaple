@@ -10,6 +10,7 @@ import { storyPageContentSchema } from "./story-content";
 import { homeDetailsSchema } from "./home-details";
 import { nimbusPageContentSchema } from "./nimbus-content";
 import { collectionLandingContentSchema } from "./collection-landing";
+import { templateFilmsSchema } from "./template-films";
 import { pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
 export const homeSectionKeys = [
   "hero",
@@ -350,6 +351,8 @@ export const storefrontContentSchema = z
     nimbusPage: nimbusPageContentSchema.optional(),
     // The Terra Collection (Figma 311:921; owner, 10 Nov 2026); revisions saved before it keep its default copy.
     terraPage: collectionLandingContentSchema.optional(),
+    // Films chosen for the testimonial and the collection pages (owner, 12 Nov 2026); absent where none was chosen.
+    templateFilms: templateFilmsSchema.optional(),
     // Legacy revisions retain the original service page templates.
     servicePages: servicePagesContentSchema.optional(),
     motion: z

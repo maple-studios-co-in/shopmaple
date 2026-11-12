@@ -36,8 +36,8 @@ export function heroArtworkProducts(content: HomeDetails["hero"], media?: Templa
 
 /**
  * The slides to show: the staff's, or, when there are none, four stills: each placement's upload, else a Keeri
- * product's photo (`photos`). There is no default film: the shop film was on Shopify, and films cannot be uploaded yet.
- * With no photo at all the one slide keeps its words over the tile's own colour.
+ * product's photo (`photos`). There is no default film (the shop film was on Shopify); staff add one as a video slide with
+ * a film from the media library. With no photo at all the one slide keeps its words over the tile's own colour.
  */
 function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia, photos?: ProductPhotos): Slide[] {
   const authored = authoredSlides(content);
@@ -86,7 +86,9 @@ export function Hero({
               key={i}
             >
               {slide.image && <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} />}
-              {slide.video && <video src={slide.video} muted loop playsInline preload={i === 0 ? "metadata" : "none"} aria-hidden="true" />}
+              {/* The poster is the picture above; the film covers it only once playing (lib/slider-behaviour.ts), so visitors
+                  who ask for reduced motion, or whose browser has not run the slider yet, see the poster. */}
+              {slide.video && <video src={slide.video} muted loop playsInline preload={i === 0 ? "metadata" : "none"} aria-hidden="true" data-hero-video="" />}
               <div className="hero-introduction">
                 <h2 data-hero-headline>{slide.headline}</h2>
                 <p data-hero-intro>{slide.intro}</p>

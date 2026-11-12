@@ -10,6 +10,6 @@ import { CollectionLandingFields } from "./collection-landing-fields";
 export function NimbusFields({ value, onChange }: { value?: NimbusPageContent; onChange: (value: NimbusPageContent) => void }) {
   return (
     <CollectionLandingFields name="Nimbus" title="The Nimbus Collection" value={resolveNimbusPageContent(value)} onChange={onChange}
-      description="Edit /nimbus-collection. Changes stay in your draft until published. The photos are under Artwork, Nimbus; the film, the links and the edit's products stay with the page." />
+      description="Edit /nimbus-collection. Changes stay in your draft until published. The photos and the collection film are under Artwork, Nimbus; the links and the edit's products stay with the page." />
   );
 }

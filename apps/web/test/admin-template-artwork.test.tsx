@@ -44,7 +44,8 @@ async function setup(options: { conflict?: boolean; legacy?: boolean; role?: "ed
   const calls: string[] = [];
   globalThis.fetch = async (url, init) => {
     const path = String(url); calls.push(`${init?.method ?? "GET"} ${path}`);
-    if (path === "/api/admin/media") return Response.json({assets:[{id:"asset",sha256:"a".repeat(64),label:"Living room",width:100,height:100,bytes:100,mimeType:"image/webp",createdAt:"2026-10-26T00:00:00Z",publicAt:null,url:image,previewUrl:preview}],nextCursor:null});
+    if (path === "/api/admin/media?kind=video") return Response.json({assets:[{id:"film",sha256:"f".repeat(64),kind:"video",label:"Terra film",width:null,height:null,bytes:2_000_000,mimeType:"video/webm",durationMs:null,faststart:null,createdAt:"2026-11-12T00:00:00Z",publicAt:null,url:`/media/uploads/${"f".repeat(64)}.webm`,previewUrl:`/api/admin/media/${"f".repeat(64)}/preview`}],nextCursor:null});
+    if (path === "/api/admin/media?kind=image") return Response.json({assets:[{id:"asset",sha256:"a".repeat(64),label:"Living room",width:100,height:100,bytes:100,mimeType:"image/webp",createdAt:"2026-10-26T00:00:00Z",publicAt:null,url:image,previewUrl:preview}],nextCursor:null});
     if (path === "/api/admin/content/publish") {
       assert.equal(options.role, "publisher");
       assert.deepEqual(JSON.parse(String(init?.body)), {expectedVersion:5});
@@ -222,11 +223,11 @@ test("a draft conflict retains artwork edits and prevents additional writes", as
   } finally { await app.close(); }
 });
 
-test("video posters explain the unchanged video and publishing requires an explicit saved-draft action", async () => {
+test("film posters point to the film's own field and publishing requires an explicit saved-draft action", async () => {
   const app = await setup({role:"publisher"});
   try {
     await click("Artwork"); await select("Artwork placement", "home-testimonial-poster");
-    assert.match(container.textContent ?? "", /poster.*video.*unchanged/is);
+    assert.match(container.textContent ?? "", /poster of its film.*Choose the film itself below/is, "the poster says the film is chosen on its own");
     await fill("Desktop image URL", "/media/poster.webp");
     await fill("Image description", "Customer at home");
     assert.equal(button("Publish draft").disabled, true);
@@ -282,5 +283,30 @@ test("homepage icons and city artwork support independent media, descriptions an
     assert.equal(document.activeElement?.getAttribute("aria-label"), "Artwork placement");
     await click("Save draft");
     assert.deepEqual(app.saved().content.templateMedia.map((item: any) => item.key), ["story-hero", "home-difference-1", "home-value-strength", "home-city-artwork-1"]);
+  } finally { await app.close(); }
+});
+
+test("Artwork offers each page's film with its photos: the testimonial under Homepage, the collection films under Nimbus and Terra", async () => {
+  const app = await setup();
+  try {
+    await click("Artwork");
+    const films = () => [...container.querySelectorAll("[data-template-film]")].map(node => node.getAttribute("data-template-film"));
+    assert.deepEqual(films(), ["home-testimonial"]);
+    await select("Artwork group", "Cities");
+    assert.deepEqual(films(), [], "no film belongs with the city artwork");
+    await select("Artwork group", "Nimbus");
+    assert.deepEqual(films(), ["nimbus-hero"]);
+    await select("Artwork placement", "nimbus-hero-poster");
+    assert.match(container.textContent ?? "", /poster of its film/, "the opening photo says it is the film's poster");
+    await select("Artwork group", "Terra");
+    assert.deepEqual(films(), ["terra-hero"]);
+    const place = container.querySelector<HTMLElement>('[data-template-film="terra-hero"]')!;
+    await click("Choose film", place);
+    await act(async () => new Promise(resolve => setTimeout(resolve, 20)));
+    assert.equal(place.querySelectorAll("img").length, 0, "a film slot never lists images");
+    await act(async () => [...place.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent?.includes("Use film"))!.click());
+    await click("Save draft");
+    assert.deepEqual(app.saved().content.templateFilms, [{ key: "terra-hero", src: `/media/uploads/${"f".repeat(64)}.webm` }], "a film without a known running time is saved without one");
+    assert.deepEqual(app.saved().content.templateMedia, [sibling], "the artwork placements are untouched");
   } finally { await app.close(); }
 });

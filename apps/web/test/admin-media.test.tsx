@@ -183,3 +183,112 @@ test("Clear selection unchecks every image and hides the bar", async () => {
   assert.equal(checkbox(ui.container, "Dining room")?.checked, false);
  } finally { await ui.dispose(); }
 });
+
+// Films (owner, 12 Nov 2026): MP4 or WebM up to 80 MB, uploaded with progress and picked only where a film belongs.
+const filmSha = "f".repeat(64);
+const film = { id: "film", sha256: filmSha, kind: "video", label: "Workshop film", width: 1920, height: 1080, bytes: 12_582_912, mimeType: "video/mp4", durationMs: 8000, faststart: false, createdAt: "2026-11-12T00:00:00Z", publicAt: null, url: `/media/uploads/${filmSha}.mp4`, previewUrl: `/api/admin/media/${filmSha}/preview` };
+/** A stand-in for the browser's XMLHttpRequest, which film uploads use for their progress. */
+function fakeUploads(reply: { status: number; body: unknown }) {
+ const sent: { method: string; url: string; headers: Record<string, string>; body: unknown }[] = [];
+ class FakeRequest {
+  upload: { onprogress: ((event: { lengthComputable: boolean; loaded: number; total: number }) => void) | null } = { onprogress: null };
+  status = 0; responseText = ""; timeout = 0;
+  onload: (() => void) | null = null; onerror: (() => void) | null = null; ontimeout: (() => void) | null = null; onabort: (() => void) | null = null;
+  private request = { method: "", url: "", headers: {} as Record<string, string>, body: null as unknown };
+  open(method: string, url: string) { this.request.method = method; this.request.url = url; }
+  setRequestHeader(name: string, value: string) { this.request.headers[name] = value; }
+  abort() { this.onabort?.(); }
+  send(body: unknown) {
+   this.request.body = body; sent.push(this.request);
+   setTimeout(() => this.upload.onprogress?.({ lengthComputable: true, loaded: 40, total: 100 }), 0);
+   setTimeout(() => { this.status = reply.status; this.responseText = JSON.stringify(reply.body); this.onload?.(); }, 60);
+  }
+ }
+ const previous = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+ Object.assign(globalThis, { XMLHttpRequest: FakeRequest });
+ return { sent, restore: () => Object.assign(globalThis, { XMLHttpRequest: previous }) };
+}
+async function openFilmUpload(container: HTMLElement) {
+ await act(async () => buttonByText(container, "Upload film")?.click());
+ await settle();
+ return document.querySelector<HTMLInputElement>('[role="dialog"] input[type="file"]');
+}
+test("films upload through the streaming route with progress and appear with their running time", async () => {
+ const uploads = fakeUploads({ status: 201, body: { asset: film } });
+ const ui = await render(<MediaLibrary session={session} onExpired={() => {}} heading="h2" />, async () => Response.json({ assets: [asset], nextCursor: null }));
+ try {
+  const input = (await openFilmUpload(ui.container))!;
+  assert.ok(input, "the library offers a film upload");
+  assert.equal(input.getAttribute("accept"), "video/mp4,video/webm");
+  assert.match(document.querySelector('[role="dialog"]')?.textContent ?? "", /MP4 \(H\.264\) or WebM up to 80 MB/);
+  const file = new File([new Uint8Array([0, 0, 0, 24])], "workshop.mp4", { type: "video/mp4" });
+  Object.defineProperty(input, "files", { value: [file], configurable: true });
+  await act(async () => { input.dispatchEvent(new dom.window.Event("change", { bubbles: true })); await new Promise(resolve => setTimeout(resolve, 20)); });
+  const bar = document.querySelector('[role="progressbar"]');
+  assert.equal(bar?.getAttribute("aria-valuenow"), "40", "staff see how far the film has gone");
+  assert.ok(buttonByText(document.querySelector('[role="dialog"]')!, "Cancel upload"), "a long upload can be stopped");
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 80)); });
+  assert.equal(uploads.sent.length, 1);
+  const [request] = uploads.sent;
+  assert.equal(request!.method, "POST"); assert.equal(request!.url, "/api/admin/media/films"); assert.equal(request!.body, file);
+  assert.equal(request!.headers["Content-Type"], "video/mp4"); assert.equal(request!.headers["X-CSRF-Token"], session.csrfToken);
+  assert.equal(document.querySelector('[role="dialog"]'), null, "a finished upload closes the dialog");
+  const card = ui.container.querySelector("li");
+  assert.equal(card?.querySelector("video")?.getAttribute("src"), film.previewUrl, "the private film previews through the staff route");
+  assert.match(card?.textContent ?? "", /0:08 · 1920 × 1080 · 12\.0 MB/);
+  assert.match(card?.textContent ?? "", /Starts slowly/, "a film without a fast start is pointed out");
+ } finally { uploads.restore(); await ui.dispose(); }
+});
+test("films of the wrong kind or over 80 MB are refused before they are sent, and the server's reason is shown", async () => {
+ const uploads = fakeUploads({ status: 400, body: { code: "MEDIA_INVALID_FILM", message: "Choose a complete MP4 or WebM film." } });
+ const ui = await render(<MediaLibrary session={session} onExpired={() => {}} heading="h2" />, async () => Response.json({ assets: [], nextCursor: null }));
+ try {
+  const input = (await openFilmUpload(ui.container))!;
+  const huge = new File([new Uint8Array(1)], "long.mp4", { type: "video/mp4" }); Object.defineProperty(huge, "size", { value: 80 * 1024 * 1024 + 1 });
+  for (const file of [new File(["x"], "clip.mov", { type: "video/quicktime" }), huge, new File(["x"], "room.png", { type: "image/png" })]) {
+   Object.defineProperty(input, "files", { value: [file], configurable: true });
+   await act(async () => input.dispatchEvent(new dom.window.Event("change", { bubbles: true })));
+   assert.match(document.querySelector('[role="dialog"] [role="alert"]')?.textContent ?? "", /MP4 or WebM film up to 80 MB/);
+  }
+  assert.equal(uploads.sent.length, 0);
+  Object.defineProperty(input, "files", { value: [new File(["x"], "broken.mp4", { type: "video/mp4" })], configurable: true });
+  await act(async () => { input.dispatchEvent(new dom.window.Event("change", { bubbles: true })); await new Promise(resolve => setTimeout(resolve, 100)); });
+  assert.match(document.querySelector('[role="dialog"] [role="alert"]')?.textContent ?? "", /Choose a complete MP4 or WebM film/);
+ } finally { uploads.restore(); await ui.dispose(); }
+});
+test("a film picker lists and uploads films only, and an image picker images only", async () => {
+ const requested: string[] = [];
+ let chosen = "";
+ const ui = await render(<MediaPicker accept="video" session={session} onExpired={() => {}} label="Collection film" value="" onChange={v => chosen = v} />, async url => { requested.push(String(url)); return Response.json({ assets: [film], nextCursor: null }); });
+ try {
+  await act(async () => buttonByText(ui.container, "Choose film")?.click());
+  assert.deepEqual(requested, ["/api/admin/media?kind=video"]);
+  assert.equal(buttonByText(ui.container, "Upload image"), undefined, "a film slot never offers an image upload");
+  assert.ok(buttonByText(ui.container, "Upload film"));
+  await act(async () => Array.from(ui.container.querySelectorAll("button")).find(b => b.textContent?.includes("Use film"))?.click());
+  assert.equal(chosen, film.url);
+ } finally { await ui.dispose(); }
+ const images = await render(<MediaPicker session={session} onExpired={() => {}} label="Banner" value="" onChange={() => {}} />, async url => { requested.push(String(url)); return Response.json({ assets: [asset], nextCursor: null }); });
+ try {
+  await act(async () => buttonByText(images.container, "Choose image")?.click());
+  assert.equal(requested.at(-1), "/api/admin/media?kind=image");
+  assert.equal(buttonByText(images.container, "Upload film"), undefined, "an image slot never offers a film upload");
+ } finally { await images.dispose(); }
+});
+test("a chosen film previews privately, and an address that is not a library film does not play", async () => {
+ const chosen = await render(<MediaPicker accept="video" session={session} onExpired={() => {}} label="Film" value={film.url} onChange={() => {}} />, async () => Response.json({ assets: [], nextCursor: null }));
+ try { assert.equal(chosen.container.querySelector("video")?.getAttribute("src"), film.previewUrl); } finally { await chosen.dispose(); }
+ for (const value of [asset.url, "https://tracker.example.invalid/film.mp4", "/media/films/bundled.mp4"]) {
+  const ui = await render(<MediaPicker accept="video" session={session} onExpired={() => {}} label="Film" value={value} onChange={() => {}} />, async () => Response.json({ assets: [], nextCursor: null }));
+  try {
+   assert.equal(ui.container.querySelectorAll("video, img").length, 0, value);
+   assert.match(ui.container.textContent ?? "", /not a film from the media library/);
+  } finally { await ui.dispose(); }
+ }
+});
+for (const [name, bad] of [["a film named for another container", { ...film, url: `/media/uploads/${filmSha}.webm` }], ["another video type", { ...film, mimeType: "video/quicktime" }],
+ ["a film over 80 MB", { ...film, bytes: 80 * 1024 * 1024 + 1 }], ["an unknown kind", { ...film, kind: "audio" }]] as const)
+ test(`malformed film metadata fails closed: ${name}`, async () => {
+  const ui = await render(<MediaLibrary session={session} onExpired={() => {}} />, async () => Response.json({ assets: [bad], nextCursor: null }));
+  try { assert.ok(ui.container.querySelector('[role="alert"]')); assert.equal(ui.container.querySelectorAll("video").length, 0); } finally { await ui.dispose(); }
+ });

@@ -441,15 +441,27 @@ model ShopContentRevision {
   @@unique([documentId, version])
 }
 
+/// A media library file: a WebP image the API made from an upload, or a film (MP4 or WebM) stored as uploaded.
+enum ShopMediaKind {
+  image
+  video
+}
+
 model ShopMediaAsset {
   id String @id @default(cuid())
   sha256 String @unique
   storageKey String @unique
+  kind ShopMediaKind @default(image)
   label String
-  width Int
-  height Int
+  /// Always set for images; a film's frame size when its file states one.
+  width Int?
+  height Int?
   bytes Int
   mimeType String
+  /// A film's running time, when its file states one.
+  durationMs Int?
+  /// An MP4 whose index comes before its pictures, so it starts playing before it has downloaded; null for images and WebM.
+  faststart Boolean?
   createdById String
   createdBy ShopAdmin @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())

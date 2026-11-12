@@ -2,6 +2,7 @@ import { collectionSectionKeys, type CollectionLandingContent, type StorefrontCo
 import type { CollectionIcon, CollectionLanding, CollectionMedia } from "@/lib/collection-landing";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { collectionFilm, withFilm } from "@/lib/template-films";
 
 /**
  * The Terra Collection's words, from the owner's frame (Figma 311:921 "Maple / Terra Collection / Desktop", 10 Nov 2026).
@@ -123,7 +124,7 @@ export function resolveTerraPageContent(value?: CollectionLandingContent): Colle
  * The Terra page, ready for the collection template: staff words, the Terra artwork slots (Admin → Artwork → Terra), the
  * store's customer email from the footer settings, and the fixed links and icons.
  */
-export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | "templateMedia" | "siteChrome">): CollectionLanding {
+export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | "templateMedia" | "templateFilms" | "siteChrome">): CollectionLanding {
   const page = resolveTerraPageContent(site.terraPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
@@ -131,14 +132,17 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
   };
   const about = (thing: string) => terraEnquiryHref(`${page.title}: ${thing}`);
   const rooms = page.rooms ?? defaultTerraPage.rooms!;
-  // Terra has no collection film, so a film line saved in its copy has nothing to open.
-  const { film: _film, ...hero } = page.hero;
+  // The film is the one staff chose under Artwork → Terra; without one the opening has no film link.
+  const { film: filmLabel, ...hero } = page.hero, opening = media("terra-hero");
   return {
     key: "terra",
     title: page.title,
     sections: page.sections.filter(section => section.enabled).map(section => section.key),
     // "Explore Terra" glides to the three settings (the template's rooms region carries "terra-rooms").
-    hero: { ...hero, cta: { label: hero.cta, href: "#terra-rooms" }, media: media("terra-hero") },
+    hero: {
+      ...hero, cta: { label: hero.cta, href: "#terra-rooms" }, media: opening,
+      ...withFilm(collectionFilm("terra-hero", site.templateFilms, { label: filmLabel ?? "Watch collection film", title: `${page.title} film`, poster: opening.src })),
+    },
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: `#${roomIds[index]}` })),
     philosophy: { ...page.philosophy },
     origin: { ...page.origin, media: media("terra-origin") },

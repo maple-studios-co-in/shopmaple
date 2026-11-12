@@ -5,8 +5,9 @@ import type { CollectionFilm as Film } from "@/lib/collection-landing";
 
 /**
  * "Watch collection film / 00:25": opens the collection's film over the page in a native modal dialog, with the
- * browser's own controls. It loads only when asked for, starts at once unless the visitor prefers less motion, and gives
- * focus back to the link when it closes (Escape, the close button or a click outside the film).
+ * browser's own controls. The film and its poster load only when asked for; it starts at once unless the visitor prefers
+ * less motion, and gives focus back to the link when it closes (Escape, the close button or a click outside the film).
+ * Without a known running time the link shows its words alone.
  */
 export function CollectionFilm({ film }: { film: Film }) {
   const opener = useRef<HTMLButtonElement>(null);
@@ -18,6 +19,7 @@ export function CollectionFilm({ film }: { film: Film }) {
     if (!player || !frame) return;
     const phone = film.mobileSrc && window.matchMedia?.("(max-width: 749px)").matches;
     const source = phone ? film.mobileSrc! : film.src;
+    if (!player.getAttribute("poster")) player.setAttribute("poster", film.poster);
     if (player.getAttribute("src") !== source) player.setAttribute("src", source);
     if (!frame.open) frame.showModal();
     if (!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) void player.play()?.catch(() => {});
@@ -32,12 +34,13 @@ export function CollectionFilm({ film }: { film: Film }) {
         <span className="collection-film-play" aria-hidden="true">
           <svg viewBox="0 0 10 12" fill="currentColor" focusable="false"><path d="M0 0v12l10-6z" /></svg>
         </span>
-        <span>{film.label}</span> <span className="collection-film-slash" aria-hidden="true">/</span> <span>{film.duration}</span>
+        <span>{film.label}</span>
+        {film.duration && <> <span className="collection-film-slash" aria-hidden="true">/</span> <span>{film.duration}</span></>}
       </button>
       <dialog ref={dialog} className="collection-film" aria-label={film.title} onClose={closed}
         onClick={event => { if (event.target === dialog.current) dialog.current.close(); }}>
         <div className="collection-film-frame">
-          <video ref={video} controls playsInline preload="none" poster={film.poster} />
+          <video ref={video} controls playsInline preload="none" />
           <button type="button" className="collection-film-close" aria-label="Close the film" onClick={() => dialog.current?.close()}>
             <X size={22} strokeWidth={1.5} aria-hidden="true" />
           </button>

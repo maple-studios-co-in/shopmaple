@@ -10,7 +10,8 @@
  *   [data-slider-toggle]       a button that opens and closes its slide's detail panel (`data-open` and `.is-open` on the slide)
  *   [data-slider-focus-opens]  opens its slide's panel when focused
  *
- * Videos play only while their slide is current, muted and looping, and never under reduced motion.
+ * Videos play only while their slide is current, muted and looping, and never under reduced motion. A video carries
+ * `data-playing` while it plays, so its stylesheet can show the slide's poster picture at every other time.
  */
 export function mountSlider(root: HTMLElement): () => void {
   const track = root.querySelector<HTMLElement>("[data-slider-track]");
@@ -93,6 +94,9 @@ export function mountSlider(root: HTMLElement): () => void {
     if (!(next instanceof Node) || !root.contains(next)) onLeave();
   };
   const onMotion = () => { show(); schedule(); };
+  const videos = [...root.querySelectorAll("video")];
+  const onPlaying = (event: Event) => (event.target as HTMLElement).setAttribute("data-playing", "");
+  const onStopped = (event: Event) => (event.target as HTMLElement).removeAttribute("data-playing");
 
   track?.addEventListener("scroll", onScroll, { passive: true });
   for (const type of ["pointerdown", "wheel", "touchstart"]) track?.addEventListener(type, release, { passive: true });
@@ -102,6 +106,7 @@ export function mountSlider(root: HTMLElement): () => void {
   root.addEventListener("focusin", onFocusIn);
   root.addEventListener("focusout", onFocusOut);
   reduced?.addEventListener?.("change", onMotion);
+  for (const video of videos) { video.addEventListener("playing", onPlaying); video.addEventListener("pause", onStopped); video.addEventListener("emptied", onStopped); }
   show();
   schedule();
   root.setAttribute("data-slider-ready", "");
@@ -116,6 +121,7 @@ export function mountSlider(root: HTMLElement): () => void {
     root.removeEventListener("focusin", onFocusIn);
     root.removeEventListener("focusout", onFocusOut);
     reduced?.removeEventListener?.("change", onMotion);
+    for (const video of videos) { video.removeEventListener("playing", onPlaying); video.removeEventListener("pause", onStopped); video.removeEventListener("emptied", onStopped); video.removeAttribute("data-playing"); }
     root.removeAttribute("data-slider-ready");
   };
 }

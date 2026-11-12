@@ -11,6 +11,8 @@
  *   [data-flipbook]      the editorial photo: its [data-flip-frame] pictures cut every 800 ms, on and
  *                        on, while it is in view
  *   [data-reveal]        an element that fades in once it scrolls into view (`data-revealed`)
+ *   [data-ambient-film]  the testimonial's film (components/ambient-film.tsx): muted and looping while at least a quarter
+ *                        of it is in view, paused otherwise
  *   [data-marquee]       the Social Proof row: its [data-marquee-track]'s drift eases to rest under the mouse or
  *                        keyboard focus and back when they leave (`data-marquee-eased` while this is in charge)
  *
@@ -357,11 +359,30 @@ export function mountReveal(element: HTMLElement): () => void {
   return () => { stopWatching(); element.setAttribute("data-revealed", ""); };
 }
 
+/**
+ * Plays `player` muted while a quarter of it is in view and pauses it otherwise. Under reduced motion it never starts, and
+ * asking for less motion mid-film brings the poster back rather than leaving a frame.
+ */
+export function mountAmbientFilm(player: HTMLVideoElement): () => void {
+  const reduced = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  let visible = false;
+  const update = () => {
+    if (visible && !reduced?.matches) { player.muted = true; void player.play()?.catch(() => {}); return; }
+    if (player.paused) return;
+    player.pause();
+    if (reduced?.matches) player.load();
+  };
+  const stopWatching = watchVisibility(player, 0.25, (seen) => { visible = seen; update(); });
+  reduced?.addEventListener?.("change", update);
+  return () => { stopWatching(); reduced?.removeEventListener?.("change", update); };
+}
+
 /** Attaches every homepage effect found under `root`; returns one function that detaches them all. */
 export function mountHomeEffects(root: ParentNode = document): () => void {
   const reduced = reducedMotion();
   const stops: (() => void)[] = [];
   for (const stage of root.querySelectorAll<HTMLElement>("[data-stage]")) stops.push(mountStage(stage, reduced));
+  for (const film of root.querySelectorAll<HTMLVideoElement>("video[data-ambient-film]")) stops.push(mountAmbientFilm(film));
   if (!reduced) {
     for (const host of root.querySelectorAll<HTMLElement>("[data-typed]")) stops.push(mountTyped(host));
     for (const book of root.querySelectorAll<HTMLElement>("[data-flipbook]")) stops.push(mountFlipbook(book));

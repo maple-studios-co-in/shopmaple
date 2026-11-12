@@ -6,6 +6,8 @@ import { productPageSchema, variantProductPageSchema } from "./product-page";
 export { productRichTextSchema, productPdpContentSchema } from "./product-pdp-content";
 export type { ProductRichText, ProductRichTextNode, ProductPdpContent } from "./product-pdp-content";
 export { campaignScheduleSchema, isCampaignActive } from "./campaign-schedule";
+export { contentFilmSchema, templateFilmKeys, templateFilmsSchema } from "./template-films";
+export type { TemplateFilm, TemplateFilmKey, TemplateFilms } from "./template-films";
 export type { CampaignSchedule } from "./campaign-schedule";
 export {
   storefrontContentSchema,

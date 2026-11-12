@@ -10,6 +10,6 @@ import { CollectionLandingFields } from "./collection-landing-fields";
 export function TerraFields({ value, onChange }: { value?: CollectionLandingContent; onChange: (value: CollectionLandingContent) => void }) {
   return (
     <CollectionLandingFields name="Terra" title="The Terra Collection" value={resolveTerraPageContent(value)} onChange={onChange}
-      description="Edit /terra-collection. Changes stay in your draft until published. The photos are under Artwork, Terra; the links stay with the page, and each setting and concept opens an enquiry about it on the contact form." />
+      description="Edit /terra-collection. Changes stay in your draft until published. The photos and the collection film are under Artwork, Terra; the links stay with the page, and each setting and concept opens an enquiry about it on the contact form." />
   );
 }

@@ -100,7 +100,7 @@ test("quota rejects new assets while allowing deduplicated selections and counts
  const different=await sharp({create:{width:15,height:25,channels:3,background:"#654321"}}).png().toBuffer();
  const orphan=join(root,"orphan.webp"), file=await open(orphan,"wx");await file.truncate(250*1024*1024);await file.close();
  try {const rejected=await upload(request(app()),different);assert.equal(rejected.status,409);assert.equal(rejected.body.code,"MEDIA_QUOTA_REACHED");assert.equal((await upload()).status,200);}finally{await unlink(orphan);}
- const count=await db.shopMediaAsset.count(), ids:string[]=[];
+ const count=await db.shopMediaAsset.count({where:{kind:"image"}}), ids:string[]=[];
  try {
   await db.shopMediaAsset.createMany({data:Array.from({length:500-count},(_,i)=>{const id=`cquota${i}`,sha256=i.toString(16).padStart(64,"0");ids.push(id);return {id,sha256,storageKey:`${sha256}.webp`,label:"Quota fixture",width:1,height:1,bytes:1,mimeType:"image/webp",createdById:staffId};})});
   assert.equal((await upload(request(app()),different)).status,409);assert.equal((await upload()).status,200);

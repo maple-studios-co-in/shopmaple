@@ -96,7 +96,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
       if (edited) { if (mobile) assert.equal(source, responsive(key) ? `/media/${key}-small.webp` : null, `${key} mobile`); }
       else if (mobile) assert.equal(source, mobile, `${key} mobile`);
     }
-    // No film anywhere: they were Shopify files, and films cannot be uploaded yet.
+    // No film anywhere: they were Shopify files, and these documents choose no library film.
     assert.equal(doc.querySelector("video"), null, `${page} draws no film`);
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
