@@ -39,6 +39,8 @@ The [order service](docs/order-flow.md) freezes server-priced quotes, gates paym
 
 [Enquiry forms](docs/enquiries.md) save locally with idempotent retries and a receipt. No team notification is sent. Contact, project and bulk enquiries also go to Keeri as [leads](docs/keeri-leads.md), and staff handle them there; the shop admin keeps a read-only [list of website enquiries](docs/enquiry-admin.md) with each one's Keeri state (the store's own CRM was [retired](docs/admin-crm.md) on 11 November 2026). Newsletter, reviews, accounts and unsupported collection aliases continue on the existing shop; Instagram links to the real profile.
 
+Operations on the VPS: [store monitoring and email alerts](docs/operations-monitoring.md), [nightly backups and the weekly restore drill](docs/operations-backups.md), and a private [staging copy](docs/operations-staging.md) for trying releases.
+
 ## Next integrations
 
 Keeri publication, atomic stock reservation and order handoff; the existing merchant gateway (Razorpay is present in historical Shopify order records); shipping/tax rules; payment verification and reconciliation; accounts/history/reviews; complete template fidelity and URL migration. Merchant access and current gateway configuration still need verification.

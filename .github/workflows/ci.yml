@@ -29,15 +29,19 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Install PostgreSQL 17 recovery clients
+      # The restore drill test starts a throwaway cluster, so initdb and pg_ctl (server package) are needed too.
+      - name: Install PostgreSQL 17 recovery clients and server binaries
         run: |
-          if test -x /usr/lib/postgresql/17/bin/pg_dump && test -x /usr/lib/postgresql/17/bin/pg_restore; then exit 0; fi
+          if test -x /usr/lib/postgresql/17/bin/pg_dump && test -x /usr/lib/postgresql/17/bin/pg_restore && test -x /usr/lib/postgresql/17/bin/initdb; then exit 0; fi
           sudo install -d /usr/share/postgresql-common/pgdg
           sudo curl --fail --silent --show-error --location https://www.postgresql.org/media/keys/ACCC4CF8.asc --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           . /etc/os-release
           printf 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/shopmaple-pgdg.list >/dev/null
+          # Binaries only: no default cluster is created or started on the runner.
+          sudo install -d /etc/postgresql-common/createcluster.d
+          echo 'create_main_cluster = false' | sudo tee /etc/postgresql-common/createcluster.d/shopmaple-no-cluster.conf >/dev/null
           sudo apt-get update
-          sudo apt-get install --yes postgresql-client-17
+          sudo apt-get install --yes postgresql-client-17 postgresql-17
       - run: npm ci
       - run: cp .env.example .env
       - run: npm run db:generate
