@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { Armchair, BedDouble, Sofa, Table2, TreePine, type LucideIcon } from "lucide-react";
 import type { CollectionSectionKey } from "@shopmaple/contracts";
-import { CollectionFilm } from "@/components/collection-landing-client";
+import { CollectionFilm, CollectionOpeningClip } from "@/components/collection-landing-client";
 import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
 import type { CollectionArt, CollectionIcon, CollectionLanding, CollectionLink, CollectionMedia } from "@/lib/collection-landing";
 
@@ -75,6 +75,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
       <section className="collection-hero" id={id("hero")} data-collection-section="hero" aria-labelledby={heading("hero")}>
         <div className="collection-hero-media">
           <Photo media={page.hero.media} sizes="100vw" eager />
+          {page.hero.clip && <CollectionOpeningClip clip={page.hero.clip} />}
         </div>
         <div className="collection-hero-copy">
           <Eyebrow>{page.hero.eyebrow}</Eyebrow>

@@ -61,6 +61,13 @@ From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), f
 - Enlarged 1.5 times with sharp (Lanczos, then light sharpening) and saved as WebP: `terra-collection/origin.webp` (node 315:623) and `detail.webp` (the material story, node 311:1004), 1536 x 1536 from raw images 1024 x 1024 PNG.
 - `terra-collection/hero-mobile.webp` (1215 x 2160): a 972 x 1728 portrait crop of the enlarged hero (the sofa, stone table and walnut chair), enlarged 1.25 times with sharp (Lanczos, then light sharpening), for the phone layout, where the opening stands about 9:16; the frame has no phone design.
 
+## Terra opening clip (12 November 2026)
+
+The owner's 8-second clip of the Terra lobby (curved olive sofa, walnut ring chairs, olive trees), one shot with no titles or logo, sent as `Terra.mp4` on 12 November 2026 to loop in the Terra page's opening. It is separate from the collection film that staff chose in Artwork, which the film link opens. The source was HEVC Main 10 (10-bit), 1920 x 1080 at 24 fps with no sound, 11.3 MB. Chrome on many Windows PCs and every Firefox cannot play HEVC, so it was re-encoded with ffmpeg (libx264, High profile, CRF 23, preset slow, 8-bit yuv420p, BT.709, moov at the front so it plays while it downloads, no audio track):
+
+- `terra-collection/opening.mp4`: 1920 x 1080, 4.1 MB.
+- `terra-collection/opening-portrait.mp4`: 608 x 1080, 1.2 MB. A 9:16 cut for phones, taken from x = 616 of each frame so the sofa and table stay in view as the camera moves.
+
 ## Bulk Enquiry (10 November 2026)
 
 From the owner's Figma file "Maple Website Review" (`GJsFInfhys0crdNpQsbUUU`), page node 298:924, exported through the Figma connector on 10 November 2026:

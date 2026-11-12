@@ -85,7 +85,9 @@ test("Nimbus and Terra show the chosen film's link with its running time, and no
   const none = { ...structuredClone(defaultStorefrontContent) };
   assert.equal("film" in resolveNimbusLanding(none).hero, false);
   assert.equal("film" in resolveTerraLanding(none).hero, false);
-  assert.equal(doc(<CollectionLandingView page={resolveTerraLanding(none)} />).querySelector("[data-collection-film], video"), null);
+  // Terra's opening keeps its own clip (collection-opening-clip.test.tsx); without a film there is no link and no player.
+  assert.equal(doc(<CollectionLandingView page={resolveTerraLanding(none)} />).querySelector("[data-collection-film], video:not([data-collection-clip])"), null);
+  assert.equal(doc(<CollectionLandingView page={resolveNimbusLanding(none)} />).querySelector("[data-collection-film], video"), null);
   // One page's film never shows on the other.
   assert.equal("film" in resolveTerraLanding({ ...none, templateFilms: [films[0]!] }).hero, false);
 });

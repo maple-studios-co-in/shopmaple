@@ -219,6 +219,20 @@
   /* The design's shade, a touch deeper behind the words on the left so the small lines stay legible over bright cloud. */
   background: linear-gradient(90deg, rgb(20 15 10 / 0.14), rgb(20 15 10 / 0) 55%), rgb(20 15 10 / 0.23);
 }
+/* The opening's clip (components/collection-landing-client.tsx) lies over the photo, under the shade, and shows only once
+   it plays; until then, and for visitors who ask for reduced motion, the photo is the opening. */
+.collection-hero-clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s var(--collection-ease);
+}
+.collection-hero-clip[data-playing] {
+  opacity: 1;
+}
 .collection-hero-copy {
   display: flex;
   flex-direction: column;

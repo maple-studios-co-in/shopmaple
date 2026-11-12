@@ -28,6 +28,8 @@ export type CollectionLanding = {
     media: CollectionMedia;
     /** "Watch collection film / 00:08": opens the film staff chose (Artwork → Nimbus / Terra) over the page; absent without one. */
     film?: CollectionFilm;
+    /** The page's own clip, looping muted over the photo (Terra's lobby); absent without one, and the photo stands alone. */
+    clip?: CollectionClip;
   };
   /** "01 Living / 02 Dining / 03 Bedroom": numbered from 01 in order. Each goes to a collection or a room below. */
   roomNav: CollectionLink[];
@@ -110,6 +112,18 @@ export type CollectionFilm = {
   mobileSrc?: string;
   /** The still shown before the film plays: the page's opening photo. */
   poster: string;
+};
+
+/**
+ * The opening's clip (owner, 12 Nov 2026): a short, silent, single shot that loops muted over the opening photo, which
+ * stays beneath it as the still. It is not the collection film: that one may carry the logo and titles, and opens over
+ * the page from its link. Bundled with the page (`/media/<page>-collection/opening.mp4`, public/media/PROVENANCE.md).
+ */
+export type CollectionClip = {
+  /** The landscape clip, for screens wider than a phone. */
+  src: string;
+  /** A 9:16 cut for phones (up to 749px wide), as the opening photo has its phone crop. */
+  mobileSrc?: string;
 };
 
 /** One of Terra's settings: photo, number and label, heading, line, tags and an enquiry button. */
