@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { preflight, runBackup } from './backup-runner.mjs';
+import { listCompletePairs, pruneCompletePairs } from './backups.mjs';
 
 const sha = 'a061826457d4033def0f2118c9b0cd82e0a04965';
 function fixture(t, script = 'exit 0') {
@@ -82,4 +83,43 @@ test('a preflight problem is recorded without starting the backup', async t => {
   const status = await runBackup({ root, statusFile, statfs: plenty, now: () => 0, extraEnv: { MARKER: marker } });
   assert.equal(status.reason, 'RELEASE_DIR_GROUP_WRITABLE');
   assert.throws(() => statSync(marker), /ENOENT/);
+});
+
+/** A complete pair as paired-backup.mjs leaves it, finished `daysAgo` days before 12 Nov 2026 02:47 UTC. */
+function completePair(backups, daysAgo) {
+  const at = new Date(Date.parse('2026-11-12T02:47:00.000Z') - daysAgo * 86_400_000);
+  const id = `${at.toISOString().replace(/[-:.]/g, '')}-pair${daysAgo}`;
+  mkdirSync(join(backups, id), { mode: 0o700 });
+  writeFileSync(join(backups, id, 'COMPLETE.json'), JSON.stringify({ version: 1, pairId: id, completedAt: at.toISOString() }));
+  writeFileSync(join(backups, id, 'database.dump'), 'dump');
+  return id;
+}
+
+test('after a good night the newest 7 complete pairs are kept and older ones deleted; partial runs and release files stay', async t => {
+  const tonight = '20261112T024700000Z-tonight';
+  const { root, statusFile } = fixture(t, `mkdir -m 700 "$BACKUPS/${tonight}" && printf '{"version":1,"pairId":"${tonight}","completedAt":"2026-11-12T03:10:00.000Z"}' > "$BACKUPS/${tonight}/COMPLETE.json" && echo '{"pairId":"${tonight}","complete":true}'`);
+  const backups = join(root, 'backups');
+  const older = Array.from({ length: 9 }, (_, i) => completePair(backups, i + 1));
+  mkdirSync(join(backups, '20261101T024700000Z-partial'), { mode: 0o700 });
+  writeFileSync(join(backups, 'a061826457d4033def0f2118c9b0cd82e0a04965.tar.gz'), 'release');
+  const status = await runBackup({ root, statusFile, statfs: plenty, now: () => Date.parse('2026-11-12T02:47:00.000Z'), extraEnv: { BACKUPS: backups } });
+  assert.equal(status.ok, true); assert.equal(status.pruned, 3);
+  assert.deepEqual(listCompletePairs(backups).map(pair => pair.id), [tonight, ...older.slice(0, 6)], 'tonight plus the six nights before it');
+  for (const kept of ['20261101T024700000Z-partial', 'a061826457d4033def0f2118c9b0cd82e0a04965.tar.gz']) assert.ok(readdirSync(backups).includes(kept), kept);
+});
+
+test('a failed night deletes nothing', async t => {
+  const { root, statusFile } = fixture(t, 'echo "Paired backup failed" >&2; exit 1');
+  const backups = join(root, 'backups');
+  for (let day = 1; day <= 9; day++) completePair(backups, day);
+  const status = await runBackup({ root, statusFile, statfs: plenty, now: () => 0 });
+  assert.equal(status.ok, false); assert.equal(status.pruned, undefined);
+  assert.equal(listCompletePairs(backups).length, 9);
+});
+
+test('pruning refuses to keep fewer than one backup', t => {
+  const root = mkdtempSync(join(realpathSync(tmpdir()), 'backup-prune-')); t.after(() => rmSync(root, { recursive: true, force: true }));
+  completePair(root, 1);
+  assert.throws(() => pruneCompletePairs(root, { keep: 0 }), /at least one/);
+  assert.deepEqual(pruneCompletePairs(root, { keep: 1 }), []);
 });

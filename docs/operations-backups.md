@@ -69,14 +69,16 @@ Measured on 11 November 2026: 193 GB disk, 24.7 GB free (12.8%); the monitor's l
 
 | Item | Size | When |
 | --- | --- | --- |
-| One nightly pair today | about 2 to 5 MB (database dump under 1 MB in October, live database 20 MB; media 1.9 MB) | every night, kept (there is no retention) |
-| A month of pairs | about 60 to 150 MB | grows with orders and uploads |
+| One nightly pair today | about 2 to 5 MB (database dump under 1 MB in October, live database 20 MB; media 1.9 MB) | every night; the newest 7 complete pairs are kept |
+| Seven kept pairs | about 15 to 35 MB today | grows with orders and uploads; films multiply it (below) |
 | Restore drill | about 100 to 150 MB at its peak (cluster files, restored database, extracted media), removed when it ends | Sundays, a few minutes |
 | Monitor and logs | under 3 MB (logs rotate at 1 MB) | always |
 
-Two things to decide before they become a problem:
+**Retention (owner, 12 Nov 2026): the last 7 nights.** After a night's pair is complete, `ops/backup-runner.mjs` deletes complete pairs older than the newest seven (`pruned` in `ops/state/backup-last.json`). A failed night deletes nothing, and partial runs and release archives are never touched.
 
-- **Films in the media library (pending PR #134)** raise the media caps to 96 MB per file and 4 GB in all, and every nightly pair copies the whole media folder. With 3 GB of films, each night adds about 3 GB and the drill needs that much again while it runs; the disk would cross the 10% line within two nights. Retention (for example keep 7 nightly pairs plus one per week) or media de-duplication between pairs is needed before films are uploaded.
+Two things to watch:
+
+- **Films in the media library (PR #134)** raise the media caps to 96 MB per file and 4 GB in all, and every nightly pair copies the whole media folder. Seven pairs hold seven copies of the films: 500 MB of films is about 3.5 GB of backups, but the full 3 GB film quota is about 21 GB, plus that much again while the Sunday drill runs. That is more than the 24.7 GB free on 11 November, so clear out old releases (next point) before the film library passes about 1 GB.
 - `releases/` holds 29 builds (28 GB, about 1.1 GB each) and `backups/` holds 40 release archives (about 700 MB). Keeping the last five releases would free about 25 GB. Nothing here deletes them.
 
 Backups are still on the same disk as the store. Off-host copies remain open (see [paired-backups.md](paired-backups.md)).

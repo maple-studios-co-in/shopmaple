@@ -7,6 +7,7 @@ import { existsSync, lstatSync, realpathSync, statfsSync } from 'node:fs';
 import { basename, dirname, join, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeState } from './alerts.mjs';
+import { pruneCompletePairs } from './backups.mjs';
 
 const ROOT = '/home/deploy/shopmaple';
 const sha = /^[a-f0-9]{40}$/;
@@ -53,7 +54,7 @@ function run(script, env, timeoutMs) {
   });
 }
 
-export async function runBackup({ root = ROOT, statusFile = join(root, 'ops', 'state', 'backup-last.json'), statfs, now = Date.now, timeoutMs = 2 * 3_600_000, extraEnv = {} } = {}) {
+export async function runBackup({ root = ROOT, statusFile = join(root, 'ops', 'state', 'backup-last.json'), statfs, now = Date.now, timeoutMs = 2 * 3_600_000, extraEnv = {}, keepPairs = 7 } = {}) {
   const started = now();
   const check = preflight({ root, ...(statfs ? { statfs } : {}) });
   let status;
@@ -65,7 +66,11 @@ export async function runBackup({ root = ROOT, statusFile = join(root, 'ops', 's
     try { claimed = JSON.parse(result.stdout.trim().split('\n').at(-1) ?? ''); } catch { claimed = undefined; }
     if (result.code !== 0) status = { ok: false, reason: /Paired backup failed/.test(result.stderr) ? 'BACKUP_FAILED' : 'BACKUP_DID_NOT_START', release: check.release.sha };
     else if (!claimed?.complete || !pairId.test(claimed.pairId ?? '') || !existsSync(join(root, 'backups', claimed.pairId, 'COMPLETE.json'))) status = { ok: false, reason: 'PAIR_NOT_COMPLETE', release: check.release.sha };
-    else status = { ok: true, pairId: claimed.pairId, release: check.release.sha };
+    else {
+      status = { ok: true, pairId: claimed.pairId, release: check.release.sha };
+      // Old pairs go only after tonight's is complete, so a failing night never eats into the ones kept.
+      try { status.pruned = pruneCompletePairs(join(root, 'backups'), { keep: keepPairs }).length; } catch { status.pruneFailed = true; }
+    }
   }
   const record = { at: new Date(started).toISOString(), durationMs: now() - started, ...status };
   writeState(statusFile, record);
