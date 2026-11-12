@@ -16,13 +16,14 @@ export function filmDuration(ms: number | undefined): string | undefined {
 
 /**
  * A collection page's film ("Watch collection film / 00:25"), opened over the page, with the page's opening photo as its
- * poster; undefined when staff have not chosen one, and the link is left out.
+ * poster, and its phone film for screens up to 749px wide when staff chose one; undefined when staff have not chosen a
+ * film, and the link is left out.
  */
 export function collectionFilm(key: "nimbus-hero" | "terra-hero", films: TemplateFilms | undefined, { label, title, poster }: { label: string; title: string; poster: string }): CollectionFilm | undefined {
   const film = resolveTemplateFilm(key, films);
   if (!film) return undefined;
   const duration = filmDuration(film.durationMs);
-  return { label, title, src: film.src, poster, ...(duration ? { duration } : {}) };
+  return { label, title, src: film.src, ...(film.mobileSrc ? { mobileSrc: film.mobileSrc } : {}), poster, ...(duration ? { duration } : {}) };
 }
 /** `{ film }` when there is one, else nothing, so a page without a film has no `film` key at all. */
 export const withFilm = (film: CollectionFilm | undefined) => film ? { film } : {};

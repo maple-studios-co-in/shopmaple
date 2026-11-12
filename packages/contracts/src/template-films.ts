@@ -12,6 +12,11 @@ export type TemplateFilmKey = (typeof templateFilmKeys)[number];
 const templateFilmSchema = z.object({
   key: z.enum(templateFilmKeys),
   src: contentFilmSchema,
+  /**
+   * An optional phone cut (owner, 12 Nov 2026), for example a 9:16 version of a square film: screens up to 749px wide
+   * play it in place of `src`. Without one, every screen plays `src`.
+   */
+  mobileSrc: contentFilmSchema.optional(),
   /** The running time the library read from the file, shown beside a collection film's link ("00:25"). */
   durationMs: z.number().int().min(1).max(24 * 60 * 60 * 1000).optional(),
 }).strict();

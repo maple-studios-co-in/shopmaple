@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { catalogueHandleSchema } from "./catalogue-cards";
 import { contentImageSchema, contentLinkSchema } from "./content";
+import { contentFilmSchema } from "./template-films";
 
 const text = (max: number) => z.string().min(1).max(max).refine(
   value => value.trim().length > 0 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value),
@@ -11,15 +12,20 @@ const text = (max: number) => z.string().min(1).max(max).refine(
 const image = z.lazy(() => contentImageSchema);
 const link = z.lazy(() => contentLinkSchema);
 
-/** One slide of the hero slider; a video needs a poster, which shows before it plays and under reduced motion. */
+/**
+ * One slide of the hero slider; a video needs a poster, which shows before it plays and under reduced motion. A video may
+ * also have a phone film (`mobileSrc`, owner 12 Nov 2026), played in place of `src` on screens up to 749px wide.
+ */
 const heroSlideSchema = z.object({
   kind: z.enum(["image", "video"]),
   src: image,
+  mobileSrc: contentFilmSchema.optional(),
   poster: image.optional(),
   alt: text(200),
   headline: text(120),
   intro: text(300),
-}).strict().refine(slide => slide.kind !== "video" || slide.poster !== undefined, { path: ["poster"], message: "A video slide needs a poster image" });
+}).strict().refine(slide => slide.kind !== "video" || slide.poster !== undefined, { path: ["poster"], message: "A video slide needs a poster image" })
+  .refine(slide => slide.kind === "video" || slide.mobileSrc === undefined, { path: ["mobileSrc"], message: "Only a video slide has a phone film" });
 
 /** An extra Nimbus-style collection slide after the base card, which the fields beside `slides` still drive. */
 const nimbusSlideSchema = z.object({

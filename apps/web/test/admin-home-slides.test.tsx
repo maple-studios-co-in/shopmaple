@@ -218,3 +218,29 @@ test("nimbus: more collections are added, filled in, moved and removed, up to fi
     assert.equal(field("Nimbus heading")!.value, "The Nimbus Collection", "the base card's fields are untouched");
   } finally { await close(); }
 });
+
+test("hero: a video slide takes an optional phone film from the library's films; an image slide has none", async () => {
+  const film = "/media/uploads/" + "f".repeat(64) + ".mp4", phone = "/media/uploads/" + "e".repeat(64) + ".mp4";
+  const requested: string[] = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = async input => {
+    requested.push(String(input));
+    return Response.json({ assets: [{ id: "phone1", sha256: "e".repeat(64), kind: "video", label: "Diwali phone cut", width: 720, height: 1280, bytes: 6_300_000, mimeType: "video/mp4", durationMs: 15000, faststart: true, createdAt: "2026-11-12T00:00:00Z", publicAt: null, url: phone, previewUrl: `/api/admin/media/${"e".repeat(64)}/preview` }], nextCursor: null });
+  };
+  const close = await mount("hero", { ...defaultHomeDetails, hero: { ...defaultHomeDetails.hero, slides: [{ kind: "video", src: film, poster: upload, alt: "Diwali", headline: "Decked for Diwali", intro: "Up to 40% off" }] } });
+  try {
+    const picker = () => container.querySelector<HTMLElement>('[data-slide-picker="phone-film"]');
+    assert.ok(picker()?.querySelector('[data-media-picker="video"]'), "a video slide has a phone film picker");
+    assert.match(picker()!.textContent ?? "", /749px/);
+    await act(async () => picker()!.querySelector<HTMLElement>("button")!.click());
+    await act(async () => new Promise(resolve => setTimeout(resolve, 20)));
+    assert.deepEqual(requested, ["/api/admin/media?kind=video"], "it lists films only");
+    await click("Use film: Diwali phone cut");
+    assert.deepEqual(slides()![0], { kind: "video", src: film, mobileSrc: phone, poster: upload, alt: "Diwali", headline: "Decked for Diwali", intro: "Up to 40% off" });
+    assert.equal(homeDetailsSchema.safeParse(latest).success, true, "the slide is valid as saved");
+    await choose("Hero slide 1 kind", "image");
+    assert.equal(picker(), null, "an image slide has no phone film picker");
+    assert.equal("mobileSrc" in slides()![0]!, false, "and keeps no phone film");
+    assert.equal(homeDetailsSchema.safeParse(latest).success, true);
+  } finally { globalThis.fetch = previous; await close(); }
+});
