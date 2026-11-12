@@ -121,6 +121,6 @@ test('original storefront chrome defaults publish through the real router and re
   assert.equal((await publish(saved.version)).status, 200);
   const content = (await publicContent()).body.content;
   assert.equal(content.siteChrome.navigation[0].columns[0].links[0].href, '/sofas');
-  assert.equal(content.siteChrome.navigation[1].columns[0].links[4].enquirySubject, 'Kids Beds');
+  assert.equal(content.siteChrome.navigation[1].columns[0].links[4].href, '/collections/kids-beds');
   assert.equal(content.siteChrome.whatsapp.phone, '+918796130252');
 });
