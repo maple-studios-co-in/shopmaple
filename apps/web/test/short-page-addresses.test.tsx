@@ -27,9 +27,12 @@ test("a retired product's old address redirects temporarily to its collection, e
   assert.equal(to("orvane-accent-chair"), "/collections/chairs");
   assert.equal(to("aileron-signature-bed"), "/collections/beds");
   assert.equal(to("arden-console-cabinet"), "/collections/storage");
+  // The outdoor sets return through Keeri under new addresses (owner, 12 Nov 2026); the cot is Keeri's Elara crib.
+  assert.equal(to("tavira-bistro-outdoor-set"), "/collections/outdoors");
+  assert.equal(to("cozy-cot-baby-bed"), "/collections/kids-beds");
   assert.equal(to("veya"), "/collections/all", "no known kind");
   for (const kept of ["caro", "aero-dining-chair", "sora", "avelon-chair"]) assert.equal(to(kept), undefined, `${kept} is listed and keeps its page`);
-  const collections = new Set(["sofas", "chairs", "tables", "beds", "storage", "all"]);
+  const collections = new Set(["sofas", "chairs", "tables", "beds", "storage", "outdoors", "kids-beds", "all"]);
   assert.ok(redirects.every((r) => /^\/products\/[a-z0-9-]+$/.test(r.source) && collections.has(r.destination.replace("/collections/", ""))));
 });
 

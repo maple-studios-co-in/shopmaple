@@ -13,6 +13,9 @@ const productTypeCategories = new Map<string, Product["category"]>([
   ["sofa", "sofas"], ["sofas", "sofas"],
   ["bed", "beds"], ["beds", "beds"],
   ["storage", "storage"], ["outdoors", "outdoors"],
+  // Keeri's own storage and nursery types (owner, 12 Nov 2026): without these its chests, bookcases and cabinets
+  // reached no category page.
+  ["chest", "storage"], ["bookcase", "storage"], ["cabinet", "storage"], ["crib", "beds"],
 ]);
 const mediaSchema = z
   .object({

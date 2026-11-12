@@ -51,11 +51,23 @@ test('functional collection aliases follow explicit source taxonomy without cros
  ['table','Dining','8 Seater',['dining','dinings']],['table','Sofa/Coffee Table',null,['center-tables','center-tables-1','sofa-table']],
  ['table','Side',null,['side-table']],['table','Console',null,['console-tables','consoles']],
  ['table','TV & Media Units',null,['tv-media-units']],['bed','Bedroom','Fabric Beds',['fabric-beds']],
- ['bed','Bedroom','Solid Wood Beds',['solid-wood-beds']],['sofa','3 Seater',null,['3-seater-sofa']],
+ ['bed','Bedroom','Solid Wood Beds',['solid-wood-beds']],
+ ['Beds','Bedroom','Kids Beds',['kids-beds']],['crib','Bedroom',null,['kids-beds']],['Outdoors','Outdoor Sets',null,['outdoor-furnitures']],['sofa','3 Seater',null,['3-seater-sofa']],
  ['sofa','5 Seater',null,['5-seater-sofa']],['sofa','7+ Seater',null,['7-seater-sofa']],
  ];
  for(const [productType,category,subCategory,routes] of examples){
   const item=product('keeri-only',{productType,category,subCategory});
   for(const route of routes)assert.deepEqual(handles([item],route),['keeri-only'],`${productType}/${category}/${route}`);
  }
+});
+
+// Kids Beds (owner, 12 Nov 2026) holds Keeri's kids' beds and cribs and nothing else from the bedroom.
+test("kids beds take only Keeri's kids' beds and cribs", () => {
+  const products = [
+    product("cot", { productType: "Beds", category: "Bedroom", subCategory: "Kids Beds" }, "beds"),
+    product("crib", { productType: "crib", category: null, subCategory: null }, "beds"),
+    product("fabric", { productType: "Beds", category: "Bedroom", subCategory: "Fabric Beds" }, "beds"),
+    product("chair", { productType: "chair", category: "Bedroom sofa chair", subCategory: "Kids Beds" }),
+  ];
+  assert.deepEqual(handles(products, "kids-beds"), ["cot", "crib"]);
 });
