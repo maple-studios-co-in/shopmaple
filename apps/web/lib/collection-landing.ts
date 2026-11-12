@@ -1,4 +1,5 @@
 import type { CollectionSectionKey } from "@shopmaple/contracts";
+import type { ProductCardModel } from "@/lib/product-card-model";
 
 /**
  * The collection landing template (Figma 311:548 "Maple / Nimbus Collection / Desktop" and 311:921 "Maple / Terra
@@ -160,7 +161,11 @@ export type CollectionPieces = {
   cta?: CollectionLink;
 };
 
-/** A card in the edit: square photo, name, "Living / Sectional seating", link. */
+/**
+ * A card in the edit, as the homepage's cards look (owner, 12 Nov 2026). A real product is drawn as the store's own
+ * product card (photo, save, name, rating, price) from `card`. A concept is drawn in that card's frame (white, the sand
+ * hairline, rounded, the square photo) with its name, "Living / Sectional seating" and its link instead of a price.
+ */
 export type CollectionPiece = {
   /** The product's name from the catalogue, or the concept's. */
   title: string;
@@ -168,6 +173,8 @@ export type CollectionPiece = {
   line: string;
   href: string;
   media: CollectionMedia;
+  /** The catalogue's card for a real product (Nimbus), drawn as the homepage draws it. */
+  card?: ProductCardModel;
 };
 
 /** The collection cards' line icons (Lucide shapes drawn at 1.3px, as the design's "Icon / sofa" layers are). */

@@ -4,6 +4,7 @@ import { Armchair, BedDouble, Sofa, Table2, TreePine, type LucideIcon } from "lu
 import type { CollectionSectionKey } from "@shopmaple/contracts";
 import { CollectionFilm, CollectionOpeningClip } from "@/components/collection-landing-client";
 import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
+import { ProductCard } from "@/components/product-card";
 import type { CollectionArt, CollectionIcon, CollectionLanding, CollectionLink, CollectionMedia } from "@/lib/collection-landing";
 
 /**
@@ -206,15 +207,22 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
         <h2 className="collection-title collection-title-section" id={heading("pieces")}>{page.pieces.heading}</h2>
         {page.pieces.lead && <p className="collection-lead" data-collection-lead="">{page.pieces.lead}</p>}
         <ul className="collection-piece-grid">
-          {page.pieces.items.map((piece, index) => (
+          {page.pieces.items.map((piece, index) => piece.card ? (
+            // A real product: the store's own card, exactly as the homepage draws it (owner, 12 Nov 2026).
+            <li className="collection-piece-product" key={index} data-collection-piece="">
+              <ProductCard product={piece.card} imageSizes="(max-width: 749px) 48vw, 24vw" className="h-full" />
+            </li>
+          ) : (
             <li className="collection-piece" key={index} data-collection-piece="">
               <div className="collection-piece-photo">
-                <Image src={piece.media.src} alt={piece.media.alt} fill loading="lazy" sizes="(max-width: 899px) calc(50vw - 28px), 22vw"
+                <Image src={piece.media.src} alt={piece.media.alt} fill loading="lazy" sizes="(max-width: 749px) 48vw, 24vw"
                   style={piece.media.focus ? { objectPosition: piece.media.focus } : undefined} />
               </div>
-              <h3 className="collection-piece-title"><Go href={piece.href} className="collection-card-link">{piece.title}</Go></h3>
-              <p className="collection-piece-line" data-collection-line="">{piece.line}</p>
-              <p className="collection-piece-more" data-collection-link="" aria-hidden="true">{page.pieces.linkLabel} <span className="collection-arrow">→</span></p>
+              <div className="collection-piece-body">
+                <h3 className="collection-piece-title"><Go href={piece.href} className="collection-card-link">{piece.title}</Go></h3>
+                <p className="collection-piece-line" data-collection-line="">{piece.line}</p>
+                <p className="collection-piece-more" data-collection-link="" aria-hidden="true">{page.pieces.linkLabel} <span className="collection-arrow">→</span></p>
+              </div>
             </li>
           ))}
         </ul>

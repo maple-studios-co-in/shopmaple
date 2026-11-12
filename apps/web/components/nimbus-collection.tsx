@@ -4,7 +4,7 @@ import { getProductCards } from "@/lib/catalog";
 import { nimbusPieceHandles, resolveNimbusLanding, resolveNimbusPageContent, type NimbusPiece } from "@/lib/nimbus-content-defaults";
 
 /**
- * The edit's pieces as the live catalogue has them: each product's own name, photo and page, in the edit's order. A piece
+ * The edit's pieces as the live catalogue has them: each product's own card (name, photo, price, rating), in the edit's order, drawn as the homepage draws it. A piece
  * the catalogue does not list, or one without a photo, is null and left out; while the catalogue cannot be read the edit
  * is empty. Nothing is saved alongside: product names and photos come from Keeri only (owner, 11 Nov 2026).
  */
@@ -13,7 +13,7 @@ async function nimbusPieces(): Promise<(NimbusPiece | null)[]> {
     const live = new Map((await getProductCards([...nimbusPieceHandles])).map(product => [product.handle, product]));
     return nimbusPieceHandles.map(handle => {
       const product = live.get(handle);
-      return product?.image ? { title: product.title, image: product.image, href: `/products/${handle}` } : null;
+      return product?.image ? { title: product.title, image: product.image, href: `/products/${handle}`, card: product } : null;
     });
   } catch {
     return [];

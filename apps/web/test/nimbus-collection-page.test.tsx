@@ -13,6 +13,8 @@ import type { CollectionLanding } from "../lib/collection-landing";
 import { defaultStorefrontContent } from "../lib/content-defaults";
 import { renderStorefrontRoute } from "../lib/storefront-routes";
 import { installUiDom } from "./support/ui-dom";
+import { ShopProvider } from "../components/shop-provider";
+import { shopMoney } from "../lib/format";
 
 // The Nimbus Collection page from Figma 311:548 "Maple / Nimbus Collection / Desktop" (owner, 10 Nov 2026), drawn by the
 // collection template it shares with Terra (311:921), between the store's own header and footer.
@@ -58,7 +60,8 @@ async function fixture(run: (requests: URL[]) => Promise<void>, options: { conte
   }
 }
 async function documentFor(node: ReactNode) {
-  const stream = await renderToReadableStream(<>{node}</>, { progressiveChunkSize: Number.POSITIVE_INFINITY });
+  // Inside the shop's provider, as the storefront layout renders it: the edit's product cards read it.
+  const stream = await renderToReadableStream(<ShopProvider>{node}</ShopProvider>, { progressiveChunkSize: Number.POSITIVE_INFINITY });
   await stream.allReady;
   return new JSDOM(await new Response(stream).text()).window.document;
 }
@@ -127,13 +130,12 @@ function assertDesign(doc: Document) {
   assert.equal(edit.getAttribute("data-mode"), "products");
   assert.equal(edit.querySelector("[data-collection-eyebrow]")?.textContent, "The Nimbus edit");
   assert.equal(edit.querySelector("h2")?.textContent, "Pieces to build your world around.");
-  // The cards are the catalogue's (the page draws none it cannot read); each keeps the line saved for its place.
+  // The cards are the catalogue's (the page draws none it cannot read), each the store's own product card as the
+  // homepage draws it (owner, 12 Nov 2026): photo, save, name, rating and price, and no line or link words of its own.
   const shown = edit.querySelectorAll("[data-collection-piece]").length;
-  assert.deepEqual(texts(edit, "[data-collection-piece] [data-collection-line]"), [
-    "Living / Sectional seating", "Living / Accent seating", "Living / Centre tables", "Bedroom / Beds",
-    "Living / Lounge chairs", "Storage / Consoles", "Bedroom / Benches", "Bedroom / Upholstered beds",
-  ].slice(0, shown));
-  assert.deepEqual(texts(edit, "[data-collection-piece] [data-collection-link]"), Array(shown).fill("View piece →"));
+  assert.equal(edit.querySelectorAll("[data-collection-piece] > [data-product-card]").length, shown);
+  assert.deepEqual(texts(edit, "[data-collection-piece] :is([data-collection-line], [data-collection-link])"), []);
+  assert.deepEqual(texts(edit, "[data-collection-piece] [data-card-price] > span"), Array(shown).fill(shopMoney(1234500)));
   const all = edit.querySelector<HTMLAnchorElement>("a[data-collection-cta]")!;
   assert.equal(all.textContent?.replace("→", "").trim(), "View the Nimbus collection");
   assert.equal(all.getAttribute("href"), "/collections/nimbus");
@@ -157,8 +159,8 @@ test("the Nimbus page draws Figma 311:548's ten regions with the design's words 
     // The edit reads the live catalogue once, for exactly its eight pieces, in order.
     assert.deepEqual(requests.filter(url => url.pathname === "/api/catalogue/cards").map(url => url.searchParams.get("handles")), [pieces.join(",")]);
     const edit = region(doc, "pieces");
-    assert.deepEqual(texts(edit, "[data-collection-piece] h3"), pieces.map(liveName), "each card is the real product's name");
-    assert.deepEqual(hrefs(edit, "[data-collection-piece] h3 a"), pieces.map(handle => `/products/${handle}`));
+    assert.deepEqual(texts(edit, "[data-collection-piece] [data-card-name]"), pieces.map(liveName), "each card is the real product's name");
+    assert.deepEqual(hrefs(edit, "[data-collection-piece] a[data-card-name]"), pieces.map(handle => `/products/${handle}`));
     const photos = [...edit.querySelectorAll<HTMLImageElement>("[data-collection-piece] img")];
     assert.equal(photos.length, 8);
     photos.forEach((photo, index) => {
@@ -265,16 +267,18 @@ test("staff choose the redesign's words, order and visibility; a hidden edit rea
   await fixture(async () => {
     const doc = await renderPage();
     assert.equal(doc.querySelector("h1")?.textContent, "Softly,\nhome.");
-    assert.equal(texts(region(doc, "pieces"), "[data-collection-line]")[0], "Living / Modular seating");
+    // A product is drawn as the store's own card (owner, 12 Nov 2026), which has no place for a saved line.
+    assert.equal(region(doc, "pieces").querySelectorAll("[data-product-card]").length, 8);
+    assert.deepEqual(texts(region(doc, "pieces"), "[data-collection-line]"), []);
   }, { content: published(page) });
 });
 
-test("a piece the live catalogue no longer lists is left out, the others keep their lines; an outage shows no cards", async () => {
+test("a piece the live catalogue no longer lists is left out, the others keep their order; an outage shows no cards", async () => {
   await fixture(async () => {
     const edit = region(await renderPage(), "pieces");
     const kept = pieces.filter(handle => handle !== "avelon-table");
-    assert.deepEqual(hrefs(edit, "[data-collection-piece] h3 a"), kept.map(handle => `/products/${handle}`));
-    assert.equal(texts(edit, "[data-collection-piece] [data-collection-line]")[2], "Bedroom / Beds", "each card keeps its own line");
+    assert.deepEqual(hrefs(edit, "[data-collection-piece] a[data-card-name]"), kept.map(handle => `/products/${handle}`));
+    assert.equal(texts(edit, "[data-collection-piece] [data-card-name]")[2], liveName("aileron"), "the others keep their order");
   }, { missing: ["avelon-table"] });
   await fixture(async () => {
     const edit = region(await renderPage(), "pieces");

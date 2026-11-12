@@ -4,6 +4,7 @@ import {
 } from "@shopmaple/contracts";
 import nimbus from "@/data/landing-nimbus.json";
 import { followDesign, promiseArt, type CollectionArt, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
+import type { ProductCardModel } from "@/lib/product-card-model";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { collectionFilm, withFilm } from "@/lib/template-films";
@@ -189,8 +190,8 @@ export const nimbusPieceHandles = [
   "cloudblock", "virelle-chair", "avelon-table", "aileron",
   "nova-chair", "meridian-console", "aileron-bench", "elara-bed",
 ] as const;
-/** A piece as the catalogue has it: its own name, photo and page. */
-export type NimbusPiece = { title: string; image: string; href: string };
+/** A piece as the catalogue has it: its own name, photo and page, and its whole product card when there is one. */
+export type NimbusPiece = { title: string; image: string; href: string; card?: ProductCardModel };
 
 /** The rooms' own Nimbus collections (data/navigation.json, the source collections). */
 const roomLinks = ["/collections/living-room-nimbus", "/collections/dining-room-nimbus", "/collections/bedroom-nimbus"];
@@ -265,6 +266,7 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
         line: page.pieces.items[index]!.line,
         href: piece.href,
         media: { src: piece.image, alt: piece.title },
+        ...(piece.card ? { card: piece.card } : {}),
       }] : [])),
       cta: { label: page.pieces.cta!, href: "/collections/nimbus" },
     },
