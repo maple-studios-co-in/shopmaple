@@ -47,6 +47,8 @@ async function seed(psql) {
       VALUES ('att1', 'cart1', 'maple', 'k1', 'r1', '{"customer":{"name":"Ramesh Piiname","email":"ramesh.pii@example.com","phone":"+919812345678","address":"42 Pii Lane"}}', 100000, now(), 'pay_PiiPayment123', 'order_PiiOrder123', 'ramesh.pii@example.com');
     INSERT INTO "PaymentWebhookInbox" (id, "merchantScope", "eventId", "bodySha256", "eventType", "paymentId") VALUES ('w1', 'maple', 'ev1', 'sha', 'payment.captured', 'pay_PiiPayment123');
     INSERT INTO "OrderNotification" (id, "merchantScope", "subjectId", kind) VALUES ('n1', 'maple', 'att1', 'customer_confirmed');
+    INSERT INTO "KeeriOrderEvent" (id, "merchantScope", "externalOrderId", type, "bodySha256", payload, "occurredAt")
+      VALUES ('ke1', 'maple', 'ord_1', 'order.cancelled', 'sha-ke1', '{"reason":"Ramesh Piiname asked to cancel","gatewayRefundId":"rfnd_PiiRefund123"}', now());
   `);
 }
 
