@@ -143,7 +143,7 @@ test("published service copy, order and metadata reach public routes with immuta
     assert.equal(contact.querySelector('[role="tabpanel"] details p')?.textContent, "Answer 1.1");
     assert.ok(contact.querySelector('a[href="tel:+918796130252"]'));
     assert.ok(contact.querySelector('a[href="mailto:contact@maplefurnishers.com"]'));
-    const address = "A-2/56-57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015";
+    const address = "A-2/57, W.H.S., Kirti Nagar, New Delhi, Delhi, 110015";
     for (const link of contact.querySelectorAll(".contact-way a[target], .contact-visit a[target]"))
       assert.equal(link.getAttribute("href"), `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`);
     assert.equal(contact.querySelectorAll(".contact-way a[target], .contact-visit a[target]").length, 2);

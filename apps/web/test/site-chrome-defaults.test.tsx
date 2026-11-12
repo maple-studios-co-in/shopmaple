@@ -17,7 +17,7 @@ test("original chrome is a publishable strict document and independent editor co
   value.footer.addressLines[0] = "Draft address";
   const next = resolveSiteChrome();
   assert.equal(next.navigation[0]!.columns[0]!.links[0]!.label, "Sofas");
-  assert.equal(next.footer.addressLines[0], "A-2/56 - 57, W.H.S, Kirti Nagar,");
+  assert.equal(next.footer.addressLines[0], "A-2/57, W.H.S, Kirti Nagar,");
   const published = customChrome();
   resolveSiteChrome(published).footer.shopLinks[0]!.label = "Another draft";
   assert.equal(published.footer.shopLinks[0]!.label, "Meet Maple");

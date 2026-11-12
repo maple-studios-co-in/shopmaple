@@ -99,7 +99,7 @@ export const defaultSiteChrome: SiteChrome = {
     ],
     policyLinks: structuredClone(policies),
     addressLines: [
-      "A-2/56 - 57, W.H.S, Kirti Nagar,",
+      "A-2/57, W.H.S, Kirti Nagar,",
       "New Delhi, Delhi, 110015",
     ],
     customerPhone: "+918796130252",
