@@ -99,8 +99,9 @@ Restoring from History is now refused for editors by the API as well as hidden i
 
 - The store keeps one `ShopAdmin` row per Keeri person (keyed by `keeriUserId`), with name and email copied from Keeri at each sign-in and each re-check, so History keeps naming who saved and published.
 - **Today's accounts move to Keeri.** The first time somebody signs in with Keeri using the email address of an existing shop account, that account becomes theirs: same row, same History, role from Keeri, and its shop password is removed. This happens once per account; a row tied to one Keeri person is never handed to another. Somebody with a shop account but no Keeri user needs one made on Keeri's Users screen, with the same email if their History should stay under one name.
+- **The join is by email address.** A person whose Keeri email differs from their old shop-admin email is not joined: they get a new entry, and their earlier History stays under the old address. To keep one name, make the two addresses the same before their first Keeri sign-in (change it on Keeri's Users screen).
 - Shop passwords of accounts that have not moved are kept in the database but cannot be used.
-- A shop-password session that was open when this release went live ends on its next request.
+- **Everybody is signed out once when this release goes live.** A shop-password session ends on its next request, and whatever was typed but not yet saved in that browser is lost. Tell staff beforehand and release at a quiet moment.
 - An account switched off in the store's own database (`active = false`) stays off whatever Keeri says.
 
 ### Removing access
@@ -115,17 +116,22 @@ Disable the person in Keeri, change their role, or untick the boxes. **The shop 
 
 - every use is written to `ShopAdminSignIn` and to the API log (`[admin] emergency password sign-in by staff <id>`);
 - the session shows "Emergency access" beside the role;
-- it is limited like any password sign-in: five tries in fifteen minutes, then a 15-minute lock;
+- it is limited like any password sign-in: five tries in fifteen minutes from one address, and five wrong tries lock the account for 15 minutes;
+- a lock ends on time: tries made while it is locked are refused without being counted, and the count starts again when it runs out (before this release one wrong try every fifteen minutes kept an account locked);
+- refused tries are recorded too (`emergency_failed` in `ShopAdminSignIn`), so a run of them shows up;
+- it works when Keeri is down even in a browser that still holds a Keeri session: the emergency sign-in, its reset link, a fresh trip to Keeri and signing out are never held behind Keeri's confirmation;
 - it has the level stored on that account and is not re-checked with Keeri;
 - it keeps its password when its owner also signs in with Keeri.
 
 **Forgot the emergency password** (owner, 14 November 2026: "some email reset"; confirmed the same day). Under Emergency access, "Forgot the emergency password? Email a reset link" emails a link to the emergency account's own address, so a forgotten password never again needs a developer script.
 
 - The link only ever goes to the address in `ADMIN_EMERGENCY_EMAIL`. Nothing typed on the page chooses who is emailed, and the page says the same thing whatever happened.
-- It works once, for fifteen minutes. Asking again replaces an unused link. Only its hash is stored.
+- It works once, for fifteen minutes. Only its hash is stored. Asking again does not cancel an earlier link; using any one of them ends the rest.
+- Asking needs no sign-in, so anybody who finds the page can make the store email the owner. That is capped at three emails an hour, and each one is a working link in the owner's own inbox, so it can be a nuisance but cannot lock the owner out. A flood of these emails is itself the sign that somebody is trying.
 - It reads `/admin#reset=…`: the part after the `#` is never sent to a server or written to an access log, and the page removes it from the address as soon as it is read.
 - Opening it asks for a new password of at least 14 characters. Setting it ends that account's emergency sessions and does **not** sign anybody in: the next step is still the labelled, recorded emergency sign-in.
 - Limits: three links an hour for the account, five requests an hour and ten password attempts in fifteen minutes from one address.
+- Setting a new password also clears a lock on the account.
 - Each request and each use is a row in `ShopAdminPasswordReset` (when asked, when used) and a line in the API log, with no address or link in it.
 - It is for the emergency account only. Everybody else resets their password in Keeri.
 - It needs the store's mail sender: `ORDER_RESEND_API_KEY`, `ORDER_MAIL_FROM` and `ORDER_MAIL_TO`, or their `ENQUIRY_*` values, the same ones order emails use. Without them the link is not offered and the API log says so by name; the emergency account still works. The email is only as deliverable as that sender: its domain must be verified in Resend.
@@ -149,6 +155,16 @@ node deploy/keeri-admin-sign-in.mjs setup --emergency-email <the owner's shop-ad
 ```
 
 It reads `WEB_ORIGIN`, `KEERI_ORIGIN` and `KEERI_TENANT_ID` from `store.env`, makes a new random secret, appends the store keys and Keeri's `APP_SIGN_IN_CLIENTS`, and keeps a dated copy of each file beside it. It refuses to run twice, refuses files other users can read, and changes nothing if a value is missing. It restarts nothing. `status` shows what is set, by name only.
+
+The helper edits settings files and cannot see the database, so it cannot tell whether the emergency address belongs to an account. The store API checks that when it starts and says so in its log, by setting name only: no emergency account named, an address that matches no active account, or an account with no password yet.
+
+**When the store's address changes** (for example the planned move of the store's address), Keeri must be told the new return address, or it will refuse to send people back. After `WEB_ORIGIN` has been changed in `store.env`:
+
+```sh
+node deploy/keeri-admin-sign-in.mjs setup --replace
+```
+
+It makes a new secret, writes the return address from the current `WEB_ORIGIN`, keeps any other app registered in Keeri and every unrelated setting, and keeps the emergency address unless a new one is given. Then restart Keeri and the store API; until both have restarted they disagree about the secret and only the emergency account can sign in. The same command changes the secret on its own, and recovers a set-up that stopped half-way.
 
 If a setting is missing or malformed the store still starts. The API log names the setting (never its value), the sign-in page says Keeri sign-in is not set up, and the only password that works is the emergency account's.
 

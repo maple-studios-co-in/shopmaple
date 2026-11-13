@@ -146,3 +146,62 @@ test('an unknown command explains itself and touches nothing', (t) => {
   assert.match(result.stderr, /Usage:/);
   assert.equal(readFileSync(paths.storeEnv, 'utf8'), STORE);
 });
+
+test('setup --replace recovers a half-finished set-up', (t) => {
+  // An earlier run wrote Keeri's file and then stopped: Keeri holds a hash for a secret nobody has.
+  const paths = files(t, { keeri: `${KEERI}APP_SIGN_IN_CLIENTS='[{"app":"shop-admin","tenantId":"tenant_maple","secretSha256":"${'0'.repeat(64)}","returnUrls":["https://shop.example.test/api/admin/keeri/callback"]}]'\n` });
+  assert.match(run(paths, 'setup').stderr, /run setup again with --replace/);
+  const result = run(paths, 'setup', '--replace', '--emergency-email', 'owner@example.test');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Replaced\./);
+  const store = parseEnv(readFileSync(paths.storeEnv, 'utf8'));
+  const clients = keeriClients(paths.keeriEnv);
+  assert.equal(clients.length, 1);
+  assert.equal(clients[0].secretSha256, createHash('sha256').update(store.KEERI_SIGN_IN_CLIENT_SECRET).digest('hex'));
+  assert.equal(readFileSync(paths.keeriEnv, 'utf8').match(/APP_SIGN_IN_CLIENTS=/g).length, 1);
+});
+
+test("setup --replace follows the store's new address, changes the secret, and keeps everything else", (t) => {
+  const paths = files(t);
+  setup({ ...paths, emergencyEmail: 'owner@example.test' });
+  const before = parseEnv(readFileSync(paths.storeEnv, 'utf8'));
+  // Another app registered in Keeri since, and the store has moved to a new address.
+  const other = { app: 'another-app', tenantId: 'tenant_maple', secretSha256: 'a'.repeat(64), returnUrls: ['https://other.example.test/cb'] };
+  writeFileSync(paths.keeriEnv, readFileSync(paths.keeriEnv, 'utf8').replace("APP_SIGN_IN_CLIENTS='[", `APP_SIGN_IN_CLIENTS='[${JSON.stringify(other)},`), { mode: 0o600 });
+  writeFileSync(paths.storeEnv, readFileSync(paths.storeEnv, 'utf8').replace('https://shop.example.test', 'https://store.example.test'), { mode: 0o600 });
+  const result = run(paths, 'setup', '--replace');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Replaced\./);
+  assert.match(result.stdout, /restart Keeri and the store API/);
+  const after = parseEnv(readFileSync(paths.storeEnv, 'utf8'));
+  assert.notEqual(after.KEERI_SIGN_IN_CLIENT_SECRET, before.KEERI_SIGN_IN_CLIENT_SECRET);
+  // The emergency address was not given again, so it stays as it was; so does every unrelated setting.
+  assert.equal(after.ADMIN_EMERGENCY_EMAIL, 'owner@example.test');
+  assert.equal(after.DATABASE_URL, before.DATABASE_URL);
+  assert.equal(after.KEERI_COMMERCE_TOKEN, EXISTING);
+  const text = readFileSync(paths.storeEnv, 'utf8');
+  for (const key of ['KEERI_SIGN_IN_CLIENT_ID', 'KEERI_SIGN_IN_CLIENT_SECRET', 'ADMIN_EMERGENCY_EMAIL']) assert.equal(text.match(new RegExp(`^${key}=`, 'gm')).length, 1, key);
+  const clients = keeriClients(paths.keeriEnv);
+  assert.deepEqual(clients[0], other);
+  assert.deepEqual(clients[1], {
+    app: 'shop-admin', tenantId: 'tenant_maple',
+    secretSha256: createHash('sha256').update(after.KEERI_SIGN_IN_CLIENT_SECRET).digest('hex'),
+    returnUrls: ['https://store.example.test/api/admin/keeri/callback'],
+  });
+  const shown = result.stdout + result.stderr;
+  assert.ok(!shown.includes(after.KEERI_SIGN_IN_CLIENT_SECRET) && !shown.includes(before.KEERI_SIGN_IN_CLIENT_SECRET));
+  assert.ok(readFileSync(paths.keeriEnv, 'utf8').startsWith(KEERI));
+  // A new emergency address is taken when one is given.
+  assert.equal(run(paths, 'setup', '--replace', '--emergency-email', 'new-owner@example.test').status, 0);
+  assert.equal(parseEnv(readFileSync(paths.storeEnv, 'utf8')).ADMIN_EMERGENCY_EMAIL, 'new-owner@example.test');
+});
+
+test('setup --replace changes nothing when Keeri\'s setting is not one it can read', (t) => {
+  const keeri = `${KEERI}export APP_SIGN_IN_CLIENTS="$(cat /somewhere/clients.json)"\n`;
+  const paths = files(t, { keeri });
+  const result = run(paths, 'setup', '--replace');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /not in the form this helper writes/);
+  assert.equal(readFileSync(paths.keeriEnv, 'utf8'), keeri);
+  assert.equal(readFileSync(paths.storeEnv, 'utf8'), STORE);
+});

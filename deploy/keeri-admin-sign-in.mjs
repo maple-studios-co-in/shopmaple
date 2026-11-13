@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Sets the store and Keeri up for shop-admin sign-in with Keeri accounts, on the server that runs both.
 //
-//   node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com]
+//   node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com] [--replace]
 //   node deploy/keeri-admin-sign-in.mjs status
 //
 // Keeri is the only way into the shop admin, so there is nothing to switch on or off: run `setup` from the
@@ -9,7 +9,9 @@
 // `setup` makes one new random secret and writes it where each side needs it: the secret itself into the
 // store's settings file, and only its SHA-256 into Keeri's, together with the company and the one address
 // Keeri may send people back to. It never prints the secret, and nobody has to copy it by hand.
-// Nothing here restarts anything, and nothing is overwritten: a file that is already set up is left alone.
+// Nothing here restarts anything, and a file that is already set up is left alone unless --replace is given.
+// `setup --replace` makes a new secret and writes the return address afresh from the store's current WEB_ORIGIN:
+// use it when the store's address changes, to change the secret, or if an earlier run stopped half-way.
 import { createHash, randomBytes } from 'node:crypto';
 import { chmodSync, copyFileSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { parseArgs, parseEnv } from 'node:util';
@@ -44,6 +46,20 @@ function writePrivate(path, text, stamp) {
   return backup;
 }
 
+const OUR_COMMENTS = ['# Shop admin sign-in with Keeri accounts (set up ', "# The store's shop admin signs staff in through Keeri (set up "];
+/** The file without the given settings and without the comment lines this helper wrote above them. */
+const without = (text, keys) => text.split('\n')
+  .filter((line) => !keys.some((key) => new RegExp(`^\\s*(?:export\\s+)?${key}=`).test(line)) && !OUR_COMMENTS.some((comment) => line.startsWith(comment)))
+  .join('\n');
+/** Other apps already registered in Keeri's setting, which a replace must keep. */
+function otherClients(keeri) {
+  const line = /^\s*(?:export\s+)?APP_SIGN_IN_CLIENTS='(.*)'\s*$/m.exec(keeri);
+  if (!line) return has(keeri, 'APP_SIGN_IN_CLIENTS') ? refuse("Keeri's APP_SIGN_IN_CLIENTS is not in the form this helper writes. Nothing was changed.") : [];
+  let clients;
+  try { clients = JSON.parse(line[1]); } catch { clients = null; }
+  if (!Array.isArray(clients)) refuse("Keeri's APP_SIGN_IN_CLIENTS is not in the form this helper writes. Nothing was changed.");
+  return clients.filter((client) => client?.app !== APP);
+}
 const has = (text, key) => new RegExp(`^\\s*(?:export\\s+)?${key}=`, 'm').test(text);
 const withLine = (text, lines) => `${text}${text.endsWith('\n') || text === '' ? '' : '\n'}${lines.join('\n')}\n`;
 
@@ -54,13 +70,15 @@ function httpsOrigin(value, key) {
   return url.origin;
 }
 
-export function setup({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV, emergencyEmail, now = new Date() } = {}) {
+export function setup({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV, emergencyEmail, replace = false, now = new Date() } = {}) {
   const store = readPrivate(storeEnv, 'Store');
   const keeri = readPrivate(keeriEnv, 'Keeri');
   const present = [...STORE_KEYS.filter((key) => has(store, key)), ...(has(keeri, 'APP_SIGN_IN_CLIENTS') ? ['APP_SIGN_IN_CLIENTS (Keeri)'] : [])];
-  if (present.length) refuse(`Already set up: ${present.join(', ')} found. Nothing was changed. To replace the secret, remove those lines from both files first.`);
+  if (present.length && !replace) refuse(`Already set up: ${present.join(', ')} found. Nothing was changed. To make a new secret and return address, run setup again with --replace.`);
   if (emergencyEmail !== undefined && !/^[^\s@'"]+@[^\s@'"]+\.[^\s@'"]+$/.test(emergencyEmail)) refuse('--emergency-email is not an email address.');
-  if (emergencyEmail !== undefined && has(store, 'ADMIN_EMERGENCY_EMAIL')) refuse('ADMIN_EMERGENCY_EMAIL is already in the store settings. Nothing was changed.');
+  if (emergencyEmail !== undefined && has(store, 'ADMIN_EMERGENCY_EMAIL') && !replace) refuse('ADMIN_EMERGENCY_EMAIL is already in the store settings. Nothing was changed.');
+  // Read before anything is written, so a setting this helper cannot understand stops it with both files intact.
+  const kept = replace ? otherClients(keeri) : [];
 
   const settings = parseEnv(store);
   const webOrigin = httpsOrigin(settings.WEB_ORIGIN, 'WEB_ORIGIN');
@@ -81,12 +99,15 @@ export function setup({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV, emergencyEma
   // Keeri's file is read by a shell, so the JSON goes in single quotes (it contains none itself).
   const keeriLines = [
     `# The store's shop admin signs staff in through Keeri (set up ${day}). Holds a hash, not the secret; see docs/app-sign-in.md.`,
-    `APP_SIGN_IN_CLIENTS='${JSON.stringify([client])}'`,
+    `APP_SIGN_IN_CLIENTS='${JSON.stringify([...kept, client])}'`,
   ];
   // Keeri first: if the second write fails, the store has no secret that Keeri would not recognise.
-  const keeriBackup = writePrivate(keeriEnv, withLine(keeri, keeriLines), stamp);
-  const storeBackup = writePrivate(storeEnv, withLine(store, storeLines), stamp);
-  return { returnUrl: client.returnUrls[0], tenantId, emergencyEmail: emergencyEmail?.toLowerCase() ?? null, backups: [keeriBackup, storeBackup] };
+  // A replace takes the old lines out first. The emergency address is only replaced when a new one is given.
+  const storeBase = replace ? without(store, [...STORE_KEYS, ...(emergencyEmail ? ['ADMIN_EMERGENCY_EMAIL'] : [])]) : store;
+  const keeriBase = replace ? without(keeri, ['APP_SIGN_IN_CLIENTS']) : keeri;
+  const keeriBackup = writePrivate(keeriEnv, withLine(keeriBase, keeriLines), stamp);
+  const storeBackup = writePrivate(storeEnv, withLine(storeBase, storeLines), stamp);
+  return { replaced: replace && present.length > 0, returnUrl: client.returnUrls[0], tenantId, emergencyEmail: emergencyEmail?.toLowerCase() ?? null, backups: [keeriBackup, storeBackup] };
 }
 
 /** Which settings exist, by name only. */
@@ -104,25 +125,28 @@ export function status({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV } = {}) {
 function main(argv) {
   const { values, positionals } = parseArgs({
     args: argv, allowPositionals: true,
-    options: { 'store-env': { type: 'string' }, 'keeri-env': { type: 'string' }, 'emergency-email': { type: 'string' } },
+    options: { 'store-env': { type: 'string' }, 'keeri-env': { type: 'string' }, 'emergency-email': { type: 'string' }, replace: { type: 'boolean' } },
   });
   const paths = { storeEnv: values['store-env'] ?? STORE_ENV, keeriEnv: values['keeri-env'] ?? KEERI_ENV };
   const [command] = positionals;
   if (command === 'setup') {
-    const done = setup({ ...paths, emergencyEmail: values['emergency-email'] });
-    console.log('Set up. A new secret is in the store settings and its hash is in Keeri\'s; it was not shown.');
+    const done = setup({ ...paths, emergencyEmail: values['emergency-email'], replace: values.replace === true });
+    console.log(`${done.replaced ? 'Replaced' : 'Set up'}. A new secret is in the store settings and its hash is in Keeri\'s; it was not shown.`);
     console.log(`Keeri will send people back only to: ${done.returnUrl}`);
-    console.log(done.emergencyEmail ? `Emergency account: ${done.emergencyEmail}` : 'No emergency account was named (add --emergency-email to have one).');
+    if (done.emergencyEmail) console.log(`Emergency account: ${done.emergencyEmail}. It must be the address of an existing shop-admin account; the store API says so in its log at start if it is not.`);
+    else if (!done.replaced) console.log('No emergency account was named (add --emergency-email to have one).');
     console.log('Copies of both files as they were:');
     for (const backup of done.backups) console.log(`  ${backup}`);
-    console.log('Next: restart Keeri so it reads its settings. The store reads its own when the new release starts.');
+    console.log(done.replaced
+      ? 'Next: restart Keeri and the store API. Until both have restarted they disagree about the secret, and only the emergency account can sign in.'
+      : 'Next: restart Keeri so it reads its settings. The store reads its own when the new release starts.');
   } else if (command === 'status') {
     const found = status(paths);
     console.log(`Store settings ready: ${found.storeReady ? 'yes' : 'no'}`);
     console.log(`Keeri settings ready: ${found.keeriReady ? 'yes' : 'no'}`);
     console.log(`Emergency account named: ${found.emergencyAccount ? 'yes' : 'no'}`);
   } else {
-    refuse('Usage: node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com] | status');
+    refuse('Usage: node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com] [--replace] | status');
   }
 }
 
