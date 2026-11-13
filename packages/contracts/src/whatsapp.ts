@@ -5,9 +5,10 @@
  * A WhatsApp business message is a template Meta approves beforehand: here an IMAGE header, a BODY with numbered
  * variables and two URL buttons. This module holds the template exactly as it is submitted and a pure builder that fills
  * it for one order, giving the Cloud API `template` object to send and a preview model the development preview page
- * (apps/web/app/previews/whatsapp) draws. Sending lives in the API (apps/api/src/orders/whatsapp.ts) and stays off until
- * the owner's WhatsApp Business account, the approved template and the customer's opt-in exist
- * (docs/whatsapp-order-confirmation.md).
+ * (apps/web/app/previews/whatsapp) draws. Keeri sends the message (owner, 13 Nov 2026), with its own builder for this
+ * template and the dispatched, delivered and cancelled ones; the store collects the buyer's consent at checkout and
+ * draws the header image (docs/whatsapp-order-confirmation.md). Keeri's builder follows the rules here: one trimmed
+ * line per variable, the lengths below, "Hi there" without a name.
  *
  * Import this module by its subpath, `@shopmaple/contracts/whatsapp`. Like `/account`, it is not re-exported from the
  * package index, which ships in the homepage's JavaScript.
@@ -82,7 +83,7 @@ export interface OrderConfirmationInput {
   city: string;
   /** The six-digit PIN code. */
   pincode: string;
-  /** The store's public origin, "https://store.maplefurnishers.com". */
+  /** The store's public origin, "https://shop.maplefurnishers.com". */
   origin: string;
   /** The header image: the origin plus `orderConfirmationMediaPath(handle of the first piece)`. */
   mediaUrl: string;

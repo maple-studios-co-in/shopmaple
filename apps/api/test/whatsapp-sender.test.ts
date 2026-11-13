@@ -10,7 +10,7 @@ const env = {
   WHATSAPP_PHONE_NUMBER_ID: "109876543210987",
   WHATSAPP_API_VERSION: "v23.0",
 };
-const store = "https://store.maplefurnishers.com";
+const store = "https://shop.maplefurnishers.com";
 const { template } = orderConfirmationWhatsApp({ ...orderConfirmationSample, origin: store, mediaUrl: `${store}/whatsapp/order-media/nola` });
 const messageId = "wamid.HBgMOTE5ODc2NTQzMjEwFQIAERgSQUJDREVGMDEyMzQ1Njc4OQA=";
 const accepted = { messaging_product: "whatsapp", contacts: [{ input: "919876543210", wa_id: "919876543210" }], messages: [{ id: messageId }] };
@@ -120,7 +120,7 @@ test("a message that breaks WhatsApp's rules never reaches Meta", async () => {
     edit((p) => { p.components[1].parameters[3]!.text = "₹26,400     paid"; }),
     edit((p) => { p.components[1].parameters[4]!.text = ""; }),
     edit((p) => { p.components[1].parameters.pop(); }),
-    edit((p) => { p.components[0].parameters[0].image.link = "http://store.maplefurnishers.com/whatsapp/order-media/nola"; }),
+    edit((p) => { p.components[0].parameters[0].image.link = "http://shop.maplefurnishers.com/whatsapp/order-media/nola"; }),
     edit((p) => { p.components[2].parameters[0].text = "../../admin"; }),
   ];
   for (const payload of broken)

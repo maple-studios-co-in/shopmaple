@@ -94,7 +94,8 @@ test("checkout options expose delivery choices and the public payment key withou
   const app = createApp(db, { ...config, checkout }, quiet);
   const response = await request(app).get("/api/checkout/options");
   assert.equal(response.status, 200);
-  assert.deepEqual(response.body, checkout);
+  // The WhatsApp tick box is offered only when the store says so (WHATSAPP_ORDER_UPDATES).
+  assert.deepEqual(response.body, { ...checkout, whatsappOrderUpdates: false });
   assert.match(String(response.headers["cache-control"]), /no-store/);
   assert.equal((await request(createApp(db, config)).get("/api/checkout/options")).status, 404);
   const unconfigured = await request(createApp(db, config, quiet)).get("/api/checkout/options");

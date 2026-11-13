@@ -1,20 +1,77 @@
-# WhatsApp order confirmation
+# WhatsApp order messages
 
-The message a customer gets on WhatsApp when Maple confirms their order (owner, 11 Nov 2026). Designed in Figma file
-`GJsFInfhys0crdNpQsbUUU`: node 394:1456 is the message on a phone, 404:1410 its 1200 × 630 header image, and 394:1477
-lists what changes per order.
+What a customer gets on WhatsApp about a store order: confirmed, dispatched, delivered and cancelled. The confirmation
+was designed in Figma file `GJsFInfhys0crdNpQsbUUU` (owner, 11 Nov 2026): node 394:1456 is the message on a phone,
+404:1410 its 1200 × 630 header image, and 394:1477 lists what changes per order.
 
-**Status: built, switched off.** Nothing sends WhatsApp messages yet. Sending needs three things that don't exist yet:
-the owner's WhatsApp Business account on Meta's Cloud API, the approved template below, and each customer's opt-in.
+**Keeri sends every one of these messages; the store only collects the buyer's consent** (owner, 13 Nov 2026). Keeri
+already runs Maple's WhatsApp number through Meta's Cloud API, so the messages land in the same conversation staff
+reply in. The store never calls WhatsApp.
 
 | Part | Where |
 | --- | --- |
-| The template as submitted, and the builder that fills it for one order (`orderConfirmationWhatsApp`) | `packages/contracts/src/whatsapp.ts` (`@shopmaple/contracts/whatsapp`) |
-| Settings (`loadWhatsAppConfig`) and the Cloud API sender (`sendOrderConfirmationWhatsApp`), not wired in | `apps/api/src/orders/whatsapp.ts` |
-| The header image for a product: `/whatsapp/order-media/<product handle>` | `apps/web/app/whatsapp/order-media/[handle]/route.tsx` |
+| The tick box at checkout, "Send my order updates on WhatsApp" | `apps/web/components/store/checkout-details.tsx` |
+| The consent kept with the checkout (`CheckoutAttempt.whatsappOptInAt`) and sent to Keeri with the paid order | `apps/api/src/orders/service.ts`, `workers.ts`; the field is `orderWhatsappUpdatesSchema` in `packages/contracts/src/checkout.ts` |
+| The switch, `WHATSAPP_ORDER_UPDATES` | `apps/api/src/commerce-composition.ts` |
+| The header image for a product: `/whatsapp/order-media/<product handle>`. **Keeri links it in every confirmation, so it must stay.** | `apps/web/app/whatsapp/order-media/[handle]/route.tsx` |
+| The confirmation template as submitted, and a builder that fills it for one order (`orderConfirmationWhatsApp`). The preview page uses them; Keeri has its own builder for all four templates. | `packages/contracts/src/whatsapp.ts` (`@shopmaple/contracts/whatsapp`) |
 | Development preview: phone, WhatsApp Desktop/Web, and the template as submitted | `/previews/whatsapp` (`apps/web/app/previews/whatsapp/page.tsx`) |
+| A Cloud API sender written before the decision (`sendOrderConfirmationWhatsApp`). **Not connected, and not to be:** Keeri sends. | `apps/api/src/orders/whatsapp.ts` |
 
-## The template to submit
+## The buyer's consent
+
+WhatsApp only allows a business to message a customer who agreed to hear from it there, order updates included.
+
+- **The tick box.** With `WHATSAPP_ORDER_UPDATES=true` the checkout form shows "Send my order updates on WhatsApp" under
+  the mobile number, unticked. The buyer ticks it or not; nothing else gives consent. It locks with the other details
+  once the quote is in, and "Edit details" unlocks it.
+- **What is kept.** `POST /api/checkout` takes `whatsappOrderUpdates: true` beside the quote's input
+  (`checkoutRequestSchema`). When the quote freezes, the attempt's `whatsappOptInAt` records the moment. It is never
+  part of the quote Keeri prices, so the quote request and the frozen snapshot are unchanged. The same idempotency key
+  with a different tick is a changed checkout (409), as any other changed detail is.
+- **What Keeri is told.** When the payment is captured, the order handed to Keeri (outbox `keeri.order.captured.v2`)
+  gains one key, `whatsappUpdates`, only for a buyer who ticked:
+
+  ```json
+  "whatsappUpdates": {
+    "consentedAt": "2026-11-13T09:12:00.000Z",
+    "orderNumber": "MF-10482",
+    "headerHandle": "nola-accent-chair",
+    "estimatedDelivery": { "from": "2026-11-24", "to": "2026-11-28" }
+  }
+  ```
+
+  `consentedAt` is when they ticked. `orderNumber` is Maple's number, which Keeri does not otherwise have.
+  `headerHandle` is the first piece's product handle, for the confirmation's image (null if the product has none
+  usable). `estimatedDelivery` is the window the buyer's order email and account show, or null when the store has no
+  estimate. The key's presence is the consent: without it Keeri sends nothing. The order worker refuses to deliver a row
+  whose consent or order number is not the attempt's own.
+- **Without the tick, or with the switch off,** the order Keeri receives is byte for byte what it was before.
+
+## Switching it on
+
+`WHATSAPP_ORDER_UPDATES` is `true`, `false` or unset (off) in the API's private environment; any other value stops the
+API at start-up. It needs `CHECKOUT_ENABLED=true`. `/api/checkout/options` reports it as `whatsappOrderUpdates`.
+
+**Keeri first.** A Keeri release from before this work refuses an order that carries `whatsappUpdates` (it checks the
+order's keys exactly), and a refused order waits for staff. So:
+
+1. Release Keeri with WhatsApp order messages (Keeri's `docs/shopmaple-whatsapp-order-messages.md`). From then on it
+   accepts orders with or without the key.
+2. In Keeri, switch the messages on, one template at a time as Meta approves each.
+3. Then set `WHATSAPP_ORDER_UPDATES=true` on the store and restart `shopmaple-api`. The tick box appears.
+
+Either side can be released first, because the store sends nothing new until step 3. To stop collecting consent, unset
+the flag and restart: the tick box goes, and orders paid from then on carry no `whatsappUpdates`, even where the buyer
+had ticked before. Messages for orders Keeri already has are switched off in Keeri.
+
+The "View order" button opens `/account/orders/<number>`, so customer accounts (`CUSTOMER_ACCOUNTS_ENABLED`) must be on.
+
+## The confirmation template
+
+All four templates (`order_confirmation`, `order_dispatched`, `order_delivered`, `order_cancelled`), with their exact
+bodies, variables and buttons, are in Keeri's `docs/shopmaple-whatsapp-order-messages.md`. The confirmation is repeated
+here because the store draws its header image and previews it.
 
 In WhatsApp Manager, open **Message templates → Create template**:
 
@@ -23,7 +80,7 @@ In WhatsApp Manager, open **Message templates → Create template**:
 | Category | **Utility** |
 | Name | `order_confirmation` |
 | Language | English (`en`) |
-| Header | **Media → Image.** For the sample, save `https://store.maplefurnishers.com/whatsapp/order-media/nola` (or `http://127.0.0.1:3100/whatsapp/order-media/nola` from the local site) and upload it. |
+| Header | **Media → Image.** For the sample, save `https://shop.maplefurnishers.com/whatsapp/order-media/nola` (or `http://127.0.0.1:3100/whatsapp/order-media/nola` from the local site) and upload it. |
 | Body | The text below, exactly. |
 | Footer | None |
 | Buttons | Two **Visit website** buttons, below. |
@@ -58,11 +115,11 @@ Sample values for Meta's review, which are also the Figma order:
 
 Buttons:
 
-1. **View order**, URL type **Dynamic**: `https://store.maplefurnishers.com/account/orders/{{1}}`. Sample:
-   `https://store.maplefurnishers.com/account/orders/MF-10482`. The variable is the Maple order number.
-2. **Contact Maple**, URL type **Static**: `https://store.maplefurnishers.com/contact`.
+1. **View order**, URL type **Dynamic**: `https://shop.maplefurnishers.com/account/orders/{{1}}`. Sample:
+   `https://shop.maplefurnishers.com/account/orders/MF-10482`. The variable is the Maple order number.
+2. **Contact Maple**, URL type **Static**: `https://shop.maplefurnishers.com/contact`.
 
-To submit through the Graph API instead, `orderConfirmationTemplate("https://store.maplefurnishers.com")` gives the body
+To submit through the Graph API instead, `orderConfirmationTemplate("https://shop.maplefurnishers.com")` gives the body
 of `POST /{whatsapp-business-account-id}/message_templates`; add the header's sample image as `example.header_handle`
 from Meta's resumable upload. The preview page prints that JSON too.
 
@@ -88,48 +145,12 @@ choice." and "Made for your everyday." beside the product's first photo. A produ
 across the whole image. It holds no customer data, so it is cached for a week; an unknown product answers 404. Meta
 downloads it each time a message is sent, so the store must answer at its public address.
 
-## Settings
+## The store's own sender (not used)
 
-On the API host, privately (the shared `store.env`), never in the repository:
-
-| Variable | Value |
-| --- | --- |
-| `WHATSAPP_ACCESS_TOKEN` | A permanent System User access token with the `whatsapp_business_messaging` permission (Meta Business Settings → Users → System users). Secret. |
-| `WHATSAPP_PHONE_NUMBER_ID` | The phone number's **ID** from WhatsApp Manager → API setup, not the phone number itself. |
-| `WHATSAPP_API_VERSION` | The Graph API version to call, as Meta's app dashboard shows it, e.g. `v23.0`. |
-| `WHATSAPP_TEMPLATE_LANGUAGE` | Optional. The approved template's language code: `en` unless it was approved under another, e.g. `en_US`. |
-
-With none of the first three set, WhatsApp is off (`loadWhatsAppConfig` returns null). With only some set, or one
-malformed, it throws an error naming the setting; errors and logs never show a value.
-
-## The customer's opt-in (not built: the owner's decision)
-
-WhatsApp only allows a business to message a customer who has agreed to hear from it on WhatsApp, order updates
-included. Checkout asks for a phone number but has no WhatsApp consent yet. It needs either a tick box beside the phone
-number ("Send my order updates on WhatsApp", unticked by default) or a consent line, stored with the checkout so the order
-worker can see it. The wording, the default and where it sits are the owner's choice. Without a recorded opt-in, nothing
-may be sent.
-
-## Switching it on
-
-1. Set up the WhatsApp Business account on the Cloud API: a verified Meta business, a registered phone number and an
-   approved display name.
-2. Submit the template above and wait for it to show as **Active**.
-3. Build the checkout opt-in the owner chooses, stored with each checkout.
-4. Set the `WHATSAPP_*` settings on the API host.
-5. Wire the sender into the order worker (`apps/api/src/orders/notifications.ts`):
-   - a notification kind such as `customer_whatsapp_confirmed`, recorded once per confirmed order that has the opt-in, as
-     the email kinds are, so each order is sent at most once;
-   - the message from `orderConfirmationWhatsApp`, filled from the order's quote snapshot: the first word of the
-     customer's name, the pieces, the amount paid, the delivery estimate, the shipping city and PIN code, the checkout id,
-     and the first piece's handle for the image;
-   - outcomes: `accepted` is sent (keep Meta's message id), `retryable` is tried again later, `failed` is failed, and
-     `uncertain` (a timeout or a broken answer) is **not** resent automatically: the Cloud API has no idempotency key, so
-     the message may already have gone. Mark it for a person.
-6. Try a test number first. Until the number is live, Meta delivers only to numbers added under API setup (error
-   131030 otherwise).
-7. Optionally, subscribe to Meta's webhook for delivery statuses (sent, delivered, read, failed). An accepted send
-   only means Meta took the message.
+`apps/api/src/orders/whatsapp.ts` holds `loadWhatsAppConfig` and `sendOrderConfirmationWhatsApp`, written on 11 Nov 2026
+when the store was going to send the confirmation itself. Nothing calls them and no `WHATSAPP_ACCESS_TOKEN`,
+`WHATSAPP_PHONE_NUMBER_ID` or `WHATSAPP_API_VERSION` should be set on the store: Keeri holds the WhatsApp connection.
+They can be deleted once Keeri's messages have run in production.
 
 ## Known limits
 

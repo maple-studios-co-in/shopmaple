@@ -47,7 +47,7 @@ const payButton = () => {
 const link = (label: string) => [...document.querySelectorAll<HTMLAnchorElement>("a")].find((a) => a.textContent === label);
 const storageKey = "maple-checkout-attempt-v1";
 type Account = { enabled: boolean; prefill: { email: string; name: string; phone: string; address: { line1: string; line2: string; city: string; stateCode: string; pincode: string } | null } | null };
-async function mount(route: (call: Call) => Response | Promise<Response>, extra: { confirmationWindowMs?: number; keepStorage?: boolean; account?: Account } = {}) {
+async function mount(route: (call: Call) => Response | Promise<Response>, extra: { confirmationWindowMs?: number; keepStorage?: boolean; account?: Account; whatsappOrderUpdates?: boolean } = {}) {
   if (!extra.keepStorage) { sessionStorage.clear(); localStorage.clear(); }
   razorpay = null;
   (window as any).Razorpay = FakeRazorpay;
@@ -63,7 +63,7 @@ async function mount(route: (call: Call) => Response | Promise<Response>, extra:
   const root = createRoot(document.getElementById("root")!);
   const router = { bfcacheId: "test", back() {}, forward() {}, refresh() {}, hmrRefresh() {}, push() {}, replace() {}, prefetch() {} };
   await act(async () => root.render(<AppRouterContext.Provider value={router}><ShopProvider>
-    <CheckoutFlow options={options} pollIntervalMs={5} confirmationWindowMs={extra.confirmationWindowMs} account={extra.account} />
+    <CheckoutFlow options={extra.whatsappOrderUpdates ? { ...options, whatsappOrderUpdates: true } : options} pollIntervalMs={5} confirmationWindowMs={extra.confirmationWindowMs} account={extra.account} />
   </ShopProvider></AppRouterContext.Provider>));
   return { calls, cleanup: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
 }
@@ -736,4 +736,34 @@ test("an item that can no longer be bought online is explained instead of a quot
     assert.match(text(), /can no longer be bought online/);
     assert.doesNotMatch(text(), /requires review/);
   } finally { await cleanup(); }
+});
+
+test("WhatsApp order updates are the buyer's to tick: offered only when the store sends them, unticked, and sent only when ticked", async () => {
+  const quoted = (call: Call) => call.path === "/api/checkout" ? Response.json(attempt()) : new Response(null, { status: 404 });
+  const off = await mount(quoted);
+  try {
+    assert.equal(field("whatsappOrderUpdates"), null, "no tick box while the store does not send WhatsApp updates");
+  } finally { await off.cleanup(); }
+
+  const unticked = await mount(quoted, { whatsappOrderUpdates: true });
+  try {
+    const box = field("whatsappOrderUpdates") as HTMLInputElement;
+    assert.equal(box.checked, false, "unticked by default");
+    assert.match(box.closest("label")!.textContent ?? "", /^Send my order updates on WhatsApp$/);
+    await submitDetails();
+    const posted = unticked.calls.find((c) => c.path === "/api/checkout" && c.method === "POST")!;
+    assert.equal("whatsappOrderUpdates" in posted.body, false, "no consent is sent without the tick");
+  } finally { await unticked.cleanup(); }
+
+  const ticked = await mount(quoted, { whatsappOrderUpdates: true });
+  try {
+    fill(details);
+    await act(async () => { field("whatsappOrderUpdates").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    const posted = ticked.calls.find((c) => c.path === "/api/checkout" && c.method === "POST")!;
+    assert.equal(posted.body.whatsappOrderUpdates, true);
+    assert.equal(posted.body.customer.phone, "+919876543210");
+    assert.equal((field("whatsappOrderUpdates") as HTMLInputElement).checked, true, "the quoted form keeps the tick");
+    assert.equal((field("whatsappOrderUpdates") as HTMLInputElement).disabled, true, "and locks it with the other quoted details");
+  } finally { await ticked.cleanup(); }
 });

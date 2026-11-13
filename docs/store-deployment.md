@@ -80,6 +80,15 @@ Shutdown and restarts: on SIGINT/SIGTERM the API first stops scheduling worker c
 
 Independent of checkout. With `KEERI_LEADS_ENABLED=true`, contact, project and bulk enquiries are also queued as Keeri leads and sent to `POST {KEERI_ORIGIN}/api/storefront/leads` with `KEERI_COMMERCE_TOKEN`; the staff email keeps going and links the Keeri lead when there is one. The flag needs valid `KEERI_ORIGIN` and `KEERI_COMMERCE_TOKEN`, or startup fails naming the key. `KEERI_ADMIN_ORIGIN` is optional (defaults to `KEERI_ORIGIN`; production `https://maplefurnishers.keeri.in`). Order: Keeri's leads endpoint and the credential's `leads:write` scope first, then the store with the flag. Rollback is `KEERI_LEADS_ENABLED=false` and a restart. Details in [Keeri leads](keeri-leads.md).
 
+## Enabling WhatsApp order updates
+
+`WHATSAPP_ORDER_UPDATES=true` in the API's private environment shows "Send my order updates on WhatsApp" at checkout
+and sends a ticked buyer's consent to Keeri with their paid order; Keeri sends the messages. Unset or `false` is off;
+any other value stops the API at start-up. It needs `CHECKOUT_ENABLED=true`. **Set it only after Keeri runs a release
+that accepts the consent** (its WhatsApp order messages): an older Keeri refuses an order that carries it, and that
+order waits for staff. Rollback is unsetting it and restarting. Migration `20261113120000_whatsapp_order_opt_in` adds
+one nullable column and is safe under the running release. See [WhatsApp order messages](whatsapp-order-confirmation.md).
+
 ## Enabling customer accounts
 
 Customer accounts (password sign-in with emailed codes for sign-up and resets, order history, saved addresses; see [architecture](architecture.md#customer-accounts)) have their own switch in the API's private environment. They are **off in production** until it is set. While they are off, every `/api/account` route answers 404, `/api/health` reports `accountsEnabled: false`, and `/account` keeps its "not available yet" page. Guest order status is unchanged either way.

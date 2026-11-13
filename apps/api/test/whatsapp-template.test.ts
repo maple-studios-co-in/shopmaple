@@ -16,7 +16,7 @@ import {
 
 // The WhatsApp order confirmation (Figma 394:1456 and 394:1477; owner, 11 Nov 2026): the template text submitted to Meta
 // and the pure builder that fills it for one order.
-const store = "https://store.maplefurnishers.com";
+const store = "https://shop.maplefurnishers.com";
 const sample: OrderConfirmationInput = { ...orderConfirmationSample, origin: store, mediaUrl: `${store}/whatsapp/order-media/nola` };
 const characters = (text: string) => Array.from(text).length;
 const bodyValues = (input: OrderConfirmationInput) => orderConfirmationWhatsApp(input).template.components[1].parameters.map((parameter) => parameter.text);
@@ -115,7 +115,7 @@ test("the template definition is a utility template with an image header and two
       { type: "URL", text: "Contact Maple", url: `${store}/contact` },
     ],
   });
-  assert.throws(() => orderConfirmationTemplate("http://store.maplefurnishers.com"), RangeError);
+  assert.throws(() => orderConfirmationTemplate("http://shop.maplefurnishers.com"), RangeError);
 });
 
 // Catches WhatsApp error 132018 (a parameter with a line break, a tab or a run of spaces) and over-long values.
@@ -193,7 +193,7 @@ test("delivery windows read as the Figma frame writes them, across months and ye
 // Catches a message pointing at another site, an http image, or a forged order path.
 test("an order without what the message needs is refused", () => {
   const refused: Partial<OrderConfirmationInput>[] = [
-    { origin: "http://store.maplefurnishers.com" },
+    { origin: "http://shop.maplefurnishers.com" },
     { origin: `${store}/shop` },
     { origin: `${store}/?ref=1` },
     { origin: "not a URL" },

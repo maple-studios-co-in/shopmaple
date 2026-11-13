@@ -21,13 +21,13 @@ const nola = {
   title: "Nola",
   description: "",
   category: "chairs",
-  images: ["https://store.maplefurnishers.com/media/keeri/nola_01.webp"],
+  images: ["https://shop.maplefurnishers.com/media/keeri/nola_01.webp"],
   published: true,
   source: "keeri",
   sourceUpdatedAt: "2026-11-01T00:00:00.000Z",
   variants: [],
 };
-const store = "https://store.maplefurnishers.com";
+const store = "https://shop.maplefurnishers.com";
 // The store's address is a setting (SITE_URL; site-address.ts, #126); unset, it would be the local development address.
 environment.SITE_URL = store;
 const order = `/account/orders/${orderConfirmationSample.orderNumber}`;

@@ -67,6 +67,9 @@ const fake = {
   reservationRefusal: "",
   /** What Razorpay reports the captured payment was for. */
   paymentAmount: 383500,
+  /** Every paid order as Keeri received it, and how Keeri answers one. */
+  orders: [] as Array<{ payloadSha256: string; payload: Record<string, any> }>,
+  orderStatus: 200,
 };
 async function transport(target: string | URL, init: RequestInit): Promise<Response> {
   const u = new URL(String(target));
@@ -118,6 +121,8 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
         assert.deepEqual(Object.keys(body).sort(), ["attemptId", "reservationId", "snapshotSha256"]);
         return Response.json({ released: true });
       case "/api/storefront/orders":
+        if (fake.orderStatus !== 200) return new Response("order detail", { status: fake.orderStatus });
+        fake.orders.push(body);
         return Response.json({ accepted: true, merchantScope: body.merchantScope, attemptId: body.attemptId,
           idempotencyKey: body.idempotencyKey, payloadSha256: body.payloadSha256, externalOrderId: "SO-1001" });
     }
@@ -144,14 +149,14 @@ async function transport(target: string | URL, init: RequestInit): Promise<Respo
   }
   throw new Error("No live network allowed in tests");
 }
-function compose() {
-  const config = loadCommerceConfig(fullEnv);
+function compose(env: Record<string, string> = fullEnv) {
+  const config = loadCommerceConfig(env);
   assert.ok(config);
   // No waits between Keeri outage retries, so the tests that hold Keeri at 503 stay fast.
   return composeCommerce(db, config, { fetch: transport, now: () => clock, keeriRetryDelaysMs: [0, 0, 0, 0] });
 }
-function checkoutApp() {
-  const composed = compose();
+function checkoutApp(env: Record<string, string> = fullEnv) {
+  const composed = compose(env);
   return { ...composed, app: createApp(db, { ...appConfig, checkout: composed.checkout }, composed.commerce) };
 }
 function freeze(app: ReturnType<typeof createApp>, key = "composition-request-1", body: unknown = input) {
@@ -180,7 +185,7 @@ beforeEach(async () => {
   clock = new Date("2030-01-01T10:00:00Z");
   Object.assign(fake, { quoteExpiresAt: "2030-01-01T10:15:00.000Z", quoteStatus: 200, reservationStatus: 200, releaseStatus: 200,
     razorpayOrderStatus: 200, paymentCaptured: true, keeriCalls: [], razorpayCalls: [], emails: [], emailStatus: 200,
-    keeriRestartCalls: 0, reservationRefusal: "", paymentAmount: 383500 });
+    keeriRestartCalls: 0, reservationRefusal: "", paymentAmount: 383500, orders: [], orderStatus: 200 });
   await db.orderNotification.deleteMany();
   await db.orderOutbox.deleteMany();
   await db.paymentWebhookInbox.deleteMany();
@@ -239,7 +244,8 @@ test("composed checkout reports itself, publishes only public options, and compl
   assert.deepEqual(health.body, { status: "ok", catalogMode: "preview", checkoutEnabled: true, accountsEnabled: false });
   const options = await request(app).get("/api/checkout/options");
   assert.equal(options.status, 200);
-  assert.deepEqual(options.body, { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_composition" });
+  assert.deepEqual(options.body, { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_composition",
+    whatsappOrderUpdates: false });
   assert.match(String(options.headers["cache-control"]), /no-store/);
 
   const frozen = await freeze(app);
@@ -672,4 +678,99 @@ test("Keeri's refusals of a code reach the buyer as its message, at the quote an
   const again = await freeze(app, "composition-promo-removed");
   assert.equal(again.status, 200, "removing the code continues the checkout");
   assert.equal((await paymentOrder(app, again.body.id)).status, 200);
+});
+
+// WhatsApp order updates (owner, 13 Nov 2026): the store records the buyer's consent and tells Keeri, which sends.
+const whatsappEnv = { ...fullEnv, WHATSAPP_ORDER_UPDATES: "true" };
+async function payAndDeliver(app: ReturnType<typeof createApp>, runWorkers: () => Promise<unknown>, id: string) {
+  assert.equal((await paymentOrder(app, id)).status, 200);
+  assert.equal((await webhook(app)).status, 202);
+  await settle(runWorkers);
+  assert.equal((await status(app, id)).body.fulfillmentStatus, "confirmed");
+}
+
+test("a buyer who ticks WhatsApp order updates has their consent kept and sent to Keeri with the paid order", async () => {
+  const { app, runWorkers } = checkoutApp(whatsappEnv);
+  assert.equal((await request(app).get("/api/checkout/options")).body.whatsappOrderUpdates, true);
+  const frozen = await freeze(app, "composition-whatsapp-1", { ...input, whatsappOrderUpdates: true });
+  assert.equal(frozen.status, 200, JSON.stringify(frozen.body));
+  // The tick is no part of the quote Keeri prices.
+  assert.deepEqual(fake.keeriCalls, ["/api/storefront/quotes"]);
+  const attempt = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.equal(attempt.whatsappOptInAt?.toISOString(), "2030-01-01T10:00:00.000Z", "consent is dated when the quote was asked for");
+  assert.equal("whatsappOrderUpdates" in (attempt.snapshot as object), false);
+  assert.equal((await freeze(app, "composition-whatsapp-1", { ...input, whatsappOrderUpdates: true })).body.id, frozen.body.id, "replay");
+  assert.equal((await freeze(app, "composition-whatsapp-1", input)).status, 409, "the same key without the tick is a changed checkout");
+
+  clock = new Date("2030-01-01T10:05:00Z");
+  await payAndDeliver(app, runWorkers, frozen.body.id);
+  assert.equal(fake.orders.length, 1);
+  const { payload, payloadSha256 } = fake.orders[0]!;
+  const paid = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  assert.deepEqual(payload.whatsappUpdates, {
+    consentedAt: "2030-01-01T10:00:00.000Z",
+    orderNumber: `MF-${paid.orderNumber}`,
+    headerHandle: "composition-chair",
+    // Stocked, six days with the courier, counted from the capture in India, and four more to the window's end.
+    estimatedDelivery: { from: "2030-01-07", to: "2030-01-11" },
+  });
+  assert.equal(payloadSha256, createHash("sha256").update(canonical(payload)).digest("hex"), "the digest Keeri checks covers the consent");
+  assert.deepEqual(Object.keys(payload).sort(), ["amountPaise", "attemptId", "currency", "merchantScope", "paymentId", "providerOrderId",
+    "reservationId", "snapshot", "version", "whatsappUpdates"]);
+});
+
+test("without the tick, or with WhatsApp updates off, Keeri receives exactly the order it always did", async () => {
+  const keys = ["amountPaise", "attemptId", "currency", "merchantScope", "paymentId", "providerOrderId", "reservationId", "snapshot", "version"];
+  const on = checkoutApp(whatsappEnv);
+  const unticked = await freeze(on.app, "composition-whatsapp-2", { ...input, whatsappOrderUpdates: false });
+  assert.equal(unticked.status, 200, JSON.stringify(unticked.body));
+  assert.equal((await db.checkoutAttempt.findUniqueOrThrow({ where: { id: unticked.body.id } })).whatsappOptInAt, null);
+  await payAndDeliver(on.app, on.runWorkers, unticked.body.id);
+  assert.deepEqual(Object.keys(fake.orders[0]!.payload).sort(), keys);
+});
+
+test("with WhatsApp updates off a tick is ignored: no consent is kept and nothing reaches Keeri", async () => {
+  const off = checkoutApp();
+  const ticked = await freeze(off.app, "composition-whatsapp-3", { ...input, whatsappOrderUpdates: true });
+  assert.equal(ticked.status, 200, JSON.stringify(ticked.body));
+  assert.equal((await db.checkoutAttempt.findUniqueOrThrow({ where: { id: ticked.body.id } })).whatsappOptInAt, null);
+  await payAndDeliver(off.app, off.runWorkers, ticked.body.id);
+  assert.equal("whatsappUpdates" in fake.orders[0]!.payload, false);
+});
+
+test("consent recorded while WhatsApp updates were on is not sent once they are switched off", async () => {
+  const on = checkoutApp(whatsappEnv);
+  const frozen = await freeze(on.app, "composition-whatsapp-4", { ...input, whatsappOrderUpdates: true });
+  assert.equal(frozen.status, 200, JSON.stringify(frozen.body));
+  const off = checkoutApp();
+  await payAndDeliver(off.app, off.runWorkers, frozen.body.id);
+  assert.equal("whatsappUpdates" in fake.orders[0]!.payload, false);
+});
+
+test("an order row whose consent is not the attempt's own is never delivered to Keeri", async () => {
+  const { app, runWorkers } = checkoutApp(whatsappEnv);
+  const frozen = await freeze(app, "composition-whatsapp-5", { ...input, whatsappOrderUpdates: true });
+  assert.equal((await paymentOrder(app, frozen.body.id)).status, 200);
+  assert.equal((await webhook(app)).status, 202);
+  // Keeri is down for the first delivery, so the row is still waiting when it is altered.
+  fake.orderStatus = 503;
+  await runWorkers();
+  const row = await db.orderOutbox.findFirstOrThrow({ where: { attemptId: frozen.body.id } });
+  assert.equal(row.state, "pending");
+  const payload = row.payload as Record<string, any>;
+  assert.match(payload.whatsappUpdates.orderNumber, /^MF-\d+$/);
+  await db.orderOutbox.update({ where: { id: row.id }, data: { nextAttemptAt: clock,
+    payload: { ...payload, whatsappUpdates: { ...payload.whatsappUpdates, orderNumber: "MF-1" } } } });
+  fake.orderStatus = 200;
+  await settle(runWorkers);
+  assert.equal(fake.orders.length, 0);
+  const failed = await db.orderOutbox.findUniqueOrThrow({ where: { id: row.id } });
+  assert.deepEqual([failed.state, failed.failureCode], ["failed", "OUTBOX_BINDING_MISMATCH"]);
+});
+
+test("WHATSAPP_ORDER_UPDATES is true, false or unset", () => {
+  assert.equal(loadCommerceConfig(fullEnv)!.whatsappOrderUpdates, false);
+  assert.equal(loadCommerceConfig({ ...fullEnv, WHATSAPP_ORDER_UPDATES: "false" })!.whatsappOrderUpdates, false);
+  assert.equal(loadCommerceConfig(whatsappEnv)!.whatsappOrderUpdates, true);
+  assert.throws(() => loadCommerceConfig({ ...fullEnv, WHATSAPP_ORDER_UPDATES: "yes" }), /WHATSAPP_ORDER_UPDATES must be true or false/);
 });

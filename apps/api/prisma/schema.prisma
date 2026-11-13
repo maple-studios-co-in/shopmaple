@@ -228,6 +228,9 @@ model CheckoutAttempt {
   /// Maple's order number (shown as "MF-<n>"), from the maple_order_number_seq sequence (START 10001). Assigned once,
   /// inside the transaction that records the captured payment, and never reused.
   orderNumber Int? @unique
+  /// When the buyer ticked "Send my order updates on WhatsApp" at checkout and asked for this quote: their consent to
+  /// WhatsApp messages about this order. Null: no consent, and Keeri is never told to message them.
+  whatsappOptInAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([cartId, idempotencyKey])

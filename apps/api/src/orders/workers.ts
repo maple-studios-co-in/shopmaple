@@ -5,6 +5,8 @@ import {
   type OrderOutbox,
   type PaymentWebhookInbox,
 } from "@prisma/client";
+import { orderWhatsappUpdatesSchema } from "@shopmaple/contracts";
+import { formatOrderNumber } from "@shopmaple/contracts/account";
 
 export interface KeeriDeliveryRequest {
   merchantScope: string;
@@ -205,6 +207,23 @@ export function createOrderWorkers(db: PrismaClient, options: Options) {
       !attempt.reservationId
     )
       throw new OrderWorkerError("OUTBOX_BINDING_MISMATCH");
+    // The buyer's WhatsApp consent travels only with a paid order that has it (service.ts). What the row says must be
+    // the attempt's own consent and order number; the image handle and delivery estimate were fixed at capture.
+    const updates = orderWhatsappUpdatesSchema.safeParse(
+      row.payload && typeof row.payload === "object" && !Array.isArray(row.payload) ? row.payload.whatsappUpdates : undefined,
+    );
+    const carriesUpdates =
+      row.payload !== null && typeof row.payload === "object" && !Array.isArray(row.payload) && "whatsappUpdates" in row.payload;
+    if (
+      carriesUpdates &&
+      (!updates.success ||
+        version !== 2 ||
+        !attempt.whatsappOptInAt ||
+        attempt.orderNumber === null ||
+        updates.data.consentedAt !== attempt.whatsappOptInAt.toISOString() ||
+        updates.data.orderNumber !== formatOrderNumber(attempt.orderNumber))
+    )
+      throw new OrderWorkerError("OUTBOX_BINDING_MISMATCH");
     const expected = {
       version,
       attemptId: attempt.id,
@@ -215,6 +234,7 @@ export function createOrderWorkers(db: PrismaClient, options: Options) {
       currency: attempt.currency,
       reservationId: attempt.reservationId,
       snapshot: attempt.snapshot,
+      ...(carriesUpdates ? { whatsappUpdates: updates.data as unknown as Prisma.JsonObject } : {}),
     };
     const serialized = canonical(row.payload);
     if (serialized !== canonical(expected))

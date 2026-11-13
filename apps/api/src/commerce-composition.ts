@@ -82,6 +82,9 @@ export interface CommerceConfig {
   razorpay: { keyId: string; keySecret: string; webhookSecret: string };
   deliveryMethods: Array<{ id: string; label: string }>;
   email: EnquiryDeliveryConfig;
+  /** WHATSAPP_ORDER_UPDATES=true: checkout offers "Send my order updates on WhatsApp" and a paid order tells Keeri,
+   * which sends the messages (docs/whatsapp-order-confirmation.md). Unset or false: no tick box, nothing sent. */
+  whatsappOrderUpdates: boolean;
 }
 /** Returns null unless checkout is explicitly enabled; then fails loudly naming
  * any missing or invalid key, so a half-configured deployment never half-works. */
@@ -100,6 +103,8 @@ export function loadCommerceConfig(
   }
   const v = parsed.data;
   const email = loadOrderEmail(env);
+  const whatsapp = env.WHATSAPP_ORDER_UPDATES?.trim() || "false";
+  if (whatsapp !== "true" && whatsapp !== "false") throw new Error("WHATSAPP_ORDER_UPDATES must be true or false");
   return {
     keeri: {
       origin: v.KEERI_ORIGIN,
@@ -114,6 +119,7 @@ export function loadCommerceConfig(
     },
     deliveryMethods: v.CHECKOUT_DELIVERY_METHODS,
     email,
+    whatsappOrderUpdates: whatsapp === "true",
   };
 }
 type Transport = (url: string | URL, init: RequestInit) => Promise<Response>;
@@ -159,6 +165,7 @@ export function composeCommerce(
     reservations: keeri.reservations,
     quoteAuthority: keeri.quote,
     keeriTenantId: config.keeri.tenantId,
+    whatsappOrderUpdates: config.whatsappOrderUpdates,
     now: options.now,
   });
   const workers = createOrderWorkers(db, {
@@ -186,6 +193,7 @@ export function composeCommerce(
     checkout: {
       deliveryMethods: config.deliveryMethods.map(({ id, label }) => ({ id, label })),
       paymentKeyId: config.razorpay.keyId,
+      whatsappOrderUpdates: config.whatsappOrderUpdates,
     },
     async runWorkers() {
       const payments = await workers.runPaymentBatch();
