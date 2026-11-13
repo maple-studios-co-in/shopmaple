@@ -23,10 +23,13 @@ Object.assign(dom.window.HTMLElement.prototype, { attachEvent() {}, detachEvent(
 const options = { deliveryMethods: [{ id: "standard", label: "Standard delivery" }], paymentKeyId: "rzp_test_result" };
 const attemptId = "0b8e1c3a-5d2f-4a6b-9c8d-7e6f5a4b3c2d";
 const storageKey = "maple-checkout-attempt-v1";
-type Line = { variantId: string; title: string; variantTitle: string; pricePaise: number; quantity: number; image: string };
-const chair: Line = { variantId: "keeri:maple:chair-v", title: "Oak Chair", variantTitle: "Natural", pricePaise: 150000, quantity: 1, image: "/media/home/category-accent-chair.webp" };
-const table: Line = { variantId: "keeri:maple:table-v", title: "Teak Side Table", variantTitle: "Default Title", pricePaise: 90000, quantity: 2,
-  image: "https://store.maplefurnishers.com/media/keeri/teak-table_01.webp" };
+// The cart names a piece by the store's own variant id, Keeri's quote by Keeri's. They differ for a piece carried over from
+// the old store (live: Aero's Deep Atlantic is "preview-46728293843133" in the cart) and match for one made in Keeri.
+type Line = { variantId: string; keeriVariantId: string; title: string; variantTitle: string; pricePaise: number; quantity: number; image: string };
+const chair: Line = { variantId: "preview-46728293843133", keeriVariantId: "keeri:maple:chair-v", title: "Oak Chair", variantTitle: "Natural", pricePaise: 150000,
+  quantity: 1, image: "/media/home/category-accent-chair.webp" };
+const table: Line = { variantId: "keeri:maple:table-v", keeriVariantId: "keeri:maple:table-v", title: "Teak Side Table", variantTitle: "Default Title", pricePaise: 90000,
+  quantity: 2, image: "https://store.maplefurnishers.com/media/keeri/teak-table_01.webp" };
 // What /api/cart answers; capture empties it.
 let cartLines: Line[] = [];
 const cartBody = () => ({
@@ -36,13 +39,17 @@ const cartBody = () => ({
   subtotalPaise: cartLines.reduce((sum, line) => sum + line.pricePaise * line.quantity, 0),
   currency: "INR", checkoutEnabled: false, mode: "preview", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 },
 });
-/** Keeri's quote for the lines: ₹250 delivery, GST added (18%) or included. */
-function quoteFor(lines: Line[], gstMode: "excluded" | "included") {
+/**
+ * Keeri's quote for the lines, as the API gives it: ₹250 delivery, GST added (18%) or included, and each line's store id
+ * beside Keeri's. `withoutStoreIds` is an attempt frozen before the API gave them, whose lines carried the store's ids.
+ */
+function quoteFor(lines: Line[], gstMode: "excluded" | "included", { withoutStoreIds = false } = {}) {
   const subtotalPaise = lines.reduce((sum, line) => sum + line.pricePaise * line.quantity, 0);
   const shippingPaise = 25000;
   const taxPaise = gstMode === "excluded" ? Math.round((subtotalPaise + shippingPaise) * 0.18) : Math.round(((subtotalPaise + shippingPaise) * 18) / 118);
   return {
-    items: lines.map((line) => ({ variantId: line.variantId, productId: line.variantId.replace(/-v$/, ""), title: line.title, variantTitle: line.variantTitle, sku: null,
+    items: lines.map((line) => ({ ...(withoutStoreIds ? { variantId: line.variantId } : { variantId: line.keeriVariantId, localVariantId: line.variantId }),
+      productId: line.keeriVariantId.replace(/-v$/, ""), title: line.title, variantTitle: line.variantTitle, sku: null,
       quantity: line.quantity, unitPricePaise: line.pricePaise, lineTotalPaise: line.pricePaise * line.quantity, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 28 } })),
     delivery: { courierName: "Delhivery Surface", estimatedDays: 6 },
     currency: "INR", subtotalPaise, shippingPaise, taxPaise, totalPaise: subtotalPaise + shippingPaise + (gstMode === "excluded" ? taxPaise : 0), gstMode,
@@ -153,6 +160,9 @@ function slowRoute(quote: Quote) {
 }
 const reportPayment = () =>
   act(async () => { providerWindow().options.handler({ razorpay_payment_id: "pay_pending1", razorpay_order_id: "order_result1", razorpay_signature: "d".repeat(64) }); });
+/** The one piece's large photo on a result screen, or null when it shows the "Image unavailable" placeholder. */
+const photoSrc = () => document.querySelector<HTMLImageElement>(".checkout-result-photo img")?.getAttribute("src") ?? null;
+const thumbSrcs = () => [...document.querySelectorAll<HTMLImageElement>(".checkout-result-thumb img")].map((img) => img.getAttribute("src"));
 
 test("the success screen tells the order number, the email and the estimate, and links to the order and the shop", async () => {
   cartLines = [chair];
@@ -175,7 +185,7 @@ test("the success screen tells the order number, the email and the estimate, and
     assert.equal(link("Continue shopping")?.getAttribute("href"), "/collections/all");
     // One piece: pictured large, then its name, the variant and quantity, the totals as quoted.
     assert.match(card(), /^Your piece, thoughtfully chosen\./);
-    assert.ok(document.querySelector(".checkout-result-photo img"), "the piece is pictured");
+    assert.equal(photoSrc(), chair.image, "the piece is pictured as the cart showed it, though Keeri's quote names it by another id");
     assert.match(card(), /Oak Chair[\s\S]*Natural · Quantity 1/);
     assert.match(card(), /Subtotal\s*₹1,500[\s\S]*Delivery\s*₹250[\s\S]*GST\s*₹315[\s\S]*Total paid\s*₹2,065[\s\S]*GST is added as shown/);
     assert.equal(document.activeElement, document.querySelector("[data-checkout-result-heading]"), "the heading takes the focus Razorpay's window left");
@@ -224,8 +234,7 @@ test("the pieces' photos survive the cart that capture empties, through a reload
     assert.equal(document.querySelector(".checkout-result-photo"), null, "no single large photo");
     const lines = [...document.querySelectorAll(".checkout-result-line")].map((line) => line.textContent);
     assert.deepEqual(lines, ["Oak ChairNatural · Quantity 1₹1,500", "Teak Side TableQuantity 2₹1,800"]);
-    const photos = [...document.querySelectorAll<HTMLImageElement>(".checkout-result-thumb img")].map((img) => img.getAttribute("src"));
-    assert.deepEqual(photos, [chair.image, table.image], "each line keeps the photo the cart showed");
+    assert.deepEqual(thumbSrcs(), [chair.image, table.image], "each line keeps the photo the cart showed, whether or not Keeri's id matches the store's");
     assert.match(card(), /Total paid\s*₹3,550/);
   } finally { await cleanup(); }
 
@@ -249,6 +258,7 @@ test("the pieces' photos survive the cart that capture empties, through a reload
     await settle(2);
     assert.equal(result()?.dataset.paymentResult, "pending");
     assert.match(text(), /We’re checking your payment\./);
+    assert.deepEqual(thumbSrcs(), [chair.image, table.image], "the pending screen pictures the pieces too");
     assert.ok(sessionStorage.getItem(storageKey), "the attempt in flight survives a reload");
   } finally { await cleanup(); }
   assert.deepEqual(cartLines, [], "capture emptied the cart");
@@ -258,8 +268,32 @@ test("the pieces' photos survive the cart that capture empties, through a reload
     await settle(12);
     assert.equal(result()?.dataset.paymentResult, "success");
     assert.equal(quoteCalls(calls).length + orderCalls(calls).length, 0, "the reload neither quotes nor pays again");
-    const photos = [...document.querySelectorAll<HTMLImageElement>(".checkout-result-thumb img")].map((img) => img.getAttribute("src"));
+    assert.deepEqual(thumbSrcs(), [chair.image, table.image]);
+  } finally { await cleanup(); }
+});
+
+test("before payment, the priced summary pictures each piece by the cart's photo, whatever Keeri calls it", async () => {
+  cartLines = [chair, table];
+  const { cleanup } = await mount(paidRoute(quoteFor([chair, table], "included")));
+  try {
+    fill(details);
+    await act(async () => { document.querySelector<HTMLFormElement>("form")!.requestSubmit(); });
+    assert.ok([...document.querySelectorAll("button")].some((b) => b.textContent?.startsWith("Continue to payment")), "quoted");
+    const photos = [...document.querySelectorAll<HTMLImageElement>("[data-checkout-summary] .checkout-line-photo img")].map((img) => img.getAttribute("src"));
     assert.deepEqual(photos, [chair.image, table.image]);
+  } finally { await cleanup(); }
+});
+
+test("an attempt frozen before the API gave the store's ids still pictures its pieces by their own ids", async () => {
+  cartLines = [chair, table];
+  const quote = quoteFor([chair, table], "included", { withoutStoreIds: true });
+  assert.ok(quote.items.every((item) => !("localVariantId" in item)));
+  const { cleanup } = await mount(paidRoute(quote));
+  try {
+    await openPayment();
+    await act(async () => { providerWindow().options.modal.ondismiss(); });
+    assert.equal(result()?.dataset.paymentReason, "dismissed");
+    assert.deepEqual(thumbSrcs(), [chair.image, table.image]);
   } finally { await cleanup(); }
 });
 
@@ -284,6 +318,7 @@ test("a failed try, then closing the window, shows the failure screen; trying ag
     assert.equal(link("Check payment status")?.getAttribute("href"), `/orders/${attemptId}`);
     assert.equal(link("Get help")?.getAttribute("href"), "/contact");
     assert.match(card(), /^Your bag is saved\.[\s\S]*Oak Chair[\s\S]*Total to pay\s*₹2,065/);
+    assert.equal(photoSrc(), chair.image, "the bag's photo");
     assert.equal(document.activeElement, document.querySelector("[data-checkout-result-heading]"));
     const stored = JSON.parse(sessionStorage.getItem(storageKey) ?? "null");
     assert.equal(stored?.attemptId, attemptId, "the attempt survives a reload");
@@ -322,6 +357,9 @@ test("closing the window without a failed try says the payment was not completed
     assert.match(text(), /Contact us with reference PAY-0B8E1C3A if you need help\./);
     assert.doesNotMatch(text(), /debited|charged|refund|money was|didn’t go through/i);
     assert.match(card(), /Total to pay\s*₹1,750[\s\S]*Inclusive of applicable taxes/);
+    // The owner's report (13 Nov 2026): this screen showed "Image unavailable" for Aero's Deep Atlantic, whose ids differ.
+    assert.equal(photoSrc(), chair.image, "the bag's photo, not the placeholder");
+    assert.equal(document.querySelector(".checkout-result-card [data-image-placeholder]"), null);
     // "Choose another method" opens Razorpay's window again for the same attempt, where every way to pay is offered.
     const first = providerWindow();
     await act(async () => button("Choose another method")!.click());

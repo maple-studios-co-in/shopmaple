@@ -14,8 +14,9 @@ const attempt: CheckoutAttempt = {
   paid: false,
   providerOrderId: null,
   quote: {
-    items: [{ variantId: "keeri:preview:nola-oak", productId: "keeri:preview:nola", title: "Nola Accent Chair", variantTitle: "Natural cane · Oak finish", sku: null,
-      quantity: 1, unitPricePaise: 2490000, lineTotalPaise: 2490000, fulfilment: { kind: "made_to_order", leadTimeDays: 10 } }],
+    // Keeri's variant id, and the store's own beside it, as the API gives a piece carried over from the old store.
+    items: [{ variantId: "keeri:preview:nola-oak", localVariantId: "preview-40000000000001", productId: "keeri:preview:nola", title: "Nola Accent Chair",
+      variantTitle: "Natural cane · Oak finish", sku: null, quantity: 1, unitPricePaise: 2490000, lineTotalPaise: 2490000, fulfilment: { kind: "made_to_order", leadTimeDays: 10 } }],
     delivery: { courierName: "Delhivery Surface", estimatedDays: 4 },
     currency: "INR",
     subtotalPaise: 2490000,
@@ -36,7 +37,7 @@ export function CheckoutQuotePreview() {
     <div data-store data-checkout>
       <CheckoutDetails id={id} phase="quote" defaults={defaults} options={options} deliveryMethodId="home" onDeliveryMethod={() => {}}
         sameBilling={sameBilling} onSameBilling={setSameBilling} fieldErrors={{}} problems={[]} notice="" busy={false}
-        account={{ enabled: true, prefill: null }} attempt={attempt} photos={{ "keeri:preview:nola-oak": "/media/previews/nola-accent-chair.webp" }}
+        account={{ enabled: true, prefill: null }} attempt={attempt} photos={{ "preview-40000000000001": "/media/previews/nola-accent-chair.webp" }}
         promoCode="" onPromoCode={() => {}} promoError="" onSubmit={(event) => event.preventDefault()} onPay={() => {}} onEdit={() => {}} onRequote={() => {}} />
     </div>
   );

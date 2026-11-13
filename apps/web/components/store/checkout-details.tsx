@@ -1,7 +1,7 @@
 "use client";
 import type { FormEvent, ReactNode } from "react";
 import Link from "next/link";
-import type { CheckoutAccount, CheckoutAttempt, CheckoutOptions } from "@/app/checkout/checkout-client";
+import { linePhoto, type CheckoutAccount, type CheckoutAttempt, type CheckoutOptions } from "@/app/checkout/checkout-client";
 import { estimatedArrival } from "@/app/checkout/delivery-estimate";
 import { indiaStates } from "@/app/checkout/india-states";
 import { money } from "@/lib/format";
@@ -111,7 +111,7 @@ export function CheckoutDetails({
   /** The quoted attempt, once there is one. */
   attempt?: CheckoutAttempt | null;
   expired?: boolean;
-  /** Photos by variant id for lines the cart cannot picture (the design preview's sample order). */
+  /** Photos by the cart's variant ids for lines the cart cannot picture (the design preview's sample order). */
   photos?: Record<string, string>;
   /** The code as typed, and Keeri's refusal of it (or the shape it must have) to show beside it. */
   promoCode: string;
@@ -133,7 +133,8 @@ export function CheckoutDetails({
   const partFree = partFreeDelivery(quote);
   const images = new Map(cart.items.map((item) => [item.variantId, item.image]));
   const lines = quote
-    ? quote.items.map((item) => ({ key: item.variantId, title: item.title, variant: item.variantTitle, quantity: item.quantity, pricePaise: item.lineTotalPaise + (item.discountPaise ?? 0), image: photos?.[item.variantId] ?? images.get(item.variantId) ?? null, making: makingTime(item) }))
+    ? quote.items.map((item) => ({ key: item.variantId, title: item.title, variant: item.variantTitle, quantity: item.quantity, pricePaise: item.lineTotalPaise + (item.discountPaise ?? 0),
+      image: linePhoto(item, (id) => photos?.[id] ?? images.get(id)) ?? null, making: makingTime(item) }))
     : cart.items.map((item) => ({ key: item.variantId, title: item.title, variant: item.variantTitle, quantity: item.quantity, pricePaise: item.lineTotalPaise ?? item.pricePaise, image: item.image || null,
       making: item.stockPolicy === "made_to_order" && item.leadTimeDays ? `Made to order: allow ${item.leadTimeDays} days for making` : null }));
   const count = quote ? quote.items.reduce((sum, item) => sum + item.quantity, 0) : cart.itemCount;
