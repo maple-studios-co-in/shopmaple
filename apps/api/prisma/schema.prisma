@@ -411,6 +411,10 @@ model OrderNotification {
 enum ShopAdminRole {
   editor
   publisher
+  /// Opens the admin and previews drafts; cannot save, upload or publish.
+  viewer
+  /// No content at all: somebody whose only access is the Enquiries screen.
+  none
 }
 model ShopAdmin {
   id String @id @default(cuid())

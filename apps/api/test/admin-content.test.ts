@@ -167,7 +167,9 @@ test("editor roles, cross-session CSRF and stale versions cannot publish or over
     await db.shopAdmin.update({ where: { id: publisherId }, data: { role: "editor" } });
     assert.equal((await other.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", other.csrf).send({ expectedVersion: 5 })).status, 403);
     await db.shopAdmin.update({ where: { id: publisherId }, data: { role: "publisher" } });
-    assert.equal((await agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 5, revisionId: "missing" })).status, 404);
+    // Restoring from history is part of Publish (owner, 14 Nov 2026): an editor is refused, a publisher is not.
+    assert.equal((await agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 5, revisionId: "missing" })).status, 403);
+    assert.equal((await other.agent.post("/api/admin/content/rollback").set("Origin", origin).set("X-CSRF-Token", other.csrf).send({ expectedVersion: 5, revisionId: "missing" })).status, 404);
     assert.equal((await agent.get("/api/admin/content")).body.version, 5);
 });
 test("concurrent saves and publication have one winner and one conflict with an atomic revision", async () => {

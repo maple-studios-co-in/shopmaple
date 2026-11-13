@@ -84,7 +84,8 @@ async function change(
         req,
         secure,
         true,
-        action === "publish",
+        // Publishing and restoring from history are the Publish level (owner, 14 Nov 2026).
+        action === "publish" || action === "rollback",
         true,
       );
       const row = await tx.shopContent.findUnique({
@@ -201,7 +202,8 @@ export function registerContentRoutes(
   );
   app.post("/api/admin/content/preview", async (req, res) => {
     // Session, role and CSRF first, so a rejected caller learns nothing about the body shape.
-    const staff = await requireStaff(db, req, secure, true);
+    // Previewing is part of View: the write flag here is for the CSRF check only.
+    const staff = await requireStaff(db, req, secure, true, false, false, "view");
     const input = expectedSchema.parse(req.body);
     const row = await db.shopContent.findUnique({ where: { id: documentId }, select: { version: true } });
     if (!row) throw new HttpError(409, "CONTENT_DRAFT_REQUIRED", "Save a draft before previewing it.");

@@ -12,7 +12,7 @@ import { requireStaff } from "./auth.js";
 const detailSelect = { id: true, kind: true, name: true, email: true, phone: true, message: true, context: true, createdAt: true } as const;
 const cursorSchema = z.object({ createdAt: z.iso.datetime(), id: enquiryAdminIdSchema }).strict();
 export async function requireEnquiryAccess(tx: Prisma.TransactionClient, req: Request, secure: boolean, write = false) {
-    const session = await requireStaff(tx, req, secure, write, false, true);
+    const session = await requireStaff(tx, req, secure, write, false, true, "any");
     // The staff row remains locked until data reads or audit writes commit.
     const current = await tx.shopAdmin.findUniqueOrThrow({ where: { id: session.user.id } });
     if (!current.canManageEnquiries)

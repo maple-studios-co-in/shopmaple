@@ -95,7 +95,11 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   livePreviewDebounceMs?: number;
 }) {
   const adminRequest = useAdminRequest();
-  const [tab, setTab] = useState<Tab>("Overview");
+  // The owner's levels (set in Keeri): View opens and previews, Edit saves, Publish publishes and restores.
+  // `none` is somebody with the Enquiries screen and nothing else.
+  const hasContent = session.user.role !== "none";
+  const canEdit = session.user.role === "editor" || session.user.role === "publisher";
+  const [tab, setTab] = useState<Tab>(hasContent ? "Overview" : "Enquiries");
   const [existingPage, setExistingPage] = useState<ExistingPage>("story");
   const [document, setDocument] = useState<Document | null>(null);
   const [content, setContent] = useState<StorefrontContent | null>(null);
@@ -168,7 +172,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       if (current()) setBusy(false);
     }
   }
-  useEffect(() => { void load(); }, [session.user.id]);
+  useEffect(() => { if (hasContent) void load(); }, [session.user.id, hasContent]);
   useEffect(() => {
     if (!dirty && !scheduleEditing) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -347,7 +351,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
 
   const canManageEnquiries = session.user.canManageEnquiries === true;
   const visibleGroups = navGroups
-    .map((group) => ({ ...group, items: group.items.filter((name) => name !== "Enquiries" || canManageEnquiries) }))
+    .map((group) => ({ ...group, items: group.items.filter((name) => (name === "Enquiries" ? canManageEnquiries : hasContent)) }))
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
     if (name === "History") { void history(); return; }
@@ -360,7 +364,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   }
   const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
   // An emergency session says so wherever the role is shown, so it is never mistaken for an ordinary one.
-  const roleLabel = (session.user.role === "publisher" ? "Publisher" : "Editor") + (session.user.emergency ? " · Emergency access" : "");
+  const roleLabel = { publisher: "Publisher", editor: "Editor", viewer: "View only", none: "Enquiries only" }[session.user.role] + (session.user.emergency ? " · Emergency access" : "");
   const unavailableDraft = busy ? (
     <div aria-busy="true">
       <p role="status" className="sr-only">Loading store content</p>
@@ -371,7 +375,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       The draft could not be loaded. Check your connection, then try again.
     </EmptyState>
   );
-  const saveDisabled = !content || !dirty || busy || saving || conflict || scheduleEditing;
+  const saveDisabled = !canEdit || !content || !dirty || busy || saving || conflict || scheduleEditing;
   const previewDisabled = !document || !content || busy || saving || conflict || scheduleEditing;
   const publishDisabled = !document?.version || dirty || busy || saving || conflict || scheduleEditing;
   const draftTone = conflict ? "conflict" : busy || saving ? "saving" : dirty ? "unsaved" : "accent";
@@ -567,8 +571,9 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
               {tab === "Enquiries" && canManageEnquiries ? (
                 <EnquiryInbox session={session} onExpired={onExpired} />
               ) : !content ? unavailableDraft : (
-              <DisabledScope disabled={busy || conflict} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : undefined}>
-              <fieldset disabled={busy || conflict} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">
+              <DisabledScope disabled={busy || conflict || !canEdit} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : !canEdit ? "You have View access: you can look and preview. Changing content needs Edit, which is set on Keeri's Roles screen." : undefined}>
+              {!canEdit && <p role="note" data-view-only className="mb-4 rounded-md bg-neutral-bg px-3 py-2 text-xs text-muted-foreground">You have View access: you can look and preview. Changing content needs Edit, which is set on Keeri&apos;s Roles screen.</p>}
+              <fieldset disabled={busy || conflict || !canEdit} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">
                 <legend className="sr-only">{tab} editor</legend>
                 {screen()}
               </fieldset>

@@ -1132,3 +1132,52 @@ for (const [name, signIn] of [
     } finally { await done(); }
   });
 }
+
+// The owner's four levels, set on Keeri's Roles screen: View, Edit, Publish, and Enquiries on its own.
+async function renderAs(user: Record<string, unknown>) {
+  const previous = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push(`${options?.method ?? "GET"} ${String(url).split("?")[0]}`);
+    if (String(url).endsWith("/session")) return Response.json({ user: { id: "staff-one", email: "person@example.test", ...user }, csrfToken: "a".repeat(64) });
+    if (String(url).includes("/enquiries")) return Response.json({ enquiries: [], nextCursor: null, keeriLeadsUrl: null });
+    return Response.json(doc());
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
+}
+
+test("a View-only person sees the draft and can preview, but nothing can be changed or saved", async () => {
+  const { requests, done } = await renderAs({ role: "viewer" });
+  try {
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /View only/);
+    assert.equal(container.querySelector<HTMLButtonElement>('button[data-action="save"]')?.disabled, true);
+    assert.equal([...container.querySelectorAll("button")].some((node) => /Publish/.test(node.textContent ?? "")), false);
+    await click("Homepage");
+    assert.equal(container.querySelector<HTMLFieldSetElement>("fieldset[data-admin-panel-body]")?.disabled, true);
+    assert.match(container.querySelector("[data-view-only]")?.textContent ?? "", /You have View access/);
+    assert.ok(requests.includes("GET /api/admin/content"), "the draft is still loaded for viewing");
+    assert.equal(requests.some((request) => /^(PUT|POST) /.test(request)), false);
+  } finally { await done(); }
+});
+
+test("somebody with only Enquiries gets the Enquiries screen and the content is never asked for", async () => {
+  const { requests, done } = await renderAs({ role: "none", canManageEnquiries: true });
+  try {
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /Enquiries only/);
+    const sections = [...container.querySelectorAll('nav[aria-label="Admin sections"] button')].map((node) => node.textContent).filter(Boolean);
+    assert.deepEqual(sections, ["Enquiries"]);
+    assert.equal(requests.some((request) => request.includes("/api/admin/content")), false);
+    assert.ok(requests.some((request) => request.includes("/api/admin/enquiries")));
+    assert.doesNotMatch(container.textContent!, /draft is unavailable/i);
+  } finally { await done(); }
+});
+
+test("a session with no content and no enquiries is not a session", async () => {
+  const { done } = await renderAs({ role: "none" });
+  try {
+    assert.ok(container.querySelector('input[type="password"]'), "falls back to the sign-in screen");
+    assert.equal(container.querySelector("[data-staff-account]"), null);
+  } finally { await done(); }
+});

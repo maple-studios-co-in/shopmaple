@@ -49,7 +49,8 @@ const accountScope = /^[a-z0-9_-]{1,100}$/.test(process.env.KEERI_MERCHANT_SCOPE
 // Order progress from Keeri: off until KEERI_DELIVERY_WEBHOOK_SECRET is set (with a merchant scope), and Keeri keeps
 // its events queued until then.
 const keeriOrderEvents = loadKeeriOrderEventsConfig(process.env, commerceConfig?.keeri.merchantScope ?? accountScope);
-// Shop admin staff sign in with shop passwords unless ADMIN_SIGN_IN=keeri, which hands that to Keeri.
+// Shop admin staff sign in with their Keeri accounts. Only a non-production run with no Keeri sign-in
+// settings at all keeps shop passwords.
 const adminSignIn = loadAdminSignIn(process.env);
 const db = new PrismaClient();
 // With accounts on, the buyer's order email opens the order in their account, which works on any device.

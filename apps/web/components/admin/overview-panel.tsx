@@ -45,7 +45,9 @@ export function OverviewPanel({ content, session, version, publishedVersion, dir
             <p>
               {session.user.role === "publisher"
                 ? "You can edit and publish. Save any unsaved changes before publishing."
-                : "You can edit and save drafts. A publisher must publish your changes."}
+                : session.user.role === "editor"
+                  ? "You can edit and save drafts. A publisher must publish your changes."
+                  : "You can view the draft and preview it. Editing needs Edit access, set on Keeri's Roles screen."}
             </p>
             <p>Restoring a revision creates a draft. It does not change the live storefront until published.</p>
             <p className="text-foreground">

@@ -47,7 +47,7 @@ async function applyKeeriStaff(db: PrismaClient | Prisma.TransactionClient, admi
  * person's History continues under one name. That happens once: a row already tied to a Keeri person is
  * never handed to a different one. A row the store itself switched off stays off.
  */
-async function startKeeriSession(db: PrismaClient, staff: KeeriStaff, previousToken: string | null) {
+async function startKeeriSession(db: PrismaClient, staff: KeeriStaff, previousToken: string | null, emergencyEmail: string | null) {
   const token = randomBytes(32).toString("hex");
   const started = await db.$transaction(async (tx) => {
     let admin = await tx.shopAdmin.findUnique({ where: { keeriUserId: staff.keeriUserId } });
@@ -56,8 +56,11 @@ async function startKeeriSession(db: PrismaClient, staff: KeeriStaff, previousTo
       const sameAddress = await tx.shopAdmin.findUnique({ where: { email: staff.email } });
       if (sameAddress?.keeriUserId) return false;
       const data = { keeriUserId: staff.keeriUserId, name: staff.name || null, role: staff.role, canManageEnquiries: staff.canManageEnquiries };
+      // The account has moved to Keeri, so its shop password goes: it could not be used again anyway.
+      // The emergency account is the one exception, and keeps its password for when Keeri is down.
+      const moved = sameAddress?.email === emergencyEmail ? data : { ...data, passwordHash: null };
       admin = sameAddress
-        ? await tx.shopAdmin.update({ where: { id: sameAddress.id }, data })
+        ? await tx.shopAdmin.update({ where: { id: sameAddress.id }, data: moved })
         : await tx.shopAdmin.create({ data: { ...data, email: staff.email } });
     }
     if (!admin.active) return false;
@@ -80,7 +83,8 @@ type Standing = "ok" | "ended" | "unconfirmed";
  * - Keeri says yes: the person's name, role and enquiry access are refreshed, and all their sessions with them.
  * - Keeri says no (disabled, role changed): every Keeri session of theirs ends now.
  * - Keeri cannot be reached: the session carries on until ten minutes after its last yes, then waits.
- * Password and emergency sessions pass straight through; they were never Keeri's to confirm.
+ * An emergency session passes straight through; it was never Keeri's to confirm. A shop-password
+ * session from before Keeri became the only way in ends here.
  */
 export function keeriSessionGuard(db: PrismaClient, secure: boolean, signIn: AdminSignIn): RequestHandler {
   const config = signIn.mode === "keeri" ? signIn.ready : null;
@@ -98,8 +102,13 @@ export function keeriSessionGuard(db: PrismaClient, secure: boolean, signIn: Adm
 
   async function standing(token: string): Promise<Standing> {
     const session = await db.shopAdminSession.findUnique({ where: { tokenHash: digest(token) }, include: { admin: true } });
-    if (!session || session.method !== "keeri") return "ok";
+    if (!session || session.method === "emergency") return "ok";
     const { admin } = session;
+    if (session.method === "password") {
+      if (signIn.mode !== "keeri") return "ok";
+      await db.shopAdminSession.deleteMany({ where: { id: session.id } });
+      return "ended";
+    }
     // Keeri sign-in switched off or unusable, or a row that is no longer a Keeri person: nothing to confirm with.
     if (!config || !admin.keeriUserId || !session.keeriCheckedAt) {
       await end(admin.id);
@@ -131,7 +140,7 @@ export function keeriSessionGuard(db: PrismaClient, secure: boolean, signIn: Adm
 }
 
 /**
- * The sign-in round trip, registered only when ADMIN_SIGN_IN=keeri:
+ * The sign-in round trip, registered wherever staff sign in with Keeri:
  *   /api/admin/keeri/start     send the browser to Keeri, with a one-off state value remembered in a cookie
  *   /api/admin/keeri/callback  check the state, swap Keeri's code server to server, start the session
  * A person only ever leaves for Keeri's configured address and only ever comes back to /admin:
@@ -175,7 +184,7 @@ export function registerKeeriSignInRoutes(app: Express, db: PrismaClient, secure
     if (answer.status !== "allowed") return home(res, answer.status === "invalid" ? "failed" : answer.status);
     let token: string | null;
     try {
-      token = await startKeeriSession(db, answer.staff, readToken(req, secure));
+      token = await startKeeriSession(db, answer.staff, readToken(req, secure), signIn.emergencyEmail);
     } catch (error) {
       // Two first sign-ins by one person at the same moment: the second finds the row the first made.
       if (!isUniqueViolation(error)) throw error;

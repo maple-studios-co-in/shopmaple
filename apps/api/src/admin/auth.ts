@@ -78,7 +78,7 @@ const keeriConfirmed = (session: { method: string; keeriCheckedAt: Date | null }
   session.method !== "keeri" ||
   (session.keeriCheckedAt !== null && Date.now() - session.keeriCheckedAt.getTime() < keeriGraceMs + keeriRecheckMs);
 /** The signed-in person as the dashboard reads them. Name and the emergency mark appear only when they apply. */
-const staffUser = (admin: { id: string; email: string; name: string | null; role: "editor" | "publisher"; canManageEnquiries: boolean }, method: string) => ({
+const staffUser = (admin: { id: string; email: string; name: string | null; role: "none" | "viewer" | "editor" | "publisher"; canManageEnquiries: boolean }, method: string) => ({
   id: admin.id,
   email: admin.email,
   role: admin.role,
@@ -86,6 +86,12 @@ const staffUser = (admin: { id: string; email: string; name: string | null; role
   ...(admin.name ? { name: admin.name } : {}),
   ...(method === "emergency" ? { emergency: true } : {}),
 });
+/**
+ * What a route needs of the website's content. `any` is for routes that are not about content at all:
+ * the session itself, signing out, and the Enquiries screen, which has its own check.
+ */
+export type StaffNeed = "any" | "view" | "edit";
+const contentLevel = { none: 0, viewer: 1, editor: 2, publisher: 3 } as const;
 export async function requireStaff(
   db: Database,
   req: Request,
@@ -93,6 +99,7 @@ export async function requireStaff(
   write = false,
   publisher = false,
   lock = false,
+  needs: StaffNeed = write ? "edit" : "view",
 ) {
   const token = readToken(req, secure);
   if (!token) throw authRequired();
@@ -127,6 +134,11 @@ export async function requireStaff(
         "Refresh your admin session and try again.",
       );
   }
+  const level = contentLevel[admin.role];
+  if (needs !== "any" && level < 1)
+    throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account does not include the website's content.");
+  if (needs === "edit" && level < 2)
+    throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account can view the website's content but not change it.");
   if (publisher && admin.role !== "publisher")
     throw new HttpError(
       403,
@@ -239,16 +251,19 @@ export function registerStaffRoutes(
       });
     },
   );
+  // Every staff route needs a session, and all but these need at least View of the content: the session
+  // itself, signing out, and the Enquiries screen, which somebody may hold with nothing else.
+  const openToAnyRole = (path: string) => path === "/session" || path === "/logout" || path === "/enquiries" || path.startsWith("/enquiries/");
   app.use("/api/admin", async (req, _res, next) => {
-    await requireStaff(db, req, secure);
+    await requireStaff(db, req, secure, false, false, false, openToAnyRole(req.path) ? "any" : "view");
     next();
   });
   app.get("/api/admin/session", async (req, res) => {
-    const { user, csrfToken } = await requireStaff(db, req, secure);
+    const { user, csrfToken } = await requireStaff(db, req, secure, false, false, false, "any");
     res.json({ user, csrfToken, ...signInOffer(signIn) });
   });
   app.post("/api/admin/logout", async (req, res) => {
-    const session = await requireStaff(db, req, secure, true);
+    const session = await requireStaff(db, req, secure, true, false, false, "any");
     await db.shopAdminSession.deleteMany({
       where: { tokenHash: session.tokenHash },
     });

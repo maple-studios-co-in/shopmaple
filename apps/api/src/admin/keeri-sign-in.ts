@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Shop admin sign-in with Keeri accounts (ADMIN_SIGN_IN=keeri).
+ * Shop admin sign-in with Keeri accounts.
  *
  * Staff are managed in Keeri: its Roles screen decides who may edit, publish and see enquiries here.
  * This file is the store's half of the conversation: the settings, and the two server-to-server calls
@@ -61,26 +61,24 @@ const envSchema = z.object({
 });
 
 /**
- * Password sign-in, exactly as before, unless ADMIN_SIGN_IN=keeri.
+ * Keeri is the only way in (owner, 14 Nov 2026): there is no setting that turns shop passwords back on.
+ * A production store always signs staff in with Keeri. Shop passwords remain only where there is no
+ * Keeri to ask: a developer's machine or a test run with none of the Keeri sign-in settings present.
  *
  * A wrong or missing setting does not stop the store from starting: the storefront must not go down over
  * a staff sign-in setting. It is named (never its value) in the log, Keeri sign-in answers "unavailable",
- * and shop passwords stay switched off except for the emergency account, so a broken setting can never
- * quietly reopen password sign-in for everybody.
+ * and the only password that works is the emergency account's.
  */
 export function loadAdminSignIn(env: Record<string, string | undefined>, warn: (message: string) => void = console.error): AdminSignIn {
-  const flag = (env.ADMIN_SIGN_IN ?? "").trim();
-  if (flag !== "keeri") {
-    if (flag && flag !== "password") warn(`ADMIN_SIGN_IN is "${flag.slice(0, 20)}", which is not a known value; staff sign in with shop passwords.`);
-    return { mode: "password" };
-  }
+  const configured = Boolean(env.KEERI_SIGN_IN_CLIENT_ID || env.KEERI_SIGN_IN_CLIENT_SECRET);
+  if (env.NODE_ENV !== "production" && !configured) return { mode: "password" };
   const emergency = emailSchema.safeParse(env.ADMIN_EMERGENCY_EMAIL || undefined);
   if (env.ADMIN_EMERGENCY_EMAIL && !emergency.success) warn("ADMIN_EMERGENCY_EMAIL is not an email address; there is no emergency account.");
   const emergencyEmail = emergency.success ? emergency.data : null;
   const parsed = envSchema.safeParse({ ...pick(env), KEERI_ADMIN_ORIGIN: env.KEERI_ADMIN_ORIGIN || undefined });
   if (!parsed.success) {
     const names = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))].join(", ");
-    warn(`ADMIN_SIGN_IN=keeri but these settings are missing or invalid: ${names}. Nobody can sign in with Keeri until they are fixed.`);
+    warn(`Shop admin sign-in with Keeri is not usable: these settings are missing or invalid: ${names}. Until they are fixed only the emergency account can sign in.`);
     return { mode: "keeri", ready: null, emergencyEmail };
   }
   const v = parsed.data;
@@ -103,12 +101,12 @@ export interface KeeriStaff {
   keeriUserId: string;
   name: string;
   email: string;
-  role: "editor" | "publisher";
+  role: "none" | "viewer" | "editor" | "publisher";
   canManageEnquiries: boolean;
 }
 export type KeeriAnswer =
   | { status: "allowed"; staff: KeeriStaff }
-  /** Keeri answered, and the answer is no: disabled, role changed, or a role without Edit or Publish. */
+  /** Keeri answered, and the answer is no: disabled, role changed, or a role with none of the four permissions. */
   | { status: "denied" }
   /** The code was wrong, spent or expired (exchange only). */
   | { status: "invalid" }
@@ -123,18 +121,16 @@ const personSchema = z.object({
 const accessSchema = z.union([z.object({ access: z.literal(false) }), personSchema.extend({ access: z.literal(true) })]);
 
 /**
- * Keeri's three permissions as the shop admin's roles. Publish includes editing. Enquiries on their own
- * open nothing here, because every shop-admin account can edit drafts: such a person is turned away.
+ * Keeri's four permissions as the shop admin's access. Publish includes Edit, and Edit includes View.
+ * Enquiries stands apart: with none of the other three it opens the Enquiries screen and nothing else.
  */
 export function staffFromKeeri(person: z.infer<typeof personSchema>, tenantId: string): KeeriStaff | null {
   // Another company's answer is not an answer about this store's staff.
   if (person.tenantId !== tenantId) return null;
   const may = (key: string) => person.permissions.includes(key);
-  if (!may("publish") && !may("edit")) return null;
-  return {
-    keeriUserId: person.user.id, name: person.user.name.trim(), email: person.user.email,
-    role: may("publish") ? "publisher" : "editor", canManageEnquiries: may("enquiries"),
-  };
+  const role = may("publish") ? "publisher" : may("edit") ? "editor" : may("view") ? "viewer" : "none";
+  if (role === "none" && !may("enquiries")) return null;
+  return { keeriUserId: person.user.id, name: person.user.name.trim(), email: person.user.email, role, canManageEnquiries: may("enquiries") };
 }
 
 async function call(config: KeeriSignInConfig, path: string, body: object): Promise<{ status: number; json: unknown } | null> {

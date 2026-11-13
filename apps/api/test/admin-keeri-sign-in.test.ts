@@ -6,7 +6,7 @@ import { randomBytes, scryptSync } from "node:crypto";
 import { createApp, type AppConfig } from "../src/app.js";
 import { loadAdminSignIn, type AdminSignIn, type KeeriSignInConfig } from "../src/admin/keeri-sign-in.js";
 
-// Shop admin sign-in with Keeri accounts (ADMIN_SIGN_IN=keeri), against a stand-in for Keeri's two server routes.
+// Shop admin sign-in with Keeri accounts, against a stand-in for Keeri's two server routes.
 const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
 const db = new PrismaClient({ datasources: { db: { url } } });
@@ -90,7 +90,7 @@ before(wipe);
 beforeEach(wipe);
 after(async () => { await wipe(); await db.$disconnect(); });
 
-test("with the flag off, the Keeri routes do not exist and password sign-in answers exactly as before", async () => {
+test("where there is no Keeri to ask (tests, a developer's machine), shop passwords answer exactly as before", async () => {
   await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
   const app = createApp(db, base);
   const http = request(app);
@@ -112,11 +112,11 @@ test("with the flag off, the Keeri routes do not exist and password sign-in answ
   assert.deepEqual(read.body, login.body);
 });
 
-test("with the flag off, a session that Keeri started is refused and ended", async () => {
+test("where there is no Keeri to ask, a session that Keeri started is refused and ended", async () => {
   const keeri = fakeKeeri();
   const { agent, back } = await signIn(appWith(keeri), keeri, editor);
   assert.equal((await sessionOf(agent)).status, 200);
-  // The same browser, after the owner has switched Keeri sign-in off again.
+  // The same browser, against an API that has no Keeri settings.
   const cookie = cookieNamed(back, "shop_admin")!.split(";")[0]!;
   const off = createApp(db, base);
   assert.equal((await request(off).get("/api/admin/session").set("Cookie", cookie)).status, 401);
@@ -193,12 +193,15 @@ test("coming back with Keeri's code starts a session for the Keeri person, excha
 });
 
 for (const [permissions, expected] of [
+  [["view"], { role: "viewer", canManageEnquiries: false }],
+  [["view", "enquiries"], { role: "viewer", canManageEnquiries: true }],
+  [["enquiries"], { role: "none", canManageEnquiries: true }],
   [["edit"], { role: "editor", canManageEnquiries: false }],
+  [["view", "edit"], { role: "editor", canManageEnquiries: false }],
   [["publish"], { role: "publisher", canManageEnquiries: false }],
   [["edit", "publish"], { role: "publisher", canManageEnquiries: false }],
   [["edit", "enquiries"], { role: "editor", canManageEnquiries: true }],
   [["edit", "publish", "enquiries"], { role: "publisher", canManageEnquiries: true }],
-  [["enquiries"], null],
   [[], null],
   [["admin", "manage", "*"], null],
 ] as const) {
@@ -217,20 +220,40 @@ for (const [permissions, expected] of [
   });
 }
 
-test("an editor from Keeri can save a draft and cannot publish it; a publisher can", async () => {
+test("each level opens exactly what the owner listed for it", async () => {
   const keeri = fakeKeeri();
   const app = appWith(keeri);
-  const asEditor = await signIn(app, keeri, editor);
-  const csrf = (await sessionOf(asEditor.agent)).body.csrfToken;
-  const publish = await asEditor.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 0 });
-  assert.equal(publish.status, 403);
-  assert.equal(publish.body.code, "ADMIN_ROLE_REQUIRED");
-  const asPublisher = await signIn(app, keeri, publisher);
-  const publisherCsrf = (await sessionOf(asPublisher.agent)).body.csrfToken;
-  const allowed = await asPublisher.agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", publisherCsrf).send({ expectedVersion: 0 });
-  assert.notEqual(allowed.status, 403);
-  assert.equal((await asEditor.agent.get("/api/admin/enquiries")).status, 403);
-  assert.equal((await asPublisher.agent.get("/api/admin/enquiries")).status, 200);
+  const as = async (person: Person) => {
+    const { agent } = await signIn(app, keeri, person);
+    const csrf = (await sessionOf(agent)).body.csrfToken as string;
+    const post = (path: string, body: object) => agent.post(path).set("Origin", origin).set("X-CSRF-Token", csrf).send(body);
+    return {
+      read: (await agent.get("/api/admin/content")).status,
+      history: (await agent.get("/api/admin/content/revisions")).status,
+      media: (await agent.get("/api/admin/media")).status,
+      // 409 "save a draft first" means the level let the request through.
+      preview: (await post("/api/admin/content/preview", { expectedVersion: 0 })).status,
+      // A complete draft sent against a version that is not the current one: 409 means the level let it through.
+      save: (await agent.put("/api/admin/content").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 99, content: draft })).status,
+      publish: (await post("/api/admin/content/publish", { expectedVersion: 0 })).status,
+      restore: (await post("/api/admin/content/rollback", { expectedVersion: 0, revisionId: "none" })).status,
+      enquiries: (await agent.get("/api/admin/enquiries")).status,
+      signOut: (await post("/api/admin/logout", {})).status,
+    };
+  };
+  const draft = { schemaVersion: 1, landingPages: [], homeSections: [{ key: "hero", enabled: true }], homeCopy: { categoryHeading: "Pick a room", bestsellersHeading: "Customer favourites", socialHeading: "At home", ticker: "Furniture made thoughtfully", testimonialHeading: "Our customers", testimonialSubheading: "Stories from home" }, campaigns: [], instagramPosts: [{ href: "https://www.instagram.com/p/test/", src: "/media/test.webp", alt: "Test scene" }], pages: [], motion: { autoplaySocial: false, autoplayCities: false, revealSections: true } };
+  const person = (id: string, permissions: string[]): Person => ({ id: `keeri_${id}`, name: id, email: `${id}@example.invalid`, permissions });
+  const denied = 403;
+  const viewer = await as(person("viewer", ["view"]));
+  assert.deepEqual(viewer, { read: 200, history: 200, media: 200, preview: 409, save: denied, publish: denied, restore: denied, enquiries: denied, signOut: 204 });
+  const editing = await as(person("editor", ["edit"]));
+  assert.deepEqual(editing, { read: 200, history: 200, media: 200, preview: 409, save: 409, publish: denied, restore: denied, enquiries: denied, signOut: 204 });
+  const publishing = await as(person("publisher", ["publish"]));
+  assert.deepEqual(publishing, { read: 200, history: 200, media: 200, preview: 409, save: 409, publish: 409, restore: 404, enquiries: denied, signOut: 204 });
+  const sales = await as(person("sales", ["enquiries"]));
+  assert.deepEqual(sales, { read: denied, history: denied, media: denied, preview: denied, save: denied, publish: denied, restore: denied, enquiries: 200, signOut: 204 });
+  const both = await as(person("both", ["view", "enquiries"]));
+  assert.deepEqual([both.read, both.save, both.enquiries], [200, denied, 200]);
 });
 
 test("a callback without this browser's own state is refused before Keeri is asked", async () => {
@@ -344,7 +367,8 @@ test("a first Keeri sign-in takes over the shop account with the same address, s
   const revisions = await agent.get("/api/admin/content/revisions");
   assert.equal(revisions.status, 200);
   assert.equal(revisions.body.revisions[0].actorEmail, editor.email);
-  // Their old shop password no longer signs them in.
+  // The account has moved to Keeri: its shop password is gone, not merely switched off.
+  assert.equal(linked.passwordHash, null);
   const old = await request(app).post("/api/admin/login").set("Origin", origin).send({ email: editor.email, password });
   assert.equal(old.status, 401);
   // A different Keeri person arriving with that address later does not get the row.
@@ -419,8 +443,15 @@ test("a role changed in Keeri is the role in the shop admin within a minute", as
   const user = (await sessionOf(agent)).body.user;
   assert.deepEqual([user.role, user.canManageEnquiries, user.name], ["editor", false, "V. Shah"]);
   assert.equal((await agent.get("/api/admin/enquiries")).status, 403);
-  // Left with enquiries only, which opens nothing here: the session ends.
+  // Left with enquiries only: the content closes and the Enquiries screen stays.
   keeri.set({ ...publisher, permissions: ["enquiries"] });
+  await aged(admin.id, 61);
+  const left = (await sessionOf(agent)).body.user;
+  assert.deepEqual([left.role, left.canManageEnquiries], ["none", true]);
+  assert.equal((await agent.get("/api/admin/content")).status, 403);
+  assert.equal((await agent.get("/api/admin/enquiries")).status, 200);
+  // Left with nothing: the session ends.
+  keeri.set({ ...publisher, permissions: [] });
   await aged(admin.id, 61);
   assert.equal((await sessionOf(agent)).status, 401);
 });
@@ -507,6 +538,30 @@ test("only the emergency account's shop password works while Keeri sign-in is on
   assert.equal((await request(appWith(keeri)).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password })).status, 401);
 });
 
+test("the emergency account keeps its password when its owner also signs in with Keeri", async () => {
+  await db.shopAdmin.create({ data: { email: publisher.email, role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const app = appWith(keeri, publisher.email);
+  await signIn(app, keeri, publisher);
+  const row = await db.shopAdmin.findUniqueOrThrow({ where: { email: publisher.email } });
+  assert.deepEqual([row.keeriUserId, row.passwordHash], [publisher.id, passwordHash]);
+  const login = await request(app).post("/api/admin/login").set("Origin", origin).send({ email: publisher.email, password });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.emergency, true);
+});
+
+test("a shop-password session from before Keeri became the only way in is ended", async () => {
+  await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const before = await request(createApp(db, base)).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password });
+  const cookie = cookieNamed(before, "shop_admin")!.split(";")[0]!;
+  assert.equal((await request(createApp(db, base)).get("/api/admin/session").set("Cookie", cookie)).status, 200);
+  const keeri = fakeKeeri();
+  const after = await request(appWith(keeri)).get("/api/admin/session").set("Cookie", cookie);
+  assert.equal(after.status, 401);
+  assert.equal(after.body.signIn.method, "keeri");
+  assert.equal(await db.shopAdminSession.count(), 0);
+});
+
 test("every sign-in while Keeri is on leaves a record with no secret in it", async () => {
   const keeri = fakeKeeri();
   const { state, code } = await signIn(appWith(keeri), keeri, editor);
@@ -571,30 +626,35 @@ test("a half-set-up Keeri sign-in lets nobody in through Keeri and reopens no pa
   assert.equal((await request(app).post("/api/admin/login").set("Origin", origin).send({ email: "other@example.invalid", password })).status, 401);
 });
 
-test("the settings: off unless ADMIN_SIGN_IN=keeri; a bad one is named, never quoted, and never stops the store", () => {
+test("the settings: production is always Keeri; a bad one is named, never quoted, and never stops the store", () => {
   const warned: string[] = [];
   const warn = (message: string) => { warned.push(message); };
-  const env = { KEERI_ORIGIN: "https://keeri.example.test", KEERI_TENANT_ID: tenantId, KEERI_SIGN_IN_CLIENT_ID: "shop-admin", KEERI_SIGN_IN_CLIENT_SECRET: secret };
+  const env = { NODE_ENV: "production", KEERI_ORIGIN: "https://keeri.example.test", KEERI_TENANT_ID: tenantId, KEERI_SIGN_IN_CLIENT_ID: "shop-admin", KEERI_SIGN_IN_CLIENT_SECRET: secret };
+  // No Keeri to ask: a test run or a developer's machine with none of the sign-in settings.
   assert.deepEqual(loadAdminSignIn({}, warn), { mode: "password" });
-  assert.deepEqual(loadAdminSignIn({ ...env }, warn), { mode: "password" });
-  assert.deepEqual(loadAdminSignIn({ ...env, ADMIN_SIGN_IN: "password" }, warn), { mode: "password" });
+  assert.deepEqual(loadAdminSignIn({ NODE_ENV: "development", KEERI_ORIGIN: env.KEERI_ORIGIN, KEERI_TENANT_ID: tenantId }, warn), { mode: "password" });
   assert.equal(warned.length, 0);
-  assert.deepEqual(loadAdminSignIn({ ...env, ADMIN_SIGN_IN: "Keeri " }, warn), { mode: "password" });
-  assert.equal(warned.length, 1);
-  const on = loadAdminSignIn({ ...env, ADMIN_SIGN_IN: "keeri", KEERI_ADMIN_ORIGIN: "https://staff.keeri.example.test", ADMIN_EMERGENCY_EMAIL: "Owner@Example.Invalid" }, warn);
+  // Nothing in the settings turns shop passwords back on in production.
+  for (const attempt of [{ ADMIN_SIGN_IN: "password" }, { ADMIN_SIGN_IN: "off" }, { KEERI_SIGN_IN_CLIENT_ID: undefined, KEERI_SIGN_IN_CLIENT_SECRET: undefined }]) {
+    assert.equal(loadAdminSignIn({ ...env, ...attempt }, warn).mode, "keeri");
+  }
+  // A developer who does set Keeri up locally gets Keeri sign-in too.
+  assert.equal(loadAdminSignIn({ ...env, NODE_ENV: "development" }, warn).mode, "keeri");
+  warned.length = 0;
+  const on = loadAdminSignIn({ ...env, KEERI_ADMIN_ORIGIN: "https://staff.keeri.example.test", ADMIN_EMERGENCY_EMAIL: "Owner@Example.Invalid" }, warn);
   assert.deepEqual(on, {
     mode: "keeri", emergencyEmail: "owner@example.invalid",
     ready: { origin: "https://keeri.example.test", adminOrigin: "https://staff.keeri.example.test", tenantId, clientId: "shop-admin", secret },
   });
-  const plain = loadAdminSignIn({ ...env, ADMIN_SIGN_IN: "keeri" }, warn);
+  const plain = loadAdminSignIn(env, warn);
   assert.equal(plain.mode === "keeri" && plain.ready?.adminOrigin, "https://keeri.example.test");
   assert.equal(plain.mode === "keeri" && plain.emergencyEmail, null);
-  warned.length = 0;
+  assert.equal(warned.length, 0);
   for (const broken of [
     { KEERI_SIGN_IN_CLIENT_SECRET: undefined }, { KEERI_SIGN_IN_CLIENT_SECRET: "too-short" }, { KEERI_ORIGIN: "http://keeri.example.test" },
     { KEERI_ORIGIN: "https://keeri.example.test/path" }, { KEERI_TENANT_ID: undefined }, { KEERI_SIGN_IN_CLIENT_ID: "Shop Admin" },
   ]) {
-    const result = loadAdminSignIn({ ...env, ...broken, ADMIN_SIGN_IN: "keeri", ADMIN_EMERGENCY_EMAIL: "owner@example.invalid" }, warn);
+    const result = loadAdminSignIn({ ...env, ...broken, ADMIN_EMERGENCY_EMAIL: "owner@example.invalid" }, warn);
     assert.deepEqual(result, { mode: "keeri", ready: null, emergencyEmail: "owner@example.invalid" });
     assert.match(warned.at(-1)!, new RegExp(Object.keys(broken)[0]!));
   }

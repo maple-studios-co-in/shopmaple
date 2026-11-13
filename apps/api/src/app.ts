@@ -55,7 +55,7 @@ export type AppConfig = {
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
   instagramFeed?: InstagramFeedConfig | null;
-  /** ADMIN_SIGN_IN: absent or `password` keeps shop passwords; `keeri` signs staff in with their Keeri accounts. */
+  /** How staff sign in. Production is always Keeri; absent (tests, a developer's machine) keeps shop passwords. */
   adminSignIn?: AdminSignIn;
   /** Customer accounts (CUSTOMER_ACCOUNTS_ENABLED); null or absent answers every /api/account route with a 404. */
   accounts?: AccountOptions | null;

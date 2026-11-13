@@ -12,7 +12,8 @@ export type StaffSession = {
   user: {
     id: string;
     email: string;
-    role: "editor" | "publisher";
+    /** `viewer` opens and previews but cannot save; `none` is somebody whose only access is the Enquiries screen. */
+    role: "none" | "viewer" | "editor" | "publisher";
     canManageEnquiries?: boolean;
     /** True for the one password account kept for when Keeri cannot be reached. */
     emergency?: boolean;
@@ -49,7 +50,8 @@ function parseSession(value: unknown): StaffSession | null {
     typeof user.email !== "string" ||
     user.email.length > 254 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email) ||
-    !["editor", "publisher"].includes(user.role) ||
+    !["none", "viewer", "editor", "publisher"].includes(user.role) ||
+    (user.role === "none" && user.canManageEnquiries !== true) ||
     typeof candidate.csrfToken !== "string" ||
     !/^[a-f0-9]{64}$/.test(candidate.csrfToken)
   )
