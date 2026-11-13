@@ -14,8 +14,28 @@ export type StaffSession = {
     email: string;
     role: "editor" | "publisher";
     canManageEnquiries?: boolean;
+    /** True for the one password account kept for when Keeri cannot be reached. */
+    emergency?: boolean;
   };
   csrfToken: string;
+};
+/** What the sign-in screen offers. `password` is the screen as it was before staff could sign in with Keeri. */
+type SignInOptions = { method: "password" } | { method: "keeri"; available: boolean; emergency: boolean };
+/**
+ * The API says what to offer in `signIn`, on the session and on its "sign in first" answer, only while
+ * Keeri sign-in is on. Anything but an exact Keeri answer leaves the password form.
+ */
+function parseSignInOptions(body: unknown): SignInOptions {
+  const value = body && typeof body === "object" ? (body as { signIn?: unknown }).signIn : null;
+  const candidate = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  if (candidate.method !== "keeri" || typeof candidate.available !== "boolean" || typeof candidate.emergency !== "boolean") return { method: "password" };
+  return { method: "keeri", available: candidate.available, emergency: candidate.emergency };
+}
+/** Why a trip to Keeri and back did not sign the person in (the callback's `?sign_in=`). */
+const signInOutcomes: Record<string, string> = {
+  denied: "Your Keeri account doesn't have access to the shop admin. Ask whoever manages roles in Keeri to tick Edit or Publish for your role under ShopMaple website admin.",
+  failed: "Sign in didn't complete. Please try again.",
+  unavailable: "We couldn't reach Keeri. Please try again in a minute.",
 };
 function parseSession(value: unknown): StaffSession | null {
   if (!value || typeof value !== "object") return null;
@@ -40,6 +60,7 @@ function parseSession(value: unknown): StaffSession | null {
       email: user.email,
       role: user.role,
       canManageEnquiries: user.canManageEnquiries === true,
+      ...(user.emergency === true ? { emergency: true } : {}),
     },
     csrfToken: candidate.csrfToken,
   };
@@ -48,18 +69,34 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
   const adminRequest = useAdminRequest();
   const [session, setSession] = useState<StaffSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [options, setOptions] = useState<SignInOptions>({ method: "password" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Back from Keeri without a session: say why, once, and take the reason out of the address.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("sign_in")) return;
+    const outcome = signInOutcomes[url.searchParams.get("sign_in") ?? ""];
+    url.searchParams.delete("sign_in");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    if (outcome) setError(outcome);
+  }, []);
   useEffect(() => {
     let active = true;
     void adminRequest("/api/admin/session", { cache: "no-store", credentials: "same-origin" })
       .then(async (response) => {
         if (active && response.ok) {
-          const verified = parseSession(await response.json());
+          const body: unknown = await response.json();
+          const verified = parseSession(body);
           if (!active) return;
+          setOptions(parseSignInOptions(body));
           if (verified) setSession(verified);
           else setError("We couldn't verify your session. Please sign in again.");
         } else if (active && response.status !== 401) setError("We couldn't check your session. Please try signing in.");
+        else if (active) {
+          const offered = parseSignInOptions(await response.json().catch(() => null));
+          if (active) setOptions(offered);
+        }
       })
       .catch((error) => {
         if (!active || (error instanceof Error && error.name === "AbortError")) return;
@@ -129,6 +166,22 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
           onExpired={() => { setSession(null); setError("Your session has expired. Sign in again to continue."); }} />
       </AdminRoot>
     );
+  const keeri = options.method === "keeri" ? options : null;
+  const passwordForm = (
+    <form onSubmit={login} className="grid gap-4">
+      <label className="grid gap-2 text-xs font-medium">
+        Email
+        <Input name="email" aria-label="Email" type="email" autoComplete="username" required className="h-10 bg-card text-sm" />
+      </label>
+      <label className="grid gap-2 text-xs font-medium">
+        Password
+        <Input name="password" aria-label="Password" type="password" autoComplete="current-password" required className="h-10 bg-card text-sm" />
+      </label>
+      <Button disabled={busy} type="submit" size="lg" variant={keeri ? "outline" : "default"} className="mt-1 w-full">
+        {busy ? "Signing in" : keeri ? "Sign in with the emergency account" : "Sign in"}
+      </Button>
+    </form>
+  );
   return (
     <AdminRoot aria-label="Store administration" data-admin-signin className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div aria-hidden="true" className="relative hidden flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:flex">
@@ -147,24 +200,24 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
             <div className="grid gap-1.5">
               <strong className="font-display text-lg font-normal text-primary lg:hidden">Maple Furnishers</strong>
               <h2 className="font-display text-2xl leading-tight font-normal">Sign in</h2>
-              <p className="text-sm text-muted-foreground">Use your staff email and password.</p>
+              <p className="text-sm text-muted-foreground">{keeri ? "Use your Keeri account. Who can edit and publish here is set on Keeri's Roles screen." : "Use your staff email and password."}</p>
             </div>
             {error && (
               <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span>{error}</span></Notice>
             )}
-            <form onSubmit={login} className="grid gap-4">
-              <label className="grid gap-2 text-xs font-medium">
-                Email
-                <Input name="email" aria-label="Email" type="email" autoComplete="username" required className="h-10 bg-card text-sm" />
-              </label>
-              <label className="grid gap-2 text-xs font-medium">
-                Password
-                <Input name="password" aria-label="Password" type="password" autoComplete="current-password" required className="h-10 bg-card text-sm" />
-              </label>
-              <Button disabled={busy} type="submit" size="lg" className="mt-1 w-full">
-                {busy ? "Signing in" : "Sign in"}
-              </Button>
-            </form>
+            {keeri && (keeri.available ? (
+              // A full page navigation: the browser itself goes to Keeri and comes back.
+              <Button asChild size="lg" className="w-full"><a href="/api/admin/keeri/start" data-keeri-sign-in>Sign in with Keeri</a></Button>
+            ) : (
+              <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span>Signing in with Keeri isn&apos;t set up correctly on this store yet. Ask whoever looks after the server.</span></Notice>
+            ))}
+            {!keeri ? passwordForm : keeri.emergency ? (
+              <details data-emergency-access className="rounded-lg border border-line-soft px-3 py-2 open:pb-3">
+                <summary className="cursor-pointer rounded-sm text-xs font-semibold text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60">Emergency access</summary>
+                <p className="mt-2 mb-3 text-xs text-muted-foreground">Only for when Keeri can&apos;t be reached. It works for the one emergency account, and every use is recorded.</p>
+                {passwordForm}
+              </details>
+            ) : null}
             <a href="/" className="w-fit rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to the storefront</a>
           </div>
         </div>
