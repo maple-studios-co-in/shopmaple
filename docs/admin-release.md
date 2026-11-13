@@ -172,12 +172,25 @@ If a setting is missing or malformed the store still starts. The API log names t
 
 With no switch, the settings go in before the new store release is made live, so staff are never left without a way in.
 
-1. **Keeri**: deploy the release with `/sign-in/authorize` and `/api/app-sign-in/*`. Nothing changes for anybody yet.
-2. **Store, staged but not live**: back up, export the release and run its migrations (`20261114140000_admin_keeri_sign_in`, `20261114150000_admin_view_and_enquiries_only` and `20261114160000_admin_emergency_password_reset`; all additive, and the running release ignores them).
-3. From the staged release folder, run the helper's `setup`. Then restart Keeri so it reads `APP_SIGN_IN_CLIENTS`.
-4. In Keeri, on Team & access → Roles, tick the ShopMaple website admin boxes for the starting roles.
-5. **Make the store release live** and restart `shopmaple-api` and `shopmaple-web`. Sign in with Keeri at `/admin`; check that History shows the right name, that an editor cannot publish, and that the emergency link works.
-6. Under Emergency access, ask for a reset link once and confirm the email arrives at the emergency account's address. This is the only proof that the mail sender can deliver it.
+Keeri's release (with `/sign-in/authorize` and `/api/app-sign-in/*`) goes first; it changes nothing for anybody on its own. Then, for the store, in this order:
+
+1. **Stage the store release, not live**: back up, export the release and run its migrations. There are four, all additive, and the running release ignores them:
+   - `20261114140000_admin_keeri_sign_in`
+   - `20261114150000_admin_view_and_enquiries_only`
+   - `20261114160000_admin_emergency_password_reset`
+   - `20261114170000_admin_emergency_failed_sign_ins`
+
+   The stage script's `prisma migrate deploy` applies all four. None may be skipped: without the last one a wrong emergency password would answer with an error instead of "incorrect".
+2. **Prove the emergency account on the release that is live now.** Sign in at `/admin` with the email and password of the shop account that will be the emergency account. After the new release goes live this password is the only way in when Keeri is down, so find out now whether it is known. If it is not, the emailed reset (last step) is the way to set one, and it depends on the store's mail sender.
+3. **From the staged release folder**, run `node deploy/keeri-admin-sign-in.mjs setup --emergency-email <that account's email>`.
+4. **Restart Keeri** so it reads `APP_SIGN_IN_CLIENTS`.
+5. **In Keeri**, on Team & access → Roles, tick the ShopMaple website admin boxes for the starting roles.
+6. **Warn staff**: everybody is signed out once when the release goes live, and anything typed but not saved in the shop admin is lost.
+7. **Activate**: make the store release live and restart `shopmaple-api` and `shopmaple-web`. From this moment Keeri is the only way in.
+8. **Check the API log's start-up lines** for a warning about the emergency account (none named, no matching account, or no password yet) or about Keeri sign-in settings.
+9. **Sign in with Keeri** at `/admin`; check that History shows the right name and that an editor cannot publish.
+10. **Try Emergency access** with the emergency account's password.
+11. **Request one reset link** under Emergency access and confirm the email arrives at the emergency account's address. This is the only proof that the mail sender can deliver it.
 
 **Falling back** is going back to the previous store release (point `current` at it and restart the two processes), without reversing the migrations. The old release signs staff in with shop passwords. Accounts that have already moved to Keeri have no shop password any more, apart from the emergency account, so on the old release only the emergency account and accounts that never moved can sign in.
 
