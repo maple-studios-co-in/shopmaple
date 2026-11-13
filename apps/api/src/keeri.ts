@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { compareLeadPhoto } from "./primary-photo.js";
 import { productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
 
 const id = z
@@ -17,6 +18,8 @@ const productTypeCategories = new Map<string, Product["category"]>([
   // reached no category page.
   ["chest", "storage"], ["bookcase", "storage"], ["cabinet", "storage"], ["crib", "beds"],
 ]);
+/** A media row with its role when Keeri sent one (v2 rows carry it; v1 rows never do). */
+const roleOf = (m: { id: string; position: number }) => ({ id: m.id, position: m.position, role: "role" in m && typeof m.role === "string" ? m.role : null });
 const mediaSchema = z
   .object({
     id,
@@ -404,7 +407,7 @@ function adaptValidated(
     const seen = new Set<string>();
     const media = [...model.media, ...eligible.flatMap((v) => v.media)]
       .filter((m) => m.stage === "approved" && m.supersededAt === null && m.storageKey?.trim() && (m.variantId === null || eligibleIds.has(m.variantId)))
-      .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+      .sort((a, b) => compareLeadPhoto(roleOf(a), roleOf(b)))
       .flatMap((m) => {
         const url = publicMedia.get(m.id);
         if (!url || seen.has(url)) return [];
@@ -465,7 +468,7 @@ function adaptValidated(
               m.storageKey?.trim() &&
               (m.variantId === null || eligibleIds.has(m.variantId)),
           )
-          .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+          .sort((a, b) => compareLeadPhoto(roleOf(a), roleOf(b)))
           .map((m) => publicMedia.get(m.id))
           .filter((url): url is string => Boolean(url)),
       ),
