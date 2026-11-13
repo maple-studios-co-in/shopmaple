@@ -359,7 +359,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     setTab(name);
   }
   const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
-  const roleLabel = session.user.role === "publisher" ? "Publisher" : "Editor";
+  // An emergency session says so wherever the role is shown, so it is never mistaken for an ordinary one.
+  const roleLabel = (session.user.role === "publisher" ? "Publisher" : "Editor") + (session.user.emergency ? " · Emergency access" : "");
   const unavailableDraft = busy ? (
     <div aria-busy="true">
       <p role="status" className="sr-only">Loading store content</p>

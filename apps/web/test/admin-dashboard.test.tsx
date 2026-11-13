@@ -1037,3 +1037,98 @@ test("a draft read aborted by StrictMode's first mount is not reported and does 
     globalThis.fetch = previous;
   }
 });
+
+// Staff sign-in with Keeri accounts: the API says what to offer in `signIn`, only while ADMIN_SIGN_IN=keeri.
+const signedOut = (signIn?: unknown) => Response.json({ code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content.", ...(signIn === undefined ? {} : { signIn }) }, { status: 401 });
+async function renderSignedOut(signIn?: unknown, address = "http://localhost:3000/admin") {
+  dom.reconfigure({ url: address });
+  const previous = globalThis.fetch;
+  const requests: { url: string; method: string; body: string | null }[] = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url: String(url), method: options?.method ?? "GET", body: options?.body ? String(options.body) : null });
+    return String(url).endsWith("/login") ? Response.json({ ...staff("publisher"), user: { ...staff("publisher").user, emergency: true } }) : String(url).endsWith("/session") ? signedOut(signIn) : Response.json(doc());
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; dom.reconfigure({ url: "http://localhost:3000/admin" }); } };
+}
+const keeriLink = () => container.querySelector<HTMLAnchorElement>("a[data-keeri-sign-in]");
+
+test("with Keeri sign-in on, the screen offers Keeri and no password form", async () => {
+  const { requests, done } = await renderSignedOut({ method: "keeri", available: true, emergency: false });
+  try {
+    assert.equal(keeriLink()?.getAttribute("href"), "/api/admin/keeri/start");
+    assert.equal(keeriLink()?.textContent, "Sign in with Keeri");
+    assert.equal(container.querySelector('input[type="password"]'), null);
+    assert.equal(container.querySelector("[data-emergency-access]"), null);
+    assert.match(container.textContent!, /Use your Keeri account/);
+    // Finding that out cost no extra request.
+    assert.deepEqual(requests.map((request) => request.url), ["/api/admin/session"]);
+  } finally { await done(); }
+});
+
+test("the emergency account's password form sits apart, labelled, and still signs in", async () => {
+  const { requests, done } = await renderSignedOut({ method: "keeri", available: true, emergency: true });
+  try {
+    const emergency = container.querySelector("[data-emergency-access]");
+    assert.ok(emergency, "Emergency access must be offered when the store has an emergency account");
+    assert.equal(emergency.querySelector("summary")?.textContent, "Emergency access");
+    assert.match(emergency.textContent!, /every use is recorded/i);
+    assert.ok(keeriLink(), "Keeri stays the main way in");
+    await fill("Email", "owner@example.test");
+    await fill("Password", "test-password");
+    await submit();
+    const login = requests.find((request) => request.url.endsWith("/login"));
+    assert.deepEqual(JSON.parse(login!.body!), { email: "owner@example.test", password: "test-password" });
+    // Signed in, and marked wherever the role is shown.
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /Emergency access/);
+  } finally { await done(); }
+});
+
+test("a store whose Keeri settings are wrong says so instead of sending people to Keeri", async () => {
+  const { done } = await renderSignedOut({ method: "keeri", available: false, emergency: false });
+  try {
+    assert.equal(keeriLink(), null);
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /isn't set up correctly/);
+    assert.equal(container.querySelector('input[type="password"]'), null);
+  } finally { await done(); }
+});
+
+for (const [outcome, message] of [["denied", /doesn't have access to the shop admin/], ["failed", /didn't complete/], ["unavailable", /couldn't reach Keeri/]] as const) {
+  test(`coming back from Keeri "${outcome}" is explained once and taken out of the address`, async () => {
+    const { done } = await renderSignedOut({ method: "keeri", available: true, emergency: false }, `http://localhost:3000/admin?sign_in=${outcome}&keep=1`);
+    try {
+      assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", message);
+      assert.equal(dom.window.location.search, "?keep=1");
+      assert.ok(keeriLink(), "The person can try again");
+    } finally { await done(); }
+  });
+}
+
+test("an unknown reason in the address is dropped without showing anything from it", async () => {
+  const { done } = await renderSignedOut({ method: "keeri", available: true, emergency: false }, "http://localhost:3000/admin?sign_in=%3Cb%3Ehello%3C/b%3E");
+  try {
+    assert.equal(container.querySelector('[role="alert"]'), null);
+    assert.doesNotMatch(container.textContent!, /hello/);
+    assert.equal(dom.window.location.search, "");
+  } finally { await done(); }
+});
+
+for (const [name, signIn] of [
+  ["no offer at all (sign-in by shop password)", undefined],
+  ["an unknown method", { method: "sso", available: true, emergency: false }],
+  ["a half-formed offer", { method: "keeri" }],
+  ["text where an offer should be", "keeri"],
+] as const) {
+  test(`${name} leaves the password form exactly as it was`, async () => {
+    const { requests, done } = await renderSignedOut(signIn);
+    try {
+      assert.equal(keeriLink(), null);
+      assert.equal(container.querySelector("[data-emergency-access]"), null);
+      assert.ok(container.querySelector('input[type="password"]'));
+      assert.equal(button("Sign in").disabled, false);
+      assert.match(container.textContent!, /Use your staff email and password\./);
+      assert.deepEqual(requests.map((request) => request.url), ["/api/admin/session"]);
+    } finally { await done(); }
+  });
+}
