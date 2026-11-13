@@ -53,6 +53,7 @@ export async function readCart(
     cartable: v.product.published && canAddToCart(v, checkoutEnabled),
     stockPolicy: v.stockPolicy,
     leadTimeDays: v.stockPolicy === "made_to_order" ? v.leadTimeDays : null,
+    minOrderQuantity: v.product.minOrderQuantity,
   }));
   return {
     items,

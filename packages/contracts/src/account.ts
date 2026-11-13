@@ -296,6 +296,8 @@ export const orderJourneyStepSchema = z
   })
   .strict();
 
+/** A private order page on the store: `/orders/MF-<n>-<32 hex>`, optionally its `/tracking` page. */
+const orderLinkPath = z.string().regex(/^\/orders\/MF-[1-9][0-9]{0,9}-[a-f0-9]{32}(?:\/tracking)?$/);
 export const orderDetailSchema = z
   .object({
     ...orderSummarySchema.shape,
@@ -338,8 +340,42 @@ export const orderDetailSchema = z
       .array(orderJourneyStepSchema)
       .length(4)
       .refine((steps) => steps.every((step, index) => step.key === orderJourneyKeys[index]), "Steps out of order"),
+    /** The order's private pages (ORDER_LINK_SECRET), which open without an account; null or absent when they are off. */
+    links: z.object({ view: orderLinkPath, tracking: orderLinkPath }).strict().nullable().optional(),
+    /** The buyer's cancellation request: `requested` while staff decide, `declined` once they say no. Null when none. A
+     * cancellation staff accept shows as `cancellation` above. */
+    cancelRequest: z.object({
+      status: z.enum(["requested", "declined"]),
+      requestedAt: dateTime,
+      /** Staff's note to the buyer when they declined, from Keeri. */
+      note: z.string().min(1).max(500).optional(),
+    }).strict().nullable().optional(),
+    /** Whether the buyer may ask to cancel online: Keeri has accepted the order and it is not yet being made or packed. */
+    canCancel: z.boolean().optional(),
   })
   .strict();
+
+/** What Keeri tells the buyer about the parcel. The tracking link is Shiprocket's public page and nothing else. */
+export const orderShipmentSchema = z
+  .object({
+    state: z.enum(["processing", "booked", "shipped", "delivered"]),
+    courierName: z.string().max(200).nullable(),
+    awbCode: z.string().max(100).nullable(),
+    trackingUrl: z.string().regex(/^https:\/\/shiprocket\.co\/tracking\/[A-Za-z0-9%_-]{1,100}$/).nullable(),
+    trackingStatus: z.string().max(200).nullable(),
+    shippedAt: dateTime.nullable(),
+    deliveredAt: dateTime.nullable(),
+  })
+  .strict();
+export type OrderShipment = z.infer<typeof orderShipmentSchema>;
+/** GET /api/orders/link/:ref/tracking → the order and its parcel. `shipment` is null before Keeri accepts the order, or
+ * when Keeri could not say just now (`shipmentUnavailable`). */
+export const orderTrackingSchema = z
+  .object({ order: orderDetailSchema, shipment: orderShipmentSchema.nullable(), shipmentUnavailable: z.boolean() })
+  .strict();
+export type OrderTracking = z.infer<typeof orderTrackingSchema>;
+/** POST /api/orders/link/:ref/cancel → the order as it now stands. */
+export const cancelOrderInputSchema = z.object({ reason: z.string().trim().min(3).max(500) }).strict();
 
 /** GET /api/account/orders → paid orders placed with the account's email, newest first (at most 200). */
 export const orderListResponseSchema = z.object({ orders: z.array(orderSummarySchema).max(200) }).strict();

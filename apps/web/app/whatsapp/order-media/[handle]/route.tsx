@@ -4,11 +4,11 @@ import { brotliDecompressSync } from "node:zlib";
 import { ImageResponse } from "next/og";
 import { getProduct } from "@/lib/catalog";
 import { isProductHandle } from "@/lib/recent-products";
-import { previewSampleHandle } from "@/lib/whatsapp-media";
+import { headerPhoto, previewSampleHandle } from "@/lib/whatsapp-media";
 
 /**
  * The header image of the WhatsApp order confirmation (Figma 404:1410, 1200 × 630; owner, 11 Nov 2026): the sage panel's
- * three lines beside the product's first photo, the 400 × 210 strip of the message (394:1456) drawn three times larger.
+ * three lines beside the photo of the variant bought (`?variant=<slug>`; else the product's first photograph), the 400 × 210 strip of the message (394:1456) drawn three times larger.
  * The template's IMAGE header links here (`orderConfirmationMediaPath` in @shopmaple/contracts/whatsapp). It holds no
  * customer data, so caches may keep it for a week.
  */
@@ -23,7 +23,7 @@ const cacheControl = "public, max-age=604800, stale-while-revalidate=2592000";
 // Development only (lib/whatsapp-media.ts): the Figma frames' own Nola photograph in the real header image.
 const previewSamplePhoto = ["public", "media", "previews", "nola-accent-chair.webp"];
 
-export async function GET(_request: Request, { params }: { params: Promise<{ handle: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
   if (!isProductHandle(handle)) return notFound();
   if (handle === previewSampleHandle && process.env.NODE_ENV !== "production") {
@@ -41,7 +41,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ han
     });
   }
   if (!product) return notFound();
-  const [fonts, photo] = await Promise.all([mediaFonts(), productPhoto(product.images[0])]);
+  // `?variant=<slug>` (Keeri adds it for orders the store tells it the variant of): the photo of the piece bought.
+  const variant = new URL(request.url).searchParams.get("variant");
+  const [fonts, photo] = await Promise.all([mediaFonts(), productPhoto(headerPhoto(product, variant))]);
   return new ImageResponse(<OrderMedia photo={photo} />, {
     width,
     height,

@@ -19,6 +19,20 @@ export class KeeriCommerceError extends Error {
     this.name = "KeeriCommerceError";
   }
 }
+/** Keeri's shipment status for a store order (`GET /api/storefront/orders/<id>/shipment`). The tracking link is
+ * Shiprocket's public page and nothing else. */
+const shipmentSchema = z.object({
+  externalOrderId: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),
+  state: z.enum(["processing", "booked", "shipped", "delivered"]),
+  courierName: z.string().max(200).nullable(),
+  awbCode: z.string().max(100).nullable(),
+  trackingUrl: z.string().regex(/^https:\/\/shiprocket\.co\/tracking\/[A-Za-z0-9%_-]{1,100}$/).nullable(),
+  trackingStatus: z.string().max(200).nullable(),
+  shippedAt: z.iso.datetime({ offset: true }).nullable(),
+  deliveredAt: z.iso.datetime({ offset: true }).nullable(),
+}).strict();
+export type KeeriShipment = z.infer<typeof shipmentSchema>;
+const cancellationAnswer = z.object({ requestId: z.string().min(1).max(64), status: z.string().min(1).max(40) }).strict();
 interface Options {
   origin: string;
   token: string;
@@ -36,11 +50,16 @@ const paths = new Set([
   "reservations/verify",
   "reservations/release",
   "orders",
+  "orders/cancellation-requests",
 ]);
+/** GET paths: one accepted order's shipment, by the id Keeri gave it. */
+const shipmentPath = /^orders\/[A-Za-z0-9_-]{1,64}\/shipment$/;
 // Keeri can safely see these twice: a hold is keyed by attemptId (a repeat returns the
 // same hold), verify and release repeat harmlessly, and an unused quote just expires.
 // Order delivery is left out because the outbox worker already retries it with backoff.
 const repeatable = new Set([
+  // Keeri answers a repeated requestId with the first answer.
+  "orders/cancellation-requests",
   "quotes",
   "reservations",
   "reservations/verify",
@@ -54,8 +73,11 @@ const defaultRetryDelaysMs = [500, 1000, 2000, 2500];
  * customer used the code meanwhile). Each reaches the buyer as its own message. */
 export const promoRefusalCodes = ["PROMO_NOT_FOUND", "PROMO_NOT_RUNNING", "PROMO_NOT_APPLICABLE", "PROMO_ALREADY_USED"] as const;
 export type PromoRefusal = (typeof promoRefusalCodes)[number];
-const promoRefusals = new Set<string>(promoRefusalCodes);
+/** Keeri's 422 refusals the buyer can act on: a promo code, or a design's minimum order (on a quote). */
+const promoRefusals = new Set<string>([...promoRefusalCodes, "BELOW_MINIMUM_ORDER"]);
 const refusalMaxBytes = 1024;
+/** Keeri's named refusals of a buyer's cancellation request (404 or 409 `{ "error": CODE }`). */
+const cancellationRefusals = new Set(["CANCELLATION_NOT_ALLOWED", "CANCELLATION_ALREADY_REQUESTED", "ORDER_NOT_FOUND"]);
 /** Server-only, fixed-origin machine transport. Each domain consumer validates its response schema. */
 export function createKeeriCommerce(options: Options) {
   const timeoutMs = options.timeoutMs ?? 10_000,
@@ -115,7 +137,8 @@ export function createKeeriCommerce(options: Options) {
       }
     }
   }
-  async function send(path: string, serialized: string): Promise<unknown> {
+  /** A POST with `serialized` as its body, or a GET when it is null. */
+  async function send(path: string, serialized: string | null): Promise<unknown> {
     const controller = new AbortController();
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -129,17 +152,24 @@ export function createKeeriCommerce(options: Options) {
     async function read() {
       const response = await (options.fetch ?? fetch)(
         new URL(`/api/storefront/${path}`, origin),
-        {
-          method: "POST",
-          redirect: "error",
-          signal: controller.signal,
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${options.token}`,
-          },
-          body: serialized,
-        },
+        serialized === null
+          ? {
+              method: "GET",
+              redirect: "error",
+              signal: controller.signal,
+              headers: { Accept: "application/json", Authorization: `Bearer ${options.token}` },
+            }
+          : {
+              method: "POST",
+              redirect: "error",
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${options.token}`,
+              },
+              body: serialized,
+            },
       );
       if (controller.signal.aborted) {
         void response.body?.cancel().catch(() => {});
@@ -147,7 +177,10 @@ export function createKeeriCommerce(options: Options) {
       }
       if (response.status !== 200 || response.redirected) {
         // A 422 may name a promo refusal the buyer can act on; no other refusal body is read.
-        const refusal = response.status === 422 && !response.redirected ? await promoRefusal(response) : null;
+        const refusal = response.redirected ? null
+          : response.status === 422 ? await namedRefusal(response, promoRefusals)
+          : path === "orders/cancellation-requests" && [404, 409].includes(response.status) ? await namedRefusal(response, cancellationRefusals)
+          : null;
         if (refusal) throw new KeeriCommerceError(refusal);
         void response.body?.cancel().catch(() => {});
         // 5xx is a Keeri outage; anything else is a refusal of this request. Only nginx's
@@ -159,12 +192,12 @@ export function createKeeriCommerce(options: Options) {
       }
       return json(response, maxBytes);
     }
-    /** Exactly `{ "error": <promo code> }` within a small bound, or nothing. */
-    async function promoRefusal(response: Response) {
+    /** Exactly `{ "error": <one of codes> }` within a small bound, or nothing. */
+    async function namedRefusal(response: Response, codes: ReadonlySet<string>) {
       try {
         const body = (await json(response, refusalMaxBytes)) as { error?: unknown } | null;
         const code = body !== null && typeof body === "object" && Object.keys(body).length === 1 ? body.error : null;
-        return typeof code === "string" && promoRefusals.has(code) ? (code as PromoRefusal) : null;
+        return typeof code === "string" && codes.has(code) ? code : null;
       } catch (error) {
         if (error instanceof KeeriCommerceError && error.code === "TRANSPORT_TIMEOUT") throw error;
         return null;
@@ -296,5 +329,18 @@ export function createKeeriCommerce(options: Options) {
       throw new KeeriCommerceError("INVALID_RESPONSE");
     return result;
   }
-  return { request, quote, reservations, deliverCapturedOrder };
+  /** Shipped and delivered status of one accepted order, as Keeri may tell the buyer (Keeri `orders:read`). */
+  async function orderShipment(externalOrderId: string): Promise<KeeriShipment> {
+    const path = `orders/${externalOrderId}/shipment`;
+    if (!shipmentPath.test(path)) throw new KeeriCommerceError("INVALID_REQUEST");
+    const shipment = validated(shipmentSchema, await send(path, null));
+    if (shipment.externalOrderId !== externalOrderId) throw new KeeriCommerceError("INVALID_RESPONSE");
+    return shipment;
+  }
+  /** The buyer's request to cancel (Keeri `orders:write`). Staff then cancel and refund, or decline; Keeri's order
+   * events tell the store which. A retry with the same requestId gets the same answer. */
+  async function requestCancellation(input: { requestId: string; externalOrderId: string; reason: string }) {
+    return validated(cancellationAnswer, await request("orders/cancellation-requests", { merchantScope: options.merchantScope, ...input }));
+  }
+  return { request, quote, reservations, deliverCapturedOrder, orderShipment, requestCancellation };
 }

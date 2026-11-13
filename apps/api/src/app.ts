@@ -18,6 +18,7 @@ import { saveEnquiry } from "./enquiries.js";
 import type { KeeriLeadsConfig } from "./keeri-leads.js";
 import { registerReviewRoutes, type KeeriReviewsConfig } from "./reviews.js";
 import { registerAccountRoutes, type AccountOptions } from "./account/routes.js";
+import { createBuyerOrders, registerBuyerOrderRoutes, type BuyerOrdersOptions } from "./orders/buyer-orders.js";
 import { registerEmailPreviews } from "./previews.js";
 import { isLoopbackAddress } from "./network.js";
 import { bootstrapCart, setCartQuantity, HttpError } from "./cart.js";
@@ -55,6 +56,8 @@ export type AppConfig = {
   instagramFeed?: InstagramFeedConfig | null;
   /** Customer accounts (CUSTOMER_ACCOUNTS_ENABLED); null or absent answers every /api/account route with a 404. */
   accounts?: AccountOptions | null;
+  /** Private order links (ORDER_LINK_SECRET); null or absent: the /api/orders/link routes do not exist. */
+  buyerOrders?: BuyerOrdersOptions | null;
 };
 export function createApp(
   db: PrismaClient,
@@ -118,7 +121,9 @@ export function createApp(
   registerCatalogueViewRoutes(app, db);
   registerCatalogueMedia(app, db, config.catalogueMedia);
   registerInstagramFeedRoutes(app, db, config.instagramFeed ?? null, config.secureCookies);
-  if (config.accounts) registerAccountRoutes(app, db, { ...config.accounts, secureCookies: config.secureCookies });
+  const buyerOrders = config.buyerOrders ? createBuyerOrders(db, config.buyerOrders) : null;
+  if (buyerOrders) registerBuyerOrderRoutes(app, buyerOrders);
+  if (config.accounts) registerAccountRoutes(app, db, { ...config.accounts, secureCookies: config.secureCookies, buyerOrders });
   registerEmailPreviews(app, config.webOrigin); // NODE_ENV development or test only; production never has the route
   app.get("/api/health", async (_req, res) => {
     await db.$queryRaw`SELECT 1`;

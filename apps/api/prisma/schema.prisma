@@ -25,6 +25,9 @@ model Product {
   reviewAverage Float?
   /// The product's own Keeri offer for the product page's countdown ({ label, code, startsAt, endsAt }); null without one.
   offer Json?
+  /// Keeri's minimum order for the design (2 to 20 pieces across its finishes); null is none. The bag and checkout
+  /// hold the buyer to it, and Keeri's quote refuses less.
+  minOrderQuantity Int?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]
@@ -238,6 +241,22 @@ model CheckoutAttempt {
   updatedAt DateTime @updatedAt
   @@unique([cartId, idempotencyKey])
   @@index([customerEmailKey])
+}
+
+/// A buyer's request to cancel a paid order, made from the order page (private link or account; owner, 14 Nov 2026).
+/// Keeri decides: staff cancel and refund the order, or decline the request, and Keeri's order events tell the store.
+/// `id` is the requestId Keeri keys on, so a retry after Keeri was unreachable is the same request.
+model OrderCancellationRequest {
+  id String @id @default(uuid())
+  attemptId String
+  /// The buyer's words, 3 to 500 characters, sent to Keeri as given.
+  reason String
+  /// pending: not yet acknowledged by Keeri (sent again on the next try); requested: Keeri has it; refused: Keeri said
+  /// the order can no longer be cancelled online.
+  state String @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([attemptId, createdAt])
 }
 
 /// A shopper who signs in with an emailed one-time code (customer accounts, 10 Nov 2026). Created by the first

@@ -4,6 +4,7 @@ import { after, before, beforeEach, test } from "node:test";
 import { PrismaClient } from "@prisma/client";
 import request from "supertest";
 import { createApp } from "../src/app.js";
+import { orderLinkRef } from "../src/orders/order-access.js";
 import { composeCommerce, loadCommerceConfig } from "../src/commerce-composition.js";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -644,7 +645,7 @@ test("a promo code is quoted by Keeri, charged at the discounted total and named
   assert.match(staff.text, /Composition Chair, Oak × 2: Rs\. 3,000\.00/, "the lines before the discount");
   assert.match(staff.text, /Discount \(DIWALI15\): -Rs\. 450\.00/);
   assert.match(staff.text, /Total: Rs\. 3,304\.00/);
-  assert.match(buyer.text, /Composition Chair\nOak\nQuantity 2 · ₹3,000\n/, "the lines before the discount");
+  assert.match(buyer.text, /Composition Chair\nOak\nQuantity 2 · ₹1,500 each · ₹3,000\n/, "the lines before the discount");
   assert.match(buyer.text, /Subtotal: ₹3,000\nDiscount \(DIWALI15\): −₹450\n/);
   assert.match(buyer.text, /Total paid: ₹3,304\n/);
   assert.match(buyer.html ?? "", /Discount \(DIWALI15\)[\s\S]*−₹450[\s\S]*₹3,304/);
@@ -773,4 +774,30 @@ test("WHATSAPP_ORDER_UPDATES is true, false or unset", () => {
   assert.equal(loadCommerceConfig({ ...fullEnv, WHATSAPP_ORDER_UPDATES: "false" })!.whatsappOrderUpdates, false);
   assert.equal(loadCommerceConfig(whatsappEnv)!.whatsappOrderUpdates, true);
   assert.throws(() => loadCommerceConfig({ ...fullEnv, WHATSAPP_ORDER_UPDATES: "yes" }), /WHATSAPP_ORDER_UPDATES must be true or false/);
+});
+
+test("with WHATSAPP_ORDER_LINKS on, Keeri also receives the order's private links and the variant for the picture", async () => {
+  const secret = "composition-order-links-secret-32-chars-plus";
+  await db.variant.update({ where: { id: "keeri:maple:comp-chair-v" }, data: { slug: "oak" } });
+  const { app, runWorkers } = checkoutApp({ ...whatsappEnv, ORDER_LINK_SECRET: secret, WHATSAPP_ORDER_LINKS: "true" });
+  const frozen = await freeze(app, "composition-whatsapp-links", { ...input, whatsappOrderUpdates: true });
+  assert.equal(frozen.status, 200, JSON.stringify(frozen.body));
+  await payAndDeliver(app, runWorkers, frozen.body.id);
+  const paid = await db.checkoutAttempt.findUniqueOrThrow({ where: { id: frozen.body.id } });
+  const ref = orderLinkRef(secret, paid.orderNumber!);
+  const { payload, payloadSha256 } = fake.orders[0]!;
+  assert.deepEqual(payload.whatsappUpdates.orderLinks, { view: ref, tracking: `${ref}-tracking` });
+  assert.equal(payload.whatsappUpdates.headerVariantId, "oak");
+  assert.equal(payloadSha256, createHash("sha256").update(canonical(payload)).digest("hex"));
+  // The confirmation email opens the same order, and its tracking, without an account.
+  const buyer = fake.emails.find((e) => e.to.includes("buyer@example.test") && /confirmed/.test(e.subject))!;
+  assert.match(buyer.text, new RegExp(`View your order: https?://[^\\s]+/orders/${ref}\\n`));
+  assert.ok(buyer.text.includes(`/orders/${ref}/tracking\n`));
+});
+
+test("with only ORDER_LINK_SECRET set, Keeri's payload stays exactly as an older Keeri accepts it", async () => {
+  const { app, runWorkers } = checkoutApp({ ...whatsappEnv, ORDER_LINK_SECRET: "composition-order-links-secret-32-chars-plus" });
+  const frozen = await freeze(app, "composition-whatsapp-nolinks", { ...input, whatsappOrderUpdates: true });
+  await payAndDeliver(app, runWorkers, frozen.body.id);
+  assert.deepEqual(Object.keys(fake.orders[0]!.payload.whatsappUpdates).sort(), ["consentedAt", "estimatedDelivery", "headerHandle", "orderNumber"]);
 });

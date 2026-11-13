@@ -39,7 +39,11 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // bytes for that.
 // 10 Nov 2026: 276,698 raw once those redesigns and the product offers (#120) met in one build; each had passed on its
 // own. Raised by 500 bytes for that.
-assert.ok(totalRaw <= 277_000, `Initial homepage JavaScript exceeds the 277,000-byte raw budget: ${totalRaw}`);
+// 14 Nov 2026: 277,060 raw after each design's minimum order (MOQ): the product and the bag line each carry
+// minOrderQuantity, and both schemas are parsed by code every page loads (the bag in the layout). The helpers that use
+// it live in @shopmaple/contracts/minimum-order, outside the homepage. Raised by 500 bytes for that (owner's yes); the
+// gzip budget below is unchanged.
+assert.ok(totalRaw <= 277_500, `Initial homepage JavaScript exceeds the 277,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
