@@ -1347,3 +1347,19 @@
 :is(.account, .checkout-page) .checkout-discount {
   color: #2f6b32;
 }
+
+/* ---- An order's actions and tracking (private order links, 14 Nov 2026) ---- */
+:is(.account, .checkout-page) [data-order-actions] {
+  display: grid;
+  gap: 14px;
+  margin-block: var(--account-gap);
+}
+:is(.account, .checkout-page) [data-order-actions] textarea.account-input {
+  height: auto;
+  resize: vertical;
+}
+:is(.account, .checkout-page) [data-tracking] {
+  display: grid;
+  gap: 14px;
+  margin-block: var(--account-gap);
+}

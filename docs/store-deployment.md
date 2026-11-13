@@ -89,6 +89,26 @@ that accepts the consent** (its WhatsApp order messages): an older Keeri refuses
 order waits for staff. Rollback is unsetting it and restarting. Migration `20261113120000_whatsapp_order_opt_in` adds
 one nullable column and is safe under the running release. See [WhatsApp order messages](whatsapp-order-confirmation.md).
 
+## Private order links, cancel and tracking
+
+A buyer opens their order from the order email, or Keeri's WhatsApp "View order" button, without an account (owner,
+14 Nov 2026). The link is `/orders/MF-<n>-<32 hex>`: the order number and the first 128 bits of an HMAC of it under
+`ORDER_LINK_SECRET`. Nothing is stored; a forged or altered link is the same 404 as a missing order. The page shows the
+pieces, photos, options, totals, address (phone masked), status and journey; `/orders/<ref>/tracking` adds Keeri's
+shipment (courier, AWB, Shiprocket's page). **Cancel** sends the buyer's reason to Keeri's cancellation requests while
+the order is still only confirmed; staff then **Cancel and refund** or **Decline** in Keeri, and the page follows
+Keeri's order events. The pages are never cached and send no Referer.
+
+| Key | Purpose |
+| --- | --- |
+| `ORDER_LINK_SECRET` | 32–512 random characters, private, for example `openssl rand -hex 32`. Turns private links on: the order emails link them (with "Track your order"), `/api/orders/link/*` answers, and account orders carry the same links and Cancel. **Set it once**: changing it retires every link already sent. Unset: emails link as before and the routes answer 404. |
+| `WHATSAPP_ORDER_LINKS` | `true` also hands Keeri each paid order's links and the bought variant's slug, so WhatsApp's "View order" opens the private page (the dispatched message opens tracking) and the confirmation's picture is the variant bought. Needs `ORDER_LINK_SECRET`. **Set it only once Keeri accepts `whatsappUpdates.orderLinks`**: an older Keeri refuses such an order. Unset or `false`: Keeri receives what it does today. |
+
+Tracking and Cancel ask Keeri with the store's commerce credential, which then needs Keeri's `orders:read` and
+`orders:write` scopes. Without `orders:read` the tracking page says tracking isn't available; without checkout there
+is no Keeri to ask and Cancel is not offered. Migration `20261114130000_order_cancellation_requests` adds one table and
+`20261114120000_product_min_order_quantity` one nullable column; both are safe under the running release.
+
 ## Enabling customer accounts
 
 Customer accounts (password sign-in with emailed codes for sign-up and resets, order history, saved addresses; see [architecture](architecture.md#customer-accounts)) have their own switch in the API's private environment. They are **off in production** until it is set. While they are off, every `/api/account` route answers 404, `/api/health` reports `accountsEnabled: false`, and `/account` keeps its "not available yet" page. Guest order status is unchanged either way.
