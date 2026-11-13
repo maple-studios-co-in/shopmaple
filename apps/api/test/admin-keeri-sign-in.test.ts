@@ -1,0 +1,761 @@
+import assert from "node:assert/strict";
+import { after, before, beforeEach, test } from "node:test";
+import { PrismaClient } from "@prisma/client";
+import request from "supertest";
+import { randomBytes, scryptSync } from "node:crypto";
+import { createApp, type AppConfig } from "../src/app.js";
+import { loadAdminSignIn, type AdminSignIn, type KeeriSignInConfig } from "../src/admin/keeri-sign-in.js";
+
+// Shop admin sign-in with Keeri accounts, against a stand-in for Keeri's two server routes.
+const url = process.env.TEST_DATABASE_URL;
+if (!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
+const db = new PrismaClient({ datasources: { db: { url } } });
+const origin = "http://localhost:3000";
+const base: AppConfig = { webOrigin: origin, catalogMode: "preview", secureCookies: false };
+const secret = randomBytes(32).toString("base64url");
+const tenantId = "tenant_maple";
+const callback = `${origin}/api/admin/keeri/callback`;
+const password = randomBytes(24).toString("base64url");
+const passwordHash = (() => {
+  const salt = randomBytes(16).toString("hex");
+  return `scrypt$131072$8$1$${salt}$${scryptSync(password, salt, 64, { N: 131072, r: 8, p: 1, maxmem: 192 * 1024 * 1024 }).toString("hex")}`;
+})();
+
+type Person = { id: string; name: string; email: string; permissions: string[]; tenantId?: string };
+/** Keeri as the store sees it: codes that work once, and a live answer about each person. */
+function fakeKeeri() {
+  const codes = new Map<string, Person>();
+  const people = new Map<string, Person>();
+  const calls: { url: string; authorization: string | null; body: Record<string, unknown> }[] = [];
+  const state = { reachable: true, status: 200 };
+  const answer = (person: Person) => ({ tenantId: person.tenantId ?? tenantId, user: { id: person.id, name: person.name, email: person.email }, permissions: person.permissions });
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  const fetchKeeri: typeof fetch = async (input, init) => {
+    const target = String(input);
+    const headers = new Headers(init?.headers);
+    const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+    calls.push({ url: target, authorization: headers.get("authorization"), body });
+    if (!state.reachable) throw new TypeError(`fetch failed for ${target} with ${headers.get("authorization")}`);
+    if (state.status !== 200) return json({ error: "sign_in_unavailable" }, state.status);
+    if (headers.get("authorization") !== `Bearer ${secret}`) return json({ error: "unauthorized" }, 401);
+    if (target.endsWith("/api/app-sign-in/token")) {
+      const person = codes.get(String(body.code));
+      if (!person || body.redirect_uri !== callback) return json({ error: "invalid_grant" }, 400);
+      codes.delete(String(body.code));
+      const current = people.get(person.id);
+      return current ? json(answer(current)) : json({ error: "access_denied" }, 403);
+    }
+    const current = people.get(String(body.user_id));
+    return current ? json({ access: true, ...answer(current) }) : json({ access: false });
+  };
+  return {
+    calls, state, fetch: fetchKeeri,
+    /** The person exists in Keeri with this access, and has just been sent back with a code. */
+    arrive(person: Person) { people.set(person.id, person); const code = randomBytes(32).toString("base64url"); codes.set(code, person); return code; },
+    set(person: Person) { people.set(person.id, person); },
+    remove(id: string) { people.delete(id); },
+  };
+}
+type Keeri = ReturnType<typeof fakeKeeri>;
+const ready = (keeri: Keeri): KeeriSignInConfig => ({ origin: "https://keeri.example.test", adminOrigin: "https://keeri.example.test", tenantId, clientId: "shop-admin", secret, fetch: keeri.fetch });
+const keeriMode = (keeri: Keeri, emergencyEmail: string | null = null): AdminSignIn => ({ mode: "keeri", ready: ready(keeri), emergencyEmail });
+const appWith = (keeri: Keeri, emergencyEmail: string | null = null) => createApp(db, { ...base, adminSignIn: keeriMode(keeri, emergencyEmail) });
+
+const cookies = (response: request.Response) => ([] as string[]).concat(response.headers["set-cookie"] ?? []);
+const cookieNamed = (response: request.Response, name: string) => cookies(response).find((value) => value.startsWith(`${name}=`));
+const editor: Person = { id: "keeri_user_editor", name: "Asha Rao", email: "asha@example.invalid", permissions: ["edit"] };
+const publisher: Person = { id: "keeri_user_publisher", name: "Vikram Shah", email: "vikram@example.invalid", permissions: ["edit", "publish", "enquiries"] };
+
+/** Out to Keeri and back, as a browser does it. */
+async function signIn(app: ReturnType<typeof createApp>, keeri: Keeri, person: Person) {
+  const agent = request.agent(app);
+  const start = await agent.get("/api/admin/keeri/start");
+  const state = new URL(start.headers.location!).searchParams.get("state")!;
+  const code = keeri.arrive(person);
+  const back = await agent.get("/api/admin/keeri/callback").query({ code, state });
+  return { agent, start, back, state, code };
+}
+const sessionOf = async (agent: ReturnType<typeof request.agent>) => agent.get("/api/admin/session");
+const aged = (adminId: string, seconds: number) =>
+  db.shopAdminSession.updateMany({ where: { adminId }, data: { keeriCheckedAt: new Date(Date.now() - seconds * 1000) } });
+
+async function wipe() {
+  await db.shopContentRevision.deleteMany();
+  await db.shopContent.deleteMany();
+  await db.shopAdminSession.deleteMany();
+  await db.shopAdminSignIn.deleteMany();
+  await db.shopAdmin.deleteMany();
+}
+before(wipe);
+beforeEach(wipe);
+after(async () => { await wipe(); await db.$disconnect(); });
+
+test("where there is no Keeri to ask (tests, a developer's machine), shop passwords answer exactly as before", async () => {
+  await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const app = createApp(db, base);
+  const http = request(app);
+  for (const path of ["/api/admin/session", "/api/admin/keeri/start", "/api/admin/keeri/callback?code=x&state=y"]) {
+    const response = await http.get(path);
+    assert.equal(response.status, 401, path);
+    assert.deepEqual(response.body, { code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content." });
+    assert.equal(cookies(response).length, 0);
+  }
+  const login = await http.post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password });
+  assert.equal(login.status, 200);
+  assert.deepEqual(Object.keys(login.body).sort(), ["csrfToken", "user"]);
+  assert.deepEqual(Object.keys(login.body.user).sort(), ["canManageEnquiries", "email", "id", "role"]);
+  const session = await db.shopAdminSession.findFirstOrThrow();
+  assert.equal(session.method, "password");
+  assert.equal(session.keeriCheckedAt, null);
+  assert.equal(await db.shopAdminSignIn.count(), 0);
+  const read = await http.get("/api/admin/session").set("Cookie", cookieNamed(login, "shop_admin")!.split(";")[0]!);
+  assert.deepEqual(read.body, login.body);
+});
+
+test("where there is no Keeri to ask, a session that Keeri started is refused and ended", async () => {
+  const keeri = fakeKeeri();
+  const { agent, back } = await signIn(appWith(keeri), keeri, editor);
+  assert.equal((await sessionOf(agent)).status, 200);
+  // The same browser, against an API that has no Keeri settings.
+  const cookie = cookieNamed(back, "shop_admin")!.split(";")[0]!;
+  const off = createApp(db, base);
+  assert.equal((await request(off).get("/api/admin/session").set("Cookie", cookie)).status, 401);
+  assert.equal(await db.shopAdminSession.count(), 0);
+  // The person is still there for History; with no shop password they simply cannot sign in.
+  assert.equal(await db.shopAdmin.count(), 1);
+  assert.equal((await request(off).post("/api/admin/login").set("Origin", origin).send({ email: editor.email, password })).status, 401);
+});
+
+test("the sign-in page is told to offer Keeri, and whether there is an emergency account", async () => {
+  const keeri = fakeKeeri();
+  const signedOut = await request(appWith(keeri)).get("/api/admin/session");
+  assert.equal(signedOut.status, 401);
+  assert.deepEqual(signedOut.body, { code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content.", signIn: { method: "keeri", available: true, emergency: false, reset: false } });
+  assert.deepEqual((await request(appWith(keeri, "owner@example.invalid")).get("/api/admin/content")).body.signIn, { method: "keeri", available: true, emergency: true, reset: false });
+  // Only a staff "sign in first" says it: a customer route's 401 and other staff errors do not.
+  const { agent } = await signIn(appWith(keeri), keeri, editor);
+  assert.deepEqual((await sessionOf(agent)).body.signIn, { method: "keeri", available: true, emergency: false, reset: false });
+  assert.equal((await agent.get("/api/admin/enquiries")).body.signIn, undefined);
+});
+
+test("starting sends the browser to Keeri with the exact return address and a state it must bring back", async () => {
+  const keeri = fakeKeeri();
+  const response = await request(appWith(keeri)).get("/api/admin/keeri/start").query({ redirect_uri: "https://evil.example.test/", next: "https://evil.example.test/", state: "chosen-by-caller" });
+  assert.equal(response.status, 303);
+  const target = new URL(response.headers.location!);
+  assert.equal(target.origin + target.pathname, "https://keeri.example.test/sign-in/authorize");
+  assert.equal(target.searchParams.get("client_id"), "shop-admin");
+  assert.equal(target.searchParams.get("redirect_uri"), callback);
+  const state = target.searchParams.get("state")!;
+  assert.match(state, /^[A-Za-z0-9_-]{43}$/);
+  assert.notEqual(state, "chosen-by-caller");
+  assert.deepEqual([...target.searchParams.keys()].sort(), ["client_id", "redirect_uri", "state"]);
+  assert.ok(!response.headers.location!.includes(secret));
+  const cookie = cookieNamed(response, "shop_admin_signin")!;
+  assert.ok(cookie.startsWith(`shop_admin_signin=${state};`));
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.match(cookie, /Max-Age=600/);
+  assert.match(String(response.headers["cache-control"]), /no-store/);
+  assert.equal(response.headers["referrer-policy"], "no-referrer");
+  const secure = await request(createApp(db, { ...base, secureCookies: true, adminSignIn: keeriMode(keeri) })).get("/api/admin/keeri/start");
+  assert.match(cookieNamed(secure, "__Host-shop_admin_signin")!, /; Secure/);
+  // Two people starting get two different states.
+  const other = await request(appWith(keeri)).get("/api/admin/keeri/start");
+  assert.notEqual(new URL(other.headers.location!).searchParams.get("state"), state);
+});
+
+test("coming back with Keeri's code starts a session for the Keeri person, exchanged server to server", async () => {
+  const keeri = fakeKeeri();
+  const { agent, back, code } = await signIn(appWith(keeri), keeri, publisher);
+  assert.equal(back.status, 303);
+  assert.equal(back.headers.location, "/admin");
+  const cookie = cookieNamed(back, "shop_admin")!;
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /SameSite=Strict/);
+  assert.match(cookieNamed(back, "shop_admin_signin")!, /Expires=Thu, 01 Jan 1970/);
+  // The store asked Keeri once, with its secret in the Authorization header and nowhere else.
+  assert.equal(keeri.calls.length, 1);
+  assert.equal(keeri.calls[0]!.url, "https://keeri.example.test/api/app-sign-in/token");
+  assert.equal(keeri.calls[0]!.authorization, `Bearer ${secret}`);
+  assert.deepEqual(keeri.calls[0]!.body, { code, redirect_uri: callback });
+  assert.ok(!JSON.stringify(keeri.calls[0]!.body).includes(secret));
+  const admin = await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: publisher.id } });
+  assert.deepEqual([admin.email, admin.name, admin.role, admin.canManageEnquiries, admin.passwordHash], [publisher.email, publisher.name, "publisher", true, null]);
+  const session = await db.shopAdminSession.findFirstOrThrow({ where: { adminId: admin.id } });
+  assert.equal(session.method, "keeri");
+  assert.ok(session.keeriCheckedAt);
+  assert.ok(!cookie.includes(session.tokenHash));
+  const read = await sessionOf(agent);
+  assert.equal(read.status, 200);
+  assert.deepEqual(read.body.user, { id: admin.id, email: publisher.email, role: "publisher", canManageEnquiries: true, name: publisher.name });
+  assert.match(read.body.csrfToken, /^[a-f0-9]{64}$/);
+});
+
+for (const [permissions, expected] of [
+  [["view"], { role: "viewer", canManageEnquiries: false }],
+  [["view", "enquiries"], { role: "viewer", canManageEnquiries: true }],
+  [["enquiries"], { role: "none", canManageEnquiries: true }],
+  [["edit"], { role: "editor", canManageEnquiries: false }],
+  [["view", "edit"], { role: "editor", canManageEnquiries: false }],
+  [["publish"], { role: "publisher", canManageEnquiries: false }],
+  [["edit", "publish"], { role: "publisher", canManageEnquiries: false }],
+  [["edit", "enquiries"], { role: "editor", canManageEnquiries: true }],
+  [["edit", "publish", "enquiries"], { role: "publisher", canManageEnquiries: true }],
+  [[], null],
+  [["admin", "manage", "*"], null],
+] as const) {
+  test(`Keeri's permissions ${JSON.stringify(permissions)} become ${expected ? `${expected.role}${expected.canManageEnquiries ? " with enquiries" : ""}` : "no access"}`, async () => {
+    const keeri = fakeKeeri();
+    const { agent, back } = await signIn(appWith(keeri), keeri, { ...editor, permissions: [...permissions] });
+    if (!expected) {
+      assert.equal(back.headers.location, "/admin?sign_in=denied");
+      assert.equal(cookieNamed(back, "shop_admin"), undefined);
+      assert.equal(await db.shopAdminSession.count(), 0);
+      assert.equal(await db.shopAdmin.count(), 0);
+      return;
+    }
+    const user = (await sessionOf(agent)).body.user;
+    assert.deepEqual({ role: user.role, canManageEnquiries: user.canManageEnquiries }, expected);
+  });
+}
+
+test("each level opens exactly what the owner listed for it", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const as = async (person: Person) => {
+    const { agent } = await signIn(app, keeri, person);
+    const csrf = (await sessionOf(agent)).body.csrfToken as string;
+    const post = (path: string, body: object) => agent.post(path).set("Origin", origin).set("X-CSRF-Token", csrf).send(body);
+    return {
+      read: (await agent.get("/api/admin/content")).status,
+      history: (await agent.get("/api/admin/content/revisions")).status,
+      media: (await agent.get("/api/admin/media")).status,
+      // 409 "save a draft first" means the level let the request through.
+      preview: (await post("/api/admin/content/preview", { expectedVersion: 0 })).status,
+      // A complete draft sent against a version that is not the current one: 409 means the level let it through.
+      save: (await agent.put("/api/admin/content").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 99, content: draft })).status,
+      publish: (await post("/api/admin/content/publish", { expectedVersion: 0 })).status,
+      restore: (await post("/api/admin/content/rollback", { expectedVersion: 0, revisionId: "none" })).status,
+      enquiries: (await agent.get("/api/admin/enquiries")).status,
+      signOut: (await post("/api/admin/logout", {})).status,
+    };
+  };
+  const draft = { schemaVersion: 1, landingPages: [], homeSections: [{ key: "hero", enabled: true }], homeCopy: { categoryHeading: "Pick a room", bestsellersHeading: "Customer favourites", socialHeading: "At home", ticker: "Furniture made thoughtfully", testimonialHeading: "Our customers", testimonialSubheading: "Stories from home" }, campaigns: [], instagramPosts: [{ href: "https://www.instagram.com/p/test/", src: "/media/test.webp", alt: "Test scene" }], pages: [], motion: { autoplaySocial: false, autoplayCities: false, revealSections: true } };
+  const person = (id: string, permissions: string[]): Person => ({ id: `keeri_${id}`, name: id, email: `${id}@example.invalid`, permissions });
+  const denied = 403;
+  const viewer = await as(person("viewer", ["view"]));
+  assert.deepEqual(viewer, { read: 200, history: 200, media: 200, preview: 409, save: denied, publish: denied, restore: denied, enquiries: denied, signOut: 204 });
+  const editing = await as(person("editor", ["edit"]));
+  assert.deepEqual(editing, { read: 200, history: 200, media: 200, preview: 409, save: 409, publish: denied, restore: denied, enquiries: denied, signOut: 204 });
+  const publishing = await as(person("publisher", ["publish"]));
+  assert.deepEqual(publishing, { read: 200, history: 200, media: 200, preview: 409, save: 409, publish: 409, restore: 404, enquiries: denied, signOut: 204 });
+  const sales = await as(person("sales", ["enquiries"]));
+  assert.deepEqual(sales, { read: denied, history: denied, media: denied, preview: denied, save: denied, publish: denied, restore: denied, enquiries: 200, signOut: 204 });
+  const both = await as(person("both", ["view", "enquiries"]));
+  assert.deepEqual([both.read, both.save, both.enquiries], [200, denied, 200]);
+});
+
+test("a callback without this browser's own state is refused before Keeri is asked", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const code = keeri.arrive(editor);
+  // No sign-in was started in this browser: an attacker's link carrying their own code.
+  const cold = await request(app).get("/api/admin/keeri/callback").query({ code, state: "A".repeat(43) });
+  assert.equal(cold.headers.location, "/admin?sign_in=failed");
+  // Started, but the state that came back is not the one that went out.
+  const agent = request.agent(app);
+  const start = await agent.get("/api/admin/keeri/start");
+  const state = new URL(start.headers.location!).searchParams.get("state")!;
+  for (const wrong of ["B".repeat(43), state.slice(0, 42), `${state}x`, ""]) {
+    const second = request.agent(app);
+    await second.get("/api/admin/keeri/start");
+    const response = await second.get("/api/admin/keeri/callback").query({ code, state: wrong });
+    assert.equal(response.headers.location, "/admin?sign_in=failed", wrong);
+    assert.equal(cookieNamed(response, "shop_admin"), undefined);
+  }
+  assert.equal(keeri.calls.length, 0);
+  assert.equal(await db.shopAdminSession.count(), 0);
+  // The right state still works afterwards, once.
+  assert.equal((await agent.get("/api/admin/keeri/callback").query({ code, state })).headers.location, "/admin");
+});
+
+test("the state and the code are each good for one callback", async () => {
+  const keeri = fakeKeeri();
+  const { agent, state, code } = await signIn(appWith(keeri), keeri, editor);
+  const sessions = await db.shopAdminSession.count();
+  // The same address opened again (history, a shared link, a replay).
+  const replay = await agent.get("/api/admin/keeri/callback").query({ code, state });
+  assert.equal(replay.headers.location, "/admin?sign_in=failed");
+  assert.equal(await db.shopAdminSession.count(), sessions);
+  assert.equal(keeri.calls.length, 1);
+});
+
+test("nobody is ever sent anywhere but /admin, whatever the callback address carries", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const agent = request.agent(app);
+  const state = new URL((await agent.get("/api/admin/keeri/start")).headers.location!).searchParams.get("state")!;
+  const back = await agent.get("/api/admin/keeri/callback").query({ code: keeri.arrive(editor), state, next: "https://evil.example.test/", redirect: "//evil.example.test", return_to: "/\\evil.example.test", redirect_uri: "https://evil.example.test/" });
+  assert.equal(back.headers.location, "/admin");
+  for (const query of [{ error: "access_denied", error_uri: "https://evil.example.test/" }, { code: "bad", next: "https://evil.example.test/" }, { state: ["a", "b"], code: ["c", "d"] }]) {
+    const response = await request(app).get("/api/admin/keeri/callback").query(query);
+    assert.match(response.headers.location!, /^\/admin\?sign_in=(failed|denied|unavailable)$/);
+  }
+});
+
+test("signing in never keeps a session token the browser arrived with", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  // Somebody else's live session, planted in the victim's browser before they sign in.
+  const attacker = await signIn(app, keeri, publisher);
+  const planted = cookieNamed(attacker.back, "shop_admin")!.split(";")[0]!;
+  const plantedHash = (await db.shopAdminSession.findFirstOrThrow()).tokenHash;
+  const start = await request(app).get("/api/admin/keeri/start").set("Cookie", planted);
+  const state = new URL(start.headers.location!).searchParams.get("state")!;
+  const back = await request(app).get("/api/admin/keeri/callback").set("Cookie", `${planted}; shop_admin_signin=${state}`).query({ code: keeri.arrive(editor), state });
+  assert.equal(back.headers.location, "/admin");
+  const fresh = cookieNamed(back, "shop_admin")!.split(";")[0]!;
+  assert.notEqual(fresh, planted);
+  // The planted session is gone, and the new one belongs to the person who signed in.
+  assert.equal(await db.shopAdminSession.count({ where: { tokenHash: plantedHash } }), 0);
+  assert.equal((await request(app).get("/api/admin/session").set("Cookie", planted)).status, 401);
+  assert.equal((await request(app).get("/api/admin/session").set("Cookie", fresh)).body.user.email, editor.email);
+  // A made-up token in the cookie does not become a session either.
+  const invented = `shop_admin=${"a".repeat(64)}`;
+  const second = await request(app).get("/api/admin/keeri/start").set("Cookie", invented);
+  const secondState = new URL(second.headers.location!).searchParams.get("state")!;
+  const again = await request(app).get("/api/admin/keeri/callback").set("Cookie", `${invented}; shop_admin_signin=${secondState}`).query({ code: keeri.arrive(editor), state: secondState });
+  assert.notEqual(cookieNamed(again, "shop_admin")!.split(";")[0]!, invented);
+  assert.equal((await request(app).get("/api/admin/session").set("Cookie", invented)).status, 401);
+});
+
+test("Keeri refusing, failing or answering for another company never starts a session", async () => {
+  const cases: [string, (keeri: Keeri) => Record<string, string>, string][] = [
+    ["Keeri says the person has no access", () => ({ error: "access_denied" }), "denied"],
+    ["the code is not one Keeri issued", () => ({ code: randomBytes(32).toString("base64url") }), "failed"],
+    ["access was removed between the two steps", (keeri) => { const code = keeri.arrive(editor); keeri.remove(editor.id); return { code }; }, "denied"],
+    ["Keeri answers for a different company", (keeri) => ({ code: keeri.arrive({ ...editor, tenantId: "tenant_other" }) }), "denied"],
+    ["Keeri cannot be reached", (keeri) => { const code = keeri.arrive(editor); keeri.state.reachable = false; return { code }; }, "unavailable"],
+    ["Keeri is failing", (keeri) => { const code = keeri.arrive(editor); keeri.state.status = 503; return { code }; }, "unavailable"],
+    ["Keeri rejects the store's secret", (keeri) => { const code = keeri.arrive(editor); keeri.state.status = 401; return { code }; }, "unavailable"],
+  ];
+  for (const [name, prepare, outcome] of cases) {
+    const keeri = fakeKeeri();
+    const agent = request.agent(appWith(keeri));
+    const state = new URL((await agent.get("/api/admin/keeri/start")).headers.location!).searchParams.get("state")!;
+    const back = await agent.get("/api/admin/keeri/callback").query({ ...prepare(keeri), state });
+    assert.equal(back.headers.location, `/admin?sign_in=${outcome}`, name);
+    assert.equal(cookieNamed(back, "shop_admin"), undefined, name);
+    assert.equal((await sessionOf(agent)).status, 401, name);
+  }
+  assert.equal(await db.shopAdminSession.count(), 0);
+  assert.equal(await db.shopAdmin.count(), 0);
+});
+
+test("a first Keeri sign-in takes over the shop account with the same address, so History keeps one name", async () => {
+  const existing = await db.shopAdmin.create({ data: { email: editor.email, role: "publisher", passwordHash, canManageEnquiries: true } });
+  await db.shopContent.create({ data: { id: "storefront", version: 1, draft: {} } });
+  await db.shopContentRevision.create({ data: { documentId: "storefront", version: 1, action: "save", content: {}, actorId: existing.id } });
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const { agent } = await signIn(app, keeri, editor);
+  const linked = await db.shopAdmin.findUniqueOrThrow({ where: { id: existing.id } });
+  // Same row, now Keeri's: its role and enquiry access are what Keeri says, not what the shop account had.
+  assert.deepEqual([linked.keeriUserId, linked.name, linked.role, linked.canManageEnquiries], [editor.id, editor.name, "editor", false]);
+  assert.equal(await db.shopAdmin.count(), 1);
+  const revisions = await agent.get("/api/admin/content/revisions");
+  assert.equal(revisions.status, 200);
+  assert.equal(revisions.body.revisions[0].actorEmail, editor.email);
+  // The account has moved to Keeri: its shop password is gone, not merely switched off.
+  assert.equal(linked.passwordHash, null);
+  const old = await request(app).post("/api/admin/login").set("Origin", origin).send({ email: editor.email, password });
+  assert.equal(old.status, 401);
+  // A different Keeri person arriving with that address later does not get the row.
+  const impostor = await signIn(app, keeri, { ...editor, id: "keeri_user_other" });
+  assert.equal(impostor.back.headers.location, "/admin?sign_in=denied");
+  assert.equal((await db.shopAdmin.findUniqueOrThrow({ where: { id: existing.id } })).keeriUserId, editor.id);
+});
+
+test("a person's name and address follow Keeri at the next sign-in; a clash keeps the old address", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  await signIn(app, keeri, editor);
+  await signIn(app, keeri, { ...editor, name: "Asha R. Rao", email: "asha.rao@example.invalid" });
+  const renamed = await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: editor.id } });
+  assert.deepEqual([renamed.name, renamed.email], ["Asha R. Rao", "asha.rao@example.invalid"]);
+  await signIn(app, keeri, publisher);
+  const clash = await signIn(app, keeri, { ...editor, email: publisher.email });
+  assert.equal(clash.back.headers.location, "/admin");
+  assert.equal((await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: editor.id } })).email, "asha.rao@example.invalid");
+  assert.equal(await db.shopAdmin.count(), 2);
+});
+
+test("an account the store itself switched off stays off", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  await signIn(app, keeri, editor);
+  await db.shopAdmin.updateMany({ data: { active: false } });
+  await db.shopAdminSession.deleteMany();
+  const { back, agent } = await signIn(app, keeri, editor);
+  assert.equal(back.headers.location, "/admin?sign_in=denied");
+  assert.equal((await sessionOf(agent)).status, 401);
+});
+
+test("removing access in Keeri ends the shop-admin session within a minute", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const first = await signIn(app, keeri, publisher);
+  const second = await signIn(app, keeri, publisher);
+  const admin = await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: publisher.id } });
+  keeri.calls.length = 0;
+  // Inside the minute, Keeri is not asked again.
+  assert.equal((await sessionOf(first.agent)).status, 200);
+  assert.equal(keeri.calls.length, 0);
+  // Disabled in Keeri. Still inside the minute: nothing has been asked yet.
+  keeri.remove(publisher.id);
+  await aged(admin.id, 30);
+  assert.equal((await sessionOf(first.agent)).status, 200);
+  // Past the minute: the next request asks Keeri, is refused, and every session of theirs ends.
+  await aged(admin.id, 61);
+  const refused = await sessionOf(first.agent);
+  assert.equal(refused.status, 401);
+  assert.equal(refused.body.code, "ADMIN_AUTH_REQUIRED");
+  assert.deepEqual(keeri.calls.map((call) => [call.url, call.authorization, call.body]), [["https://keeri.example.test/api/app-sign-in/access", `Bearer ${secret}`, { user_id: publisher.id }]]);
+  assert.equal(await db.shopAdminSession.count({ where: { adminId: admin.id } }), 0);
+  assert.equal((await sessionOf(second.agent)).status, 401);
+  // History still names them.
+  assert.equal((await db.shopAdmin.findUniqueOrThrow({ where: { id: admin.id } })).email, publisher.email);
+});
+
+test("a role changed in Keeri is the role in the shop admin within a minute", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const { agent } = await signIn(app, keeri, publisher);
+  const admin = await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: publisher.id } });
+  const csrf = (await sessionOf(agent)).body.csrfToken;
+  keeri.set({ ...publisher, permissions: ["edit"], name: "V. Shah" });
+  await aged(admin.id, 61);
+  // The very request that would have published is the one that finds out.
+  const publish = await agent.post("/api/admin/content/publish").set("Origin", origin).set("X-CSRF-Token", csrf).send({ expectedVersion: 0 });
+  assert.equal(publish.status, 403);
+  assert.equal(publish.body.code, "ADMIN_ROLE_REQUIRED");
+  const user = (await sessionOf(agent)).body.user;
+  assert.deepEqual([user.role, user.canManageEnquiries, user.name], ["editor", false, "V. Shah"]);
+  assert.equal((await agent.get("/api/admin/enquiries")).status, 403);
+  // Left with enquiries only: the content closes and the Enquiries screen stays.
+  keeri.set({ ...publisher, permissions: ["enquiries"] });
+  await aged(admin.id, 61);
+  const left = (await sessionOf(agent)).body.user;
+  assert.deepEqual([left.role, left.canManageEnquiries], ["none", true]);
+  assert.equal((await agent.get("/api/admin/content")).status, 403);
+  assert.equal((await agent.get("/api/admin/enquiries")).status, 200);
+  // Left with nothing: the session ends.
+  keeri.set({ ...publisher, permissions: [] });
+  await aged(admin.id, 61);
+  assert.equal((await sessionOf(agent)).status, 401);
+});
+
+test("the re-check also covers staff routes registered before the staff gate", async () => {
+  const keeri = fakeKeeri();
+  const { agent } = await signIn(appWith(keeri), keeri, editor);
+  assert.equal((await agent.get("/api/admin/media")).status, 200);
+  keeri.remove(editor.id);
+  await aged((await db.shopAdmin.findFirstOrThrow()).id, 61);
+  assert.equal((await agent.get("/api/admin/media")).status, 401);
+});
+
+test("if Keeri cannot be reached, a session carries on for ten minutes past its last confirmation, then waits", async () => {
+  const keeri = fakeKeeri();
+  const { agent } = await signIn(appWith(keeri), keeri, editor);
+  const admin = await db.shopAdmin.findFirstOrThrow();
+  for (const state of [{ reachable: false, status: 200 }, { reachable: true, status: 503 }, { reachable: true, status: 401 }]) {
+    Object.assign(keeri.state, state);
+    await aged(admin.id, 9 * 60);
+    assert.equal((await sessionOf(agent)).status, 200);
+    await aged(admin.id, 10 * 60 + 1);
+    const waiting = await sessionOf(agent);
+    assert.equal(waiting.status, 401);
+    assert.equal(waiting.body.code, "ADMIN_ACCESS_UNCONFIRMED");
+    assert.equal(waiting.body.signIn.method, "keeri");
+  }
+  // The session was not thrown away: when Keeri is back and still says yes, the person carries on.
+  Object.assign(keeri.state, { reachable: true, status: 200 });
+  assert.equal((await sessionOf(agent)).status, 200);
+  const session = await db.shopAdminSession.findFirstOrThrow({ where: { adminId: admin.id } });
+  assert.ok(Date.now() - session.keeriCheckedAt!.getTime() < 5_000);
+  // And if Keeri is back and says no, it ends.
+  keeri.remove(editor.id);
+  await aged(admin.id, 20 * 60);
+  assert.equal((await sessionOf(agent)).status, 401);
+  assert.equal(await db.shopAdminSession.count(), 0);
+});
+
+test("a stale Keeri session opens nothing even where the re-check did not run", async () => {
+  const { requireStaff } = await import("../src/admin/auth.js");
+  const keeri = fakeKeeri();
+  const { back } = await signIn(appWith(keeri), keeri, editor);
+  const cookie = cookieNamed(back, "shop_admin")!.split(";")[0]!;
+  const req = { headers: { cookie }, get: () => undefined } as never;
+  assert.equal((await requireStaff(db, req, false)).user.email, editor.email);
+  await aged((await db.shopAdmin.findFirstOrThrow()).id, 12 * 60);
+  await assert.rejects(requireStaff(db, req, false), { code: "ADMIN_AUTH_REQUIRED" });
+});
+
+test("only the emergency account's shop password works while Keeri sign-in is on, and each use is recorded", async () => {
+  const owner = await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  await db.shopAdmin.create({ data: { email: "other@example.invalid", role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  keeri.state.reachable = false;
+  const app = appWith(keeri, "owner@example.invalid");
+  const send = (email: string, pass = password) => request(app).post("/api/admin/login").set("Origin", origin).send({ email, password: pass });
+  const refused = await send("other@example.invalid");
+  const unknown = await send("nobody@example.invalid");
+  assert.equal(refused.status, 401);
+  assert.deepEqual(refused.body, unknown.body);
+  assert.equal(await db.shopAdminSession.count(), 0);
+  assert.equal((await db.shopAdmin.findUniqueOrThrow({ where: { email: "other@example.invalid" } })).failedAttempts, 0);
+  const warnings: string[] = [];
+  const warn = console.warn;
+  console.warn = (...values: unknown[]) => { warnings.push(values.join(" ")); };
+  let login: request.Response;
+  try { login = await send("owner@example.invalid"); } finally { console.warn = warn; }
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.emergency, true);
+  const session = await db.shopAdminSession.findFirstOrThrow();
+  assert.deepEqual([session.method, session.keeriCheckedAt], ["emergency", null]);
+  const records = await db.shopAdminSignIn.findMany();
+  assert.deepEqual(records.map((row) => [row.adminId, row.method]), [[owner.id, "emergency"]]);
+  assert.equal(warnings.length, 1);
+  assert.ok(!warnings[0]!.includes("owner@example.invalid") && !warnings[0]!.includes(password));
+  // Keeri being unreachable does not touch it, however long it lasts.
+  const cookie = cookieNamed(login, "shop_admin")!.split(";")[0]!;
+  const read = await request(app).get("/api/admin/session").set("Cookie", cookie);
+  assert.equal(read.status, 200);
+  assert.equal(read.body.user.emergency, true);
+  assert.equal(keeri.calls.length, 0);
+  // Without an emergency account named, no shop password works at all.
+  assert.equal((await request(appWith(keeri)).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password })).status, 401);
+});
+
+test("the emergency account keeps its password when its owner also signs in with Keeri", async () => {
+  await db.shopAdmin.create({ data: { email: publisher.email, role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const app = appWith(keeri, publisher.email);
+  await signIn(app, keeri, publisher);
+  const row = await db.shopAdmin.findUniqueOrThrow({ where: { email: publisher.email } });
+  assert.deepEqual([row.keeriUserId, row.passwordHash], [publisher.id, passwordHash]);
+  const login = await request(app).post("/api/admin/login").set("Origin", origin).send({ email: publisher.email, password });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.emergency, true);
+});
+
+test("a shop-password session from before Keeri became the only way in is ended", async () => {
+  await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const before = await request(createApp(db, base)).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password });
+  const cookie = cookieNamed(before, "shop_admin")!.split(";")[0]!;
+  assert.equal((await request(createApp(db, base)).get("/api/admin/session").set("Cookie", cookie)).status, 200);
+  const keeri = fakeKeeri();
+  const after = await request(appWith(keeri)).get("/api/admin/session").set("Cookie", cookie);
+  assert.equal(after.status, 401);
+  assert.equal(after.body.signIn.method, "keeri");
+  assert.equal(await db.shopAdminSession.count(), 0);
+});
+
+test("with Keeri unreachable past the grace, the browser holding a Keeri session can still use every way in and out", async () => {
+  await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const mail: { to: string[]; text: string }[] = [];
+  const { loadAccountEmail } = await import("../src/account/config.js");
+  const config = loadAccountEmail({ ENQUIRY_RESEND_API_KEY: "re_test_admin", ENQUIRY_MAIL_FROM: "orders@maple.example.com", ENQUIRY_MAIL_TO: "staff@maple.example.com", WEB_ORIGIN: "https://store.maple.example.com" })!;
+  const send: typeof fetch = async (_input, init) => { mail.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ id: "email_1" }), { status: 200 }); };
+  const app = createApp(db, { ...base, adminSignIn: { mode: "keeri", ready: ready(keeri), emergencyEmail: "owner@example.invalid", resetMail: { config, fetch: send } } });
+  // Signed in with Keeri, then Keeri goes away and stays away.
+  const stale = async () => {
+    await wipeSessions();
+    keeri.state.reachable = true;
+    const { back } = await signIn(app, keeri, editor);
+    keeri.state.reachable = false;
+    await aged((await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: editor.id } })).id, 11 * 60);
+    return cookieNamed(back, "shop_admin")!.split(";")[0]!;
+  };
+  const wipeSessions = () => db.shopAdminSession.deleteMany();
+  const post = (path: string, cookie: string, body: object = {}) => request(app).post(path).set("Origin", origin).set("Cookie", cookie).send(body);
+  const silently = async <T>(run: () => Promise<T>) => { const warn = console.warn; console.warn = () => {}; try { return await run(); } finally { console.warn = warn; } };
+
+  let cookie = await stale();
+  // The session itself is waiting on Keeri, and says so.
+  const waiting = await request(app).get("/api/admin/session").set("Cookie", cookie);
+  assert.deepEqual([waiting.status, waiting.body.code], [401, "ADMIN_ACCESS_UNCONFIRMED"]);
+  // Emergency sign-in works in that same browser, and replaces the stuck session.
+  const emergency = await silently(() => post("/api/admin/login", cookie, { email: "owner@example.invalid", password }));
+  assert.equal(emergency.status, 200);
+  assert.equal(emergency.body.user.emergency, true);
+  const fresh = cookieNamed(emergency, "shop_admin")!.split(";")[0]!;
+  assert.equal((await request(app).get("/api/admin/session").set("Cookie", fresh)).status, 200);
+  assert.equal(await db.shopAdminSession.count({ where: { method: "keeri" } }), 0);
+
+  // So do asking for the reset link and using it.
+  cookie = await stale();
+  assert.equal((await silently(() => post("/api/admin/emergency/reset-request", cookie))).status, 202);
+  const token = /#reset=([a-f0-9]{64})/.exec(mail[0]!.text)![1]!;
+  assert.equal((await silently(() => post("/api/admin/emergency/reset", cookie, { token, password: "a new long emergency value" }))).status, 204);
+
+  // A fresh trip to Keeri can be started, and its return is handled rather than refused.
+  cookie = await stale();
+  const start = await request(app).get("/api/admin/keeri/start").set("Cookie", cookie);
+  assert.equal(start.status, 303);
+  assert.match(start.headers.location!, /^https:\/\/keeri\.example\.test\/sign-in\/authorize/);
+  const state = new URL(start.headers.location!).searchParams.get("state")!;
+  const back = await request(app).get("/api/admin/keeri/callback").set("Cookie", `${cookie}; shop_admin_signin=${state}`).query({ code: keeri.arrive(editor), state });
+  assert.equal(back.headers.location, "/admin?sign_in=unavailable");
+
+  // And the person can sign out of the stuck session.
+  cookie = await stale();
+  const csrf = (await import("node:crypto")).createHash("sha256").update("csrf:" + cookie.split("=")[1]!).digest("hex");
+  const out = await request(app).post("/api/admin/logout").set("Origin", origin).set("Cookie", cookie).set("X-CSRF-Token", csrf).send({});
+  assert.equal(out.status, 204);
+  assert.equal(await db.shopAdminSession.count(), 0);
+  // Signing out still needs the session's own CSRF token.
+  cookie = await stale();
+  assert.equal((await post("/api/admin/logout", cookie)).status, 403);
+  // Nothing else opened: content and enquiries still wait on Keeri.
+  for (const path of ["/api/admin/content", "/api/admin/media", "/api/admin/enquiries"]) assert.equal((await request(app).get(path).set("Cookie", cookie)).status, 401, path);
+});
+
+test("the emergency account cannot be kept locked by somebody who only knows its address", async () => {
+  const owner = await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const tryWith = async (pass: string) => {
+    const warn = console.warn; console.warn = () => {};
+    // A new app each time, so only the account's own lock is being tested and not the per-address limiter.
+    try { return (await request(appWith(keeri, "owner@example.invalid")).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password: pass })).status; } finally { console.warn = warn; }
+  };
+  const row = () => db.shopAdmin.findUniqueOrThrow({ where: { id: owner.id } });
+  const lockRunsOut = () => db.shopAdmin.update({ where: { id: owner.id }, data: { lockedUntil: new Date(Date.now() - 1000) } });
+  for (let attempt = 0; attempt < 5; attempt += 1) assert.equal(await tryWith("wrong"), 401);
+  const lockedUntil = (await row()).lockedUntil!;
+  assert.ok(lockedUntil > new Date());
+  // While it is locked even the right password waits, and further wrong tries do not stretch the lock.
+  assert.equal(await tryWith(password), 401);
+  for (let attempt = 0; attempt < 3; attempt += 1) assert.equal(await tryWith("wrong"), 401);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [lockedUntil, 5]);
+  // The lock runs out. One wrong try used to lock it again at once; now the count has started over.
+  await lockRunsOut();
+  assert.equal(await tryWith("wrong"), 401);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [null, 1]);
+  assert.equal(await tryWith(password), 200);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [null, 0]);
+  // The same after a lock when the very next try is the right password.
+  for (let attempt = 0; attempt < 5; attempt += 1) await tryWith("wrong");
+  await lockRunsOut();
+  assert.equal(await tryWith(password), 200);
+  // Every refused try was recorded, locked ones included, with nothing but who and how.
+  const records = await db.shopAdminSignIn.groupBy({ by: ["method"], _count: true, where: { adminId: owner.id } });
+  assert.deepEqual(Object.fromEntries(records.map((record) => [record.method, record._count])), { emergency: 2, emergency_failed: 15 });
+});
+
+test("every sign-in while Keeri is on leaves a record with no secret in it", async () => {
+  const keeri = fakeKeeri();
+  const { state, code } = await signIn(appWith(keeri), keeri, editor);
+  const rows = await db.shopAdminSignIn.findMany({ include: { admin: true } });
+  assert.deepEqual(rows.map((row) => [row.method, row.admin?.keeriUserId]), [["keeri", editor.id]]);
+  const stored = JSON.stringify([rows, await db.shopAdminSession.findMany(), await db.shopAdmin.findMany()]);
+  for (const value of [secret, code, state]) assert.ok(!stored.includes(value));
+  // Removing the person keeps the record of the sign-in.
+  await db.shopAdminSession.deleteMany();
+  await db.shopAdmin.deleteMany();
+  assert.deepEqual((await db.shopAdminSignIn.findMany()).map((row) => [row.method, row.adminId]), [["keeri", null]]);
+});
+
+test("nothing the store logs or sends to the browser carries the secret or the code", async () => {
+  const keeri = fakeKeeri();
+  const app = appWith(keeri);
+  const lines: string[] = [];
+  const original = { error: console.error, warn: console.warn, log: console.log };
+  for (const level of ["error", "warn", "log"] as const) console[level] = (...values: unknown[]) => { lines.push(values.map(String).join(" ")); };
+  const responses: request.Response[] = [];
+  let code = "";
+  try {
+    const good = await signIn(app, keeri, editor);
+    code = good.code;
+    responses.push(good.start, good.back, await sessionOf(good.agent));
+    // The stand-in's own failure message quotes the secret; it must not reach the log.
+    keeri.state.reachable = false;
+    const agent = request.agent(app);
+    const state = new URL((await agent.get("/api/admin/keeri/start")).headers.location!).searchParams.get("state")!;
+    responses.push(await agent.get("/api/admin/keeri/callback").query({ code: keeri.arrive(editor), state }));
+    await aged((await db.shopAdmin.findFirstOrThrow()).id, 11 * 60);
+    responses.push(await sessionOf(good.agent));
+  } finally {
+    Object.assign(console, original);
+  }
+  const seen = JSON.stringify([lines, responses.map((response) => [response.headers, response.text])]);
+  assert.ok(!seen.includes(secret));
+  assert.ok(!seen.includes(code));
+  for (const call of keeri.calls) assert.ok(!call.url.includes(secret) && !call.url.includes("?"));
+});
+
+test("starting and coming back are each limited to thirty tries in fifteen minutes", async () => {
+  const keeri = fakeKeeri();
+  for (const path of ["/api/admin/keeri/start", "/api/admin/keeri/callback?code=x&state=y"]) {
+    const http = request(appWith(keeri));
+    for (let attempt = 0; attempt < 30; attempt += 1) assert.equal((await http.get(path)).status, 303);
+    const limited = await http.get(path);
+    assert.equal(limited.status, 429);
+    assert.equal(limited.body.code, "ADMIN_LOGIN_LIMIT");
+    assert.equal(limited.headers.location, undefined);
+  }
+});
+
+test("a half-set-up Keeri sign-in lets nobody in through Keeri and reopens no passwords", async () => {
+  await db.shopAdmin.create({ data: { email: "other@example.invalid", role: "publisher", passwordHash } });
+  const app = createApp(db, { ...base, adminSignIn: { mode: "keeri", ready: null, emergencyEmail: null } });
+  assert.deepEqual((await request(app).get("/api/admin/session")).body.signIn, { method: "keeri", available: false, emergency: false, reset: false });
+  const start = await request(app).get("/api/admin/keeri/start");
+  assert.equal(start.headers.location, "/admin?sign_in=unavailable");
+  assert.equal(cookies(start).length, 0);
+  assert.equal((await request(app).get("/api/admin/keeri/callback").query({ code: "c".repeat(43), state: "s".repeat(43) })).headers.location, "/admin?sign_in=failed");
+  assert.equal((await request(app).post("/api/admin/login").set("Origin", origin).send({ email: "other@example.invalid", password })).status, 401);
+});
+
+test("the settings: production is always Keeri; a bad one is named, never quoted, and never stops the store", () => {
+  const warned: string[] = [];
+  const warn = (message: string) => { warned.push(message); };
+  const env = { NODE_ENV: "production", KEERI_ORIGIN: "https://keeri.example.test", KEERI_TENANT_ID: tenantId, KEERI_SIGN_IN_CLIENT_ID: "shop-admin", KEERI_SIGN_IN_CLIENT_SECRET: secret };
+  // No Keeri to ask: a test run or a developer's machine with none of the sign-in settings.
+  assert.deepEqual(loadAdminSignIn({}, warn), { mode: "password" });
+  assert.deepEqual(loadAdminSignIn({ NODE_ENV: "development", KEERI_ORIGIN: env.KEERI_ORIGIN, KEERI_TENANT_ID: tenantId }, warn), { mode: "password" });
+  assert.equal(warned.length, 0);
+  // Nothing in the settings turns shop passwords back on in production.
+  for (const attempt of [{ ADMIN_SIGN_IN: "password" }, { ADMIN_SIGN_IN: "off" }, { KEERI_SIGN_IN_CLIENT_ID: undefined, KEERI_SIGN_IN_CLIENT_SECRET: undefined }]) {
+    assert.equal(loadAdminSignIn({ ...env, ...attempt }, warn).mode, "keeri");
+  }
+  // A developer who does set Keeri up locally gets Keeri sign-in too.
+  assert.equal(loadAdminSignIn({ ...env, NODE_ENV: "development" }, warn).mode, "keeri");
+  warned.length = 0;
+  const on = loadAdminSignIn({ ...env, KEERI_ADMIN_ORIGIN: "https://staff.keeri.example.test", ADMIN_EMERGENCY_EMAIL: "Owner@Example.Invalid" }, warn);
+  assert.deepEqual(on, {
+    mode: "keeri", emergencyEmail: "owner@example.invalid", resetMail: null,
+    ready: { origin: "https://keeri.example.test", adminOrigin: "https://staff.keeri.example.test", tenantId, clientId: "shop-admin", secret },
+  });
+  const plain = loadAdminSignIn(env, warn);
+  assert.equal(plain.mode === "keeri" && plain.ready?.adminOrigin, "https://keeri.example.test");
+  assert.equal(plain.mode === "keeri" && plain.emergencyEmail, null);
+  // The one thing said so far: the emergency account above has no mail sender for its reset link.
+  assert.equal(warned.length, 1);
+  assert.match(warned[0]!, /cannot be reset by email/);
+  // With the store's mail sender set, the reset link can be offered.
+  const mailed = loadAdminSignIn({ ...env, ADMIN_EMERGENCY_EMAIL: "owner@example.invalid", ENQUIRY_RESEND_API_KEY: "re_test_admin", ENQUIRY_MAIL_FROM: "orders@maple.example.com", ENQUIRY_MAIL_TO: "staff@maple.example.com", WEB_ORIGIN: "https://store.maple.example.com" }, warn);
+  assert.equal(mailed.mode === "keeri" && mailed.resetMail?.config.from, "orders@maple.example.com");
+  assert.equal(warned.length, 1);
+  for (const broken of [
+    { KEERI_SIGN_IN_CLIENT_SECRET: undefined }, { KEERI_SIGN_IN_CLIENT_SECRET: "too-short" }, { KEERI_ORIGIN: "http://keeri.example.test" },
+    { KEERI_ORIGIN: "https://keeri.example.test/path" }, { KEERI_TENANT_ID: undefined }, { KEERI_SIGN_IN_CLIENT_ID: "Shop Admin" },
+  ]) {
+    const result = loadAdminSignIn({ ...env, ...broken, ADMIN_EMERGENCY_EMAIL: "owner@example.invalid" }, warn);
+    assert.deepEqual(result, { mode: "keeri", ready: null, emergencyEmail: "owner@example.invalid", resetMail: null });
+    assert.match(warned.at(-1)!, new RegExp(Object.keys(broken)[0]!));
+  }
+  assert.ok(!warned.join("\n").includes(secret) && !warned.join("\n").includes("too-short"));
+});

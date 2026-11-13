@@ -430,11 +430,20 @@ model OrderNotification {
 enum ShopAdminRole {
   editor
   publisher
+  /// Opens the admin and previews drafts; cannot save, upload or publish.
+  viewer
+  /// No content at all: somebody whose only access is the Enquiries screen.
+  none
 }
 model ShopAdmin {
   id String @id @default(cuid())
   email String @unique
-  passwordHash String
+  /// Null for somebody who only ever signs in with their Keeri account.
+  passwordHash String?
+  /// The Keeri user this person is, once they have signed in with Keeri. Their name, email, role and
+  /// enquiry access are then Keeri's, copied here at sign-in and at each re-check so History can name them.
+  keeriUserId String? @unique
+  name String?
   role ShopAdminRole
   active Boolean @default(true)
   canManageEnquiries Boolean @default(false)
@@ -442,6 +451,8 @@ model ShopAdmin {
   lockedUntil DateTime?
   createdAt DateTime @default(now())
   sessions ShopAdminSession[]
+  signIns ShopAdminSignIn[]
+  passwordResets ShopAdminPasswordReset[]
   revisions ShopContentRevision[]
   mediaAssets ShopMediaAsset[]
   deliveryRetries EnquiryDeliveryRetryAudit[]
@@ -460,7 +471,36 @@ model ShopAdminSession {
   admin ShopAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+  /// How this session began: password (as before Keeri sign-in), keeri, or emergency (the one
+  /// password account kept for when Keeri cannot be reached).
+  method String @default("password")
+  /// When Keeri last confirmed this person still has access; set only on a Keeri session.
+  keeriCheckedAt DateTime?
   @@index([expiresAt])
+}
+/// A one-time emailed link to choose a new password for the emergency account. Only the link's hash is kept.
+/// Rows stay as the record of each request and whether it was used.
+model ShopAdminPasswordReset {
+  id String @id @default(cuid())
+  adminId String
+  admin ShopAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([adminId, createdAt])
+}
+/// One row per sign-in while Keeri sign-in is on: who, when and which way (keeri, emergency, or
+/// emergency_failed for a refused try at the emergency account). Never a password, code or token.
+/// The record outlives the staff row: removing a person leaves when and how somebody signed in.
+model ShopAdminSignIn {
+  id String @id @default(cuid())
+  adminId String?
+  admin ShopAdmin? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+  method String
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+  @@index([adminId, createdAt])
 }
 model ShopContent {
   id String @id

@@ -48,7 +48,7 @@ test("owner helper provisions from another working directory and refuses duplica
     assert.ok(admin, "owner helper must create its publisher identity");
     assert.equal(admin.role, "publisher");
     assert.ok(!result.output.includes(password));
-    assert.ok(!admin.passwordHash.includes(password));
+    assert.ok(admin.passwordHash && !admin.passwordHash.includes(password));
     assert.notEqual((await run(file, randomBytes(32).toString("hex"))).code, 0);
     assert.equal((await db.shopAdmin.findUniqueOrThrow({ where: { email } })).passwordHash, admin.passwordHash);
 });

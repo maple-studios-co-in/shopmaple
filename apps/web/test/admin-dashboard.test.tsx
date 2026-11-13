@@ -1037,3 +1037,260 @@ test("a draft read aborted by StrictMode's first mount is not reported and does 
     globalThis.fetch = previous;
   }
 });
+
+// Staff sign-in with Keeri accounts: the API says what to offer in `signIn`, only while ADMIN_SIGN_IN=keeri.
+const signedOut = (signIn?: unknown) => Response.json({ code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content.", ...(signIn === undefined ? {} : { signIn }) }, { status: 401 });
+async function renderSignedOut(signIn?: unknown, address = "http://localhost:3000/admin") {
+  dom.reconfigure({ url: address });
+  const previous = globalThis.fetch;
+  const requests: { url: string; method: string; body: string | null }[] = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url: String(url), method: options?.method ?? "GET", body: options?.body ? String(options.body) : null });
+    return String(url).endsWith("/login") ? Response.json({ ...staff("publisher"), user: { ...staff("publisher").user, emergency: true } }) : String(url).endsWith("/session") ? signedOut(signIn) : Response.json(doc());
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; dom.reconfigure({ url: "http://localhost:3000/admin" }); } };
+}
+const keeriLink = () => container.querySelector<HTMLAnchorElement>("a[data-keeri-sign-in]");
+
+test("with Keeri sign-in on, the screen offers Keeri and no password form", async () => {
+  const { requests, done } = await renderSignedOut({ method: "keeri", available: true, emergency: false });
+  try {
+    assert.equal(keeriLink()?.getAttribute("href"), "/api/admin/keeri/start");
+    assert.equal(keeriLink()?.textContent, "Sign in with Keeri");
+    assert.equal(container.querySelector('input[type="password"]'), null);
+    assert.equal(container.querySelector("[data-emergency-access]"), null);
+    assert.match(container.textContent!, /Use your Keeri account/);
+    // Finding that out cost no extra request.
+    assert.deepEqual(requests.map((request) => request.url), ["/api/admin/session"]);
+  } finally { await done(); }
+});
+
+test("the emergency account's password form sits apart, labelled, and still signs in", async () => {
+  const { requests, done } = await renderSignedOut({ method: "keeri", available: true, emergency: true });
+  try {
+    const emergency = container.querySelector("[data-emergency-access]");
+    assert.ok(emergency, "Emergency access must be offered when the store has an emergency account");
+    assert.equal(emergency.querySelector("summary")?.textContent, "Emergency access");
+    assert.match(emergency.textContent!, /every use is recorded/i);
+    assert.ok(keeriLink(), "Keeri stays the main way in");
+    await fill("Email", "owner@example.test");
+    await fill("Password", "test-password");
+    await submit();
+    const login = requests.find((request) => request.url.endsWith("/login"));
+    assert.deepEqual(JSON.parse(login!.body!), { email: "owner@example.test", password: "test-password" });
+    // Signed in, and marked wherever the role is shown.
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /Emergency access/);
+  } finally { await done(); }
+});
+
+test("a store whose Keeri settings are wrong says so instead of sending people to Keeri", async () => {
+  const { done } = await renderSignedOut({ method: "keeri", available: false, emergency: false });
+  try {
+    assert.equal(keeriLink(), null);
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /isn't set up correctly/);
+    assert.equal(container.querySelector('input[type="password"]'), null);
+  } finally { await done(); }
+});
+
+for (const [outcome, message] of [["denied", /doesn't have access to the shop admin/], ["failed", /didn't complete/], ["unavailable", /couldn't reach Keeri/]] as const) {
+  test(`coming back from Keeri "${outcome}" is explained once and taken out of the address`, async () => {
+    const { done } = await renderSignedOut({ method: "keeri", available: true, emergency: false }, `http://localhost:3000/admin?sign_in=${outcome}&keep=1`);
+    try {
+      assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", message);
+      assert.equal(dom.window.location.search, "?keep=1");
+      assert.ok(keeriLink(), "The person can try again");
+    } finally { await done(); }
+  });
+}
+
+test("an unknown reason in the address is dropped without showing anything from it", async () => {
+  const { done } = await renderSignedOut({ method: "keeri", available: true, emergency: false }, "http://localhost:3000/admin?sign_in=%3Cb%3Ehello%3C/b%3E");
+  try {
+    assert.equal(container.querySelector('[role="alert"]'), null);
+    assert.doesNotMatch(container.textContent!, /hello/);
+    assert.equal(dom.window.location.search, "");
+  } finally { await done(); }
+});
+
+for (const [name, signIn] of [
+  ["no offer at all (sign-in by shop password)", undefined],
+  ["an unknown method", { method: "sso", available: true, emergency: false }],
+  ["a half-formed offer", { method: "keeri" }],
+  ["text where an offer should be", "keeri"],
+] as const) {
+  test(`${name} leaves the password form exactly as it was`, async () => {
+    const { requests, done } = await renderSignedOut(signIn);
+    try {
+      assert.equal(keeriLink(), null);
+      assert.equal(container.querySelector("[data-emergency-access]"), null);
+      assert.ok(container.querySelector('input[type="password"]'));
+      assert.equal(button("Sign in").disabled, false);
+      assert.match(container.textContent!, /Use your staff email and password\./);
+      assert.deepEqual(requests.map((request) => request.url), ["/api/admin/session"]);
+    } finally { await done(); }
+  });
+}
+
+// The owner's four levels, set on Keeri's Roles screen: View, Edit, Publish, and Enquiries on its own.
+async function renderAs(user: Record<string, unknown>) {
+  const previous = globalThis.fetch;
+  const requests: string[] = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push(`${options?.method ?? "GET"} ${String(url).split("?")[0]}`);
+    if (String(url).endsWith("/session")) return Response.json({ user: { id: "staff-one", email: "person@example.test", ...user }, csrfToken: "a".repeat(64) });
+    if (String(url).includes("/enquiries")) return Response.json({ enquiries: [], nextCursor: null, keeriLeadsUrl: null });
+    return Response.json(doc());
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; } };
+}
+
+test("a View-only person sees the draft and can preview, but nothing can be changed or saved", async () => {
+  const { requests, done } = await renderAs({ role: "viewer" });
+  try {
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /View only/);
+    assert.equal(container.querySelector<HTMLButtonElement>('button[data-action="save"]')?.disabled, true);
+    assert.equal([...container.querySelectorAll("button")].some((node) => /Publish/.test(node.textContent ?? "")), false);
+    await click("Homepage");
+    assert.equal(container.querySelector<HTMLFieldSetElement>("fieldset[data-admin-panel-body]")?.disabled, true);
+    assert.match(container.querySelector("[data-view-only]")?.textContent ?? "", /You have View access/);
+    assert.ok(requests.includes("GET /api/admin/content"), "the draft is still loaded for viewing");
+    assert.equal(requests.some((request) => /^(PUT|POST) /.test(request)), false);
+  } finally { await done(); }
+});
+
+test("somebody with only Enquiries gets the Enquiries screen and the content is never asked for", async () => {
+  const { requests, done } = await renderAs({ role: "none", canManageEnquiries: true });
+  try {
+    assert.match(container.querySelector("[data-staff-account]")?.textContent ?? "", /Enquiries only/);
+    const sections = [...container.querySelectorAll('nav[aria-label="Admin sections"] button')].map((node) => node.textContent).filter(Boolean);
+    assert.deepEqual(sections, ["Enquiries"]);
+    assert.equal(requests.some((request) => request.includes("/api/admin/content")), false);
+    assert.ok(requests.some((request) => request.includes("/api/admin/enquiries")));
+    assert.doesNotMatch(container.textContent!, /draft is unavailable/i);
+  } finally { await done(); }
+});
+
+test("a session with no content and no enquiries is not a session", async () => {
+  const { done } = await renderAs({ role: "none" });
+  try {
+    assert.ok(container.querySelector('input[type="password"]'), "falls back to the sign-in screen");
+    assert.equal(container.querySelector("[data-staff-account]"), null);
+  } finally { await done(); }
+});
+
+// "Forgot the emergency password": an emailed, one-time link (see apps/api/test/admin-emergency-reset.test.ts).
+async function renderReset(signIn: unknown, address: string, answers: Record<string, number> = {}) {
+  dom.reconfigure({ url: address });
+  const previous = globalThis.fetch;
+  const requests: { url: string; body: string | null }[] = [];
+  globalThis.fetch = async (url, options) => {
+    const path = String(url);
+    requests.push({ url: path, body: options?.body ? String(options.body) : null });
+    if (path.endsWith("/session")) return signedOut(signIn);
+    const status = answers[path] ?? 500;
+    return new Response(status === 204 ? null : JSON.stringify({ message: "x", code: "RESET_LINK_INVALID" }), { status });
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; dom.reconfigure({ url: "http://localhost:3000/admin" }); } };
+}
+const offer = (reset: boolean) => ({ method: "keeri", available: true, emergency: true, reset });
+const token = "c".repeat(64);
+
+test("the reset link is offered under Emergency access only when the store can email it, and asking says the same thing every time", async () => {
+  const without = await renderReset(offer(false), "http://localhost:3000/admin");
+  try { assert.equal(container.querySelector("[data-emergency-forgot]"), null); } finally { await without.done(); }
+  const { requests, done } = await renderReset(offer(true), "http://localhost:3000/admin", { "/api/admin/emergency/reset-request": 202 });
+  try {
+    const forgot = container.querySelector<HTMLButtonElement>("[data-emergency-access] [data-emergency-forgot]");
+    assert.ok(forgot, "the link sits inside Emergency access");
+    await act(async () => forgot.click());
+    const sent = requests.find((request) => request.url.endsWith("/reset-request"));
+    // Nothing about who to email is sent: the server only ever emails the emergency account.
+    assert.equal(sent?.body, "{}");
+    assert.match(container.querySelector('[role="status"]')?.textContent ?? "", /a reset link has been emailed/);
+  } finally { await done(); }
+});
+
+test("opening the emailed link asks for a new password, sends it with the link's token, and takes the token out of the address", async () => {
+  const { requests, done } = await renderReset(offer(true), `http://localhost:3000/admin#reset=${token}`, { "/api/admin/emergency/reset": 204 });
+  try {
+    assert.equal(dom.window.location.hash, "");
+    assert.ok(container.querySelector("[data-emergency-reset]"), "the new-password form is shown");
+    assert.equal(keeriLink(), null);
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a different long value");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /don't match/);
+    assert.equal(requests.some((request) => request.url.endsWith("/emergency/reset")), false);
+    await fill("New password", "short");
+    await fill("New password again", "short");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /at least 14 characters/);
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a new long test value");
+    await submit();
+    const sent = requests.find((request) => request.url.endsWith("/emergency/reset"));
+    assert.deepEqual(JSON.parse(sent!.body!), { token, password: "a new long test value" });
+    assert.match(container.querySelector('[role="status"]')?.textContent ?? "", /has been changed/);
+    // Changing the password does not sign anybody in: the ordinary screen is back.
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+    assert.ok(keeriLink());
+  } finally { await done(); }
+});
+
+test("a link that is used up or lapsed says so and goes back to the sign-in screen", async () => {
+  const { done } = await renderReset(offer(true), `http://localhost:3000/admin#reset=${token}`, { "/api/admin/emergency/reset": 400 });
+  try {
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a new long test value");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /not valid any more/);
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+  } finally { await done(); }
+});
+
+test("anything after the # that is not a reset link is ignored", async () => {
+  const { done } = await renderReset(offer(true), "http://localhost:3000/admin#reset=<script>alert(1)</script>");
+  try {
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+    assert.ok(keeriLink());
+  } finally { await done(); }
+});
+
+test("when Keeri cannot be reached the screen says so, and points to Emergency access rather than blaming the password", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "ADMIN_ACCESS_UNCONFIRMED", message: "We couldn't confirm your access with Keeri. Try again in a minute.", signIn: { method: "keeri", available: true, emergency: true, reset: true } }, { status: 401 });
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+    const alert = container.querySelector('[role="alert"]')?.textContent ?? "";
+    assert.match(alert, /Keeri can't be reached right now/);
+    assert.match(alert, /Emergency access/);
+    assert.doesNotMatch(alert, /email or password/i);
+    assert.ok(container.querySelector("[data-emergency-access]"));
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("a session that stops mid-work because Keeri is down says that, not that it expired", async () => {
+  const previous = globalThis.fetch;
+  let down = false;
+  globalThis.fetch = async (url) => {
+    if (down) return Response.json({ code: "ADMIN_ACCESS_UNCONFIRMED", message: "x", signIn: { method: "keeri", available: true, emergency: true, reset: false } }, { status: 401 });
+    return String(url).endsWith("/session") ? Response.json({ ...staff("publisher"), signIn: { method: "keeri", available: true, emergency: true, reset: false } }) : Response.json(doc());
+  };
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+    assert.ok(container.querySelector("[data-staff-account]"));
+    down = true;
+    await click("History");
+    await act(async () => {});
+    assert.equal(container.querySelector("[data-staff-account]"), null);
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /Keeri can't be reached right now/);
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});

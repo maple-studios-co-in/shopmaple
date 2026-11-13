@@ -4,6 +4,7 @@ import type { Express, Request, Response } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { HttpError } from "../cart.js";
+import { keeriGraceMs, keeriRecheckMs, signInOffer, type AdminSignIn } from "./keeri-sign-in.js";
 type Database = PrismaClient | Prisma.TransactionClient;
 export const staffInputSchema = z
   .object({
@@ -25,8 +26,8 @@ const loginSchema = z
   })
   .strict();
 const options = { N: 131072, r: 8, p: 1, maxmem: 192 * 1024 * 1024 };
-const sessionDuration = 8 * 60 * 60000;
-const digest = (value: string) =>
+export const sessionDuration = 8 * 60 * 60000;
+export const digest = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 const derive = (password: string, salt: string) =>
   new Promise<Buffer>((resolve, reject) =>
@@ -57,7 +58,7 @@ const dummyHash = `scrypt$131072$8$1$${"0".repeat(32)}$${"0".repeat(128)}`;
 export function cookieName(secure: boolean) {
   return secure ? "__Host-shop_admin" : "shop_admin";
 }
-function readToken(req: Request, secure: boolean) {
+export function readToken(req: Request, secure: boolean) {
   const values = (req.headers.cookie ?? "")
     .split(";")
     .map((v) => v.trim())
@@ -66,8 +67,32 @@ function readToken(req: Request, secure: boolean) {
   const token = values[0]!.slice(cookieName(secure).length + 1);
   return /^[a-f0-9]{64}$/.test(token) ? token : null;
 }
-const authRequired = () =>
+export const authRequired = () =>
   new HttpError(401, "ADMIN_AUTH_REQUIRED", "Sign in to manage shop content.");
+/**
+ * A Keeri session is only as good as Keeri's last word on it. The guard in keeri-session.ts renews that
+ * every minute; this is the backstop for any route the guard did not run before, so a session Keeri has
+ * not confirmed within the grace period opens nothing anywhere.
+ */
+const keeriConfirmed = (session: { method: string; keeriCheckedAt: Date | null }) =>
+  session.method !== "keeri" ||
+  (session.keeriCheckedAt !== null && Date.now() - session.keeriCheckedAt.getTime() < keeriGraceMs + keeriRecheckMs);
+/** The signed-in person as the dashboard reads them. Name and the emergency mark appear only when they apply. */
+const staffUser = (admin: { id: string; email: string; name: string | null; role: "none" | "viewer" | "editor" | "publisher"; canManageEnquiries: boolean }, method: string) => ({
+  id: admin.id,
+  email: admin.email,
+  role: admin.role,
+  canManageEnquiries: admin.canManageEnquiries,
+  ...(admin.name ? { name: admin.name } : {}),
+  ...(method === "emergency" ? { emergency: true } : {}),
+});
+/**
+ * What a route needs of the website's content. `any` is for routes that are not about content at all:
+ * the session itself and the Enquiries screen, which has its own check. `sign-out` is `any` for a session
+ * Keeri has not confirmed lately as well: somebody must always be able to end their own session.
+ */
+export type StaffNeed = "any" | "view" | "edit" | "sign-out";
+const contentLevel = { none: 0, viewer: 1, editor: 2, publisher: 3 } as const;
 export async function requireStaff(
   db: Database,
   req: Request,
@@ -75,6 +100,7 @@ export async function requireStaff(
   write = false,
   publisher = false,
   lock = false,
+  needs: StaffNeed = write ? "edit" : "view",
 ) {
   const token = readToken(req, secure);
   if (!token) throw authRequired();
@@ -85,7 +111,7 @@ export async function requireStaff(
     where: { tokenHash },
     include: { admin: true },
   });
-  if (!session || session.expiresAt <= new Date()) throw authRequired();
+  if (!session || session.expiresAt <= new Date() || (needs !== "sign-out" && !keeriConfirmed(session))) throw authRequired();
   if (lock)
     await db.$queryRaw`SELECT "id" FROM "ShopAdmin" WHERE "id"=${session.adminId} FOR SHARE`;
   const admin = lock
@@ -109,24 +135,20 @@ export async function requireStaff(
         "Refresh your admin session and try again.",
       );
   }
+  const level = contentLevel[admin.role];
+  if (needs !== "any" && needs !== "sign-out" && level < 1)
+    throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account does not include the website's content.");
+  if (needs === "edit" && level < 2)
+    throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account can view the website's content but not change it.");
   if (publisher && admin.role !== "publisher")
     throw new HttpError(
       403,
       "ADMIN_ROLE_REQUIRED",
       "A publisher must approve this change.",
     );
-  return {
-    user: {
-      id: admin.id,
-      email: admin.email,
-      role: admin.role,
-      canManageEnquiries: admin.canManageEnquiries,
-    },
-    csrfToken,
-    tokenHash,
-  };
+  return { user: staffUser(admin, session.method), csrfToken, tokenHash };
 }
-function setSessionCookie(res: Response, token: string, secure: boolean) {
+export function setSessionCookie(res: Response, token: string, secure: boolean) {
   res.cookie(cookieName(secure), token, {
     httpOnly: true,
     secure,
@@ -139,7 +161,11 @@ export function registerStaffRoutes(
   app: Express,
   db: PrismaClient,
   secure: boolean,
+  signIn: AdminSignIn = { mode: "password" },
 ) {
+  // With Keeri sign-in on, shop passwords are switched off for everybody except the one emergency
+  // account, whose sessions are marked and recorded.
+  const keeri = signIn.mode === "keeri" ? signIn : null;
   app.post(
     "/api/admin/login",
     rateLimit({
@@ -154,19 +180,28 @@ export function registerStaffRoutes(
     }),
     async (req, res) => {
       const input = loginSchema.parse(req.body);
-      const admin = await db.shopAdmin.findUnique({
-        where: { email: input.email },
-      });
+      // Any other address is treated as one nobody holds: the same answer, at the same cost.
+      const allowed = !keeri || (keeri.emergencyEmail !== null && input.email === keeri.emergencyEmail);
+      let admin = allowed
+        ? await db.shopAdmin.findUnique({ where: { email: input.email } })
+        : null;
+      // A lock that has run out is over: the count starts again. Without this the count stayed at five,
+      // so one wrong try every fifteen minutes kept the account locked for as long as somebody cared to.
+      if (admin?.lockedUntil && admin.lockedUntil <= new Date())
+        admin = await db.shopAdmin.update({ where: { id: admin.id }, data: { failedAttempts: 0, lockedUntil: null } });
+      const locked = Boolean(admin?.lockedUntil && admin.lockedUntil > new Date());
       const valid = await verifyPassword(
         input.password,
         admin?.passwordHash ?? dummyHash,
       );
       if (
         !admin?.active ||
+        !admin.passwordHash ||
         !valid ||
-        (admin.lockedUntil && admin.lockedUntil > new Date())
+        locked
       ) {
-        if (admin && !valid) {
+        // A try made while the account is locked is refused but not counted, so it cannot stretch the lock.
+        if (admin && !valid && !locked) {
           const failed = await db.shopAdmin.update({
             where: { id: admin.id },
             data: { failedAttempts: { increment: 1 } },
@@ -176,6 +211,11 @@ export function registerStaffRoutes(
               where: { id: admin.id },
               data: { lockedUntil: new Date(Date.now() + 15 * 60000) },
             });
+        }
+        // A refused try at the emergency account is recorded like a successful one. No address, no password.
+        if (keeri && admin) {
+          await db.shopAdminSignIn.create({ data: { adminId: admin.id, method: "emergency_failed" } });
+          console.warn(`[admin] emergency password sign-in refused for staff ${admin.id}${locked ? " (locked)" : ""}`);
         }
         throw new HttpError(
           401,
@@ -209,31 +249,33 @@ export function registerStaffRoutes(
             adminId: admin.id,
             tokenHash: digest(token),
             expiresAt: new Date(Date.now() + sessionDuration),
+            method: keeri ? "emergency" : "password",
           },
         });
+        if (keeri) await tx.shopAdminSignIn.create({ data: { adminId: admin.id, method: "emergency" } });
       });
+      // Said in the server log as well as the table, with no address or name: emergency access is rare enough to notice.
+      if (keeri) console.warn(`[admin] emergency password sign-in by staff ${admin.id}`);
       setSessionCookie(res, token, secure);
       res.json({
-        user: {
-          id: admin.id,
-          email: admin.email,
-          role: admin.role,
-          canManageEnquiries: admin.canManageEnquiries,
-        },
+        user: staffUser(admin, keeri ? "emergency" : "password"),
         csrfToken: digest("csrf:" + token),
       });
     },
   );
+  // Every staff route needs a session, and all but these need at least View of the content: the session
+  // itself, signing out, and the Enquiries screen, which somebody may hold with nothing else.
+  const openToAnyRole = (path: string) => path === "/session" || path === "/logout" || path === "/enquiries" || path.startsWith("/enquiries/");
   app.use("/api/admin", async (req, _res, next) => {
-    await requireStaff(db, req, secure);
+    await requireStaff(db, req, secure, false, false, false, req.path === "/logout" ? "sign-out" : openToAnyRole(req.path) ? "any" : "view");
     next();
   });
   app.get("/api/admin/session", async (req, res) => {
-    const { user, csrfToken } = await requireStaff(db, req, secure);
-    res.json({ user, csrfToken });
+    const { user, csrfToken } = await requireStaff(db, req, secure, false, false, false, "any");
+    res.json({ user, csrfToken, ...signInOffer(signIn) });
   });
   app.post("/api/admin/logout", async (req, res) => {
-    const session = await requireStaff(db, req, secure, true);
+    const session = await requireStaff(db, req, secure, true, false, false, "sign-out");
     await db.shopAdminSession.deleteMany({
       where: { tokenHash: session.tokenHash },
     });

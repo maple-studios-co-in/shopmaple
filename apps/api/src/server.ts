@@ -14,6 +14,8 @@ import { createSignInCodeSender, loadAccountConfig } from "./account/config.js";
 import { loadOrderLinkConfig } from "./orders/order-access.js";
 import { backfillOrderLinks } from "./orders/order-links.js";
 import { loadKeeriOrderEventsConfig } from "./orders/keeri-events.js";
+import { loadAdminSignIn } from "./admin/keeri-sign-in.js";
+import { emergencyAccountProblem } from "./admin/emergency-reset.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -52,9 +54,15 @@ const keeriOrderEvents = loadKeeriOrderEventsConfig(process.env, commerceConfig?
 // Private order links (ORDER_LINK_SECRET): order emails and Keeri's WhatsApp open the order, its tracking and Cancel
 // without an account. Off until set.
 const orderLinks = commerceConfig ? commerceConfig.orderLinks : loadOrderLinkConfig(process.env);
+// Shop admin staff sign in with their Keeri accounts. Only a non-production run with no Keeri sign-in
+// settings at all keeps shop passwords.
+const adminSignIn = loadAdminSignIn(process.env);
 const db = new PrismaClient();
 // With accounts on, the buyer's order email opens the order in their account, which works on any device.
 const commerce = commerceConfig ? composeCommerce(db, commerceConfig, { accountLinks: accountConfig !== null }) : null;
+// Said once at start, by setting name only: a mistyped emergency address would otherwise be found out
+// on the day Keeri is down.
+void emergencyAccountProblem(db, adminSignIn).then((problem) => { if (problem) console.error(problem); }).catch(() => undefined);
 // Orders the previous release froze or captured after the migration ran get their email key and MF number now.
 void backfillOrderLinks(db).catch(() => console.error("Order number catch-up failed; it runs again at the next start."));
 const server = createApp(
@@ -74,6 +82,7 @@ const server = createApp(
     checkout: commerce?.checkout,
     keeriOrderEvents,
     instagramFeed,
+    adminSignIn,
     accounts: accountConfig
       ? {
           codeSecret: accountConfig.codeSecret,
@@ -93,7 +102,8 @@ const server = createApp(
       ":" +
       env.API_PORT +
       (commerce ? " (preview catalogue; checkout enabled" : " (preview; checkout disabled") +
-      (accountConfig ? "; customer accounts on)" : "; customer accounts off)"),
+      (accountConfig ? "; customer accounts on" : "; customer accounts off") +
+      (adminSignIn.mode === "keeri" ? (adminSignIn.ready ? "; admin sign-in with Keeri)" : "; admin sign-in with Keeri NOT usable)") : ")"),
   ),
 );
 const deliveryRunner = enquiryDelivery || keeriLeads
