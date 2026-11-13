@@ -35,6 +35,10 @@ const config: NextConfig = {
       // Pages moved from Shopify's /pages/<slug> to /<slug> (10 Nov 2026). Old links, search results and sent emails keep
       // working, and the query (an enquiry's ?product=) carries over.
       { source: "/pages/:slug", destination: "/:slug", permanent: true },
+      // Keeri's WhatsApp "View order" button is approved as /account/orders/{{1}}. With private order links (owner,
+      // 14 Nov 2026) its end is the order's reference, which opens the order, or its tracking, without an account.
+      { source: "/account/orders/:ref(MF-[1-9][0-9]{0,9}-[a-f0-9]{32})-tracking", destination: "/orders/:ref/tracking", permanent: false },
+      { source: "/account/orders/:ref(MF-[1-9][0-9]{0,9}-[a-f0-9]{32})", destination: "/orders/:ref", permanent: false },
       // The products that existed only in the old Shopify catalogue left the store (owner, 11 Nov 2026), for now: each old
       // address goes to its kind's collection, or to all furniture, temporarily (307), so search engines keep the
       // address while the owner decides what returns (data/retired-products.json).
@@ -73,6 +77,11 @@ const config: NextConfig = {
         // pages are not (owner's spec, 10 Nov 2026). The pages also render per request.
         source: "/account/:path*",
         headers: [{ key: "Cache-Control", value: "private, no-store" }],
+      },
+      {
+        // An order behind its private link: never stored, and the link never leaves in a Referer.
+        source: "/orders/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store" }, { key: "Referrer-Policy", value: "no-referrer" }],
       },
       {
         // The draft preview frame is embedded only by the same-origin preview shell.

@@ -19,3 +19,11 @@ paths = ['''^apps/api/test/razorpay\.test\.ts$''']
 regexTarget = "secret"
 # https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/
 regexes = ['''^EnLs21M47BllR3X8PSFtjtbd$''']
+
+[[allowlists]]
+description = "Test-only HMAC key for private order links in an old commit (eac29be); the test now generates its key"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^apps/api/test/buyer-orders-db\.test\.ts$''']
+regexTarget = "secret"
+regexes = ['''^buyer-orders-test-secret-at-least-32-chars$''']

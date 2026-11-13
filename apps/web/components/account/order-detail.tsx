@@ -3,6 +3,7 @@ import type { OrderDetail, OrderJourneyStep, OrderStatus } from "@shopmaple/cont
 import { money } from "@/lib/format";
 import { formatDate, formatDayRange, itemCount } from "@/lib/account/format";
 import { AccountHeading, addressLines, Lines, OrderPhoto } from "./account-parts";
+import { OrderActions } from "@/components/orders/order-actions";
 
 const badges: Record<OrderStatus, string> = {
   confirmed: "Order confirmed",
@@ -54,6 +55,8 @@ export function OrderDetailView({ order }: { order: OrderDetail }) {
           ) : null}
         </section>
       ) : null}
+      {/* With private links: Track your order, and Cancel while the order can still be cancelled. */}
+      <OrderActions order={order} />
       <ol className="account-journey" aria-label="Order journey">
         {order.journey.map((step, index) => (
           <li key={step.key} className="account-journey-step" data-step-state={step.state} aria-current={step.state === "current" ? "step" : undefined}>

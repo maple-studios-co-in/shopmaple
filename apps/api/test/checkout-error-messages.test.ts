@@ -35,3 +35,12 @@ test("unknown order errors and Keeri refusals keep their existing messages", () 
   assert.equal(shown(new KeeriCommerceError("UPSTREAM_REJECTED")).code, "QUOTE_REJECTED");
   assert.equal(shown(new KeeriCommerceError("toString")).code, "QUOTE_UNAVAILABLE", "only the known codes are promo refusals");
 });
+
+test("a quote Keeri refuses below a design's minimum order tells the buyer to add more", () => {
+  for (const error of [new KeeriCommerceError("BELOW_MINIMUM_ORDER"), new OrderFlowError("BELOW_MINIMUM_ORDER")])
+    assert.deepEqual(shown(error), {
+      status: 422,
+      code: "BELOW_MINIMUM_ORDER",
+      message: "A piece in your bag has a minimum order. Add more of it (finishes can be mixed) and try again. No payment has been taken.",
+    });
+});

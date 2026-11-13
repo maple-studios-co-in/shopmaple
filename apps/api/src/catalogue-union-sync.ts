@@ -68,6 +68,8 @@ export async function syncCatalogueUnion(
           pdpContent: fields.pdpContent ?? Prisma.DbNull, sourceTaxonomy: fields.sourceTaxonomy ?? Prisma.DbNull, sourceDetails: fields.sourceDetails ?? Prisma.DbNull,
           productPage: fields.productPage ?? Prisma.DbNull,
           offer: fields.offer ?? Prisma.DbNull,
+          // Absent below Keeri's minimum-order level: no minimum is kept from an earlier export.
+          minOrderQuantity: fields.minOrderQuantity ?? null,
           ...reviewSummary(fields.productPage),
           sourceUpdatedAt: new Date(fields.sourceUpdatedAt),
         };

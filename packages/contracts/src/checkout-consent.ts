@@ -41,6 +41,14 @@ export const orderWhatsappUpdatesSchema = z
       .object({ from: z.iso.date(), to: z.iso.date() })
       .strict()
       .nullable(),
+    /** Only with WHATSAPP_ORDER_LINKS=true (Keeri accepts them from 14 Nov 2026): the ends of the order's private links,
+     * which Keeri's "View order" button carries after `/account/orders/`; the dispatched message opens tracking. */
+    orderLinks: z
+      .object({ view: z.string().regex(/^MF-[1-9][0-9]{0,9}-[a-f0-9]{32}$/), tracking: z.string().regex(/^MF-[1-9][0-9]{0,9}-[a-f0-9]{32}-tracking$/) })
+      .strict()
+      .optional(),
+    /** Only with WHATSAPP_ORDER_LINKS=true: the first piece's variant slug, so the picture is the variant bought. */
+    headerVariantId: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(64).nullable().optional(),
   })
   .strict();
 export type OrderWhatsappUpdates = z.infer<typeof orderWhatsappUpdatesSchema>;

@@ -3,8 +3,10 @@ import {
   type QuoteRequest,
   type QuoteSnapshot,
 } from "@shopmaple/contracts";
+import { minimumOrderShortfalls } from "@shopmaple/contracts/minimum-order";
 import { checkoutRequestSchema, type OrderWhatsappUpdates } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
+import { orderLinkPaths, type OrderLinkConfig } from "./order-access.js";
 import { createHash, randomUUID } from "node:crypto";
 import { deliveryEstimate } from "../account/orders.js";
 import { loadOrderProgress } from "./keeri-events.js";
@@ -86,6 +88,8 @@ interface Options {
   /** WHATSAPP_ORDER_UPDATES: checkout records the buyer's consent to order updates on WhatsApp and a paid order tells
    * Keeri of it. Off (the default), a tick is ignored and Keeri receives exactly the order it always did. */
   whatsappOrderUpdates?: boolean;
+  /** ORDER_LINK_SECRET and WHATSAPP_ORDER_LINKS: the paid order also hands Keeri the order's private links. */
+  orderLinks?: OrderLinkConfig | null;
   now?: () => Date;
 }
 /** Stocked carries no lead time; made to order always carries one. */
@@ -342,6 +346,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
         )
       )
         throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
+      // A design's minimum order counts all its finishes; Keeri's quote would refuse the same bag.
+      const lines = rows.map((r) => ({ handle: r.variant.product.handle, title: r.variant.product.title, quantity: r.quantity, minOrderQuantity: r.variant.product.minOrderQuantity }));
+      if (minimumOrderShortfalls(lines).length) throw new OrderFlowError("BELOW_MINIMUM_ORDER");
       const bindings = await resolveCatalogueBindings(tx, rows.map((r) => r.variantId), options.keeriTenantId!);
       const items = rows
         .map((r) => ({ variantId: bindings.items.find((b) => b.localVariantId === r.variantId)!.sourceVariantId, quantity: r.quantity }))
@@ -913,6 +920,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
           // The confirmation's header image is drawn for the first piece's product page.
           // A message never holds up a payment: without a usable handle Keeri sends the confirmation's plain picture.
           let handle: string | null = null;
+          let variantSlug: string | null = null;
           try {
             const first = storedCatalogueBindings(current.catalogueBindings, options.keeriTenantId ?? "", snapshot)
               .items.find((b) => b.sourceVariantId === snapshot.items[0]?.variantId);
@@ -920,15 +928,23 @@ export function createOrderService(db: PrismaClient, options: Options) {
               ? await tx.product.findUnique({ where: { id: first.localProductId }, select: { handle: true } })
               : null;
             if (product && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(product.handle) && product.handle.length <= 200) handle = product.handle;
+            // The variant bought, so the picture is its photo rather than the listing's first.
+            const variant = first && handle ? await tx.variant.findUnique({ where: { id: first.localVariantId }, select: { slug: true } }) : null;
+            if (variant?.slug && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(variant.slug) && variant.slug.length <= 64) variantSlug = variant.slug;
           } catch (error) {
             if (!(error instanceof OrderFlowError)) throw error;
           }
+          // Only to a Keeri that accepts them (WHATSAPP_ORDER_LINKS): an older one refuses the whole order for them.
+          const linked = options.orderLinks?.whatsappLinks
+            ? { orderLinks: orderLinkPaths(options.orderLinks.secret, links.orderNumber).whatsapp, headerVariantId: variantSlug }
+            : {};
           return {
             consentedAt: current.whatsappOptInAt.toISOString(),
             orderNumber: formatOrderNumber(links.orderNumber),
             headerHandle: handle,
             // The same window the buyer's order email and account show, counted from the capture.
             estimatedDelivery: deliveryEstimate(snapshot, capturedAt),
+            ...linked,
           };
         };
         if (

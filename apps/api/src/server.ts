@@ -11,6 +11,7 @@ import { installShutdown } from "./server-lifecycle.js";
 import { loadInstagramFeedConfig, refreshInstagramFeed } from "./instagram-feed.js";
 import { loadKeeriReviewsConfig } from "./reviews.js";
 import { createSignInCodeSender, loadAccountConfig } from "./account/config.js";
+import { loadOrderLinkConfig } from "./orders/order-access.js";
 import { backfillOrderLinks } from "./orders/order-links.js";
 import { loadKeeriOrderEventsConfig } from "./orders/keeri-events.js";
 import { loadAdminSignIn } from "./admin/keeri-sign-in.js";
@@ -50,6 +51,9 @@ const accountScope = /^[a-z0-9_-]{1,100}$/.test(process.env.KEERI_MERCHANT_SCOPE
 // Order progress from Keeri: off until KEERI_DELIVERY_WEBHOOK_SECRET is set (with a merchant scope), and Keeri keeps
 // its events queued until then.
 const keeriOrderEvents = loadKeeriOrderEventsConfig(process.env, commerceConfig?.keeri.merchantScope ?? accountScope);
+// Private order links (ORDER_LINK_SECRET): order emails and Keeri's WhatsApp open the order, its tracking and Cancel
+// without an account. Off until set.
+const orderLinks = commerceConfig ? commerceConfig.orderLinks : loadOrderLinkConfig(process.env);
 // Shop admin staff sign in with their Keeri accounts. Only a non-production run with no Keeri sign-in
 // settings at all keeps shop passwords.
 const adminSignIn = loadAdminSignIn(process.env);
@@ -85,6 +89,9 @@ const server = createApp(
           merchantScope: commerceConfig?.keeri.merchantScope ?? accountScope,
           sendCode: createSignInCodeSender(accountConfig.email, { production: accountConfig.production }),
         }
+      : null,
+    buyerOrders: orderLinks
+      ? { links: orderLinks, merchantScope: commerceConfig?.keeri.merchantScope ?? accountScope, keeri: commerce?.keeri ?? null }
       : null,
   },
   commerce?.commerce,

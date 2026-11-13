@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { Prisma, type Customer, type CustomerAddress, type PrismaClient } from "@prisma/client";
-import { quoteSnapshotSchema } from "@shopmaple/contracts";
 import {
   accountEmailSchema,
   accountNameSchema,
@@ -25,9 +24,9 @@ import {
 import { z } from "zod";
 import { HttpError } from "../cart.js";
 import type { SignInCodeMessage } from "./config.js";
-import { paidOrderStates, toOrderDetail, toOrderSummary, type OrderImages, type PaidOrder } from "./orders.js";
-import { loadOrderProgress } from "../orders/keeri-events.js";
-import { variantPhoto } from "../variant-photo.js";
+import { paidOrderStates, toOrderDetail, toOrderSummary } from "./orders.js";
+import { createPaidOrderReader, orderSelect } from "../orders/paid-orders.js";
+import type { BuyerOrders } from "../orders/buyer-orders.js";
 import {
   generateSignInCode,
   hashNetwork,
@@ -58,6 +57,8 @@ export interface AccountServiceOptions {
   now?: () => Date;
   /** Where the store-wide cap line goes (default console.error). It never carries personal data. */
   log?: (line: string) => void;
+  /** Private order links are on (ORDER_LINK_SECRET): an order's detail also carries its links and Cancel. */
+  buyerOrders?: Pick<BuyerOrders, "detailOf"> | null;
 }
 type Tx = Prisma.TransactionClient;
 /** Sign-in start: the client's network and the browser's sign-in cookie, before and after this request. */
@@ -90,11 +91,6 @@ export const storeCapLogLine =
   "[accounts] sign-in email cap reached: 300 codes in the past hour; new codes are held back until the count falls";
 const verifyBody = z.object({ email: z.unknown(), code: z.unknown(), password: z.unknown().optional(), name: z.unknown().optional() }).strict();
 // The catalogue identities frozen with the quote: the snapshot's Keeri variant id → the local variant (for its photo).
-const frozenBindings = z.object({ items: z.array(z.object({ localVariantId: z.string(), sourceVariantId: z.string() })) });
-const orderSelect = {
-  id: true, orderNumber: true, state: true, capturedAt: true, paymentId: true, snapshot: true, catalogueBindings: true,
-} satisfies Prisma.CheckoutAttemptSelect;
-type OrderRow = Prisma.CheckoutAttemptGetPayload<{ select: typeof orderSelect }>;
 const newestFirst = [{ capturedAt: "desc" }, { orderNumber: "desc" }] satisfies Prisma.CheckoutAttemptOrderByWithRelationInput[];
 const addressOrder = [{ isDefault: "desc" }, { updatedAt: "desc" }, { id: "asc" }] satisfies Prisma.CustomerAddressOrderByWithRelationInput[];
 
@@ -327,61 +323,7 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
     ...extra,
   });
 
-  /** Rows with their Keeri delivery outcome and a parsed snapshot; a row whose snapshot no longer parses is left out. */
-  async function paidOrders(rows: OrderRow[]): Promise<Array<PaidOrder & { row: OrderRow }>> {
-    if (!rows.length) return [];
-    const outboxes = await db.orderOutbox.findMany({
-      where: { attemptId: { in: rows.map((row) => row.id) }, kind: "keeri.order.captured.v2" },
-      select: { attemptId: true, state: true, externalOrderId: true, deliveredAt: true },
-    });
-    const byAttempt = new Map(outboxes.map((outbox) => [outbox.attemptId, outbox]));
-    // What Keeri has reported since accepting each order (status, delivery, cancellation, refund).
-    const progress = await loadOrderProgress(db, options.merchantScope, outboxes.flatMap((outbox) => (outbox.externalOrderId ? [outbox.externalOrderId] : [])));
-    return rows.flatMap((row) => {
-      const snapshot = quoteSnapshotSchema.safeParse(row.snapshot);
-      if (!snapshot.success || row.orderNumber === null || !row.capturedAt || !row.paymentId) return [];
-      return [{ row, orderNumber: row.orderNumber, state: row.state, capturedAt: row.capturedAt, paymentId: row.paymentId,
-        snapshot: snapshot.data, outbox: byAttempt.get(row.id) ?? null,
-        progress: progress.get(byAttempt.get(row.id)?.externalOrderId ?? "") ?? null }];
-    });
-  }
-
-  /**
-   * Item photos from the catalogue, chosen by variantPhoto (variant-photo.ts) as the bag and the order emails choose
-   * them; only for published products (the media route serves nothing else). Found through the bindings frozen with the
-   * quote, else the variant's Keeri identity.
-   */
-  async function orderImages(orders: Array<PaidOrder & { row: OrderRow }>, firstOnly: boolean): Promise<OrderImages> {
-    const local = new Map<string, string>();
-    const unbound: string[] = [];
-    for (const order of orders) {
-      const bindings = frozenBindings.safeParse(order.row.catalogueBindings);
-      for (const item of firstOnly ? order.snapshot.items.slice(0, 1) : order.snapshot.items) {
-        const bound = bindings.success ? bindings.data.items.find((binding) => binding.sourceVariantId === item.variantId) : undefined;
-        if (bound) local.set(item.variantId, bound.localVariantId);
-        else unbound.push(item.variantId);
-      }
-    }
-    if (unbound.length) {
-      const identities = await db.variantSourceIdentity.findMany({
-        where: { OR: unbound.map((externalId) => ({ source: externalId.split(":").slice(0, 2).join(":"), externalId })) },
-        select: { externalId: true, variantId: true },
-      });
-      for (const identity of identities) local.set(identity.externalId, identity.variantId);
-    }
-    if (!local.size) return new Map();
-    const variants = await db.variant.findMany({
-      where: { id: { in: [...new Set(local.values())] } },
-      select: { id: true, images: true, product: { select: { published: true, images: true } } },
-    });
-    const photos = new Map(variants.map((variant) => [variant.id, variantPhoto(variant)] as const));
-    const images = new Map<string, string>();
-    for (const [source, variantId] of local) {
-      const photo = photos.get(variantId);
-      if (photo) images.set(source, photo);
-    }
-    return images;
-  }
+  const { paidOrders, orderImages } = createPaidOrderReader(db, options.merchantScope);
 
   async function listOrders(customer: Customer): Promise<OrderSummary[]> {
     const orders = await paidOrders(await db.checkoutAttempt.findMany({ where: paidWhere(customer), orderBy: newestFirst, take: 200, select: orderSelect }));
@@ -396,6 +338,7 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
     const row = await db.checkoutAttempt.findFirst({ where: paidWhere(customer, { orderNumber }), select: orderSelect });
     const [order] = await paidOrders(row ? [row] : []);
     if (!order) throw orderNotFound();
+    if (options.buyerOrders) return options.buyerOrders.detailOf(order);
     return toOrderDetail(order, await orderImages([order], false));
   }
 

@@ -66,6 +66,10 @@ the flag and restart: the tick box goes, and orders paid from then on carry no `
 had ticked before. Messages for orders Keeri already has are switched off in Keeri.
 
 The "View order" button opens `/account/orders/<number>`, so customer accounts (`CUSTOMER_ACCOUNTS_ENABLED`) must be on.
+With private order links (`ORDER_LINK_SECRET` and `WHATSAPP_ORDER_LINKS=true`, docs/store-deployment.md) the button's
+variable is the order's private reference instead: `/account/orders/MF-<n>-<ref>` redirects to the order page and
+`/account/orders/MF-<n>-<ref>-tracking` (the dispatched message) to its tracking page, with no sign-in. The header
+picture link then carries `?variant=<slug>`, the variant bought. The approved templates need no change.
 
 ## The confirmation template
 

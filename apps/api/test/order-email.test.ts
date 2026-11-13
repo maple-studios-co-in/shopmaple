@@ -131,7 +131,7 @@ test("every string from the customer or the catalogue is escaped", () => {
 test("several pieces repeat the piece row; a missing photo leaves a plain tile, never a broken image", () => {
   const pieces: Item[] = [
     { ...nola },
-    { ...nola, variantId: "keeri:maple:side-table", title: "Ari Side Table", variantTitle: "Walnut", quantity: 2, lineTotalPaise: 1500000 },
+    { ...nola, variantId: "keeri:maple:side-table", title: "Ari Side Table", variantTitle: "Walnut", quantity: 2, unitPricePaise: 750000, lineTotalPaise: 1500000 },
     { ...nola, variantId: "keeri:maple:lamp", title: "Lumen Lamp", variantTitle: "Brass", lineTotalPaise: 350050 },
   ];
   const { html, text } = render({
@@ -151,7 +151,7 @@ test("several pieces repeat the piece row; a missing photo leaves a plain tile, 
   assert.ok(html.includes("background-image:url(https://store.maplefurnishers.com/media/keeri/lamp_01.webp);background-size:cover;"));
   assert.ok(html.includes('role="img" aria-label="Lumen Lamp"'));
   assert.match(html, /<td class="m-photo" width="120" height="150" valign="top" bgcolor="#f1f0e9" style="width:120px;height:150px;background-color:#f1f0e9;font-size:0;line-height:0;">&nbsp;<\/td><td class="m-gap"[^>]*>\n<p[^>]*>YOUR PIECE<\/p>\n<p class="m-title"[^>]*>Ari Side Table</);
-  assert.ok(text.includes("Your pieces\nNola Accent Chair\nNatural cane · Oak finish\nQuantity 1 · ₹24,900\n\nAri Side Table\nWalnut\nQuantity 2 · ₹15,000\n\nLumen Lamp\nBrass\nQuantity 1 · ₹3,500.50\n"));
+  assert.ok(text.includes("Your pieces\nNola Accent Chair\nNatural cane · Oak finish\nQuantity 1 · ₹24,900\n\nAri Side Table\nWalnut\nQuantity 2 · ₹7,500 each · ₹15,000\n\nLumen Lamp\nBrass\nQuantity 1 · ₹3,500.50\n"));
   // Anything that is not a web address is no photo at all.
   const odd = render({ photos: new Map([[nola.variantId, "javascript:alert(1)"]]) }).html;
   assert.doesNotMatch(odd, /javascript:|<img class="m-photo"|background-image/);
@@ -263,4 +263,56 @@ test("an order with the most pieces a quote allows stays under Gmail's clipping 
   assert.equal(count(html, "YOUR PIECE"), 50);
   assert.ok(html.length < 102_000, `${html.length} characters`);
   assert.ok(text.length < 20_000, `${text.length} characters`);
+});
+
+const ref = "MF-10482-0123456789abcdef0123456789abcdef";
+const privateLinks = { view: `/orders/${ref}`, tracking: `/orders/${ref}/tracking` };
+
+test("with private links, View your order opens without an account and a second link tracks the order", () => {
+  for (const accountLinks of [false, true]) {
+    const { html, text } = render({ privateLinks, accountLinks });
+    assert.equal(count(html, `href="${origin}${privateLinks.view}"`), 2, "the button, and Outlook's VML copy of it");
+    assert.equal(count(html, `href="${origin}${privateLinks.tracking}"`), 1);
+    assert.match(html, />Track your order</);
+    assert.equal(html.includes("/account/orders/"), false);
+    assert.ok(text.includes(`View your order: ${origin}${privateLinks.view}\n`));
+    assert.ok(text.includes(`Track your order: ${origin}${privateLinks.tracking}\n`));
+  }
+  // The payment-received email links the order too: the buyer can watch it being confirmed.
+  const received = render({ kind: "received", privateLinks });
+  assert.equal(count(received.html, `href="${origin}${privateLinks.view}"`), 2);
+});
+
+test("each piece says its unit price and quantity, its dimensions where Keeri has them, and shows more photos", () => {
+  const details = new Map([[nola.variantId, {
+    photos: ["https://store.maplefurnishers.com/media/keeri/nola_02.webp", "https://store.maplefurnishers.com/media/keeri/nola_03.webp",
+      "https://store.maplefurnishers.com/media/keeri/nola_04.webp", "https://store.maplefurnishers.com/media/keeri/nola_05.webp"],
+    dimensions: "W 72 × D 78 × H 81 cm",
+  }]]);
+  const two = { ...nola, quantity: 2, lineTotalPaise: 4980000 };
+  const { html, text } = render({ quote: quoteWith({ items: [two] }), details });
+  assert.match(html, /Quantity 2 · ₹24,900 each/);
+  assert.match(html, /W 72 × D 78 × H 81 cm/);
+  for (const n of ["02", "03", "04"]) assert.equal(count(html, `nola_${n}.webp`), 1, `photo ${n}`);
+  assert.equal(html.includes("nola_05.webp"), false, "three more at most");
+  assert.match(text, /Nola Accent Chair\nNatural cane · Oak finish\nQuantity 2 · ₹24,900 each · ₹49,800\nDimensions: W 72 × D 78 × H 81 cm\n/);
+});
+
+test("a long order keeps one photo per piece, so the email stays under Gmail's clipping size", () => {
+  const items = Array.from({ length: 50 }, (_, n) => ({ ...nola, variantId: `keeri:maple:piece-${n}`, title: `A rather long piece name, number ${n}` }));
+  const details = new Map(items.map((item) => [item.variantId, { photos: ["https://store.maplefurnishers.com/media/keeri/x2.webp", "https://store.maplefurnishers.com/media/keeri/x3.webp"], dimensions: "W 72 × D 78 × H 81 cm" }]));
+  const { html } = render({ quote: quoteWith({ items }), details, privateLinks });
+  assert.equal(html.includes("x2.webp"), false);
+  assert.ok(html.length < 102_000, `${html.length} characters`);
+});
+
+test("a piece's size is Keeri's measurements, the variant's over the design's, else its written dimensions", async () => {
+  const { pieceDimensions } = await import("../src/orders/order-email.js");
+  const specs = (widthCm: number | null, depthCm: number | null, heightCm: number | null) => ({ specs: { widthCm, depthCm, heightCm, seatHeightCm: null, weightKg: null } });
+  assert.equal(pieceDimensions(null, specs(72, 78, 81), null), "W 72 × D 78 × H 81 cm");
+  assert.equal(pieceDimensions(specs(180, null, null), specs(72, 78, 81.5), null), "W 180 × D 78 × H 81.5 cm");
+  assert.equal(pieceDimensions(null, specs(null, null, null), { dimensions: "  Seat 45 cm\n high " }), "Seat 45 cm high");
+  assert.equal(pieceDimensions({ copy: { dimensions: "200 × 90 cm" } }, null, { dimensions: "older words" }), "200 × 90 cm");
+  assert.equal(pieceDimensions(null, null, { dimensions: "x".repeat(200) })!.length, 120);
+  assert.equal(pieceDimensions(null, null, null), null);
 });
