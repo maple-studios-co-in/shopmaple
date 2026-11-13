@@ -5,6 +5,8 @@ import { rateLimit } from "express-rate-limit";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { registerStaffRoutes } from "./admin/auth.js";
+import { keeriSessionGuard, registerKeeriSignInRoutes } from "./admin/keeri-session.js";
+import { signInOffer, type AdminSignIn } from "./admin/keeri-sign-in.js";
 import { registerMediaRoutes } from "./admin/media.js";
 import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
 import { registerEnquiryDeliveryAdminRoutes } from "./admin/enquiry-delivery.js";
@@ -53,6 +55,8 @@ export type AppConfig = {
   checkout?: CheckoutOptions;
   /** The automatic Instagram feed; null or absent until every private Meta setting is present. */
   instagramFeed?: InstagramFeedConfig | null;
+  /** ADMIN_SIGN_IN: absent or `password` keeps shop passwords; `keeri` signs staff in with their Keeri accounts. */
+  adminSignIn?: AdminSignIn;
   /** Customer accounts (CUSTOMER_ACCOUNTS_ENABLED); null or absent answers every /api/account route with a 404. */
   accounts?: AccountOptions | null;
 };
@@ -94,6 +98,10 @@ export function createApp(
     const { merchantScope, now } = config.keeriOrderEvents;
     registerKeeriOrderEvents(app, config.keeriOrderEvents, (rawBody) => ingestKeeriOrderEvent(db, merchantScope, rawBody), now);
   }
+  const adminSignIn: AdminSignIn = config.adminSignIn ?? { mode: "password" };
+  // Before every staff route, including the media ones registered next: Keeri is asked again about a
+  // Keeri session that is more than a minute old.
+  app.use("/api/admin", keeriSessionGuard(db, config.secureCookies, adminSignIn));
   registerMediaRoutes(app, db, config);
   registerReviewRoutes(app, db, { webOrigin: config.webOrigin, keeri: config.keeriReviews, enquiryDelivery: config.enquiryDelivery });
   app.use("/api/admin/content", express.json({ limit: "128kb" }));
@@ -111,7 +119,9 @@ export function createApp(
     }
     next();
   });
-  registerStaffRoutes(app, db, config.secureCookies);
+  // Reached without a session, so they sit before the staff gate that registerStaffRoutes installs.
+  if (adminSignIn.mode === "keeri") registerKeeriSignInRoutes(app, db, config.secureCookies, adminSignIn, config.webOrigin);
+  registerStaffRoutes(app, db, config.secureCookies, adminSignIn);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
   registerEnquiryAdminRoutes(app, db, config.secureCookies, config.keeriLeads ?? null);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.keeriLeads ?? null);
@@ -215,7 +225,7 @@ export function createApp(
       .status(404)
       .json({ code: "NOT_FOUND", message: "This endpoint does not exist." }),
   );
-  const onError: ErrorRequestHandler = (error, _req, res, _next) => {
+  const onError: ErrorRequestHandler = (error, req, res, _next) => {
     if (error instanceof z.ZodError) {
       res.status(400).json({
         code: "INVALID_INPUT",
@@ -225,9 +235,11 @@ export function createApp(
     }
     error = commerceHttpError(error) ?? error;
     if (error instanceof HttpError) {
+      // With Keeri sign-in on, a staff "sign in first" also says how, so the sign-in screen knows what to offer.
+      const offer = error.status === 401 && req.path.startsWith("/api/admin") ? signInOffer(adminSignIn) : {};
       res
         .status(error.status)
-        .json({ code: error.code, message: error.message });
+        .json({ code: error.code, message: error.message, ...offer });
       return;
     }
     if (error?.type === "entity.too.large") {
