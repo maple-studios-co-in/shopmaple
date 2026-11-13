@@ -47,7 +47,7 @@ test("the secret is optional, must be long, and needs the store's merchant scope
 });
 
 test("an order's events become the stage the buyer sees, with when each was first reached", () => {
-  assert.deepEqual(orderProgress([]), { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, refund: null });
+  assert.deepEqual(orderProgress([]), { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, refund: null });
   const made = orderProgress([status("in_production", "2026-11-14T05:00:00.000Z"), status("ready", "2026-11-20T05:00:00.000Z")]);
   assert.equal(made.stage, "preparing");
   assert.equal(made.preparingAt?.toISOString(), "2026-11-14T05:00:00.000Z", "in production and ready are both preparing; the first counts");

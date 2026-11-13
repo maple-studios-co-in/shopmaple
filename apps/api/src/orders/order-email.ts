@@ -18,6 +18,12 @@ import { variantPhoto } from "../variant-photo.js";
 export type OrderEmailKind = "confirmed" | "received";
 /** Photo URLs by the snapshot item's (Keeri) variant id; an item without one gets a plain tile. */
 export type OrderPhotos = ReadonlyMap<string, string>;
+/** More of a piece than its one photo (owner, 14 Nov 2026): up to three more photos of the variant bought, photographs
+ * before drawings, and its size where Keeri has it ("W 72 × D 78 × H 81 cm"). By the snapshot item's variant id. */
+export type PieceDetail = { photos: string[]; dimensions: string | null };
+export type OrderPieceDetails = ReadonlyMap<string, PieceDetail>;
+/** An order with more pieces than this keeps one photo each, so the email stays under Gmail's clipping size. */
+const galleryPieceLimit = 6;
 export type OrderEmailInput = {
   /** `confirmed`: Keeri accepted the order. `received`: paid, and the team is confirming it by hand. */
   kind: OrderEmailKind;
@@ -32,6 +38,10 @@ export type OrderEmailInput = {
    * which works on any device. Otherwise, or for an order without an MF number, it opens the order status page, which
    * finds the order only in the browser that paid. */
   accountLinks?: boolean;
+  /** The order's private pages (paths; ORDER_LINK_SECRET): "View your order" opens it without an account, on any device,
+   * and "Track your order" opens its tracking. They come before `accountLinks`. */
+  privateLinks?: { view: string; tracking: string } | null;
+  details?: OrderPieceDetails;
 };
 export type OrderEmail = { subject: string; html: string; text: string };
 
@@ -169,6 +179,62 @@ export async function findOrderPhotos(
   return photos;
 }
 
+const measure = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null);
+const centimetres = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, ""));
+/** A piece's size in words: Keeri's measured width, depth and height ("W 72 × D 78 × H 81 cm"), the variant's own over
+ * the design's; else the dimensions Keeri wrote out, on one line and kept short; else null. */
+export function pieceDimensions(variantPage: unknown, productPage: unknown, sourceDetails: unknown): string | null {
+  const specsOf = (page: unknown) => (page && typeof page === "object" && "specs" in page && page.specs && typeof page.specs === "object" ? page.specs as Record<string, unknown> : {});
+  const own = specsOf(variantPage), design = specsOf(productPage);
+  const parts = ([["W", "widthCm"], ["D", "depthCm"], ["H", "heightCm"]] as const).flatMap(([letter, key]) => {
+    const value = measure(own[key]) ?? measure(design[key]);
+    return value === null ? [] : [`${letter} ${centimetres(value)}`];
+  });
+  if (parts.length) return `${parts.join(" × ")} cm`;
+  const written = [variantPage && typeof variantPage === "object" && "copy" in variantPage ? (variantPage.copy as Record<string, unknown> | null)?.dimensions : null,
+    sourceDetails && typeof sourceDetails === "object" ? (sourceDetails as Record<string, unknown>).dimensions : null]
+    .find((text): text is string => typeof text === "string" && text.trim().length > 0);
+  if (!written) return null;
+  const line = written.replace(/\s+/g, " ").trim();
+  return line.length > 120 ? `${line.slice(0, 119).trimEnd()}…` : line;
+}
+
+/**
+ * Beyond each piece's photo: up to three more photos of the variant bought (its own, else its design's, in the order the
+ * product page shows them, photographs before drawings) and its size. Found as findOrderPhotos finds the photo.
+ */
+export async function findOrderPieceDetails(
+  db: PrismaClient,
+  attempt: Pick<CheckoutAttempt, "catalogueBindings">,
+  quote: QuoteSnapshot,
+): Promise<Map<string, PieceDetail>> {
+  const bindings = frozenBindings.safeParse(attempt.catalogueBindings);
+  const local = new Map<string, string>();
+  for (const item of quote.items) {
+    const bound = bindings.success ? bindings.data.items.find((binding) => binding.sourceVariantId === item.variantId) : undefined;
+    if (bound) local.set(item.variantId, bound.localVariantId);
+  }
+  if (!local.size) return new Map();
+  const variants = await db.variant.findMany({
+    where: { id: { in: [...new Set(local.values())] } },
+    select: { id: true, images: true, productPage: true, product: { select: { published: true, images: true, productPage: true, sourceDetails: true } } },
+  });
+  const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  const details = new Map<string, PieceDetail>();
+  for (const [sourceVariantId, variantId] of local) {
+    const variant = byId.get(variantId);
+    if (!variant) continue;
+    const lead = variantPhoto(variant);
+    const own = variant.images.filter((url) => variant.product.images.includes(url));
+    const pool = (own.length > 1 ? own : variant.product.images).filter((url) => url.startsWith("https://") && url !== lead);
+    details.set(sourceVariantId, {
+      photos: variant.product.published ? pool.slice(0, 3) : [],
+      dimensions: pieceDimensions(variant.productPage, variant.product.productPage, variant.product.sourceDetails),
+    });
+  }
+  return details;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // HTML parts
 // ---------------------------------------------------------------------------------------------------------------------
@@ -218,13 +284,28 @@ function photoCell(raw: string | undefined, title: string) {
   return `<td class="m-photo" width="120" height="150" valign="top" bgcolor="${sand}" style="${box}font-size:0;line-height:0;">&nbsp;</td>`;
 }
 
-function pieceRow(item: QuoteSnapshot["items"][number], photo: string | undefined) {
+/** "Quantity 1", or "Quantity 2 · ₹24,900 each" when there is more than one, at the price before any discount. */
+function quantityWords(item: QuoteSnapshot["items"][number]) {
+  // The line is printed before any code's discount, so "each" is too.
+  const each = Math.round((item.lineTotalPaise + (item.discountPaise ?? 0)) / item.quantity);
+  return item.quantity > 1 ? `Quantity ${item.quantity} · ${inr(each)} each` : `Quantity ${item.quantity}`;
+}
+/** Up to three more photos of the piece, small, in a row under it. */
+function galleryRow(photos: readonly string[], title: string) {
+  const cells = photos.flatMap((raw) => {
+    const url = webUrl(raw);
+    return url ? [`<td width="72" height="90" bgcolor="${sand}" role="img" aria-label="${esc(title)}" style="width:72px;height:90px;background-color:${sand};background-image:url(${esc(cssUrl(url.href))});background-size:cover;background-position:center center;background-repeat:no-repeat;font-size:0;line-height:0;">&nbsp;</td>`] : [];
+  }).slice(0, 3);
+  if (!cells.length) return "";
+  return `<table ${table} style="margin-top:12px;"><tr>${cells.join(`<td width="8" style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`)}</tr></table>`;
+}
+function pieceRow(item: QuoteSnapshot["items"][number], photo: string | undefined, detail: PieceDetail | undefined, gallery: boolean) {
   return `<table ${table} width="100%" style="width:100%;"><tr>${photoCell(photo, item.title)}<td class="m-gap" valign="top" style="padding:0 0 0 24px;font-family:${redHat};">
 <p style="margin:0;${type(null, 11, 15, muted)}">YOUR PIECE</p>
 <p class="m-title" style="margin:12px 0 0 0;${type(dmSans, 23, 32, ink, 500)}word-break:break-word;">${esc(item.title)}</p>
-<p style="margin:12px 0 0 0;${type(null, 14, 20, muted)}">${esc(item.variantTitle)}<br>Quantity ${item.quantity}</p>
+<p style="margin:12px 0 0 0;${type(null, 14, 20, muted)}">${esc(item.variantTitle)}<br>${esc(quantityWords(item))}${detail?.dimensions ? `<br>${esc(detail.dimensions)}` : ""}</p>
 <p class="m-price" style="margin:12px 0 0 0;${type(dmSans, 19, 27, ink, 500)}white-space:nowrap;">${esc(inr(item.lineTotalPaise + (item.discountPaise ?? 0)))}</p>
-</td></tr></table>`;
+${gallery && detail ? galleryRow(detail.photos, item.title) : ""}</td></tr></table>`;
 }
 
 function amountRow(name: string, amount: string, first: boolean) {
@@ -273,21 +354,26 @@ function receiptLines(quote: QuoteSnapshot): Array<[string, string]> {
 const taxNote = (quote: QuoteSnapshot) => (quote.gstMode === "included" ? "Inclusive of applicable taxes" : "GST is added as shown");
 
 /** The pieces, for the plain-text part. */
-function pieceLines(quote: QuoteSnapshot) {
+function pieceLines(quote: QuoteSnapshot, details?: OrderPieceDetails) {
   return [
     quote.items.length === 1 ? "Your piece" : "Your pieces",
-    ...quote.items.flatMap((item, index) => [
-      ...(index ? [""] : []),
-      item.title,
-      item.variantTitle,
-      `Quantity ${item.quantity} · ${inr(item.lineTotalPaise + (item.discountPaise ?? 0))}`,
-    ]),
+    ...quote.items.flatMap((item, index) => {
+      const dimensions = details?.get(item.variantId)?.dimensions;
+      return [
+        ...(index ? [""] : []),
+        item.title,
+        item.variantTitle,
+        `${quantityWords(item)} · ${inr(item.lineTotalPaise + (item.discountPaise ?? 0))}`,
+        ...(dimensions ? [`Dimensions: ${dimensions}`] : []),
+      ];
+    }),
   ];
 }
 /** The button, the line of help, the sign-off and the footer, for the plain-text part. */
-function closingLines(action: { href: string; words: string }, help: string, links: StoreLinks) {
+function closingLines(action: { href: string; words: string }, help: string, links: StoreLinks, track?: { href: string; words: string } | null) {
   return [
     `${action.words}: ${action.href}`,
+    ...(track ? [`${track.words}: ${track.href}`] : []),
     "",
     help,
     "",
@@ -331,12 +417,16 @@ type Layout = {
   /** The tinted block: its colour, its heading and its two columns (HTML), side by side and one under the other on phones. */
   next: { background: string; heading: string; left: string; right: string };
   action: { href: string; words: string };
+  /** A quieter second link under the button ("Track your order"); absent without private links. */
+  track?: { href: string; words: string } | null;
   help: string;
   links: StoreLinks;
+  details?: OrderPieceDetails;
 };
 
-function layout({ subject, preheader, chip, heading, intro, reference, day, quote, photos, amounts, band, note, next, action, help, links }: Layout) {
-  const pieces = quote.items.map((item) => `<tr><td style="padding-top:20px;">${pieceRow(item, photos.get(item.variantId))}</td></tr>`).join("\n");
+function layout({ subject, preheader, chip, heading, intro, reference, day, quote, photos, amounts, band, note, next, action, track, help, links, details }: Layout) {
+  const gallery = quote.items.length <= galleryPieceLimit;
+  const pieces = quote.items.map((item) => `<tr><td style="padding-top:20px;">${pieceRow(item, photos.get(item.variantId), details?.get(item.variantId), gallery)}</td></tr>`).join("\n");
   const chipCell = chip.centred
     ? `<td align="center" bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}text-align:center;white-space:nowrap;">`
     : `<td bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}">`;
@@ -406,7 +496,7 @@ ${next.right}
 <tr><td class="m-block" bgcolor="${white}" style="padding:40px;background-color:${white};">
 <table ${table} width="100%" style="width:100%;">
 <tr><td>${button(esc(action.href), esc(action.words))}</td></tr>
-<tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 14, 20, muted)}">${esc(help)}</p></td></tr>
+${track ? `<tr><td align="center" style="padding-top:14px;text-align:center;"><a href="${esc(track.href)}" target="_blank" style="${type(redHat, 15, 21, "#80241c")}text-decoration:underline;">${esc(track.words)}</a></td></tr>\n` : ""}<tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 14, 20, muted)}">${esc(help)}</p></td></tr>
 <tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 15, 21, ink)}">With care,<br>The Maple team</p></td></tr>
 </table>
 </td></tr>
@@ -428,11 +518,14 @@ ${next.right}
 // The order emails
 // ---------------------------------------------------------------------------------------------------------------------
 
-export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, origin, accountLinks = false }: OrderEmailInput): OrderEmail {
+export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, origin, accountLinks = false, privateLinks = null, details }: OrderEmailInput): OrderEmail {
   const links = storeLinks(origin);
-  const orderLink = accountLinks && orderNumber && /^MF-[1-9][0-9]{0,9}$/.test(orderNumber)
-    ? `${links.base}/account/orders/${orderNumber}`
-    : `${links.base}/orders/${encodeURIComponent(attempt.id)}`;
+  const orderLink = privateLinks
+    ? `${links.base}${privateLinks.view}`
+    : accountLinks && orderNumber && /^MF-[1-9][0-9]{0,9}$/.test(orderNumber)
+      ? `${links.base}/account/orders/${orderNumber}`
+      : `${links.base}/orders/${encodeURIComponent(attempt.id)}`;
+  const track = privateLinks ? { href: `${links.base}${privateLinks.tracking}`, words: "Track your order" } : null;
   const { name, firstName } = buyer(quote);
   const total = inr(attempt.amountPaise);
   const confirmed = kind === "confirmed";
@@ -500,8 +593,10 @@ export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, or
     note: paidNote,
     next: { background: sand, heading: nextHeading, left: next, right: deliverTo },
     action,
+    track,
     help,
     links,
+    details,
   });
 
   const text = [
@@ -512,7 +607,7 @@ export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, or
     orderNumber ? `Order number: ${orderNumber}` : `Checkout reference: ${attempt.id}`,
     ...(placed ? [`Order date: ${placed}`] : []),
     "",
-    ...pieceLines(quote),
+    ...pieceLines(quote, details),
     "",
     ...amounts.map(([item, amount]) => `${item}: ${amount}`),
     `Total paid: ${total}`,
@@ -525,7 +620,7 @@ export function renderOrderEmail({ kind, attempt, quote, orderNumber, photos, or
     `${addressLabel}:`,
     ...addressLines,
     "",
-    ...closingLines(action, help, links),
+    ...closingLines(action, help, links, track),
   ].join("\n");
 
   return { subject, html, text };

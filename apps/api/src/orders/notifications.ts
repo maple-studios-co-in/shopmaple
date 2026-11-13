@@ -7,7 +7,8 @@ import {
   type EnquiryDeliveryConfig,
   type EnquiryDeliveryOutcome,
 } from "../enquiry-delivery-provider.js";
-import { findOrderPhotos, renderOrderEmail, renderPaymentEmail, type OrderPhotos } from "./order-email.js";
+import { findOrderPhotos, findOrderPieceDetails, renderOrderEmail, renderPaymentEmail, type OrderPhotos, type OrderPieceDetails, type PieceDetail } from "./order-email.js";
+import { orderLinkPaths, type OrderLinkConfig } from "./order-access.js";
 
 /**
  * Order emails. A sweep decides which emails an attempt now deserves and records
@@ -52,6 +53,8 @@ interface Options {
   email: EnquiryDeliveryConfig;
   /** Customer accounts are on: the buyer's email links the order in their account (see order-email.ts). */
   accountLinks?: boolean;
+  /** ORDER_LINK_SECRET: the buyer's email links the order's private pages, which need no account. */
+  orderLinks?: OrderLinkConfig | null;
   fetch?: typeof fetch;
   now?: () => Date;
   leaseMs?: number;
@@ -222,11 +225,15 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
           return new Map<string, string>();
         })
       : new Map();
-    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos, payment });
+    // More of each piece for the order emails; a failed lookup sends them without, never not at all.
+    const details: OrderPieceDetails = attempt && quote && (row.kind === "customer_confirmed" || row.kind === "customer_received")
+      ? await findOrderPieceDetails(db, attempt, quote).catch(() => new Map<string, PieceDetail>())
+      : new Map();
+    return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos, payment, details });
   }
   function compose(
     kind: NotificationKind,
-    { attempt, quote, inbox, reference, staffOutcome, photos, payment }: {
+    { attempt, quote, inbox, reference, staffOutcome, photos, payment, details }: {
       attempt: CheckoutAttempt | null;
       quote: QuoteSnapshot | null;
       inbox: { id: string; paymentId: string | null; providerOrderId: string | null; failureCode: string | null; workerState: string } | null;
@@ -234,6 +241,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       staffOutcome: string | null;
       photos: OrderPhotos;
       payment: { paymentId: string | null; receivedAt: Date } | null;
+      details?: OrderPieceDetails;
     },
   ): Message | null {
     // With a code, each line reads at its price before the discount and the discount follows as
@@ -262,15 +270,16 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     // Maple's own number ("MF-…") once the capture assigned it. Keeri's SO number is internal: customers see it only
     // on an order confirmed before numbering existed.
     const orderNumber = attempt?.orderNumber ? formatOrderNumber(attempt.orderNumber) : null;
+    const privateLinks = options.orderLinks && attempt?.orderNumber ? orderLinkPaths(options.orderLinks.secret, attempt.orderNumber) : null;
     if (kind === "customer_confirmed" && attempt && quote && reference)
       return {
         to: quote.customer.email,
-        ...renderOrderEmail({ kind: "confirmed", attempt, quote, orderNumber: orderNumber ?? reference, photos, origin: email.adminOrigin, accountLinks: options.accountLinks }),
+        ...renderOrderEmail({ kind: "confirmed", attempt, quote, orderNumber: orderNumber ?? reference, photos, origin: email.adminOrigin, accountLinks: options.accountLinks, privateLinks, details }),
       };
     if (kind === "customer_received" && attempt && quote)
       return {
         to: quote.customer.email,
-        ...renderOrderEmail({ kind: "received", attempt, quote, orderNumber, photos, origin: email.adminOrigin, accountLinks: options.accountLinks }),
+        ...renderOrderEmail({ kind: "received", attempt, quote, orderNumber, photos, origin: email.adminOrigin, accountLinks: options.accountLinks, privateLinks, details }),
       };
     if (isPaymentKind(kind) && attempt && quote && payment)
       return {

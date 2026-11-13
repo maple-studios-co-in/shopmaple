@@ -98,6 +98,8 @@ export type OrderProgress = {
   dispatchedAt: Date | null;
   deliveredAt: Date | null;
   cancelledAt: Date | null;
+  /** When staff last declined the buyer's cancellation request in Keeri; null when never. */
+  cancellationDeclinedAt: Date | null;
   refund: OrderRefund | null;
 };
 
@@ -116,7 +118,7 @@ type StoredEvent = { type: string; payload: unknown; occurredAt: Date };
  * without a production step was still prepared).
  */
 export function orderProgress(rows: readonly StoredEvent[]): OrderProgress {
-  const progress: OrderProgress = { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, refund: null };
+  const progress: OrderProgress = { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, refund: null };
   const reach = (stage: OrderStage, on: Date) => {
     if (stage === "cancelled") { progress.cancelledAt ??= on; return; }
     if (stage === "preparing") progress.preparingAt ??= on;
@@ -135,7 +137,8 @@ export function orderProgress(rows: readonly StoredEvent[]): OrderProgress {
       const refund = payload.refund as { amountPaise?: unknown } | undefined;
       if (refund && typeof refund.amountPaise === "number" && progress.refund?.status !== "refunded")
         progress.refund = { status: "pending", amountPaise: refund.amountPaise, refundedAt: null };
-    } else if (row.type === "order.refunded" && typeof payload.amountPaise === "number")
+    } else if (row.type === "order.cancellation_declined") progress.cancellationDeclinedAt = row.occurredAt;
+    else if (row.type === "order.refunded" && typeof payload.amountPaise === "number")
       progress.refund = { status: "refunded", amountPaise: payload.amountPaise, refundedAt: row.occurredAt };
   }
   if (progress.cancelledAt) progress.stage = "cancelled";
