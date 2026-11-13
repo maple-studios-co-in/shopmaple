@@ -107,6 +107,17 @@ function consistentPromotion(s: QuoteSnapshot) {
   }
   return s.promotion.discountPaise === sum;
 }
+/** Keeri's free-delivery record, which the store checks rather than trusts: the flagged items are this
+ * quote's own, each named once; `free` means every item is flagged and nothing is charged for delivery;
+ * a carrier price may leave some items out, never all of them; and no other delivery line names any. */
+function consistentFreeDelivery(s: QuoteSnapshot) {
+  const d = s.delivery, ids = d?.freeDeliveryVariantIds;
+  if (!d || !ids) return d?.source !== "free";
+  const quoted = new Set(s.items.map((i) => i.variantId));
+  if (new Set(ids).size !== ids.length || ids.some((id) => !quoted.has(id))) return false;
+  if (d.source === "free") return ids.length === s.items.length && s.shippingPaise === 0;
+  return d.source === "carrier" && ids.length < s.items.length;
+}
 /** Keeri refused a hold for its promo code: a definite no, so nothing is held for the attempt. */
 const promoRefusal = (error: unknown) =>
   error instanceof KeeriCommerceError && (promoRefusalCodes as readonly string[]).includes(error.code) ? error.code : null;
@@ -411,7 +422,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
           s.shippingPaise +
           (s.gstMode === "excluded" ? s.taxPaise : 0) ||
       s.items.some((i) => !consistentFulfilment(i.fulfilment)) ||
-      !consistentPromotion(s)
+      !consistentPromotion(s) ||
+      !consistentFreeDelivery(s)
     )
       throw new OrderFlowError("QUOTE_INVALID");
     // The buyer pays the price the store showed: a quoted unit price that moved
@@ -423,9 +435,13 @@ export function createOrderService(db: PrismaClient, options: Options) {
     }))
       throw new OrderFlowError("PRICE_CHANGED");
     // The owner's rule: only a delivery charge Shiprocket priced may be paid. A
-    // policy amount (fallback or otherwise) is refused, never charged.
+    // policy amount (fallback or otherwise) is refused, never charged. The one
+    // exception is the owner's own and Keeri states it outright: `free`, the
+    // free-delivery flag on every item, which charges nothing and still names
+    // the courier that confirmed it can reach the pincode. Nothing else that
+    // arrives unpriced is let through.
     const d = s.delivery;
-    if (d?.source !== "carrier" || !d.carrier || d.carrierPriced !== true || d.fallbackReason !== null)
+    if ((d?.source !== "carrier" && d?.source !== "free") || !d.carrier || d.carrierPriced !== true || d.fallbackReason !== null)
       throw new OrderFlowError("DELIVERY_UNPRICED");
     for (let retry = 0; ; retry++) {
       try {

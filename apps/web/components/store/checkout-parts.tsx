@@ -69,7 +69,7 @@ export function QuoteTotals({ quote, totalPaise, methodLabel }: { quote: Quote; 
             </span>
           )}
         </dt>
-        <dd className="m-0 tabular-nums">{money(quote.shippingPaise)}</dd>
+        <dd className="m-0 tabular-nums">{quote.shippingPaise ? money(quote.shippingPaise) : "Free"}</dd>
       </div>
       {quote.gstMode === "excluded" ? (
         <div className={row}>

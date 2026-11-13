@@ -248,8 +248,10 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
         ]
       : [];
     const courier = quote?.delivery?.carrier;
+    // Free delivery is the owner's rule, not a missed charge: say so, and that the courier is still booked.
+    const charge = quote?.delivery?.source === "free" ? "free (free-delivery products), ships" : quote ? rupees(quote.shippingPaise) : "";
     const deliveryLine = courier
-      ? `Delivery: ${rupees(quote!.shippingPaise)} by ${courier.courierName}${courier.estimatedDays ? `, about ${courier.estimatedDays} days in transit` : ""}`
+      ? `Delivery: ${charge} by ${courier.courierName}${courier.estimatedDays ? `, about ${courier.estimatedDays} days in transit` : ""}`
       : quote
         ? `Delivery: ${rupees(quote.shippingPaise)}`
         : "";

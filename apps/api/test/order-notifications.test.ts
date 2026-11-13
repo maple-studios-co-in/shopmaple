@@ -120,6 +120,15 @@ test("staff: a new order alert stays plain text, word for word", async () => {
   ].join("\n"));
 });
 
+test("staff: a free-delivery order's alert says the delivery was free and which courier still ships it", async () => {
+  const snapshot = captured.snapshot as any;
+  const free = { ...captured, amountPaise: snapshot.totalPaise - snapshot.shippingPaise, snapshot: { ...snapshot, shippingPaise: 0, totalPaise: snapshot.totalPaise - snapshot.shippingPaise,
+    delivery: { ...snapshot.delivery, source: "free", freeDeliveryVariantIds: snapshot.items.map((i: any) => i.variantId) } } };
+  const payload = await sendOne("staff_order", attemptId, { attempts: [free], outbox: { state: "delivered", externalOrderId: "SO-1001", failureCode: null } });
+  assert.match(String(payload.text), /^Delivery: free \(free-delivery products\), ships by Delhivery Surface, about 14 days in transit$/m);
+  assert.doesNotMatch(String(payload.text), /Delivery: Rs\./);
+});
+
 test("staff: paid-but-unplaced and leftover-hold alerts stay plain text, word for word", async () => {
   const lapsed = { ...captured, state: "paid_hold_lapsed", failureCode: "PAID_HOLD_LAPSED" };
   const paid = await sendOne("staff_payment", attemptId, { attempts: [lapsed] });

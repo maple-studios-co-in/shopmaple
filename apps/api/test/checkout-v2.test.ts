@@ -579,6 +579,96 @@ test("only a Shiprocket-priced delivery line can be paid; a policy fallback or a
   assert.doesNotMatch(JSON.stringify(response.body), /carrier_unavailable|policy/);
 });
 
+// Keeri's free-delivery rule (docs/contracts/shopmaple-quote-v2-free-delivery.json): every item flagged, the
+// courier that confirmed the pincode named, nothing charged for delivery.
+const freeDelivery = { ...shiprocketDelivery, source: "free", freeDeliveryVariantIds: ["keeri:maple:chair-v"] };
+function freeQuotation(r: any, delivery: any = freeDelivery, charged = 0) {
+  const q = quotation(r);
+  Object.assign(q.snapshot, { shippingPaise: charged, totalPaise: 23600 + charged, delivery });
+  return resigned(q);
+}
+const checkoutOver = (flow: ReturnType<typeof service>, key: string) =>
+  request(createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, flow))
+    .post("/api/checkout").set("Origin", "http://localhost:3000").set("Cookie", `maple_cart=${token}`).set("Idempotency-Key", key).send(input);
+
+test("free delivery that Keeri states outright is the one delivery line that can be paid without a charge", async () => {
+  const frozen = await freeze(service(async (r) => freeQuotation(r)));
+  assert.equal(frozen.amountPaise, 23600);
+  assert.equal((frozen.snapshot as any).shippingPaise, 0);
+  assert.deepEqual((frozen.snapshot as any).delivery, freeDelivery);
+  await db.checkoutAttempt.deleteMany();
+  const response = await checkoutOver(service(async (r) => freeQuotation(r)), "http-free-delivery");
+  assert.equal(response.status, 200);
+  assert.equal(response.body.quote.shippingPaise, 0);
+  assert.equal(response.body.quote.totalPaise, 23600);
+  // The buyer is told it is free delivery, and still which courier brings it.
+  assert.deepEqual(response.body.quote.delivery, { courierName: "Delhivery Surface", estimatedDays: 6, freeDelivery: { all: true, titles: ["Test Chair"] } });
+});
+
+test("every other delivery line that arrives without a carrier's price is still refused, free-delivery wording or not", async () => {
+  const policyZero = { source: "policy", carrierPriced: false, fallbackReason: null, carrier: null };
+  for (const delivery of [
+    { ...freeDelivery, carrier: null },
+    { ...freeDelivery, carrierPriced: false },
+    { ...freeDelivery, fallbackReason: "carrier_unserviceable" },
+    // A zero charge is not free delivery unless Keeri says it is the rule.
+    policyZero,
+    { ...policyZero, carrierPriced: true, fallbackReason: "carrier_unavailable" },
+  ]) {
+    await assert.rejects(freeze(service(async (r) => freeQuotation(r, delivery))), { code: "DELIVERY_UNPRICED" }, JSON.stringify(delivery));
+  }
+  const contradictions: Array<[any, number]> = [
+    // Free, yet something was charged; free with no item named, another quote's item, or one named twice.
+    [freeDelivery, 1000],
+    [{ ...shiprocketDelivery, source: "free" }, 0],
+    [{ ...freeDelivery, freeDeliveryVariantIds: ["keeri:maple:other-v"] }, 0],
+    [{ ...freeDelivery, freeDeliveryVariantIds: ["keeri:maple:chair-v", "keeri:maple:chair-v"] }, 0],
+    // A carrier price cannot leave every item out, and a fallback waives nothing.
+    [{ ...shiprocketDelivery, freeDeliveryVariantIds: ["keeri:maple:chair-v"] }, 1000],
+    [{ ...policyZero, carrierPriced: true, fallbackReason: "carrier_unavailable", freeDeliveryVariantIds: ["keeri:maple:chair-v"] }, 1000],
+  ];
+  for (const [delivery, charged] of contradictions)
+    await assert.rejects(freeze(service(async (r) => freeQuotation(r, delivery, charged))), { code: "QUOTE_INVALID" }, JSON.stringify(delivery));
+  // A source the store has never heard of does not parse at all.
+  await assert.rejects(freeze(service(async (r) => freeQuotation(r, { ...freeDelivery, source: "waived" }))));
+  assert.equal(await db.checkoutAttempt.count(), 0);
+});
+
+test("a mixed cart pays the courier for the pieces that are not free delivery, and the buyer is told which piece ships free", async () => {
+  await db.product.create({
+    data: {
+      id: "keeri:maple:stool", handle: "v2-fixture-stool", title: "Stale stool", description: "", category: "chairs", images: [], published: true,
+      source: "keeri:maple", sourceUpdatedAt: now, identities: { create: { source: "keeri:maple", externalId: "keeri:maple:stool" } },
+      variants: { create: { id: "keeri:maple:stool-v", identities: { create: { source: "keeri:maple", externalId: "keeri:maple:stool-v" } }, title: "Oak", pricePaise: 5000, available: true, published: true, stockPolicy: "stocked" } },
+    },
+  });
+  try {
+    await db.cartItem.create({ data: { cartId: "v2-cart", variantId: "keeri:maple:stool-v", quantity: 1 } });
+    const stool = { ...quotation({}).snapshot.items[0]!, variantId: "keeri:maple:stool-v", productId: "keeri:maple:stool", title: "Test Stool", variantTitle: "Oak", sku: "STOOL", quantity: 1, unitPricePaise: 5000, lineTotalPaise: 5000 };
+    const mixed = (delivery: any) => async (r: any) => {
+      const q = quotation(r);
+      const lines = [q.snapshot.items[0]!, stool];
+      // The chair ships free; the courier's charge (Rs 10) is for the stool alone. Lines follow the request's order.
+      Object.assign(q.snapshot, { items: r.items.map((i: any) => lines.find((l) => l.variantId === i.variantId)), subtotalPaise: 25000, shippingPaise: 1000, taxPaise: 4680, totalPaise: 30680, delivery });
+      return resigned(q);
+    };
+    const partFree = { ...shiprocketDelivery, freeDeliveryVariantIds: ["keeri:maple:chair-v"] };
+    const response = await checkoutOver(service(mixed(partFree)), "http-mixed-free-delivery");
+    assert.equal(response.status, 200);
+    assert.equal(response.body.quote.shippingPaise, 1000);
+    assert.equal(response.body.quote.totalPaise, 30680);
+    assert.deepEqual(response.body.quote.delivery, { courierName: "Delhivery Surface", estimatedDays: 6, freeDelivery: { all: false, titles: ["Test Chair"] } });
+    await db.checkoutAttempt.deleteMany();
+    // "Free" needs every piece flagged: one flagged piece cannot make the whole order free.
+    await assert.rejects(freeze(service(mixed(freeDelivery))), { code: "QUOTE_INVALID" });
+    await assert.rejects(freeze(service(mixed({ ...partFree, freeDeliveryVariantIds: ["keeri:maple:chair-v", "keeri:maple:stool-v"] }))), { code: "QUOTE_INVALID" });
+  } finally {
+    await db.checkoutAttempt.deleteMany();
+    await db.cartItem.deleteMany({ where: { variantId: "keeri:maple:stool-v" } });
+    await db.product.deleteMany({ where: { handle: "v2-fixture-stool" } });
+  }
+});
+
 test("a made-to-order piece Keeri sells is quoted with its lead time and the chosen courier is shown for review", async () => {
   await db.variant.update({ where: { id: "keeri:maple:chair-v" }, data: { stockPolicy: "made_to_order" } });
   const flow = service(async (r) => {

@@ -6,7 +6,7 @@ Never refund or re-raise an order from the email alone. Confirm the payment in t
 
 ## How a normal order flows
 
-1. The buyer submits contact and address details. Keeri prices the goods, GST and the Shiprocket delivery charge and returns a quote valid for a few minutes. A quote whose delivery Shiprocket could not price is refused (`DELIVERY_UNPRICED`) and the buyer is pointed to an enquiry; no flat rate is ever charged.
+1. The buyer submits contact and address details. Keeri prices the goods, GST and the Shiprocket delivery charge and returns a quote valid for a few minutes. A quote whose delivery Shiprocket could not price is refused (`DELIVERY_UNPRICED`) and the buyer is pointed to an enquiry; no flat rate is ever charged. Products that staff flagged free delivery in Keeri are the one case with no delivery charge: Shiprocket must still confirm it can reach the pincode, and the parcel is still booked with the courier (`docs/checkout-http.md`, "Free delivery").
 2. "Pay" asks Keeri to hold the stock for **15 minutes**, then creates the Razorpay order. The Razorpay window closes itself **2 minutes before** the hold lapses (`payBy`).
 3. Razorpay confirms the payment two ways: the buyer's browser posts the signed callback, and Razorpay sends the `payment.captured` / `order.paid` webhook. Either one queues a check; the worker then fetches the payment from Razorpay and only a `captured` payment of the exact amount counts.
 4. The worker marks the attempt `captured`, empties the buyer's cart and hands the order to Keeri (retried with backoff for about ten minutes, inside the hold). Keeri's reply carries the sales-order reference.

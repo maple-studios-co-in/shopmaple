@@ -1,0 +1,234 @@
+{
+  "free": {
+    "request": {
+      "version": 2,
+      "items": [
+        {
+          "variantId": "keeri:maple:variant",
+          "quantity": 2
+        }
+      ],
+      "customer": {
+        "name": "Example Buyer",
+        "email": "buyer@example.test",
+        "phone": "+919876543210"
+      },
+      "billingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "shippingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "deliveryMethodId": "courier"
+    },
+    "response": {
+      "version": 2,
+      "quoteId": "example_quote_free",
+      "expiresAt": "2026-11-01T12:15:00.000Z",
+      "snapshotSha256": "19afa6aef05d980c025e547046f047b5fa7bace7fa57d6f195b2a99612d76697",
+      "snapshot": {
+        "version": 2,
+        "currency": "INR",
+        "policyId": "reviewed_test_v1",
+        "quoteId": "example_quote_free",
+        "expiresAt": "2026-11-01T12:15:00.000Z",
+        "customer": {
+          "name": "Example Buyer",
+          "email": "buyer@example.test",
+          "phone": "+919876543210"
+        },
+        "billingAddress": {
+          "line1": "1 Example Road",
+          "line2": "",
+          "city": "Mumbai",
+          "stateCode": "27",
+          "pincode": "400001",
+          "country": "IN"
+        },
+        "shippingAddress": {
+          "line1": "1 Example Road",
+          "line2": "",
+          "city": "Mumbai",
+          "stateCode": "27",
+          "pincode": "400001",
+          "country": "IN"
+        },
+        "deliveryMethodId": "courier",
+        "gstMode": "excluded",
+        "items": [
+          {
+            "variantId": "keeri:maple:variant",
+            "productId": "keeri:maple:model",
+            "title": "Example Chair",
+            "variantTitle": "Oak",
+            "sku": "EXAMPLE_CHAIR",
+            "quantity": 2,
+            "unitPricePaise": 100000,
+            "lineTotalPaise": 200000,
+            "hsn": "9403",
+            "taxRateBps": 1800,
+            "fulfilment": {
+              "kind": "stocked",
+              "leadTimeDays": null
+            }
+          }
+        ],
+        "subtotalPaise": 200000,
+        "shippingPaise": 0,
+        "taxPaise": 36000,
+        "totalPaise": 236000,
+        "delivery": {
+          "source": "free",
+          "carrierPriced": true,
+          "fallbackReason": null,
+          "carrier": {
+            "provider": "shiprocket",
+            "courierId": 142,
+            "courierName": "Example Surface",
+            "estimatedDays": 4,
+            "chargeWeightGrams": 24000
+          },
+          "freeDeliveryVariantIds": [
+            "keeri:maple:variant"
+          ]
+        }
+      }
+    }
+  },
+  "mixed": {
+    "request": {
+      "version": 2,
+      "items": [
+        {
+          "variantId": "keeri:maple:variant",
+          "quantity": 2
+        },
+        {
+          "variantId": "keeri:maple:stool",
+          "quantity": 1
+        }
+      ],
+      "customer": {
+        "name": "Example Buyer",
+        "email": "buyer@example.test",
+        "phone": "+919876543210"
+      },
+      "billingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "shippingAddress": {
+        "line1": "1 Example Road",
+        "line2": "",
+        "city": "Mumbai",
+        "stateCode": "27",
+        "pincode": "400001",
+        "country": "IN"
+      },
+      "deliveryMethodId": "courier"
+    },
+    "response": {
+      "version": 2,
+      "quoteId": "example_quote_mixed",
+      "expiresAt": "2026-11-01T12:15:00.000Z",
+      "snapshotSha256": "445fc15a526e71a6910df6d307646d8e7bb3d670bfa1306be94b1a851e215fbf",
+      "snapshot": {
+        "version": 2,
+        "currency": "INR",
+        "policyId": "reviewed_test_v1",
+        "quoteId": "example_quote_mixed",
+        "expiresAt": "2026-11-01T12:15:00.000Z",
+        "customer": {
+          "name": "Example Buyer",
+          "email": "buyer@example.test",
+          "phone": "+919876543210"
+        },
+        "billingAddress": {
+          "line1": "1 Example Road",
+          "line2": "",
+          "city": "Mumbai",
+          "stateCode": "27",
+          "pincode": "400001",
+          "country": "IN"
+        },
+        "shippingAddress": {
+          "line1": "1 Example Road",
+          "line2": "",
+          "city": "Mumbai",
+          "stateCode": "27",
+          "pincode": "400001",
+          "country": "IN"
+        },
+        "deliveryMethodId": "courier",
+        "gstMode": "excluded",
+        "items": [
+          {
+            "variantId": "keeri:maple:variant",
+            "productId": "keeri:maple:model",
+            "title": "Example Chair",
+            "variantTitle": "Oak",
+            "sku": "EXAMPLE_CHAIR",
+            "quantity": 2,
+            "unitPricePaise": 100000,
+            "lineTotalPaise": 200000,
+            "hsn": "9403",
+            "taxRateBps": 1800,
+            "fulfilment": {
+              "kind": "stocked",
+              "leadTimeDays": null
+            }
+          },
+          {
+            "variantId": "keeri:maple:stool",
+            "productId": "keeri:maple:stool_model",
+            "title": "Example Stool",
+            "variantTitle": "Oak",
+            "sku": "EXAMPLE_STOOL",
+            "quantity": 1,
+            "unitPricePaise": 50000,
+            "lineTotalPaise": 50000,
+            "hsn": "9403",
+            "taxRateBps": 1800,
+            "fulfilment": {
+              "kind": "stocked",
+              "leadTimeDays": null
+            }
+          }
+        ],
+        "subtotalPaise": 250000,
+        "shippingPaise": 18000,
+        "taxPaise": 48240,
+        "totalPaise": 316240,
+        "delivery": {
+          "source": "carrier",
+          "carrierPriced": true,
+          "fallbackReason": null,
+          "carrier": {
+            "provider": "shiprocket",
+            "courierId": 142,
+            "courierName": "Example Surface",
+            "estimatedDays": 4,
+            "chargeWeightGrams": 24000
+          },
+          "freeDeliveryVariantIds": [
+            "keeri:maple:variant"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -78,9 +78,10 @@ export const fulfilmentSchema = z
     leadTimeDays: z.number().int().min(1).max(365).nullable(),
   })
   .strict();
+// `free` is Keeri's free-delivery rule, not a fallback: every item is flagged, the courier is named, nothing is charged.
 const deliverySchema = z
   .object({
-    source: z.enum(["policy", "carrier"]),
+    source: z.enum(["policy", "carrier", "free"]),
     carrierPriced: z.boolean(),
     fallbackReason: z
       .enum([
@@ -101,6 +102,8 @@ const deliverySchema = z
       })
       .strict()
       .nullable(),
+    // Only when free delivery changed the charge: the flagged items it leaves out (all of them under `free`).
+    freeDeliveryVariantIds: z.array(identity).min(1).max(50).optional(),
   })
   .strict();
 /** The offer a promo code applied; Keeri adds it, and the per-item discount fields, only when one did. */
