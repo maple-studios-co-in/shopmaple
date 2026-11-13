@@ -88,6 +88,7 @@ export async function syncCatalogueUnion(
             productId: product.id,
             published: true,
             leadTimeDays: variant.leadTimeDays ?? null,
+            freeDelivery: variant.freeDelivery ?? false,
           };
           await tx.variant.upsert({
             where: { id: variant.id },

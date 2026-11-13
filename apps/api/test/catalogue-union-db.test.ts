@@ -363,3 +363,30 @@ test("a sync stores each product's Keeri offer, the product API serves it, and a
   await syncCatalogueUnion(db, k, "maple");
   assert.equal((await request(app).get(`/api/products/${product.handle}`)).body.offer, null, "a lower level clears it too");
 });
+
+test("a sync stores each variant's free-delivery tick, the product and card APIs serve it, and a later export without it clears it", async () => {
+  const k = fixtures();
+  const oak = k.models[0]!.variants[0]!;
+  Object.assign(oak, { fulfilment: { kind: "stocked", leadTimeDays: null }, eligibility: { sellable: true, reasons: [] }, freeDelivery: true });
+  const ash = { ...structuredClone(oak), id: "variant2", sku: "CHAIR-ASH", variantName: "Linen / Ash" };
+  k.models[0]!.variants.push(ash);
+  await syncCatalogueUnion(db, k, "maple");
+  const { handle } = await db.product.findFirstOrThrow({ where: { published: true } });
+  const ticks = async () => Object.fromEntries((await request(app()).get(`/api/products/${handle}`)).body.variants.map((v: { id: string; freeDelivery: boolean }) => [v.id, v.freeDelivery]));
+  const card = async () => (await request(app()).get(`/api/catalogue/cards/${handle}`)).body.product;
+  assert.deepEqual(await ticks(), { "keeri:maple:variant1": true, "keeri:maple:variant2": true });
+  assert.equal((await card()).freeDelivery, true, "every variant a shopper can buy ships free");
+  assert.equal((await request(app()).get(`/api/catalogue/cards?handles=${handle}`)).body.products[0].freeDelivery, true, "the batch of cards too");
+  assert.equal((await request(app()).get("/api/catalogue/collections/chairs")).body.products.find((p: { handle: string }) => p.handle === handle).freeDelivery, true, "listing cards too");
+
+  (ash as any).freeDelivery = false;
+  k.capturedAt = "2026-10-25T11:00:00Z";
+  await syncCatalogueUnion(db, k, "maple");
+  assert.deepEqual(await ticks(), { "keeri:maple:variant1": true, "keeri:maple:variant2": false });
+  assert.equal("freeDelivery" in (await card()), false, "one buyable variant is charged delivery, so the card says nothing");
+
+  for (const variant of k.models[0]!.variants) delete (variant as any).freeDelivery;
+  k.capturedAt = "2026-10-25T12:00:00Z";
+  await syncCatalogueUnion(db, k, "maple");
+  assert.deepEqual(await ticks(), { "keeri:maple:variant1": false, "keeri:maple:variant2": false }, "a level without the tick clears a stored one");
+});

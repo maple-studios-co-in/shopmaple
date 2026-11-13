@@ -1,6 +1,6 @@
 /** The product page design's card (Figma), used in its "More …" row; the rest of the store keeps the classic card in product-card.tsx. */
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Truck } from "lucide-react";
 import type { ProductCardModel } from "@/lib/product-card-model";
 import { categoryNames, shopMoney } from "@/lib/format";
 import { ProductImage } from "./product-image";
@@ -56,6 +56,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
           </p>
           {sale ? <del className="text-label font-normal text-taupe">{shopMoney(product.compareAtPaise!)}</del> : null}
         </div>
+        {product.freeDelivery ? <p data-card-free-delivery className="m-0 inline-flex items-center gap-1 text-meta font-semibold text-[#2f6b32]"><Truck aria-hidden="true" className="size-3.5" strokeWidth={1.75} />Free delivery</p> : null}
         <CardSwatches optionNames={product.optionNames} />
         {product.otherOptionsOnRequest && <p data-card-options className="m-0 text-meta text-taupe">Other options on request</p>}
         {product.optionCount > 1 && (

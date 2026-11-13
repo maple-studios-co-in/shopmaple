@@ -32,12 +32,19 @@ const batchInput = z.object({
 const relatedInput = z.object({ category: z.enum(categories) }).strict();
 const cardSelect = {
   id: true, handle: true, title: true, images: true, category: true, reviewCount: true, reviewAverage: true,
-  variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true, title: true, images: true, slug: true } },
+  // `available`, `stockPolicy` and `freeDelivery` decide the card's "Free delivery" badge.
+  variants: { where: { published: true }, orderBy: { id: "asc" }, select: { pricePaise: true, compareAtPaise: true, title: true, images: true, slug: true, available: true, stockPolicy: true, freeDelivery: true } },
 } satisfies Prisma.ProductSelect;
-const collectionSelect = {
-  ...cardSelect, description: true, sourceTaxonomy: true, sourceDetails: true,
-  variants: { ...cardSelect.variants, select: { ...cardSelect.variants.select, available: true, stockPolicy: true } },
-} satisfies Prisma.ProductSelect;
+const collectionSelect = { ...cardSelect, description: true, sourceTaxonomy: true, sourceDetails: true } satisfies Prisma.ProductSelect;
+type CardSource = Parameters<typeof toProductCard>[0] & { variants: { available: boolean; pricePaise: number | null; stockPolicy: string; freeDelivery: boolean }[] };
+/**
+ * The card, with "Free delivery" only when the piece can be bought and every variant that can be is one Keeri staff
+ * ticked. Worked out here rather than in the shared contract, which every page's script carries.
+ */
+export function catalogueCard(product: CardSource) {
+  const buyable = product.variants.filter(canOrder);
+  return { ...toProductCard(product), ...(buyable.length > 0 && buyable.every(variant => variant.freeDelivery) ? { freeDelivery: true as const } : {}) };
+}
 const cache = "public, max-age=30, s-maxage=60";
 // The two catalogue texts the listing's Material and Size filters read; anything else stored there is ignored.
 const catalogueText = z.object({ materials: z.string().nullable().optional(), dimensions: z.string().nullable().optional() }).nullable();
@@ -66,7 +73,7 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
       where: { published: true, category }, select: cardSelect,
       orderBy: [{ title: "asc" }, { id: "asc" }], take: 5,
     });
-    sendCatalogue(res, relatedCatalogueCardsResponseSchema, { category, products: products.map(toProductCard), published: true });
+    sendCatalogue(res, relatedCatalogueCardsResponseSchema, { category, products: products.map(catalogueCard), published: true });
   });
   app.get("/api/catalogue/collections/:handle", async (req, res) => {
     const handle = catalogueHandleSchema.parse(req.params.handle);
@@ -83,7 +90,7 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
     const page = Math.min(query.page, Math.max(1, Math.ceil(filtered.length / limit)));
     const knownPrices = members.flatMap(product => pricedVariants(product).map(variant => variant.pricePaise));
     sendCatalogue(res, cataloguePageSchema, {
-      handle, query: { ...query, page }, products: filtered.slice((page - 1) * limit, page * limit).map(toProductCard),
+      handle, query: { ...query, page }, products: filtered.slice((page - 1) * limit, page * limit).map(catalogueCard),
       total: filtered.length, collectionTotal: members.length,
       inStock: members.filter(product => product.variants.some(canOrder)).length,
       outOfStock: members.filter(product => !product.variants.length || product.variants.some(variant => !canOrder(variant))).length,
@@ -99,7 +106,7 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
     const current = new Map(aliases.map(alias => [alias.handle, alias.product.handle]));
     const wanted = handles.map(handle => current.get(handle) ?? handle);
     const products = await db.product.findMany({ where: { published: true, handle: { in: wanted } }, select: cardSelect });
-    const byHandle = new Map(products.map(product => [product.handle, toProductCard(product)]));
+    const byHandle = new Map(products.map(product => [product.handle, catalogueCard(product)]));
     const seen = new Set<string>();
     const moved: { handle: string; from: string }[] = [];
     const ordered = handles.flatMap((asked, index) => {
@@ -124,6 +131,6 @@ export function registerCatalogueViewRoutes(app: Express, db: PrismaClient) {
       }
       throw new HttpError(404, "PRODUCT_NOT_FOUND", "We couldn't find that product.");
     }
-    sendCatalogue(res, catalogueCardResponseSchema, { product: toProductCard(product), published: true });
+    sendCatalogue(res, catalogueCardResponseSchema, { product: catalogueCard(product), published: true });
   });
 }

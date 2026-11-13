@@ -1,4 +1,4 @@
-import type { Product } from "@shopmaple/contracts";
+import { canOrder, type Product, type Variant } from "@shopmaple/contracts";
 
 /**
  * The warranty the page states: the product's own when the catalogue has a short one ("One year" reads "One year warranty"),
@@ -18,6 +18,16 @@ export function warrantyLabel(product: Pick<Product, "sourceDetails">) {
  * are not store policy, so they are not here.
  */
 export const assurances = { delivery: "Delivery across India", cover: "Defects and transit damage" } as const;
+
+/**
+ * Free delivery is per finish: Keeri staff tick it, and checkout then charges no courier rate for that finish. The page
+ * says so only for a ticked finish the shopper can buy, in these words. Checkout still asks the courier about the
+ * address first, so nothing here names a pincode or a place.
+ */
+export const freeDelivery = { label: "Free delivery", detail: "Confirmed for your address at checkout.", note: "Free delivery on this piece, confirmed for your address at checkout." } as const;
+export function shipsFree(variant?: Pick<Variant, "freeDelivery" | "available" | "pricePaise" | "stockPolicy">) {
+  return variant?.freeDelivery === true && canOrder(variant);
+}
 
 /** The showroom the contact page maps (Kirti Nagar, New Delhi), in place of the frame's pickup times, which the store has not published. */
 export const showroom = { title: "Visit the Maple Furnishers showroom", address: "A-2/57, W.H.S, Kirti Nagar, New Delhi 110015", href: "/contact" } as const;

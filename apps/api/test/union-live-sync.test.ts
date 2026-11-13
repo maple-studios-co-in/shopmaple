@@ -14,7 +14,7 @@ function options() {
     fetch: async (input: URL | RequestInfo) => {
       assert.equal(
         String(input),
-        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1",
+        "https://keeri.example/api/storefront/catalogue/v2?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1",
       );
       return new Response(JSON.stringify(k), {
         headers: { "content-type": "application/json" },
@@ -60,7 +60,7 @@ test("a Keeri that does not offer variant options yet is asked again without the
   } });
   assert.equal(result.totalProducts, 1);
   // The offers and product-page levels need variant options too, so such a Keeri refuses all three before the plain level.
-  assert.deepEqual(asked.map((url) => new URL(url).search), ["?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1", "?taxonomy=1&content=1&attributes=1", "?taxonomy=1&content=1"]);
+  assert.deepEqual(asked.map((url) => new URL(url).search), ["?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1", "?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1", "?taxonomy=1&content=1&attributes=1", "?taxonomy=1&content=1"]);
   await assert.rejects(pullCatalogueUnion({ ...base, fetch: async () => Response.json({ error: "unauthorized" }, { status: 401 }) }), "other refusals are not retried");
 });
 
@@ -79,7 +79,7 @@ test("an older Keeri without the product-page level steps the sync down to varia
       return new Response(JSON.stringify(k), { headers: { "content-type": "application/json" } });
     },
   });
-  assert.deepEqual(asked, ["taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1", "taxonomy=1&content=1&attributes=1"]);
+  assert.deepEqual(asked, ["taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1", "taxonomy=1&content=1&attributes=1"]);
   assert.equal(result.totalProducts, 1);
 });
 
@@ -97,6 +97,24 @@ test("a Keeri from before offers steps the sync down to the product-page level, 
       return new Response(JSON.stringify(k), { headers: { "content-type": "application/json" } });
     },
   });
-  assert.deepEqual(asked, ["taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1"]);
+  assert.deepEqual(asked, ["taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1"]);
+  assert.equal(result.totalProducts, 1);
+});
+
+test("a Keeri from before the free-delivery level steps the sync down to the offers level, and nothing ships free", async () => {
+  const asked: string[] = [];
+  const base = options();
+  const k = v2Fixture();
+  k.publicMedia = [];
+  for (const model of k.models) Object.assign(model, { taxonomy: { category: "Dining", subCategory: null }, content: { details: null, materials: null, dimensions: null, careInstructions: null, warranty: null } });
+  const result = await pullCatalogueUnion({
+    ...base,
+    fetch: async (input: URL | RequestInfo) => {
+      asked.push(String(input).split("?")[1]!);
+      if (String(input).includes("freeDelivery=1")) return Response.json({ error: "query_not_supported" }, { status: 400 });
+      return new Response(JSON.stringify(k), { headers: { "content-type": "application/json" } });
+    },
+  });
+  assert.deepEqual(asked, ["taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1", "taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1"]);
   assert.equal(result.totalProducts, 1);
 });

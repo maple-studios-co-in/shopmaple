@@ -14,7 +14,7 @@ import { ProductVisit } from "../product-visit";
 import { ProductRichText } from "./product-rich-text";
 import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
-import { assurances, cheapestPriced, discountPercent, enquiryLink, showroom, warrantyLabel } from "./product-assurances";
+import { assurances, cheapestPriced, discountPercent, enquiryLink, freeDelivery, shipsFree, showroom, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
 import { CompleteTheLook } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
@@ -153,6 +153,9 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     </Link>
   );
   const discount = discountPercent(variant?.pricePaise, variant?.compareAtPaise);
+  // The chosen finish's own free delivery (Keeri's tick), said wherever the page speaks of delivery.
+  const free = shipsFree(variant);
+  const delivery = free ? freeDelivery.label : assurances.delivery;
   // The rating is Keeri's: the average and count of the piece's approved reviews, and nothing in their place without any.
   const rating = productRating(product);
   const nudge = batchNudge(variant?.productPage?.batch);
@@ -282,6 +285,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <strong data-price className="font-heading text-[20px] leading-[1.2] font-medium text-maple">{shopMoney(variant?.pricePaise ?? null)}</strong>
               {discount >= 1 && <span data-discount className="inline-flex h-[27px] items-center rounded-[5px] bg-[rgba(66,132,69,0.1)] px-2 text-[12px] leading-[1.6] font-medium text-[#2f6b32]">{discount}%OFF</span>}
+              {free && <span data-free-delivery className="inline-flex h-[27px] items-center gap-1.5 rounded-[5px] bg-[rgba(66,132,69,0.1)] px-2 text-[12px] leading-[1.6] font-medium text-[#2f6b32]"><Truck aria-hidden="true" className="size-3.5" strokeWidth={1.6} />{freeDelivery.label}</span>}
             </div>
             <div className="flex items-center justify-between gap-3">
               {discount >= 1 ? <p data-was className="m-0 text-[16px] font-medium text-black"><span className="sr-only">Was </span><del>{shopMoney(variant!.compareAtPaise!)}</del></p> : <span />}
@@ -391,7 +395,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               {[false, true].map((copy) => (
                 <ul key={String(copy)} {...(copy ? { "data-assurances-copy": "", "aria-hidden": true } : { "data-assurances": "" })}
                   className={cx("m-0 flex shrink-0 list-none items-center p-0", copy ? "motion-reduce:hidden" : "motion-reduce:flex-wrap motion-reduce:justify-center")}>
-                  <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap"><Truck aria-hidden="true" className="size-[15px]" strokeWidth={1.6} />{assurances.delivery}</li>
+                  <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap"><Truck aria-hidden="true" className="size-[15px]" strokeWidth={1.6} />{delivery}</li>
                   <li className="flex h-[49px] items-center gap-1.5 border-0 border-r border-solid border-maple/10 px-[21px] whitespace-nowrap">
                     {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                     <img src="/product-page/returns.svg" alt="" width={13} height={12} className="h-3 w-[13px]" />{assurances.cover}
@@ -404,7 +408,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               ))}
             </div>
           </div>
-          <p data-shipping-note className="m-0 -mt-2 text-[12px] leading-[1.5] text-[#5e574f]">Shipping is charged separately and quoted before you confirm your order.</p>
+          <p data-shipping-note className="m-0 -mt-2 text-[12px] leading-[1.5] text-[#5e574f]">{free ? freeDelivery.note : "Shipping is charged separately and quoted before you confirm your order."}</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <Link data-ask href={enquiryHref} className={iconLink}>
               {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
@@ -422,7 +426,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
       <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} />
       <ProductBanner picture={banner} />
-      <ProductTicker warranty={warranty} />
+      <ProductTicker warranty={warranty} delivery={delivery} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)}
         piece={{ handle: product.handle, title: product.title, image: images[0], collection: category, variantId: variant?.id }} />
       <ProductBundle product={product} variant={variant} paired={bundle} quantities={bundleQuantities} />
@@ -431,8 +435,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
           variant={variant ? { title: variant.title, sku: variant.sku } : undefined} />
       )}
       {children}
-      <ProductFaq extra={productFaq(product)} />
-      <ProductPromises />
+      <ProductFaq extra={productFaq(product)} shipsFree={free} />
+      <ProductPromises shipsFree={free} />
       <ProductEnquiry product={product.title} variant={variant?.title ?? ""} sku={variant?.sku ?? ""} />
       <Modal open={zoom} onClose={() => setZoom(false)} title={product.title}>
         <div data-zoom className="[&_img]:h-auto [&_img]:w-full">

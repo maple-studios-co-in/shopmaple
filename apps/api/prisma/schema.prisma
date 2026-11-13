@@ -45,6 +45,9 @@ model Variant {
   stockPolicy String @default("unverified")
   /// Keeri's approved making time for a made-to-order variant; null otherwise.
   leadTimeDays Int?
+  /// Keeri staff ticked this variant free delivery (Keeri's `freeDelivery=1` catalogue level). Shown as a badge only;
+  /// the quote decides the charge.
+  freeDelivery Boolean @default(false)
   /// This variant's own photos; Product.images keeps every photo for cards.
   images String[] @default([])
   /// The readable ?variant= value, unique within its product.
