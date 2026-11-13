@@ -26,8 +26,11 @@ export function checkStagingEnv(env, production = {}) {
   if (env.SITE_ALIASES) problems.push('SITE_ALIASES: must be unset on staging');
   if (env.SEO_INDEXING === 'on') problems.push('SEO_INDEXING: must not be on (staging must stay out of search engines)');
   if (env.KEERI_LEADS_ENABLED === 'true') problems.push('KEERI_LEADS_ENABLED: must not be true (staging enquiries would become real Keeri leads)');
-  // Keeri sends people back to the live store's address only, so staging staff keep shop passwords.
-  if (env.ADMIN_SIGN_IN === 'keeri') problems.push('ADMIN_SIGN_IN: must not be keeri on staging (Keeri returns staff to the live store only; staging uses shop passwords)');
+  // Keeri sends people back to the live store's address only, so staging has no Keeri sign-in:
+  // staff get in with the emergency account (ADMIN_EMERGENCY_EMAIL) there.
+  for (const key of ['KEERI_SIGN_IN_CLIENT_ID', 'KEERI_SIGN_IN_CLIENT_SECRET']) {
+    if (env[key]) problems.push(`${key}: must be unset on staging (Keeri returns staff to the live store only; use the emergency account)`);
+  }
   for (const key of ['KEERI_REVIEWS_TOKEN', 'INSTAGRAM_ACCESS_TOKEN', 'INSTAGRAM_USER_ID', 'META_APP_ID', 'META_APP_SECRET', 'SHOPIFY_CATALOGUE_FILE']) {
     if (env[key]) problems.push(`${key}: must be unset on staging (it would act on live services)`);
   }

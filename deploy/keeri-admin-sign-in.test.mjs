@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { parseEnv } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { setup, status, turn } from './keeri-admin-sign-in.mjs';
+import { setup, status } from './keeri-admin-sign-in.mjs';
 
 const script = fileURLToPath(new URL('./keeri-admin-sign-in.mjs', import.meta.url));
 // Stands in for a credential that is already in the file; made here so no literal looks like one.
@@ -40,7 +40,7 @@ test('setup writes one secret to the store and only its hash to Keeri, and shows
   assert.match(secret, /^[A-Za-z0-9_-]{43}$/);
   assert.equal(store.KEERI_SIGN_IN_CLIENT_ID, 'shop-admin');
   assert.equal(store.ADMIN_EMERGENCY_EMAIL, 'owner@example.test');
-  // Keeri sign-in is not turned on by setting it up.
+  // There is no switch to write: Keeri is the only way in.
   assert.equal(store.ADMIN_SIGN_IN, undefined);
   const clients = keeriClients(paths.keeriEnv);
   assert.deepEqual(clients, [{
@@ -124,35 +124,14 @@ test('a failure never repeats a line from a settings file', (t) => {
   assert.ok(!(result.stdout + result.stderr).includes('pw@'));
 });
 
-test('on and off switch the one flag, need a set-up first, and keep everything else', (t) => {
-  const paths = files(t);
-  const early = run(paths, 'on');
-  assert.equal(early.status, 1);
-  assert.match(early.stderr, /Run "setup" first/);
-  assert.equal(readFileSync(paths.storeEnv, 'utf8'), STORE);
-  setup(paths);
-  const ready = readFileSync(paths.storeEnv, 'utf8');
-  assert.deepEqual(status(paths), { signIn: 'password', storeReady: true, keeriReady: true, emergencyAccount: false });
-  assert.equal(run(paths, 'on').status, 0);
-  assert.equal(readFileSync(paths.storeEnv, 'utf8'), `${ready}ADMIN_SIGN_IN=keeri\n`);
-  assert.equal(status(paths).signIn, 'keeri');
-  assert.deepEqual(turn('keeri', paths), { changed: false });
-  const off = run(paths, 'off');
-  assert.equal(off.status, 0);
-  assert.match(off.stdout, /shop passwords, as before/);
-  assert.equal(readFileSync(paths.storeEnv, 'utf8'), `${ready}ADMIN_SIGN_IN=password\n`);
-  assert.equal(status(paths).signIn, 'password');
-  // Going back keeps the set-up, so turning it on again is one step.
-  assert.equal(run(paths, 'on').status, 0);
-  assert.equal(parseEnv(readFileSync(paths.storeEnv, 'utf8')).KEERI_SIGN_IN_CLIENT_SECRET, parseEnv(ready).KEERI_SIGN_IN_CLIENT_SECRET);
-});
-
 test('status names what exists and never a value', (t) => {
   const paths = files(t);
   setup({ ...paths, emergencyEmail: 'owner@example.test' });
   const result = run(paths, 'status');
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /Staff sign in with: shop passwords/);
+  assert.match(result.stdout, /Store settings ready: yes/);
+  assert.match(result.stdout, /Keeri settings ready: yes/);
+  assert.deepEqual(status(paths), { storeReady: true, keeriReady: true, emergencyAccount: true });
   assert.match(result.stdout, /Emergency account named: yes/);
   const secret = parseEnv(readFileSync(paths.storeEnv, 'utf8')).KEERI_SIGN_IN_CLIENT_SECRET;
   for (const value of [secret, EXISTING, 'owner@example.test', 'tenant_maple', 'pw@']) assert.ok(!result.stdout.includes(value));
@@ -160,6 +139,8 @@ test('status names what exists and never a value', (t) => {
 
 test('an unknown command explains itself and touches nothing', (t) => {
   const paths = files(t);
+  // Including the switch that an earlier draft had: there is none to turn.
+  for (const command of ['on', 'off']) assert.equal(run(paths, command).status, 1);
   const result = run(paths, 'rotate');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Usage:/);

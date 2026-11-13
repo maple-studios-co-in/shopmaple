@@ -36,12 +36,12 @@ test('copied production secrets and mail recipients are refused, by name only', 
   assert.equal(problems.join('\n').includes('prod-secret'), false, 'values are never printed');
 });
 
-test('staging keeps shop passwords: Keeri sign-in and the live store\'s Keeri secret are refused', () => {
-  const problems = checkStagingEnv({ ...good, ADMIN_SIGN_IN: 'keeri', KEERI_SIGN_IN_CLIENT_SECRET: 'live-secret' }, { ...production, KEERI_SIGN_IN_CLIENT_SECRET: 'live-secret' });
-  assert.ok(problems.some(p => p.startsWith('ADMIN_SIGN_IN:')));
+test('staging has no Keeri sign-in: its settings, and the live store\'s secret, are refused', () => {
+  const problems = checkStagingEnv({ ...good, KEERI_SIGN_IN_CLIENT_ID: 'shop-admin', KEERI_SIGN_IN_CLIENT_SECRET: 'live-secret' }, { ...production, KEERI_SIGN_IN_CLIENT_SECRET: 'live-secret' });
+  assert.ok(problems.some(p => p.startsWith('KEERI_SIGN_IN_CLIENT_ID:')));
   assert.ok(problems.some(p => p.startsWith('KEERI_SIGN_IN_CLIENT_SECRET:')));
   assert.equal(problems.join('\n').includes('live-secret'), false, 'values are never printed');
-  assert.deepEqual(checkStagingEnv({ ...good, ADMIN_SIGN_IN: 'password' }, production), []);
+  assert.deepEqual(checkStagingEnv({ ...good, ADMIN_EMERGENCY_EMAIL: 'owner@example.test' }, production), []);
 });
 
 test('staging checkout needs test keys and its own Keeri merchant scope and credential', () => {

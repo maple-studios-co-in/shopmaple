@@ -2,12 +2,13 @@
 // Sets the store and Keeri up for shop-admin sign-in with Keeri accounts, on the server that runs both.
 //
 //   node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com]
-//   node deploy/keeri-admin-sign-in.mjs on | off | status
+//   node deploy/keeri-admin-sign-in.mjs status
 //
+// Keeri is the only way into the shop admin, so there is nothing to switch on or off: run `setup` from the
+// new release before it is made live, and the store signs staff in with Keeri from its first request.
 // `setup` makes one new random secret and writes it where each side needs it: the secret itself into the
 // store's settings file, and only its SHA-256 into Keeri's, together with the company and the one address
 // Keeri may send people back to. It never prints the secret, and nobody has to copy it by hand.
-// `on` and `off` set ADMIN_SIGN_IN in the store's settings; the store API must be restarted to read it.
 // Nothing here restarts anything, and nothing is overwritten: a file that is already set up is left alone.
 import { createHash, randomBytes } from 'node:crypto';
 import { chmodSync, copyFileSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
@@ -72,7 +73,7 @@ export function setup({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV, emergencyEma
   const day = now.toISOString().slice(0, 10);
   const stamp = now.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
   const storeLines = [
-    `# Shop admin sign-in with Keeri accounts (set up ${day}). ADMIN_SIGN_IN=keeri turns it on; see docs/admin-release.md.`,
+    `# Shop admin sign-in with Keeri accounts (set up ${day}); see docs/admin-release.md.`,
     `KEERI_SIGN_IN_CLIENT_ID=${APP}`,
     `KEERI_SIGN_IN_CLIENT_SECRET=${secret}`,
     ...(emergencyEmail ? [`ADMIN_EMERGENCY_EMAIL=${emergencyEmail.toLowerCase()}`] : []),
@@ -88,27 +89,12 @@ export function setup({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV, emergencyEma
   return { returnUrl: client.returnUrls[0], tenantId, emergencyEmail: emergencyEmail?.toLowerCase() ?? null, backups: [keeriBackup, storeBackup] };
 }
 
-/** Sets ADMIN_SIGN_IN in the store settings: `keeri` to turn Keeri sign-in on, `password` to go back. */
-export function turn(value, { storeEnv = STORE_ENV, now = new Date() } = {}) {
-  const store = readPrivate(storeEnv, 'Store');
-  if (value === 'keeri') {
-    const missing = STORE_KEYS.filter((key) => !has(store, key));
-    if (missing.length) refuse(`Not set up yet: ${missing.join(', ')} missing from the store settings. Run "setup" first.`);
-  }
-  const line = `ADMIN_SIGN_IN=${value}`;
-  if (new RegExp(`^${line}$`, 'm').test(store)) return { changed: false };
-  const next = has(store, 'ADMIN_SIGN_IN') ? store.replace(/^\s*(?:export\s+)?ADMIN_SIGN_IN=.*$/m, line) : withLine(store, [line]);
-  const stamp = now.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
-  return { changed: true, backup: writePrivate(storeEnv, next, stamp) };
-}
-
 /** Which settings exist, by name only. */
 export function status({ storeEnv = STORE_ENV, keeriEnv = KEERI_ENV } = {}) {
   const store = readPrivate(storeEnv, 'Store');
   const keeri = readPrivate(keeriEnv, 'Keeri');
   const settings = parseEnv(store);
   return {
-    signIn: settings.ADMIN_SIGN_IN === 'keeri' ? 'keeri' : 'password',
     storeReady: STORE_KEYS.every((key) => Boolean(settings[key])),
     keeriReady: has(keeri, 'APP_SIGN_IN_CLIENTS'),
     emergencyAccount: Boolean(settings.ADMIN_EMERGENCY_EMAIL),
@@ -129,19 +115,14 @@ function main(argv) {
     console.log(done.emergencyEmail ? `Emergency account: ${done.emergencyEmail}` : 'No emergency account was named (add --emergency-email to have one).');
     console.log('Copies of both files as they were:');
     for (const backup of done.backups) console.log(`  ${backup}`);
-    console.log('Keeri sign-in is still OFF. Next: restart Keeri so it reads its settings, then run "on" and restart the store API.');
-  } else if (command === 'on' || command === 'off') {
-    const done = turn(command === 'on' ? 'keeri' : 'password', paths);
-    console.log(command === 'on' ? 'ADMIN_SIGN_IN=keeri: staff sign in with their Keeri accounts.' : 'ADMIN_SIGN_IN=password: staff sign in with shop passwords, as before.');
-    console.log(done.changed ? 'Restart the store API for this to take effect.' : 'It was already set; nothing was changed.');
+    console.log('Next: restart Keeri so it reads its settings. The store reads its own when the new release starts.');
   } else if (command === 'status') {
     const found = status(paths);
-    console.log(`Staff sign in with: ${found.signIn === 'keeri' ? 'Keeri accounts' : 'shop passwords'}`);
     console.log(`Store settings ready: ${found.storeReady ? 'yes' : 'no'}`);
     console.log(`Keeri settings ready: ${found.keeriReady ? 'yes' : 'no'}`);
     console.log(`Emergency account named: ${found.emergencyAccount ? 'yes' : 'no'}`);
   } else {
-    refuse('Usage: node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com] | on | off | status');
+    refuse('Usage: node deploy/keeri-admin-sign-in.mjs setup [--emergency-email you@example.com] | status');
   }
 }
 

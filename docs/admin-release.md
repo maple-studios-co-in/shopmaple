@@ -69,75 +69,90 @@ Secure stdin is also supported for an approved secret-management workflow. Never
 
 Sign in at `https://store.maplefurnishers.com/admin`. Save an initial draft copied from the existing storefront, review it, and publish explicitly. Deployment and account creation alone do not publish content. Editors can save drafts and restore an old revision into a new draft; publishers can also publish. The current dashboard limits restore controls to publishers, while the API permits editors to restore because restoration never changes the public snapshot. A restore always needs a separate publish to become public.
 
-Sessions expire after eight hours; logout invalidates the stored token. Role changes and disabling an account are checked on subsequent requests. The store itself has no staff-management, password-reset or MFA UI: since 14 November 2026 staff can instead be managed in Keeri (next section). Operator recovery must be separately authorized; do not use the create-only helper to reset an existing identity. Login attempts are bounded by the API and per-account lockout. Account lockout can deny access temporarily if an attacker targets a known address; no lockout bypass is provided.
+Sessions expire after eight hours; logout invalidates the stored token. Role changes and disabling an account are checked on subsequent requests. The store itself has no staff-management, password-reset or MFA UI: since 14 November 2026 staff are managed in Keeri (next section). Operator recovery must be separately authorized; do not use the create-only helper to reset an existing identity. Login attempts are bounded by the API and per-account lockout. Account lockout can deny access temporarily if an attacker targets a known address; no lockout bypass is provided.
 
 ## Staff sign in with Keeri accounts (14 November 2026)
 
-Owner's decision, 14 November 2026: staff for the shop admin are managed in Keeri, not in a second staff list here. With `ADMIN_SIGN_IN=keeri` the sign-in page has one button, **Sign in with Keeri**. Keeri signs the person in, checks their role, and sends them back; the store's server then confirms with Keeri who they are. The store never sees a Keeri password. Keeri's side is described in Keeri's `docs/app-sign-in.md`.
+Owner's decisions, 14 November 2026: staff for the shop admin are managed in Keeri, not in a second staff list here; Keeri is the only way in; one emergency password is kept; today's shop-admin account moves to Keeri.
 
-**The setting is a switch.** Without `ADMIN_SIGN_IN=keeri` (unset, or `password`) nothing changes: the same sign-in form, the same answers from the API, no Keeri routes. Keeri can be deployed first, this release second, and the switch turned on last. Turning it off again is the fallback.
+The sign-in page has one button, **Sign in with Keeri**. Keeri signs the person in, checks their role and sends them back; the store's server then confirms with Keeri who they are. The store never sees a Keeri password. Keeri's side is described in Keeri's `docs/app-sign-in.md`.
+
+**There is no switch.** A production store always signs staff in with Keeri, and no setting turns shop passwords back on. Shop passwords remain only where there is no Keeri to ask: a developer's machine or a test run with none of the Keeri sign-in settings present.
 
 ### Who gets in, and with what
 
-Access is three boxes on a role in Keeri, under **ShopMaple website admin** on Team & access → Roles:
+Access is four boxes on a role in Keeri, under **ShopMaple website admin** on Team & access → Roles. There are no per-section permissions, because the shop admin has one draft and publishes everything at once.
 
 | Ticked in Keeri | In the shop admin |
 |---|---|
-| Edit the website and save drafts | Editor |
-| Publish changes to the live website | Publisher (can also edit) |
-| See website enquiries, together with Edit or Publish | The Enquiries screen as well |
-| Only "See website enquiries", or none | No access; the sign-in page says so |
+| View | Opens the admin, reads the draft and History, previews. Cannot save, upload or publish. |
+| Edit | View, plus change content, upload media and save drafts. |
+| Publish | Edit, plus publish and restore from History. |
+| Enquiries | The Enquiries screen. On its own it opens only that screen. |
+| None of the four | No access; the sign-in page says so. |
 
-Keeri's Admin role holds all three. No other role starts with any: whoever manages roles in Keeri ticks them.
+Keeri's Administrator role holds all four. The owner's starting ticks for the other roles are listed in Keeri's `docs/app-sign-in.md` ("Starting roles for Maple Furnishers"); they are made on Keeri's Roles screen and stay editable there.
 
-### What happens to people and History
+Restoring from History is now refused for editors by the API as well as hidden in the screen; before this release the API allowed it.
+
+### People, accounts and History
 
 - The store keeps one `ShopAdmin` row per Keeri person (keyed by `keeriUserId`), with name and email copied from Keeri at each sign-in and each re-check, so History keeps naming who saved and published.
-- **Existing accounts are kept.** The first time somebody signs in with Keeri using the email address of an existing shop account, that account becomes theirs: same row, same History, and its role now follows Keeri. This happens once per account; a row tied to one Keeri person is never handed to another.
-- While the switch is on, shop passwords do not work, except for the emergency account below. Nothing is deleted, so switching off brings the passwords back.
+- **Today's accounts move to Keeri.** The first time somebody signs in with Keeri using the email address of an existing shop account, that account becomes theirs: same row, same History, role from Keeri, and its shop password is removed. This happens once per account; a row tied to one Keeri person is never handed to another. Somebody with a shop account but no Keeri user needs one made on Keeri's Users screen, with the same email if their History should stay under one name.
+- Shop passwords of accounts that have not moved are kept in the database but cannot be used.
+- A shop-password session that was open when this release went live ends on its next request.
 - An account switched off in the store's own database (`active = false`) stays off whatever Keeri says.
 
 ### Removing access
 
-Disable the person in Keeri, change their role, or untick the boxes. **The shop admin stops working for them within one minute**: every staff request first checks how long ago Keeri confirmed the person, and asks Keeri again when that is more than 60 seconds. A no ends all of that person's Keeri sessions here at once. A changed role (publisher to editor, enquiries removed) applies the same way.
+Disable the person in Keeri, change their role, or untick the boxes. **The shop admin stops working for them within one minute**: every staff request first checks how long ago Keeri confirmed the person, and asks Keeri again when that is more than 60 seconds. A no ends all of that person's Keeri sessions here at once. A changed level (publisher to editor, enquiries removed) applies the same way.
 
 **If Keeri cannot be reached**, a session carries on until ten minutes after Keeri last confirmed it, then answers "couldn't confirm your access" until Keeri is back. The session is not thrown away, so the person carries on when Keeri returns. Nobody new can sign in with Keeri meanwhile. Sessions still end after eight hours.
 
 ### The emergency account
 
-`ADMIN_EMERGENCY_EMAIL` names one existing shop account whose password keeps working while the switch is on, for when Keeri is unreachable. It sits behind an **Emergency access** link on the sign-in page. Each use is written to `ShopAdminSignIn` and to the API log (`[admin] emergency password sign-in by staff <id>`), and the session shows "Emergency access" beside the role. It has the role stored on that account, is not re-checked with Keeri, and is limited like any password sign-in (five tries, then a 15-minute lock). Leave the key out to have no emergency account. There is still no password reset: the account's existing password is the one that works.
+`ADMIN_EMERGENCY_EMAIL` names the one shop account whose password still works, for when Keeri is unreachable. It sits behind an **Emergency access** link on the sign-in page and is not meant for everyday use:
+
+- every use is written to `ShopAdminSignIn` and to the API log (`[admin] emergency password sign-in by staff <id>`);
+- the session shows "Emergency access" beside the role;
+- it is limited like any password sign-in: five tries in fifteen minutes, then a 15-minute lock;
+- it has the level stored on that account and is not re-checked with Keeri;
+- it keeps its password when its owner also signs in with Keeri.
+
+**Not built yet: resetting the emergency password by email.** The owner mentioned "some email reset". Until that is confirmed and built, the account's existing password is the one that works, and replacing a forgotten one still needs the server helper `deploy/bootstrap-shop-admin.sh`, which only creates an account.
 
 ### Settings (names only; values are never written in a document or a message)
 
 | File | Key | Purpose |
 |---|---|---|
-| Store `store.env` | `ADMIN_SIGN_IN` | `keeri` turns Keeri sign-in on. Unset or `password` is sign-in by shop password. |
 | Store `store.env` | `KEERI_SIGN_IN_CLIENT_ID` | The store's name in Keeri's registry: `shop-admin`. |
 | Store `store.env` | `KEERI_SIGN_IN_CLIENT_SECRET` | The secret the store proves itself to Keeri with. 32 to 256 URL-safe characters. |
-| Store `store.env` | `ADMIN_EMERGENCY_EMAIL` | Optional. The one account whose password still works. |
+| Store `store.env` | `ADMIN_EMERGENCY_EMAIL` | The one account whose shop password still works. |
 | Store `store.env` | `KEERI_ORIGIN`, `KEERI_TENANT_ID` | Already present. Where the store's server calls Keeri, and which company's answers it accepts. |
 | Store `store.env` | `KEERI_ADMIN_ORIGIN` | Optional, already documented. Where a browser is sent to sign in; defaults to `KEERI_ORIGIN`. |
 | Keeri `keeri.env` | `APP_SIGN_IN_CLIENTS` | Keeri's record of the store: company, the SHA-256 of the secret, and the one return address `<WEB_ORIGIN>/api/admin/keeri/callback`. |
 
-A helper writes the secret to both files without showing it. On the server, as `deploy`, from the store's current release:
+A helper writes the secret to both files without showing it. On the server, as `deploy`:
 
 ```sh
 node deploy/keeri-admin-sign-in.mjs setup --emergency-email <the owner's shop-admin email>
 ```
 
-It reads `WEB_ORIGIN`, `KEERI_ORIGIN` and `KEERI_TENANT_ID` from `store.env`, makes a new random secret, appends the three store keys and Keeri's `APP_SIGN_IN_CLIENTS`, and keeps a dated copy of each file beside it. It refuses to run twice, refuses files other users can read, and changes nothing if a value is missing. It does not turn the switch on and restarts nothing. `status` shows what is set, by name only; `on` and `off` set `ADMIN_SIGN_IN`.
+It reads `WEB_ORIGIN`, `KEERI_ORIGIN` and `KEERI_TENANT_ID` from `store.env`, makes a new random secret, appends the store keys and Keeri's `APP_SIGN_IN_CLIENTS`, and keeps a dated copy of each file beside it. It refuses to run twice, refuses files other users can read, and changes nothing if a value is missing. It restarts nothing. `status` shows what is set, by name only.
 
-If `ADMIN_SIGN_IN=keeri` but a setting is missing or malformed, the store still starts. The API log names the setting (never its value), the sign-in page says Keeri sign-in is not set up, and shop passwords stay off except for the emergency account.
+If a setting is missing or malformed the store still starts. The API log names the setting (never its value), the sign-in page says Keeri sign-in is not set up, and the only password that works is the emergency account's.
 
 ### Order of release
 
-1. **Keeri**: deploy the release with `/sign-in/authorize` and `/api/app-sign-in/*`. Nothing changes for anybody yet.
-2. **Store**: deploy this release with the switch off. Migration `20261114140000_admin_keeri_sign_in` is additive: two nullable columns and one defaulted column on existing tables, and one new table. Back up first as for any migration.
-3. Run the helper's `setup`, then restart Keeri so it reads `APP_SIGN_IN_CLIENTS`.
-4. In Keeri, on Team & access → Roles, tick the ShopMaple website admin boxes for the roles that need them.
-5. Run the helper's `on` and restart `shopmaple-api` only. Sign in with Keeri at `/admin`; check that History shows the right name, that an editor cannot publish, and that the emergency link works.
+With no switch, the settings go in before the new store release is made live, so staff are never left without a way in.
 
-**Fallback:** run the helper's `off` and restart `shopmaple-api`. Staff sign in with shop passwords as before; Keeri sessions end on their next request. People who only ever signed in with Keeri have no shop password, so they cannot sign in until the switch is on again. The application can also be rolled back to the previous release without reversing the migration: the old release ignores the new columns and table.
+1. **Keeri**: deploy the release with `/sign-in/authorize` and `/api/app-sign-in/*`. Nothing changes for anybody yet.
+2. **Store, staged but not live**: back up, export the release and run its migrations (`20261114140000_admin_keeri_sign_in` and `20261114150000_admin_view_and_enquiries_only`; both additive, and the running release ignores them).
+3. From the staged release folder, run the helper's `setup`. Then restart Keeri so it reads `APP_SIGN_IN_CLIENTS`.
+4. In Keeri, on Team & access → Roles, tick the ShopMaple website admin boxes for the starting roles.
+5. **Make the store release live** and restart `shopmaple-api` and `shopmaple-web`. Sign in with Keeri at `/admin`; check that History shows the right name, that an editor cannot publish, and that the emergency link works.
+
+**Falling back** is going back to the previous store release (point `current` at it and restart the two processes), without reversing the migrations. The old release signs staff in with shop passwords. Accounts that have already moved to Keeri have no shop password any more, apart from the emergency account, so on the old release only the emergency account and accounts that never moved can sign in.
 
 ### What protects it
 
@@ -148,11 +163,11 @@ If `ADMIN_SIGN_IN=keeri` but a setting is missing or malformed, the store still 
 - The answer must be for the configured `KEERI_TENANT_ID`.
 - Starting and returning are each limited to 30 tries in 15 minutes per address, on top of the API's general limit.
 - `ShopAdminSignIn` holds who, when and how (`keeri` or `emergency`), and nothing else.
-- Staging keeps shop passwords: `deploy/ops/staging-env-check.mjs` refuses `ADMIN_SIGN_IN=keeri` and the live secret there, because Keeri returns people to the live store only.
+- Staging has no Keeri sign-in, because Keeri returns people to the live store only: `deploy/ops/staging-env-check.mjs` refuses the Keeri sign-in settings there. Staging staff use the emergency account.
 
 ### Checked locally, not on the server
 
-`apps/api/test/admin-keeri-sign-in.test.ts` runs the whole round trip against a stand-in for Keeri's two server routes; Keeri's own tests cover the real routes. The two were not run against each other over HTTPS, and nothing was deployed. Confirm on the server: the callback through the Cloudflare tunnel and the Next proxy, the cookies' `Secure` and `__Host-` attributes, and that Keeri's start script passes `APP_SIGN_IN_CLIENTS` to the running process.
+`apps/api/test/admin-keeri-sign-in.test.ts` runs the whole round trip against a stand-in for Keeri's two server routes; Keeri's own tests cover the real routes. The two were also run against each other over plain HTTP on one machine. Nothing was deployed. Confirm on the server: the callback through the Cloudflare tunnel and the Next proxy, the cookies' `Secure` and `__Host-` attributes, and that Keeri's start script passes `APP_SIGN_IN_CLIENTS` to the running process.
 
 ## Draft preview and reordering
 
