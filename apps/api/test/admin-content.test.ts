@@ -115,7 +115,7 @@ test("local staff bootstrap reads a private stdin password, hashes it and refuse
     const row = await db.shopAdmin.findUnique({ where: { email } });
     assert.ok(row, "bootstrap must persist a staff account");
     assert.equal(row.role, "publisher");
-    assert.ok(!row.passwordHash.includes(password));
+    assert.ok(row.passwordHash && !row.passwordHash.includes(password));
     assert.ok(!first.output.includes(password));
     assert.equal((await login(createApp(db, config), email)).response.status, 200);
     assert.notEqual((await run([email, "editor"], password + "\n")).code, 0);
