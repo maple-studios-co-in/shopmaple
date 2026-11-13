@@ -49,6 +49,7 @@ async function seed(psql) {
     INSERT INTO "OrderNotification" (id, "merchantScope", "subjectId", kind) VALUES ('n1', 'maple', 'att1', 'customer_confirmed');
     INSERT INTO "KeeriOrderEvent" (id, "merchantScope", "externalOrderId", type, "bodySha256", payload, "occurredAt")
       VALUES ('ke1', 'maple', 'ord_1', 'order.cancelled', 'sha-ke1', '{"reason":"Ramesh Piiname asked to cancel","gatewayRefundId":"rfnd_PiiRefund123"}', now());
+    INSERT INTO "OrderCancellationRequest" (id, "attemptId", reason, "updatedAt") VALUES ('00000000-0000-4000-8000-000000000001', 'att1', 'Ordered by mistake: Ramesh Piiname moved to 42 Pii Lane', now());
   `);
 }
 
@@ -63,6 +64,7 @@ test('after the scrub no customer name, email, phone, address, note or payment i
   await seed(psql);
   const result = await scrubDatabase(psql);
   assert.ok(result.emptied.includes('CheckoutAttempt'));
+  assert.ok(result.emptied.includes('OrderCancellationRequest'));
   const { stdout: data } = await run(join(pgBin, 'pg_dump'), ['--data-only', '--inserts', name], { env: pgEnv, maxBuffer: 32 * 1024 * 1024 });
   for (const value of PII) assert.equal(data.includes(value), false, `${value} survived the scrub`);
   const [[enquiries]] = await psql(`SELECT count(*) FROM "Enquiry";`);
