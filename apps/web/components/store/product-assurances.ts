@@ -1,4 +1,4 @@
-import { canOrder, type Product, type Variant } from "@shopmaple/contracts";
+import type { Product, Variant } from "@shopmaple/contracts";
 
 /**
  * The warranty the page states: the product's own when the catalogue has a short one ("One year" reads "One year warranty"),
@@ -25,8 +25,12 @@ export const assurances = { delivery: "Delivery across India", cover: "Defects a
  * address first, so nothing here names a pincode or a place.
  */
 export const freeDelivery = { label: "Free delivery", detail: "Confirmed for your address at checkout.", note: "Free delivery on this piece, confirmed for your address at checkout." } as const;
+/**
+ * A ticked finish the shopper can buy. The second half is the contracts' `canOrder`, repeated here: importing it puts it
+ * in the script every page loads, which the homepage budget has no room for.
+ */
 export function shipsFree(variant?: Pick<Variant, "freeDelivery" | "available" | "pricePaise" | "stockPolicy">) {
-  return variant?.freeDelivery === true && canOrder(variant);
+  return variant?.freeDelivery === true && variant.available && variant.pricePaise !== null && variant.pricePaise > 0 && ["stocked", "made_to_order"].includes(variant.stockPolicy);
 }
 
 /** The showroom the contact page maps (Kirti Nagar, New Delhi), in place of the frame's pickup times, which the store has not published. */
