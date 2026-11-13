@@ -1,4 +1,4 @@
-import { quoteSnapshotSchema } from "@shopmaple/contracts";
+import { quoteSnapshotSchema, type QuoteSnapshot } from "@shopmaple/contracts";
 import { checkoutRequestSchema } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import express, { type Express, type Request } from "express";
@@ -53,6 +53,14 @@ function guestToken(req: Request, secure: boolean) {
   if (!token) throw new OrderFlowError("CART_NOT_FOUND");
   return token;
 }
+/** What the buyer is told about free delivery: whether it covers the whole order, and the pieces it
+ * covers by name. Nothing at all on an ordinary delivery charge. */
+function freeDeliveryOf(quote: QuoteSnapshot) {
+  const ids = quote.delivery?.freeDeliveryVariantIds;
+  if (!ids?.length) return {};
+  const titles = quote.items.filter((item) => ids.includes(item.variantId)).map((item) => item.title);
+  return { freeDelivery: { all: quote.delivery?.source === "free", titles: [...new Set(titles)] } };
+}
 function publicAttempt(
   attempt: CheckoutAttempt & {
     fulfillmentStatus?: string;
@@ -71,6 +79,8 @@ function publicAttempt(
               ? {
                   courierName: quote.data.delivery.carrier.courierName,
                   estimatedDays: quote.data.delivery.carrier.estimatedDays,
+                  // Only when free delivery changed the charge; otherwise the reply is what it always was.
+                  ...freeDeliveryOf(quote.data),
                 }
               : null,
             currency: quote.data.currency,

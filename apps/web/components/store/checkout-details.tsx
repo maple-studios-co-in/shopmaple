@@ -16,6 +16,15 @@ type Address = { line1: string; line2: string; city: string; stateCode: string; 
 export type CheckoutDefaults = { email: string; firstName: string; lastName: string; phone: string; shipping: Address | null; billing: Address | null };
 
 const pickup = (methodLabel: string) => /pick ?up|store|showroom/i.test(methodLabel);
+type Quote = NonNullable<CheckoutAttempt["quote"]>;
+/** The delivery option's charge: the courier's rate, or "Free delivery" where Keeri's free-delivery rule covers the whole order. */
+const deliveryCharge = (quote: Quote) =>
+  quote.delivery?.freeDelivery?.all ? "Free delivery" : quote.shippingPaise ? money(quote.shippingPaise) : "Free";
+/** The pieces that ship free in an order that still pays for the rest, by name; null when none or all do. */
+function partFreeDelivery(quote: Quote | null) {
+  const free = quote?.delivery?.freeDelivery;
+  return free && !free.all && free.titles.length ? free.titles.join(", ") : null;
+}
 
 /** A labelled field, its problem tied to it through aria-describedby (Figma's "Maple / Forms / Input"). */
 function Field({ id, name, label, error, hint, wide, children }: {
@@ -121,6 +130,7 @@ export function CheckoutDetails({
   const method = options.deliveryMethods.find((m) => m.id === deliveryMethodId) ?? options.deliveryMethods[0];
   const signedIn = account?.prefill ?? null;
   const arrival = quote ? estimatedArrival(quote, new Date()) : null;
+  const partFree = partFreeDelivery(quote);
   const images = new Map(cart.items.map((item) => [item.variantId, item.image]));
   const lines = quote
     ? quote.items.map((item) => ({ key: item.variantId, title: item.title, variant: item.variantTitle, quantity: item.quantity, pricePaise: item.lineTotalPaise + (item.discountPaise ?? 0), image: photos?.[item.variantId] ?? images.get(item.variantId) ?? null, making: makingTime(item) }))
@@ -203,10 +213,13 @@ export function CheckoutDetails({
             <div data-checkout-delivery="" aria-live="polite">
               {quote && method ? (
                 <div className="checkout-option">
-                  <p className="checkout-option-title">{`${method.label} · ${quote.shippingPaise ? money(quote.shippingPaise) : "Free"}`}</p>
+                  <p className="checkout-option-title">{`${method.label} · ${deliveryCharge(quote)}`}</p>
                   {arrival ? <p className="checkout-option-note">{`Estimated arrival · ${formatDayRange(arrival.from, arrival.to, { month: "long" })}`}</p> : (
                     <p className="checkout-option-note">We’ll confirm the delivery date with you.</p>
                   )}
+                  {partFree ? (
+                    <p className="checkout-option-note" data-free-delivery="">{`Free delivery on ${partFree}. The delivery charge is for the rest of your order.`}</p>
+                  ) : null}
                   {quote.delivery ? (
                     <p className="checkout-option-meta" data-courier="">
                       {quote.delivery.courierName}

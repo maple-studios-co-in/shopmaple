@@ -559,6 +559,35 @@ test("once quoted, the page shows the delivery charge and estimate in place and 
   } finally { await cleanup(); }
 });
 
+test("a free-delivery order says \"Free delivery\" on the delivery line and charges nothing for it", async () => {
+  const free = { ...shiprocketQuote, shippingPaise: 0, taxPaise: 54000, totalPaise: 354000,
+    delivery: { ...shiprocketQuote.delivery, freeDelivery: { all: true, titles: ["Oak Chair"] } } };
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt({ amountPaise: 354000, quote: free })) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    const delivery = document.querySelector("[data-checkout-delivery]")?.textContent ?? "";
+    assert.match(delivery, /Standard delivery · Free delivery/);
+    assert.match(delivery, /Delhivery Surface/, "the courier that brings it is still named");
+    assert.equal(document.querySelector("[data-free-delivery]"), null, "nothing is left to explain when the whole order ships free");
+    const summary = document.querySelector("[data-checkout-summary]")!.textContent!;
+    assert.match(summary, /Delivery\s*Free/);
+    assert.match(summary, /Total to pay\s*₹3,540/);
+    assert.ok(button("Continue to payment · ₹3,540"));
+  } finally { await cleanup(); }
+});
+
+test("when only some pieces ship free, the charge stands and the page names the pieces it leaves out", async () => {
+  const part = { ...shiprocketQuote, delivery: { ...shiprocketQuote.delivery, freeDelivery: { all: false, titles: ["Oak Chair"] } } };
+  const { cleanup } = await mount((call) => call.path === "/api/checkout" ? Response.json(attempt({ quote: part })) : new Response(null, { status: 404 }));
+  try {
+    await submitDetails();
+    const delivery = document.querySelector("[data-checkout-delivery]")?.textContent ?? "";
+    assert.match(delivery, /Standard delivery · ₹250/);
+    assert.equal(document.querySelector("[data-free-delivery]")?.textContent, "Free delivery on Oak Chair. The delivery charge is for the rest of your order.");
+    assert.match(document.querySelector("[data-checkout-summary]")!.textContent!, /Delivery\s*₹250/);
+  } finally { await cleanup(); }
+});
+
 test("a field the page rejects is marked and described on the field itself", async () => {
   const { calls, cleanup } = await mount(() => new Response(null, { status: 404 }));
   try {

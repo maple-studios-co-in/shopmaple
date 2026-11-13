@@ -195,6 +195,18 @@ test("shared Keeri producer fixture passes the quote transport unchanged and cro
  await assert.rejects(createKeeriCommerce({...base,fetch:async()=>Response.json({accepted:true},{status:202})}).request("orders",{}),{code:"UPSTREAM_REJECTED"});
 });
 
+test("shared Keeri free-delivery fixtures pass the quote transport unchanged",async()=>{
+ const {readFile}=await import("node:fs/promises");
+ const fixture=JSON.parse(await readFile(new URL("../../../docs/contracts/shopmaple-quote-v2-free-delivery.json",import.meta.url),"utf8"));
+ for(const {request,response} of [fixture.free,fixture.mixed]){
+  const client=createKeeriCommerce({...base,fetch:async()=>Response.json(response)});
+  assert.deepEqual(await client.quote(request),response);
+ }
+ assert.equal(fixture.free.response.snapshot.delivery.source,"free");
+ assert.equal(fixture.free.response.snapshot.shippingPaise,0);
+ assert.deepEqual(fixture.mixed.response.snapshot.delivery.freeDeliveryVariantIds,["keeri:maple:variant"]);
+});
+
 const restart = () => new Response("<html>502 Bad Gateway</html>", { status: 502, headers: { "content-type": "text/html" } });
 const refused = () => {
   throw new TypeError("fetch failed");

@@ -49,8 +49,13 @@ export const checkoutAttemptSchema = z.object({
           undiscountedUnitPricePaise: money.optional(),
         }),
       ),
-      /** The Shiprocket courier Keeri chose and its transit estimate. */
-      delivery: z.object({ courierName: z.string().min(1).max(200), estimatedDays: z.number().int().min(0).nullable() }).nullable().optional(),
+      /** The Shiprocket courier Keeri chose and its transit estimate. `freeDelivery` is there only when Keeri's
+       * free-delivery rule changed the charge: for the whole order, or for the named pieces alone. */
+      delivery: z.object({
+        courierName: z.string().min(1).max(200),
+        estimatedDays: z.number().int().min(0).nullable(),
+        freeDelivery: z.object({ all: z.boolean(), titles: z.array(z.string()).max(50) }).nullable().optional(),
+      }).nullable().optional(),
       currency: z.literal("INR"),
       subtotalPaise: money,
       shippingPaise: money,
