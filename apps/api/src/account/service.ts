@@ -27,6 +27,7 @@ import { HttpError } from "../cart.js";
 import type { SignInCodeMessage } from "./config.js";
 import { paidOrderStates, toOrderDetail, toOrderSummary, type OrderImages, type PaidOrder } from "./orders.js";
 import { loadOrderProgress } from "../orders/keeri-events.js";
+import { variantPhoto } from "../variant-photo.js";
 import {
   generateSignInCode,
   hashNetwork,
@@ -346,9 +347,9 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
   }
 
   /**
-   * Item photos from the catalogue, as the product cards show them: the bought variant's own photo when the product
-   * serves it, else the product's first; only for published products (the media route serves nothing else); null
-   * otherwise. Found through the bindings frozen with the quote, else the variant's Keeri identity.
+   * Item photos from the catalogue, chosen by variantPhoto (variant-photo.ts) as the bag and the order emails choose
+   * them; only for published products (the media route serves nothing else). Found through the bindings frozen with the
+   * quote, else the variant's Keeri identity.
    */
   async function orderImages(orders: Array<PaidOrder & { row: OrderRow }>, firstOnly: boolean): Promise<OrderImages> {
     const local = new Map<string, string>();
@@ -373,12 +374,7 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
       where: { id: { in: [...new Set(local.values())] } },
       select: { id: true, images: true, product: { select: { published: true, images: true } } },
     });
-    const https = (value: string | undefined) => (value?.startsWith("https://") ? value : null);
-    const photos = new Map(variants.map((variant) => {
-      if (!variant.product.published) return [variant.id, null] as const;
-      const own = https(variant.images[0]);
-      return [variant.id, own && variant.product.images.includes(own) ? own : https(variant.product.images[0])] as const;
-    }));
+    const photos = new Map(variants.map((variant) => [variant.id, variantPhoto(variant)] as const));
     const images = new Map<string, string>();
     for (const [source, variantId] of local) {
       const photo = photos.get(variantId);

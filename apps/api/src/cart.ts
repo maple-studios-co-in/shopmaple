@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import type { Cart, CartMutationInput } from "@shopmaple/contracts";
 import { canAddToCart } from "@shopmaple/contracts";
 import { cartCookieName, guestCartToken } from "./cart-credential.js";
+import { variantPhoto } from "./variant-photo.js";
 
 export class HttpError extends Error {
   constructor(
@@ -42,8 +43,9 @@ export async function readCart(
     handle: v.product.handle,
     title: v.product.title,
     variantTitle: v.title,
-    // A product the store no longer lists keeps its line, without its old photo.
-    image: v.product.published ? v.product.images[0] ?? "" : "",
+    // The chosen variant's own photo, as the order email shows it. A product the store no longer lists keeps its line,
+    // without its old photo.
+    image: variantPhoto(v) ?? "",
     pricePaise: v.pricePaise,
     quantity,
     lineTotalPaise: v.pricePaise === null ? null : v.pricePaise * quantity,
