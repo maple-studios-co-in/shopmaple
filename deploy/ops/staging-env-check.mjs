@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const STAGING_ORIGIN = 'https://staging.maplefurnishers.com';
 const must = (env, key, expected, problems) => { if (env[key] !== expected) problems.push(`${key}: must be ${expected}`); };
-const differs = ['RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET', 'KEERI_COMMERCE_TOKEN', 'ADMIN_PREVIEW_SECRET', 'ACCOUNT_CODE_SECRET', 'ORDER_MAIL_TO', 'ENQUIRY_MAIL_TO', 'DATABASE_URL'];
+const differs = ['RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET', 'KEERI_COMMERCE_TOKEN', 'KEERI_SIGN_IN_CLIENT_SECRET', 'ADMIN_PREVIEW_SECRET', 'ACCOUNT_CODE_SECRET', 'ORDER_MAIL_TO', 'ENQUIRY_MAIL_TO', 'DATABASE_URL'];
 
 export function checkStagingEnv(env, production = {}) {
   const problems = [];
@@ -26,6 +26,8 @@ export function checkStagingEnv(env, production = {}) {
   if (env.SITE_ALIASES) problems.push('SITE_ALIASES: must be unset on staging');
   if (env.SEO_INDEXING === 'on') problems.push('SEO_INDEXING: must not be on (staging must stay out of search engines)');
   if (env.KEERI_LEADS_ENABLED === 'true') problems.push('KEERI_LEADS_ENABLED: must not be true (staging enquiries would become real Keeri leads)');
+  // Keeri sends people back to the live store's address only, so staging staff keep shop passwords.
+  if (env.ADMIN_SIGN_IN === 'keeri') problems.push('ADMIN_SIGN_IN: must not be keeri on staging (Keeri returns staff to the live store only; staging uses shop passwords)');
   for (const key of ['KEERI_REVIEWS_TOKEN', 'INSTAGRAM_ACCESS_TOKEN', 'INSTAGRAM_USER_ID', 'META_APP_ID', 'META_APP_SECRET', 'SHOPIFY_CATALOGUE_FILE']) {
     if (env[key]) problems.push(`${key}: must be unset on staging (it would act on live services)`);
   }
