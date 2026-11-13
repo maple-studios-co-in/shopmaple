@@ -1,4 +1,4 @@
-import { checkoutInputSchema, type CheckoutInput } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts/checkout-consent";
 import { z } from "zod";
 
 export const checkoutOptionsSchema = z.object({
@@ -7,6 +7,8 @@ export const checkoutOptionsSchema = z.object({
     .min(1)
     .max(20),
   paymentKeyId: z.string().regex(/^rzp_(test|live)_[A-Za-z0-9]+$/),
+  /** The store offers order updates on WhatsApp (WHATSAPP_ORDER_UPDATES): the form shows the tick box. */
+  whatsappOrderUpdates: z.boolean().optional(),
 });
 export type CheckoutOptions = z.infer<typeof checkoutOptionsSchema>;
 /** A signed-in customer's contact and default address, filled into the form (owner's spec, 10 Nov 2026). */
@@ -156,8 +158,8 @@ export function createCheckoutClient(transport: typeof fetch = (...args) => fetc
   }
   return {
     /** Same details replay the same attempt; changed details or `fresh` start a new one. */
-    async quote(input: CheckoutInput, fresh = false) {
-      const body = JSON.stringify(checkoutInputSchema.parse(input));
+    async quote(input: CheckoutRequest, fresh = false) {
+      const body = JSON.stringify(checkoutRequestSchema.parse(input));
       const payload = canonical(JSON.parse(body));
       if (fresh || payload !== keyedPayload) {
         key = crypto.randomUUID();

@@ -1,4 +1,5 @@
-import { checkoutInputSchema, quoteSnapshotSchema } from "@shopmaple/contracts";
+import { quoteSnapshotSchema } from "@shopmaple/contracts";
+import { checkoutRequestSchema } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import express, { type Express, type Request } from "express";
 import type { CheckoutAttempt } from "@prisma/client";
@@ -20,6 +21,8 @@ export interface CheckoutOptions {
   deliveryMethods: Array<{ id: string; label: string }>;
   /** The Razorpay key id is a public identifier used by the hosted checkout. Never the secret. */
   paymentKeyId: string;
+  /** Whether the checkout page offers "Send my order updates on WhatsApp" (WHATSAPP_ORDER_UPDATES). */
+  whatsappOrderUpdates?: boolean;
 }
 const emptyBody = z.object({}).strict();
 const quoteRejectedMessage =
@@ -173,10 +176,11 @@ export function registerCheckoutRoutes(
     res.json({
       deliveryMethods: options.deliveryMethods.map(({ id, label }) => ({ id, label })),
       paymentKeyId: options.paymentKeyId,
+      whatsappOrderUpdates: options.whatsappOrderUpdates === true,
     });
   });
   app.post("/api/checkout", async (req, res) => {
-    const input = checkoutInputSchema.or(emptyBody).parse(req.body);
+    const input = checkoutRequestSchema.or(emptyBody).parse(req.body);
     const key = idempotencyKey.parse(req.get("Idempotency-Key"));
     if (
       options &&

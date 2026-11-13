@@ -1,10 +1,12 @@
 import {
-  checkoutInputSchema,
   quoteResponseSchema,
   type QuoteRequest,
   type QuoteSnapshot,
 } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type OrderWhatsappUpdates } from "@shopmaple/contracts/checkout-consent";
+import { formatOrderNumber } from "@shopmaple/contracts/account";
 import { createHash, randomUUID } from "node:crypto";
+import { deliveryEstimate } from "../account/orders.js";
 import { loadOrderProgress } from "./keeri-events.js";
 import {
   Prisma,
@@ -81,6 +83,9 @@ interface Options {
   /** Configured tenant for persisted Keeri catalogue identities; required with quoteAuthority. */
   keeriTenantId?: string;
   quoteAuthority?(request: QuoteRequest): Promise<unknown>;
+  /** WHATSAPP_ORDER_UPDATES: checkout records the buyer's consent to order updates on WhatsApp and a paid order tells
+   * Keeri of it. Off (the default), a tick is ignored and Keeri receives exactly the order it always did. */
+  whatsappOrderUpdates?: boolean;
   now?: () => Date;
 }
 /** Stocked carries no lead time; made to order always carries one. */
@@ -301,7 +306,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
     idempotencyKey: string,
     raw: unknown,
   ) {
-    const input = checkoutInputSchema.parse(raw);
+    const { whatsappOrderUpdates: ticked, ...input } = checkoutRequestSchema.parse(raw);
+    // The buyer's consent to WhatsApp order updates. It is no part of the quote Keeri prices.
+    const optIn = options.whatsappOrderUpdates === true && ticked === true;
     async function readCart(tx: Prisma.TransactionClient) {
       const cart = await guestCart(tx, cartToken);
       const rows = await tx.cartItem.findMany({
@@ -364,7 +371,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
       if (!sameCatalogueBindings(frozenBindings, current.bindings))
         throw new OrderFlowError("CATALOGUE_BINDING_CHANGED");
       if (
-        canonical(snapshotRequest(parsed.data)) !== canonical(current.request)
+        canonical(snapshotRequest(parsed.data)) !== canonical(current.request) ||
+        // A changed tick is changed input: consent is recorded once, with the quote it was given for.
+        (existing.whatsappOptInAt !== null) !== optIn
       )
         throw new OrderFlowError("CHECKOUT_INPUT_CHANGED");
       return existing;
@@ -449,6 +458,7 @@ export function createOrderService(db: PrismaClient, options: Options) {
               currency: "INR",
               // Customer accounts list paid attempts by this key (trimmed and lowercased, order-links.ts).
               customerEmailKey: emailKey(s.customer.email),
+              whatsappOptInAt: optIn ? now() : null,
             },
           });
         });
@@ -880,6 +890,31 @@ export function createOrderService(db: PrismaClient, options: Options) {
           orderNumber: current.orderNumber ?? (await nextOrderNumber(tx)),
           customerEmailKey: current.customerEmailKey ?? snapshotEmailKey(current.snapshot),
         });
+        /** What Keeri needs to send this order's WhatsApp messages, only for a buyer who agreed to them. */
+        const whatsappUpdates = async (links: { orderNumber: number }, capturedAt: Date): Promise<OrderWhatsappUpdates | null> => {
+          const snapshot = current.snapshot as unknown as FrozenSnapshot;
+          if (!options.whatsappOrderUpdates || !current.whatsappOptInAt || snapshot.version !== 2) return null;
+          // The confirmation's header image is drawn for the first piece's product page.
+          // A message never holds up a payment: without a usable handle Keeri sends the confirmation's plain picture.
+          let handle: string | null = null;
+          try {
+            const first = storedCatalogueBindings(current.catalogueBindings, options.keeriTenantId ?? "", snapshot)
+              .items.find((b) => b.sourceVariantId === snapshot.items[0]?.variantId);
+            const product = first
+              ? await tx.product.findUnique({ where: { id: first.localProductId }, select: { handle: true } })
+              : null;
+            if (product && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(product.handle) && product.handle.length <= 200) handle = product.handle;
+          } catch (error) {
+            if (!(error instanceof OrderFlowError)) throw error;
+          }
+          return {
+            consentedAt: current.whatsappOptInAt.toISOString(),
+            orderNumber: formatOrderNumber(links.orderNumber),
+            headerHandle: handle,
+            // The same window the buyer's order email and account show, counted from the capture.
+            estimatedDelivery: deliveryEstimate(snapshot, capturedAt),
+          };
+        };
         if (
           !holdLive ||
           lateNow ||
@@ -900,16 +935,19 @@ export function createOrderService(db: PrismaClient, options: Options) {
           await clearCart();
           return finish("reconciliation_required", "PAID_HOLD_LAPSED");
         }
+        const links = await orderLinks();
+        const capturedAt = now();
         await tx.checkoutAttempt.update({
           where: { id: current.id },
           data: {
             state: "captured",
             paymentId: inbox.paymentId,
-            capturedAt: now(),
+            capturedAt,
             failureCode: null,
-            ...(await orderLinks()),
+            ...links,
           },
         });
+        const updates = await whatsappUpdates(links, capturedAt);
         await clearCart();
         await tx.orderOutbox.create({
           data: {
@@ -925,6 +963,8 @@ export function createOrderService(db: PrismaClient, options: Options) {
               currency: current.currency,
               reservationId: current.reservationId,
               snapshot: current.snapshot,
+              // Present only with the buyer's consent: Keeri sends the order's WhatsApp messages from it.
+              ...(updates ? { whatsappUpdates: updates } : {}),
             },
           },
         });

@@ -7,8 +7,11 @@ import { z } from "zod";
 
 /**
  * WhatsApp order confirmations through Meta's WhatsApp Cloud API (owner, 11 Nov 2026; docs/whatsapp-order-confirmation.md).
- * Off until the owner's WhatsApp Business account exists: with no WHATSAPP_* settings `loadWhatsAppConfig` returns null,
- * and nothing calls the sender yet.
+ *
+ * Not connected, and not to be: Keeri sends every WhatsApp order message (owner, 13 Nov 2026) through the WhatsApp
+ * connection it already runs, and the store only collects the buyer's consent at checkout (orders/service.ts). With no
+ * WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_API_VERSION `loadWhatsAppConfig` returns null, and
+ * nothing calls the sender. Do not set those on the store.
  */
 export interface WhatsAppConfig {
   /** The WhatsApp Business phone number's id in Meta (not the phone number). */
@@ -105,13 +108,9 @@ const requestDeadlineMs = 8_000;
  * an Indian mobile number, in the configured template language. An accepted answer means Meta took the message, not
  * that it was delivered: delivery and later failures arrive on Meta's webhook.
  *
- * Ready to wire into the order worker (apps/api/src/orders/notifications.ts), which needs first:
- * - a notification row kind (e.g. `customer_whatsapp_confirmed`) so each order is sent at most once. The Cloud API takes
- *   no idempotency key, so an `uncertain` outcome (a timeout, a broken answer) may have been delivered: mark it for a
- *   person rather than resending it;
- * - the customer's opt-in to WhatsApp messages, recorded at checkout. Without it, send nothing;
- * - the approved `order_confirmation` template in the configured language, and WHATSAPP_* settings
- *   (`loadWhatsAppConfig`). Rejected or unknown templates come back as `failed` / `configuration_error`.
+ * Unused (see the top of this file). The Cloud API takes no idempotency key, so an `uncertain` outcome (a timeout, a
+ * broken answer) may have been delivered and must not be resent automatically; rejected or unknown templates come back
+ * as `failed` / `configuration_error`. Keeri's sender follows the same rules.
  * Error bodies are read only for Meta's error code and never kept or returned; nothing here logs.
  */
 export async function sendOrderConfirmationWhatsApp(

@@ -75,7 +75,8 @@ function AddressFields({ id, prefix, defaults, errors, locked }: { id: string; p
  * checks it with the quote, which takes it off as one line; removing it quotes again without it.
  */
 export function CheckoutDetails({
-  id, phase, defaults, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, fieldErrors, problems, notice, busy,
+  id, phase, defaults, options, deliveryMethodId, onDeliveryMethod, sameBilling, onSameBilling, whatsappUpdates = false, onWhatsappUpdates,
+  fieldErrors, problems, notice, busy,
   enquiryHref, account, attempt, expired = false, photos, promoCode, onPromoCode, promoError, onRemoveCode, onSubmit, onPay, onEdit, onRequote,
 }: {
   id: string;
@@ -86,6 +87,9 @@ export function CheckoutDetails({
   onDeliveryMethod: (id: string) => void;
   sameBilling: boolean;
   onSameBilling: (value: boolean) => void;
+  /** "Send my order updates on WhatsApp", shown when the store offers them (`options.whatsappOrderUpdates`). */
+  whatsappUpdates?: boolean;
+  onWhatsappUpdates?: (value: boolean) => void;
   /** Problems by field name ("email", "shipping.pincode"), each shown on its field. */
   fieldErrors: Record<string, string>;
   /** The same problems by label, for the summary line by the button. */
@@ -172,6 +176,14 @@ export function CheckoutDetails({
                 )}
               </Field>
             </div>
+            {/* The buyer's consent to WhatsApp messages about this order (owner, 13 Nov 2026): theirs to tick. */}
+            {options.whatsappOrderUpdates ? (
+              <label className="account-check" data-checkout-whatsapp="">
+                <input type="checkbox" name="whatsappOrderUpdates" checked={whatsappUpdates} disabled={locked}
+                  onChange={(event) => onWhatsappUpdates?.(event.currentTarget.checked)} />
+                Send my order updates on WhatsApp
+              </label>
+            ) : null}
             <label className="account-check">
               <input type="checkbox" name="sameBilling" checked={sameBilling} disabled={locked} onChange={(event) => onSameBilling(event.currentTarget.checked)} />
               Billing address is the same as delivery address

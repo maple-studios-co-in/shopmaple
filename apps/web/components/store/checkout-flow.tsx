@@ -1,5 +1,5 @@
 "use client";
-import { checkoutInputSchema, type CheckoutInput } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts/checkout-consent";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { z } from "zod";
@@ -59,7 +59,7 @@ const fieldProblems: Record<string, string> = {
   pincode: "Enter the 6-digit PIN code.",
 };
 /** The details already entered win; otherwise a signed-in customer's contact and default address fill the form. */
-function defaultsFrom(input: CheckoutInput | null, account: CheckoutAccount | undefined): CheckoutDefaults | null {
+function defaultsFrom(input: CheckoutRequest | null, account: CheckoutAccount | undefined): CheckoutDefaults | null {
   if (input) {
     const [firstName = "", ...rest] = input.customer.name.split(" ");
     return { email: input.customer.email, firstName, lastName: rest.join(" "), phone: input.customer.phone.replace(/^\+91/, ""),
@@ -77,7 +77,7 @@ const minimumPayWindowMs = 60_000;
 const storageKey = "maple-checkout-attempt-v1";
 const storedAttemptSchema = z.object({
   attemptId: z.uuid(),
-  input: checkoutInputSchema,
+  input: checkoutRequestSchema,
   submitted: z.boolean(),
   // The pieces' photos for the result screens, as the cart showed them when payment started (capture empties it).
   // Anything malformed drops the photos, never the attempt.
@@ -180,7 +180,9 @@ function CheckoutStages({
   const { cart, cartReady, recoverCart } = useShop();
   const client = useMemo(() => createCheckoutClient(), []);
   const [stage, setStage] = useState<Stage>({ kind: "details" });
-  const [input, setInput] = useState<CheckoutInput | null>(null);
+  const [input, setInput] = useState<CheckoutRequest | null>(null);
+  // "Send my order updates on WhatsApp": the buyer's consent, unticked until they tick it.
+  const [whatsappUpdates, setWhatsappUpdates] = useState(false);
   const [sameBilling, setSameBilling] = useState(true);
   const [deliveryMethodId, setDeliveryMethodId] = useState(options.deliveryMethods[0]?.id ?? "");
   const [problems, setProblems] = useState<string[]>([]);
@@ -252,7 +254,7 @@ function CheckoutStages({
       /* The server quarantines an uncertain release; the hold otherwise lapses on its own. */
     }
   }
-  async function requestQuote(data: CheckoutInput, fresh: boolean) {
+  async function requestQuote(data: CheckoutRequest, fresh: boolean) {
     setBusy(true);
     setNotice("");
     setPromoError("");
@@ -272,7 +274,11 @@ function CheckoutStages({
     event.preventDefault();
     const form = event.currentTarget;
     const code = promoCode.trim();
-    const parsed = checkoutInputSchema.safeParse({ ...readForm(form, sameBilling), ...(code ? { promoCode: code } : {}) });
+    const parsed = checkoutRequestSchema.safeParse({
+      ...readForm(form, sameBilling),
+      ...(code ? { promoCode: code } : {}),
+      ...(options.whatsappOrderUpdates && whatsappUpdates ? { whatsappOrderUpdates: true } : {}),
+    });
     if (!parsed.success) {
       // With billing the same as delivery, a delivery problem is not repeated as a billing one.
       const issues = parsed.error.issues.filter((issue) => issue.path[0] !== "promoCode" && !(sameBilling && issue.path[0] === "billingAddress"));
@@ -406,6 +412,7 @@ function CheckoutStages({
     setInput(stored.input);
     if (stored.photos) setPhotos(stored.photos);
     setPromoCode(stored.input.promoCode ?? "");
+    setWhatsappUpdates(stored.input.whatsappOrderUpdates === true);
     setStage({ kind: "resuming" });
     void (async () => {
       try {
@@ -661,6 +668,8 @@ function CheckoutStages({
       onDeliveryMethod={setDeliveryMethodId}
       sameBilling={sameBilling}
       onSameBilling={setSameBilling}
+      whatsappUpdates={whatsappUpdates}
+      onWhatsappUpdates={setWhatsappUpdates}
       fieldErrors={fieldErrors}
       problems={problems}
       notice={notice}
