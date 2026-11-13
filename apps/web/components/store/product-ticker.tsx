@@ -4,8 +4,8 @@ import { assurances } from "./product-assurances";
  * Frame 999:317: large burgundy promises on a loop, a green dot between each. It stops on hover and, wrapped and still,
  * for people who ask for reduced motion (the owner did not want a pause button on the page).
  */
-export function ProductTicker({ warranty }: { warranty: string }) {
-  const items = [warranty, "Crafted in Delhi", "Fully customisable", assurances.delivery];
+export function ProductTicker({ warranty, delivery = assurances.delivery }: { warranty: string; /** "Free delivery" for a finish that ships free. */ delivery?: string }) {
+  const items = [warranty, "Crafted in Delhi", "Fully customisable", delivery];
   const row = () => (
     <ul aria-hidden="true" className="m-0 flex shrink-0 list-none items-center p-0">
       {items.map((item) => (

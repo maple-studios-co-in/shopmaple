@@ -66,6 +66,8 @@ export const variantSchema = z.object({
   stockPolicy: z.enum(["stocked", "made_to_order", "dropship", "unverified"]),
   /** Days Keeri approved to make a made-to-order piece; null when stocked or not sellable. */
   leadTimeDays: z.number().int().min(1).max(365).nullable().optional(),
+  /** Keeri staff ticked this variant free delivery; checkout still asks the courier about the buyer's pincode. */
+  freeDelivery: z.boolean().optional(),
   /** This variant's own photos; the product's `images` keeps every photo for cards. */
   images: z.array(httpsUrl).optional(),
   /** The readable `?variant=` value on the product address, unique within its product. */

@@ -10,6 +10,8 @@ export interface KeeriFetchOptions {
   includeProductPage?: boolean;
   /** Each model's own offer for the product page's countdown (Keeri's `offers=1`, which needs `productPage=1`). */
   includeOffers?: boolean;
+  /** Each variant's free-delivery tick for the "Free delivery" badge (Keeri's `freeDelivery=1`, which needs `offers=1`). */
+  includeFreeDelivery?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -25,9 +27,9 @@ export class KeeriFetchError extends Error {
 }
 /**
  * Keeri accepts each opt-in only after the ones before it, in exactly this order:
- * taxonomy, content, attributes, then compareAt and productPage together, then offers.
+ * taxonomy, content, attributes, then compareAt and productPage together, then offers, then freeDelivery.
  */
-export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers">) {
+export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers" | "includeFreeDelivery">) {
   const query = new URLSearchParams();
   if (options.includeTaxonomy || options.includeContent) query.set("taxonomy", "1");
   if (options.includeContent) query.set("content", "1");
@@ -36,6 +38,7 @@ export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonom
     query.set("compareAt", "1");
     query.set("productPage", "1");
     if (options.includeOffers) query.set("offers", "1");
+    if (options.includeOffers && options.includeFreeDelivery) query.set("freeDelivery", "1");
   }
   const text = query.toString();
   return text ? `?${text}` : "";
@@ -97,8 +100,12 @@ export async function fetchKeeriExport(
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("EXPORT_TIMEOUT");
     }
-    // A Keeri release from before an opt-in (offers, the product page, variant options) refuses it with 400;
-    // the caller asks again a level down.
+    // A Keeri release from before an opt-in (free delivery, offers, the product page, variant options) refuses it
+    // with 400; the caller asks again a level down.
+    if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers && options.includeFreeDelivery) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("FREE_DELIVERY_UNSUPPORTED");
+    }
     if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("OFFERS_UNSUPPORTED");

@@ -251,6 +251,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
               shipping: shippingSchema.optional(),
               fulfilment: fulfilmentSchema.optional(),
               eligibility: eligibilitySchema.optional(),
+              // The `freeDelivery=1` level: staff's free-delivery tick on a selected ShopMaple row. Absent below that level.
+              freeDelivery: z.boolean().optional(),
             }),
           )
           .max(500),
@@ -505,6 +507,8 @@ function adaptValidated(
           available: data.schemaVersion === 2 && keeriSellable(v),
           stockPolicy: v.stockPolicy,
           leadTimeDays: "fulfilment" in v && v.fulfilment?.kind === "made_to_order" ? v.fulfilment.leadTimeDays : null,
+          // Only at the free-delivery level; the sync clears a stored tick when a later export has none.
+          ...("freeDelivery" in v && v.freeDelivery !== undefined ? { freeDelivery: v.freeDelivery } : {}),
           ...("productPage" in v && v.productPage ? { productPage: {
             ...v.productPage,
             options: ((v as V2Variant).attributes ?? [])

@@ -30,6 +30,8 @@ export const productCardSchema = z.object({
   // Keeri's approved reviews: their average (to one decimal) and how many. Absent for a piece without any, so a card
   // never shows a score nobody gave, and absent from older payloads.
   rating: z.object({ value: z.number().min(1).max(5), count: z.number().int().min(1).max(1_000_000) }).strict().optional(),
+  // Every variant a shopper can buy is one Keeri staff ticked free delivery (the API decides). Absent otherwise, and from older payloads.
+  freeDelivery: z.literal(true).optional(),
 }).strict().superRefine((card, ctx) => {
   if ((card.compareAtPaise !== null && (card.pricePaise === null || card.compareAtPaise <= card.pricePaise)) ||
       (card.pricePaise === null && (card.priceFrom || card.otherOptionsOnRequest)) ||

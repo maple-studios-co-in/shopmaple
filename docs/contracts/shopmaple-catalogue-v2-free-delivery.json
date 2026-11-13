@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 2,
+  "source": "keeri-export",
+  "complete": true,
+  "tenantId": "tenant-demo",
+  "capturedAt": "2026-11-13T00:00:01.000Z",
+  "models": [
+    {
+      "id": "model-demo",
+      "tenantId": "tenant-demo",
+      "name": "Demo dining chair",
+      "productType": "chair",
+      "taxonomy": {
+        "category": "Dining",
+        "subCategory": null
+      },
+      "content": {
+        "details": null,
+        "materials": "Solid wood frame",
+        "dimensions": "52 x 56 x 81 cm",
+        "careInstructions": null,
+        "warranty": null
+      },
+      "productPage": {
+        "specs": {
+          "widthCm": 52.5,
+          "depthCm": 56,
+          "heightCm": 81,
+          "seatHeightCm": 46,
+          "weightKg": 6.5
+        },
+        "highlights": [
+          "Solid wood frame",
+          "Hand-finished in Jaipur",
+          "Choose your fabric"
+        ],
+        "faq": [
+          {
+            "question": "Can I choose a different fabric?",
+            "answer": "Yes, from the swatches shown on this page."
+          }
+        ],
+        "assembly": {
+          "required": true,
+          "minutes": 20
+        },
+        "customisation": {
+          "options": [
+            "fabric",
+            "finish"
+          ],
+          "note": "Ask us for other finishes."
+        },
+        "rooms": [
+          {
+            "id": "room-demo",
+            "name": "Dining"
+          }
+        ],
+        "reviews": {
+          "average": 4.5,
+          "count": 2,
+          "items": [
+            {
+              "id": "review-demo-1",
+              "rating": 5,
+              "title": "Sturdy and comfortable",
+              "body": "Synthetic fixture text, not a real review.",
+              "reviewerName": "Fixture A",
+              "city": "Jaipur",
+              "reviewedAt": "2026-10-20",
+              "source": "online_order",
+              "verifiedBuyer": true,
+              "variantId": "variant-demo",
+              "photos": [
+                {
+                  "id": "review-photo-demo",
+                  "url": "https://shop.maplefurnishers.com/media/keeri-review/review-photo-demo.webp",
+                  "width": 1600,
+                  "height": 1200
+                }
+              ]
+            },
+            {
+              "id": "review-demo-2",
+              "rating": 4,
+              "title": "Good finish",
+              "body": "Synthetic fixture text, not a real review.",
+              "reviewerName": "Fixture B",
+              "city": null,
+              "reviewedAt": "2026-09-01",
+              "source": "showroom",
+              "verifiedBuyer": false,
+              "variantId": null,
+              "photos": []
+            }
+          ]
+        },
+        "bundleIds": [
+          "bundle-demo"
+        ]
+      },
+      "offer": null,
+      "description": null,
+      "status": "published",
+      "channelPublished": true,
+      "deletedAt": null,
+      "updatedAt": "2026-11-01T00:00:00.000Z",
+      "media": [],
+      "variants": [
+        {
+          "id": "variant-demo",
+          "tenantId": "tenant-demo",
+          "modelId": "model-demo",
+          "sku": "DEMO-OAK-AG",
+          "variantName": null,
+          "status": "published",
+          "published": true,
+          "channelPublished": true,
+          "deletedAt": null,
+          "stockPolicy": "made_to_order",
+          "shipping": {
+            "packedWeightGrams": 7200,
+            "cartonLengthCm": 60,
+            "cartonWidthCm": 58,
+            "cartonHeightCm": 86,
+            "cartonCount": 1
+          },
+          "fulfilment": {
+            "kind": "made_to_order",
+            "leadTimeDays": 28
+          },
+          "eligibility": {
+            "sellable": true,
+            "reasons": []
+          },
+          "updatedAt": "2026-11-01T00:00:00.000Z",
+          "prices": [
+            {
+              "kind": "mrp",
+              "amount": 1250000,
+              "currency": "INR",
+              "updatedAt": "2026-11-01T00:00:00.000Z"
+            },
+            {
+              "kind": "store_price",
+              "amount": 1475000,
+              "currency": "INR",
+              "updatedAt": "2026-11-01T00:00:00.000Z"
+            }
+          ],
+          "media": [
+            {
+              "id": "asset-demo",
+              "tenantId": "tenant-demo",
+              "modelId": null,
+              "variantId": "variant-demo",
+              "stage": "approved",
+              "storageKey": "public-media:asset-demo",
+              "supersededAt": null,
+              "position": 0,
+              "role": "cutout",
+              "width": 1600,
+              "height": 1200,
+              "altText": "Demo dining chair in oak with grey fabric",
+              "hotspots": [
+                {
+                  "x": 0.4812,
+                  "y": 0.3125,
+                  "label": "Fabric",
+                  "text": "Ash Grey boucle, removable cover.",
+                  "type": "fabric"
+                },
+                {
+                  "x": 0.31,
+                  "y": 0.82,
+                  "label": "Legs",
+                  "text": "Solid oak, oil finish.",
+                  "type": "material"
+                }
+              ],
+              "realPhoto": false
+            }
+          ],
+          "shopifyProductId": null,
+          "shopifyVariantId": null,
+          "attributes": [
+            {
+              "axis": "fabric",
+              "value": "Ash Grey",
+              "code": "AG",
+              "hex": "#B2B2AE"
+            },
+            {
+              "axis": "polish",
+              "value": "Natural Oak",
+              "code": "NO",
+              "hex": null
+            }
+          ],
+          "productPage": {
+            "specs": {
+              "widthCm": null,
+              "depthCm": null,
+              "heightCm": null,
+              "seatHeightCm": null,
+              "weightKg": null
+            },
+            "copy": {
+              "description": null,
+              "details": null,
+              "materials": null,
+              "dimensions": null,
+              "careInstructions": null
+            },
+            "batch": {
+              "remaining": 3,
+              "showAtOrBelow": 5
+            }
+          },
+          "freeDelivery": true
+        },
+        {
+          "id": "variant-demo-walnut",
+          "tenantId": "tenant-demo",
+          "modelId": "model-demo",
+          "sku": "DEMO-WAL-AG",
+          "variantName": null,
+          "status": "published",
+          "published": true,
+          "channelPublished": true,
+          "deletedAt": null,
+          "stockPolicy": "made_to_order",
+          "shipping": {
+            "packedWeightGrams": 7200,
+            "cartonLengthCm": 60,
+            "cartonWidthCm": 58,
+            "cartonHeightCm": 86,
+            "cartonCount": 1
+          },
+          "fulfilment": {
+            "kind": "made_to_order",
+            "leadTimeDays": 28
+          },
+          "eligibility": {
+            "sellable": true,
+            "reasons": []
+          },
+          "updatedAt": "2026-11-01T00:00:00.000Z",
+          "prices": [
+            {
+              "kind": "mrp",
+              "amount": 1250000,
+              "currency": "INR",
+              "updatedAt": "2026-11-01T00:00:00.000Z"
+            },
+            {
+              "kind": "store_price",
+              "amount": 1475000,
+              "currency": "INR",
+              "updatedAt": "2026-11-01T00:00:00.000Z"
+            }
+          ],
+          "media": [],
+          "shopifyProductId": null,
+          "shopifyVariantId": null,
+          "attributes": [
+            {
+              "axis": "fabric",
+              "value": "Ash Grey",
+              "code": "AG",
+              "hex": "#B2B2AE"
+            },
+            {
+              "axis": "polish",
+              "value": "Dark Walnut",
+              "code": "DW",
+              "hex": null
+            }
+          ],
+          "productPage": {
+            "specs": {
+              "widthCm": null,
+              "depthCm": null,
+              "heightCm": null,
+              "seatHeightCm": null,
+              "weightKg": null
+            },
+            "copy": {
+              "description": null,
+              "details": null,
+              "materials": null,
+              "dimensions": null,
+              "careInstructions": null
+            },
+            "batch": null
+          },
+          "freeDelivery": false
+        }
+      ],
+      "shopifyProductId": null
+    },
+    {
+      "id": "model-demo-table",
+      "tenantId": "tenant-demo",
+      "name": "Demo dining table",
+      "productType": "table",
+      "taxonomy": {
+        "category": "Dining",
+        "subCategory": "6 Seater"
+      },
+      "content": {
+        "details": null,
+        "materials": null,
+        "dimensions": null,
+        "careInstructions": null,
+        "warranty": null
+      },
+      "productPage": {
+        "specs": {
+          "widthCm": null,
+          "depthCm": null,
+          "heightCm": null,
+          "seatHeightCm": null,
+          "weightKg": null
+        },
+        "highlights": [],
+        "faq": [],
+        "assembly": null,
+        "customisation": null,
+        "rooms": [],
+        "reviews": {
+          "average": null,
+          "count": 0,
+          "items": []
+        },
+        "bundleIds": [
+          "bundle-demo"
+        ]
+      },
+      "offer": null,
+      "description": null,
+      "status": "published",
+      "channelPublished": true,
+      "deletedAt": null,
+      "updatedAt": "2026-11-01T00:00:00.000Z",
+      "media": [],
+      "variants": [],
+      "shopifyProductId": null
+    }
+  ],
+  "publication": [
+    {
+      "modelId": "model-demo",
+      "handle": "keeri-model-demo",
+      "category": null
+    },
+    {
+      "modelId": "model-demo-table",
+      "handle": "keeri-model-demo-table",
+      "category": null
+    }
+  ],
+  "bundles": [
+    {
+      "id": "bundle-demo",
+      "name": "Demo dining set",
+      "description": "Synthetic fixture bundle.",
+      "items": [
+        {
+          "modelId": "model-demo",
+          "variantId": "variant-demo",
+          "quantity": 4
+        },
+        {
+          "modelId": "model-demo-table",
+          "variantId": null,
+          "quantity": 1
+        }
+      ]
+    }
+  ],
+  "publicMedia": [
+    {
+      "assetId": "asset-demo",
+      "url": "https://shop.maplefurnishers.com/media/keeri/asset-demo.webp"
+    }
+  ]
+}

@@ -16,11 +16,15 @@ const questions = [
   ["Do you deliver across India?", "Maple delivers across India. Share your location and we will confirm delivery details and the charge before you order."],
 ] as const;
 
-/** `extra`: the product's own questions from Keeri, shown first; a general question it repeats is left out. */
-export function ProductFaq({ extra = [] }: { extra?: readonly (readonly [string, string])[] }) {
+/**
+ * `extra`: the product's own questions from Keeri, shown first; a general question it repeats is left out.
+ * `shipsFree`: the chosen finish ships free (Keeri's tick), so the shipping answer says that instead of a charge.
+ */
+export function ProductFaq({ extra = [], shipsFree = false }: { extra?: readonly (readonly [string, string])[]; shipsFree?: boolean }) {
   const [open, setOpen] = useState(-1);
   const asked = new Set(extra.map(([q]) => q.trim().toLowerCase()));
-  const items = [...extra, ...questions.filter(([q]) => !asked.has(q.toLowerCase()))];
+  const general = questions.map(([q, a]) => [q, shipsFree && q === questions[1][0] ? "Delivery is free on this piece. It is confirmed for your address at checkout." : a] as const);
+  const items = [...extra, ...general.filter(([q]) => !asked.has(q.toLowerCase()))];
   return (
     <section data-store data-faq aria-labelledby="product-faq-title" className="bg-white px-4 font-text text-black md:px-12">
       <div className="flex flex-col gap-10 lg:flex-row lg:justify-center lg:gap-[clamp(96px,8vw,200px)]">

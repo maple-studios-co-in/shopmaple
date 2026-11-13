@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Truck } from "lucide-react";
 import { discountPercent, type ProductCardModel } from "@/lib/product-card-model";
 import { shopMoney } from "@/lib/format";
 import { ProductImage } from "../product-image";
@@ -50,6 +50,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
           {sale && percent !== null ? <span data-card-discount className="rounded-[4px] bg-[#e6f2e3] px-1.5 py-1 text-[10px] leading-none font-bold text-[#2f6b3a]">{percent}% OFF</span> : null}
           {sale ? <del className="basis-full text-label font-normal text-taupe">{shopMoney(product.compareAtPaise!)}</del> : null}
         </p>
+        {product.freeDelivery ? <p data-card-free-delivery className="m-0 inline-flex items-center gap-1 text-meta font-semibold text-[#2f6b32]"><Truck aria-hidden="true" className="size-3.5" strokeWidth={1.75} />Free delivery</p> : null}
         {product.otherOptionsOnRequest && <p data-card-options className="m-0 text-meta text-taupe">Other options on request</p>}
         {product.optionCount > 1 && hasOptionPhotos(product) && <CardOptionThumbs product={product} />}
         {product.optionCount > 1 && !hasOptionPhotos(product) && (
