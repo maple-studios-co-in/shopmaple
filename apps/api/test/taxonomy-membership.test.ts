@@ -54,6 +54,7 @@ test('functional collection aliases follow explicit source taxonomy without cros
  ['bed','Bedroom','Solid Wood Beds',['solid-wood-beds']],
  ['Beds','Bedroom','Kids Beds',['kids-beds']],['crib','Bedroom',null,['kids-beds']],['Outdoors','Outdoor Sets',null,['outdoor-furnitures']],['sofa','3 Seater',null,['3-seater-sofa']],
  ['sofa','5 Seater',null,['5-seater-sofa']],['sofa','7+ Seater',null,['7-seater-sofa']],
+ ['sofa','L-Shape',null,['l-shape-sofa','l-shape-sofa-set']],
  ];
  for(const [productType,category,subCategory,routes] of examples){
   const item=product('keeri-only',{productType,category,subCategory});
@@ -70,6 +71,18 @@ test("kids beds take only Keeri's kids' beds and cribs", () => {
     product("chair", { productType: "chair", category: "Bedroom sofa chair", subCategory: "Kids Beds" }),
   ];
   assert.deepEqual(handles(products, "kids-beds"), ["cot", "crib"]);
+});
+
+// Benches & Ottomans (owner, 14 Nov 2026) holds Keeri's benches and ottomans and nothing else from the bedroom.
+test("benches take only Keeri benches and ottomans", () => {
+  const products = [
+    product("verona", { productType: "bench", category: "Bedroom Bench", subCategory: null }),
+    product("aileron", { productType: " Bench ", category: "Bedroom", subCategory: null }),
+    product("elara", { productType: "ottoman", category: "Bedroom", subCategory: null }),
+    product("bed", { productType: "Beds", category: "Bedroom", subCategory: "Fabric Beds" }, "beds"),
+    product("stool", { productType: "stool", category: null, subCategory: null }),
+  ];
+  assert.deepEqual(handles(products, "benches"), ["verona", "aileron", "elara"]);
 });
 
 // Office Chairs (owner, 12 Nov 2026): Keeri files them as Chair › Office Chairs (code OFC). They join the chairs
