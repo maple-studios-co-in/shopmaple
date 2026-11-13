@@ -88,9 +88,10 @@ const staffUser = (admin: { id: string; email: string; name: string | null; role
 });
 /**
  * What a route needs of the website's content. `any` is for routes that are not about content at all:
- * the session itself, signing out, and the Enquiries screen, which has its own check.
+ * the session itself and the Enquiries screen, which has its own check. `sign-out` is `any` for a session
+ * Keeri has not confirmed lately as well: somebody must always be able to end their own session.
  */
-export type StaffNeed = "any" | "view" | "edit";
+export type StaffNeed = "any" | "view" | "edit" | "sign-out";
 const contentLevel = { none: 0, viewer: 1, editor: 2, publisher: 3 } as const;
 export async function requireStaff(
   db: Database,
@@ -110,7 +111,7 @@ export async function requireStaff(
     where: { tokenHash },
     include: { admin: true },
   });
-  if (!session || session.expiresAt <= new Date() || !keeriConfirmed(session)) throw authRequired();
+  if (!session || session.expiresAt <= new Date() || (needs !== "sign-out" && !keeriConfirmed(session))) throw authRequired();
   if (lock)
     await db.$queryRaw`SELECT "id" FROM "ShopAdmin" WHERE "id"=${session.adminId} FOR SHARE`;
   const admin = lock
@@ -135,7 +136,7 @@ export async function requireStaff(
       );
   }
   const level = contentLevel[admin.role];
-  if (needs !== "any" && level < 1)
+  if (needs !== "any" && needs !== "sign-out" && level < 1)
     throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account does not include the website's content.");
   if (needs === "edit" && level < 2)
     throw new HttpError(403, "ADMIN_ROLE_REQUIRED", "Your account can view the website's content but not change it.");
@@ -181,9 +182,14 @@ export function registerStaffRoutes(
       const input = loginSchema.parse(req.body);
       // Any other address is treated as one nobody holds: the same answer, at the same cost.
       const allowed = !keeri || (keeri.emergencyEmail !== null && input.email === keeri.emergencyEmail);
-      const admin = allowed
+      let admin = allowed
         ? await db.shopAdmin.findUnique({ where: { email: input.email } })
         : null;
+      // A lock that has run out is over: the count starts again. Without this the count stayed at five,
+      // so one wrong try every fifteen minutes kept the account locked for as long as somebody cared to.
+      if (admin?.lockedUntil && admin.lockedUntil <= new Date())
+        admin = await db.shopAdmin.update({ where: { id: admin.id }, data: { failedAttempts: 0, lockedUntil: null } });
+      const locked = Boolean(admin?.lockedUntil && admin.lockedUntil > new Date());
       const valid = await verifyPassword(
         input.password,
         admin?.passwordHash ?? dummyHash,
@@ -192,9 +198,10 @@ export function registerStaffRoutes(
         !admin?.active ||
         !admin.passwordHash ||
         !valid ||
-        (admin.lockedUntil && admin.lockedUntil > new Date())
+        locked
       ) {
-        if (admin && !valid) {
+        // A try made while the account is locked is refused but not counted, so it cannot stretch the lock.
+        if (admin && !valid && !locked) {
           const failed = await db.shopAdmin.update({
             where: { id: admin.id },
             data: { failedAttempts: { increment: 1 } },
@@ -204,6 +211,11 @@ export function registerStaffRoutes(
               where: { id: admin.id },
               data: { lockedUntil: new Date(Date.now() + 15 * 60000) },
             });
+        }
+        // A refused try at the emergency account is recorded like a successful one. No address, no password.
+        if (keeri && admin) {
+          await db.shopAdminSignIn.create({ data: { adminId: admin.id, method: "emergency_failed" } });
+          console.warn(`[admin] emergency password sign-in refused for staff ${admin.id}${locked ? " (locked)" : ""}`);
         }
         throw new HttpError(
           401,
@@ -255,7 +267,7 @@ export function registerStaffRoutes(
   // itself, signing out, and the Enquiries screen, which somebody may hold with nothing else.
   const openToAnyRole = (path: string) => path === "/session" || path === "/logout" || path === "/enquiries" || path.startsWith("/enquiries/");
   app.use("/api/admin", async (req, _res, next) => {
-    await requireStaff(db, req, secure, false, false, false, openToAnyRole(req.path) ? "any" : "view");
+    await requireStaff(db, req, secure, false, false, false, req.path === "/logout" ? "sign-out" : openToAnyRole(req.path) ? "any" : "view");
     next();
   });
   app.get("/api/admin/session", async (req, res) => {
@@ -263,7 +275,7 @@ export function registerStaffRoutes(
     res.json({ user, csrfToken, ...signInOffer(signIn) });
   });
   app.post("/api/admin/logout", async (req, res) => {
-    const session = await requireStaff(db, req, secure, true, false, false, "any");
+    const session = await requireStaff(db, req, secure, true, false, false, "sign-out");
     await db.shopAdminSession.deleteMany({
       where: { tokenHash: session.tokenHash },
     });

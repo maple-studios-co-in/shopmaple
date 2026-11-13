@@ -129,8 +129,12 @@ export function keeriSessionGuard(db: PrismaClient, secure: boolean, signIn: Adm
     return age < keeriGraceMs ? "ok" : "unconfirmed";
   }
 
+  // The ways in and the way out are not Keeri's to hold shut. When Keeri has been unreachable past the
+  // grace, the browser still carries its Keeri session cookie, and that is exactly the browser that needs
+  // the emergency sign-in, its reset link, a fresh trip to Keeri, or to sign out.
+  const beforeSession = new Set(["/login", "/logout", "/emergency/reset-request", "/emergency/reset", "/keeri/start", "/keeri/callback"]);
   return async (req, _res, next) => {
-    const token = readToken(req, secure);
+    const token = beforeSession.has(req.path) ? null : readToken(req, secure);
     const result = token ? await standing(token) : "ok";
     if (result === "ended") throw authRequired();
     if (result === "unconfirmed")

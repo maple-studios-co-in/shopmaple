@@ -14,6 +14,7 @@ import { createSignInCodeSender, loadAccountConfig } from "./account/config.js";
 import { backfillOrderLinks } from "./orders/order-links.js";
 import { loadKeeriOrderEventsConfig } from "./orders/keeri-events.js";
 import { loadAdminSignIn } from "./admin/keeri-sign-in.js";
+import { emergencyAccountProblem } from "./admin/emergency-reset.js";
 const env = z
   .object({
     DATABASE_URL: z.url(),
@@ -55,6 +56,9 @@ const adminSignIn = loadAdminSignIn(process.env);
 const db = new PrismaClient();
 // With accounts on, the buyer's order email opens the order in their account, which works on any device.
 const commerce = commerceConfig ? composeCommerce(db, commerceConfig, { accountLinks: accountConfig !== null }) : null;
+// Said once at start, by setting name only: a mistyped emergency address would otherwise be found out
+// on the day Keeri is down.
+void emergencyAccountProblem(db, adminSignIn).then((problem) => { if (problem) console.error(problem); }).catch(() => undefined);
 // Orders the previous release froze or captured after the migration ran get their email key and MF number now.
 void backfillOrderLinks(db).catch(() => console.error("Order number catch-up failed; it runs again at the next start."));
 const server = createApp(

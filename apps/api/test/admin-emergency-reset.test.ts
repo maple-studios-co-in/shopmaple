@@ -5,6 +5,7 @@ import request from "supertest";
 import { createHash, randomBytes, scryptSync } from "node:crypto";
 import { createApp, type AppConfig } from "../src/app.js";
 import { loadAccountEmail } from "../src/account/config.js";
+import { emergencyAccountProblem } from "../src/admin/emergency-reset.js";
 import type { AdminSignIn } from "../src/admin/keeri-sign-in.js";
 
 // "Forgot the emergency password": an emailed, one-time link for the emergency account only.
@@ -121,7 +122,7 @@ test("two people opening the same link at once cannot both set a password", asyn
   assert.deepEqual(result.map((response) => response.status).sort(), [204, 400]);
 });
 
-test("a lapsed link, a replaced link, a made-up link and a short password are each refused", async () => {
+test("a lapsed link, a made-up link and a short password are each refused; asking again does not cancel a link", async () => {
   const mail = outbox();
   const app = appWith(mail);
   await quiet(() => ask(app));
@@ -129,14 +130,20 @@ test("a lapsed link, a replaced link, a made-up link and a short password are ea
   // Too short: refused, and the link is still good afterwards.
   assert.equal((await choose(app, first, "short")).status, 400);
   assert.equal((await db.shopAdminPasswordReset.findFirstOrThrow()).usedAt, null);
-  // Asking again replaces the first link.
+  // Somebody else asking again does not cancel the link the owner already has...
   await quiet(() => ask(app));
   const second = tokenIn(mail.sent[1]!.text);
   assert.notEqual(second, first);
-  assert.equal((await choose(app, first)).body.code, "RESET_LINK_INVALID");
-  // The second one lapses after fifteen minutes.
-  await db.shopAdminPasswordReset.updateMany({ where: { usedAt: null }, data: { expiresAt: new Date(Date.now() - 1000) } });
+  assert.equal(await db.shopAdminPasswordReset.count({ where: { usedAt: null, expiresAt: { gt: new Date() } } }), 2);
+  // ...but using one ends the other.
+  assert.equal((await quiet(() => choose(app, first))).result.status, 204);
   assert.equal((await choose(app, second)).body.code, "RESET_LINK_INVALID");
+  await db.shopAdmin.update({ where: { email: owner }, data: { passwordHash: hashOf(oldPassword) } });
+  // A link lapses after fifteen minutes.
+  await quiet(() => ask(app));
+  const third = tokenIn(mail.sent[2]!.text);
+  await db.shopAdminPasswordReset.updateMany({ where: { usedAt: null }, data: { expiresAt: new Date(Date.now() - 1000) } });
+  assert.equal((await choose(app, third)).body.code, "RESET_LINK_INVALID");
   assert.equal((await choose(app, "f".repeat(64))).body.code, "RESET_LINK_INVALID");
   assert.equal((await choose(app, "not-a-token")).status, 400);
   assert.equal((await quiet(() => signIn(app, oldPassword))).result.status, 200);
@@ -203,4 +210,28 @@ test("an emergency account that moved to Keeri and lost nothing can still be giv
   await quiet(() => ask(app));
   assert.equal((await quiet(() => choose(app, tokenIn(mail.sent[0]!.text)))).result.status, 204);
   assert.equal((await quiet(() => signIn(app, newPassword))).result.status, 200);
+});
+
+test("setting a new password also clears a lock, so a locked-out owner is never stuck", async () => {
+  const mail = outbox();
+  const app = appWith(mail);
+  await db.shopAdmin.update({ where: { email: owner }, data: { failedAttempts: 5, lockedUntil: new Date(Date.now() + 15 * 60_000) } });
+  assert.equal((await quiet(() => signIn(app, oldPassword))).result.status, 401);
+  await quiet(() => ask(app));
+  assert.equal((await quiet(() => choose(app, tokenIn(mail.sent[0]!.text)))).result.status, 204);
+  assert.equal((await quiet(() => signIn(app, newPassword))).result.status, 200);
+});
+
+test("at start-up the store says, by setting name only, when the emergency account cannot work", async () => {
+  const mail = outbox();
+  assert.equal(await emergencyAccountProblem(db, { mode: "password" }), null);
+  assert.equal(await emergencyAccountProblem(db, mode(mail)), null);
+  assert.match((await emergencyAccountProblem(db, mode(mail, null)))!, /No emergency account is named/);
+  const mistyped = await emergencyAccountProblem(db, mode(mail, "ownr@example.invalid"));
+  assert.match(mistyped!, /does not match an active shop-admin account/);
+  assert.ok(!mistyped!.includes("ownr@example.invalid"));
+  await db.shopAdmin.update({ where: { email: owner }, data: { passwordHash: null } });
+  assert.match((await emergencyAccountProblem(db, mode(mail)))!, /has no password yet/);
+  await db.shopAdmin.update({ where: { email: owner }, data: { active: false } });
+  assert.match((await emergencyAccountProblem(db, mode(mail)))!, /does not match an active/);
 });

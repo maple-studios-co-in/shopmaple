@@ -32,6 +32,9 @@ function parseSignInOptions(body: unknown): SignInOptions {
   if (candidate.method !== "keeri" || typeof candidate.available !== "boolean" || typeof candidate.emergency !== "boolean") return { method: "password" };
   return { method: "keeri", available: candidate.available, emergency: candidate.emergency, reset: candidate.emergency && candidate.reset === true };
 }
+/** Keeri has not answered for over ten minutes, so the store cannot tell whether this person still has access. */
+const keeriUnreachable = "Keeri can't be reached right now, so we couldn't confirm your access. Try again in a minute. If it stays down, use Emergency access.";
+const isUnconfirmed = (body: unknown) => Boolean(body && typeof body === "object" && (body as { code?: unknown }).code === "ADMIN_ACCESS_UNCONFIRMED");
 /** Why a trip to Keeri and back did not sign the person in (the callback's `?sign_in=`). */
 const signInOutcomes: Record<string, string> = {
   denied: "Your Keeri account doesn't have access to the shop admin. Ask whoever manages roles in Keeri to tick Edit or Publish for your role under ShopMaple website admin.",
@@ -106,8 +109,10 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
           else setError("We couldn't verify your session. Please sign in again.");
         } else if (active && response.status !== 401) setError("We couldn't check your session. Please try signing in.");
         else if (active) {
-          const offered = parseSignInOptions(await response.json().catch(() => null));
-          if (active) setOptions(offered);
+          const body: unknown = await response.json().catch(() => null);
+          if (!active) return;
+          setOptions(parseSignInOptions(body));
+          if (isUnconfirmed(body)) setError(keeriUnreachable);
         }
       })
       .catch((error) => {
@@ -143,6 +148,14 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
       passwordInput.value = "";
       setBusy(false);
     }
+  }
+  // A request was refused mid-session. Usually the session ran out; but if Keeri is down, say that instead,
+  // because the answer is to wait or use Emergency access, not to sign in again.
+  async function explainSignedOut() {
+    try {
+      const response = await adminRequest("/api/admin/session", { cache: "no-store", credentials: "same-origin" });
+      if (response.status === 401 && isUnconfirmed(await response.json().catch(() => null))) setError(keeriUnreachable);
+    } catch { /* the "session has expired" message already shown stands */ }
   }
   async function requestReset() {
     setBusy(true); setError(""); setNotice("");
@@ -208,7 +221,7 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
           </div>
         )}
         <ContentEditor session={session} initialContent={initialContent} account={{ onSignOut: () => void logout(), busy }}
-          onExpired={() => { setSession(null); setError("Your session has expired. Sign in again to continue."); }} />
+          onExpired={() => { setSession(null); setError("Your session has expired. Sign in again to continue."); void explainSignedOut(); }} />
       </AdminRoot>
     );
   const keeri = options.method === "keeri" ? options : null;

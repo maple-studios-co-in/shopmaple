@@ -562,6 +562,99 @@ test("a shop-password session from before Keeri became the only way in is ended"
   assert.equal(await db.shopAdminSession.count(), 0);
 });
 
+test("with Keeri unreachable past the grace, the browser holding a Keeri session can still use every way in and out", async () => {
+  await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const mail: { to: string[]; text: string }[] = [];
+  const { loadAccountEmail } = await import("../src/account/config.js");
+  const config = loadAccountEmail({ ENQUIRY_RESEND_API_KEY: "re_test_admin", ENQUIRY_MAIL_FROM: "orders@maple.example.com", ENQUIRY_MAIL_TO: "staff@maple.example.com", WEB_ORIGIN: "https://store.maple.example.com" })!;
+  const send: typeof fetch = async (_input, init) => { mail.push(JSON.parse(String(init?.body))); return new Response(JSON.stringify({ id: "email_1" }), { status: 200 }); };
+  const app = createApp(db, { ...base, adminSignIn: { mode: "keeri", ready: ready(keeri), emergencyEmail: "owner@example.invalid", resetMail: { config, fetch: send } } });
+  // Signed in with Keeri, then Keeri goes away and stays away.
+  const stale = async () => {
+    await wipeSessions();
+    keeri.state.reachable = true;
+    const { back } = await signIn(app, keeri, editor);
+    keeri.state.reachable = false;
+    await aged((await db.shopAdmin.findUniqueOrThrow({ where: { keeriUserId: editor.id } })).id, 11 * 60);
+    return cookieNamed(back, "shop_admin")!.split(";")[0]!;
+  };
+  const wipeSessions = () => db.shopAdminSession.deleteMany();
+  const post = (path: string, cookie: string, body: object = {}) => request(app).post(path).set("Origin", origin).set("Cookie", cookie).send(body);
+  const silently = async <T>(run: () => Promise<T>) => { const warn = console.warn; console.warn = () => {}; try { return await run(); } finally { console.warn = warn; } };
+
+  let cookie = await stale();
+  // The session itself is waiting on Keeri, and says so.
+  const waiting = await request(app).get("/api/admin/session").set("Cookie", cookie);
+  assert.deepEqual([waiting.status, waiting.body.code], [401, "ADMIN_ACCESS_UNCONFIRMED"]);
+  // Emergency sign-in works in that same browser, and replaces the stuck session.
+  const emergency = await silently(() => post("/api/admin/login", cookie, { email: "owner@example.invalid", password }));
+  assert.equal(emergency.status, 200);
+  assert.equal(emergency.body.user.emergency, true);
+  const fresh = cookieNamed(emergency, "shop_admin")!.split(";")[0]!;
+  assert.equal((await request(app).get("/api/admin/session").set("Cookie", fresh)).status, 200);
+  assert.equal(await db.shopAdminSession.count({ where: { method: "keeri" } }), 0);
+
+  // So do asking for the reset link and using it.
+  cookie = await stale();
+  assert.equal((await silently(() => post("/api/admin/emergency/reset-request", cookie))).status, 202);
+  const token = /#reset=([a-f0-9]{64})/.exec(mail[0]!.text)![1]!;
+  assert.equal((await silently(() => post("/api/admin/emergency/reset", cookie, { token, password: "a new long emergency value" }))).status, 204);
+
+  // A fresh trip to Keeri can be started, and its return is handled rather than refused.
+  cookie = await stale();
+  const start = await request(app).get("/api/admin/keeri/start").set("Cookie", cookie);
+  assert.equal(start.status, 303);
+  assert.match(start.headers.location!, /^https:\/\/keeri\.example\.test\/sign-in\/authorize/);
+  const state = new URL(start.headers.location!).searchParams.get("state")!;
+  const back = await request(app).get("/api/admin/keeri/callback").set("Cookie", `${cookie}; shop_admin_signin=${state}`).query({ code: keeri.arrive(editor), state });
+  assert.equal(back.headers.location, "/admin?sign_in=unavailable");
+
+  // And the person can sign out of the stuck session.
+  cookie = await stale();
+  const csrf = (await import("node:crypto")).createHash("sha256").update("csrf:" + cookie.split("=")[1]!).digest("hex");
+  const out = await request(app).post("/api/admin/logout").set("Origin", origin).set("Cookie", cookie).set("X-CSRF-Token", csrf).send({});
+  assert.equal(out.status, 204);
+  assert.equal(await db.shopAdminSession.count(), 0);
+  // Signing out still needs the session's own CSRF token.
+  cookie = await stale();
+  assert.equal((await post("/api/admin/logout", cookie)).status, 403);
+  // Nothing else opened: content and enquiries still wait on Keeri.
+  for (const path of ["/api/admin/content", "/api/admin/media", "/api/admin/enquiries"]) assert.equal((await request(app).get(path).set("Cookie", cookie)).status, 401, path);
+});
+
+test("the emergency account cannot be kept locked by somebody who only knows its address", async () => {
+  const owner = await db.shopAdmin.create({ data: { email: "owner@example.invalid", role: "publisher", passwordHash } });
+  const keeri = fakeKeeri();
+  const tryWith = async (pass: string) => {
+    const warn = console.warn; console.warn = () => {};
+    // A new app each time, so only the account's own lock is being tested and not the per-address limiter.
+    try { return (await request(appWith(keeri, "owner@example.invalid")).post("/api/admin/login").set("Origin", origin).send({ email: "owner@example.invalid", password: pass })).status; } finally { console.warn = warn; }
+  };
+  const row = () => db.shopAdmin.findUniqueOrThrow({ where: { id: owner.id } });
+  const lockRunsOut = () => db.shopAdmin.update({ where: { id: owner.id }, data: { lockedUntil: new Date(Date.now() - 1000) } });
+  for (let attempt = 0; attempt < 5; attempt += 1) assert.equal(await tryWith("wrong"), 401);
+  const lockedUntil = (await row()).lockedUntil!;
+  assert.ok(lockedUntil > new Date());
+  // While it is locked even the right password waits, and further wrong tries do not stretch the lock.
+  assert.equal(await tryWith(password), 401);
+  for (let attempt = 0; attempt < 3; attempt += 1) assert.equal(await tryWith("wrong"), 401);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [lockedUntil, 5]);
+  // The lock runs out. One wrong try used to lock it again at once; now the count has started over.
+  await lockRunsOut();
+  assert.equal(await tryWith("wrong"), 401);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [null, 1]);
+  assert.equal(await tryWith(password), 200);
+  assert.deepEqual([(await row()).lockedUntil, (await row()).failedAttempts], [null, 0]);
+  // The same after a lock when the very next try is the right password.
+  for (let attempt = 0; attempt < 5; attempt += 1) await tryWith("wrong");
+  await lockRunsOut();
+  assert.equal(await tryWith(password), 200);
+  // Every refused try was recorded, locked ones included, with nothing but who and how.
+  const records = await db.shopAdminSignIn.groupBy({ by: ["method"], _count: true, where: { adminId: owner.id } });
+  assert.deepEqual(Object.fromEntries(records.map((record) => [record.method, record._count])), { emergency: 2, emergency_failed: 15 });
+});
+
 test("every sign-in while Keeri is on leaves a record with no secret in it", async () => {
   const keeri = fakeKeeri();
   const { state, code } = await signIn(appWith(keeri), keeri, editor);

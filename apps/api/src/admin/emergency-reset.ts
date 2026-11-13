@@ -15,6 +15,10 @@ import type { AdminSignIn } from "./keeri-sign-in.js";
  * which comes from the server's settings: nothing a visitor types chooses who is emailed. The link works
  * once, for fifteen minutes, and only lets the holder choose a new password; signing in afterwards is still
  * the labelled, recorded emergency sign-in. Everybody else's way in is Keeri, which has its own reset.
+ *
+ * Asking needs no sign-in (the person asking cannot sign in), so anybody can make the store email the owner.
+ * That is held to three emails an hour, and each one is a working link in the owner's own inbox, so it can
+ * annoy but cannot lock the owner out. Setting a password also clears a lock on the account.
  */
 export const resetLifetimeMs = 15 * 60_000;
 /** Links emailed for the account in any one hour, whoever asks and from wherever. */
@@ -56,8 +60,8 @@ export function registerEmergencyResetRoutes(app: Express, db: PrismaClient, sig
       const recent = await db.shopAdminPasswordReset.count({ where: { adminId: admin.id, createdAt: { gt: new Date(now.getTime() - 60 * 60_000) } } });
       if (recent < resetsPerHour) {
         const token = randomBytes(32).toString("hex");
-        // A newer link replaces any older one still unused.
-        await db.shopAdminPasswordReset.updateMany({ where: { adminId: admin.id, usedAt: null, expiresAt: { gt: now } }, data: { expiresAt: now } });
+        // An earlier link stays good for its fifteen minutes: anybody can ask for a link, so asking must not
+        // be a way to cancel the one the owner is about to open. Using any one of them ends the rest.
         const row = await db.shopAdminPasswordReset.create({ data: { adminId: admin.id, tokenHash: digest(token), expiresAt: new Date(now.getTime() + resetLifetimeMs) } });
         const outcome = await sendTransactionalEmail(resetMail.config, `admin-reset/${row.id}`, { to: emergencyEmail, ...resetEmail(webOrigin, token) }, resetMail.fetch)
           .catch(() => ({ status: "uncertain", code: "network_error" }) as const);
@@ -79,6 +83,7 @@ export function registerEmergencyResetRoutes(app: Express, db: PrismaClient, sig
       // The one statement both checks the link is unused and uses it, so it cannot be spent twice.
       const used = await tx.shopAdminPasswordReset.updateMany({ where: { id: found.id, usedAt: null, expiresAt: { gt: new Date() } }, data: { usedAt: new Date() } });
       if (used.count !== 1) throw invalid();
+      await tx.shopAdminPasswordReset.updateMany({ where: { adminId: found.adminId, usedAt: null, expiresAt: { gt: new Date() } }, data: { expiresAt: new Date() } });
       await tx.shopAdmin.update({ where: { id: found.adminId }, data: { passwordHash, failedAttempts: 0, lockedUntil: null } });
       // Whoever was in with the old password is out. A Keeri session of the same person is Keeri's to end.
       await tx.shopAdminSession.deleteMany({ where: { adminId: found.adminId, method: { in: ["emergency", "password"] } } });
@@ -86,4 +91,18 @@ export function registerEmergencyResetRoutes(app: Express, db: PrismaClient, sig
     console.warn(`[admin] emergency password was reset for staff ${found.adminId}`);
     res.status(204).end();
   });
+}
+
+/**
+ * What is wrong with the emergency account, in words for the API log at start-up, or null when it is usable.
+ * The set-up helper only edits settings files and cannot see the database, so this is where a mistyped
+ * address is caught. It names the setting, never the address.
+ */
+export async function emergencyAccountProblem(db: PrismaClient, signIn: AdminSignIn): Promise<string | null> {
+  if (signIn.mode !== "keeri") return null;
+  if (!signIn.emergencyEmail) return "No emergency account is named (ADMIN_EMERGENCY_EMAIL): if Keeri cannot be reached, nobody can sign in to the shop admin.";
+  const account = await db.shopAdmin.findUnique({ where: { email: signIn.emergencyEmail }, select: { active: true, passwordHash: true } });
+  if (!account?.active) return "ADMIN_EMERGENCY_EMAIL does not match an active shop-admin account: emergency sign-in and its reset link will not work until it does.";
+  if (!account.passwordHash) return "The emergency account has no password yet: use \"Forgot the emergency password\" on the sign-in page once to set one.";
+  return null;
 }

@@ -471,7 +471,8 @@ model ShopAdminPasswordReset {
   createdAt DateTime @default(now())
   @@index([adminId, createdAt])
 }
-/// One row per sign-in while Keeri sign-in is on: who, when and which way. Never a password, code or token.
+/// One row per sign-in while Keeri sign-in is on: who, when and which way (keeri, emergency, or
+/// emergency_failed for a refused try at the emergency account). Never a password, code or token.
 /// The record outlives the staff row: removing a person leaves when and how somebody signed in.
 model ShopAdminSignIn {
   id String @id @default(cuid())

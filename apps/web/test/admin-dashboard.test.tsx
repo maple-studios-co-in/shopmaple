@@ -1261,3 +1261,36 @@ test("anything after the # that is not a reset link is ignored", async () => {
     assert.ok(keeriLink());
   } finally { await done(); }
 });
+
+test("when Keeri cannot be reached the screen says so, and points to Emergency access rather than blaming the password", async () => {
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ code: "ADMIN_ACCESS_UNCONFIRMED", message: "We couldn't confirm your access with Keeri. Try again in a minute.", signIn: { method: "keeri", available: true, emergency: true, reset: true } }, { status: 401 });
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+    const alert = container.querySelector('[role="alert"]')?.textContent ?? "";
+    assert.match(alert, /Keeri can't be reached right now/);
+    assert.match(alert, /Emergency access/);
+    assert.doesNotMatch(alert, /email or password/i);
+    assert.ok(container.querySelector("[data-emergency-access]"));
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
+
+test("a session that stops mid-work because Keeri is down says that, not that it expired", async () => {
+  const previous = globalThis.fetch;
+  let down = false;
+  globalThis.fetch = async (url) => {
+    if (down) return Response.json({ code: "ADMIN_ACCESS_UNCONFIRMED", message: "x", signIn: { method: "keeri", available: true, emergency: true, reset: false } }, { status: 401 });
+    return String(url).endsWith("/session") ? Response.json({ ...staff("publisher"), signIn: { method: "keeri", available: true, emergency: true, reset: false } }) : Response.json(doc());
+  };
+  const root = createRoot(container);
+  try {
+    await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+    assert.ok(container.querySelector("[data-staff-account]"));
+    down = true;
+    await click("History");
+    await act(async () => {});
+    assert.equal(container.querySelector("[data-staff-account]"), null);
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /Keeri can't be reached right now/);
+  } finally { await act(async () => root.unmount()); globalThis.fetch = previous; }
+});
