@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { checkoutInputSchema } from "./checkout";
+// Through the index, as every other importer reaches the checkout schemas: a second path to ./checkout makes the
+// bundler regroup the homepage's chunks, which costs its compressed-size budget (scripts/check-homepage-payload.mjs).
+import { checkoutInputSchema } from "./index";
 
 /**
  * The buyer's consent to order updates on WhatsApp (owner, 13 Nov 2026): what the checkout page posts, and what the
