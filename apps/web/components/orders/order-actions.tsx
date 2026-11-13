@@ -16,7 +16,7 @@ const refOf = (order: OrderDetail) => order.links?.view.replace(/^\/orders\//, "
 /**
  * Under an order behind a private link (and in the account with links on): Track your order, and Cancel while Keeri can
  * still accept a request (the order is confirmed and not yet being made). A request is staff's to decide in Keeri; the
- * page says so, and says it again when they decline.
+ * page says so, and when they decline it shows their note to the buyer.
  */
 export function OrderActions({ order }: { order: OrderDetail }) {
   const router = useRouter();
@@ -65,7 +65,9 @@ export function OrderActions({ order }: { order: OrderDetail }) {
         </p>
       ) : request?.status === "declined" ? (
         <p className="account-muted" data-cancel-request="declined">
-          Our team couldn’t cancel this order, as it is already being prepared. Please contact us and we’ll help.
+          {request.note
+            ? <>Our team couldn’t cancel this order: “{request.note}” Please contact us if you have any questions.</>
+            : "Our team couldn’t cancel this order, as it is already being prepared. Please contact us and we’ll help."}
         </p>
       ) : null}
       {order.canCancel && !request && !open ? (

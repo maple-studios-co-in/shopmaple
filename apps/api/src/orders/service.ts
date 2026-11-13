@@ -2,8 +2,8 @@ import {
   quoteResponseSchema,
   type QuoteRequest,
   type QuoteSnapshot,
-  minimumOrderShortfalls,
 } from "@shopmaple/contracts";
+import { minimumOrderShortfalls } from "@shopmaple/contracts/minimum-order";
 import { checkoutRequestSchema, type OrderWhatsappUpdates } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import { orderLinkPaths, type OrderLinkConfig } from "./order-access.js";

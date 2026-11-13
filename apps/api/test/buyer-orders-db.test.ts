@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { after, beforeEach, test } from "node:test";
 import { Prisma, PrismaClient } from "@prisma/client";
 import request from "supertest";
@@ -12,7 +12,7 @@ const url = process.env.TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
 const db = new PrismaClient({ datasources: { db: { url } } });
 const origin = "http://localhost:3000";
-const secret = "buyer-orders-test-secret-at-least-32-chars";
+const secret = randomBytes(32).toString("hex");
 const clock = new Date("2026-11-14T10:00:00.000Z");
 
 type Calls = { cancellations: Array<Record<string, string>>; shipments: string[] };
@@ -122,7 +122,29 @@ test("cancel asks Keeri once with the buyer's reason; the order then shows the r
   await event(504, "order.cancellation_declined", { decidedAt: "2026-11-15T10:00:00.000Z" }, new Date("2026-11-15T10:00:00.000Z"));
   const declined = await request(target).get(`/api/orders/link/${ref(504)}`);
   assert.equal(declined.body.cancelRequest.status, "declined");
+  assert.equal(declined.body.cancelRequest.note, undefined);
   assert.equal(declined.body.canCancel, false);
+  // With staff's note to the buyer, the page shows their words.
+  await event(504, "order.cancellation_declined", { decidedAt: "2026-11-15T11:00:00.000Z", note: "Your chairs are already being upholstered." },
+    new Date("2026-11-15T11:00:00.000Z"));
+  const noted = await request(target).get(`/api/orders/link/${ref(504)}`);
+  assert.deepEqual([noted.body.cancelRequest.status, noted.body.cancelRequest.note], ["declined", "Your chairs are already being upholstered."]);
+});
+
+test("once staff approve, the order shows cancelled and refunded, not a request still waiting", async () => {
+  await order({ number: 509 });
+  const target = app();
+  assert.equal((await cancel(target, 509)).status, 200);
+  const at = new Date("2026-11-15T10:00:00.000Z");
+  await event(509, "order.status_changed", { status: "cancelled", changedAt: at.toISOString() }, at);
+  await event(509, "order.cancelled", { cancelledAt: at.toISOString(), refund: { status: "pending", amountPaise: 350_000 } }, at);
+  const cancelled = await request(target).get(`/api/orders/link/${ref(509)}`);
+  assert.equal(cancelled.body.status, "cancelled");
+  assert.equal(cancelled.body.cancelRequest, null);
+  assert.equal(cancelled.body.canCancel, false);
+  const again = await cancel(target, 509);
+  assert.equal(again.status, 409);
+  assert.equal(calls.cancellations.length, 1);
 });
 
 test("an order already in production, or not yet confirmed, cannot be cancelled online and Keeri is not asked", async () => {
@@ -141,12 +163,20 @@ test("an order already in production, or not yet confirmed, cannot be cancelled 
 });
 
 test("Keeri's refusal is the buyer's answer; Keeri being away keeps the request to send again with the same id", async () => {
-  await order({ number: 507 });
+  const attempt507 = await order({ number: 507 });
   const target = app();
   cancelAnswer = async () => { throw new KeeriCommerceError("CANCELLATION_NOT_ALLOWED"); };
   const refused = await cancel(target, 507);
   assert.equal(refused.status, 409);
   assert.equal(refused.body.code, "CANCELLATION_NOT_AVAILABLE");
+  // Keeri has said no, though the store has not yet heard the order move on: Cancel is not offered again, and a
+  // second click neither stores another request nor asks Keeri again.
+  const after = await request(target).get(`/api/orders/link/${ref(507)}`);
+  assert.equal(after.body.canCancel, false);
+  assert.equal(after.body.cancelRequest, null);
+  assert.equal((await cancel(target, 507)).status, 409);
+  assert.equal(calls.cancellations.filter((c) => c.externalOrderId === "SO-507").length, 1);
+  assert.equal(await db.orderCancellationRequest.count({ where: { attemptId: attempt507 } }), 1);
   await order({ number: 508 });
   cancelAnswer = async () => { throw new KeeriCommerceError("UPSTREAM_UNAVAILABLE", true); };
   assert.equal((await cancel(target, 508)).status, 503);

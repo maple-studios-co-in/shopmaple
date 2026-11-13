@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { minimumOrderShortfalls, minimumToAdd, productSchema } from "@shopmaple/contracts";
+import { productSchema } from "@shopmaple/contracts";
+import { minimumOrderShortfalls, minimumToAdd } from "@shopmaple/contracts/minimum-order";
 import { adaptKeeriExportV2 } from "../src/keeri.js";
 import { buildKeeriQuery, fetchKeeriExport, KeeriFetchError } from "../src/keeri-fetch.js";
 import { v2Fixture } from "./fixtures/keeri-v2.js";

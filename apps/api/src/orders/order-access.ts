@@ -44,15 +44,27 @@ export type OrderLinkConfig = { secret: string; whatsappLinks: boolean };
  * emails link as before. WHATSAPP_ORDER_LINKS=true also hands the links (and the header's variant) to Keeri with a paid
  * order; set it only once Keeri accepts them (Keeri's `whatsappUpdates.orderLinks`), because an older Keeri refuses the
  * order.
+ *
+ * Both are optional extras, so a bad value never stops the API (and with it checkout): it switches the part it governs
+ * off and logs one line naming the setting, never its value. A short or overlong secret leaves private links off;
+ * a flag that is not true or false, or true without a secret, leaves WhatsApp on the links it sent before.
  */
-export function loadOrderLinkConfig(env: Record<string, string | undefined>): OrderLinkConfig | null {
+export function loadOrderLinkConfig(
+  env: Record<string, string | undefined>,
+  warn: (line: string) => void = (line) => console.warn(line),
+): OrderLinkConfig | null {
   const secret = env.ORDER_LINK_SECRET?.trim() ?? "";
-  const flag = env.WHATSAPP_ORDER_LINKS?.trim() || "false";
-  if (flag !== "true" && flag !== "false") throw new Error("WHATSAPP_ORDER_LINKS must be true or false");
+  const rawFlag = env.WHATSAPP_ORDER_LINKS?.trim() || "false";
+  let whatsappLinks = rawFlag === "true";
+  if (rawFlag !== "true" && rawFlag !== "false")
+    warn("WHATSAPP_ORDER_LINKS must be true or false; WhatsApp order messages keep their old links until it is fixed.");
   if (!secret) {
-    if (flag === "true") throw new Error("WHATSAPP_ORDER_LINKS=true requires ORDER_LINK_SECRET");
+    if (whatsappLinks) warn("WHATSAPP_ORDER_LINKS=true needs ORDER_LINK_SECRET; WhatsApp order messages keep their old links until it is set.");
     return null;
   }
-  if (secret.length < 32 || secret.length > 512) throw new Error("ORDER_LINK_SECRET must be 32 to 512 characters");
-  return { secret, whatsappLinks: flag === "true" };
+  if (secret.length < 32 || secret.length > 512) {
+    warn("ORDER_LINK_SECRET must be 32 to 512 characters; private order links are off until it is fixed.");
+    return null;
+  }
+  return { secret, whatsappLinks };
 }

@@ -86,7 +86,14 @@ test("a pending or declined request is shown instead of Cancel; an order past co
     assert.equal(button("Cancel order"), undefined);
   } finally { await unmount(); }
   unmount = await mount(<OrderDetailView order={order({ canCancel: false, cancelRequest: { status: "declined", requestedAt: "2026-11-11T06:30:00.000Z" } })} />);
-  try { assert.match(text(), /couldn’t cancel this order/); } finally { await unmount(); }
+  try { assert.match(text(), /couldn’t cancel this order, as it is already being prepared/); } finally { await unmount(); }
+  // Staff's note to the buyer replaces the general reason.
+  unmount = await mount(<OrderDetailView order={order({ canCancel: false,
+    cancelRequest: { status: "declined", requestedAt: "2026-11-11T06:30:00.000Z", note: "Your chairs are already being upholstered." } })} />);
+  try {
+    assert.match(text(), /couldn’t cancel this order: “Your chairs are already being upholstered\.”/);
+    assert.doesNotMatch(text(), /already being prepared/);
+  } finally { await unmount(); }
   unmount = await mount(<OrderDetailView order={order({ status: "preparing", canCancel: false })} />);
   try { assert.equal(button("Cancel order"), undefined); } finally { await unmount(); }
 });

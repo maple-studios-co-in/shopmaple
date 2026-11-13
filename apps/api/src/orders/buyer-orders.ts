@@ -25,17 +25,27 @@ const notAvailable = () => new HttpError(409, "CANCELLATION_NOT_AVAILABLE",
   "This order can't be cancelled online any more. Please contact us and our team will help.");
 
 type CancelRow = { id: string; state: string; createdAt: Date };
-/** The buyer's latest request as the page shows it, and whether Cancel is offered. A request Keeri has not acknowledged
- * (pending) is offered again, and sent with the same id; one Keeri refused is not shown. */
+/**
+ * The buyer's latest request as the page shows it, and whether Cancel is offered.
+ * - A cancelled order shows no request: the page already says it is cancelled and refunded.
+ * - A request Keeri has not acknowledged (pending) is offered again, and sent with the same id.
+ * - A request Keeri refused is not shown, and Cancel is not offered again: Keeri has said the order is past it, even
+ *   while the store has yet to hear the order move on.
+ * - A declined request carries staff's note to the buyer when Keeri sent one.
+ */
 export function cancellationState(order: ReadOrder, latest: CancelRow | null, keeriReachable: boolean) {
-  const declinedAt = order.progress?.cancellationDeclinedAt ?? null;
+  const progress = order.progress;
+  if (progress?.cancelledAt || progress?.stage === "cancelled") return { cancelRequest: null, canCancel: false };
+  const declinedAt = progress?.cancellationDeclinedAt ?? null;
+  const declined = latest?.state === "requested" && declinedAt !== null && declinedAt >= latest.createdAt;
   const cancelRequest = latest?.state === "requested"
-    ? { status: declinedAt && declinedAt >= latest.createdAt ? "declined" as const : "requested" as const, requestedAt: latest.createdAt.toISOString() }
+    ? { status: declined ? "declined" as const : "requested" as const, requestedAt: latest.createdAt.toISOString(),
+        ...(declined && progress?.cancellationDeclinedNote ? { note: progress.cancellationDeclinedNote } : {}) }
     : null;
   const confirmed = order.state === "captured" && order.outbox?.state === "delivered" && Boolean(order.outbox.externalOrderId);
   // Keeri accepts a request only before production starts (its status still "confirmed").
-  const stage = order.progress?.stage ?? "confirmed";
-  return { cancelRequest, canCancel: keeriReachable && confirmed && stage === "confirmed" && !cancelRequest };
+  const stage = progress?.stage ?? "confirmed";
+  return { cancelRequest, canCancel: keeriReachable && confirmed && stage === "confirmed" && !cancelRequest && latest?.state !== "refused" };
 }
 
 /**
@@ -56,7 +66,7 @@ export function createBuyerOrders(db: PrismaClient, options: BuyerOrdersOptions)
     return order ?? null;
   }
   const latestRequest = (attemptId: string) =>
-    db.orderCancellationRequest.findFirst({ where: { attemptId, state: { in: ["pending", "requested"] } }, orderBy: { createdAt: "desc" }, select: { id: true, state: true, createdAt: true } });
+    db.orderCancellationRequest.findFirst({ where: { attemptId, state: { in: ["pending", "requested", "refused"] } }, orderBy: { createdAt: "desc" }, select: { id: true, state: true, createdAt: true } });
 
   /** The order page's view: the account's detail plus its private links, its cancellation request and Cancel. */
   async function detailOf(order: ReadOrder): Promise<OrderDetail> {

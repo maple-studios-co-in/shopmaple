@@ -200,8 +200,9 @@ export function pieceDimensions(variantPage: unknown, productPage: unknown, sour
 }
 
 /**
- * Beyond each piece's photo: up to three more photos of the variant bought (its own, else its design's, in the order the
- * product page shows them, photographs before drawings) and its size. Found as findOrderPhotos finds the photo.
+ * Beyond each piece's photo: up to three more photos of the variant bought (its own only, never its design's other
+ * finishes, in the order the product page shows them, photographs before drawings) and its size. Found as
+ * findOrderPhotos finds the photo.
  */
 export async function findOrderPieceDetails(
   db: PrismaClient,
@@ -225,8 +226,9 @@ export async function findOrderPieceDetails(
     const variant = byId.get(variantId);
     if (!variant) continue;
     const lead = variantPhoto(variant);
-    const own = variant.images.filter((url) => variant.product.images.includes(url));
-    const pool = (own.length > 1 ? own : variant.product.images).filter((url) => url.startsWith("https://") && url !== lead);
+    // The variant's own photos only, and only those its product still serves: the design's other photos can be
+    // other finishes, so a variant with one photo or none gets no more.
+    const pool = variant.images.filter((url) => variant.product.images.includes(url) && url.startsWith("https://") && url !== lead);
     details.set(sourceVariantId, {
       photos: variant.product.published ? pool.slice(0, 3) : [],
       dimensions: pieceDimensions(variant.productPage, variant.product.productPage, variant.product.sourceDetails),

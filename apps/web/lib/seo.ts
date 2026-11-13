@@ -19,8 +19,8 @@ export function seoSettings(env: Record<string, string | undefined>): SeoSetting
 }
 export const absolute = (settings: SeoSettings, path: string) => /^https?:\/\//.test(path) ? path : `${settings.siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
-/** Pages with no value in search: staff, the API, and each visitor's own cart, checkout, account and saved items. */
-const privatePaths = ["/admin", "/api", "/cart", "/checkout", "/account", "/favourites"];
+/** Pages with no value in search: staff, the API, and each visitor's own cart, checkout, account, orders and saved items. */
+const privatePaths = ["/admin", "/api", "/cart", "/checkout", "/account", "/favourites", "/orders"];
 /**
  * Crawlers may read every page except the API, so they see the noindex on pages that must stay
  * out (a page blocked here can still be listed from links elsewhere, with no way to drop it).

@@ -344,7 +344,12 @@ export const orderDetailSchema = z
     links: z.object({ view: orderLinkPath, tracking: orderLinkPath }).strict().nullable().optional(),
     /** The buyer's cancellation request: `requested` while staff decide, `declined` once they say no. Null when none. A
      * cancellation staff accept shows as `cancellation` above. */
-    cancelRequest: z.object({ status: z.enum(["requested", "declined"]), requestedAt: dateTime }).strict().nullable().optional(),
+    cancelRequest: z.object({
+      status: z.enum(["requested", "declined"]),
+      requestedAt: dateTime,
+      /** Staff's note to the buyer when they declined, from Keeri. */
+      note: z.string().min(1).max(500).optional(),
+    }).strict().nullable().optional(),
     /** Whether the buyer may ask to cancel online: Keeri has accepted the order and it is not yet being made or packed. */
     canCancel: z.boolean().optional(),
   })

@@ -224,7 +224,7 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
         // The `offers=1` level: the model's running or next offer, or null. Absent below that level.
         offer: productOfferSchema.nullable().optional(),
         // The `minOrder=1` level: the fewest pieces of the design an order may hold, or null. Absent below that level.
-        minOrderQuantity: minOrderQuantitySchema.nullable().optional(),
+        minOrderQuantity: minOrderQuantitySchema,
         taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,

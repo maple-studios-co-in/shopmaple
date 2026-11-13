@@ -42,7 +42,8 @@ const events = {
     cancelledAt: at,
     refund: z.looseObject({ status: z.string().max(40), amountPaise: paise }).optional(),
   }),
-  "order.cancellation_declined": z.looseObject({ externalOrderId: remoteId, decidedAt: at }),
+  // `note` is staff's note to the buyer (Keeri asks 3 to 500 characters); kept optional so an older Keeri still lands.
+  "order.cancellation_declined": z.looseObject({ externalOrderId: remoteId, decidedAt: at, note: z.string().max(500).nullable().optional() }),
   "order.refunded": z.looseObject({ externalOrderId: remoteId, amountPaise: paise, refundedAt: at }),
 } as const;
 export type KeeriOrderEventType = keyof typeof events;
@@ -100,6 +101,8 @@ export type OrderProgress = {
   cancelledAt: Date | null;
   /** When staff last declined the buyer's cancellation request in Keeri; null when never. */
   cancellationDeclinedAt: Date | null;
+  /** Staff's note to the buyer with that decision, when Keeri sent one. */
+  cancellationDeclinedNote: string | null;
   refund: OrderRefund | null;
 };
 
@@ -118,7 +121,7 @@ type StoredEvent = { type: string; payload: unknown; occurredAt: Date };
  * without a production step was still prepared).
  */
 export function orderProgress(rows: readonly StoredEvent[]): OrderProgress {
-  const progress: OrderProgress = { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, refund: null };
+  const progress: OrderProgress = { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, cancellationDeclinedNote: null, refund: null };
   const reach = (stage: OrderStage, on: Date) => {
     if (stage === "cancelled") { progress.cancelledAt ??= on; return; }
     if (stage === "preparing") progress.preparingAt ??= on;
@@ -137,7 +140,10 @@ export function orderProgress(rows: readonly StoredEvent[]): OrderProgress {
       const refund = payload.refund as { amountPaise?: unknown } | undefined;
       if (refund && typeof refund.amountPaise === "number" && progress.refund?.status !== "refunded")
         progress.refund = { status: "pending", amountPaise: refund.amountPaise, refundedAt: null };
-    } else if (row.type === "order.cancellation_declined") progress.cancellationDeclinedAt = row.occurredAt;
+    } else if (row.type === "order.cancellation_declined") {
+      progress.cancellationDeclinedAt = row.occurredAt;
+      progress.cancellationDeclinedNote = typeof payload.note === "string" && payload.note.trim() ? payload.note.trim() : null;
+    }
     else if (row.type === "order.refunded" && typeof payload.amountPaise === "number")
       progress.refund = { status: "refunded", amountPaise: payload.amountPaise, refundedAt: row.occurredAt };
   }

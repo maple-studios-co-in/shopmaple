@@ -30,12 +30,28 @@ test("the store's order and tracking pages, and the ends Keeri's View order butt
   });
 });
 
-test("ORDER_LINK_SECRET switches private links on; unset leaves them off; a short one stops startup", () => {
-  assert.equal(loadOrderLinkConfig({}), null);
-  assert.equal(loadOrderLinkConfig({ ORDER_LINK_SECRET: "  " }), null);
-  assert.deepEqual(loadOrderLinkConfig({ ORDER_LINK_SECRET: secret }), { secret, whatsappLinks: false });
-  assert.deepEqual(loadOrderLinkConfig({ ORDER_LINK_SECRET: secret, WHATSAPP_ORDER_LINKS: "true" }), { secret, whatsappLinks: true });
-  assert.throws(() => loadOrderLinkConfig({ ORDER_LINK_SECRET: "short" }), /ORDER_LINK_SECRET/);
-  assert.throws(() => loadOrderLinkConfig({ WHATSAPP_ORDER_LINKS: "true" }), /WHATSAPP_ORDER_LINKS/);
-  assert.throws(() => loadOrderLinkConfig({ ORDER_LINK_SECRET: secret, WHATSAPP_ORDER_LINKS: "yes" }), /WHATSAPP_ORDER_LINKS/);
+test("ORDER_LINK_SECRET switches private links on; unset leaves them off; a bad value switches off and logs, never stops startup", () => {
+  const lines: string[] = [];
+  const load = (env: Record<string, string>) => loadOrderLinkConfig(env, (line) => lines.push(line));
+  assert.equal(load({}), null);
+  assert.equal(load({ ORDER_LINK_SECRET: "  " }), null);
+  assert.deepEqual(load({ ORDER_LINK_SECRET: secret }), { secret, whatsappLinks: false });
+  assert.deepEqual(load({ ORDER_LINK_SECRET: secret, WHATSAPP_ORDER_LINKS: "true" }), { secret, whatsappLinks: true });
+  assert.equal(lines.length, 0);
+
+  // A short or overlong secret: links off, one line naming the setting and not its value.
+  assert.equal(load({ ORDER_LINK_SECRET: "short-but-secret", WHATSAPP_ORDER_LINKS: "true" }), null);
+  assert.equal(load({ ORDER_LINK_SECRET: "x".repeat(513) }), null);
+  assert.equal(lines.length, 2);
+  assert.match(lines[0]!, /^ORDER_LINK_SECRET must be 32 to 512 characters; private order links are off/);
+  assert.ok(lines.every((line) => !line.includes("short-but-secret") && !line.includes("xxxx")));
+
+  // The flag: anything but true/false leaves WhatsApp as before while the private links stay on; true without a
+  // secret does nothing.
+  lines.length = 0;
+  assert.deepEqual(load({ ORDER_LINK_SECRET: secret, WHATSAPP_ORDER_LINKS: "yes" }), { secret, whatsappLinks: false });
+  assert.equal(load({ WHATSAPP_ORDER_LINKS: "true" }), null);
+  assert.equal(lines.length, 2);
+  assert.match(lines[0]!, /^WHATSAPP_ORDER_LINKS must be true or false/);
+  assert.match(lines[1]!, /^WHATSAPP_ORDER_LINKS=true needs ORDER_LINK_SECRET/);
 });

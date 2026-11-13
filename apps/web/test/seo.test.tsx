@@ -38,8 +38,9 @@ test("after launch the public store is indexed, private pages say noindex, and c
   assert.deepEqual([everyone(rules).disallow].flat(), ["/api/"], "only the API is not crawled; private pages are crawled so their noindex is seen");
   assert.deepEqual(robotsMeta(on), { index: true, follow: true });
   for (const path of ["/", "/products/arix", "/collections/chairs", "/media/keeri/a.webp"]) assert.equal(robotsHeader(on, path), null, path);
-  for (const path of ["/admin", "/admin/content", "/api/products", "/cart", "/checkout/pay", "/account", "/favourites"]) assert.equal(robotsHeader(on, path), "noindex, nofollow", path);
+  for (const path of ["/admin", "/admin/content", "/api/products", "/cart", "/checkout/pay", "/account", "/favourites", "/orders/MF-501-0123456789abcdef0123456789abcdef", "/orders/MF-501-0123456789abcdef0123456789abcdef/tracking"]) assert.equal(robotsHeader(on, path), "noindex, nofollow", path);
   assert.equal(robotsHeader(on, "/cartography"), null, "a prefix match is per path segment");
+  assert.equal(robotsHeader(on, "/ordersheet"), null, "orders is matched per path segment too");
 });
 
 test("the site address is the SITE_URL setting; a missing or malformed one falls back to WEB_ORIGIN, never to a hard-coded store", () => {

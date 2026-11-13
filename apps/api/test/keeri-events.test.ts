@@ -47,7 +47,7 @@ test("the secret is optional, must be long, and needs the store's merchant scope
 });
 
 test("an order's events become the stage the buyer sees, with when each was first reached", () => {
-  assert.deepEqual(orderProgress([]), { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, refund: null });
+  assert.deepEqual(orderProgress([]), { stage: null, preparingAt: null, dispatchedAt: null, deliveredAt: null, cancelledAt: null, cancellationDeclinedAt: null, cancellationDeclinedNote: null, refund: null });
   const made = orderProgress([status("in_production", "2026-11-14T05:00:00.000Z"), status("ready", "2026-11-20T05:00:00.000Z")]);
   assert.equal(made.stage, "preparing");
   assert.equal(made.preparingAt?.toISOString(), "2026-11-14T05:00:00.000Z", "in production and ready are both preparing; the first counts");
@@ -66,6 +66,16 @@ test("an order's events become the stage the buyer sees, with when each was firs
   assert.equal(orderProgress([status("on_hold", "2026-11-14T05:00:00.000Z"), status("draft", "2026-11-14T06:00:00.000Z"),
     { type: "order.status_changed", occurredAt: now, payload: null }, row("order.cancellation_declined", "2026-11-14T07:00:00.000Z")]).stage, null);
   assert.equal(orderProgress([status("confirmed", "2026-11-13T05:00:00.000Z")]).stage, "confirmed");
+});
+
+test("a declined request keeps staff's latest note to the buyer", () => {
+  const declined = orderProgress([
+    row("order.cancellation_declined", "2026-11-14T07:00:00.000Z", { decidedAt: "2026-11-14T07:00:00.000Z", note: "Old note" }),
+    row("order.cancellation_declined", "2026-11-15T07:00:00.000Z", { decidedAt: "2026-11-15T07:00:00.000Z", note: "  Your sofa is already being made.  " }),
+  ]);
+  assert.equal(declined.cancellationDeclinedAt?.toISOString(), "2026-11-15T07:00:00.000Z");
+  assert.equal(declined.cancellationDeclinedNote, "Your sofa is already being made.");
+  assert.equal(orderProgress([row("order.cancellation_declined", "2026-11-14T07:00:00.000Z", { note: null })]).cancellationDeclinedNote, null);
 });
 
 test("a cancellation is final and carries its refund from pending to refunded", () => {

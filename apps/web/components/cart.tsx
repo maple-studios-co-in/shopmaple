@@ -6,7 +6,7 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { money } from "@/lib/format";
-import { minimumOrderShortfalls } from "@shopmaple/contracts";
+import { minimumOrderShortfalls } from "@shopmaple/contracts/minimum-order";
 export function CartContents() {
   const { cart, busy, cartReady, error, setQuantity, setCartOpen, cartRecovery, checkingCart, recoverCart } = useShop();
   const region = useRef<HTMLElement>(null);
