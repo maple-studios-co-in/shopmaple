@@ -25,7 +25,7 @@ test("a product's photographs lead and its dimension drawings follow, each kind 
 
 test("a variant's own photographs lead its drawings too, so the bag, emails and WhatsApp show the piece", () => {
   const product = adaptKeeriExportV2(drawingsFirst(), "maple").products[0]!;
-  assert.deepEqual(names(product.variants[0]!.images), ["vfront", "vdrawing"]);
+  assert.deepEqual(names(product.variants[0]!.images ?? []), ["vfront", "vdrawing"]);
 });
 
 test("a design with only drawings still shows them, and staff's order is kept where no drawing is involved", () => {

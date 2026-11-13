@@ -6,12 +6,15 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useShop } from "./shop-provider";
 import { Modal } from "./modal";
 import { money } from "@/lib/format";
+import { minimumOrderShortfalls } from "@shopmaple/contracts";
 export function CartContents() {
   const { cart, busy, cartReady, error, setQuantity, setCartOpen, cartRecovery, checkingCart, recoverCart } = useShop();
   const region = useRef<HTMLElement>(null);
   const restoreFocus = useRef(false);
   const removalFocus = useRef<{ control: HTMLButtonElement; index: number; succeeded: boolean } | null>(null);
   const [removalCompleted, setRemovalCompleted] = useState(0);
+  // Designs short of their minimum order, each said once, under its first line in the bag.
+  const shortfalls = minimumOrderShortfalls(cart.items).map((short) => ({ ...short, first: cart.items.find((item) => item.handle === short.handle)!.variantId }));
   useLayoutEffect(() => {
     const moved = (event: FocusEvent) => {
       if (removalFocus.current && event.target !== removalFocus.current.control) removalFocus.current = null;
@@ -119,6 +122,9 @@ export function CartContents() {
               </Link>
               <p className="muted">{item.variantTitle}</p>
               <p>{money(item.pricePaise)}</p>
+              {shortfalls.filter((short) => short.first === item.variantId).map((short) => (
+                <p key={short.handle} data-minimum-shortfall className="error-text">{item.title} has a minimum order of {short.minimum}. Add {short.minimum - short.quantity} more (finishes can be mixed).</p>
+              ))}
               {item.stockPolicy === "made_to_order" && <p data-lead-time className="muted">Made to order{item.leadTimeDays ? `: allow ${item.leadTimeDays} days for making` : ""}</p>}
               {!item.cartable && (
                 <p className="error-text">
@@ -174,13 +180,18 @@ export function CartContents() {
           <strong>{money(cart.subtotalPaise)}</strong>
         </div>
         <p>Shipping and availability will be confirmed before payment.</p>
-        <Link
-          className="button full-width"
-          href={cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "/checkout" : "/contact"}
-          onClick={() => setCartOpen(false)}
-        >
-          {cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
-        </Link>
+        {shortfalls.length && cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? (
+          // Keeri's quote would refuse it: the bag says what to add instead of failing at checkout.
+          <button type="button" className="button full-width" disabled>Add more to check out</button>
+        ) : (
+          <Link
+            className="button full-width"
+            href={cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "/checkout" : "/contact"}
+            onClick={() => setCartOpen(false)}
+          >
+            {cart.items.every(item => item.cartable) && cart.subtotalPaise !== null ? "Continue to checkout" : "Ask about these items"}
+          </Link>
+        )}
         {!cart.checkoutEnabled && (
           <p className="preview-disclosure">
             Your cart is saved. Online payment is not available yet.

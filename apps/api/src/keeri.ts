@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { compareLeadPhoto } from "./primary-photo.js";
-import { productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
+import { minOrderQuantitySchema, productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
 
 const id = z
   .string()
@@ -223,6 +223,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
         productPage: modelPageSchema.optional(),
         // The `offers=1` level: the model's running or next offer, or null. Absent below that level.
         offer: productOfferSchema.nullable().optional(),
+        // The `minOrder=1` level: the fewest pieces of the design an order may hold, or null. Absent below that level.
+        minOrderQuantity: minOrderQuantitySchema.nullable().optional(),
         taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,
@@ -500,6 +502,8 @@ function adaptValidated(
         ...(productPage ? { productPage } : {}),
         // Only at the offers level; the sync clears a stored offer when a later export has none.
         ...("offer" in model && model.offer !== undefined ? { offer: model.offer } : {}),
+        // Only at the minimum-order level; the sync stores none when a later export does not say.
+        ...("minOrderQuantity" in model && model.minOrderQuantity !== undefined ? { minOrderQuantity: model.minOrderQuantity } : {}),
         variants: eligible.map((v) => ({
           id: identity(v.id),
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",

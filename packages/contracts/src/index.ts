@@ -94,6 +94,8 @@ export const productOfferSchema = z.object({
   endsAt: z.iso.datetime({ offset: true }),
 }).strict().refine((offer) => Date.parse(offer.endsAt) > Date.parse(offer.startsAt), "An offer ends after it starts");
 export type ProductOffer = z.infer<typeof productOfferSchema>;
+/** A design's minimum order (Keeri's `minOrderQuantity`): 2 to 20 pieces across its finishes. Null or absent is none. */
+export const minOrderQuantitySchema = z.number().int().min(2).max(20);
 export const productSchema = z.object({
   id: z.string().min(1).max(160),
   handle: addressPart.max(200),
@@ -111,6 +113,8 @@ export const productSchema = z.object({
   productPage: productPageSchema.nullable().optional(),
   /** Null when Keeri has no offer for it; absent when the export came from a level without offers. */
   offer: productOfferSchema.nullable().optional(),
+  /** The fewest pieces of this design an order may hold, across its finishes; null or absent is no minimum. */
+  minOrderQuantity: minOrderQuantitySchema.nullable().optional(),
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });
@@ -138,6 +142,8 @@ export const cartItemSchema = z.object({
   cartable: z.boolean().default(false),
   stockPolicy: z.string(),
   leadTimeDays: z.number().int().min(1).max(365).nullable().optional(),
+  /** The product's minimum order, counted across every line of the same product (handle). */
+  minOrderQuantity: minOrderQuantitySchema.nullable().optional(),
 });
 export const cartMutationContextSchema = z.object({
   cartIdentity: z.string().regex(/^[a-f0-9]{64}$/),
@@ -163,6 +169,24 @@ export const cartSchema = z.object({
   mode: z.literal("preview"),
 });
 export type Cart = z.infer<typeof cartSchema>;
+export type MinimumShortfall = { handle: string; title: string; minimum: number; quantity: number };
+/** The products in a bag that fall short of their minimum order, each counted across all its lines (finishes may be
+ * mixed). Checkout is refused while any remain; Keeri's quote checks the same. */
+export function minimumOrderShortfalls(items: readonly { handle: string; title: string; quantity: number; minOrderQuantity?: number | null }[]): MinimumShortfall[] {
+  const products = new Map<string, MinimumShortfall>();
+  for (const item of items) {
+    const minimum = item.minOrderQuantity ?? 1;
+    if (minimum <= 1) continue;
+    const seen = products.get(item.handle) ?? { handle: item.handle, title: item.title, minimum, quantity: 0 };
+    seen.quantity += item.quantity;
+    products.set(item.handle, seen);
+  }
+  return [...products.values()].filter((product) => product.quantity < product.minimum);
+}
+/** How many pieces the product page adds at first: enough to meet the minimum with what is already in the bag. */
+export function minimumToAdd(minimum: number | null | undefined, inBag: number) {
+  return Math.max(1, (minimum ?? 1) - inBag);
+}
 export const guardedCartSchema = cartSchema.extend({ mutationContext: cartMutationContextSchema });
 export const cartMutationResponseSchema = guardedCartSchema.extend({
   mutationResult: z.object({ id: z.uuid(), status: z.enum(["applied", "replayed"]) }),

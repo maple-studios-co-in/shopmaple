@@ -25,6 +25,9 @@ model Product {
   reviewAverage Float?
   /// The product's own Keeri offer for the product page's countdown ({ label, code, startsAt, endsAt }); null without one.
   offer Json?
+  /// Keeri's minimum order for the design (2 to 20 pieces across its finishes); null is none. The bag and checkout
+  /// hold the buyer to it, and Keeri's quote refuses less.
+  minOrderQuantity Int?
   sourceStatus String?
   sourceUpdatedAt DateTime
   variants Variant[]

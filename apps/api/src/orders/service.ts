@@ -2,6 +2,7 @@ import {
   quoteResponseSchema,
   type QuoteRequest,
   type QuoteSnapshot,
+  minimumOrderShortfalls,
 } from "@shopmaple/contracts";
 import { checkoutRequestSchema, type OrderWhatsappUpdates } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
@@ -342,6 +343,9 @@ export function createOrderService(db: PrismaClient, options: Options) {
         )
       )
         throw new OrderFlowError("RESERVATION_NOT_ELIGIBLE");
+      // A design's minimum order counts all its finishes; Keeri's quote would refuse the same bag.
+      const lines = rows.map((r) => ({ handle: r.variant.product.handle, title: r.variant.product.title, quantity: r.quantity, minOrderQuantity: r.variant.product.minOrderQuantity }));
+      if (minimumOrderShortfalls(lines).length) throw new OrderFlowError("BELOW_MINIMUM_ORDER");
       const bindings = await resolveCatalogueBindings(tx, rows.map((r) => r.variantId), options.keeriTenantId!);
       const items = rows
         .map((r) => ({ variantId: bindings.items.find((b) => b.localVariantId === r.variantId)!.sourceVariantId, quantity: r.quantity }))
