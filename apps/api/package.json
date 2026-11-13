@@ -13,7 +13,7 @@
     "db:migrate": "dotenv -e ../../.env -- prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "6.19.3",
+    "@prisma/client": "7.10.1",
     "@shopmaple/contracts": "0.1.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
