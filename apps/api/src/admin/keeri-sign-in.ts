@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { loadAccountEmail } from "../account/config.js";
+import type { EnquiryDeliveryConfig } from "../enquiry-delivery-provider.js";
 
 /**
  * Shop admin sign-in with Keeri accounts.
@@ -27,6 +29,8 @@ export type AdminSignIn =
       ready: KeeriSignInConfig | null;
       /** The one account whose shop password still works, for when Keeri cannot be reached. */
       emergencyEmail: string | null;
+      /** The store's mail sender, for the emergency account's password-reset link; absent when mail is not set up. */
+      resetMail?: { config: EnquiryDeliveryConfig; fetch?: typeof fetch } | null;
     };
 
 /**
@@ -34,7 +38,9 @@ export type AdminSignIn =
  * all while sign-in is by shop password, so those answers stay exactly as they were.
  */
 export const signInOffer = (signIn: AdminSignIn) =>
-  signIn.mode === "keeri" ? { signIn: { method: "keeri" as const, available: signIn.ready !== null, emergency: signIn.emergencyEmail !== null } } : {};
+  signIn.mode === "keeri"
+    ? { signIn: { method: "keeri" as const, available: signIn.ready !== null, emergency: signIn.emergencyEmail !== null, reset: signIn.emergencyEmail !== null && Boolean(signIn.resetMail) } }
+    : {};
 
 /** A Keeri session is re-checked once it is this old, so removed access stops within a minute. */
 export const keeriRecheckMs = 60_000;
@@ -75,16 +81,25 @@ export function loadAdminSignIn(env: Record<string, string | undefined>, warn: (
   const emergency = emailSchema.safeParse(env.ADMIN_EMERGENCY_EMAIL || undefined);
   if (env.ADMIN_EMERGENCY_EMAIL && !emergency.success) warn("ADMIN_EMERGENCY_EMAIL is not an email address; there is no emergency account.");
   const emergencyEmail = emergency.success ? emergency.data : null;
+  // The reset link goes out through the sender that order emails use. Without one the emergency account
+  // still works; only "forgot the password" is not offered.
+  let resetMail: { config: EnquiryDeliveryConfig } | null = null;
+  try {
+    const config = loadAccountEmail(env);
+    resetMail = config ? { config } : null;
+  } catch { /* said below, by name */ }
+  if (emergencyEmail && !resetMail) warn("The emergency account's password cannot be reset by email: ORDER_RESEND_API_KEY, ORDER_MAIL_FROM and ORDER_MAIL_TO (or their ENQUIRY_* values) are missing or invalid.");
   const parsed = envSchema.safeParse({ ...pick(env), KEERI_ADMIN_ORIGIN: env.KEERI_ADMIN_ORIGIN || undefined });
   if (!parsed.success) {
     const names = [...new Set(parsed.error.issues.map((issue) => String(issue.path[0])))].join(", ");
     warn(`Shop admin sign-in with Keeri is not usable: these settings are missing or invalid: ${names}. Until they are fixed only the emergency account can sign in.`);
-    return { mode: "keeri", ready: null, emergencyEmail };
+    return { mode: "keeri", ready: null, emergencyEmail, resetMail };
   }
   const v = parsed.data;
   return {
     mode: "keeri",
     emergencyEmail,
+    resetMail,
     ready: {
       origin: v.KEERI_ORIGIN, adminOrigin: v.KEERI_ADMIN_ORIGIN ?? v.KEERI_ORIGIN, tenantId: v.KEERI_TENANT_ID,
       clientId: v.KEERI_SIGN_IN_CLIENT_ID, secret: v.KEERI_SIGN_IN_CLIENT_SECRET,

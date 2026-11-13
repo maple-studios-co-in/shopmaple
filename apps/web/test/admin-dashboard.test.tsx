@@ -1181,3 +1181,83 @@ test("a session with no content and no enquiries is not a session", async () => 
     assert.equal(container.querySelector("[data-staff-account]"), null);
   } finally { await done(); }
 });
+
+// "Forgot the emergency password": an emailed, one-time link (see apps/api/test/admin-emergency-reset.test.ts).
+async function renderReset(signIn: unknown, address: string, answers: Record<string, number> = {}) {
+  dom.reconfigure({ url: address });
+  const previous = globalThis.fetch;
+  const requests: { url: string; body: string | null }[] = [];
+  globalThis.fetch = async (url, options) => {
+    const path = String(url);
+    requests.push({ url: path, body: options?.body ? String(options.body) : null });
+    if (path.endsWith("/session")) return signedOut(signIn);
+    const status = answers[path] ?? 500;
+    return new Response(status === 204 ? null : JSON.stringify({ message: "x", code: "RESET_LINK_INVALID" }), { status });
+  };
+  const root = createRoot(container);
+  await act(async () => root.render(<AdminDashboard initialContent={initialContent} />));
+  return { requests, done: async () => { await act(async () => root.unmount()); globalThis.fetch = previous; dom.reconfigure({ url: "http://localhost:3000/admin" }); } };
+}
+const offer = (reset: boolean) => ({ method: "keeri", available: true, emergency: true, reset });
+const token = "c".repeat(64);
+
+test("the reset link is offered under Emergency access only when the store can email it, and asking says the same thing every time", async () => {
+  const without = await renderReset(offer(false), "http://localhost:3000/admin");
+  try { assert.equal(container.querySelector("[data-emergency-forgot]"), null); } finally { await without.done(); }
+  const { requests, done } = await renderReset(offer(true), "http://localhost:3000/admin", { "/api/admin/emergency/reset-request": 202 });
+  try {
+    const forgot = container.querySelector<HTMLButtonElement>("[data-emergency-access] [data-emergency-forgot]");
+    assert.ok(forgot, "the link sits inside Emergency access");
+    await act(async () => forgot.click());
+    const sent = requests.find((request) => request.url.endsWith("/reset-request"));
+    // Nothing about who to email is sent: the server only ever emails the emergency account.
+    assert.equal(sent?.body, "{}");
+    assert.match(container.querySelector('[role="status"]')?.textContent ?? "", /a reset link has been emailed/);
+  } finally { await done(); }
+});
+
+test("opening the emailed link asks for a new password, sends it with the link's token, and takes the token out of the address", async () => {
+  const { requests, done } = await renderReset(offer(true), `http://localhost:3000/admin#reset=${token}`, { "/api/admin/emergency/reset": 204 });
+  try {
+    assert.equal(dom.window.location.hash, "");
+    assert.ok(container.querySelector("[data-emergency-reset]"), "the new-password form is shown");
+    assert.equal(keeriLink(), null);
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a different long value");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /don't match/);
+    assert.equal(requests.some((request) => request.url.endsWith("/emergency/reset")), false);
+    await fill("New password", "short");
+    await fill("New password again", "short");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /at least 14 characters/);
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a new long test value");
+    await submit();
+    const sent = requests.find((request) => request.url.endsWith("/emergency/reset"));
+    assert.deepEqual(JSON.parse(sent!.body!), { token, password: "a new long test value" });
+    assert.match(container.querySelector('[role="status"]')?.textContent ?? "", /has been changed/);
+    // Changing the password does not sign anybody in: the ordinary screen is back.
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+    assert.ok(keeriLink());
+  } finally { await done(); }
+});
+
+test("a link that is used up or lapsed says so and goes back to the sign-in screen", async () => {
+  const { done } = await renderReset(offer(true), `http://localhost:3000/admin#reset=${token}`, { "/api/admin/emergency/reset": 400 });
+  try {
+    await fill("New password", "a new long test value");
+    await fill("New password again", "a new long test value");
+    await submit();
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /not valid any more/);
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+  } finally { await done(); }
+});
+
+test("anything after the # that is not a reset link is ignored", async () => {
+  const { done } = await renderReset(offer(true), "http://localhost:3000/admin#reset=<script>alert(1)</script>");
+  try {
+    assert.equal(container.querySelector("[data-emergency-reset]"), null);
+    assert.ok(keeriLink());
+  } finally { await done(); }
+});

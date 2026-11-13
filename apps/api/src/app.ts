@@ -5,6 +5,7 @@ import { rateLimit } from "express-rate-limit";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { registerStaffRoutes } from "./admin/auth.js";
+import { registerEmergencyResetRoutes } from "./admin/emergency-reset.js";
 import { keeriSessionGuard, registerKeeriSignInRoutes } from "./admin/keeri-session.js";
 import { signInOffer, type AdminSignIn } from "./admin/keeri-sign-in.js";
 import { registerMediaRoutes } from "./admin/media.js";
@@ -120,7 +121,10 @@ export function createApp(
     next();
   });
   // Reached without a session, so they sit before the staff gate that registerStaffRoutes installs.
-  if (adminSignIn.mode === "keeri") registerKeeriSignInRoutes(app, db, config.secureCookies, adminSignIn, config.webOrigin);
+  if (adminSignIn.mode === "keeri") {
+    registerKeeriSignInRoutes(app, db, config.secureCookies, adminSignIn, config.webOrigin);
+    registerEmergencyResetRoutes(app, db, adminSignIn, config.webOrigin);
+  }
   registerStaffRoutes(app, db, config.secureCookies, adminSignIn);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
   registerEnquiryAdminRoutes(app, db, config.secureCookies, config.keeriLeads ?? null);

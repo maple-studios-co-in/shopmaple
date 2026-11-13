@@ -433,6 +433,7 @@ model ShopAdmin {
   createdAt DateTime @default(now())
   sessions ShopAdminSession[]
   signIns ShopAdminSignIn[]
+  passwordResets ShopAdminPasswordReset[]
   revisions ShopContentRevision[]
   mediaAssets ShopMediaAsset[]
   deliveryRetries EnquiryDeliveryRetryAudit[]
@@ -457,6 +458,18 @@ model ShopAdminSession {
   /// When Keeri last confirmed this person still has access; set only on a Keeri session.
   keeriCheckedAt DateTime?
   @@index([expiresAt])
+}
+/// A one-time emailed link to choose a new password for the emergency account. Only the link's hash is kept.
+/// Rows stay as the record of each request and whether it was used.
+model ShopAdminPasswordReset {
+  id String @id @default(cuid())
+  adminId String
+  admin ShopAdmin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([adminId, createdAt])
 }
 /// One row per sign-in while Keeri sign-in is on: who, when and which way. Never a password, code or token.
 /// The record outlives the staff row: removing a person leaves when and how somebody signed in.

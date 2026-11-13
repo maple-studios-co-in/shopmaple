@@ -119,7 +119,17 @@ Disable the person in Keeri, change their role, or untick the boxes. **The shop 
 - it has the level stored on that account and is not re-checked with Keeri;
 - it keeps its password when its owner also signs in with Keeri.
 
-**Not built yet: resetting the emergency password by email.** The owner mentioned "some email reset". Until that is confirmed and built, the account's existing password is the one that works, and replacing a forgotten one still needs the server helper `deploy/bootstrap-shop-admin.sh`, which only creates an account.
+**Forgot the emergency password** (owner, 14 November 2026: "some email reset"; confirmed the same day). Under Emergency access, "Forgot the emergency password? Email a reset link" emails a link to the emergency account's own address, so a forgotten password never again needs a developer script.
+
+- The link only ever goes to the address in `ADMIN_EMERGENCY_EMAIL`. Nothing typed on the page chooses who is emailed, and the page says the same thing whatever happened.
+- It works once, for fifteen minutes. Asking again replaces an unused link. Only its hash is stored.
+- It reads `/admin#reset=…`: the part after the `#` is never sent to a server or written to an access log, and the page removes it from the address as soon as it is read.
+- Opening it asks for a new password of at least 14 characters. Setting it ends that account's emergency sessions and does **not** sign anybody in: the next step is still the labelled, recorded emergency sign-in.
+- Limits: three links an hour for the account, five requests an hour and ten password attempts in fifteen minutes from one address.
+- Each request and each use is a row in `ShopAdminPasswordReset` (when asked, when used) and a line in the API log, with no address or link in it.
+- It is for the emergency account only. Everybody else resets their password in Keeri.
+- It needs the store's mail sender: `ORDER_RESEND_API_KEY`, `ORDER_MAIL_FROM` and `ORDER_MAIL_TO`, or their `ENQUIRY_*` values, the same ones order emails use. Without them the link is not offered and the API log says so by name; the emergency account still works. The email is only as deliverable as that sender: its domain must be verified in Resend.
+- The account must already exist in the shop admin. An emergency account whose owner has only ever signed in with Keeri has no password until this link is used once.
 
 ### Settings (names only; values are never written in a document or a message)
 
@@ -147,10 +157,11 @@ If a setting is missing or malformed the store still starts. The API log names t
 With no switch, the settings go in before the new store release is made live, so staff are never left without a way in.
 
 1. **Keeri**: deploy the release with `/sign-in/authorize` and `/api/app-sign-in/*`. Nothing changes for anybody yet.
-2. **Store, staged but not live**: back up, export the release and run its migrations (`20261114140000_admin_keeri_sign_in` and `20261114150000_admin_view_and_enquiries_only`; both additive, and the running release ignores them).
+2. **Store, staged but not live**: back up, export the release and run its migrations (`20261114140000_admin_keeri_sign_in`, `20261114150000_admin_view_and_enquiries_only` and `20261114160000_admin_emergency_password_reset`; all additive, and the running release ignores them).
 3. From the staged release folder, run the helper's `setup`. Then restart Keeri so it reads `APP_SIGN_IN_CLIENTS`.
 4. In Keeri, on Team & access → Roles, tick the ShopMaple website admin boxes for the starting roles.
 5. **Make the store release live** and restart `shopmaple-api` and `shopmaple-web`. Sign in with Keeri at `/admin`; check that History shows the right name, that an editor cannot publish, and that the emergency link works.
+6. Under Emergency access, ask for a reset link once and confirm the email arrives at the emergency account's address. This is the only proof that the mail sender can deliver it.
 
 **Falling back** is going back to the previous store release (point `current` at it and restart the two processes), without reversing the migrations. The old release signs staff in with shop passwords. Accounts that have already moved to Keeri have no shop password any more, apart from the emergency account, so on the old release only the emergency account and accounts that never moved can sign in.
 
@@ -163,6 +174,7 @@ With no switch, the settings go in before the new store release is made live, so
 - The answer must be for the configured `KEERI_TENANT_ID`.
 - Starting and returning are each limited to 30 tries in 15 minutes per address, on top of the API's general limit.
 - `ShopAdminSignIn` holds who, when and how (`keeri` or `emergency`), and nothing else.
+- `ShopAdminPasswordReset` holds a link's hash, when it was asked for and when it was used.
 - Staging has no Keeri sign-in, because Keeri returns people to the live store only: `deploy/ops/staging-env-check.mjs` refuses the Keeri sign-in settings there. Staging staff use the emergency account.
 
 ### Checked locally, not on the server

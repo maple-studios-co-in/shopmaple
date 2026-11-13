@@ -130,11 +130,11 @@ test("the sign-in page is told to offer Keeri, and whether there is an emergency
   const keeri = fakeKeeri();
   const signedOut = await request(appWith(keeri)).get("/api/admin/session");
   assert.equal(signedOut.status, 401);
-  assert.deepEqual(signedOut.body, { code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content.", signIn: { method: "keeri", available: true, emergency: false } });
-  assert.deepEqual((await request(appWith(keeri, "owner@example.invalid")).get("/api/admin/content")).body.signIn, { method: "keeri", available: true, emergency: true });
+  assert.deepEqual(signedOut.body, { code: "ADMIN_AUTH_REQUIRED", message: "Sign in to manage shop content.", signIn: { method: "keeri", available: true, emergency: false, reset: false } });
+  assert.deepEqual((await request(appWith(keeri, "owner@example.invalid")).get("/api/admin/content")).body.signIn, { method: "keeri", available: true, emergency: true, reset: false });
   // Only a staff "sign in first" says it: a customer route's 401 and other staff errors do not.
   const { agent } = await signIn(appWith(keeri), keeri, editor);
-  assert.deepEqual((await sessionOf(agent)).body.signIn, { method: "keeri", available: true, emergency: false });
+  assert.deepEqual((await sessionOf(agent)).body.signIn, { method: "keeri", available: true, emergency: false, reset: false });
   assert.equal((await agent.get("/api/admin/enquiries")).body.signIn, undefined);
 });
 
@@ -618,7 +618,7 @@ test("starting and coming back are each limited to thirty tries in fifteen minut
 test("a half-set-up Keeri sign-in lets nobody in through Keeri and reopens no passwords", async () => {
   await db.shopAdmin.create({ data: { email: "other@example.invalid", role: "publisher", passwordHash } });
   const app = createApp(db, { ...base, adminSignIn: { mode: "keeri", ready: null, emergencyEmail: null } });
-  assert.deepEqual((await request(app).get("/api/admin/session")).body.signIn, { method: "keeri", available: false, emergency: false });
+  assert.deepEqual((await request(app).get("/api/admin/session")).body.signIn, { method: "keeri", available: false, emergency: false, reset: false });
   const start = await request(app).get("/api/admin/keeri/start");
   assert.equal(start.headers.location, "/admin?sign_in=unavailable");
   assert.equal(cookies(start).length, 0);
@@ -643,19 +643,25 @@ test("the settings: production is always Keeri; a bad one is named, never quoted
   warned.length = 0;
   const on = loadAdminSignIn({ ...env, KEERI_ADMIN_ORIGIN: "https://staff.keeri.example.test", ADMIN_EMERGENCY_EMAIL: "Owner@Example.Invalid" }, warn);
   assert.deepEqual(on, {
-    mode: "keeri", emergencyEmail: "owner@example.invalid",
+    mode: "keeri", emergencyEmail: "owner@example.invalid", resetMail: null,
     ready: { origin: "https://keeri.example.test", adminOrigin: "https://staff.keeri.example.test", tenantId, clientId: "shop-admin", secret },
   });
   const plain = loadAdminSignIn(env, warn);
   assert.equal(plain.mode === "keeri" && plain.ready?.adminOrigin, "https://keeri.example.test");
   assert.equal(plain.mode === "keeri" && plain.emergencyEmail, null);
-  assert.equal(warned.length, 0);
+  // The one thing said so far: the emergency account above has no mail sender for its reset link.
+  assert.equal(warned.length, 1);
+  assert.match(warned[0]!, /cannot be reset by email/);
+  // With the store's mail sender set, the reset link can be offered.
+  const mailed = loadAdminSignIn({ ...env, ADMIN_EMERGENCY_EMAIL: "owner@example.invalid", ENQUIRY_RESEND_API_KEY: "re_test_admin", ENQUIRY_MAIL_FROM: "orders@maple.example.com", ENQUIRY_MAIL_TO: "staff@maple.example.com", WEB_ORIGIN: "https://store.maple.example.com" }, warn);
+  assert.equal(mailed.mode === "keeri" && mailed.resetMail?.config.from, "orders@maple.example.com");
+  assert.equal(warned.length, 1);
   for (const broken of [
     { KEERI_SIGN_IN_CLIENT_SECRET: undefined }, { KEERI_SIGN_IN_CLIENT_SECRET: "too-short" }, { KEERI_ORIGIN: "http://keeri.example.test" },
     { KEERI_ORIGIN: "https://keeri.example.test/path" }, { KEERI_TENANT_ID: undefined }, { KEERI_SIGN_IN_CLIENT_ID: "Shop Admin" },
   ]) {
     const result = loadAdminSignIn({ ...env, ...broken, ADMIN_EMERGENCY_EMAIL: "owner@example.invalid" }, warn);
-    assert.deepEqual(result, { mode: "keeri", ready: null, emergencyEmail: "owner@example.invalid" });
+    assert.deepEqual(result, { mode: "keeri", ready: null, emergencyEmail: "owner@example.invalid", resetMail: null });
     assert.match(warned.at(-1)!, new RegExp(Object.keys(broken)[0]!));
   }
   assert.ok(!warned.join("\n").includes(secret) && !warned.join("\n").includes("too-short"));

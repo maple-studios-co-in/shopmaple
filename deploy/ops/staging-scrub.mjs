@@ -18,7 +18,7 @@ export const TABLE_POLICY = {
   // accounts, sign-in traces, delivery queues and the stored Instagram token: emptied.
   Cart: 'empty', CartItem: 'empty', CartMutationReceipt: 'empty', CheckoutAttempt: 'empty', PaymentWebhookInbox: 'empty',
   OrderOutbox: 'empty', OrderNotification: 'empty', KeeriOrderEvent: 'empty', Customer: 'empty', CustomerAddress: 'empty', CustomerSession: 'empty',
-  CustomerLoginChallenge: 'empty', CustomerSignInFailure: 'empty', ShopAdminSession: 'empty', ShopAdminSignIn: 'empty', EnquiryDelivery: 'empty',
+  CustomerLoginChallenge: 'empty', CustomerSignInFailure: 'empty', ShopAdminSession: 'empty', ShopAdminSignIn: 'empty', ShopAdminPasswordReset: 'empty', EnquiryDelivery: 'empty',
   EnquiryDeliveryRetryAudit: 'empty', InstagramFeedState: 'empty',
   // Enquiries and the CRM keep their shape (so the admin is realistic) with every personal field replaced.
   Enquiry: 'anonymise', Contact: 'anonymise', ContactActivity: 'anonymise', EnquiryActivity: 'anonymise', FollowUpTask: 'anonymise',

@@ -21,7 +21,7 @@ export type StaffSession = {
   csrfToken: string;
 };
 /** What the sign-in screen offers. `password` is the screen as it was before staff could sign in with Keeri. */
-type SignInOptions = { method: "password" } | { method: "keeri"; available: boolean; emergency: boolean };
+type SignInOptions = { method: "password" } | { method: "keeri"; available: boolean; emergency: boolean; /** The emergency password can be reset by an emailed link. */ reset: boolean };
 /**
  * The API says what to offer in `signIn`, on the session and on its "sign in first" answer, only while
  * Keeri sign-in is on. Anything but an exact Keeri answer leaves the password form.
@@ -30,7 +30,7 @@ function parseSignInOptions(body: unknown): SignInOptions {
   const value = body && typeof body === "object" ? (body as { signIn?: unknown }).signIn : null;
   const candidate = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   if (candidate.method !== "keeri" || typeof candidate.available !== "boolean" || typeof candidate.emergency !== "boolean") return { method: "password" };
-  return { method: "keeri", available: candidate.available, emergency: candidate.emergency };
+  return { method: "keeri", available: candidate.available, emergency: candidate.emergency, reset: candidate.emergency && candidate.reset === true };
 }
 /** Why a trip to Keeri and back did not sign the person in (the callback's `?sign_in=`). */
 const signInOutcomes: Record<string, string> = {
@@ -74,6 +74,16 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
   const [options, setOptions] = useState<SignInOptions>({ method: "password" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  // The emailed link to choose a new emergency password arrives as /admin#reset=…: the part after the # never
+  // reaches a server, and it is taken out of the address as soon as it has been read.
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  useEffect(() => {
+    const match = /^#reset=([a-f0-9]{64})$/.exec(window.location.hash);
+    if (!match) return;
+    setResetToken(match[1]!);
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, []);
   // Back from Keeri without a session: say why, once, and take the reason out of the address.
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -131,6 +141,39 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
       setError(error instanceof AdminRequestTimeout ? "Sign in timed out. Please try again." : "We couldn't connect. Check your connection and try again.");
     } finally {
       passwordInput.value = "";
+      setBusy(false);
+    }
+  }
+  async function requestReset() {
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const response = await adminRequest("/api/admin/emergency/reset-request", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}" });
+      if (response.status === 202) setNotice("If the emergency account is set up, a reset link has been emailed to it. It works once, for 15 minutes.");
+      else setError(response.status === 429 ? "Too many requests. Please wait before asking again." : "We couldn't send a reset link. Please try again.");
+    } catch (error) {
+      setError(error instanceof AdminRequestTimeout ? "Sending the reset link timed out. Please try again." : "We couldn't connect. Check your connection and try again.");
+    } finally { setBusy(false); }
+  }
+  async function chooseNewPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = event.currentTarget.elements;
+    const chosen = fields.namedItem("new-password") as HTMLInputElement, repeated = fields.namedItem("confirm-password") as HTMLInputElement;
+    setError(""); setNotice("");
+    if (chosen.value.length < 14) return setError("Choose a password of at least 14 characters.");
+    if (chosen.value !== repeated.value) return setError("The two passwords don't match.");
+    setBusy(true);
+    try {
+      const response = await adminRequest("/api/admin/emergency/reset", {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: resetToken, password: chosen.value }),
+      });
+      if (response.status === 204) { setResetToken(null); setNotice("The emergency password has been changed. Sign in with it under Emergency access."); }
+      else if (response.status === 429) setError("Too many attempts. Please wait before trying again.");
+      else { setResetToken(null); setError("This reset link is not valid any more. Ask for a new one under Emergency access."); }
+    } catch (error) {
+      setError(error instanceof AdminRequestTimeout ? "Changing the password timed out. Please try again." : "We couldn't connect. Check your connection and try again.");
+    } finally {
+      chosen.value = ""; repeated.value = "";
       setBusy(false);
     }
   }
@@ -207,17 +250,38 @@ export function AdminDashboard({ initialContent }: { initialContent: StorefrontC
             {error && (
               <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span>{error}</span></Notice>
             )}
-            {keeri && (keeri.available ? (
+            {notice && <Notice tone="status"><span>{notice}</span></Notice>}
+            {resetToken ? (
+              <form onSubmit={chooseNewPassword} data-emergency-reset className="grid gap-4">
+                <p className="text-sm text-muted-foreground">Choose a new password for the emergency account. It must be at least 14 characters.</p>
+                <label className="grid gap-2 text-xs font-medium">
+                  New password
+                  <Input name="new-password" aria-label="New password" type="password" autoComplete="new-password" required minLength={14} maxLength={128} className="h-10 bg-card text-sm" />
+                </label>
+                <label className="grid gap-2 text-xs font-medium">
+                  New password again
+                  <Input name="confirm-password" aria-label="New password again" type="password" autoComplete="new-password" required className="h-10 bg-card text-sm" />
+                </label>
+                <Button disabled={busy} type="submit" size="lg" className="mt-1 w-full">{busy ? "Saving" : "Set the emergency password"}</Button>
+              </form>
+            ) : null}
+            {!resetToken && keeri && (keeri.available ? (
               // A full page navigation: the browser itself goes to Keeri and comes back.
               <Button asChild size="lg" className="w-full"><a href="/api/admin/keeri/start" data-keeri-sign-in>Sign in with Keeri</a></Button>
             ) : (
               <Notice tone="error"><TriangleAlert aria-hidden="true" strokeWidth={1.5} className="mt-0.5 size-4 shrink-0" /><span>Signing in with Keeri isn&apos;t set up correctly on this store yet. Ask whoever looks after the server.</span></Notice>
             ))}
-            {!keeri ? passwordForm : keeri.emergency ? (
+            {resetToken ? null : !keeri ? passwordForm : keeri.emergency ? (
               <details data-emergency-access className="rounded-lg border border-line-soft px-3 py-2 open:pb-3">
                 <summary className="cursor-pointer rounded-sm text-xs font-semibold text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/60">Emergency access</summary>
                 <p className="mt-2 mb-3 text-xs text-muted-foreground">Only for when Keeri can&apos;t be reached. It works for the one emergency account, and every use is recorded.</p>
                 {passwordForm}
+                {keeri.reset && (
+                  <button type="button" data-emergency-forgot disabled={busy} onClick={() => void requestReset()}
+                    className="mt-3 w-fit rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-60">
+                    Forgot the emergency password? Email a reset link
+                  </button>
+                )}
               </details>
             ) : null}
             <a href="/" className="w-fit rounded-sm text-xs font-semibold text-primary underline-offset-4 focus-visible:outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/60">Back to the storefront</a>
