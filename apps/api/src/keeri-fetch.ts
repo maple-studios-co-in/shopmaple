@@ -12,6 +12,8 @@ export interface KeeriFetchOptions {
   includeOffers?: boolean;
   /** Each variant's free-delivery tick for the "Free delivery" badge (Keeri's `freeDelivery=1`, which needs `offers=1`). */
   includeFreeDelivery?: boolean;
+  /** Each design's minimum order (Keeri's `minOrder=1`, which needs `freeDelivery=1`). */
+  includeMinOrder?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -27,9 +29,9 @@ export class KeeriFetchError extends Error {
 }
 /**
  * Keeri accepts each opt-in only after the ones before it, in exactly this order:
- * taxonomy, content, attributes, then compareAt and productPage together, then offers, then freeDelivery.
+ * taxonomy, content, attributes, then compareAt and productPage together, then offers, then freeDelivery, then minOrder.
  */
-export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers" | "includeFreeDelivery">) {
+export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers" | "includeFreeDelivery" | "includeMinOrder">) {
   const query = new URLSearchParams();
   if (options.includeTaxonomy || options.includeContent) query.set("taxonomy", "1");
   if (options.includeContent) query.set("content", "1");
@@ -39,6 +41,7 @@ export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonom
     query.set("productPage", "1");
     if (options.includeOffers) query.set("offers", "1");
     if (options.includeOffers && options.includeFreeDelivery) query.set("freeDelivery", "1");
+    if (options.includeOffers && options.includeFreeDelivery && options.includeMinOrder) query.set("minOrder", "1");
   }
   const text = query.toString();
   return text ? `?${text}` : "";
@@ -102,6 +105,10 @@ export async function fetchKeeriExport(
     }
     // A Keeri release from before an opt-in (free delivery, offers, the product page, variant options) refuses it
     // with 400; the caller asks again a level down.
+    if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers && options.includeFreeDelivery && options.includeMinOrder) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("MIN_ORDER_UNSUPPORTED");
+    }
     if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers && options.includeFreeDelivery) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("FREE_DELIVERY_UNSUPPORTED");

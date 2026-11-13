@@ -861,3 +861,22 @@ test("a hold Keeri refuses for the code leaves the attempt abandoned with the re
     assert.equal(retry.amountPaise, 24600, "the buyer removes the code and continues");
   }
 });
+
+test("a bag below a design's minimum order is refused before Keeri is asked, with a message the buyer can act on", async () => {
+  let asked = 0;
+  const flow = service(async (request) => { asked += 1; return quotation(request); });
+  await db.product.update({ where: { id: "keeri:maple:chair" }, data: { minOrderQuantity: 3 } });
+  await assert.rejects(freeze(flow), { code: "BELOW_MINIMUM_ORDER" });
+  assert.equal(asked, 0);
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, flow);
+  const response = await request(app).post("/api/checkout").set("Origin", "http://localhost:3000")
+    .set("Cookie", `maple_cart=${token}`).set("Idempotency-Key", "http-below-minimum").send(input);
+  assert.equal(response.status, 422);
+  assert.equal(response.body.code, "BELOW_MINIMUM_ORDER");
+  assert.match(response.body.message, /minimum order/);
+  assert.equal(await db.checkoutAttempt.count(), 0);
+  // Meeting the minimum checks out as before.
+  await db.product.update({ where: { id: "keeri:maple:chair" }, data: { minOrderQuantity: 2 } });
+  await freeze(flow);
+  assert.equal(asked, 1);
+});

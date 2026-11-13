@@ -34,6 +34,8 @@ const promoMessages: Record<string, string> = {
   PROMO_NOT_APPLICABLE: "That code doesn't apply to anything in your cart. No payment has been taken.",
   PROMO_ALREADY_USED: "That code has already been used with this phone number or email. No payment has been taken.",
 };
+const belowMinimum = () => new HttpError(422, "BELOW_MINIMUM_ORDER",
+  "A piece in your bag has a minimum order. Add more of it (finishes can be mixed) and try again. No payment has been taken.");
 const promoError = (code: string) =>
   Object.hasOwn(promoMessages, code) ? new HttpError(422, code, promoMessages[code]!) : undefined;
 const attemptId = z.uuid();
@@ -272,6 +274,7 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
         "PRICE_CHANGED",
         "The price of an item in your cart has changed. Review your cart and try again. No payment has been taken.",
       );
+    if (error.code === "BELOW_MINIMUM_ORDER") return belowMinimum();
     if (error.code === "DELIVERY_UNPRICED")
       return new HttpError(
         422,
@@ -298,6 +301,7 @@ export function commerceHttpError(error: unknown): HttpError | undefined {
     );
   }
   if (error instanceof KeeriCommerceError) {
+    if (error.code === "BELOW_MINIMUM_ORDER") return belowMinimum();
     if (error.code === "UPSTREAM_REJECTED")
       return new HttpError(422, "QUOTE_REJECTED", quoteRejectedMessage);
     return new HttpError(

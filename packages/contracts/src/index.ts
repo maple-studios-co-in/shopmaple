@@ -94,6 +94,9 @@ export const productOfferSchema = z.object({
   endsAt: z.iso.datetime({ offset: true }),
 }).strict().refine((offer) => Date.parse(offer.endsAt) > Date.parse(offer.startsAt), "An offer ends after it starts");
 export type ProductOffer = z.infer<typeof productOfferSchema>;
+/** A design's minimum order (Keeri's `minOrderQuantity`): 2 to 20 pieces across its finishes. Null or absent is none.
+ * One schema for the product and the bag line, because both ship in the homepage's JavaScript. */
+export const minOrderQuantitySchema = z.number().int().min(2).max(20).nullish();
 export const productSchema = z.object({
   id: z.string().min(1).max(160),
   handle: addressPart.max(200),
@@ -111,6 +114,8 @@ export const productSchema = z.object({
   productPage: productPageSchema.nullable().optional(),
   /** Null when Keeri has no offer for it; absent when the export came from a level without offers. */
   offer: productOfferSchema.nullable().optional(),
+  /** The fewest pieces of this design an order may hold, across its finishes; null or absent is no minimum. */
+  minOrderQuantity: minOrderQuantitySchema,
   sourceUpdatedAt: z.iso.datetime({ offset: true }),
   variants: z.array(variantSchema).max(500),
 });
@@ -138,6 +143,8 @@ export const cartItemSchema = z.object({
   cartable: z.boolean().default(false),
   stockPolicy: z.string(),
   leadTimeDays: z.number().int().min(1).max(365).nullable().optional(),
+  /** The product's minimum order, counted across every line of the same product (handle). */
+  minOrderQuantity: minOrderQuantitySchema,
 });
 export const cartMutationContextSchema = z.object({
   cartIdentity: z.string().regex(/^[a-f0-9]{64}$/),

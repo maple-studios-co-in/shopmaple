@@ -880,3 +880,20 @@ test("password sign-in, like every account write, must come from the Maple websi
   assert.equal(foreign.status, 403);
   assert.equal(setCookies(foreign).some((line) => line.includes("maple_account=")), false);
 });
+
+test("with private links on, an account's order carries its links and Cancel, and without them it is as before", async () => {
+  await paidAttempt({ email: "asha@example.com", orderNumber: 10021, state: "captured", confirmed: true });
+  const secret = "account-links-test-secret-at-least-32-chars";
+  const linked = app({ buyerOrders: { links: { secret, whatsappLinks: false }, merchantScope: "maple-store",
+    keeri: { orderShipment: async () => { throw new Error("unused"); }, requestCancellation: async () => { throw new Error("unused"); } } } });
+  const session = await signIn(linked, "asha@example.com");
+  const detail = await request(linked).get("/api/account/orders/MF-10021").set("Cookie", session.cookie);
+  assert.equal(detail.status, 200);
+  assert.match(detail.body.links.view, /^\/orders\/MF-10021-[a-f0-9]{32}$/);
+  assert.equal(detail.body.links.tracking, `${detail.body.links.view}/tracking`);
+  assert.equal(detail.body.canCancel, true);
+  const plain = await request(app()).get("/api/account/orders/MF-10021").set("Cookie", session.cookie);
+  assert.equal(plain.status, 200);
+  assert.equal(plain.body.links, undefined);
+  assert.equal(plain.body.canCancel, undefined);
+});

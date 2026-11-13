@@ -1,3 +1,5 @@
+import { loadOrderLinkConfig, type OrderLinkConfig } from "./orders/order-access.js";
+import type { KeeriOrderFollowUp } from "./orders/buyer-orders.js";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import type { CheckoutOptions, CommerceHttpService } from "./commerce-http.js";
@@ -85,6 +87,8 @@ export interface CommerceConfig {
   /** WHATSAPP_ORDER_UPDATES=true: checkout offers "Send my order updates on WhatsApp" and a paid order tells Keeri,
    * which sends the messages (docs/whatsapp-order-confirmation.md). Unset or false: no tick box, nothing sent. */
   whatsappOrderUpdates: boolean;
+  /** ORDER_LINK_SECRET (and WHATSAPP_ORDER_LINKS): private order links in emails and, when on, in Keeri's messages. */
+  orderLinks: OrderLinkConfig | null;
 }
 /** Returns null unless checkout is explicitly enabled; then fails loudly naming
  * any missing or invalid key, so a half-configured deployment never half-works. */
@@ -120,12 +124,15 @@ export function loadCommerceConfig(
     deliveryMethods: v.CHECKOUT_DELIVERY_METHODS,
     email,
     whatsappOrderUpdates: whatsapp === "true",
+    orderLinks: loadOrderLinkConfig(env),
   };
 }
 type Transport = (url: string | URL, init: RequestInit) => Promise<Response>;
 export interface ComposedCommerce {
   commerce: CommerceHttpService;
   checkout: CheckoutOptions;
+  /** What the buyer's order pages ask Keeri: the parcel's tracking and a cancellation request. */
+  keeri: KeeriOrderFollowUp;
   /** One bounded worker cycle: verify captured payments, then deliver captured orders to Keeri. */
   runWorkers(): Promise<{
     payments: Awaited<ReturnType<ReturnType<typeof createOrderWorkers>["runPaymentBatch"]>>;
@@ -166,6 +173,7 @@ export function composeCommerce(
     quoteAuthority: keeri.quote,
     keeriTenantId: config.keeri.tenantId,
     whatsappOrderUpdates: config.whatsappOrderUpdates,
+    orderLinks: config.orderLinks,
     now: options.now,
   });
   const workers = createOrderWorkers(db, {
@@ -185,11 +193,13 @@ export function composeCommerce(
     merchantScope: config.keeri.merchantScope,
     email: config.email,
     accountLinks: options.accountLinks,
+    orderLinks: config.orderLinks,
     fetch: transport ? (url, init) => transport(url instanceof Request ? url.url : url, init ?? {}) : undefined,
     now: options.now,
   });
   return {
     commerce: orders,
+    keeri: { orderShipment: keeri.orderShipment, requestCancellation: keeri.requestCancellation },
     checkout: {
       deliveryMethods: config.deliveryMethods.map(({ id, label }) => ({ id, label })),
       paymentKeyId: config.razorpay.keyId,

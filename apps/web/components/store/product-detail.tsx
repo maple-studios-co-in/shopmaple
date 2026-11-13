@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Star, Truck } from "lucide-react";
 import { batchNudge, categoryNames, type Product, type ProductCard, type ProductRichText as ProductRichTextValue } from "@shopmaple/contracts";
+import { minimumToAdd } from "@shopmaple/contracts/minimum-order";
 import { canAddToCart } from "@/lib/product-availability";
 import { LeadTimeNote } from "./lead-time-note";
 import { shopMoney } from "@/lib/format";
@@ -141,6 +142,10 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const shown = Math.min(image, Math.max(0, images.length - 1));
   const enquiry = !product.published || !canAddToCart(variant, cart.checkoutEnabled);
   const selectedQuantity = cart.items.find((x) => x.variantId === variantId)?.quantity ?? 0;
+  // A design's minimum order counts every finish of it in the bag: the stepper starts where the bag meets it.
+  const minimum = product.minOrderQuantity ?? null;
+  const floor = minimumToAdd(minimum, cart.items.filter((x) => x.handle === product.handle).reduce((n, x) => n + x.quantity, 0));
+  const adding = Math.max(quantity, floor);
   const saved = favourites.includes(product.handle);
   const enquiryHref = enquiryLink(product, variant);
   // Every piece can be made around its buyer (owner, 4 Nov 2026), so every piece offers it: beside the options when it
@@ -164,7 +169,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   const isLimited = highlights.product(product.handle)?.isLimited;
   async function add() {
     if (enquiry || !variant) return false;
-    return setQuantity(variantId, selectedQuantity + quantity);
+    return setQuantity(variantId, selectedQuantity + adding);
   }
   async function buyNow() {
     if (await add()) router.push("/checkout");
@@ -322,12 +327,12 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
             <div data-purchase className="flex gap-[11px]">
               {!enquiry && (
                 <div className="flex h-[50px] w-[128px] shrink-0 items-center justify-between rounded-[30px] border border-solid border-maple/8 bg-white px-[7px] text-[14px] text-maple">
-                  <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1 || busy} onClick={() => setQuantityValue((q) => q - 1)} className={stepper}>
+                  <button type="button" aria-label="Decrease quantity" disabled={adding <= floor || busy} onClick={() => setQuantityValue(adding - 1)} className={stepper}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                     <img src="/product-page/minus.svg" alt="" width={12} height={12} className="size-3" />
                   </button>
-                  <output aria-live="polite" aria-label="Quantity" className="min-w-6 text-center tabular-nums">{quantity}</output>
-                  <button type="button" aria-label="Increase quantity" disabled={quantity >= 20 || busy} onClick={() => setQuantityValue((q) => q + 1)} className={stepper}>
+                  <output aria-live="polite" aria-label="Quantity" className="min-w-6 text-center tabular-nums">{adding}</output>
+                  <button type="button" aria-label="Increase quantity" disabled={adding >= 20 || busy} onClick={() => setQuantityValue(adding + 1)} className={stepper}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
                     <img src="/product-page/plus.svg" alt="" width={12} height={12} className="size-3" />
                   </button>
@@ -336,20 +341,21 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               {enquiry ? (
                 <Link data-primary data-fill-button="" className={cx(solid, "flex-1")} href={enquiryHref}>Enquire about this piece</Link>
               ) : (
-                <button type="button" data-primary data-fill-button="" className={cx(solid, "flex-1")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void add().then((added) => { if (added) setCartOpen(true); })}>
+                <button type="button" data-primary data-fill-button="" className={cx(solid, "flex-1")} disabled={busy || selectedQuantity + adding > 20} onClick={() => void add().then((added) => { if (added) setCartOpen(true); })}>
                   {busy ? "Updating cart…" : "Add to cart"}
                 </button>
               )}
             </div>
             {!enquiry && cart.checkoutEnabled ? (
-              <button type="button" data-buy-now data-fill-button="outline" className={cx(outline, "w-full")} disabled={busy || selectedQuantity + quantity > 20} onClick={() => void buyNow()}>Buy it now</button>
+              <button type="button" data-buy-now data-fill-button="outline" className={cx(outline, "w-full")} disabled={busy || selectedQuantity + adding > 20} onClick={() => void buyNow()}>Buy it now</button>
             ) : enquiry ? (
               <Link data-designer data-fill-button="outline" href={enquiryHref} className={cx(outline, "w-full")}>Speak to a designer</Link>
             ) : (
               <Link data-enquire data-fill-button="outline" href={enquiryHref} className={cx(outline, "w-full")}>Enquire about this piece</Link>
             )}
+            {!enquiry && minimum !== null && <p data-minimum-order className="m-0 text-[12px] leading-[1.5] text-[#5e574f]">Minimum order: {minimum} pieces. Finishes can be mixed.</p>}
             <LeadTimeNote variant={variant} className="m-0 text-[12px] leading-[1.5] text-[#5e574f]" />
-            {selectedQuantity + quantity > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
+            {selectedQuantity + adding > 20 && <p className="m-0 text-meta text-maple">You can add up to 20 of this item. Contact our team for larger orders.</p>}
             {error && <p role="alert" className="m-0 text-meta text-maple">{error}</p>}
           </div>
           {nudge !== null ? (

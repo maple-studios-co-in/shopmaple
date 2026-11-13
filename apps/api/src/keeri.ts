@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
+import { compareLeadPhoto } from "./primary-photo.js";
+import { minOrderQuantitySchema, productOfferSchema, productSchema, sourceDetailsSchema, hotspotTypes, reviewSources, customisationOptions, type Product, type ProductPage } from "@shopmaple/contracts";
 
 const id = z
   .string()
@@ -17,6 +18,8 @@ const productTypeCategories = new Map<string, Product["category"]>([
   // reached no category page.
   ["chest", "storage"], ["bookcase", "storage"], ["cabinet", "storage"], ["crib", "beds"],
 ]);
+/** A media row with its role when Keeri sent one (v2 rows carry it; v1 rows never do). */
+const roleOf = (m: { id: string; position: number }) => ({ id: m.id, position: m.position, role: "role" in m && typeof m.role === "string" ? m.role : null });
 const mediaSchema = z
   .object({
     id,
@@ -220,6 +223,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
         productPage: modelPageSchema.optional(),
         // The `offers=1` level: the model's running or next offer, or null. Absent below that level.
         offer: productOfferSchema.nullable().optional(),
+        // The `minOrder=1` level: the fewest pieces of the design an order may hold, or null. Absent below that level.
+        minOrderQuantity: minOrderQuantitySchema,
         taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,
@@ -404,7 +409,7 @@ function adaptValidated(
     const seen = new Set<string>();
     const media = [...model.media, ...eligible.flatMap((v) => v.media)]
       .filter((m) => m.stage === "approved" && m.supersededAt === null && m.storageKey?.trim() && (m.variantId === null || eligibleIds.has(m.variantId)))
-      .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+      .sort((a, b) => compareLeadPhoto(roleOf(a), roleOf(b)))
       .flatMap((m) => {
         const url = publicMedia.get(m.id);
         if (!url || seen.has(url)) return [];
@@ -465,7 +470,7 @@ function adaptValidated(
               m.storageKey?.trim() &&
               (m.variantId === null || eligibleIds.has(m.variantId)),
           )
-          .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+          .sort((a, b) => compareLeadPhoto(roleOf(a), roleOf(b)))
           .map((m) => publicMedia.get(m.id))
           .filter((url): url is string => Boolean(url)),
       ),
@@ -497,6 +502,8 @@ function adaptValidated(
         ...(productPage ? { productPage } : {}),
         // Only at the offers level; the sync clears a stored offer when a later export has none.
         ...("offer" in model && model.offer !== undefined ? { offer: model.offer } : {}),
+        // Only at the minimum-order level; the sync stores none when a later export does not say.
+        ...("minOrderQuantity" in model && model.minOrderQuantity !== undefined ? { minOrderQuantity: model.minOrderQuantity } : {}),
         variants: eligible.map((v) => ({
           id: identity(v.id),
           title: v.variantName?.trim() || variantOptions(v).map((o) => o.value).join(" / ").slice(0, 300).trim() || v.sku || "Details on request",
