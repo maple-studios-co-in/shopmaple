@@ -62,7 +62,8 @@ function taxonomyMember(product: CollectionProduct, handle: string) {
     case "rocking-chair": case "rocking-chairs": return type === "chair" && category === "rocking";
     case "lounge-wing-chair": return type === "chair" && (category === "lounge" || category === "accent" && ["lou", "win"].includes(sub));
     case "wing-chair": return type === "chair" && category === "accent" && sub === "win";
-    case "dining": case "dinings": return type === "table" && category === "dining";
+    // Keeri's Dining category belongs to chair, so tables added since 13 Nov 2026 are filed as Table › Dining Table (DT).
+    case "dining": case "dinings": return type === "table" && ["dining", "dining table"].includes(category);
     case "center-tables": case "center-tables-1": case "sofa-table": return type === "table" && category === "sofa/coffee table";
     case "side-table": return type === "table" && category === "side";
     case "console-tables": case "consoles": return type === "console" || type === "table" && category === "console";

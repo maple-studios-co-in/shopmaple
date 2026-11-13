@@ -87,3 +87,16 @@ test("office chairs take only Keeri chairs filed under Office Chairs", () => {
   const filter = collectionCategories(products.filter((item) => item.category === "chairs"), "office-chairs");
   assert.deepEqual(filter.find((item) => item.handle === "office-chairs"), { handle: "office-chairs", title: "Office Chairs", count: 2, current: true, kind: "collection" });
 });
+
+// Dining Table (owner, 13 Nov 2026): Keeri's Dining category belongs to chair, so new dining tables and sets are filed
+// as Table › Dining Table. Both spellings reach the Dining Tables collection; a dining chair never does.
+test("dining tables take Keeri tables filed under Dining or Dining Table", () => {
+  const products = [
+    product("legacy", { productType: "table", category: "Dining", subCategory: null }, "tables"),
+    product("set", { productType: "Table", category: " Dining Table ", subCategory: null }, "tables"),
+    product("chair", { productType: "Chair", category: "Dining Table", subCategory: null }),
+    product("console", { productType: "table", category: "Console", subCategory: null }, "tables"),
+  ];
+  assert.deepEqual(handles(products, "dining"), ["legacy", "set"]);
+  assert.deepEqual(handles(products, "dinings"), ["legacy", "set"]);
+});
