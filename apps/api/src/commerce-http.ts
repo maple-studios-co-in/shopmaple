@@ -61,6 +61,8 @@ function freeDeliveryOf(quote: QuoteSnapshot) {
   const titles = quote.items.filter((item) => ids.includes(item.variantId)).map((item) => item.title);
   return { freeDelivery: { all: quote.delivery?.source === "free", titles: [...new Set(titles)] } };
 }
+// The catalogue identities frozen with the quote (orders/catalogue-bindings.ts), read only for the store's variant ids.
+const frozenBindings = z.object({ items: z.array(z.object({ localVariantId: z.string().min(1), sourceVariantId: z.string().min(1) })) });
 function publicAttempt(
   attempt: CheckoutAttempt & {
     fulfillmentStatus?: string;
@@ -69,11 +71,19 @@ function publicAttempt(
   },
 ) {
   const quote = quoteSnapshotSchema.safeParse(attempt.snapshot);
+  // Keeri's quote names each piece by Keeri's variant id. The cart, and so the photos the storefront keeps, name it by
+  // the store's own, which differs for a variant carried over from the old store (live: Aero's Deep Atlantic is
+  // "preview-46728293843133"). Each line gets the store's id beside Keeri's; an attempt frozen without bindings has none.
+  const bindings = frozenBindings.safeParse(attempt.catalogueBindings);
+  const storeVariant = new Map(bindings.success ? bindings.data.items.map((item) => [item.sourceVariantId, item.localVariantId]) : []);
   return {
     ...(quote.success
       ? {
           quote: {
-            items: quote.data.items,
+            items: quote.data.items.map((item) => {
+              const localVariantId = storeVariant.get(item.variantId);
+              return localVariantId ? { ...item, localVariantId } : item;
+            }),
             // The courier and its estimate only: the carrier's ids and weights stay internal.
             delivery: quote.data.delivery?.carrier
               ? {

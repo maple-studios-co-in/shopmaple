@@ -445,6 +445,11 @@ test("merged preview cart quotes and reserves persisted Keeri identities while r
   assert.deepEqual((result as any).catalogueBindings, bindingSnapshot);
   assert.equal((await db.cartItem.findFirstOrThrow()).variantId, "preview-chair-v");
   assert.equal((await freeze(flow)).id, result.id);
+  // The storefront pictures the piece with the cart's photo, which the cart keys "preview-chair-v": the checkout's status
+  // gives that id beside Keeri's (owner's report, 13 Nov 2026: Aero's Deep Atlantic showed "Image unavailable").
+  const app = createApp(db, { webOrigin: "http://localhost:3000", catalogMode: "preview", secureCookies: false }, flow);
+  const status = await request(app).get(`/api/checkout/${result.id}`).set("Cookie", `maple_cart=${token}`);
+  assert.deepEqual(status.body.quote.items.map((item: any) => [item.variantId, item.localVariantId]), [["keeri:maple:chair-v", "preview-chair-v"]]);
   assert.equal((await flow.createProviderOrder(token, result.id)).state, "awaiting_payment");
   assert.equal(providerPosts.length, 1);
 });

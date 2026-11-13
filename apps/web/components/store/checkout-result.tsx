@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useId } from "react";
-import type { CheckoutAttempt } from "@/app/checkout/checkout-client";
+import { linePhoto, type CheckoutAttempt } from "@/app/checkout/checkout-client";
 import { estimatedArrival } from "@/app/checkout/delivery-estimate";
 import { firstName, formatDayRange } from "@/lib/account/format";
 import { money } from "@/lib/format";
@@ -12,7 +12,7 @@ import { ProductImage } from "./product-image";
 
 /** Why the failure screen shows: a try failed in Razorpay's window, or the window was closed without one. */
 export type PaymentShortfall = "failed" | "dismissed";
-/** Photos by variant id. Capture empties the cart, so the flow remembers them when payment starts. */
+/** Photos by the cart's variant ids (the store's own). Capture empties the cart, so the flow remembers them when payment starts. */
 export type ResultPhotos = Record<string, string>;
 
 /**
@@ -45,7 +45,7 @@ function OrderCard({ title, attempt, photos, photoSizes, totalLabel }: {
         <>
           <div className="checkout-result-photo">
             {/* The card's one large picture, shown whole (the frame's 300px "Product photography"). */}
-            <ProductImage src={photos[only.variantId]} alt="" fill sizes={photoSizes} loading="eager" fetchPriority="high" />
+            <ProductImage src={linePhoto(only, (id) => photos[id])} alt="" fill sizes={photoSizes} loading="eager" fetchPriority="high" />
           </div>
           <p className="checkout-result-piece">{only.title}</p>
           <p className="checkout-result-meta">{pieceNote(only.variantTitle, only.quantity)}</p>
@@ -55,7 +55,7 @@ function OrderCard({ title, attempt, photos, photoSizes, totalLabel }: {
           {items.map((item) => (
             <li key={item.variantId} className="checkout-result-line">
               <span className="checkout-result-thumb">
-                <ProductImage src={photos[item.variantId]} alt="" fill sizes="(max-width: 1440px) 68px, 5vw" />
+                <ProductImage src={linePhoto(item, (id) => photos[id])} alt="" fill sizes="(max-width: 1440px) 68px, 5vw" />
               </span>
               <span className="checkout-result-line-text">
                 <span className="checkout-result-line-title">{item.title}</span>

@@ -2,6 +2,7 @@ import type { CheckoutAttempt, PrismaClient } from "@prisma/client";
 import type { QuoteSnapshot } from "@shopmaple/contracts";
 import { z } from "zod";
 import { deliveryEstimate, indiaDay } from "../account/orders.js";
+import { variantPhoto } from "../variant-photo.js";
 
 /**
  * The buyer's emails as HTML, with a plain-text part that says the same things, all in one layout: the confirmation
@@ -130,10 +131,9 @@ const cssUrl = (href: string) => href.replace(/[\s'"()\\]/g, (char) => `%${char.
 const frozenBindings = z.object({ items: z.array(z.object({ localVariantId: z.string(), sourceVariantId: z.string() })) });
 
 /**
- * The pieces' photos, chosen as the account pages choose them (orderImages in account/service.ts), so the email and the
- * order page show the same picture: the bought variant's first photo when its product serves it, else the product's
- * first; https only, and only while the product is published. A snapshot item reaches its catalogue row through the
- * bindings frozen with the quote, else through the variant's Keeri identity.
+ * The pieces' photos, chosen by variantPhoto (variant-photo.ts) as the bag and the account pages choose them, so the
+ * customer sees the same picture of the variant they chose everywhere. A snapshot item reaches its catalogue row through
+ * the bindings frozen with the quote, else through the variant's Keeri identity.
  */
 export async function findOrderPhotos(
   db: PrismaClient,
@@ -160,14 +160,7 @@ export async function findOrderPhotos(
     where: { id: { in: [...new Set(local.values())] } },
     select: { id: true, images: true, product: { select: { published: true, images: true } } },
   });
-  const https = (value: string | undefined) => (value?.startsWith("https://") ? value : null);
-  const byVariant = new Map(
-    variants.map((variant) => {
-      if (!variant.product.published) return [variant.id, null] as const;
-      const own = https(variant.images[0]);
-      return [variant.id, own && variant.product.images.includes(own) ? own : https(variant.product.images[0])] as const;
-    }),
-  );
+  const byVariant = new Map(variants.map((variant) => [variant.id, variantPhoto(variant)] as const));
   const photos = new Map<string, string>();
   for (const [sourceVariantId, variantId] of local) {
     const photo = byVariant.get(variantId);
