@@ -26,6 +26,7 @@ import { z } from "zod";
 import { HttpError } from "../cart.js";
 import type { SignInCodeMessage } from "./config.js";
 import { paidOrderStates, toOrderDetail, toOrderSummary, type OrderImages, type PaidOrder } from "./orders.js";
+import { loadOrderProgress } from "../orders/keeri-events.js";
 import {
   generateSignInCode,
   hashNetwork,
@@ -333,11 +334,14 @@ export function createAccountService(db: PrismaClient, options: AccountServiceOp
       select: { attemptId: true, state: true, externalOrderId: true, deliveredAt: true },
     });
     const byAttempt = new Map(outboxes.map((outbox) => [outbox.attemptId, outbox]));
+    // What Keeri has reported since accepting each order (status, delivery, cancellation, refund).
+    const progress = await loadOrderProgress(db, options.merchantScope, outboxes.flatMap((outbox) => (outbox.externalOrderId ? [outbox.externalOrderId] : [])));
     return rows.flatMap((row) => {
       const snapshot = quoteSnapshotSchema.safeParse(row.snapshot);
       if (!snapshot.success || row.orderNumber === null || !row.capturedAt || !row.paymentId) return [];
       return [{ row, orderNumber: row.orderNumber, state: row.state, capturedAt: row.capturedAt, paymentId: row.paymentId,
-        snapshot: snapshot.data, outbox: byAttempt.get(row.id) ?? null }];
+        snapshot: snapshot.data, outbox: byAttempt.get(row.id) ?? null,
+        progress: progress.get(byAttempt.get(row.id)?.externalOrderId ?? "") ?? null }];
     });
   }
 

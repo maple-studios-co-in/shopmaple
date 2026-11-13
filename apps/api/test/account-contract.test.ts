@@ -101,6 +101,8 @@ const detail: OrderDetail = {
   totals: { subtotalPaise: 4_500_000, deliveryPaise: 50_000, taxPaise: 686_441, totalPaise: 4_550_000, taxIncluded: true },
   payment: { label: "Paid online", reference: "pay_Fixture123" },
   estimate: { from: "2026-11-27", to: "2026-11-30" },
+  cancellation: null,
+  refund: null,
   journey: [
     { key: "confirmed", label: "Confirmed", state: "done", at: "2026-11-10T09:31:00.000Z" },
     { key: "preparing", label: "Preparing", state: "upcoming", at: null },
@@ -110,7 +112,7 @@ const detail: OrderDetail = {
 };
 test("order summaries and details hold the shapes the account pages render, and refuse drift", () => {
   assert.deepEqual(orderDetailSchema.parse(detail), detail);
-  const { items: _items, delivery: _delivery, totals: _totals, payment: _payment, estimate: _estimate, journey: _journey, ...summary } = detail;
+  const { items: _items, delivery: _delivery, totals: _totals, payment: _payment, estimate: _estimate, cancellation: _cancellation, refund: _refund, journey: _journey, ...summary } = detail;
   assert.deepEqual(orderSummarySchema.parse(summary), summary);
   for (const [name, change] of [
     ["a bare number", { number: "10482" }],
@@ -122,6 +124,12 @@ test("order summaries and details hold the shapes the account pages render, and 
   ] as const)
     assert.equal(orderDetailSchema.safeParse({ ...detail, ...change }).success, false, name);
   assert.equal(orderDetailSchema.safeParse({ ...detail, estimate: null }).success, true, "an unknown estimate is null");
+  // Keeri's order updates: the two further statuses, and a cancelled order's refund.
+  for (const status of ["preparing", "dispatched"] as const) assert.equal(orderSummarySchema.safeParse({ ...summary, status }).success, true, status);
+  assert.equal(orderDetailSchema.safeParse({ ...detail, status: "cancelled", cancellation: { cancelledAt: "2026-11-15T05:00:00.000Z" },
+    refund: { status: "pending", amountPaise: 4_550_000, refundedAt: null } }).success, true);
+  assert.equal(orderDetailSchema.safeParse({ ...detail, refund: { status: "requested", amountPaise: 1, refundedAt: null } }).success, false, "an unknown refund state");
+  assert.equal(orderDetailSchema.safeParse({ ...detail, cancellation: { cancelledAt: "2026-11-15T05:00:00.000Z", reason: "Out of fabric" } }).success, false, "the staff reason is never sent");
   assert.equal(orderSummarySchema.safeParse({ ...summary, status: "delivered", statusLabel: "Delivered" }).success, true, "delivered is reserved for later");
   assert.equal(accountOverviewResponseSchema.safeParse({
     customer: { name: null, email: "asha@example.com", phone: null },

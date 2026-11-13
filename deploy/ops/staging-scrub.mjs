@@ -14,9 +14,10 @@ export const TABLE_POLICY = {
   ShopMediaAsset: 'keep', ShopArticlePublication: 'keep', InstagramFeedPost: 'keep', EnquiryReviewAudit: 'keep',
   // Staff accounts stay so staff can sign in to staging admin (behind Cloudflare Access); their sessions do not.
   ShopAdmin: 'keep',
-  // Orders, payments, carts, customer accounts, sign-in traces, delivery queues and the stored Instagram token: emptied.
+  // Orders, payments, Keeri's order updates (they carry staff cancellation reasons and refund ids), carts, customer
+  // accounts, sign-in traces, delivery queues and the stored Instagram token: emptied.
   Cart: 'empty', CartItem: 'empty', CartMutationReceipt: 'empty', CheckoutAttempt: 'empty', PaymentWebhookInbox: 'empty',
-  OrderOutbox: 'empty', OrderNotification: 'empty', Customer: 'empty', CustomerAddress: 'empty', CustomerSession: 'empty',
+  OrderOutbox: 'empty', OrderNotification: 'empty', KeeriOrderEvent: 'empty', Customer: 'empty', CustomerAddress: 'empty', CustomerSession: 'empty',
   CustomerLoginChallenge: 'empty', CustomerSignInFailure: 'empty', ShopAdminSession: 'empty', EnquiryDelivery: 'empty',
   EnquiryDeliveryRetryAudit: 'empty', InstagramFeedState: 'empty',
   // Enquiries and the CRM keep their shape (so the admin is realistic) with every personal field replaced.

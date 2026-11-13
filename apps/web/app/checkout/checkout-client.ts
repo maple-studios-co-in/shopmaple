@@ -62,6 +62,10 @@ export const checkoutAttemptSchema = z.object({
     .optional(),
   fulfillmentStatus: z.enum(["pending", "confirmed", "review_required"]).optional(),
   orderReference: z.string().nullable().optional(),
+  /** Where a confirmed order stands, from Keeri's order updates; null or absent until Keeri reports a move. */
+  orderStage: z.enum(["confirmed", "preparing", "dispatched", "delivered", "cancelled"]).nullable().optional(),
+  /** A cancelled order's refund: pending until staff record it. */
+  refund: z.object({ status: z.enum(["pending", "refunded"]), amountPaise: money }).nullable().optional(),
   /** Maple's own order number ("MF-10482"), assigned when the payment is captured; Keeri's reference stays internal. */
   orderNumber: z.string().regex(/^MF-[1-9][0-9]{0,9}$/).nullable().optional(),
   /** When the payment window must close: two minutes before Keeri's stock hold lapses. */

@@ -52,13 +52,24 @@ Migration `20261111140000_customer_accounts` is additive. It adds two nullable `
 
 **What a customer sees.** A signed-in customer sees the attempts whose `customerEmailKey` equals their `Customer.emailKey`, in the paid states `captured` and `paid_hold_lapsed`, with a number. When `KEERI_MERCHANT_SCOPE` is set, only that scope counts. `reconciliation_required` is left out on purpose: in `service.ts` it never holds a verified payment. It marks an uncertain hold, provider order or release, and when Razorpay later confirms a payment for it, the worker moves it to `paid_hold_lapsed`, where it appears. Any other order number, including another customer's, answers the same 404 as one that does not exist.
 
-The customer-facing status is derived from today's data, as `getAttempt` does:
-- `confirmed`: `captured`, and the `keeri.order.captured.v2` outbox entry is `delivered` with an SO number.
-- `confirming`: every other paid order, including a failed Keeri delivery and `paid_hold_lapsed`, which is confirmed by hand.
-- `cancelled`: reserved and not produced yet.
-- `delivered`: reserved for when staff status exists.
+The customer-facing status is derived when the order is read:
+- `confirming`: every paid order Keeri has not accepted yet, including a failed Keeri delivery and `paid_hold_lapsed`, which is confirmed by hand.
+- `confirmed`: `captured`, and the `keeri.order.captured.v2` outbox entry is `delivered` with Keeri's order id.
+- `preparing`, `dispatched`, `delivered`, `cancelled`: a confirmed order follows Keeri's order updates (below).
 
-The journey marks Confirmed done (with the Keeri acceptance time) or current, and Preparing, Dispatched and Delivered as upcoming. The delivery estimate counts from the capture day in India. It adds the longest made-to-order lead time and the courier's estimated days, with a three-day window (`estimateSpreadDays`, an owner decision to confirm). It is null when either figure is unknown.
+The journey marks Confirmed done (with the Keeri acceptance time) or current. After that each step is done with the time Keeri reported, the step under way is current (Preparing while the order is in production or ready, Delivered while it is with the courier), and the rest are upcoming. A cancelled order keeps the steps it reached and shows when it was cancelled and where its refund stands. The delivery estimate counts from the capture day in India. It adds the longest made-to-order lead time and the courier's estimated days, with a three-day window (`estimateSpreadDays`, an owner decision to confirm). It is null when either figure is unknown.
+
+## Order progress from Keeri (13 Nov 2026)
+
+After Keeri accepts a paid order, it reports what happens to it. `apps/api/src/orders/keeri-events.ts` receives those reports and the order pages read them.
+
+- **Route.** `POST /api/integrations/keeri/order-events`, mounted before JSON parsing and Origin enforcement. It exists only when `KEERI_DELIVERY_WEBHOOK_SECRET` is set (with the store's merchant scope).
+- **Authentication.** `X-Keeri-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">`, checked against the raw bytes with a ten-minute window. Anything else is 401.
+- **Events.** `order.status_changed` (`status`, `changedAt`), `order.delivered` (`deliveredAt`), `order.cancelled` (`cancelledAt`, `refund`), `order.cancellation_declined` (`decidedAt`) and `order.refunded` (`amountPaise`, `refundedAt`). Each names the order by `externalOrderId`, the id Keeri returned when it accepted the order. An event type the store does not know is acknowledged and not stored, so a new Keeri event never blocks the ones behind it. A malformed body is 400.
+- **Storage.** Migration `20261113100000_keeri_order_events` adds `KeeriOrderEvent` (additive). One row per signed body, unique on merchant scope and the body's SHA-256, so Keeri's retries and a replay store nothing twice. The route answers 200 only once the event is stored, or was already; a database fault answers 500 and Keeri retries. There is no foreign key to the order: an event may arrive before the store records Keeri's acceptance, and applies once it has.
+- **What the buyer sees.** `orderProgress` reads an order's events in the order they happened. Keeri's `in_production` and `ready` are "preparing"; `dispatched`, `delivered` and `cancelled` are themselves. Delivered and cancelled are final. The refund is `pending` from the cancellation and `refunded` once staff record it in Keeri. Both order pages use it: the account order (`GET /api/account/orders/:number`: `status`, `journey`, `cancellation`, `refund`) and the guest status page (`GET /api/checkout/:attemptId`: `orderStage`, `refund`).
+- **What stays in Keeri.** The staff cancellation reason, the decline note, the credit note number and the gateway refund id are stored with the event and never sent to a browser.
+- **Not built yet.** No email goes out on these events, the courier's tracking number is not shown, and a buyer cannot ask to cancel from the store. Keeri has endpoints for the last two (`/api/storefront/orders/:id/shipment`, `/api/storefront/orders/cancellation-requests`).
 
 **Payment emails.** Before any order exists, the buyer hears of a payment that did not complete, once per checkout (`orders/notifications.ts`, Figma 488:1339 and 488:1390):
 - `customer_payment_failed`, "Your payment didn't go through": Razorpay reported a `payment.failed` on the checkout's order in the past two days, the latest failure is at least 10 minutes old (a buyer still trying in Razorpay's window is left alone), nothing on that order says a payment worked (no success callback, capture or authorization), no capture is recorded, and the buyer has not started another checkout since (same cart or same email). It links back to `/checkout`.
@@ -74,7 +85,7 @@ Each quotes Razorpay's payment id (`pay_…`) as its reference, which staff find
 - Supply merchant-approved pricing, shipping, tax and delivery eligibility, and collect required customer/order information.
 - Confirm the gateway merchant/mode, configure credentials and raw webhook routing, and add protected checkout/status endpoints.
 - Implement observable inbox scheduling, uncertain-creation reconciliation and an idempotent Keeri outbox consumer with delivery retries and acknowledgement.
-- Implement refunds/disputes/cancellation reconciliation. Ignored refund/dispute events currently do not update commerce state.
+- Reconcile Razorpay's own refund and dispute events. A cancellation and refund recorded in Keeri now reach the buyer's order pages (above); Razorpay's ignored refund/dispute events still do not update commerce state.
 - Validate the complete provider sandbox flow and ordinary browser checkout before enabling purchases.
 
 ## Verification

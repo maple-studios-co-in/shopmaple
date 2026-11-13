@@ -345,6 +345,22 @@ model PaymentWebhookInbox {
   @@index([merchantScope, providerOrderId])
 }
 
+/// What Keeri reported about a store order after accepting it: status moves, delivery, cancellation and refund
+/// (orders/keeri-events.ts). Kept as received, one row per signed body, and read by the order pages. `externalOrderId` is
+/// the id Keeri returned when it accepted the order (`OrderOutbox.externalOrderId`); there is no foreign key, because an
+/// event may arrive before the store has recorded that acceptance.
+model KeeriOrderEvent {
+  id String @id @default(cuid())
+  merchantScope String
+  externalOrderId String
+  type String
+  bodySha256 String
+  payload Json
+  occurredAt DateTime
+  receivedAt DateTime @default(now())
+  @@unique([merchantScope, bodySha256])
+  @@index([merchantScope, externalOrderId, occurredAt])
+}
 model OrderOutbox {
   id String @id @default(cuid())
   attemptId String
