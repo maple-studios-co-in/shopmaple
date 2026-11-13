@@ -54,6 +54,7 @@ test('functional collection aliases follow explicit source taxonomy without cros
  ['bed','Bedroom','Solid Wood Beds',['solid-wood-beds']],
  ['Beds','Bedroom','Kids Beds',['kids-beds']],['crib','Bedroom',null,['kids-beds']],['Outdoors','Outdoor Sets',null,['outdoor-furnitures']],['sofa','3 Seater',null,['3-seater-sofa']],
  ['sofa','5 Seater',null,['5-seater-sofa']],['sofa','7+ Seater',null,['7-seater-sofa']],
+ ['sofa','L-Shape',null,['l-shape-sofa','l-shape-sofa-set']],
  ];
  for(const [productType,category,subCategory,routes] of examples){
   const item=product('keeri-only',{productType,category,subCategory});

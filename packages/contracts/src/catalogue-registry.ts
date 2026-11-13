@@ -80,6 +80,8 @@ function taxonomyMember(product: CollectionProduct, handle: string) {
     case "3-seater-sofa": return type === "sofa" && category === "3 seater";
     case "5-seater-sofa": return type === "sofa" && category === "5 seater";
     case "7-seater-sofa": return type === "sofa" && ["7 seater", "7+ seater"].includes(category);
+    // Keeri files sectionals as Sofa › L-Shape (code LSHAPE, 14 Nov 2026), e.g. Aurevon and Elano.
+    case "l-shape-sofa": case "l-shape-sofa-set": return type === "sofa" && category === "l-shape";
     default: return false;
   }
 }
