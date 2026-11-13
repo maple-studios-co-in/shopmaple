@@ -153,6 +153,23 @@ test("cart totals use database prices and reject injected price fields", async (
   await db.variant.update({ where: { id: "chair-cream" }, data: { pricePaise: 15000 } });
   assert.equal((await agent.get("/api/cart")).body.subtotalPaise, 30000);
 });
+test("each cart line pictures the variant the shopper chose, as the order email does (owner, 13 Nov 2026)", async () => {
+  const photo = (name: string) => `https://store.maplefurnishers.com/media/keeri/${name}.webp`;
+  await db.product.update({ where: { id: "chair" }, data: { images: [photo("main"), photo("cream-1"), photo("cream-2")] } });
+  await db.variant.update({ where: { id: "chair-cream" }, data: { images: [photo("cream-1"), photo("cream-2")] } });
+  const agent = request.agent(app);
+  await agent.get("/api/cart");
+  const added = await cartWrite(agent, "chair-cream", 1);
+  assert.equal(added.status, 200);
+  assert.equal(added.body.items[0].image, photo("cream-1"), "the chosen colour's own first photo, not the product's main one");
+  const image = async () => (await agent.get("/api/cart")).body.items[0].image;
+  await db.variant.update({ where: { id: "chair-cream" }, data: { images: [photo("unserved")] } });
+  assert.equal(await image(), photo("main"), "a variant photo the product does not serve gives way to the product's first");
+  await db.variant.update({ where: { id: "chair-cream" }, data: { images: [] } });
+  assert.equal(await image(), photo("main"), "a variant without photos of its own shows the product's first");
+  await db.product.update({ where: { id: "chair" }, data: { published: false } });
+  assert.equal(await image(), "", "a product the store stops listing keeps its line, without its photo");
+});
 test("guest cart credentials isolate shoppers and survive a new API instance", async () => {
   const a = request.agent(app), b = request.agent(app);
   const boot = await a.get("/api/cart");

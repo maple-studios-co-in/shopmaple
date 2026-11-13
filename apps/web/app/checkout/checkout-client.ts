@@ -34,6 +34,9 @@ export const checkoutAttemptSchema = z.object({
       items: z.array(
         z.object({
           variantId: z.string(),
+          /** The store's own id for the piece, which the cart uses; Keeri's `variantId` differs for one carried over from the old
+           * store. Only pictures depend on it, so a malformed one is dropped rather than failing the checkout. */
+          localVariantId: z.string().min(1).max(160).optional().catch(undefined),
           productId: z.string(),
           title: z.string(),
           variantTitle: z.string(),
@@ -81,6 +84,13 @@ export const checkoutAttemptSchema = z.object({
   payWithinSeconds: z.number().int().min(0).nullable().optional(),
 });
 export type CheckoutAttempt = z.infer<typeof checkoutAttemptSchema>;
+/**
+ * A quoted piece's photo, from photos keyed by the cart's variant ids: under the store's id when the quote gives it, else
+ * under the line's own (a quote frozen before the API gave the store's id, whose ids were the store's).
+ */
+export function linePhoto(line: { variantId: string; localVariantId?: string }, photoFor: (variantId: string) => string | null | undefined) {
+  return (line.localVariantId ? photoFor(line.localVariantId) : null) || photoFor(line.variantId) || undefined;
+}
 
 /** A failure the buyer can act on. `closed` means the API no longer offers checkout at all. */
 export class CheckoutClientError extends Error {

@@ -170,3 +170,41 @@ test("status responses carry the public quote, payment key and fulfilment fields
   const moved = await request(createApp(db, { ...config, checkout }, service({ getAttempt: async () => cancelled as never }))).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
   assert.deepEqual([moved.body.orderStage, moved.body.refund], ["cancelled", { status: "pending", amountPaise: 105000 }]);
 });
+
+test("each quoted line names the store's own variant beside Keeri's, from the bindings frozen with the quote, and nothing else of them", async () => {
+  // Live shapes: a colour carried over from the old store keeps its store id ("preview-…"); one made in Keeri has Keeri's.
+  const line = (variantId: string, title: string) => ({ variantId, productId: "keeri:maple:aero", title, variantTitle: "Default Title", sku: null,
+    quantity: 1, unitPricePaise: 100000, lineTotalPaise: 100000, hsn: "9401", taxRateBps: 1800, fulfilment: { kind: "made_to_order", leadTimeDays: 10 } });
+  const snapshot = {
+    version: 2, currency: "INR", policyId: "routes", quoteId: "quote_routes", expiresAt: "2026-10-27T10:15:00.000Z", ...input, gstMode: "included",
+    items: [line("keeri:maple:deep-atlantic", "Aero Deep Atlantic"), line("keeri:maple:nordic-ivory", "Aero Nordic Ivory")],
+    subtotalPaise: 200000, shippingPaise: 0, taxPaise: 30508, totalPaise: 200000,
+  };
+  const catalogueBindings = { version: 1, tenantId: "maple", items: [
+    { localVariantId: "preview-46728293843133", localProductId: "preview-8292121215165", sourceVariantId: "keeri:maple:deep-atlantic", sourceProductId: "keeri:maple:aero" },
+    { localVariantId: "keeri:maple:nordic-ivory", localProductId: "preview-8292121215165", sourceVariantId: "keeri:maple:nordic-ivory", sourceProductId: "keeri:maple:aero" },
+  ] };
+  const attempt = {
+    id: attemptId, cartId: "cart", merchantScope: "routes", idempotencyKey: "routes-request-2", receipt: "sm_routes", snapshot, catalogueBindings,
+    amountPaise: 200000, currency: "INR", state: "awaiting_payment", reservationId: "hold", reservationExpiresAt: new Date(Date.now() + 15 * 60_000),
+    providerOrderId: "order_routes", paymentId: null, capturedAt: null, failureCode: null, createdAt: new Date(), updatedAt: new Date(),
+    customerEmailKey: "buyer@example.test", orderNumber: null,
+  };
+  const status = async (row: Record<string, unknown>) => {
+    const response = await request(createApp(db, { ...config, checkout }, service({ getAttempt: async () => row as never }))).get(`/api/checkout/${attemptId}`).set("Cookie", cookie);
+    assert.equal(response.status, 200);
+    return response.body;
+  };
+  const body = await status(attempt);
+  assert.deepEqual(body.quote.items.map((item: { variantId: string; localVariantId?: string }) => [item.variantId, item.localVariantId]), [
+    ["keeri:maple:deep-atlantic", "preview-46728293843133"],
+    ["keeri:maple:nordic-ivory", "keeri:maple:nordic-ivory"],
+  ]);
+  assert.doesNotMatch(JSON.stringify(body), /preview-8292121215165|tenantId|sourceVariantId|localProductId/, "only the variant ids, never the rest of the bindings");
+
+  // Without bindings (an attempt frozen before them), or with ones that cannot be read, the lines are as quoted.
+  for (const unbound of [null, { items: "malformed" }, { version: 1, tenantId: "maple", items: [] }]) {
+    const plain = await status({ ...attempt, catalogueBindings: unbound });
+    assert.deepEqual(plain.quote.items, snapshot.items);
+  }
+});

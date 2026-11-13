@@ -10,12 +10,14 @@ import type { CheckoutAttempt } from "./checkout-client";
 // and the pending screen's "Check payment status" pretends a check that finds the payment still pending.
 export type ResultPreviewKind = "success" | "success-multi" | "failure" | "failure-dismissed" | "pending";
 
-const nola = { variantId: "keeri:preview:nola-oak", productId: "keeri:preview:nola", title: "Nola Accent Chair", variantTitle: "Natural cane · Oak finish", sku: null,
-  quantity: 1, unitPricePaise: 2490000, lineTotalPaise: 2490000, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 10 } };
-const aero = { variantId: "keeri:preview:nimbus-ivory", productId: "keeri:preview:nimbus", title: "Nimbus Modular Sofa", variantTitle: "Ivory bouclé · 4 seater", sku: null,
-  quantity: 1, unitPricePaise: 8990000, lineTotalPaise: 8990000, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 10 } };
-// The frames' own Nola photograph (Figma 392:1752), and the Nimbus page's sofa.
-const photos = { [nola.variantId]: "/media/previews/nola-accent-chair.webp", [aero.variantId]: "/media/nimbus-collection/sofas.webp" };
+// Each line as the API gives it: Keeri's variant id, and the store's own beside it, by which the cart keys its photos. The
+// Nola stands for a piece carried over from the old store, whose two ids differ; the sofa for one made in Keeri.
+const nola = { variantId: "keeri:preview:nola-oak", localVariantId: "preview-40000000000001", productId: "keeri:preview:nola", title: "Nola Accent Chair",
+  variantTitle: "Natural cane · Oak finish", sku: null, quantity: 1, unitPricePaise: 2490000, lineTotalPaise: 2490000, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 10 } };
+const aero = { variantId: "keeri:preview:nimbus-ivory", localVariantId: "keeri:preview:nimbus-ivory", productId: "keeri:preview:nimbus", title: "Nimbus Modular Sofa",
+  variantTitle: "Ivory bouclé · 4 seater", sku: null, quantity: 1, unitPricePaise: 8990000, lineTotalPaise: 8990000, fulfilment: { kind: "made_to_order" as const, leadTimeDays: 10 } };
+// The frames' own Nola photograph (Figma 392:1752), and the Nimbus page's sofa, as the cart kept them.
+const photos = { [nola.localVariantId]: "/media/previews/nola-accent-chair.webp", [aero.localVariantId]: "/media/nimbus-collection/sofas.webp" };
 const customer = { name: "Aditi Sharma", email: "aditi.sharma@example.com" };
 const shippingPaise = 150000;
 
