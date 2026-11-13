@@ -43,6 +43,7 @@ export const collectionTitles: Record<string, string> = {
   "console-tables": "Console Tables",
   "kids-beds": "Kids Beds",
   "office-chairs": "Office Chairs",
+  benches: "Benches & Ottomans",
 };
 // Functional collections augment Shopify membership from explicit Keeri taxonomy.
 // Campaigns, bestsellers and price promotions retain their curated membership.
@@ -72,11 +73,15 @@ function taxonomyMember(product: CollectionProduct, handle: string) {
     case "solid-wood-beds": return type === "bed" && sub === "solid wood beds";
     // Keeri files kids' beds under Beds › Bedroom › Kids Beds, and cribs under their own type.
     case "kids-beds": return type === "bed" && sub === "kids beds" || type === "crib";
+    // Benches & Ottomans (owner, 14 Nov 2026): every Keeri piece of type bench or ottoman, e.g. Bench › Bedroom Bench.
+    case "benches": return type === "bench" || type === "ottoman";
     // The menu's Outdoors link: the old Shopify list plus every Keeri piece of type Outdoors.
     case "outdoor-furnitures": return type === "outdoor";
     case "3-seater-sofa": return type === "sofa" && category === "3 seater";
     case "5-seater-sofa": return type === "sofa" && category === "5 seater";
     case "7-seater-sofa": return type === "sofa" && ["7 seater", "7+ seater"].includes(category);
+    // Keeri files sectionals as Sofa › L-Shape (code LSHAPE, 14 Nov 2026), e.g. Aurevon and Elano.
+    case "l-shape-sofa": case "l-shape-sofa-set": return type === "sofa" && category === "l-shape";
     default: return false;
   }
 }
