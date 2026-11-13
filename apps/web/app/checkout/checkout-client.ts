@@ -1,4 +1,4 @@
-import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts/checkout-consent";
 import { z } from "zod";
 
 export const checkoutOptionsSchema = z.object({

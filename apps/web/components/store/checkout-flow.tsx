@@ -1,5 +1,5 @@
 "use client";
-import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type CheckoutRequest } from "@shopmaple/contracts/checkout-consent";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { z } from "zod";

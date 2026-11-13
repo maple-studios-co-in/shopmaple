@@ -1,10 +1,9 @@
 import {
-  checkoutRequestSchema,
   quoteResponseSchema,
-  type OrderWhatsappUpdates,
   type QuoteRequest,
   type QuoteSnapshot,
 } from "@shopmaple/contracts";
+import { checkoutRequestSchema, type OrderWhatsappUpdates } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import { createHash, randomUUID } from "node:crypto";
 import { deliveryEstimate } from "../account/orders.js";

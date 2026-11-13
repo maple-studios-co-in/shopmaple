@@ -1,4 +1,5 @@
-import { checkoutRequestSchema, quoteSnapshotSchema } from "@shopmaple/contracts";
+import { quoteSnapshotSchema } from "@shopmaple/contracts";
+import { checkoutRequestSchema } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 import express, { type Express, type Request } from "express";
 import type { CheckoutAttempt } from "@prisma/client";

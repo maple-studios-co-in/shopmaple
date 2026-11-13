@@ -237,8 +237,6 @@ export type EnquiryReceipt = z.infer<typeof enquiryReceiptSchema>;
 
 export {
   checkoutInputSchema,
-  checkoutRequestSchema,
-  orderWhatsappUpdatesSchema,
   checkoutAddressSchema,
   quoteRequestSchema,
   quoteSnapshotSchema,
@@ -246,7 +244,7 @@ export {
   promoCodeSchema,
   promotionSchema,
 } from "./checkout";
-export type { CheckoutInput, CheckoutRequest, OrderWhatsappUpdates, QuoteRequest, QuoteSnapshot, Promotion } from "./checkout";
+export type { CheckoutInput, QuoteRequest, QuoteSnapshot, Promotion } from "./checkout";
 
 export * from "./category-content";
 export * from "./story-content";

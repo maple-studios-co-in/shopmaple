@@ -11,7 +11,7 @@ reply in. The store never calls WhatsApp.
 | Part | Where |
 | --- | --- |
 | The tick box at checkout, "Send my order updates on WhatsApp" | `apps/web/components/store/checkout-details.tsx` |
-| The consent kept with the checkout (`CheckoutAttempt.whatsappOptInAt`) and sent to Keeri with the paid order | `apps/api/src/orders/service.ts`, `workers.ts`; the field is `orderWhatsappUpdatesSchema` in `packages/contracts/src/checkout.ts` |
+| The consent kept with the checkout (`CheckoutAttempt.whatsappOptInAt`) and sent to Keeri with the paid order | `apps/api/src/orders/service.ts`, `workers.ts`; the field is `orderWhatsappUpdatesSchema` in `packages/contracts/src/checkout-consent.ts` |
 | The switch, `WHATSAPP_ORDER_UPDATES` | `apps/api/src/commerce-composition.ts` |
 | The header image for a product: `/whatsapp/order-media/<product handle>`. **Keeri links it in every confirmation, so it must stay.** | `apps/web/app/whatsapp/order-media/[handle]/route.tsx` |
 | The confirmation template as submitted, and a builder that fills it for one order (`orderConfirmationWhatsApp`). The preview page uses them; Keeri has its own builder for all four templates. | `packages/contracts/src/whatsapp.ts` (`@shopmaple/contracts/whatsapp`) |

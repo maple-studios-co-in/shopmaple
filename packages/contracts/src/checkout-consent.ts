@@ -1,0 +1,44 @@
+import { z } from "zod";
+import { checkoutInputSchema } from "./checkout";
+
+/**
+ * The buyer's consent to order updates on WhatsApp (owner, 13 Nov 2026): what the checkout page posts, and what the
+ * store tells Keeri, which sends the messages (docs/whatsapp-order-confirmation.md).
+ *
+ * Import this module by its subpath, `@shopmaple/contracts/checkout-consent`. Like `/account` and `/whatsapp`, it is not
+ * re-exported from the package index, which ships in the homepage's JavaScript.
+ */
+
+/**
+ * What the checkout page posts to `/api/checkout`: the quote's input, and whether the buyer ticked "Send my order
+ * updates on WhatsApp" (owner, 13 Nov 2026). The tick is the buyer's consent to WhatsApp messages about this order. It
+ * is kept with the checkout attempt and never goes into the quote Keeri prices, so the quote request and its snapshot
+ * are exactly what they were. Absent or false: no consent.
+ */
+export const checkoutRequestSchema = checkoutInputSchema
+  .extend({ whatsappOrderUpdates: z.boolean().optional() })
+  .strict();
+export type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
+
+/**
+ * What the store adds to a paid order it hands to Keeri (outbox `keeri.order.captured.v2`, payload key
+ * `whatsappUpdates`) when the buyer agreed to order updates on WhatsApp. Keeri sends every WhatsApp order message
+ * (owner, 13 Nov 2026); the key's presence is the consent, and without it Keeri sends nothing. Keeri's intake
+ * (`apps/admin/src/storefront/orders.ts` there) accepts the key as optional and checks exactly these fields.
+ */
+export const orderWhatsappUpdatesSchema = z
+  .object({
+    /** When the buyer ticked the box and asked for the quote. */
+    consentedAt: z.iso.datetime(),
+    /** Maple's order number as the buyer knows it: the messages' "#MF-10482" and the "View order" link. */
+    orderNumber: z.string().regex(/^MF-[1-9][0-9]{0,9}$/),
+    /** The first piece's product handle, for the confirmation's header image `/whatsapp/order-media/<handle>`. */
+    headerHandle: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200).nullable(),
+    /** The delivery window the store shows the buyer, as calendar days in India; null when it has no estimate. */
+    estimatedDelivery: z
+      .object({ from: z.iso.date(), to: z.iso.date() })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+export type OrderWhatsappUpdates = z.infer<typeof orderWhatsappUpdatesSchema>;

@@ -5,7 +5,7 @@ import {
   type OrderOutbox,
   type PaymentWebhookInbox,
 } from "@prisma/client";
-import { orderWhatsappUpdatesSchema } from "@shopmaple/contracts";
+import { orderWhatsappUpdatesSchema } from "@shopmaple/contracts/checkout-consent";
 import { formatOrderNumber } from "@shopmaple/contracts/account";
 
 export interface KeeriDeliveryRequest {
