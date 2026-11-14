@@ -186,10 +186,13 @@ test("the photo frame narrows to the photo's shape on a short window instead of 
     assert.ok(frame, "the frame is marked");
     assert.ok(frame.contains(document.querySelector("[data-main-image]")), "the large photo sits inside the frame");
     const classes = frame.className;
-    // Width follows the same height caps as the photo: 4:5 below 2xl, square from 2xl.
+    // Width follows the same height caps as the photo, at 4:5.
     assert.match(classes, /(^| )mx-auto( |$)/);
     assert.ok(classes.includes("max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)]"));
     assert.ok(classes.includes("lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)]"));
-    assert.ok(classes.includes("2xl:max-w-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]"));
+    // The large photo stays 4:5 at every width: a square frame on wide screens cropped the piece top and bottom.
+    const photo = document.querySelector("[data-main-image]")!;
+    assert.match(photo.className, /(^| )aspect-\[4\/5\]( |$)/);
+    assert.doesNotMatch(photo.className, /aspect-square/);
   });
 });
