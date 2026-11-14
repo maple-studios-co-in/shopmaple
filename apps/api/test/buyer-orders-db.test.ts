@@ -17,6 +17,7 @@ const clock = new Date("2026-11-14T10:00:00.000Z");
 
 type Calls = { cancellations: Array<Record<string, string>>; shipments: string[] };
 let calls: Calls;
+let logged: string[];
 let cancelAnswer: () => Promise<{ requestId: string; status: string }>;
 let shipmentAnswer: () => Promise<KeeriShipment>;
 function app(overrides: Partial<AppConfig> = {}) {
@@ -28,6 +29,7 @@ function app(overrides: Partial<AppConfig> = {}) {
         requestCancellation: async (input) => { calls.cancellations.push(input); return cancelAnswer(); },
         orderShipment: async (id) => { calls.shipments.push(id); return shipmentAnswer(); },
       },
+      log: { info: (line) => logged.push(`info ${line}`), warn: (line) => logged.push(`warn ${line}`) },
     },
     ...overrides,
   });
@@ -69,6 +71,7 @@ const cancel = (target: ReturnType<typeof app>, number: number, reason = "Ordere
 
 beforeEach(async () => {
   calls = { cancellations: [], shipments: [] };
+  logged = [];
   cancelAnswer = async () => ({ requestId: calls.cancellations.at(-1)!.requestId!, status: "requested" });
   shipmentAnswer = async () => ({ externalOrderId: "SO-501", state: "shipped", courierName: "Delhivery", awbCode: "AWB501",
     trackingUrl: "https://shiprocket.co/tracking/AWB501", trackingStatus: "In transit", shippedAt: "2026-11-16T09:00:00.000Z", deliveredAt: null });
@@ -185,6 +188,24 @@ test("Keeri's refusal is the buyer's answer; Keeri being away keeps the request 
   const ids = calls.cancellations.filter((c) => c.externalOrderId === "SO-508").map((c) => c.requestId);
   assert.equal(ids.length, 2);
   assert.equal(ids[0], ids[1]);
+});
+
+test("each cancellation outcome is logged once, naming the order number and nothing about the buyer", async () => {
+  const target = app();
+  await order({ number: 511 });
+  await order({ number: 512 });
+  await order({ number: 513 });
+  assert.equal((await cancel(target, 511)).status, 200);
+  cancelAnswer = async () => { throw new KeeriCommerceError("CANCELLATION_NOT_ALLOWED"); };
+  assert.equal((await cancel(target, 512)).status, 409);
+  cancelAnswer = async () => { throw new KeeriCommerceError("TRANSPORT_TIMEOUT"); };
+  assert.equal((await cancel(target, 513)).status, 503);
+  assert.deepEqual(logged, [
+    "info Cancellation request for MF-511 accepted by Keeri; staff decide it there.",
+    "warn Cancellation request for MF-512 refused by Keeri (CANCELLATION_NOT_ALLOWED); Cancel is no longer offered on it.",
+    "warn Cancellation request for MF-513 not sent: Keeri unavailable (TRANSPORT_TIMEOUT); the buyer can try again.",
+  ]);
+  for (const line of logged) for (const secretish of ["wrong colour", "Asha", "asha@example.test", "SO-51"]) assert.ok(!line.includes(secretish), line);
 });
 
 test("a reason is required and bounded, and only the store's own pages may cancel", async () => {

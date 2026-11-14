@@ -18,6 +18,8 @@ export type BuyerOrdersOptions = {
   merchantScope?: string;
   /** Null or absent: checkout is off, so there is no Keeri to ask; Cancel and tracking say so. */
   keeri?: KeeriOrderFollowUp | null;
+  /** Where a cancellation's outcome is logged: one line naming only the order number. */
+  log?: { info(line: string): void; warn(line: string): void };
 };
 
 const notFound = () => new HttpError(404, "ORDER_NOT_FOUND", "We couldn't find that order.");
@@ -55,6 +57,7 @@ export function cancellationState(order: ReadOrder, latest: CancelRow | null, ke
 export function createBuyerOrders(db: PrismaClient, options: BuyerOrdersOptions) {
   const reader = createPaidOrderReader(db, options.merchantScope);
   const keeri = options.keeri ?? null;
+  const log = options.log ?? { info: (line: string) => console.log(line), warn: (line: string) => console.warn(line) };
 
   async function readOrder(orderNumber: number): Promise<ReadOrder | null> {
     const row = await db.checkoutAttempt.findFirst({
@@ -106,20 +109,27 @@ export function createBuyerOrders(db: PrismaClient, options: BuyerOrdersOptions)
     const request = latest?.state === "pending"
       ? latest
       : await db.orderCancellationRequest.create({ data: { attemptId: order.row.id, reason: input.data.reason }, select: { id: true, state: true, createdAt: true } });
+    // The order number only: never the buyer, the reason or anything Keeri holds.
+    const subject = `Cancellation request for MF-${order.orderNumber}`;
     try {
       await keeri.requestCancellation({ requestId: request.id, externalOrderId: order.outbox!.externalOrderId!, reason: input.data.reason });
     } catch (error) {
-      if (error instanceof KeeriCommerceError && error.code === "CANCELLATION_ALREADY_REQUESTED") {
+      const code = error instanceof KeeriCommerceError ? error.code : "UNEXPECTED_ERROR";
+      if (code === "CANCELLATION_ALREADY_REQUESTED") {
         await db.orderCancellationRequest.update({ where: { id: request.id }, data: { state: "requested" } });
+        log.info(`${subject}: Keeri already holds an open one.`);
         return detailOf(order);
       }
-      if (error instanceof KeeriCommerceError && ["CANCELLATION_NOT_ALLOWED", "ORDER_NOT_FOUND", "UPSTREAM_REJECTED"].includes(error.code)) {
+      if (["CANCELLATION_NOT_ALLOWED", "ORDER_NOT_FOUND", "UPSTREAM_REJECTED"].includes(code)) {
         await db.orderCancellationRequest.update({ where: { id: request.id }, data: { state: "refused" } });
+        log.warn(`${subject} refused by Keeri (${code}); Cancel is no longer offered on it.`);
         throw notAvailable();
       }
+      log.warn(`${subject} not sent: Keeri unavailable (${code}); the buyer can try again.`);
       throw new HttpError(503, "CANCELLATION_UNAVAILABLE", "We couldn't send your request just now. Please try again in a moment.");
     }
     await db.orderCancellationRequest.update({ where: { id: request.id }, data: { state: "requested" } });
+    log.info(`${subject} accepted by Keeri; staff decide it there.`);
     return detailOf(order);
   }
 
