@@ -120,12 +120,12 @@
 :where(.shop-admin) :is(input, textarea)::placeholder { color: var(--muted-foreground); opacity: 1; }
 :where(.shop-admin) :is(a, a:hover) { color: inherit; text-decoration: inherit; }
 /* The field holding words clicked in the live preview (click-to-edit): it pulses once so the eye finds it. */
-.shop-admin [data-field-flash="true"] { animation: admin-field-flash 1.8s ease-out; }
+:where(.shop-admin) [data-field-flash="true"] { animation: admin-field-flash 1.8s ease-out; }
 @keyframes admin-field-flash {
   0%, 35% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--admin-accent) 22%, transparent), 0 0 0 1px var(--admin-accent); }
   100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
-@media (prefers-reduced-motion: reduce) { .shop-admin [data-field-flash="true"] { animation: none; box-shadow: 0 0 0 2px var(--admin-accent); } }
+@media (prefers-reduced-motion: reduce) { :where(.shop-admin) [data-field-flash="true"] { animation: none; box-shadow: 0 0 0 2px var(--admin-accent); } }
 :where(.shop-admin) :is(b, strong) { font-weight: 600; }
 :where(.shop-admin) :is(code, kbd, samp, pre) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1em; }
 :where(.shop-admin) table { border-collapse: collapse; text-indent: 0; border-color: inherit; }
