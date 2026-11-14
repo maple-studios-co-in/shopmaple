@@ -101,7 +101,9 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      <div className={cx("relative overflow-hidden rounded-[20px] border border-solid lg:rounded-[30px]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
+      {/* The frame is never wider than its photo's shape at the height it may take: on a short, wide window the height cap
+          would otherwise leave a frame wider than 4:5 and the photo would be cropped top and bottom (owner, 14 Nov 2026). */}
+      <div data-gallery-frame className={cx("relative mx-auto w-full max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)] overflow-hidden rounded-[20px] border border-solid lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)] lg:rounded-[30px] 2xl:max-w-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
