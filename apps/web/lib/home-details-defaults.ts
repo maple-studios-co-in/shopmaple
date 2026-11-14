@@ -77,5 +77,19 @@ export function resolveHomeDetails(value?: HomeDetails): ResolvedHomeDetails {
   // Documents published before the editorial and compare sections carry neither: they start from the defaults. The same
   // goes for the promise under the cities' figure, added later still.
   const details = { ...defaultHomeDetails, ...value } as ResolvedHomeDetails;
-  return structuredClone({ ...details, cities: { ...details.cities, description: details.cities.description ?? citiesPromise } });
+  return structuredClone(withTerraPage({ ...details, cities: { ...details.cities, description: details.cities.description ?? citiesPromise } }));
+}
+
+/**
+ * The homepage's Terra slide linked to Sofas from 2 Nov 2026 until the Terra page shipped (11 Nov), and a draft saved in
+ * that window kept the old link: the live "Explore" on Terra opened Sofas (owner, 14 Nov 2026). Only that stand-in
+ * link on the Terra slide (the theme's Terra photo, or a Terra heading) is moved to the Terra page; any other link
+ * staff chose stays as they set it.
+ */
+const terraStandIn = "/collections/sofas";
+const isTerraSlide = (slide: { image: string; heading: string }) => slide.image === "/media/home/nimbus-terra.webp" || /\bterra\b/i.test(slide.heading);
+function withTerraPage(details: ResolvedHomeDetails): ResolvedHomeDetails {
+  const slides = details.nimbus.slides;
+  if (!slides?.some((slide) => slide.href === terraStandIn && isTerraSlide(slide))) return details;
+  return { ...details, nimbus: { ...details.nimbus, slides: slides.map((slide) => (slide.href === terraStandIn && isTerraSlide(slide) ? { ...slide, href: "/terra-collection" } : slide)) } };
 }
