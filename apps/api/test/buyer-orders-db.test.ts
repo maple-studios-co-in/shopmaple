@@ -101,7 +101,9 @@ test("the private link opens the order without an account: pieces, totals, addre
 test("a forged, altered or other order's link is the same 404, and without the secret the routes do not exist", async () => {
   await order({ number: 502 });
   const target = app();
-  for (const bad of [ref(503), ref(502).slice(0, -1) + "0", "MF-502", `MF-502-${"0".repeat(32)}`])
+  // Change the last character to one it isn't, so the altered link can never be the real one.
+  const altered = ref(502).slice(0, -1) + (ref(502).endsWith("0") ? "1" : "0");
+  for (const bad of [ref(503), altered, "MF-502", `MF-502-${"0".repeat(32)}`])
     assert.equal((await request(target).get(`/api/orders/link/${bad}`)).status, 404, bad);
   assert.equal((await request(target).get(`/api/orders/link/${orderLinkRef("x".repeat(40), 502)}`)).status, 404);
   assert.equal((await request(app({ buyerOrders: null })).get(`/api/orders/link/${ref(502)}`)).status, 404);
