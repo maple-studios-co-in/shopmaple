@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Maximize2, Minimize2, Monitor, Pause, Play, RefreshCw, Smartphone, Tablet, X } from "lucide-react";
+import { Maximize2, Minimize2, Monitor, MousePointer2, MousePointerClick, Pause, Play, RefreshCw, Smartphone, Tablet, X } from "lucide-react";
 import {
   previewDevices,
   previewDeviceWidths,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState, Skeleton } from "./crm-primitives";
 import type { PreviewToken } from "./use-preview-token";
+import type { TextEditMessage, TextReply, TextSelectMessage } from "./use-click-to-edit";
 export type { MintResult } from "./use-preview-token";
 
 export type LivePreviewProps = {
@@ -41,6 +42,19 @@ export type LivePreviewProps = {
   focusedSection: string | null;
   /** The staff member pressed "Edit" on a section inside the preview. */
   onSelectSection?: (section: string) => void;
+  /** Click-to-edit is offered (Edit or Publish access); View access only browses. */
+  textEditing?: boolean;
+  /** Click-to-edit: they clicked these words on the page; reply whether a field holds them. */
+  onTextSelect?: (message: TextSelectMessage, reply: TextReply) => void;
+  /** Click-to-edit: they typed over those words and kept them; reply whether the field took them. */
+  onTextEdit?: (message: TextEditMessage, reply: TextReply) => void;
+  /**
+   * Whether the page in the frame already shows the draft: every change since it loaded was typed on the page itself.
+   * Then a newer token is handed to the page instead of reloading it (owner, 14 Nov 2026: "on edit the page keep reloading").
+   */
+  isFrameCurrent?: () => boolean;
+  /** The draft page in the frame finished loading at this version. */
+  onFrameReady?: (version: number) => void;
 };
 
 const draftRequiredMessage = "Save the draft once to start the live preview.";
@@ -59,9 +73,13 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
  * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
  * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
+  /** Click-to-edit (the default) or Browse, where clicks follow links as a shopper's would. */
+  const [editMode, setEditMode] = useState(true);
+  /** Words on the page are being typed over: a newer draft waits, so a reload never wipes them. */
+  const [frameEditing, setFrameEditing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [frameStatus, setFrameStatus] = useState<"loading" | "ready">("loading");
   const [framePath, setFramePath] = useState<string | null>(null);
@@ -70,14 +88,43 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const stage = useRef<HTMLDivElement>(null);
   const { token, minting, error: mintError, retry } = previewToken;
   const src = token ? previewFrameUrl({ path, token, view }) : null;
+  // The address the frame shows. It follows `src`, except: while words on the page are being typed over (the reload
+  // waits), and when only the token moved on for a page that already shows the draft (the page takes the new token in
+  // place, so it never reloads after a click-to-edit save). A real reload of the same page keeps its scroll position.
+  const [shownSrc, setShownSrc] = useState(src);
+  const shownPage = useRef(`${path}|${view}`);
+  const restoreScroll = useRef(0);
+  const currentRef = useRef(isFrameCurrent), readyRef = useRef(onFrameReady), viewRef = useRef(view);
+  currentRef.current = isFrameCurrent;
+  readyRef.current = onFrameReady;
+  viewRef.current = view;
+  useEffect(() => {
+    if (frameEditing || src === shownSrc) return;
+    // Every save mints a token for the new version, and the token is empty meanwhile. Before, that emptied the frame and
+    // loaded the page again from the top after each save. Keep showing the page until the new token arrives.
+    if (src === null && shownSrc !== null && !draftRequired && !mintError) return;
+    const page = `${path}|${view}`;
+    const samePage = page === shownPage.current && src !== null && shownSrc !== null;
+    if (samePage && token && version && frameStatus === "ready" && view === "draft" && currentRef.current?.()) {
+      frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "token", token, version }, window.location.origin);
+      return;
+    }
+    let scrolled = 0;
+    try { scrolled = samePage ? frame.current?.contentWindow?.scrollY ?? 0 : 0; } catch { scrolled = 0; }
+    restoreScroll.current = scrolled;
+    shownPage.current = page;
+    setShownSrc(src);
+  }, [src, frameEditing]);
   const hasToken = token !== null;
   const unpublished = view === "published" && publishedVersion === null;
-  // The message listener is registered once; it reads the latest callback from here.
+  // The message listener is registered once; it reads the latest callbacks from here.
   const selectRef = useRef(onSelectSection);
   useEffect(() => { selectRef.current = onSelectSection; }, [onSelectSection]);
+  const textSelectRef = useRef(onTextSelect), textEditRef = useRef(onTextEdit);
+  useEffect(() => { textSelectRef.current = onTextSelect; textEditRef.current = onTextEdit; }, [onTextSelect, onTextEdit]);
 
   // Every new address starts a fresh load; the frame reports when it is ready.
-  useEffect(() => { setFrameStatus("loading"); setFramePath(null); }, [src]);
+  useEffect(() => { setFrameStatus("loading"); setFramePath(null); setFrameEditing(false); }, [shownSrc]);
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       // Only the mounted frame may talk to the pane; with no frame there is no one to listen to.
@@ -85,13 +132,35 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
       if (!source) return;
       const message = readPreviewMessage(event, window.location.origin, source);
       if (!message) return;
-      if (message.type === "ready") { setFrameStatus("ready"); setFramePath(message.path); }
+      if (message.type === "ready") {
+        setFrameStatus("ready");
+        setFramePath(message.path);
+        setFrameEditing(false);
+        // A reload of the same page: put it back where it was scrolled.
+        if (restoreScroll.current > 0) source.postMessage({ source: previewMessageSource, type: "scroll", y: restoreScroll.current }, window.location.origin);
+        restoreScroll.current = 0;
+        if (viewRef.current === "draft") readyRef.current?.(message.version);
+      }
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }
       else if (message.type === "select") selectRef.current?.(message.section);
+      else if (message.type === "editing") setFrameEditing(message.active);
+      else if (message.type === "text-select" || message.type === "text-edit") {
+        const phase = message.type === "text-select" ? "select" : "edit";
+        const reply: TextReply = ({ ok, message: reason }) => source.postMessage(
+          { source: previewMessageSource, type: "text-result", phase, ok, ...(reason ? { message: reason.slice(0, 300) } : {}) }, window.location.origin);
+        if (message.type === "text-select") {
+          if (textSelectRef.current) textSelectRef.current(message, reply); else reply({ ok: false });
+        } else if (textEditRef.current) textEditRef.current(message, reply); else reply({ ok: false });
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, []);
+  // Tell the frame whether clicks edit words or browse, whenever it (re)loads or the switch changes.
+  useEffect(() => {
+    if (frameStatus !== "ready" || view !== "draft") return;
+    frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "mode", mode: textEditing && editMode ? "edit" : "browse" }, window.location.origin);
+  }, [textEditing, editMode, frameStatus, view]);
   // Scroll the frame to the section being edited.
   useEffect(() => {
     if (frameStatus !== "ready" || view !== "draft") return;
@@ -143,7 +212,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
         "flex min-w-0 flex-col bg-sunken shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ring-1 ring-line-soft",
         full
           ? "fixed inset-0 z-40 rounded-none"
-          : "relative h-[72dvh] min-h-[520px] rounded-xl md:h-[calc(100dvh-8.5rem)] xl:sticky xl:top-20",
+          : "relative h-[72dvh] min-h-[520px] rounded-xl md:h-[calc(100dvh-8.5rem)] lg:sticky lg:top-20",
       )}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-2 md:flex-nowrap">
@@ -168,6 +237,14 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
           <span className="truncate">{statusLabel}</span>
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          {view === "draft" && textEditing && (
+            <Button type="button" variant="ghost" size="sm" aria-pressed={editMode} data-click-to-edit={editMode ? "on" : "off"} onClick={() => setEditMode((value) => !value)}
+              title={editMode ? "Click to edit is on: click any words on the page to change them. Turn it off to follow links." : "Browsing: clicks follow links. Turn on click to edit."}
+              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary">
+              {editMode ? <MousePointerClick aria-hidden="true" strokeWidth={1.5} /> : <MousePointer2 aria-hidden="true" strokeWidth={1.5} />}
+              <span>{editMode ? "Click to edit" : "Browse"}</span>
+            </Button>
+          )}
           <Button type="button" variant="ghost" size="icon-sm" aria-pressed={!auto} title={auto ? "Pause live updates" : "Resume live updates"} onClick={() => onAutoChange(!auto)}>
             {auto ? <Pause aria-hidden="true" strokeWidth={1.5} /> : <Play aria-hidden="true" strokeWidth={1.5} />}
             <span className="sr-only">{auto ? "Pause live updates" : "Resume live updates"}</span>
@@ -196,8 +273,8 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
             </div>
           ) : unpublished ? (
             <div className={placeholder}><p className="max-w-[36ch] text-sm text-muted-foreground">Nothing is published yet. Publish the draft to compare it with the live storefront.</p></div>
-          ) : src ? (
-            <iframe ref={frame} data-live-preview-frame title={frameTitle} src={src} referrerPolicy="same-origin" className={cn("block min-h-full w-full flex-1 border-0 bg-white", device === "phone" ? "rounded-2xl" : "rounded-[10px]")} />
+          ) : shownSrc ? (
+            <iframe ref={frame} data-live-preview-frame title={frameTitle} src={shownSrc} referrerPolicy="same-origin" className={cn("block min-h-full w-full flex-1 border-0 bg-white", device === "phone" ? "rounded-2xl" : "rounded-[10px]")} />
           ) : (
             <div className={placeholder} aria-busy="true"><div className="w-full max-w-[420px]"><Skeleton rows={3} variant="card" /></div></div>
           )}

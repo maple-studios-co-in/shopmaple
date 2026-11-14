@@ -22,7 +22,7 @@ const copyLabels: Record<keyof Copy, string> = {
 const copyLimit = (key: keyof Copy) => key === "ticker" ? 600 : key === "testimonialSubheading" ? 300 : 160;
 export const titleCase = sectionName;
 
-export function HomepagePanel({ content, edit, focusedSection, onSelectSection, inspecting, onInspect, session, onExpired, onScheduleEditingChange, scheduleEditing, thumbnails }: {
+export function HomepagePanel({ content, edit, focusedSection, onSelectSection, inspecting, onInspect, session, onExpired, onScheduleEditingChange, scheduleEditing, thumbnails, inspectQuietly = false, contentRequest = 0 }: {
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
   focusedSection: string | null;
@@ -35,6 +35,10 @@ export function HomepagePanel({ content, edit, focusedSection, onSelectSection, 
   onScheduleEditingChange: (editing: boolean) => void;
   scheduleEditing: boolean;
   thumbnails: ThumbnailSource;
+  /** Opened from click-to-edit: the keyboard stays on the words being typed in the preview. */
+  inspectQuietly?: boolean;
+  /** Bumped by click-to-edit so the open inspector shows its Content tab, where text fields live. */
+  contentRequest?: number;
 }) {
   if (inspecting) {
     const back = () => {
@@ -43,7 +47,7 @@ export function HomepagePanel({ content, edit, focusedSection, onSelectSection, 
       requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-section-card="${inspecting}"] [data-section-edit]`)?.focus());
     };
     return <SectionInspector key={inspecting} section={inspecting} content={content} edit={edit} session={session} onExpired={onExpired}
-      onScheduleEditingChange={onScheduleEditingChange} locked={scheduleEditing} onBack={back} />;
+      onScheduleEditingChange={onScheduleEditingChange} locked={scheduleEditing} onBack={back} quiet={inspectQuietly} contentRequest={contentRequest} />;
   }
   const copyField = (key: keyof Copy) => (
     <Field

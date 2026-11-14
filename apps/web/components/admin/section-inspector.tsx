@@ -56,7 +56,7 @@ type Tab = "Content" | "Media" | "Layout" | "Motion";
  * (Content), its artwork (Media), its arrangement (Layout) and its movement (Motion). It takes
  * the editor column, so the live preview beside it keeps showing the change.
  */
-export function SectionInspector({ section, content, edit, session, onExpired, onScheduleEditingChange, locked, onBack }: {
+export function SectionInspector({ section, content, edit, session, onExpired, onScheduleEditingChange, locked, onBack, quiet = false, contentRequest = 0 }: {
   section: HomeSectionKey;
   content: StorefrontContent;
   edit: (next: StorefrontContent) => void;
@@ -66,6 +66,10 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
   /** A campaign schedule is open: leaving would drop it, so Back waits until it is applied or cancelled. */
   locked: boolean;
   onBack: () => void;
+  /** Opened from click-to-edit in the live preview: leave the keyboard on the words being typed there. */
+  quiet?: boolean;
+  /** Each new value shows the Content tab (click-to-edit looks for the clicked words there). */
+  contentRequest?: number;
 }) {
   const name = sectionName(section);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -104,8 +108,11 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
   const tabs = (Object.keys(panels) as Tab[]);
   const [active, setActive] = useState<Tab>(tabs[0]!);
   const shown = content.homeSections.find((item) => item.key === section)?.enabled ?? false;
-  // Opening a section moves focus to its name, so keyboard and screen reader users land in it.
+  useEffect(() => { if (contentRequest) setActive(tabs[0]!); }, [contentRequest]);
+  // Opening a section moves focus to its name, so keyboard and screen reader users land in it. Opened from the live
+  // preview's click-to-edit, the keyboard stays on the page, where the staff member is typing.
   useEffect(() => {
+    if (quiet) return;
     const node = heading.current?.querySelector<HTMLElement>("h2");
     if (!node) return;
     node.tabIndex = -1;
