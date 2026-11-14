@@ -80,7 +80,8 @@ const schema = z.object({
     .pipe(deliveryMethodsSchema),
 });
 export interface CommerceConfig {
-  keeri: { origin: string; token: string; tenantId: string; merchantScope: string };
+  /** `adminOrigin`: where staff open Keeri (KEERI_ADMIN_ORIGIN, else KEERI_ORIGIN), for "Open in Keeri" in the team's emails. */
+  keeri: { origin: string; token: string; tenantId: string; merchantScope: string; adminOrigin?: string };
   razorpay: { keyId: string; keySecret: string; webhookSecret: string };
   deliveryMethods: Array<{ id: string; label: string }>;
   email: EnquiryDeliveryConfig;
@@ -89,6 +90,17 @@ export interface CommerceConfig {
   whatsappOrderUpdates: boolean;
   /** ORDER_LINK_SECRET (and WHATSAPP_ORDER_LINKS): private order links in emails and, when on, in Keeri's messages. */
   orderLinks: OrderLinkConfig | null;
+}
+/** KEERI_ADMIN_ORIGIN when it is an HTTPS origin, else KEERI_ORIGIN's origin. Never fails start-up: a link in an email is
+ * not worth stopping checkout for, and the leads sender already names a malformed value. */
+function adminOrigin(raw: string | undefined, keeriOrigin: string) {
+  try {
+    const url = new URL(raw?.trim() ?? "");
+    if (url.protocol === "https:" && url.href === url.origin + "/" && !url.username && !url.password) return url.origin;
+  } catch {
+    // Unset or malformed: Keeri's own origin.
+  }
+  return new URL(keeriOrigin).origin;
 }
 /** Returns null unless checkout is explicitly enabled; then fails loudly naming
  * any missing or invalid key, so a half-configured deployment never half-works. */
@@ -115,6 +127,7 @@ export function loadCommerceConfig(
       token: v.KEERI_COMMERCE_TOKEN,
       tenantId: v.KEERI_TENANT_ID,
       merchantScope: v.KEERI_MERCHANT_SCOPE,
+      adminOrigin: adminOrigin(env.KEERI_ADMIN_ORIGIN, v.KEERI_ORIGIN),
     },
     razorpay: {
       keyId: v.RAZORPAY_KEY_ID,
@@ -194,6 +207,8 @@ export function composeCommerce(
     email: config.email,
     accountLinks: options.accountLinks,
     orderLinks: config.orderLinks,
+    keeriAdminOrigin: config.keeri.adminOrigin ?? new URL(config.keeri.origin).origin,
+    paymentMode: config.razorpay.keyId.startsWith("rzp_test_") ? "test" : "live",
     fetch: transport ? (url, init) => transport(url instanceof Request ? url.url : url, init ?? {}) : undefined,
     now: options.now,
   });

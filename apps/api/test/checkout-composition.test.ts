@@ -225,6 +225,11 @@ test("checkout stays disabled unless the explicit flag and every commerce value 
   const config = loadCommerceConfig(fullEnv);
   assert.deepEqual(config?.deliveryMethods, [{ id: "standard", label: "Standard delivery" }]);
   assert.equal(config?.keeri.merchantScope, "maple-store");
+  // Staff emails open Keeri at its admin origin when one is set; a malformed one falls back and never stops checkout.
+  assert.equal(config?.keeri.adminOrigin, "https://keeri.example.test");
+  assert.equal(loadCommerceConfig({ ...fullEnv, KEERI_ADMIN_ORIGIN: "https://admin.keeri.example.test/" })?.keeri.adminOrigin, "https://admin.keeri.example.test");
+  assert.equal(loadCommerceConfig({ ...fullEnv, KEERI_ADMIN_ORIGIN: "http://admin.keeri.example.test" })?.keeri.adminOrigin, "https://keeri.example.test");
+  assert.equal(loadCommerceConfig({ ...fullEnv, KEERI_ADMIN_ORIGIN: "not a url" })?.keeri.adminOrigin, "https://keeri.example.test");
 });
 
 test("an application without commerce behaves exactly as the preview does today", async () => {
@@ -536,8 +541,10 @@ test("a confirmed order emails the buyer once with Maple's order number and aler
   for (const expected of [/Composition Chair/, /Oak/, /Quantity 2/, /₹3,835/, /Estimated delivery: 7–11 Jan 2030/, /1 Test Street/])
     assert.match(buyer.text, expected);
   const staff = fake.emails.find((e) => e.to.includes("staff@maple.example.com"))!;
-  assert.match(staff.subject, /New online order SO-1001/);
-  assert.match(staff.text, new RegExp(`MF-${attempt.orderNumber}`));
+  // Staff see the customer's number first, and Keeri's order one tap away (KEERI_ORIGIN, as there is no admin origin).
+  assert.match(staff.subject, new RegExp(`^New order MF-${attempt.orderNumber} · Rs\\. [0-9,.]+ · Composition Chair`));
+  assert.match(staff.text, /^Keeri order: SO-1001$/m);
+  assert.match(staff.text, /\/orders\/SO-1001$/m);
   assert.match(staff.text, /9876543210/);
   assert.notEqual(buyer.key, staff.key);
   await settle(runWorkers);

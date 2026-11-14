@@ -65,19 +65,19 @@ export type PaymentEmailInput = {
 // Words, numbers and dates
 // ---------------------------------------------------------------------------------------------------------------------
 
-const dmSans = "'DM Sans', 'Helvetica Neue', Arial, sans-serif";
-const redHat = "'Red Hat Display', 'Helvetica Neue', Arial, sans-serif";
-const ink = "#1c1c1c";
-const muted = "#756d68";
-const sand = "#f1f0e9";
-const page = "#f8f7f3";
-const white = "#ffffff";
+export const dmSans = "'DM Sans', 'Helvetica Neue', Arial, sans-serif";
+export const redHat = "'Red Hat Display', 'Helvetica Neue', Arial, sans-serif";
+export const ink = "#1c1c1c";
+export const muted = "#756d68";
+export const sand = "#f1f0e9";
+export const page = "#f8f7f3";
+export const white = "#ffffff";
 
 const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-const esc = (value: string) => value.replace(/[&<>"']/g, (char) => entities[char]!);
+export const esc = (value: string) => value.replace(/[&<>"']/g, (char) => entities[char]!);
 
 /** "₹24,900", or "₹3,835.50" when there are paise: the storefront's money format (apps/web/lib/format.ts). */
-const inr = (paise: number) =>
+export const inr = (paise: number) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -86,7 +86,7 @@ const inr = (paise: number) =>
   }).format(paise / 100);
 
 /** GST state codes as checkout takes them; the same list as apps/web/app/checkout/india-states.ts. */
-const stateNames: Record<string, string> = {
+export const stateNames: Record<string, string> = {
   "35": "Andaman and Nicobar Islands", "37": "Andhra Pradesh", "12": "Arunachal Pradesh", "18": "Assam", "10": "Bihar",
   "04": "Chandigarh", "22": "Chhattisgarh", "26": "Dadra and Nagar Haveli and Daman and Diu", "07": "Delhi", "30": "Goa",
   "24": "Gujarat", "06": "Haryana", "02": "Himachal Pradesh", "01": "Jammu and Kashmir", "20": "Jharkhand",
@@ -241,16 +241,16 @@ export async function findOrderPieceDetails(
 // HTML parts
 // ---------------------------------------------------------------------------------------------------------------------
 
-const table = 'role="presentation" cellpadding="0" cellspacing="0" border="0"';
+export const table = 'role="presentation" cellpadding="0" cellspacing="0" border="0"';
 /**
  * Inline type; a null family inherits its cell's. Line heights are the frame's 1.4 rounded to whole pixels. Outlook reads
  * them as minimums, which changes nothing here: 1.4 is above every font's own spacing. Kept short, because a quote's
  * fifty pieces must stay under the 102 KB at which Gmail clips a message.
  */
-const type = (family: string | null, size: number, lineHeight: number, colour: string, weight = 400) =>
+export const type = (family: string | null, size: number, lineHeight: number, colour: string, weight = 400) =>
   `${family ? `font-family:${family};` : ""}font-size:${size}px;line-height:${lineHeight}px;color:${colour};${weight === 400 ? "" : `font-weight:${weight};`}`;
-const ruleCell = `<td height="1" bgcolor="#e4ded8" style="height:1px;font-size:1px;line-height:1px;mso-line-height-rule:exactly;background-color:#e4ded8;">&nbsp;</td>`;
-const label = (words: string) => `<p style="margin:0;${type(redHat, 11, 15, muted)}">${words}</p>`;
+export const ruleCell = `<td height="1" bgcolor="#e4ded8" style="height:1px;font-size:1px;line-height:1px;mso-line-height-rule:exactly;background-color:#e4ded8;">&nbsp;</td>`;
+export const label = (words: string) => `<p style="margin:0;${type(redHat, 11, 15, muted)}">${words}</p>`;
 
 /** Phones (Gmail and Apple Mail keep this block): narrower padding, smaller headings, a smaller photo beside its words,
  * receipt amounts to the right, and the delivery columns one under the other. */
@@ -301,21 +301,22 @@ function galleryRow(photos: readonly string[], title: string) {
   if (!cells.length) return "";
   return `<table ${table} style="margin-top:12px;"><tr>${cells.join(`<td width="8" style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`)}</tr></table>`;
 }
-function pieceRow(item: QuoteSnapshot["items"][number], photo: string | undefined, detail: PieceDetail | undefined, gallery: boolean) {
+/** One piece: its photo, then its words. `caption` heads the words; `note` is one more line of plain text under the size
+ * (the staff email's making time). */
+export function pieceRow(item: QuoteSnapshot["items"][number], photo: string | undefined, detail: PieceDetail | undefined, gallery: boolean, caption = "YOUR PIECE", note: string | null = null) {
   return `<table ${table} width="100%" style="width:100%;"><tr>${photoCell(photo, item.title)}<td class="m-gap" valign="top" style="padding:0 0 0 24px;font-family:${redHat};">
-<p style="margin:0;${type(null, 11, 15, muted)}">YOUR PIECE</p>
-<p class="m-title" style="margin:12px 0 0 0;${type(dmSans, 23, 32, ink, 500)}word-break:break-word;">${esc(item.title)}</p>
-<p style="margin:12px 0 0 0;${type(null, 14, 20, muted)}">${esc(item.variantTitle)}<br>${esc(quantityWords(item))}${detail?.dimensions ? `<br>${esc(detail.dimensions)}` : ""}</p>
+${caption ? `<p style="margin:0;${type(null, 11, 15, muted)}">${caption}</p>\n` : ""}<p class="m-title" style="margin:${caption ? 12 : 0}px 0 0 0;${type(dmSans, 23, 32, ink, 500)}word-break:break-word;">${esc(item.title)}</p>
+<p style="margin:12px 0 0 0;${type(null, 14, 20, muted)}">${esc(item.variantTitle)}<br>${esc(quantityWords(item))}${detail?.dimensions ? `<br>${esc(detail.dimensions)}` : ""}${note ? `<br>${esc(note)}` : ""}</p>
 <p class="m-price" style="margin:12px 0 0 0;${type(dmSans, 19, 27, ink, 500)}white-space:nowrap;">${esc(inr(item.lineTotalPaise + (item.discountPaise ?? 0)))}</p>
 ${gallery && detail ? galleryRow(detail.photos, item.title) : ""}</td></tr></table>`;
 }
 
-function amountRow(name: string, amount: string, first: boolean) {
+export function amountRow(name: string, amount: string, first: boolean) {
   const gap = first ? "" : "padding-top:20px;";
   return `<tr><td class="m-label" valign="top" style="width:62.667%;${gap}${type(redHat, 15, 21, muted)}">${name}</td><td class="m-amount" valign="top" style="${gap}${type(redHat, 15, 21, ink)}white-space:nowrap;">${esc(amount)}</td></tr>`;
 }
 
-function button(href: string, words: string) {
+export function button(href: string, words: string) {
   // Outlook for Windows gets a VML button (rounded, the whole of it clickable); every other client the table.
   return `<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${href}" style="height:52px;v-text-anchor:middle;width:600px;" arcsize="12%" stroke="f" fillcolor="#80241c"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;">${words}</center></v:roundrect><![endif]--><!--[if !mso]><!--><table ${table} width="100%" style="width:100%;"><tr><td align="center" bgcolor="#80241c" style="border-radius:6px;background-color:#80241c;"><a href="${href}" target="_blank" style="display:block;padding:15px 20px;border-radius:6px;${type(redHat, 15, 22, white)}text-align:center;text-decoration:none;">${words}</a></td></tr></table><!--<![endif]-->`;
 }
@@ -325,7 +326,7 @@ function button(href: string, words: string) {
 // ---------------------------------------------------------------------------------------------------------------------
 
 /** The storefront pages every email links to, and its logo. */
-function storeLinks(origin: string) {
+export function storeLinks(origin: string) {
   const base = new URL(origin).origin;
   return {
     base,
@@ -334,7 +335,7 @@ function storeLinks(origin: string) {
     logo: `${base}/media/email/maple-logo.png`,
   };
 }
-type StoreLinks = ReturnType<typeof storeLinks>;
+export type StoreLinks = ReturnType<typeof storeLinks>;
 
 /** The buyer's name as checkout took it, and the first word of it to greet them by ("Aditi"). */
 function buyer(quote: QuoteSnapshot) {
@@ -344,7 +345,7 @@ function buyer(quote: QuoteSnapshot) {
 
 /** The receipt's lines above the total, as [name (HTML), amount]. With a code, the lines read before its discount and
  * the discount follows as one line, so the email adds up to what was charged (main's #120, as the staff email words it). */
-function receiptLines(quote: QuoteSnapshot): Array<[string, string]> {
+export function receiptLines(quote: QuoteSnapshot): Array<[string, string]> {
   return [
     ["Subtotal", inr(quote.subtotalPaise + (quote.promotion?.discountPaise ?? 0))],
     ...(quote.promotion ? [[`Discount (${esc(quote.promotion.code)})`, `−${inr(quote.promotion.discountPaise)}`] as [string, string]] : []),
@@ -386,6 +387,62 @@ function closingLines(action: { href: string; words: string }, help: string, lin
     `Contact us: ${links.contact}`,
     `Privacy policy: ${links.privacy}`,
   ];
+}
+
+/**
+ * The document every email shares, buyer and staff alike: the head, the 680px column with the logo, then the email's own
+ * rows (HTML `<tr>`s), then the footer row (the buyer's by default) and the close.
+ */
+export function emailShell({ subject, preheader, links, rows, foot }: { subject: string; preheader: string; links: StoreLinks; rows: string; foot?: string }) {
+  return `<!DOCTYPE html>
+<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>${esc(subject)}</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<!--[if !mso]><!--><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500&amp;family=Red+Hat+Display:wght@400&amp;display=swap"><!--<![endif]-->
+<style>
+:root{color-scheme:light;supported-color-schemes:light}
+a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
+</style>
+<style>
+body{margin:0!important;padding:0!important;width:100%!important;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
+img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
+${phoneStyles}
+</style>
+<!--[if mso]><style>body,table,td,p,a,h1,h2{font-family:Arial,Helvetica,sans-serif!important}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:${page};" bgcolor="${page}">
+<div role="article" aria-roledescription="email" aria-label="${esc(subject)}" lang="en" style="background-color:${page};">
+<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:${page};">${esc(preheader)}${"&#847;&zwnj;&nbsp;".repeat(60)}</div>
+<table ${table} width="100%" bgcolor="${page}" style="width:100%;background-color:${page};"><tr><td align="center" style="padding:0;">
+<!--[if mso]><table ${table} width="680" align="center"><tr><td><![endif]-->
+<table ${table} width="100%" align="center" style="width:100%;max-width:680px;margin:0 auto;">
+<tr><td class="m-head" align="center" bgcolor="${white}" style="padding:28px;background-color:${white};"><img src="${esc(links.logo)}" width="132" height="61" alt="Maple Furnishers" style="display:block;margin:0 auto;width:132px;height:61px;border:0;outline:none;text-decoration:none;${type(dmSans, 20, 61, "#80241c", 500)}"></td></tr>
+<tr>${ruleCell}</tr>
+${rows}${foot ?? buyerFoot(links)}</table>
+<!--[if mso]></td></tr></table><![endif]-->
+</td></tr></table>
+</div>
+</body>
+</html>
+`;
+}
+/** The buyer's footer row: the name, the line and the two links. */
+function buyerFoot(links: StoreLinks) {
+  return `<tr><td class="m-foot" align="center" bgcolor="${page}" style="padding:28px;background-color:${page};text-align:center;">
+<p style="margin:0;${type(redHat, 12, 17, ink)}">MAPLE FURNISHERS</p>
+<p style="margin:12px 0 0 0;${type(redHat, 12, 17, muted)}">Thoughtful furniture. Made for your everyday.</p>
+<p style="margin:12px 0 0 0;${type(redHat, 12, 17, muted)}"><a href="${esc(links.contact)}" target="_blank" style="color:${muted};text-decoration:none;">Contact us</a>&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;<a href="${esc(links.privacy)}" target="_blank" style="color:${muted};text-decoration:none;">Privacy policy</a></p>
+</td></tr>
+`;
 }
 
 /**
@@ -432,40 +489,7 @@ function layout({ subject, preheader, chip, heading, intro, reference, day, quot
   const chipCell = chip.centred
     ? `<td align="center" bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}text-align:center;white-space:nowrap;">`
     : `<td bgcolor="${chip.background}" style="padding:10px;border-radius:20px;background-color:${chip.background};${type(redHat, 11, 15, chip.colour)}">`;
-  return `<!DOCTYPE html>
-<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="x-apple-disable-message-reformatting">
-<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
-<meta name="color-scheme" content="light">
-<meta name="supported-color-schemes" content="light">
-<title>${esc(subject)}</title>
-<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
-<!--[if !mso]><!--><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500&amp;family=Red+Hat+Display:wght@400&amp;display=swap"><!--<![endif]-->
-<style>
-:root{color-scheme:light;supported-color-schemes:light}
-a[x-apple-data-detectors]{color:inherit!important;text-decoration:none!important;font-size:inherit!important;font-family:inherit!important;font-weight:inherit!important;line-height:inherit!important}
-</style>
-<style>
-body{margin:0!important;padding:0!important;width:100%!important;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse}
-img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
-${phoneStyles}
-</style>
-<!--[if mso]><style>body,table,td,p,a,h1,h2{font-family:Arial,Helvetica,sans-serif!important}</style><![endif]-->
-</head>
-<body style="margin:0;padding:0;width:100%;background-color:${page};" bgcolor="${page}">
-<div role="article" aria-roledescription="email" aria-label="${esc(subject)}" lang="en" style="background-color:${page};">
-<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:${page};">${esc(preheader)}${"&#847;&zwnj;&nbsp;".repeat(60)}</div>
-<table ${table} width="100%" bgcolor="${page}" style="width:100%;background-color:${page};"><tr><td align="center" style="padding:0;">
-<!--[if mso]><table ${table} width="680" align="center"><tr><td><![endif]-->
-<table ${table} width="100%" align="center" style="width:100%;max-width:680px;margin:0 auto;">
-<tr><td class="m-head" align="center" bgcolor="${white}" style="padding:28px;background-color:${white};"><img src="${esc(links.logo)}" width="132" height="61" alt="Maple Furnishers" style="display:block;margin:0 auto;width:132px;height:61px;border:0;outline:none;text-decoration:none;${type(dmSans, 20, 61, "#80241c", 500)}"></td></tr>
-<tr>${ruleCell}</tr>
-<tr><td class="m-intro" bgcolor="${white}" style="padding:40px 40px 28px 40px;background-color:${white};">
+  return emailShell({ subject, preheader, links, rows: `<tr><td class="m-intro" bgcolor="${white}" style="padding:40px 40px 28px 40px;background-color:${white};">
 <table ${table} width="100%" style="width:100%;">
 <tr><td><table ${table} width="${chip.width}" style="width:${chip.width}px;"><tr>${chipCell}${chip.html}</td></tr></table></td></tr>
 <tr><td style="padding-top:16px;"><h1 class="m-h1" style="margin:0;${type(dmSans, 38, 53, "#272822", 500)}">${heading.join("<br>")}</h1></td></tr>
@@ -502,18 +526,7 @@ ${track ? `<tr><td align="center" style="padding-top:14px;text-align:center;"><a
 <tr><td style="padding-top:18px;"><p style="margin:0;${type(redHat, 15, 21, ink)}">With care,<br>The Maple team</p></td></tr>
 </table>
 </td></tr>
-<tr><td class="m-foot" align="center" bgcolor="${page}" style="padding:28px;background-color:${page};text-align:center;">
-<p style="margin:0;${type(redHat, 12, 17, ink)}">MAPLE FURNISHERS</p>
-<p style="margin:12px 0 0 0;${type(redHat, 12, 17, muted)}">Thoughtful furniture. Made for your everyday.</p>
-<p style="margin:12px 0 0 0;${type(redHat, 12, 17, muted)}"><a href="${esc(links.contact)}" target="_blank" style="color:${muted};text-decoration:none;">Contact us</a>&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;<a href="${esc(links.privacy)}" target="_blank" style="color:${muted};text-decoration:none;">Privacy policy</a></p>
-</td></tr>
-</table>
-<!--[if mso]></td></tr></table><![endif]-->
-</td></tr></table>
-</div>
-</body>
-</html>
-`;
+` });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
