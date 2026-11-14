@@ -101,13 +101,13 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      {/* The frame is never wider than its photo's shape at the height it may take: on a short, wide window the height cap
-          would otherwise leave a frame wider than 4:5 and the photo would be cropped top and bottom (owner, 14 Nov 2026). */}
-      <div data-gallery-frame className={cx("relative mx-auto w-full max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)] overflow-hidden rounded-[20px] border border-solid lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)] lg:rounded-[30px] 2xl:max-w-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
+      {/* The frame keeps the photos' 4:5 shape at every width and is never wider than that shape at the height it may take.
+          A square frame on wide screens, or a height cap on short ones, cropped the piece top and bottom (owner, 14 Nov 2026). */}
+      <div data-gallery-frame className={cx("relative mx-auto w-full max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)] overflow-hidden rounded-[20px] border border-solid lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)] lg:rounded-[30px]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className={cx("relative block aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "bg-white" : "bg-cream")}
+            className={cx("relative block aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -159,7 +159,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full 2xl:aspect-square lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
