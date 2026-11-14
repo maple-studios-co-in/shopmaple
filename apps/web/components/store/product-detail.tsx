@@ -317,7 +317,8 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
             <div className="relative mt-2">
               <VariantSelector layout={optionLayout} selectedId={variantId} onSelect={selectVariant}
                 variants={product.variants.map((v) => ({
-                  id: v.id, name: v.title, slug: v.slug ?? undefined, image: variantImage(v.id), swatch: swatch(v.title),
+                  // The piece on white when Keeri has one: the tile shows the whole piece instead of a cropped room photo.
+                  id: v.id, name: v.title, slug: v.slug ?? undefined, image: cutoutFor(v.id)?.image ?? variantImage(v.id), cutout: Boolean(cutoutFor(v.id)), swatch: swatch(v.title),
                 }))} />
               {customiseTrigger("absolute top-0 right-0")}
             </div>
