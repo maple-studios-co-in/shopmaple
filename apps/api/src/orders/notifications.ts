@@ -9,22 +9,23 @@ import {
 } from "../enquiry-delivery-provider.js";
 import { findOrderPhotos, findOrderPieceDetails, renderOrderEmail, renderPaymentEmail, type OrderPhotos, type OrderPieceDetails, type PieceDetail } from "./order-email.js";
 import { orderLinkPaths, type OrderLinkConfig } from "./order-access.js";
+import { keeriOrderUrl, renderStaffAttentionEmail, renderStaffOrderEmail, rupees, staffLines } from "./staff-email.js";
 
 /**
  * Order emails. A sweep decides which emails an attempt now deserves and records
  * each once (unique per attempt and kind); a leased batch then sends them through
  * Resend with the row id as the idempotency key, so a retry after an uncertain
  * answer can never send twice. Bodies are rendered at send time from the attempt,
- * so no customer data is copied into the notification row: the buyer's emails as
- * HTML with a plain-text part (order-email.ts), staff alerts as plain text.
+ * so no customer data is copied into the notification row. Every email is HTML with a
+ * plain-text part: the buyer's from order-email.ts, the team's from staff-email.ts.
  */
 export type NotificationKind =
   | "customer_confirmed" | "customer_received" | "customer_payment_failed" | "customer_payment_pending"
   | "staff_order" | "staff_payment" | "staff_attention";
 type PaymentKind = Extract<NotificationKind, "customer_payment_failed" | "customer_payment_pending">;
 const isPaymentKind = (kind: string): kind is PaymentKind => kind === "customer_payment_failed" || kind === "customer_payment_pending";
-/** The buyer's emails, which show the pieces' photos. */
-const buyerKinds = new Set<string>(["customer_confirmed", "customer_received", "customer_payment_failed", "customer_payment_pending"]);
+/** The emails that show each piece's size: the order emails, the buyer's and the team's. */
+const detailKinds = new Set<string>(["customer_confirmed", "customer_received", "staff_order"]);
 
 /** A failed payment rests this long before the buyer hears of it: Razorpay's window lets them try again at once, and a
  * retry that works, or a fresh checkout, must win. */
@@ -55,6 +56,10 @@ interface Options {
   accountLinks?: boolean;
   /** ORDER_LINK_SECRET: the buyer's email links the order's private pages, which need no account. */
   orderLinks?: OrderLinkConfig | null;
+  /** Keeri's admin origin (KEERI_ADMIN_ORIGIN, else KEERI_ORIGIN): the team's emails open the order there. */
+  keeriAdminOrigin?: string | null;
+  /** From the Razorpay key id: a test payment's "New order" says so. */
+  paymentMode?: "test" | "live" | null;
   fetch?: typeof fetch;
   now?: () => Date;
   leaseMs?: number;
@@ -64,8 +69,8 @@ interface Options {
 
 type Message = { to: string; subject: string; text: string; html?: string };
 
-const rupees = (paise: number) =>
-  "Rs. " + new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(paise / 100);
+const refundWarning =
+  "Follow the refund and reconciliation procedure in docs/checkout-recovery.md. Never refund from this email alone: check the payment in the Razorpay dashboard first.";
 
 export function createOrderNotifications(db: PrismaClient, options: Options) {
   const { merchantScope, email } = options;
@@ -203,8 +208,14 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     const related = inbox?.providerOrderId
       ? await db.checkoutAttempt.findFirst({ where: { merchantScope, providerOrderId: inbox.providerOrderId } })
       : null;
-    if (inbox)
-      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference: null, staffOutcome: null, photos: new Map(), payment: null });
+    if (inbox) {
+      // Keeri may hold an order for that checkout (a second payment for an order it accepted): the email opens it.
+      const relatedOutbox = related
+        ? await db.orderOutbox.findUnique({ where: { attemptId_kind: { attemptId: related.id, kind: "keeri.order.captured.v2" } } })
+        : null;
+      const reference = relatedOutbox?.state === "delivered" ? relatedOutbox.externalOrderId : null;
+      return compose(row.kind as NotificationKind, { attempt: related, quote: null, inbox, reference, staffOutcome: null, photos: new Map(), payment: null });
+    }
     const parsed = attempt ? quoteSnapshotSchema.safeParse(attempt.snapshot) : null;
     const quote = parsed?.success ? parsed.data : null;
     const outbox = attempt
@@ -218,15 +229,15 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
           select: { paymentId: true, receivedAt: true },
         })
       : null;
-    // The pieces' photos, for the buyer's emails only. A failed lookup sends the email with plain tiles, never not at all.
-    const photos: OrderPhotos = attempt && quote && buyerKinds.has(row.kind)
+    // The pieces' photos. A failed lookup sends the email with plain tiles, never not at all.
+    const photos: OrderPhotos = attempt && quote
       ? await findOrderPhotos(db, attempt, quote).catch(() => {
           console.error("Order email photos unavailable; sending without them.");
           return new Map<string, string>();
         })
       : new Map();
     // More of each piece for the order emails; a failed lookup sends them without, never not at all.
-    const details: OrderPieceDetails = attempt && quote && (row.kind === "customer_confirmed" || row.kind === "customer_received")
+    const details: OrderPieceDetails = attempt && quote && detailKinds.has(row.kind)
       ? await findOrderPieceDetails(db, attempt, quote).catch(() => new Map<string, PieceDetail>())
       : new Map();
     return compose(row.kind as NotificationKind, { attempt, quote, inbox, reference: outbox?.externalOrderId ?? null, staffOutcome: outbox?.failureCode ?? null, photos, payment, details });
@@ -244,28 +255,7 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
       details?: OrderPieceDetails;
     },
   ): Message | null {
-    // With a code, each line reads at its price before the discount and the discount follows as
-    // one line, so the email adds up to what was charged.
-    const lines = quote
-      ? [
-          ...quote.items.map((i) => {
-            const making = i.fulfilment?.kind === "made_to_order" ? ` (made to order: allow ${i.fulfilment.leadTimeDays} days for making)` : "";
-            return `- ${i.title}, ${i.variantTitle} × ${i.quantity}: ${rupees(i.lineTotalPaise + (i.discountPaise ?? 0))}${making}`;
-          }),
-          ...(quote.promotion ? [`Discount (${quote.promotion.code}): -${rupees(quote.promotion.discountPaise)}`] : []),
-        ]
-      : [];
-    const courier = quote?.delivery?.carrier;
-    // Free delivery is the owner's rule, not a missed charge: say so, and that the courier is still booked.
-    const charge = quote?.delivery?.source === "free" ? "free (free-delivery products), ships" : quote ? rupees(quote.shippingPaise) : "";
-    const deliveryLine = courier
-      ? `Delivery: ${charge} by ${courier.courierName}${courier.estimatedDays ? `, about ${courier.estimatedDays} days in transit` : ""}`
-      : quote
-        ? `Delivery: ${rupees(quote.shippingPaise)}`
-        : "";
-    const address = quote
-      ? [quote.shippingAddress.line1, quote.shippingAddress.line2, `${quote.shippingAddress.city} ${quote.shippingAddress.pincode}`].filter(Boolean).join(", ")
-      : "";
+    const lines = quote ? staffLines(quote) : [];
     const total = attempt ? rupees(attempt.amountPaise) : "";
     // Maple's own number ("MF-…") once the capture assigned it. Keeri's SO number is internal: customers see it only
     // on an order confirmed before numbering existed.
@@ -292,23 +282,12 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
     if (kind === "staff_order" && attempt && reference)
       return {
         to: email.to,
-        subject: `New online order ${reference}: ${total}`,
-        text: [
-          `Keeri order: ${reference}`,
-          ...(orderNumber ? [`Maple order (the customer's number): ${orderNumber}`] : []),
-          `Checkout: ${attempt.id}`,
-          `Payment: ${attempt.paymentId} (Razorpay order ${attempt.providerOrderId})`,
-          `Total: ${total}`,
-          "",
-          ...lines,
-          deliveryLine,
-          "",
-          ...(quote ? [`Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`, `Deliver to: ${address}`] : []),
-        ].join("\n"),
+        ...renderStaffOrderEmail({ attempt, quote, orderNumber, keeriOrderId: reference, photos, details, origin: email.adminOrigin,
+          keeriAdminOrigin: options.keeriAdminOrigin ?? null, paymentMode: options.paymentMode ?? null }),
       };
     const footer = [
       "",
-      "Follow the refund and reconciliation procedure in docs/checkout-recovery.md. Never refund from this email alone: check the payment in the Razorpay dashboard first.",
+      refundWarning,
     ];
     const customerLines = quote ? ["", ...lines, "", `Customer: ${quote.customer.name}, ${quote.customer.phone}, ${quote.customer.email}`] : [];
     const attemptLines = attempt
@@ -316,51 +295,42 @@ export function createOrderNotifications(db: PrismaClient, options: Options) {
          `Checkout: ${attempt.id}`, `State: ${attempt.state}${attempt.failureCode ? ` (${attempt.failureCode})` : ""}`, `Amount: ${total}`,
          `Payment recorded on the checkout: ${attempt.paymentId ?? "none"}`, `Razorpay order: ${attempt.providerOrderId ?? "none"}`]
       : [];
+    const keeri = reference && options.keeriAdminOrigin ? keeriOrderUrl(options.keeriAdminOrigin, reference) : null;
+    // The plain text as staff have always had it; the HTML shows the same words and ids in the order email's layout.
+    const attention = (subject: string, heading: string, intro: string, facts: string[], tail: string[]) =>
+      ({ to: email.to, ...renderStaffAttentionEmail({ subject, heading, intro, facts, closing: refundWarning, quote, attempt, photos, origin: email.adminOrigin, keeri,
+        text: [intro, "", ...facts, ...tail, ...footer].join("\n") }) });
     if (kind === "staff_payment" && inbox) {
       const reason = inbox.failureCode ?? "WORKER_GAVE_UP";
-      return {
-        to: email.to,
-        subject: `Online order needs attention: payment ${inbox.paymentId ?? inbox.id}`,
-        text: [
-          reason === "PAYMENT_ID_CONFLICT"
-            ? `The customer PAID TWICE for one order. Keep the payment recorded on the checkout and refund payment ${inbox.paymentId} in full.`
-            : `A payment (${inbox.paymentId}) needs a person: ${reason}. Check it in Razorpay; if it is captured and not fulfilled, refund it in full.`,
-          "",
-          `Payment: ${inbox.paymentId}`,
-          `Razorpay order: ${inbox.providerOrderId ?? "unknown"}`,
-          `Reason: ${reason}`,
-          `Payment event: ${inbox.id}`,
-          ...(attempt ? ["", ...attemptLines] : ["No checkout matches this Razorpay order."]),
-          ...footer,
-        ].join("\n"),
-      };
+      return attention(
+        `Online order needs attention: payment ${inbox.paymentId ?? inbox.id}`,
+        reason === "PAYMENT_ID_CONFLICT" ? "Paid twice for one order" : "A payment needs a person",
+        reason === "PAYMENT_ID_CONFLICT"
+          ? `The customer PAID TWICE for one order. Keep the payment recorded on the checkout and refund payment ${inbox.paymentId} in full.`
+          : `A payment (${inbox.paymentId}) needs a person: ${reason}. Check it in Razorpay; if it is captured and not fulfilled, refund it in full.`,
+        [`Payment: ${inbox.paymentId}`, `Razorpay order: ${inbox.providerOrderId ?? "unknown"}`, `Reason: ${reason}`, `Payment event: ${inbox.id}`,
+          ...(attempt ? ["", ...attemptLines] : ["No checkout matches this Razorpay order."])],
+        [],
+      );
     }
     if (kind === "staff_payment" && attempt)
-      return {
-        to: email.to,
-        subject: `Online order needs attention: ${attempt.id}`,
-        text: [
-          attempt.state === "paid_hold_lapsed"
-            ? `The customer PAID (${attempt.paymentId}), but the Keeri stock hold had lapsed or been released, so no Keeri order was placed. Confirm stock and raise the order by hand, or refund in full.`
-            : `The customer PAID (${attempt.paymentId}), but Keeri did not accept the order (${staffOutcome ?? "unknown"}). Raise it by hand or refund in full.`,
-          "",
-          ...attemptLines,
-          ...customerLines,
-          ...footer,
-        ].join("\n"),
-      };
+      return attention(
+        `Online order needs attention: ${attempt.id}`,
+        "Paid, but no Keeri order",
+        attempt.state === "paid_hold_lapsed"
+          ? `The customer PAID (${attempt.paymentId}), but the Keeri stock hold had lapsed or been released, so no Keeri order was placed. Confirm stock and raise the order by hand, or refund in full.`
+          : `The customer PAID (${attempt.paymentId}), but Keeri did not accept the order (${staffOutcome ?? "unknown"}). Raise it by hand or refund in full.`,
+        attemptLines,
+        customerLines,
+      );
     if (kind === "staff_attention" && attempt)
-      return {
-        to: email.to,
-        subject: `Online order needs attention: ${attempt.id}`,
-        text: [
-          "No payment is recorded for this checkout, but a Keeri stock hold or a Razorpay order may be left over and needs a manual check.",
-          "",
-          ...attemptLines,
-          ...customerLines,
-          ...footer,
-        ].join("\n"),
-      };
+      return attention(
+        `Online order needs attention: ${attempt.id}`,
+        "Check for a leftover hold",
+        "No payment is recorded for this checkout, but a Keeri stock hold or a Razorpay order may be left over and needs a manual check.",
+        attemptLines,
+        customerLines,
+      );
     return null;
   }
 

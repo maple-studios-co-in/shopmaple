@@ -12,7 +12,7 @@ Never refund or re-raise an order from the email alone. Confirm the payment in t
 4. The worker marks the attempt `captured`, empties the buyer's cart and hands the order to Keeri (retried with backoff for about ten minutes, inside the hold). Keeri's reply carries the sales-order reference.
 
 Keeri restarts now and then (a deploy, or its memory limit), and is unreachable for a few seconds when it does. The quote, hold, hold check and hold release calls each retry nginx's 502/504 or a failed connection for about six seconds before giving up. Keeri's own errors are not retried. So a restart during "Pay" no longer leaves a `RESERVATION_UNCERTAIN` attempt behind. A longer outage still fails as before.
-5. The buyer gets "Your Maple Furnishers order SO-… is confirmed"; staff get "New online order SO-…".
+5. The buyer gets "Your Maple Furnishers order SO-… is confirmed"; staff get "New order MF-… · Rs. … · <first piece>", with an "Open in Keeri" button (KEERI_ADMIN_ORIGIN, else KEERI_ORIGIN) and a "Test payment" tag when the Razorpay key is a test key.
 
 A payment that does not complete is the buyer's to hear about, not staff's. Razorpay's failure report, or a success that is still unconfirmed after five minutes, sends the buyer "Your payment didn't go through" or "We're checking your payment" (see `docs/order-flow.md`).
 
