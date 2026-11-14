@@ -12,6 +12,8 @@ export type SelectorVariant = {
   name: string;
   slug?: string;
   image?: string;
+  /** `image` is the piece on white (Keeri's cutout): shown whole on white, never cropped to fill the tile. */
+  cutout?: boolean;
   swatch?: string;
 };
 
@@ -49,10 +51,12 @@ export function VariantSelector({ variants, selectedId, onSelect, layout = "phot
               <input type="radio" name="variant" value={variant.id} checked={selected} onChange={() => onSelect(variant.id)} className="sr-only" />
               {layout === "photo" && (
                 <span aria-hidden="true"
-                  className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] bg-cream shadow-[0_0_0_1px_rgb(86_60_73/0.2)] transition-shadow motion-reduce:transition-none [&_img]:object-cover",
+                  className={cx("relative block aspect-[122/83] w-full overflow-hidden rounded-[7px] shadow-[0_0_0_1px_rgb(86_60_73/0.2)] transition-shadow motion-reduce:transition-none",
+                    variant.image && variant.cutout ? "bg-white [&_img]:object-contain" : "bg-cream [&_img]:object-cover",
                     selected && "shadow-[0_0_0_3px_var(--color-maple)]")}>
                   {variant.image
-                    ? <span data-variant-image className="absolute inset-0"><ProductImage src={variant.image} alt="" fill sizes="122px" /></span>
+                    // A cutout keeps a little white around the piece so the whole chair reads in a short tile (owner, 14 Nov 2026).
+                    ? <span data-variant-image data-cutout={variant.cutout || undefined} className={cx("absolute", variant.cutout ? "inset-1" : "inset-0")}><ProductImage src={variant.image} alt="" fill sizes="122px" /></span>
                     : variant.swatch
                       ? <span data-variant-swatch className="absolute inset-0" style={{ backgroundColor: variant.swatch }} />
                       : <span data-variant-placeholder className="absolute inset-0 grid place-items-center p-1 text-center text-label">{variant.name}</span>}
