@@ -33,6 +33,7 @@ import { TemplateArtworkFields } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
+import { useClickToEdit } from "./use-click-to-edit";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
@@ -121,6 +122,25 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   const [focusedSection, setFocusedSection] = useState<string | null>(null);
   /** The homepage section whose inspector fills the editor column, or null for the section list. */
   const [inspecting, setInspecting] = useState<HomeSectionKey | null>(null);
+  /** The inspector was opened by click-to-edit: it leaves the keyboard on the words being typed in the preview. */
+  const [inspectQuiet, setInspectQuiet] = useState(false);
+  /** Bumped by click-to-edit so an open inspector shows its Content tab. */
+  const [contentRequest, setContentRequest] = useState(0);
+  /**
+   * The frame route the live preview stays on after click-to-edit opened another screen (Navigation & footer for words
+   * in the footer of a policy page, say), so the page being edited never jumps away. Choosing a screen clears it.
+   */
+  const [previewHold, setPreviewHold] = useState<string | null>(null);
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  /**
+   * Whether the page in the live preview already shows the local draft: true once it loads the saved draft, and it
+   * stays true through edits typed on the page itself (click-to-edit); any other edit makes it false. While true, a
+   * save hands the page its new token instead of reloading it.
+   */
+  const frameCurrent = useRef(false);
+  /** An edit is arriving from click-to-edit right now (the page already shows it). */
+  const editFromFrame = useRef(false);
   /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
   const [saving, setSaving] = useState(false);
   /** The last failed quiet save; auto-save pauses until a manual save succeeds. */
@@ -198,6 +218,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     }
   }
   function edit(next: StorefrontContent) {
+    if (!editFromFrame.current) frameCurrent.current = false;
     latestContent.current = next;
     setContent(next);
     setDirty(true);
@@ -206,6 +227,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   }
   /** Storefront address the preview opens on, chosen from what is being edited. */
   function previewPath() {
+    if (previewHold) return previewHold;
     if (tab === "Category pages") return "pages/sofas";
     if (tab === "Existing pages") return existingPages.find(([key]) => key === existingPage)![2];
     if (tab === "Pages") {
@@ -354,6 +376,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     .map((group) => ({ ...group, items: group.items.filter((name) => (name === "Enquiries" ? canManageEnquiries : hasContent)) }))
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
+    setPreviewHold(null);
     if (name === "History") { void history(); return; }
     // Choosing Homepage again from an open inspector returns to the section list.
     if (name === tab) { setInspecting(null); return; }
@@ -362,6 +385,36 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     setInspecting(null);
     setTab(name);
   }
+  // Click-to-edit in the live preview: open the screen that edits the clicked words and type into its field.
+  const clickToEdit = useClickToEdit({
+    canEdit,
+    blocked: () => scheduleEditing ? "Apply or cancel the campaign schedule first, then click the words again."
+      : conflict ? "Another editor saved a newer version. Reload the latest draft, then try again."
+      : !content ? "The draft is still loading. Try again in a moment." : null,
+    busy: () => busy,
+    content,
+    existingPages,
+    notice: setNotice,
+    whileApplying: (run) => {
+      editFromFrame.current = true;
+      try { return run(); } finally { editFromFrame.current = false; }
+    },
+    open: (screen, keep) => {
+      if (screen.kind === "current") return;
+      if (screen.kind === "section") {
+        if (tabRef.current !== "Homepage") { setSelectedPage(0); setTab("Homepage"); }
+        setFocusedSection(screen.section);
+        setInspectQuiet(true);
+        setInspecting(screen.section);
+        setContentRequest((value) => value + 1);
+        return;
+      }
+      const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs" } as const)[screen.kind];
+      if (screen.kind === "existing") setExistingPage(screen.page as ExistingPage);
+      setPreviewHold(keep);
+      if (tabRef.current !== next) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(next); }
+    },
+  });
   const navDisabled = (name: Tab) => scheduleEditing || (!content && name !== "Enquiries" && name !== "Overview");
   // An emergency session says so wherever the role is shown, so it is never mistaken for an ordinary one.
   const roleLabel = { publisher: "Publisher", editor: "Editor", viewer: "View only", none: "Enquiries only" }[session.user.role] + (session.user.emergency ? " · Emergency access" : "");
@@ -399,7 +452,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     switch (tab) {
       case "Overview": return <OverviewPanel content={content} session={session} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null} dirty={dirty} />;
       case "Homepage": return <HomepagePanel content={content} edit={edit} focusedSection={focusedSection} onSelectSection={setFocusedSection}
-        inspecting={inspecting} onInspect={setInspecting} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} scheduleEditing={scheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
+        inspecting={inspecting} onInspect={(section) => { setInspectQuiet(false); setInspecting(section); }} inspectQuietly={inspectQuiet} contentRequest={contentRequest} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} scheduleEditing={scheduleEditing} thumbnails={{ token: previewToken.token, dirty, unavailable: document?.draft === null || previewToken.error !== null, onWanted: wantThumbnails }} />;
       case "Navigation & footer": return <SiteChromeFields value={content.siteChrome} onChange={(siteChrome) => {
         const next = { ...content };
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
@@ -411,7 +464,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         films={{ value: content.templateFilms, onChange: set("templateFilms"), session, onExpired }} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
-      case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={setSelectedPage} />;
+      case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={(index) => { setPreviewHold(null); setSelectedPage(index); }} />;
       case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
@@ -422,7 +475,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       </>;
       case "Existing pages": return <>
         <PanelHeader title="Existing pages" description="Edit the storefront pages that ship with the theme. Changes stay in your draft until published." />
-        <SelectField label="Existing page" className="mb-6 max-w-sm" value={existingPage} onChange={(event) => setExistingPage(event.target.value as ExistingPage)}>
+        <SelectField label="Existing page" className="mb-6 max-w-sm" value={existingPage} onChange={(event) => { setPreviewHold(null); setExistingPage(event.target.value as ExistingPage); }}>
           {existingPages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </SelectField>
         {existingPage === "story" ? <StoryFields value={content.storyPage} onChange={set("storyPage")} />
@@ -474,8 +527,9 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
           />
           {draftScreen && (
             <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" aria-pressed={liveOpen} disabled={liveDisabled} onClick={() => setLiveOpen((value) => !value)}
-                className="hidden text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary xl:inline-flex">
+              {/* An outlined button, from 1024 px (a laptop at 125%): as grey text it read as switched off (owner, 14 Nov 2026). */}
+              <Button type="button" variant="outline" size="sm" aria-pressed={liveOpen} disabled={liveDisabled} onClick={() => setLiveOpen((value) => !value)}
+                className="hidden aria-pressed:border-primary/40 aria-pressed:bg-accent-tint aria-pressed:text-primary lg:inline-flex">
                 <Eye aria-hidden="true" strokeWidth={1.5} />Live preview
               </Button>
               <Button type="button" variant="outline" size="sm" data-action="save" disabled={saveDisabled} onClick={() => void write("save")}>
@@ -538,7 +592,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             data-mobile-pane={liveActive ? mobilePane : undefined}
             className={cn(
               "grid flex-1 items-start gap-5 p-4 sm:p-6",
-              liveActive && "xl:grid-cols-[minmax(380px,0.85fr)_minmax(0,1.15fr)]",
+              liveActive && "lg:grid-cols-[minmax(340px,0.85fr)_minmax(0,1.15fr)]",
               liveActive && mobilePane === "preview" && "max-md:[&>[data-admin-panel]]:hidden",
               liveActive && mobilePane === "editor" && "max-md:[&>[data-live-preview]]:hidden",
             )}
@@ -591,8 +645,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                   if (tab !== "Homepage") selectTab("Homepage");
                   setFocusedSection(section);
                   // Edit in the preview opens the same inspector as the section's card.
+                  setInspectQuiet(false);
                   setInspecting((homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : null);
-                }} />
+                }}
+                textEditing={canEdit} onTextSelect={clickToEdit.onTextSelect} onTextEdit={clickToEdit.onTextEdit}
+                isFrameCurrent={() => frameCurrent.current}
+                onFrameReady={(frameVersion) => { frameCurrent.current = frameVersion === document?.version && !dirty; }} />
             )}
           </div>
         )}
