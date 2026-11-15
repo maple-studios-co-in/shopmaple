@@ -224,3 +224,19 @@ test("the reviews slide: arrows for the previous and next review, the one with n
     assert.ok((moves[0]!.left ?? 0) > 0, "one review on");
   });
 });
+
+test("the photograph staff picked in Keeri for the band between Specifications and Details replaces the store's own pick", async () => {
+  const lifestyle = photo("demo-in-a-study");
+  const picked: Product = { ...demo, productPage: { ...page, featurePhoto: lifestyle, media: [...page.media, { url: lifestyle, variantId: null, role: "lifestyle", width: 1600, height: 1200, altText: null, realPhoto: false, hotspots: [] }] } };
+  await mount((doc) => {
+    const frame = doc.querySelector("[data-features] [data-feature-photo-frame]")!;
+    assert.match(decodeURIComponent(frame.querySelector("img")!.getAttribute("src")!), /demo-in-a-study/, "staff's pick, not the finish's white-background photo");
+    assert.match(frame.className, /\[&_img\]:object-cover/, "a photograph fills its frame");
+  }, picked);
+  // A white-background pick stands whole, as the store's own cut-out does.
+  await mount((doc) => {
+    const frame = doc.querySelector("[data-features] [data-feature-photo-frame]")!;
+    assert.match(decodeURIComponent(frame.querySelector("img")!.getAttribute("src")!), /grey-cutout/);
+    assert.match(frame.className, /\[&_img\]:object-contain/);
+  }, { ...demo, productPage: { ...page, featurePhoto: photo("grey-cutout") } });
+});

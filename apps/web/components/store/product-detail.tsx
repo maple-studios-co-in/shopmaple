@@ -257,6 +257,9 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     features.push({ key: "delivery", title: "Delivery & Warranty", icon: "feature-about", rows: [["Delivery", "Across India"], ["Covered", "Defects and transit damage"], ["Warranty", storeWarranty]] });
   // Keeri's highlights have no position: they stand on the finish's white-background photo, the piece whole in the middle.
   const highlightPhoto = highlightLines.length ? cutoutFor(variantId)?.image : undefined;
+  // Staff's own pick in Keeri for this band leads; a white-background pick stands whole, like the store's own.
+  const pickedPhoto = product.productPage?.featurePhoto ?? undefined;
+  const pickedCutout = Boolean(pickedPhoto) && product.productPage?.media.find((m) => m.url === pickedPhoto)?.role === "cutout";
   const warranty = warrantyLabel(product);
   const category = product.category ? categoryNames[product.category] : undefined;
   const deal = useRunningOffer(product.offer, openedAt);
@@ -431,7 +434,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
       </section>
       {deal && <DealTab key={dealKey(deal)} deal={deal} />}
       {/* Every piece, sofas and beds included, gets the same section: Keeri's highlights as hotspots, cards that open in place (owner, 4 Nov 2026). */}
-      <ProductFeatures features={features} highlights={highlightLines} photo={highlightPhoto ?? photo} contain={Boolean(highlightPhoto)} title={product.title} />
+      <ProductFeatures features={features} highlights={highlightLines} photo={pickedPhoto ?? highlightPhoto ?? photo} contain={pickedPhoto ? pickedCutout : Boolean(highlightPhoto)} title={product.title} />
       <ProductBanner picture={banner} />
       <ProductTicker warranty={warranty} delivery={delivery} />
       <ProductReviews rating={rating} writeHref={enquiryHref} reviews={productReviews(product)}

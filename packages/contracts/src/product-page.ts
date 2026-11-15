@@ -97,6 +97,8 @@ export const productPageSchema = z.object({
   }).strict(),
   media: z.array(productMediaSchema).max(600),
   bundles: z.array(productBundleSchema).max(20),
+  /** Staff's photograph for the band between Specifications and Details (one of `media`); null or absent: the store's own pick. */
+  featurePhoto: z.string().max(2000).nullable().optional(),
 }).strict();
 export type ProductPage = z.infer<typeof productPageSchema>;
 
