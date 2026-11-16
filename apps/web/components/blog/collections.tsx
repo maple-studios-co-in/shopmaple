@@ -19,7 +19,7 @@ export function BlogCollections({ media }: { media?: TemplateMedia } = {}) {
   return (
     <section data-blog-collections className="blog-collections" aria-labelledby="blog-collections-title">
       <div className="blog-collections-photo">
-        <ContentImage data-collections-photo src={photo.image} alt={photo.alt} fill sizes="(max-width: 899px) calc(100vw - 32px), 50vw" />
+        <ContentImage data-collections-photo data-media-slot="blog-collections-photo" src={photo.image} alt={photo.alt} fill sizes="(max-width: 899px) calc(100vw - 32px), 50vw" />
       </div>
       <div className="blog-collections-copy">
         <p data-collections-eyebrow className="blog-collections-eyebrow"><SiteWord k="blog.collections.eyebrow" /></p>

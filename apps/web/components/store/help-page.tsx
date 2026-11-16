@@ -39,13 +39,15 @@ const titleScales = {
   compact: "lg:text-[length:min(86px,6.01vw)]",
 } as const;
 
-export function HelpPage({ chrome: { links, care }, current, title, opening, photo, photoAlt = "", titleScale = "policy", children }: {
+export function HelpPage({ chrome: { links, care }, current, title, opening, photo, photoAlt = "", photoSlot, titleScale = "policy", children }: {
   chrome: HelpChrome;
   /** This page's address, which marks its tab. */
   current: string;
   title: string;
   opening?: ReactNode;
   photo: string;
+  /** The Artwork placement the photo comes from, so the live preview can open it for a new one. */
+  photoSlot?: string;
   /** The photo only sets the scene unless staff describe the one they chose. */
   photoAlt?: string;
   titleScale?: keyof typeof titleScales;
@@ -75,7 +77,7 @@ export function HelpPage({ chrome: { links, care }, current, title, opening, pho
             )}
           </header>
           <div data-help-photo className="relative aspect-[342/150] w-full overflow-hidden bg-cream lg:aspect-[1272/360]">
-            <Image src={photo} alt={photoAlt} fill preload sizes="(min-width: 1432px) 1272px, (min-width: 1024px) calc(100vw - 160px), calc(100vw - 48px)" className="object-cover" />
+            <Image src={photo} alt={photoAlt} data-media-slot={photoSlot} fill preload sizes="(min-width: 1432px) 1272px, (min-width: 1024px) calc(100vw - 160px), calc(100vw - 48px)" className="object-cover" />
           </div>
           <div aria-hidden="true" className="h-px bg-help-rule" />
           {children}

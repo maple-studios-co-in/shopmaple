@@ -57,7 +57,7 @@ export function ContactPage({ context, content, site }: {
         </div>
         <div className="contact-intro-media">
           {/* Under 630px wide the frame's 240px floor makes the photo wider than the window: it is drawn 560px wide. */}
-          <Image src={studio.image} alt={studio.alt} width={1792} height={768} preload sizes="(max-width: 629px) 560px, 89vw" />
+          <Image data-media-slot="contact-studio" src={studio.image} alt={studio.alt} width={1792} height={768} preload sizes="(max-width: 629px) 560px, 89vw" />
         </div>
       </section>
     ),
@@ -116,7 +116,7 @@ export function ContactPage({ context, content, site }: {
     visit: (
       <section className="contact-visit" id="contact-visit" data-service-section="visit" aria-labelledby="contact-visit-title">
         <div className="contact-visit-media">
-          <Image src={workshop.image} alt={workshop.alt} width={1536} height={1024} loading="lazy"
+          <Image data-media-slot="contact-workshop" src={workshop.image} alt={workshop.alt} width={1536} height={1024} loading="lazy"
             sizes="(max-width: 799px) calc(100vw - 40px), 32vw" />
         </div>
         <div className="contact-visit-copy">

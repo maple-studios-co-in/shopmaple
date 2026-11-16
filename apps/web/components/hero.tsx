@@ -13,7 +13,7 @@ import { artworkProducts, resolveArtwork, type ProductPhotos } from "@/lib/templ
 /** How long a slide stays before the next one, unless the shopper hovers or focuses the tile. */
 const autoplayMs = 6000;
 
-type Slide = { kind: "image" | "video"; video?: string; phoneVideo?: string; image?: string; alt: string; headline: string; intro: string };
+type Slide = { kind: "image" | "video"; video?: string; phoneVideo?: string; image?: string; alt: string; headline: string; intro: string; slot?: string };
 
 /** The default slides' four stills: the opening still, then the Nimbus slideshow's three rooms. */
 const defaultStills = ["home-workshop-poster", "nimbus-slide-living", "nimbus-slide-bedroom", "nimbus-slide-dining"] as const;
@@ -48,7 +48,7 @@ function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia, phot
   const headline = content.headline ?? heroHeadline, intro = content.intro ?? heroIntro;
   const stills = defaultStills.flatMap((key): Slide[] => {
     const artwork = resolveArtwork(key, media, photos);
-    return artwork ? [{ kind: "image", image: artwork.image, alt: artwork.alt, headline, intro }] : [];
+    return artwork ? [{ kind: "image", image: artwork.image, alt: artwork.alt, headline, intro, slot: key }] : [];
   });
   return stills.length ? stills : [{ kind: "image", alt: "", headline, intro }];
 }
@@ -89,7 +89,7 @@ export function Hero({
               aria-label={many ? `${i + 1} of ${slides.length}` : undefined}
               key={i}
             >
-              {slide.image && <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} />}
+              {slide.image && <Image src={slide.image} alt={slide.alt} fill sizes="(max-width: 700px) 100vw, 50vw" preload={i === 0} data-media-slot={slide.slot} />}
               {/* The poster is the picture above; the film covers it only once playing (lib/slider-behaviour.ts), so visitors
                   who ask for reduced motion, or whose browser has not run the slider yet, see the poster. A slide with a
                   phone film leaves the choice of cut to the slider's script (lib/film-source.ts). */}
@@ -112,7 +112,7 @@ export function Hero({
           const artwork = resolveHomeTemplateMedia(`home-hero-${key}`, media);
           return (
             <Link href={(key === "beds" ? "/collections/" : "/") + key} className="category-tile" data-hero-tile={key} key={key}>
-              <Image src={artwork.image} alt={artwork.alt} fill sizes="(max-width: 700px) 48vw, 25vw" preload />
+              <Image src={artwork.image} alt={artwork.alt} fill sizes="(max-width: 700px) 48vw, 25vw" preload data-media-slot={`home-hero-${key}`} />
               <div>
                 <h2 data-hero-tile-title>{label}</h2>
                 <p data-hero-tile-cta>View Collection <ArrowRight aria-hidden size={12} /></p>

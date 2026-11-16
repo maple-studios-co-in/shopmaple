@@ -95,6 +95,8 @@ export type CollectionMedia = {
   mobileSrc?: string;
   /** From the content; an empty string marks a decorative photo. */
   alt: string;
+  /** The Artwork placement the photo comes from, so the live preview can open it for a new one. */
+  slot?: string;
   /** CSS object-position for the crop ("50% 40%"); centred when omitted. */
   focus?: string;
 };

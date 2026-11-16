@@ -53,13 +53,13 @@ function Button({ link, tone = "maple" }: { link: CollectionLink; tone?: "maple"
 function Photo({ media, sizes, eager = false }: { media: CollectionMedia; sizes: string; eager?: boolean }) {
   const style: CSSProperties | undefined = media.focus ? { objectPosition: media.focus } : undefined;
   const loading = eager ? { loading: "eager" as const, fetchPriority: "high" as const } : { loading: "lazy" as const };
-  if (!media.mobileSrc) return <Image src={media.src} alt={media.alt} fill sizes={sizes} style={style} {...loading} />;
+  if (!media.mobileSrc) return <Image src={media.src} alt={media.alt} fill sizes={sizes} style={style} {...loading} data-media-slot={media.slot} />;
   const desktop = getContentImageProps({ src: media.src, alt: media.alt, fill: true, sizes, ...loading }).props;
   const phone = getContentImageProps({ src: media.mobileSrc, alt: media.alt, fill: true, sizes: "100vw", ...loading }).props;
   return (
     <picture>
       <source media="(max-width: 749px)" srcSet={phone.srcSet ?? phone.src} sizes={phone.sizes} />
-      <img src={desktop.src} srcSet={desktop.srcSet} sizes={desktop.sizes} alt={media.alt} loading={desktop.loading}
+      <img src={desktop.src} srcSet={desktop.srcSet} sizes={desktop.sizes} alt={media.alt} loading={desktop.loading} data-media-slot={media.slot}
         fetchPriority={desktop.fetchPriority} decoding="async" style={style} />
     </picture>
   );
@@ -215,7 +215,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
           ) : (
             <li className="collection-piece" key={index} data-collection-piece="">
               <div className="collection-piece-photo">
-                <Image src={piece.media.src} alt={piece.media.alt} fill loading="lazy" sizes="(max-width: 749px) 48vw, 24vw"
+                <Image src={piece.media.src} alt={piece.media.alt} data-media-slot={piece.media.slot} fill loading="lazy" sizes="(max-width: 749px) 48vw, 24vw"
                   style={piece.media.focus ? { objectPosition: piece.media.focus } : undefined} />
               </div>
               <div className="collection-piece-body">

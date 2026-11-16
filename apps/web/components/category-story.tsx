@@ -60,7 +60,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
           {shown.has("journey") && <a className="story-button story-hero-cta" href="#maple-journey" data-fill-button="">{page.heroCta}</a>}
         </div>
         {opening && <div className="story-hero-media">
-          <Image src={opening.image} alt={opening.alt} width={1200} height={1200} sizes="(max-width: 899px) calc(100vw - 40px), 44vw" preload />
+          <Image data-media-slot="story-hero" src={opening.image} alt={opening.alt} width={1200} height={1200} sizes="(max-width: 899px) calc(100vw - 40px), 44vw" preload />
         </div>}
       </section>
     ),
@@ -84,7 +84,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
     "belief-film": (
       <section className="story-belief" data-story-section="belief-film" data-store>
         {belief && <div className="story-belief-media">
-          <Image src={belief.image} alt={belief.alt} width={1080} height={1920} sizes="(max-width: 699px) min(520px, calc(100vw - 40px)), 38vw" />
+          <Image data-media-slot="story-belief" src={belief.image} alt={belief.alt} width={1080} height={1920} sizes="(max-width: 699px) min(520px, calc(100vw - 40px)), 38vw" />
         </div>}
         <div className="story-belief-copy">
           <Eyebrow parts={slashed(page.beliefEyebrow)} />
@@ -103,7 +103,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
             return (
               <article key={chapter.key} className="story-chapter" data-story-chapter={chapter.key}>
                 <div className="story-chapter-media">
-                  <Image src={art.image} alt={art.alt} width={1024} height={1024} sizes="(max-width: 699px) calc(100vw - 40px), 39vw" loading="lazy" draggable={false} />
+                  <Image data-media-slot={`story-${chapter.key}`} src={art.image} alt={art.alt} width={1024} height={1024} sizes="(max-width: 699px) calc(100vw - 40px), 39vw" loading="lazy" draggable={false} />
                 </div>
                 <div className="story-chapter-copy">
                   <Eyebrow parts={["Story", <span key="date" className="story-eyebrow-date">{chapter.date}</span>]} />

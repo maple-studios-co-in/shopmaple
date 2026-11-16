@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { EmptyState, Skeleton } from "./crm-primitives";
 import type { PreviewToken } from "./use-preview-token";
 import type { TextEditMessage, TextReply, TextSelectMessage } from "./use-click-to-edit";
+import type { TemplateMediaKey } from "@shopmaple/contracts";
 export type { MintResult } from "./use-preview-token";
 
 export type LivePreviewProps = {
@@ -48,6 +49,8 @@ export type LivePreviewProps = {
   onTextSelect?: (message: TextSelectMessage, reply: TextReply) => void;
   /** Click-to-edit: they typed over those words and kept them; reply whether the field took them. */
   onTextEdit?: (message: TextEditMessage, reply: TextReply) => void;
+  /** Click-to-edit: they clicked a picture from this Artwork placement, on this storefront page. */
+  onMediaSelect?: (slot: TemplateMediaKey, path: string) => void;
   /**
    * Whether the page in the frame already shows the draft: every change since it loaded was typed on the page itself.
    * Then a newer token is handed to the page instead of reloading it (owner, 14 Nov 2026: "on edit the page keep reloading").
@@ -73,7 +76,7 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
  * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
  * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, isFrameCurrent, onFrameReady }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
   /** Click-to-edit (the default) or Browse, where clicks follow links as a shopper's would. */
@@ -122,6 +125,8 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   useEffect(() => { selectRef.current = onSelectSection; }, [onSelectSection]);
   const textSelectRef = useRef(onTextSelect), textEditRef = useRef(onTextEdit);
   useEffect(() => { textSelectRef.current = onTextSelect; textEditRef.current = onTextEdit; }, [onTextSelect, onTextEdit]);
+  const mediaSelectRef = useRef(onMediaSelect);
+  useEffect(() => { mediaSelectRef.current = onMediaSelect; }, [onMediaSelect]);
 
   // Every new address starts a fresh load; the frame reports when it is ready.
   useEffect(() => { setFrameStatus("loading"); setFramePath(null); setFrameEditing(false); }, [shownSrc]);
@@ -144,6 +149,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }
       else if (message.type === "select") selectRef.current?.(message.section);
       else if (message.type === "editing") setFrameEditing(message.active);
+      else if (message.type === "media-select") mediaSelectRef.current?.(message.slot, message.path);
       else if (message.type === "text-select" || message.type === "text-edit") {
         const phase = message.type === "text-select" ? "select" : "edit";
         const reply: TextReply = ({ ok, message: reason }) => source.postMessage(

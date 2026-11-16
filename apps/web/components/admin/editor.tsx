@@ -30,11 +30,12 @@ import { AuthoredArticleFields } from "./authored-article-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highlights-fields";
 import { MediaLibrary } from "./media-library";
-import { TemplateArtworkFields } from "./template-artwork-fields";
+import { TemplateArtworkFields, type ArtworkRequest } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
+import { previewRouteFor } from "@/lib/live-preview";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
@@ -132,6 +133,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * in the footer of a policy page, say), so the page being edited never jumps away. Choosing a screen clears it.
    */
   const [previewHold, setPreviewHold] = useState<string | null>(null);
+  /** A picture clicked in the live preview: the Artwork screen shows its placement and opens its library. */
+  const [artworkRequest, setArtworkRequest] = useState<ArtworkRequest | null>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
   /**
@@ -389,6 +392,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
     setPreviewHold(null);
+    setArtworkRequest(null);
     if (name === "History") { void history(); return; }
     // Choosing Homepage again from an open inspector returns to the section list.
     if (name === tab) { setInspecting(null); return; }
@@ -473,7 +477,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       }} />;
       case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
-      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired}
+      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} request={artworkRequest ?? undefined}
         films={{ value: content.templateFilms, onChange: set("templateFilms"), session, onExpired }} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
@@ -663,6 +667,13 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                   setInspecting((homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : null);
                 }}
                 textEditing={canEdit} onTextSelect={clickToEdit.onTextSelect} onTextEdit={clickToEdit.onTextEdit}
+                onMediaSelect={(slot, framePath) => {
+                  // A picture from an Artwork placement: open Artwork on it with its library, keeping the preview on that page.
+                  if (!canEdit || scheduleEditing) return;
+                  setPreviewHold(previewRouteFor(framePath));
+                  setArtworkRequest((current) => ({ slot, nonce: (current?.nonce ?? 0) + 1 }));
+                  if (tabRef.current !== "Artwork") { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab("Artwork"); }
+                }}
                 isFrameCurrent={() => frameCurrent.current}
                 onFrameReady={(frameVersion) => { frameCurrent.current = frameVersion === document?.version && !dirty; }} />
             )}

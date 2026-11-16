@@ -239,7 +239,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     const plainText = supportsPlainText();
     const layout = document.documentElement.getClientRects().length > 0;
     const visible = (node: Element) => !layout || node.getClientRects().length > 0;
-    let editing: HTMLElement | null = null, hovered: HTMLElement | null = null;
+    let editing: HTMLElement | null = null, hovered: HTMLElement | null = null, hoveredPicture: HTMLElement | null = null;
     let originalHtml = "", originalText = "", target: PreviewTextTarget | null = null;
     const post = (message: Record<string, unknown>) => parent!.postMessage({ source: previewMessageSource, ...message }, origin);
     /** Where the words sit and what surrounds them, so the editor can open the right screen and pick the right field. */
@@ -268,7 +268,14 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     }
     function onOver(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
-      const next = node && editableWords(node) && node !== editing ? node : null;
+      // A picture from an Artwork placement is outlined as one to click; words inside it are not outlined.
+      const picture = node?.closest<HTMLElement>("[data-media-slot]") ?? null;
+      if (picture !== hoveredPicture) {
+        hoveredPicture?.removeAttribute("data-preview-media-hover");
+        hoveredPicture = picture;
+        hoveredPicture?.setAttribute("data-preview-media-hover", "true");
+      }
+      const next = !picture && node && editableWords(node) && node !== editing ? node : null;
       if (next === hovered) return;
       hovered?.removeAttribute("data-preview-text-hover");
       hovered = next;
@@ -321,6 +328,16 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       if (!node || node.closest("[data-preview-edit]")) return;
       // Clicks inside the words being typed place the caret, as in any text box.
       if (editing && editing.contains(node)) return;
+      // A picture from an Artwork placement (owner, 16 Nov 2026): open that placement's picture library in the editor.
+      const picture = node.closest<HTMLElement>("[data-media-slot]");
+      if (picture?.dataset.mediaSlot) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (editing) finish(true);
+        post({ type: "media-select", slot: picture.dataset.mediaSlot, path });
+        setNote("Choose the new picture in the library beside the preview.");
+        return;
+      }
       // A form box whose grey words are the theme's (Site words): open their box in the editor; the form box still works.
       const box = node.closest<HTMLElement>("[data-site-word-placeholder]");
       if (box) {
@@ -353,6 +370,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       document.removeEventListener("mouseover", onOver);
       window.removeEventListener("click", onClick, true);
       hovered?.removeAttribute("data-preview-text-hover");
+      hoveredPicture?.removeAttribute("data-preview-media-hover");
       // Switching to Browse keeps what was typed so far.
       finish(true);
       cancelEdit.current = () => {};
@@ -364,7 +382,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       {editMode && (
         <p data-preview-hint="" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex max-w-[min(520px,calc(100%-24px))] items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 font-sans text-2xs font-semibold text-background shadow-md backdrop-blur">
           <Pencil aria-hidden="true" className="size-3 shrink-0" strokeWidth={1.75} />
-          {note || "Click any text to change it · Enter to keep · Esc to undo"}
+          {note || "Click any text or picture to change it · Enter to keep · Esc to undo"}
         </p>
       )}
       {hover?.section && (
@@ -399,7 +417,7 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, menuArt
     // display: contents); the ribbon sits in space reserved at the bottom.
     <div
       data-admin-tokens=""
-      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500 [&_[data-preview-text-hover=true]]:cursor-text [&_[data-preview-text-hover=true]]:outline-1 [&_[data-preview-text-hover=true]]:outline-offset-2 [&_[data-preview-text-hover=true]]:outline-primary [&_[data-preview-text-hover=true]]:outline-dashed [&_[data-preview-editing=true]]:cursor-text [&_[data-preview-editing=true]]:rounded-[2px] [&_[data-preview-editing=true]]:outline-2 [&_[data-preview-editing=true]]:outline-offset-2 [&_[data-preview-editing=true]]:outline-primary [&_[data-preview-editing=true]]:outline-solid"
+      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500 [&_[data-preview-text-hover=true]]:cursor-text [&_[data-preview-text-hover=true]]:outline-1 [&_[data-preview-text-hover=true]]:outline-offset-2 [&_[data-preview-text-hover=true]]:outline-primary [&_[data-preview-text-hover=true]]:outline-dashed [&_[data-preview-editing=true]]:cursor-text [&_[data-preview-editing=true]]:rounded-[2px] [&_[data-preview-editing=true]]:outline-2 [&_[data-preview-editing=true]]:outline-offset-2 [&_[data-preview-editing=true]]:outline-primary [&_[data-preview-editing=true]]:outline-solid [&_[data-preview-media-hover=true]]:cursor-pointer [&_[data-preview-media-hover=true]]:outline-2 [&_[data-preview-media-hover=true]]:-outline-offset-2 [&_[data-preview-media-hover=true]]:outline-primary [&_[data-preview-media-hover=true]]:outline-dashed"
       data-preview-version={version}
       data-preview-path={path}
       data-preview-view={view}

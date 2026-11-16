@@ -10,7 +10,7 @@ const collectionWord = (heading: string) => heading.replace(/^the\s+/i, "").repl
 /** How long each collection holds the stage while the ring round its number fills. */
 export const stageIntervalMs = 5200;
 
-type Card = { id: string; heading: string; tagline: string; cta: string; href: string; image: string; mobileImage?: string; alt: string; word: string | null };
+type Card = { id: string; heading: string; tagline: string; cta: string; href: string; image: string; mobileImage?: string; alt: string; word: string | null; slot?: string };
 
 /**
  * The collections stage ("x-slideshow" in the Impact Layout frame): a rounded card on a band of the same photo,
@@ -27,7 +27,7 @@ export function HomeNimbus({
   // The bundled photo has no lettering, so the name is live text; staff artwork keeps whatever it carries.
   const liveWord = artwork.image === homeTemplateMedia["home-nimbus"].image;
   const cards: Card[] = [
-    { id: "nimbus", heading: content.heading, tagline: content.tagline, cta: content.cta, href: "/nimbus-collection", image: artwork.image, mobileImage: artwork.mobileImage, alt: artwork.alt, word: liveWord ? collectionWord(content.heading) : null },
+    { id: "nimbus", heading: content.heading, tagline: content.tagline, cta: content.cta, href: "/nimbus-collection", image: artwork.image, mobileImage: artwork.mobileImage, alt: artwork.alt, word: liveWord ? collectionWord(content.heading) : null, slot: "home-nimbus" },
     // An extra slide with no artwork yet (a draft in the editor) has nothing to show, so it is left out.
     ...(content.slides ?? []).filter(slide => slide.image).map((slide, i): Card => ({
       id: `nimbus-${i + 2}`, heading: slide.heading, tagline: slide.tagline, cta: slide.cta, href: slide.href,
@@ -67,7 +67,7 @@ export function HomeNimbus({
             >
               <picture className="nimbus-stage-media">
                 {card.mobileImage && <source media="(max-width: 767px)" srcSet={card.mobileImage} />}
-                <img src={card.image} alt={card.alt} loading="lazy" decoding="async" />
+                <img src={card.image} alt={card.alt} loading="lazy" decoding="async" data-media-slot={card.slot} />
               </picture>
               <div className="nimbus-stage-copy">
                 <p className="nimbus-stage-tagline" data-nimbus-lead>{card.tagline}</p>

@@ -101,7 +101,7 @@ export function HomeDifference({
           return (
             <li key={icons[index]} data-difference-promise>
               {/* Only an uploaded icon: the originals were on Shopify (owner, 11 Nov 2026). */}
-              {artwork.image && <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />}
+              {artwork.image && <Image src={artwork.image} width={60} height={60} alt={artwork.alt} data-media-slot={icons[index]} />}
               <span>{text}</span>
             </li>
           );
@@ -175,7 +175,7 @@ export function HomeTestimonial({
       {film
         ? <AmbientFilm src={film.src} mobileSrc={film.mobileSrc} label={poster.alt} width={720} height={1280}
           poster={poster.image ? getImageProps({ src: poster.image, alt: poster.alt, width: 720, height: 1280 }).props.src : undefined} />
-        : poster.image && <Image className="home-testimonial-still" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
+        : poster.image && <Image className="home-testimonial-still" data-media-slot="home-testimonial-poster" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
     </section>
   );
 }
@@ -191,6 +191,7 @@ export function HomeNewsletter({
     <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>
       {artwork.image && <div className="home-newsletter-mark" data-newsletter-mark>
         <Image
+          data-media-slot="home-newsletter"
           src={artwork.image}
           alt={artwork.alt}
           width={1080}
@@ -234,7 +235,7 @@ export function HomeValues({
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
           <div key={key}>
-            {artwork.image && <Image src={artwork.image} alt={artwork.alt} width={80} height={80} />}
+            {artwork.image && <Image src={artwork.image} alt={artwork.alt} width={80} height={80} data-media-slot={`home-value-${key}`} />}
             <h3>{title}</h3>
             <p>{body}</p>
           </div>
@@ -283,6 +284,7 @@ export function HomeCities({
             <figure key={key} className="home-city-card">
               <div className="home-city-artwork">
                 <Image
+                  data-media-slot={`home-city-${key}`}
                   src={artwork.image}
                   alt={artwork.alt}
                   width={400}

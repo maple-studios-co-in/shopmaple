@@ -134,7 +134,7 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
   const page = resolveTerraPageContent(site.terraPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
-    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt };
+    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt, slot: key };
   };
   const about = (thing: string) => terraEnquiryHref(`${page.title}: ${thing}`);
   const rooms = page.rooms ?? defaultTerraPage.rooms!;

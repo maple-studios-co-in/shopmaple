@@ -20,6 +20,7 @@ export function ReturnExchange({ content, chrome, media }: { content: ReturnsPag
       opening={<p>{content.intro}</p>}
       photo={photo.image}
       photoAlt={photo.alt}
+      photoSlot="policy-return-exchange"
       titleScale="compact"
     >
       <div className="flex flex-col items-center gap-6 pt-8 pb-12 lg:pt-[60px] lg:pb-20">

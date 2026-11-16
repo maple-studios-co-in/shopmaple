@@ -372,6 +372,7 @@ async function setup({ role = "editor", content = defaultStorefrontContent }: { 
       return Response.json({ token: mints++ === 0 ? tokenA : tokenB, version, expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() });
     }
     if (path.startsWith("/api/catalogue")) return Response.json({ items: [], total: 0 });
+    if (path.startsWith("/api/admin/media")) return Response.json({ assets: [], nextCursor: null });
     assert.equal(path, "/api/admin/content", `Unexpected request ${method} ${path}`);
     return Response.json({ version: 4, draft: structuredClone(content), publishedVersion: 2, updatedAt: "2026-11-14T08:00:00Z" });
   };
@@ -614,4 +615,54 @@ test("inside the frame: the theme's own words say their place, and a click on a 
     assert.equal(event.defaultPrevented, false, "the form box still takes a click");
     assert.equal(container.querySelector("input")!.hasAttribute("contenteditable"), false);
   } finally { await frame.close(); }
+});
+
+test("picture clicks are read only for a known Artwork placement on a storefront address", () => {
+  const frameWindow = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data: { source: previewMessageSource, ...data } }, origin, frameWindow);
+  assert.deepEqual(read({ type: "media-select", slot: "contact-studio", path: "/contact" }), { type: "media-select", slot: "contact-studio", path: "/contact" });
+  assert.equal(read({ type: "media-select", slot: "not-a-placement", path: "/" }), null);
+  assert.equal(read({ type: "media-select", slot: "contact-studio", path: "//evil.example/" }), null);
+});
+
+test("inside the frame: a click on a picture from an Artwork placement asks for its library, outlined on hover, never followed", async () => {
+  const frame = await renderBridge(
+    <div data-home-section="cities">
+      <a href="/collections/all"><img data-media-slot="home-city-kolkata" src="/media/cities/kolkata.webp" alt="Kolkata" /></a>
+      <p>Kolkata</p>
+    </div>,
+  );
+  try {
+    const picture = container.querySelector("img")!;
+    await act(async () => { picture.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })); });
+    assert.equal(picture.getAttribute("data-preview-media-hover"), "true", "the picture is outlined as one to click");
+    const event = await frame.click(picture);
+    assert.equal(event.defaultPrevented, true, "the link around the picture does not open");
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", slot: "home-city-kolkata", path: "/" });
+    assert.equal(frame.sent.some((message) => message.type === "text-select"), false);
+    assert.match(words(container.querySelector("[data-preview-hint]")), /library beside the preview/);
+  } finally { await frame.close(); }
+});
+
+test("a picture clicked in the preview opens Artwork on its placement with the picture library open, and the preview stays on its page", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "media-select", slot: "contact-workshop", path: "/contact" });
+    await until(() => container.querySelector('[data-admin-panel][aria-label="Artwork editor"]') !== null, "the Artwork screen");
+    const list = (label: string) => [...container.querySelectorAll<HTMLSelectElement>("select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === label);
+    await until(() => list("Artwork placement")?.value === "contact-workshop", "the clicked placement");
+    assert.equal(list("Artwork group")?.value, "Contact");
+    await until(() => [...container.querySelectorAll("button")].some((button) => words(button) === "Close library"), "the picture library, open");
+    assert.match(app.frame().getAttribute("src") ?? "", /\/admin\/preview-frame\/pages\/contact\?/, "the preview stays on Contact");
+  } finally { await app.close(); }
+});
+
+test("the storefront marks each picture from an Artwork placement with that placement", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { Hero } = await import("../components/hero");
+  const { HomeCities } = await import("../components/home-sections");
+  const hero = renderToStaticMarkup(<Hero />);
+  for (const tile of ["sofas", "chairs", "tables", "beds"]) assert.match(hero, new RegExp(`data-media-slot="home-hero-${tile}"`));
+  assert.match(renderToStaticMarkup(<HomeCities />), /data-media-slot="home-city-kolkata"/);
 });

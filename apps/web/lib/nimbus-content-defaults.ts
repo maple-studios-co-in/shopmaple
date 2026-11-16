@@ -223,7 +223,7 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
   const page = resolveNimbusPageContent(site.nimbusPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
-    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt };
+    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt, slot: key };
   };
   const sections = page.sections.filter(item => item.enabled).map(item => item.key);
   const hero = media("nimbus-hero-poster");

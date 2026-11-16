@@ -54,7 +54,7 @@ export function BulkEnquiry({ context, content, site }: {
     hero: (
       <section className="bulk-hero" data-service-section="hero" aria-labelledby="bulk-hero-title">
         <div className="bulk-hero-media">
-          <Image src={opening.image} alt={opening.alt} fill sizes="100vw" preload />
+          <Image data-media-slot="bulk-hero" src={opening.image} alt={opening.alt} fill sizes="100vw" preload />
         </div>
         <div className="bulk-hero-intro">
           <Eyebrow text={page.eyebrow} />
@@ -113,7 +113,7 @@ export function BulkEnquiry({ context, content, site }: {
             return (
               <li key={step.key} className="bulk-step" data-bulk-step={step.key} data-reveal="">
                 <div className="bulk-step-media">
-                  <Image src={art.image} alt={art.alt} width={1254} height={1254} loading="lazy"
+                  <Image data-media-slot={`bulk-step-${step.key}`} src={art.image} alt={art.alt} width={1254} height={1254} loading="lazy"
                     sizes="(max-width: 599px) calc(100vw - 40px), (max-width: 899px) 40vw, 29vw" />
                 </div>
                 <div className="bulk-step-copy">
@@ -136,7 +136,7 @@ export function BulkEnquiry({ context, content, site }: {
         </div>
         <div className="bulk-proposal-aside" data-reveal="">
           <div className="bulk-proposal-media">
-            <Image src={materials.image} alt={materials.alt} width={1280} height={1024} loading="lazy" sizes="(max-width: 999px) calc(100vw - 40px), 31vw" />
+            <Image data-media-slot="bulk-proposal" src={materials.image} alt={materials.alt} width={1280} height={1024} loading="lazy" sizes="(max-width: 999px) calc(100vw - 40px), 31vw" />
           </div>
           <div className="bulk-conversation" data-bulk-conversation="">
             <h3>{page.proposal.contactHeading}</h3>
