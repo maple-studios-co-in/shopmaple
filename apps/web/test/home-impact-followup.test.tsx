@@ -57,10 +57,11 @@ test("the statement band reads as the owner's line, 'custom-built' in script, it
   assert.equal(text(band.querySelector("[data-typed-live]")), "it is custom-built.");
 });
 
-test("offer cards carry the frame's artwork edge to edge, with no second arrow on top of the artwork's own", async () => {
+// The bundled artwork's painted arrow was painted out (owner, 16 Nov 2026): each card carries the live arrow instead.
+test("offer cards carry the frame's artwork edge to edge, each with the live arrow", async () => {
   const tiles = [...section(await renderHome(), "offers").querySelectorAll("[data-offer-tile]")];
   assert.deepEqual(tiles.map((tile) => shownSrc(tile.querySelector("img")!)), ["clearance-sale", "minimum-30", "best-buy-50k", "furniture-25k"].map((key) => `/media/home/offer-${key}.webp`));
-  assert.equal(tiles.filter((tile) => tile.querySelector("[data-offer-arrow]")).length, 0);
+  assert.equal(tiles.filter((tile) => tile.querySelector("[data-offer-arrow]")).length, tiles.length);
 });
 
 test("Our Social Proof has no Instagram icon or handle under its heading", async () => {

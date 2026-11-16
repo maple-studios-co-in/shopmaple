@@ -442,6 +442,20 @@
     padding: 8px;
   }
 }
+/* On the bundled pictures the arrow takes the place of the one they used to paint, clear of their words, which sit lower
+   than on the uploads: its centre at the spot each picture names (components/home-page.tsx), never past the card's
+   edge. */
+[data-offer-arrow][data-offer-arrow-placed] {
+  left: calc(var(--offer-arrow-x) - 17px);
+  top: clamp(6px, calc(var(--offer-arrow-y) - 17px), calc(100% - 40px));
+  bottom: auto;
+}
+@media (max-width: 749px) {
+  [data-offer-arrow][data-offer-arrow-placed] {
+    left: calc(var(--offer-arrow-x) - 15px);
+    top: clamp(4px, calc(var(--offer-arrow-y) - 15px), calc(100% - 34px));
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   [data-offer-arrow] {
     transition: none;
