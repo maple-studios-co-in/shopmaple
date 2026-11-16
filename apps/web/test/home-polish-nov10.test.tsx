@@ -5,7 +5,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
 import { InstagramRail } from "../components/motion-rail";
-import { mountMarquee } from "../lib/home-effects";
+import { mountMarquee, mountMarqueeSteps } from "../lib/home-effects";
 import instagramPosts from "../data/instagram-posts.json";
 
 // The owner's homepage notes of 10 Nov 2026: the Social Proof row held by the pointer instead of a pause button,
@@ -35,7 +35,9 @@ test("the Social Proof row has no pause button: the cards themselves are all the
   const page = new JSDOM(renderToStaticMarkup(<InstagramRail posts={posts} />)).window.document;
   const row = page.querySelector<HTMLElement>("[data-marquee]")!;
   assert.ok(row, "the row drifts");
-  assert.equal(row.querySelectorAll("input, label, button, [data-marquee-toggle], [data-marquee-pause]").length, 0, "no switch over the row");
+  assert.equal(row.querySelectorAll("input, label, [data-marquee-toggle], [data-marquee-pause]").length, 0, "no switch over the row");
+  // QA report, 16 Nov 2026: previous and next buttons under the row step through it; still nothing pauses it.
+  assert.deepEqual([...row.querySelectorAll("button")].map(button => button.getAttribute("aria-label")), ["Previous Instagram posts", "Next Instagram posts"]);
   assert.equal(row.querySelectorAll("[data-marquee-track]").length, 1, "the drifting track is marked for the eased hold");
   assert.equal(page.querySelectorAll("[data-marquee-group]:not([data-marquee-copy]) a").length, posts.length);
   const css = styles("../styles/home-impact.css");
@@ -130,6 +132,63 @@ test("with less motion asked for, or no drift to ease, the row is left alone", (
   Object.assign(root.querySelector("[data-marquee-track]")!, { getAnimations: () => [] });
   const stop = mountMarquee(root, false);
   assert.ok(!root.hasAttribute("data-marquee-eased"), "the stylesheet's hold stays in charge");
+  stop();
+});
+
+/** The row laid out as a browser would: posts 200px apart (with their gap), so one copy of four is 800px long. */
+function stepDom() {
+  const page = marqueeDom();
+  const posts = [...page.root.querySelectorAll<HTMLElement>("[data-marquee-group]:not([data-marquee-copy]) a")];
+  posts.forEach((post, i) => Object.defineProperty(post, "offsetLeft", { value: i * 200 }));
+  Object.defineProperty(page.root.querySelector("[data-marquee-track]")!, "offsetWidth", { value: 2 * posts.length * 200 });
+  Object.assign(page.drift, { currentTime: 0, effect: { getTiming: () => ({ duration: 24000 }) } });
+  const press = (which: "prev" | "next") => page.root.querySelector<HTMLButtonElement>(`[data-marquee-${which}]`)!.click();
+  return { ...page, drift: page.drift as { playbackRate: number; currentTime: number }, press };
+}
+
+test("previous and next glide the drifting row one post along and settle with a post at its start", () => {
+  const { root, drift, run, press, pending } = stepDom();
+  const stop = mountMarqueeSteps(root, false);
+  assert.ok(root.hasAttribute("data-marquee-steps"), "the buttons show once they work");
+  press("next");
+  const glide = run(40).map(() => drift.currentTime);
+  assert.equal(drift.currentTime, 6000, "one post is a quarter of the 24 s lap");
+  assert.ok(glide.every((time, i) => time >= (i ? glide[i - 1]! : 0)), "gliding forward, never jumping back");
+  assert.equal(pending(), 0, "and resting once there");
+  press("next"); press("next");
+  run(40);
+  assert.equal(drift.currentTime, 18000, "two quick presses go two posts");
+  press("prev");
+  run(40);
+  assert.equal(drift.currentTime, 12000);
+  drift.currentTime = 7000; // a sixth of the way past a post, as the drift leaves it
+  press("next");
+  run(40);
+  assert.equal(drift.currentTime, 12000, "next lines up the following post");
+  drift.currentTime = 7000;
+  press("prev");
+  run(40);
+  assert.equal(drift.currentTime, 0, "previous passes the post that is mostly in view for the one before it: a press always travels");
+  drift.currentTime = 10000; // two thirds of the way along
+  press("prev");
+  run(40);
+  assert.equal(drift.currentTime, 6000, "the post that is mostly gone comes back into view");
+  drift.currentTime = 0;
+  press("prev");
+  const back = run(40).map(() => drift.currentTime);
+  assert.equal(drift.currentTime, 18000, "before the first post comes the last, a lap round, which shows the same row");
+  assert.ok(back.every((time, i) => time <= (i ? back[i - 1]! : 24000) && time >= 18000), "gliding back without a jump");
+  stop();
+  assert.ok(!root.hasAttribute("data-marquee-steps"));
+});
+
+test("with less motion asked for, the buttons scroll the still row one post at a time", () => {
+  const { root, press } = stepDom();
+  const scrolls: ScrollToOptions[] = [];
+  Object.assign(root.querySelector("[data-marquee-viewport]")!, { scrollBy: (options: ScrollToOptions) => scrolls.push(options) });
+  const stop = mountMarqueeSteps(root, true);
+  press("next"); press("prev");
+  assert.deepEqual(scrolls, [{ left: 200, behavior: "auto" }, { left: -200, behavior: "auto" }]);
   stop();
 });
 

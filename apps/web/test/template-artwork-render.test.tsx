@@ -102,7 +102,7 @@ async function checkArtwork(edited: boolean, fallback = false) {
     if (page === "home") {
       assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Explore Collection");
       assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");
-      assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot])"), null, "no video control (the dots are slide buttons)");
+      assert.equal(doc.querySelector(".hero-film button:not([data-slider-dot], [data-slider-prev], [data-slider-next])"), null, "no video control (the dots and arrows are slide buttons)");
       if (!fallback || doc.querySelector(".home-newsletter")) assert.equal(doc.querySelector(".home-newsletter h2")?.textContent, "Soft presence. Strong craftsmanship.");
     }
     if (page === "nimbus") {

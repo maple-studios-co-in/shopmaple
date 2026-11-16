@@ -221,7 +221,9 @@ test("a drifting row draws its items twice, the second pass hidden and out of th
   assert.equal(groups[1]!.getAttribute("aria-hidden"), "true");
   assert.equal(groups[1]!.querySelector("a")?.getAttribute("tabindex"), "-1");
   assert.equal(groups[0]!.querySelector("a")?.hasAttribute("tabindex"), false);
-  assert.equal(page.querySelector("input, button, [data-marquee-toggle]"), null, "the pointer and keyboard focus hold it instead");
+  assert.equal(page.querySelector("input, [data-marquee-toggle], button:not([data-marquee-prev], [data-marquee-next])"), null, "the pointer and keyboard focus hold it instead");
+  // QA report, 16 Nov 2026: previous and next buttons step through the row; neither pauses it.
+  assert.deepEqual(all(page, "[data-marquee-prev], [data-marquee-next]").map(button => button.getAttribute("aria-label")), ["Previous Instagram posts", "Next Instagram posts"]);
   const still = doc(<HomeMarquee label="Instagram posts" seconds={30} autoplay={false} items={items} />);
   assert.equal(still.querySelectorAll("[data-marquee-group]").length, 1, "without motion there is one plain row");
   assert.equal(still.querySelector("[data-marquee-toggle]"), null);

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test, beforeEach, afterEach } from "node:test";
+import { test, beforeEach, afterEach, mock } from "node:test";
 import { JSDOM } from "jsdom";
 import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -164,14 +164,22 @@ test("desktop menu includes visual discovery and a working custom furniture enqu
   }
 });
 
-async function leaveWithMouse(element: Element) {
+async function leaveWithMouse(element: Element, to: Element | null = document.getElementById("outside")) {
   const event = new dom.window.MouseEvent("pointerout", {
     bubbles: true,
-    relatedTarget: document.getElementById("outside"),
+    relatedTarget: to,
   });
   Object.defineProperty(event, "pointerType", { value: "mouse" });
   await act(async () => { element.dispatchEvent(event); });
 }
+/** A mouse coming onto `element` from outside the page's React root. */
+async function enterWithMouse(element: Element) {
+  const event = new dom.window.MouseEvent("pointerover", { bubbles: true, relatedTarget: document.getElementById("outside") });
+  Object.defineProperty(event, "pointerType", { value: "mouse" });
+  await act(async () => { element.dispatchEvent(event); });
+}
+/** A mouse moving between two elements of the menu: React reads both ends from the `pointerout` on the first. */
+const moveWithMouse = (from: Element, to: Element) => leaveWithMouse(from, to);
 
 async function withControlledDrawer(check: () => Promise<void>) {
   configureMobileBrowser();
@@ -220,18 +228,52 @@ test("controlled mobile category navigation closes the drawer and restores prior
 
 test("desktop mouse-only departure and focus outside still dismiss the menu", async () => {
   const root = createRoot(document.getElementById("root")!);
+  mock.timers.enable({ apis: ["setTimeout"] });
   try {
     await act(async () => root.render(<DesktopNavigation />));
     const trigger = [...document.querySelectorAll("button")].find(button => button.textContent === "Living Room")!;
     await act(async () => trigger.click());
     await leaveWithMouse(document.querySelector("nav")!);
+    assert.equal(trigger.getAttribute("aria-expanded"), "true", "the panel waits a moment for the pointer to come back");
+    await act(async () => { mock.timers.tick(300); });
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     await act(async () => trigger.click());
     await act(async () => document.querySelector<HTMLAnchorElement>(".maple-mega a")!.focus());
     await act(async () => document.getElementById("outside")!.focus());
     assert.equal(trigger.getAttribute("aria-expanded"), "false");
     assert.equal(document.activeElement, document.getElementById("outside"));
-  } finally { await act(async () => root.unmount()); }
+  } finally { mock.timers.reset(); await act(async () => root.unmount()); }
+});
+
+// QA report, 16 Nov 2026: the panel shut while the pointer crossed the strip of header between the word and the panel.
+test("desktop menu stays open while the pointer travels from the word to its panel", async () => {
+  const root = createRoot(document.getElementById("root")!);
+  mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    await act(async () => root.render(<DesktopNavigation />));
+    const nav = document.querySelector("nav")!;
+    const [living, bedroom] = ["Living Room", "Bedroom"].map(name => [...document.querySelectorAll("button")].find(button => button.textContent === name)!);
+    await enterWithMouse(living!);
+    assert.equal(living!.getAttribute("aria-expanded"), "true", "hovering a closed row opens the room at once");
+    // Off the row for a moment (the strip of header), then onto the panel: it never closes.
+    await leaveWithMouse(living!);
+    await act(async () => { mock.timers.tick(200); });
+    const option = document.querySelector(".maple-mega a")!;
+    await enterWithMouse(option);
+    await act(async () => { mock.timers.tick(1000); });
+    assert.equal(living!.getAttribute("aria-expanded"), "true", "coming back within the pause keeps the panel");
+    // Passing over another room's word on the way does not swap the panel; resting on it does.
+    await moveWithMouse(option, bedroom!);
+    await moveWithMouse(bedroom!, nav);
+    await act(async () => { mock.timers.tick(1000); });
+    assert.equal(living!.getAttribute("aria-expanded"), "true", "a word only passed over leaves the open panel alone");
+    await moveWithMouse(nav, bedroom!);
+    await act(async () => { mock.timers.tick(159); });
+    assert.equal(living!.getAttribute("aria-expanded"), "true", "not before the pause is up");
+    await act(async () => { mock.timers.tick(1); });
+    assert.equal(bedroom!.getAttribute("aria-expanded"), "true", "a word rested on opens its own panel");
+    assert.equal(living!.getAttribute("aria-expanded"), "false");
+  } finally { mock.timers.reset(); await act(async () => root.unmount()); }
 });
 
 for (const living of [false, true]) {

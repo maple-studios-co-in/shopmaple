@@ -984,7 +984,8 @@
 .home-carousel button.motion-playback-control:focus-visible .sr-only { position: static; width: auto; height: auto; clip: auto; clip-path: none; }
 
 /* Bestsellers: a thin, always-visible scrollbar instead of arrows (owner, 2026-11-01). */
-.home-scroll-rail {
+/* The grab hand only while there is more row to drag to (components/home-scroll-rail.tsx). */
+.home-scroll-rail[data-scrollable] {
   cursor: grab;
 }
 .home-scroll-rail a,

@@ -121,6 +121,7 @@ test("a request with no choices says so, and a refused one keeps the form with t
     const form = dialog.querySelector("form")!;
     (form.elements.namedItem("name") as HTMLInputElement).value = "Asha";
     (form.elements.namedItem("email") as HTMLInputElement).value = "asha@example.com";
+    (form.elements.namedItem("phone") as HTMLInputElement).value = "98765 43210";
     await act(async () => { form.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true })); });
     await act(async () => {});
     assert.equal(sent[0]!.message, "Customisation quote request\nFabric: Not chosen\nWood polish: Not chosen");

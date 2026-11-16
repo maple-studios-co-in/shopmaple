@@ -10,6 +10,9 @@
   outline-offset: 4px;
 }
 .home-carousel-controls button:disabled { opacity: .45; cursor: default; }
+/* An arrow at its end of the row: still reachable by keyboard, but plainly spent. */
+.home-carousel-controls button[aria-disabled="true"],
+.home-carousel-controls button[aria-disabled="true"]:hover { opacity: .35; cursor: default; background: transparent; }
 .instagram-motion { --social-columns: 6; --social-gap: calc(5% / var(--social-columns)); }
 .home-social .instagram-motion .home-instagram-posts {
   display: flex;

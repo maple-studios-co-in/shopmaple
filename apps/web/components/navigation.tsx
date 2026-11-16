@@ -64,6 +64,10 @@ function CategoryLink({
     </Link>
   );
 }
+/** How long a mouse may be off the menu row and its panel before the panel closes. */
+const closeDelayMs = 300;
+/** How long the pointer rests on another word before its panel replaces the open one (or a plain link closes it). */
+const switchDelayMs = 160;
 export function DesktopNavigation({
   siteChrome = defaultSiteChrome,
   artwork = defaultMenuArtwork,
@@ -73,6 +77,16 @@ export function DesktopNavigation({
   const nav = useRef<HTMLElement>(null);
   const triggers = useRef(new Map<string, HTMLButtonElement>());
   const pathname = usePathname();
+  // A mouse that leaves the row, or crosses another word on its way down to the panel, changes the menu only after a
+  // short pause, so a slightly slow or diagonal path to an option no longer shuts the panel under it (QA report, 16 Nov
+  // 2026). Coming back within the pause keeps it.
+  const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hold = () => clearTimeout(pending.current);
+  const changeSoon = (next: string | null, wait: number) => {
+    hold();
+    pending.current = setTimeout(() => setActive(next), wait);
+  };
+  useEffect(() => hold, []);
   const group = navigation.find(
     (item) =>
       item.id === active &&
@@ -103,18 +117,22 @@ export function DesktopNavigation({
       ref={nav}
       className="desktop-nav maple-desktop-nav"
       aria-label="Main navigation"
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") hold();
+      }}
       onPointerLeave={(event) => {
         if (
           event.pointerType === "mouse" &&
+          active &&
           !event.currentTarget
             .querySelector(".maple-mega")
             ?.contains(document.activeElement)
         ) {
-          setActive(null);
+          changeSoon(null, closeDelayMs);
         }
       }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setActive(null);
+        if (!event.currentTarget.contains(event.relatedTarget)) { hold(); setActive(null); }
       }}
       onKeyDown={(event) => {
         if (event.key === "Escape" && active) {
@@ -138,13 +156,21 @@ export function DesktopNavigation({
               aria-expanded={active === item.id}
               aria-controls={`maple-panel-${item.id}`}
               onPointerEnter={(event) => {
-                if (event.pointerType === "mouse") setActive(item.id);
+                if (event.pointerType !== "mouse") return;
+                // Opening from a closed row is at once; another room's panel already open waits a beat, in case the
+                // pointer is only passing over this word on its way down.
+                if (active === null || active === item.id) { hold(); setActive(item.id); }
+                else changeSoon(item.id, switchDelayMs);
               }}
-              onClick={(event) =>
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse" && active !== item.id) hold();
+              }}
+              onClick={(event) => {
+                hold();
                 setActive(
                   event.detail === 0 && active === item.id ? null : item.id,
-                )
-              }
+                );
+              }}
               onKeyDown={(event) => {
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
@@ -168,13 +194,22 @@ export function DesktopNavigation({
               >
                 {item.feature !== "none" && (
                   <div className="maple-mega-feature">
-                    <Image
-                      src={artwork.features[item.feature].image}
-                      alt={artwork.features[item.feature].alt}
-                      width={320}
-                      height={330}
-                      sizes="240px"
-                    />
+                    {/* The room's photo in a round frame with its arrow, both live (QA report, 16 Nov 2026: the card was one
+                        flat picture with the circle and arrow painted on). The whole card opens the room through its
+                        Explore link. The original pictures still carry that painted frame, so they sit a little closer,
+                        out of its reach (`data-framed-art`); a staff upload shows whole. */}
+                    <div className="maple-mega-feature-media" data-framed-art={artwork.features[item.feature].image === defaultMenuArtwork.features[item.feature].image ? "" : undefined}>
+                      <div className="maple-mega-feature-photo">
+                        <Image
+                          src={artwork.features[item.feature].image}
+                          alt={artwork.features[item.feature].alt}
+                          width={320}
+                          height={320}
+                          sizes="240px"
+                        />
+                      </div>
+                      <span className="maple-mega-feature-arrow" aria-hidden="true"><ArrowRight size={16} strokeWidth={1.75} /></span>
+                    </div>
                     <span data-mega-room>{item.label}</span>
                     <h2>{megaFeatures[item.feature].heading}</h2>
                     <p>{megaFeatures[item.feature].body}</p>
@@ -255,8 +290,13 @@ export function DesktopNavigation({
             href={chromeHref(item)}
             data-nav-sale={item.id === "nav-sale" ? "" : undefined}
             aria-current={pathname === item.href ? "page" : undefined}
-            onPointerEnter={() => setActive(null)}
-            onFocus={() => setActive(null)}
+            onPointerEnter={(event) => {
+              if (event.pointerType === "mouse" && active) changeSoon(null, switchDelayMs);
+            }}
+            onPointerLeave={(event) => {
+              if (event.pointerType === "mouse") hold();
+            }}
+            onFocus={() => { hold(); setActive(null); }}
           >
             {item.label}
           </Link>

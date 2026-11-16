@@ -77,9 +77,10 @@ test("older published homepage retains original copy, assets, local links and fo
   assert.ok(doc.querySelector('.home-project-form input[name="email"][required]'));
   assert.ok(doc.querySelector('.home-newsletter-form input[type="email"][required]'));
   // The shop film, its poster and the customer's film were Shopify files (left the store 11 Nov 2026). With no Keeri photo
-  // listed for the stills, the hero keeps its words over the tile; the testimonial keeps its words.
+  // listed for the stills, the hero shows Terra's own two photos under its words (QA report, 16 Nov 2026); the
+  // testimonial keeps its words.
   assert.equal(doc.querySelector(".hero-film video"), null);
-  assert.equal(doc.querySelector(".hero-film img"), null);
+  assert.deepEqual([...doc.querySelectorAll(".hero-film img")].map(img => /terra-collection/.test(decodeURIComponent(img.getAttribute("src") ?? ""))), [true, true]);
   assert.equal(doc.querySelector("[data-hero-headline]")?.textContent, "Timeless Craftsmanship for Modern Living");
   assert.equal(doc.querySelector(".home-testimonial video"), null);
 });
@@ -87,7 +88,8 @@ test("older published homepage retains original copy, assets, local links and fo
 test("published detail copy reaches every homepage section and stable keys keep their assets and destinations", async () => {
   const { doc, requests } = await renderHome(editedDetails());
   assert.equal(doc.querySelector(".hero-cta")?.textContent?.trim(), "Discover our collection");
-  assert.equal(doc.querySelector(".hero-cta")?.getAttribute("href"), "/nimbus-collection");
+  // No Keeri photo is listed here, so the stills are Terra's two, each opening Terra (QA report, 16 Nov 2026).
+  assert.deepEqual([...doc.querySelectorAll(".hero-cta")].map((node) => node.getAttribute("href")), ["/terra-collection", "/terra-collection"]);
   assert.deepEqual(texts(doc, ".category-tile h2"), ["Restful beds", "Welcoming sofas", "Everyday chairs", "Gathering tables"]);
   assert.deepEqual(texts(doc, ".category-tile p"), Array(4).fill("View Collection"));
   assert.ok(!doc.body.textContent!.includes("Made for your budget"), "the admin's price lines are not on the Impact Layout tiles");

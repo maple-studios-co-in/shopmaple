@@ -14,6 +14,8 @@ export type SiteWordEntry = { text: string; label: string; place: SitePlace; mul
 
 export const siteWordList = {
   // Homepage
+  "home.hero.nimbusLabel": { place: "Homepage", label: "Hero: small heading on the Nimbus photos", text: "The Nimbus Collection" },
+  "home.hero.terraLabel": { place: "Homepage", label: "Hero: small heading on the Terra photos", text: "The Terra Collection" },
   "home.bestsellers.eyebrow": { place: "Homepage", label: "Bestsellers: small heading", text: "Handpicked favourites" },
   "home.bestsellers.lede": { place: "Homepage", label: "Bestsellers: line under the heading", text: "Discover the pieces that make a room feel complete." },
   "home.bestsellers.viewAll": { place: "Homepage", label: "Bestsellers: View all link (before the heading)", text: "View all" },

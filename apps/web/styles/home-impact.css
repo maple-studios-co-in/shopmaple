@@ -63,6 +63,15 @@
   max-width: 170px;
   font: 400 13px/1.45 var(--font-text);
 }
+/* The collection a photo belongs to (Nimbus or Terra), over its headline. */
+[data-home-section="hero"] .hero-introduction > p.hero-eyebrow {
+  margin: 0 0 14px;
+  max-width: none;
+  color: rgb(255 255 255 / 0.88);
+  font: 500 11px/1.3 var(--font-text);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
 /* In the flow of the film's copy, lined up under the headline as in the frame; relative (not static) so its fill from
    the pointer stays inside it, with the legacy button's corner offsets cleared (they nudged it 20px right and up). */
 [data-home-section="hero"] .hero-cta {
@@ -271,16 +280,17 @@
   margin: 34px 0 0;
   padding: 0;
 }
+/* Each promise sits in the middle of its quarter, so the four spread evenly across the row (QA report, 16 Nov 2026:
+   without icons the words hugged the left of each quarter and the row looked pushed to the left). */
 [data-home-section="difference"] .home-difference li {
+  justify-content: center;
   gap: 10px;
   padding: 0 12px;
   border-right: 1px solid #e3e0da;
+  text-align: center;
 }
 [data-home-section="difference"] .home-difference li:last-child {
   border-right: 0;
-}
-[data-home-section="difference"] .home-difference li:first-child {
-  padding-left: 0;
 }
 [data-home-section="difference"] .home-difference li img {
   width: clamp(48px, 4.6vw, 64px);
@@ -393,8 +403,13 @@
   aspect-ratio: 320 / 168;
   border-radius: 12px;
 }
+/* An offer's picture carries its words at the left (the uploads are 2:1, the tile a little narrower), so the picture is
+   anchored there: the tile's crop and the hover zoom trim the furniture side, never the words (QA report, 16 Nov 2026:
+   "Clearance SALE" lost its first letters, most of all under the zoom). */
 [data-home-section="offers"] .home-offer-tiles img {
   object-fit: cover;
+  object-position: left center;
+  transform-origin: left center;
 }
 /* The categories' arrow on every offer (owner, 10 Nov 2026): at its bottom left, a white circle with a dark maple
    arrow. Pointing at the card trades the colours and nudges it on, as the category circles' arrows do. */
@@ -557,13 +572,14 @@
 /* The banners scale their words with the artwork, which left the offer near 9px on a small laptop or tablet (750px to
    1300px wide); they keep a readable floor that still fits the artwork, as the room pages' banners do (owner, 10 Nov 2026). */
 @container (min-width: 750px) {
-  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-supporting,
-  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-offer {
+  /* Cards keep their own square sizes at every width (styles/campaign-banners.css). */
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"], [data-campaign-layout="card"]) .campaign-copy .campaign-supporting,
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"], [data-campaign-layout="card"]) .campaign-copy .campaign-offer {
     font-size: max(12px, 0.947368cqw);
     line-height: max(16px, 1.315789cqw);
   }
-  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-label,
-  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"]) .campaign-copy .campaign-eligibility {
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"], [data-campaign-layout="card"]) .campaign-copy .campaign-label,
+  [data-home-section] .campaign-banner:not([data-campaign-layout="strip"], [data-campaign-layout="card"]) .campaign-copy .campaign-eligibility {
     font-size: max(10px, 0.631579cqw);
     line-height: max(14px, 0.894737cqw);
   }
@@ -1292,6 +1308,17 @@ html[data-home-effects="live"] [data-typed][data-typing] [data-typed-live]::afte
 }
 .home-social .instagram-motion .home-instagram-posts > a img { transition: transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1); }
 .home-social .instagram-motion .home-instagram-posts > a:hover img { transform: scale(1.06); }
+/* Each post clips its own photo's zoom on its own layer. Inside the drifting row a growing photo is drawn apart from the
+   page, and a rounded `overflow: hidden` alone could lag a frame behind it, so sweeping the pointer across several posts
+   let photos spill over their neighbours for a moment (QA report, 16 Nov 2026). */
+.home-social .instagram-motion .home-instagram-posts > a {
+  isolation: isolate;
+  clip-path: inset(0 round 10px);
+  transform: translateZ(0);
+}
+/* The row's previous and next buttons show once the homepage's effects have wired them (lib/home-effects.ts). */
+.home-marquee:not([data-marquee-steps]) .home-marquee-steps { display: none; }
+.home-social .home-marquee-steps { margin-top: 16px; padding-inline: 0; }
 
 
 

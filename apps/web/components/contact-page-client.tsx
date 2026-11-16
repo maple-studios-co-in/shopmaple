@@ -4,6 +4,7 @@ import { SiteWord, useSiteWord, useSiteWordPlaceholder } from "@/components/site
 import { ChevronDown } from "lucide-react";
 import type { EnquiryContext } from "@/lib/enquiry-context";
 import { useEnquiry } from "@/components/use-enquiry";
+import { useEnquiryValidation } from "@/components/enquiry-validation";
 
 const otherTopic = "Something else";
 // The topic and order number lead the message, so the whole stays within the enquiry's 5,000 characters.
@@ -27,22 +28,27 @@ export function ContactEnquiryForm({ heading, note, topics, context }: {
 }) {
   const id = useId();
   const enquiry = useEnquiry();
+  const check = useEnquiryValidation({ name: "required", phone: "optional", message: "required", messagePrompt: "Please tell us how we can help." });
   const form = useRef<HTMLFormElement>(null);
   const [topic, setTopic] = useState("");
   const sent = Boolean(enquiry.message) && !enquiry.failed;
+  const { reset } = check;
   useEffect(() => {
     if (!sent) return;
     form.current?.reset();
     setTopic("");
-  }, [sent, enquiry.message]);
+    reset();
+  }, [sent, enquiry.message, reset]);
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const values = check.check(event.currentTarget);
+    if (!values) return;
     const data = new FormData(event.currentTarget);
     const value = (name: string) => String(data.get(name) ?? "").trim();
     const lead = [value("topic") && `I need help with: ${value("topic")}`, value("order") && `Order number: ${value("order")}`].filter(Boolean).join("\n");
     void enquiry.submit({
-      kind: "contact", name: value("name"), email: value("email"), phone: value("phone"),
-      message: lead ? `${lead}\n\n${value("message")}` : value("message"), context,
+      kind: "contact", name: values.name, email: values.email, phone: values.phone,
+      message: lead ? `${lead}\n\n${values.message}` : values.message, context,
     });
   }
   const box = {
@@ -53,7 +59,7 @@ export function ContactEnquiryForm({ heading, note, topics, context }: {
   const selectTopic = useSiteWord("contact.form.topicPlaceholder");
   const at = (name: string) => `${id}-${name}`;
   return (
-    <form ref={form} className="contact-form" onSubmit={submit} onChange={enquiry.clear} aria-labelledby={at("title")}>
+    <form ref={form} className="contact-form" onSubmit={submit} onChange={event => { enquiry.clear(); check.onChange(event); }} aria-labelledby={at("title")} noValidate>
       <h3 className="contact-form-title" id={at("title")}>{heading}</h3>
       {(context.product || context.pincode) && (
         <div className="contact-form-context">
@@ -63,14 +69,17 @@ export function ContactEnquiryForm({ heading, note, topics, context }: {
       )}
       <div className="contact-fields">
         <Field id={at("name")} label={<SiteWord k="contact.form.nameLabel" />} required>
-          <input id={at("name")} name="name" autoComplete="name" {...box.name} required maxLength={100} />
+          <input id={at("name")} name="name" autoComplete="name" {...box.name} required maxLength={100} {...check.field("name")} />
+          {check.message("name")}
         </Field>
         <Field id={at("email")} label={<SiteWord k="contact.form.emailLabel" />} required>
           <input id={at("email")} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false}
-            {...box.email} required maxLength={254} />
+            {...box.email} required maxLength={254} {...check.field("email")} />
+          {check.message("email")}
         </Field>
         <Field id={at("phone")} label={<SiteWord k="contact.form.phoneLabel" />}>
-          <input id={at("phone")} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} />
+          <input id={at("phone")} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} {...check.field("phone")} />
+          {check.message("phone")}
         </Field>
         <Field id={at("topic")} label={<SiteWord k="contact.form.topicLabel" />}>
           {/* The design writes the choice with a small arrow just after it; the native list, unseen over it, does the choosing. */}
@@ -88,7 +97,8 @@ export function ContactEnquiryForm({ heading, note, topics, context }: {
           <input id={at("order")} name="order" autoComplete="off" {...box.order} maxLength={40} />
         </Field>
         <Field id={at("message")} label={<SiteWord k="contact.form.messageLabel" />} required wide>
-          <textarea id={at("message")} name="message" {...box.message} required maxLength={messageLimit} />
+          <textarea id={at("message")} name="message" {...box.message} required maxLength={messageLimit} {...check.field("message")} />
+          {check.message("message")}
         </Field>
       </div>
       <p className="contact-form-note">{note}</p>

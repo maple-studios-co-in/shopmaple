@@ -34,7 +34,7 @@ const section = (doc: Document, key: string) => doc.querySelector(`[data-home-se
 test("the default hero shows stills, with no film and no play or pause control", async () => {
   const hero = section(await renderHome(), "hero");
   assert.equal(hero.querySelector("video"), null);
-  assert.equal(hero.querySelectorAll("[data-hero-slide] img").length, 4);
+  assert.equal(hero.querySelectorAll("[data-hero-slide] img").length, 6, "the workshop, three Nimbus rooms and two Terra photos");
   assert.equal([...hero.querySelectorAll("button")].filter((button) => /play|pause|video|motion/i.test(button.getAttribute("aria-label") ?? button.textContent ?? "")).length, 0, "no video controls");
 });
 

@@ -57,7 +57,8 @@ async function withHero(reducedAtStart: boolean, check: (video: HTMLVideoElement
 test("the default hero has no film: its stills are pictures only", () => {
   const doc = new JSDOM(renderToStaticMarkup(<Hero photos={new Map([["arbor-sofa", "https://store.maplefurnishers.com/media/keeri/arbor.webp"]])} />)).window.document;
   assert.equal(doc.querySelector(".hero-film video"), null);
-  assert.deepEqual([...doc.querySelectorAll("[data-hero-slide]")].map(slide => slide.getAttribute("data-hero-slide-kind")), ["image"]);
+  // The workshop still and Terra's two photos (QA report, 16 Nov 2026: Terra gained slides of its own).
+  assert.deepEqual([...doc.querySelectorAll("[data-hero-slide]")].map(slide => slide.getAttribute("data-hero-slide-kind")), ["image", "image", "image"]);
 });
 
 test("server rendering shows the poster and the film, muted and looping, with no controls", () => {

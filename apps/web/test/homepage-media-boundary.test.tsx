@@ -22,7 +22,9 @@ const partial: TemplateMedia = [
 test("homepage islands retain exact default art and resolve partial overrides by slot", () => {
   for (const media of [undefined, partial]) {
     const doc = new JSDOM(renderToStaticMarkup(<><Hero media={media} photos={photos} /><HomeNimbus media={media} /></>)).window.document;
-    assert.deepEqual([...doc.querySelectorAll(".hero-film [data-hero-slide] img")].map(node => node.getAttribute("src")), [keeri("arbor"), keeri("aurevo"), keeri("altura"), keeri("meridian")]);
+    const stills = [...doc.querySelectorAll(".hero-film [data-hero-slide] img")].map(node => node.getAttribute("src") ?? "");
+    assert.deepEqual([stills[0], stills[1], stills[3], stills[5]], [keeri("arbor"), keeri("aurevo"), keeri("altura"), keeri("meridian")]);
+    assert.deepEqual([stills[2], stills[4]].map(src => decodeURIComponent(src ?? "").match(/terra-collection\/([a-z-]+)\.webp/)?.[1]), ["hero", "room-lobby"], "Terra's photos between the Nimbus rooms");
     assert.equal(doc.querySelector(".hero-film img")?.getAttribute("alt"), "Maple furniture");
     assert.equal(doc.querySelector(".hero-film video"), null, "no default film");
     assert.deepEqual([...doc.querySelectorAll(".category-tile img")].map(node => node.getAttribute("src")), [

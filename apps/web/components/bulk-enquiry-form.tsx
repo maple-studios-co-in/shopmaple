@@ -4,6 +4,7 @@ import { SiteWord, useSiteWord, useSiteWordPlaceholder } from "@/components/site
 import { ArrowRight } from "lucide-react";
 import type { EnquiryContext } from "@/lib/enquiry-context";
 import { useEnquiry } from "@/components/use-enquiry";
+import { useEnquiryValidation } from "@/components/enquiry-validation";
 
 export type BulkProposalCopy = { formHeading: string; note: string; cta: string; referencesTitle: string; referencesNote: string };
 
@@ -24,17 +25,22 @@ function proposal(form: HTMLFormElement) {
 function Label({ text, required }: { text: ReactNode; required?: boolean }) {
   return <span className="bulk-field-label" data-field-label>{text}{required && <span aria-hidden="true"> *</span>}</span>;
 }
-function TextField({ label, required, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
-  return <label className="bulk-field"><Label text={label} required={required} /><input {...input} required={required} /></label>;
+/** `error` is the box's problem, shown under it once a send was tried (components/enquiry-validation.tsx). */
+function TextField({ label, required, error, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode; error?: ReactNode }) {
+  return <label className="bulk-field"><Label text={label} required={required} /><input {...input} required={required} />{error}</label>;
 }
-function Choice({ label, name, placeholder, options, required }: { label: ReactNode; name: string; placeholder: string; options: string[]; required?: boolean }) {
+function Choice({ label, name, placeholder, options, required, error, ...select }: {
+  label: ReactNode; name: string; placeholder: string; options: string[]; required?: boolean; error?: ReactNode;
+  "aria-invalid"?: true; "aria-describedby"?: string;
+}) {
   return (
     <label className="bulk-field">
       <Label text={label} required={required} />
-      <select name={name} required={required} defaultValue="">
+      <select name={name} required={required} defaultValue="" {...select}>
         <option value="">{placeholder}</option>
         {options.map(option => <option key={option} value={option}>{option}</option>)}
       </select>
+      {error}
     </label>
   );
 }
@@ -46,8 +52,13 @@ function Choice({ label, name, placeholder, options, required }: { label: ReactN
 export function BulkProposalForm({ copy, email, context }: { copy: BulkProposalCopy; email: string; context: EnquiryContext }) {
   const id = useId();
   const enquiry = useEnquiry();
+  const check = useEnquiryValidation(
+    { name: "required", phone: "required", message: "required", messagePrompt: "Please describe what you need: the pieces, sizes or finishes." },
+    { projectType: "Please choose the type of project.", city: "Please enter the project's city." },
+  );
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!check.check(event.currentTarget)) return;
     void enquiry.submit({ kind: "bulk", ...proposal(event.currentTarget), context });
   }
   const box = {
@@ -58,7 +69,7 @@ export function BulkProposalForm({ copy, email, context }: { copy: BulkProposalC
   };
   const selectType = useSiteWord("bulk.form.typePlaceholder"), selectDelivery = useSiteWord("bulk.form.deliveryPlaceholder");
   return (
-    <form className="bulk-form" onSubmit={submit} onChange={enquiry.clear} aria-labelledby={`${id}-title`}>
+    <form className="bulk-form" onSubmit={submit} onChange={event => { enquiry.clear(); check.onChange(event); }} aria-labelledby={`${id}-title`} noValidate>
       <h3 className="bulk-form-title" id={`${id}-title`}>{copy.formHeading}</h3>
       {(context.product || context.pincode) && (
         <p className="bulk-form-context" data-bulk-context>
@@ -67,17 +78,18 @@ export function BulkProposalForm({ copy, email, context }: { copy: BulkProposalC
         </p>
       )}
       <div className="bulk-form-fields">
-        <TextField label={<SiteWord k="bulk.form.nameLabel" />} name="name" autoComplete="name" {...box.name} maxLength={100} required />
+        <TextField label={<SiteWord k="bulk.form.nameLabel" />} name="name" autoComplete="name" {...box.name} maxLength={100} required {...check.field("name")} error={check.message("name")} />
         <TextField label={<SiteWord k="bulk.form.companyLabel" />} name="company" autoComplete="organization" {...box.company} maxLength={120} />
-        <TextField label={<SiteWord k="bulk.form.emailLabel" />} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} {...box.email} maxLength={254} required />
-        <TextField label={<SiteWord k="bulk.form.phoneLabel" />} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} required />
-        <Choice label={<SiteWord k="bulk.form.typeLabel" />} name="projectType" placeholder={selectType} options={projectTypes} required />
-        <TextField label={<SiteWord k="bulk.form.cityLabel" />} name="city" autoComplete="address-level2" {...box.city} maxLength={120} required />
+        <TextField label={<SiteWord k="bulk.form.emailLabel" />} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} {...box.email} maxLength={254} required {...check.field("email")} error={check.message("email")} />
+        <TextField label={<SiteWord k="bulk.form.phoneLabel" />} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} required {...check.field("phone")} error={check.message("phone")} />
+        <Choice label={<SiteWord k="bulk.form.typeLabel" />} name="projectType" placeholder={selectType} options={projectTypes} required {...check.field("projectType")} error={check.message("projectType")} />
+        <TextField label={<SiteWord k="bulk.form.cityLabel" />} name="city" autoComplete="address-level2" {...box.city} maxLength={120} required {...check.field("city")} error={check.message("city")} />
         <TextField label={<SiteWord k="bulk.form.quantityLabel" />} name="quantity" {...box.quantity} maxLength={60} />
         <Choice label={<SiteWord k="bulk.form.deliveryLabel" />} name="timeline" placeholder={selectDelivery} options={timelines} />
         <label className="bulk-field" data-wide="">
           <Label text={<SiteWord k="bulk.form.requirementsLabel" />} required />
-          <textarea name="message" rows={5} maxLength={4000} required {...box.requirements} />
+          <textarea name="message" rows={5} maxLength={4000} required {...box.requirements} {...check.field("message")} />
+          {check.message("message")}
         </label>
       </div>
       <a className="bulk-references" data-bulk-references href={`mailto:${email}?subject=${encodeURIComponent("Project references")}`} aria-describedby={`${id}-mail`}>

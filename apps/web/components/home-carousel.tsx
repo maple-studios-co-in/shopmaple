@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+
+/** Whether the row has more than it shows, and whether it sits at either end. */
+type Edges = { overflow: boolean; start: boolean; end: boolean };
+const sameEdges = (a: Edges, b: Edges) => a.overflow === b.overflow && a.start === b.start && a.end === b.end;
+function edgesOf(element: HTMLElement): Edges {
+  const room = element.scrollWidth - element.clientWidth;
+  return { overflow: room > 1, start: element.scrollLeft <= 1, end: element.scrollLeft >= room - 1 };
+}
 
 export function HomeCarousel({ children, label, autoplay = false, railClassName = "home-product-rail", className = "" }: {
   children: ReactNode;
@@ -19,6 +27,35 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
   const [reduced, setReduced] = useState(true);
   const [visible, setVisible] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
+  // The arrows show only while the row holds more than fits, each fading at its own end (QA report, 16 Nov 2026: on a
+  // wide screen every chair was in view and the arrows still offered more).
+  const [edges, setEdges] = useState<Edges>({ overflow: false, start: true, end: false });
+  const measure = useCallback(() => {
+    const element = rail.current;
+    if (!element) return;
+    const next = edgesOf(element);
+    setEdges(previous => (sameEdges(previous, next) ? previous : next));
+  }, []);
+
+  useEffect(() => {
+    const element = rail.current;
+    if (!element) return;
+    measure();
+    element.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    // Cards that load or change size after the first paint change how much there is to scroll.
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    if (observer) {
+      observer.observe(element);
+      for (const child of element.children) observer.observe(child);
+    }
+    return () => {
+      element.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+      observer?.disconnect();
+    };
+  }, [measure]);
+  useEffect(measure, [measure, visible, hovered]);
 
   useEffect(() => {
     setReady(true);
@@ -66,16 +103,20 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
   }, [autoplay, paused, hovered, reduced, visible, pageVisible]);
 
   function move(direction: number) {
-    if (autoplay) setPaused(true);
     const element = rail.current;
-    element?.scrollBy({
+    if (!element) return;
+    // Read afresh: a smooth scroll may still be under way since the arrows last changed.
+    const now = edgesOf(element);
+    if (!now.overflow || (direction < 0 ? now.start : now.end)) return;
+    if (autoplay) setPaused(true);
+    element.scrollBy({
       left: element.clientWidth * direction,
       behavior: typeof window.matchMedia !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   }
 
   const controls = (
-    <div className="home-carousel-controls" hidden={!ready}>
+    <div className="home-carousel-controls" hidden={!ready || !edges.overflow}>
       {autoplay && <button className="motion-playback-control" type="button" aria-controls={id} disabled={reduced}
         aria-label={`${paused || reduced ? "Play" : "Pause"} ${label}`}
         title={reduced ? "Automatic motion is off because you prefer reduced motion" : undefined}
@@ -89,8 +130,9 @@ export function HomeCarousel({ children, label, autoplay = false, railClassName 
         }}>
         <span className="sr-only">Toggle motion</span>
       </button>}
-      <button type="button" onClick={() => move(-1)} aria-controls={id} aria-label={`Previous ${label}`}><ArrowLeft size={20} aria-hidden="true" /></button>
-      <button type="button" onClick={() => move(1)} aria-controls={id} aria-label={`Next ${label}`}><ArrowRight size={20} aria-hidden="true" /></button>
+      {/* At an end the arrow stays focusable (a keyboard press never loses its place) but says it has nothing further. */}
+      <button type="button" onClick={() => move(-1)} aria-controls={id} aria-label={`Previous ${label}`} aria-disabled={edges.start || undefined}><ArrowLeft size={20} aria-hidden="true" /></button>
+      <button type="button" onClick={() => move(1)} aria-controls={id} aria-label={`Next ${label}`} aria-disabled={edges.end || undefined}><ArrowRight size={20} aria-hidden="true" /></button>
     </div>
   );
 

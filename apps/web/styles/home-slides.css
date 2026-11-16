@@ -47,6 +47,53 @@
   .slider-dots button::before { transition: none; }
 }
 
+/* ---- Previous / next (shared) ----------------------------------------------------------- */
+/* A pair of glass rings in the corner, clear of the slide's words on the left and of the dots in the middle. */
+.slider-arrows {
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+.slider-arrows button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+.slider-arrows button:hover {
+  border-color: #fff;
+  background: #fff;
+  color: var(--impact-burgundy, #741a14);
+}
+.slider-arrows button:active {
+  transform: scale(0.94);
+}
+.slider-arrows button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slider-arrows button { transition: none; }
+}
+@media (max-width: 749px) {
+  .slider-arrows { right: 12px; bottom: 10px; gap: 6px; }
+  .slider-arrows button { width: 34px; height: 34px; }
+}
+
 /* ---- Hero ------------------------------------------------------------------------------ */
 [data-home-section="hero"] .hero-slides {
   position: absolute;
@@ -131,6 +178,7 @@
 }
 
 /* The dots only make sense once the slider's behaviour has attached; until then (or if it never does) the row is a plain swipe row. */
-[data-slider]:not([data-slider-ready]) .slider-dots {
+[data-slider]:not([data-slider-ready]) .slider-dots,
+[data-slider]:not([data-slider-ready]) .slider-arrows {
   display: none;
 }
