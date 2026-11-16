@@ -37,6 +37,9 @@ const side = z.object({ handle: catalogueHandleSchema, label: text(80) }).strict
 /** Copy for the fixed homepage template; links, media and commerce stay outside this contract. */
 export const homeDetailsSchema = z.object({
   hero: z.object({
+    /** The big words over the default photos, editable from the live preview (owner, 16 Nov 2026). Absent keeps the theme's own. */
+    headline: text(120).optional(),
+    intro: text(300).optional(),
     cta: text(80),
     tiles: z.array(z.object({
       key: z.enum(["sofas", "chairs", "tables", "beds"]),

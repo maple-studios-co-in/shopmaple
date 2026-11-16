@@ -37,9 +37,12 @@ test("click-to-edit messages are read only with a known shape: words, a page add
   const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data }, origin, frameWindow);
   const base = { source: previewMessageSource, path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 };
   assert.deepEqual(read({ ...base, type: "text-select", text: "Explore" }),
-    { type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 });
-  assert.deepEqual(read({ ...base, type: "text-edit", before: "Explore", after: "Discover\nmore" }),
-    { type: "text-edit", before: "Explore", after: "Discover\nmore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 });
+    { type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1, repeats: 1 }, "no count reads as words shown once");
+  assert.deepEqual(read({ ...base, repeats: 2, type: "text-edit", before: "Explore", after: "Discover\nmore" }),
+    { type: "text-edit", before: "Explore", after: "Discover\nmore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1, repeats: 2 });
+  assert.equal(read({ ...base, repeats: 0, type: "text-select", text: "Explore" }), null);
+  assert.equal(read({ ...base, repeats: 1001, type: "text-select", text: "Explore" }), null);
+  assert.equal(read({ ...base, repeats: "4", type: "text-select", text: "Explore" }), null);
   assert.deepEqual(read({ ...base, section: null, area: "footer", type: "text-select", text: "SHOP" })?.type, "text-select", "words outside a section carry a null section");
   assert.equal(read({ ...base, type: "text-select", text: "   " }), null, "blank words are ignored");
   assert.equal(read({ ...base, type: "text-select", text: "x".repeat(2001) }), null, "words are bounded");
@@ -96,6 +99,37 @@ test("a field is matched by its words, by part of them, or with fixed words arou
     assert.equal(address?.match.how, "same", "line breaks read as spaces on the page");
     assert.deepEqual(applyCandidate(address!, "A-2/57\nNew Delhi"), { ok: true });
     assert.equal(host.querySelector("textarea")!.value, "A-2/57\nNew Delhi", "a text box keeps line breaks typed on the page");
+  } finally { host.remove(); }
+});
+
+test("a short word drawn apart from the rest of a short field ('20+' of '20+ Cities') is matched when the page shows the whole field there", () => {
+  const around = "We Are Serving 20+ Cities Delivering comfort and elegance across India.";
+  assert.equal(matchWords("20+ Cities", "20+"), null, "on its own, a short word is still too weak a clue");
+  assert.deepEqual(matchWords("20+ Cities", "20+", around), { how: "part", start: 0, end: 3 });
+  assert.equal(matchWords("20+ Cities", "20+", "We Are Serving 20+ Kolkata Delhi"), null, "not when the field's words are not shown together");
+  const paragraph = `Every one of our pieces is built to order in our own workshop, with 20+ checks before it ships to you.`;
+  assert.equal(matchWords(paragraph, "20+", paragraph), null, "never inside a long field, where a short word is everywhere");
+
+  const host = document.createElement("div");
+  host.innerHTML = '<input aria-label="Cities heading" value="20+ Cities">';
+  document.body.append(host);
+  try {
+    const [figure] = findTextCandidates(host, "20+", around);
+    assert.deepEqual(applyCandidate(figure!, "25+"), { ok: true });
+    assert.equal(host.querySelector("input")!.value, "25+ Cities", "only the figure changes");
+  } finally { host.remove(); }
+});
+
+test("an empty field whose placeholder is the theme's words (the hero headline) is found and filled in", () => {
+  const host = document.createElement("div");
+  host.innerHTML = '<input aria-label="Hero headline" placeholder="Timeless Craftsmanship for Modern Living" value=""><input aria-label="Search" placeholder="Search products" value="">';
+  document.body.append(host);
+  try {
+    const [headline] = findTextCandidates(host, " Timeless Craftsmanship  for Modern Living ");
+    assert.equal(headline?.element.getAttribute("aria-label"), "Hero headline");
+    assert.deepEqual(applyCandidate(headline!, "Made by hand in Delhi"), { ok: true });
+    assert.equal(host.querySelector("input")!.value, "Made by hand in Delhi");
+    assert.equal(findTextCandidates(host, "Search").length, 0, "only a placeholder that is exactly the words counts");
   } finally { host.remove(); }
 });
 
@@ -214,7 +248,7 @@ test("inside the frame: clicked words become a text box; Enter hands the new wor
     assert.ok(terra.hasAttribute("contenteditable"), "the words are a text box on the page");
     assert.equal(terra.getAttribute("data-preview-editing"), "true");
     const select = frame.sent.find((message) => message.type === "text-select")!;
-    assert.deepEqual({ ...select, context: undefined }, { source: previewMessageSource, type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: undefined, occurrence: 1 });
+    assert.deepEqual({ ...select, context: undefined }, { source: previewMessageSource, type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: undefined, occurrence: 1, repeats: 2 });
     assert.match(select.context, /The Terra Collection/);
     assert.doesNotMatch(select.context, /Nimbus Collection/, "the context stops before the other Explore");
     assert.ok(frame.sent.some((message) => message.type === "editing" && message.active === true), "the pane is told typing started");
@@ -230,6 +264,14 @@ test("inside the frame: clicked words become a text box; Enter hands the new wor
     await frame.tell({ type: "text-result", phase: "edit", ok: false, message: "These words can't be changed here." });
     assert.equal(words(terra), "Explore");
     assert.equal(words(container.querySelector("[data-preview-hint]")), "These words can't be changed here.");
+  } finally { await frame.close(); }
+});
+
+test("inside the frame: a new token after kept words says they are saved, and in which draft version", async () => {
+  const frame = await renderBridge(slider);
+  try {
+    await frame.tell({ type: "token", token: tokenB, version: 8 });
+    assert.equal(words(container.querySelector("[data-preview-hint]")), "Saved in draft version 8. It goes live when the draft is published.");
   } finally { await frame.close(); }
 });
 
@@ -404,12 +446,67 @@ test("a click-to-edit save never reloads the page: the frame gets the new token 
     await app.openPreview();
     const before = app.frame().getAttribute("src");
     assert.match(before ?? "", new RegExp(tokenA));
-    await app.fromFrame({ type: "text-edit", before: "Explore", after: "Discover Terra", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
+    await app.fromFrame({ type: "text-edit", before: "Explore", after: "Discover Terra", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1, repeats: 2 });
     await until(() => app.puts.length > 0, "the quiet save");
-    await until(() => app.replies.some((reply) => reply.type === "token"), "the new token handed to the page");
+    await until(() => app.replies.some((reply) => reply.type === "token"), "the new token handed to the page (two copies, each its own field)");
     assert.deepEqual(app.replies.find((reply) => reply.type === "token"), { source: previewMessageSource, type: "token", token: tokenB, version: 5 });
     await settle(120);
     assert.equal(app.frame().getAttribute("src"), before, "the frame was not reloaded");
+    await until(() => [...container.querySelectorAll('[data-notice="status"]')].some((node) => /Saved in draft version 5/.test(words(node))), "the saved notice");
+    assert.ok([...container.querySelectorAll('[data-notice="status"]')].some((node) => words(node) === "Saved in draft version 5. A publisher puts it on the live store when they publish the draft."),
+      "the editor says the words are saved, and who puts them live");
+  } finally { await app.close(); }
+});
+
+test("the big hero headline, shown from the theme until staff write their own, is typed into Hero headline and saved", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    const before = app.frame().getAttribute("src");
+    await app.fromFrame({ type: "text-edit", before: "Timeless Craftsmanship for Modern Living", after: "Made by hand in Delhi", path: "/", section: "hero", area: "section",
+      context: "Timeless Craftsmanship for Modern Living Handcrafted furniture that brings elegance to every corner of your home.", occurrence: 0, repeats: 4 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true);
+    assert.equal(app.field("Hero headline")?.value, "Made by hand in Delhi");
+    await until(() => app.puts.length > 0, "the quiet save");
+    assert.equal(app.puts.at(-1).content.homeDetails.hero.headline, "Made by hand in Delhi");
+    assert.equal(app.puts.at(-1).content.homeDetails.hero.intro, undefined, "the intro keeps the theme's words");
+    // The other three photos show the same field: the page reloads once (keeping its place) so they show the new words too.
+    await until(() => app.frame().getAttribute("src") !== before, "the page reloaded with the new draft");
+    assert.match(app.frame().getAttribute("src") ?? "", new RegExp(tokenB));
+    assert.equal(app.replies.some((reply) => reply.type === "token"), false, "no in-place token: the reload carries it");
+  } finally { await app.close(); }
+});
+
+test("the promos' second card is found in its own campaign: the Campaign list switches to it and its headline changes", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-edit", before: "Less clutter.", after: "Less mess.", path: "/", section: "promos", area: "section",
+      context: "Less clutter. More celebration. Up to 25% off selected storage furniture Shop Storage", occurrence: 0 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true, "the words are taken, not refused");
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing storage");
+    assert.equal(app.field("Campaign headline")?.value, "Less mess.\nMore celebration.");
+    await until(() => app.puts.length > 0, "the quiet save");
+    const campaigns = app.puts.at(-1).content.campaigns as { key: string; headline: string[] }[];
+    assert.deepEqual(campaigns.find((campaign) => campaign.key === "landing-storage")?.headline, ["Less mess.", "More celebration."]);
+    assert.deepEqual(campaigns.find((campaign) => campaign.key === "landing-dining")?.headline, ["Come together.", "Stay a little longer."], "the first card is untouched");
+  } finally { await app.close(); }
+});
+
+test("words in none of a section's campaigns are refused and the Campaign list is put back where it was", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-select", text: "Nothing like this", path: "/", section: "promos", area: "section", context: "Nothing like this", occurrence: 0 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.type === "text-result")?.ok, false);
+    await settle(120);
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing dining");
+    assert.equal(app.puts.length, 0, "nothing was saved");
   } finally { await app.close(); }
 });
 

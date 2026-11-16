@@ -44,11 +44,13 @@ export function heroArtworkProducts(content: HomeDetails["hero"], media?: Templa
 function resolveSlides(content: HomeDetails["hero"], media?: TemplateMedia, photos?: ProductPhotos): Slide[] {
   const authored = authoredSlides(content);
   if (authored.length) return authored;
+  // The staff's own words when they have written them (Homepage > Hero, or click-to-edit in the live preview), else the theme's.
+  const headline = content.headline ?? heroHeadline, intro = content.intro ?? heroIntro;
   const stills = defaultStills.flatMap((key): Slide[] => {
     const artwork = resolveArtwork(key, media, photos);
-    return artwork ? [{ kind: "image", image: artwork.image, alt: artwork.alt, headline: heroHeadline, intro: heroIntro }] : [];
+    return artwork ? [{ kind: "image", image: artwork.image, alt: artwork.alt, headline, intro }] : [];
   });
-  return stills.length ? stills : [{ kind: "image", alt: "", headline: heroHeadline, intro: heroIntro }];
+  return stills.length ? stills : [{ kind: "image", alt: "", headline, intro }];
 }
 
 /**

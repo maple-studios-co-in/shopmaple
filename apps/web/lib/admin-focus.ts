@@ -56,13 +56,18 @@ function findPart(value: string, words: string): { start: number; end: number } 
   return found ? { start: found.index, end: found.index + found[0].length } : null;
 }
 
-/** How a field's text relates to the clicked words, or null when it does not hold them. */
-export function matchWords(value: string, words: string): Match | null {
+/**
+ * How a field's text relates to the clicked words, or null when it does not hold them. `context` is the text the page
+ * shows around the clicked words (see PreviewTextTarget).
+ */
+export function matchWords(value: string, words: string, context?: string): Match | null {
   const field = squashWords(value), page = squashWords(words);
   if (!field || !page) return null;
   if (field === page) return { how: "same" };
-  // A short word ("Shop") inside a long field is too weak a clue to change that field by.
-  if (page.length >= 4 && field.includes(page)) {
+  // A short word ("Shop") inside a long field is too weak a clue to change that field by, unless the field is short and
+  // the page shows all of it right there: "20+" is drawn apart from "Cities" in the heading "20+ Cities" (live, 16 Nov 2026).
+  const shownWhole = context !== undefined && field.length <= 60 && key(context).includes(key(field));
+  if ((page.length >= 4 || shownWhole) && field.includes(page)) {
     const part = findPart(value, words);
     if (part) return { how: "part", ...part };
   }
@@ -94,12 +99,17 @@ const rank = (candidate: TextCandidate) => {
   return quality[candidate.match.how] + (addressField.test(label.trim()) ? 0.5 : 0);
 };
 
-/** Every field and rich text run under `root` holding these words, hidden ones included (a closed panel, another tab). */
-export function findTextCandidates(root: ParentNode, words: string): TextCandidate[] {
+/**
+ * Every field and rich text run under `root` holding these words, hidden ones included (a closed panel, another tab).
+ * An empty field counts when its placeholder is the words: the storefront shows the theme's own words (the hero
+ * headline) until staff write theirs.
+ */
+export function findTextCandidates(root: ParentNode, words: string, context?: string): TextCandidate[] {
   const found: TextCandidate[] = [];
   for (const field of root.querySelectorAll<TextField>(fillableSelector)) {
     if (field.closest("[data-click-edit-ignore]") || field.readOnly) continue;
-    const match = matchWords(field.value, words);
+    const match: Match | null = field.value ? matchWords(field.value, words, context)
+      : field.placeholder && key(field.placeholder) === key(words) ? { how: "same" } : null;
     if (match) found.push({ kind: "field", field, element: field, match });
   }
   for (const element of root.querySelectorAll<HTMLElement>(".ProseMirror")) {
@@ -219,6 +229,12 @@ export function setFieldValue(field: TextField | HTMLSelectElement, value: strin
 }
 
 /** The select whose label reads `label`, when it offers `value`. */
+/** The list with this label under `root` (a select's aria-label or its label's text), or null. */
+export function selectNamed(root: ParentNode, label: string): HTMLSelectElement | null {
+  const wanted = key(label);
+  return [...root.querySelectorAll<HTMLSelectElement>("select")].find((select) => key(select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "") === wanted) ?? null;
+}
+
 export function selectOffering(root: ParentNode, label: string, value: string): HTMLSelectElement | null {
   const wanted = key(label);
   for (const select of root.querySelectorAll<HTMLSelectElement>("select")) {

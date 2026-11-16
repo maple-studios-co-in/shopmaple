@@ -165,7 +165,13 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       const message = readPreviewMessage(event, origin, parent);
       if (!message) return;
       if (message.type === "mode") { setEditMode(message.mode === "edit"); return; }
-      if (message.type === "token") { tokenRef.current?.(message.token, message.version); return; }
+      if (message.type === "token") {
+        tokenRef.current?.(message.token, message.version);
+        // A token handed over in place follows the save of words typed on this page. Say so where the eyes are: the save
+        // happens by itself, and with Save draft greyed out the owner took it for "can't save" (16 Nov 2026).
+        setNote(`Saved in draft version ${message.version}. It goes live when the draft is published.`);
+        return;
+      }
       if (message.type === "scroll") {
         // Instant, never smooth: the page was reloaded under the staff member and should simply be where it was.
         (document.scrollingElement ?? document.documentElement).scrollTo?.({ top: message.y, behavior: "instant" });
@@ -253,6 +259,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         area: sectionNode ? "section" : chrome ? chrome[1] : "page",
         context: squash(shownText(box)).slice(0, 3000),
         occurrence: Math.max(0, repeats.indexOf(node)),
+        repeats: Math.min(1000, Math.max(1, repeats.length)),
       };
     }
     function onOver(event: MouseEvent) {

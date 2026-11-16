@@ -52,6 +52,11 @@ export type PreviewTextTarget = {
   context: string;
   /** Which of the visible repeats of these words this is, counted down the page from 0. */
   occurrence: number;
+  /**
+   * How many times these words show in their part of the page (1: only here). Kept words shown more than once reload the
+   * page after saving, so every copy shows them: the hero's four photos share one headline (16 Nov 2026).
+   */
+  repeats?: number;
 };
 
 export type FrameToParentMessage =
@@ -90,12 +95,13 @@ const isPath = (value: unknown): value is string => typeof value === "string" &&
 const isWords = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= 2000;
 
 function readTextTarget(message: Record<string, unknown>): PreviewTextTarget | null {
-  const { path, section, area, context, occurrence } = message;
+  const { path, section, area, context, occurrence, repeats = 1 } = message;
   if (!isPath(path) || !(section === null || isSection(section))) return null;
   if (typeof area !== "string" || !(previewTextAreas as readonly string[]).includes(area)) return null;
   if (typeof context !== "string" || context.length > 4000) return null;
   if (!Number.isSafeInteger(occurrence) || (occurrence as number) < 0 || (occurrence as number) > 999) return null;
-  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number };
+  if (!Number.isSafeInteger(repeats) || (repeats as number) < 1 || (repeats as number) > 1000) return null;
+  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number };
 }
 
 /**

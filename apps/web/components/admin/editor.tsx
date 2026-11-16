@@ -139,8 +139,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * save hands the page its new token instead of reloading it.
    */
   const frameCurrent = useRef(false);
-  /** An edit is arriving from click-to-edit right now (the page already shows it). */
-  const editFromFrame = useRef(false);
+  /** An edit is arriving from click-to-edit right now, and whether the page already shows it everywhere it appears. */
+  const editFromFrame = useRef(false), frameShowsAll = useRef(true);
+  /** Edits typed on the page so far, and how many of them a finished save has already confirmed in the notice line. */
+  const frameEdits = useRef(0), frameEditsSaved = useRef(0);
   /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
   const [saving, setSaving] = useState(false);
   /** The last failed quiet save; auto-save pauses until a manual save succeeds. */
@@ -218,7 +220,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     }
   }
   function edit(next: StorefrontContent) {
-    if (!editFromFrame.current) frameCurrent.current = false;
+    // Words typed on the page are already shown there; when they show in other places too (the hero's photos share one
+    // headline), the page reloads after the save so every copy shows them.
+    if (!editFromFrame.current || !frameShowsAll.current) frameCurrent.current = false;
+    if (editFromFrame.current) frameEdits.current += 1;
     latestContent.current = next;
     setContent(next);
     setDirty(true);
@@ -339,6 +344,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       setAutoSaveFailed("");
       if (!quiet) setNotice(action === "save" ? "Draft saved. The published storefront has not changed."
         : action === "publish" ? "Draft published. The storefront now uses this version." : "Restored as a draft. Review it, then publish when ready.");
+      // Words typed on the page save by themselves: confirm it once they are in, and say who puts them live. With Save
+      // draft greyed out afterwards, the owner read the quiet save as "can't save" (live, 16 Nov 2026).
+      if (action === "save" && latestContent.current === sent && frameEdits.current > frameEditsSaved.current) {
+        frameEditsSaved.current = frameEdits.current;
+        if (quiet) setNotice(`Saved in draft version ${accepted.version}. ${publisher ? "Publish draft puts it on the live store." : "A publisher puts it on the live store when they publish the draft."}`);
+      }
       return accepted;
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
@@ -395,9 +406,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     content,
     existingPages,
     notice: setNotice,
-    whileApplying: (run) => {
+    whileApplying: (run, elsewhere) => {
       editFromFrame.current = true;
-      try { return run(); } finally { editFromFrame.current = false; }
+      frameShowsAll.current = !elsewhere;
+      try { return run(); } finally { editFromFrame.current = false; frameShowsAll.current = true; }
     },
     open: (screen, keep) => {
       if (screen.kind === "current") return;
