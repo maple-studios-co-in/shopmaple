@@ -225,6 +225,9 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
         offer: productOfferSchema.nullable().optional(),
         // The `minOrder=1` level: the fewest pieces of the design an order may hold, or null. Absent below that level.
         minOrderQuantity: minOrderQuantitySchema,
+        // The `featurePhoto=1` level: the id of one of the model's exported photographs staff picked for the band
+        // between Specifications and Details, or null to let the store choose. Absent below that level.
+        featurePhotoId: z.string().trim().min(1).max(64).nullable().optional(),
         taxonomy: z.object({ category: z.string().max(200).nullable(), subCategory: z.string().max(200).nullable() }).strict().optional(),
         channelPublished: z.boolean(),
         shopifyProductId: shopifyId,
@@ -422,8 +425,13 @@ function adaptValidated(
           hotspots: role === "cutout" ? m.hotspots ?? [] : [],
         }];
       });
+    // Staff's pick for the band between Specifications and Details, as a store URL; only a photograph this page shows.
+    const picked = model.featurePhotoId
+      ? [...model.media, ...eligible.flatMap((v) => v.media)].find((m) => m.id === model.featurePhotoId) : undefined;
+    const featurePhoto = picked && media.some((m) => m.url === publicMedia.get(picked.id)) ? publicMedia.get(picked.id)! : null;
     return {
       ...page,
+      ...(model.featurePhotoId !== undefined ? { featurePhoto } : {}),
       reviews: { ...reviews, items: reviews.items.map((r) => ({ ...r, variantId: r.variantId && eligibleIds.has(r.variantId) ? identity(r.variantId) : null })) },
       media,
       bundles: bundleIds.flatMap((bundleId) => {

@@ -123,3 +123,20 @@ test("an older Keeri that refuses the product-page level is reported as such, so
     (error: unknown) => error instanceof KeeriFetchError && error.code === "PRODUCT_PAGE_UNSUPPORTED",
   );
 });
+
+test("staff's photograph for the band between Specifications and Details reaches the page as its store address, only when Keeri sends the level", () => {
+  const chairOf = (k: any) => adaptKeeriExportV2(k, "tenant-demo").products.find((p) => p.handle === "keeri-model-demo")!;
+  const k = fixture();
+  const url = k.publicMedia.find((m: { assetId: string }) => m.assetId === "asset-demo").url;
+  // Below the level the page carries no pick at all, and the store keeps choosing.
+  assert.equal("featurePhoto" in chairOf(k).productPage!, false);
+  k.models[0].featurePhotoId = "asset-demo";
+  const picked = chairOf(k);
+  assert.equal(picked.productPage!.featurePhoto, url);
+  assert.doesNotThrow(() => productSchema.parse(picked));
+  k.models[0].featurePhotoId = null;
+  assert.equal(chairOf(k).productPage!.featurePhoto, null);
+  // An id this page does not show is no pick rather than a broken address.
+  k.models[0].featurePhotoId = "asset-elsewhere";
+  assert.equal(chairOf(k).productPage!.featurePhoto, null);
+});
