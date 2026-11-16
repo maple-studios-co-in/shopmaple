@@ -1,4 +1,5 @@
 import { DismissibleDetails } from "./dismissible-details";
+import { SiteWord } from "@/components/site-words";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type CSSProperties } from "react";
@@ -148,11 +149,11 @@ export function Footer({
         <span>
           © {new Date().getFullYear()} {footer.copyrightName}
           {/* The city photos are CC BY-SA, which asks for their credits within reach; the owner took the line off the cities row. */}
-          <a className="maple-footer-credits" href="/media/cities/credits.html">Image credits</a>
+          <a className="maple-footer-credits" href="/media/cities/credits.html"><SiteWord k="footer.imageCredits" /></a>
         </span>
         {footer.policyLinks.some((link) => link.enabled) && (
           <DismissibleDetails className="maple-footer-policies">
-            <summary>Terms and Policies</summary>
+            <summary><SiteWord k="footer.policies" /></summary>
             <nav aria-label="Store policies">
               <Links links={footer.policyLinks} />
             </nav>

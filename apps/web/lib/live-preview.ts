@@ -3,7 +3,7 @@
  * and the frame bridge (components/admin/preview-shell.tsx) share these so the token, URL and
  * messaging rules are testable without a browser.
  */
-import { homeSectionKeys, previewTokenPattern } from "@shopmaple/contracts";
+import { homeSectionKeys, previewTokenPattern, siteWordKeyPattern } from "@shopmaple/contracts";
 import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
@@ -57,6 +57,8 @@ export type PreviewTextTarget = {
    * page after saving, so every copy shows them: the hero's four photos share one headline (16 Nov 2026).
    */
   repeats?: number;
+  /** The theme's own words name their place (Site words, "home.bestsellers.eyebrow"): their box is opened directly. */
+  word?: string;
 };
 
 export type FrameToParentMessage =
@@ -95,13 +97,14 @@ const isPath = (value: unknown): value is string => typeof value === "string" &&
 const isWords = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= 2000;
 
 function readTextTarget(message: Record<string, unknown>): PreviewTextTarget | null {
-  const { path, section, area, context, occurrence, repeats = 1 } = message;
+  const { path, section, area, context, occurrence, repeats = 1, word } = message;
+  if (word !== undefined && (typeof word !== "string" || word.length > 80 || !siteWordKeyPattern.test(word))) return null;
   if (!isPath(path) || !(section === null || isSection(section))) return null;
   if (typeof area !== "string" || !(previewTextAreas as readonly string[]).includes(area)) return null;
   if (typeof context !== "string" || context.length > 4000) return null;
   if (!Number.isSafeInteger(occurrence) || (occurrence as number) < 0 || (occurrence as number) > 999) return null;
   if (!Number.isSafeInteger(repeats) || (repeats as number) < 1 || (repeats as number) > 1000) return null;
-  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number };
+  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number, ...(word === undefined ? {} : { word: word as string }) };
 }
 
 /**

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { SiteWord } from "@/components/site-words";
 
 export function CategoryIntroduction({
   title,
@@ -24,7 +25,7 @@ export function CategoryIntroduction({
           aria-expanded={expanded}
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? "Read Less" : "Read More"}
+          {expanded ? <SiteWord k="category.readLess" /> : <SiteWord k="category.readMore" />}
         </button>
       )}
     </section>

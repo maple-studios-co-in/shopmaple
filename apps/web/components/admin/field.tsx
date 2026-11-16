@@ -13,6 +13,7 @@ export function Field({
   className,
   placeholder,
   hint,
+  name,
 }: {
   label: string;
   value: string;
@@ -24,12 +25,15 @@ export function Field({
   placeholder?: string;
   /** One short line under the field. */
   hint?: string;
+  /** The control's name, for finding it again (click-to-edit finds a Site words box by "site-word:<place>"). */
+  name?: string;
 }) {
   const props = {
     "aria-label": label,
     value,
     maxLength,
     placeholder,
+    name,
     onInput: (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange(event.currentTarget.value),
     // Edits arrive through onInput; this only tells React the value is controlled on purpose.

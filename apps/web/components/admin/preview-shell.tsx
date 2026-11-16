@@ -93,6 +93,8 @@ const chromeParts = [[".announcement", "announcement"], [".whatsapp-support", "w
 /** Never words to edit: the admin's own controls inside the frame, hidden helpers, and form controls. */
 const notWords = "[data-preview-edit], [data-preview-hint], .skip-link, script, style, noscript, template, svg, select, option, textarea, input";
 const squash = (text: string) => text.replace(/\s+/g, " ").trim();
+/** The Site words place clicked words name (their own span), or a form box's placeholder names; undefined elsewhere. */
+const siteWordOf = (node: Element) => node.closest<HTMLElement>("[data-site-word]")?.dataset.siteWord ?? (node as HTMLElement).dataset?.siteWordPlaceholder;
 /** The words around clicked words, as laid out (innerText needs layout; tests have none). Only compared, never saved. */
 const shownText = (node: HTMLElement) => (typeof node.innerText === "string" ? node.innerText : node.textContent ?? "");
 /**
@@ -260,6 +262,8 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         context: squash(shownText(box)).slice(0, 3000),
         occurrence: Math.max(0, repeats.indexOf(node)),
         repeats: Math.min(1000, Math.max(1, repeats.length)),
+        // The theme's own words carry their place (Site words); a form box carries its placeholder's.
+        ...(siteWordOf(node) ? { word: siteWordOf(node) } : {}),
       };
     }
     function onOver(event: MouseEvent) {
@@ -317,6 +321,14 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       if (!node || node.closest("[data-preview-edit]")) return;
       // Clicks inside the words being typed place the caret, as in any text box.
       if (editing && editing.contains(node)) return;
+      // A form box whose grey words are the theme's (Site words): open their box in the editor; the form box still works.
+      const box = node.closest<HTMLElement>("[data-site-word-placeholder]");
+      if (box) {
+        if (editing) finish(true);
+        const placeholder = squash(box.getAttribute("placeholder") ?? "");
+        if (placeholder) post({ type: "text-select", text: placeholder.slice(0, 2000), ...describe(box) });
+        return;
+      }
       if (!editableWords(node)) {
         // A slider arrow, a tab or a menu button without words of its own keeps working while text is edited.
         if (node.closest("button, [role=button], [role=tab], summary, label") && !node.closest("a[href]")) return;

@@ -574,3 +574,44 @@ test("View access browses the preview: no click-to-edit switch, and a clicked wo
     assert.match(reply.message, /View access/);
   } finally { await app.close(); }
 });
+
+test("the theme's own words (Site words) open their one box on the Site words screen, and are saved with the draft", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-edit", before: "Handpicked favourites", after: "Our favourites", path: "/", section: "bestsellers", area: "section",
+      context: "Handpicked favourites Bestsellers", occurrence: 0, word: "home.bestsellers.eyebrow" });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true);
+    assert.ok(container.querySelector('[data-admin-panel][aria-label="Site words editor"]'), "Site words is open");
+    const box = container.querySelector<HTMLInputElement>('[name="site-word:home.bestsellers.eyebrow"]');
+    assert.equal(box?.value, "Our favourites");
+    assert.equal(container.querySelector<HTMLInputElement>('[name="site-word:home.chairs.eyebrow"]')?.value, "", "the chairs row's own words are another box");
+    await until(() => app.puts.length > 0, "the quiet save");
+    assert.deepEqual(app.puts.at(-1).content.siteWords, { "home.bestsellers.eyebrow": "Our favourites" });
+  } finally { await app.close(); }
+});
+
+test("inside the frame: the theme's own words say their place, and a click on a form box asks for its placeholder's box", async () => {
+  const frame = await renderBridge(
+    <footer className="maple-footer">
+      <p><span data-site-word="footer.imageCredits">Image credits</span></p>
+      <label><span>Full name</span><input placeholder="Your full name" data-site-word-placeholder="contact.form.namePlaceholder" /></label>
+    </footer>,
+  );
+  try {
+    await frame.click(container.querySelector("[data-site-word]")!);
+    const select = frame.sent.find((message) => message.type === "text-select")!;
+    assert.equal(select.word, "footer.imageCredits");
+    assert.equal(select.text, "Image credits");
+    assert.equal(select.area, "footer");
+    await frame.key(container.querySelector("[data-site-word]")!, "Escape");
+
+    frame.sent.length = 0;
+    const event = await frame.click(container.querySelector("input")!);
+    const asked = frame.sent.find((message) => message.type === "text-select")!;
+    assert.deepEqual({ word: asked.word, text: asked.text }, { word: "contact.form.namePlaceholder", text: "Your full name" });
+    assert.equal(event.defaultPrevented, false, "the form box still takes a click");
+    assert.equal(container.querySelector("input")!.hasAttribute("contenteditable"), false);
+  } finally { await frame.close(); }
+});

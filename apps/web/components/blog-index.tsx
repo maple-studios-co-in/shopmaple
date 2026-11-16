@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteWord } from "@/components/site-words";
 import { Suspense } from "react";
 import type { TemplateMedia } from "@shopmaple/contracts";
 import { BlogBestsellers } from "@/components/blog/bestsellers";
@@ -39,7 +40,7 @@ export function BlogIndex({ blog, title, articles, bestsellers, media }: {
             )}
           </>
         ) : (
-          <p className="blog-empty">No articles published yet.</p>
+          <p className="blog-empty"><SiteWord k="blog.empty" /></p>
         )}
       </section>
       <Suspense fallback={<section className="blog-bestsellers" aria-label="Shop Bestsellers" aria-busy="true" data-rail-placeholder />}>
@@ -65,7 +66,7 @@ function FeaturedStory({ blog, post, eager }: { blog: string; post: Story; eager
         </p>
         <h2><Link href={href}>{post.title}</Link></h2>
         {post.excerpt && <p data-slide-excerpt className="blog-slide-excerpt">{post.excerpt}</p>}
-        <Link data-slide-read href={href} className="blog-slide-read" aria-label={`Read more about ${post.title}`}>Read more</Link>
+        <Link data-slide-read href={href} className="blog-slide-read" aria-label={`Read more about ${post.title}`}><SiteWord k="blog.readMore" /></Link>
       </div>
     </article>
   );

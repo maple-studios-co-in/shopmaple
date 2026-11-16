@@ -11,6 +11,7 @@ import { homeDetailsSchema } from "./home-details";
 import { nimbusPageContentSchema } from "./nimbus-content";
 import { collectionLandingContentSchema } from "./collection-landing";
 import { templateFilmsSchema } from "./template-films";
+import { siteWordsSchema } from "./site-words";
 import { pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
 export const homeSectionKeys = [
   "hero",
@@ -353,6 +354,8 @@ export const storefrontContentSchema = z
     terraPage: collectionLandingContentSchema.optional(),
     // Films chosen for the testimonial and the collection pages (owner, 12 Nov 2026); absent where none was chosen.
     templateFilms: templateFilmsSchema.optional(),
+    // The theme's own words (small headings, buttons, form labels) staff changed (owner, 16 Nov 2026); absent keeps them all.
+    siteWords: siteWordsSchema.optional(),
     // Legacy revisions retain the original service page templates.
     servicePages: servicePagesContentSchema.optional(),
     motion: z

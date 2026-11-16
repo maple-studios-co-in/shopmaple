@@ -1,4 +1,5 @@
 import type { ProductCard as ProductCardModel } from "@shopmaple/contracts";
+import { SiteWord } from "@/components/site-words";
 import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
 import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
@@ -111,12 +112,12 @@ export async function CategoryProducts({
       {heading && (
         <header>
           <div>
-            <p className="home-eyebrow">Shop By</p>
+            <p className="home-eyebrow"><SiteWord k="category.shopBy" /></p>
             <h2>{heading}</h2>
           </div>
           {viewAll && (
             <Link href={landingCollectionHref(`/collections/${collection}`)}>
-              View all →
+              <SiteWord k="category.viewAll" />
             </Link>
           )}
         </header>

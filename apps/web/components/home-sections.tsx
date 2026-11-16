@@ -1,4 +1,5 @@
 import { InstagramRail } from "@/components/motion-rail";
+import { SiteWord } from "@/components/site-words";
 import { CityRail } from "@/components/city-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
@@ -228,7 +229,7 @@ export function HomeValues({
       className="home-values home-container"
       aria-label="Made for real living"
     >
-      {watermark && <div className="home-values-watermark" data-values-watermark data-reveal aria-hidden="true">Maple Furnishers</div>}
+      {watermark && <div className="home-values-watermark" data-values-watermark data-reveal aria-hidden="true"><SiteWord k="home.values.watermark" /></div>}
       {content.map(({ key, title, body }) => {
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
@@ -239,7 +240,7 @@ export function HomeValues({
           </div>
         );
       })}
-      {watermark && <Link className="home-values-cta" href="/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
+      {watermark && <Link className="home-values-cta" href="/our-story" data-values-cta data-fill-button=""><SiteWord k="home.values.cta" /></Link>}
     </section>
   );
 }
@@ -303,7 +304,7 @@ export function HomeProject({
   return (
     <section className="home-project home-container">
       <div>
-        <span className="home-project-eyebrow" data-project-eyebrow>Let’s connect</span>
+        <span className="home-project-eyebrow" data-project-eyebrow><SiteWord k="home.project.eyebrow" /></span>
         <h2>{content.heading}</h2>
         <p>
           {content.introBefore.trimEnd()}{" "}
@@ -313,7 +314,7 @@ export function HomeProject({
         <p>{content.body}</p>
         <div className="home-project-promise" data-project-promise>
           <Check size={18} aria-hidden />
-          <span><strong>Quick response</strong> <span>We respond within {content.responseTime}.</span></span>
+          <span><strong><SiteWord k="home.project.promise" /></strong> <span><SiteWord k="home.project.respondWithin" /> {content.responseTime}.</span></span>
         </div>
       </div>
       <HomeProjectForm card />

@@ -4,6 +4,7 @@ import { categoryPageSlugs, homeSectionKeys, type StorefrontContent } from "@sho
 import { applyCandidate, findTextCandidates, pickCandidate, rendered, revealCandidate, selectNamed, selectOffering, setFieldValue, type TextCandidate } from "@/lib/admin-focus";
 import { previewRouteFor, type FrameToParentMessage, type PreviewTextArea } from "@/lib/live-preview";
 import type { HomeSectionKey } from "@/lib/section-thumbnails";
+import { isSiteWordKey, type SiteWordKey } from "@/lib/site-words";
 
 export type TextSelectMessage = Extract<FrameToParentMessage, { type: "text-select" }>;
 export type TextEditMessage = Extract<FrameToParentMessage, { type: "text-edit" }>;
@@ -21,6 +22,8 @@ export type ClickEditScreen =
   | { kind: "pages"; slug: string }
   | { kind: "category"; slug: string }
   | { kind: "editorial"; choice: string; article?: string }
+  /** A word the theme writes itself (Site words), named by the page. */
+  | { kind: "words"; key: SiteWordKey }
   | { kind: "current" };
 
 /** Navigation & footer's tabs that hold each part of the chrome, in the order to look. */
@@ -33,6 +36,8 @@ const chromeTabs: Record<ChromePart, string[]> = {
 
 /** Where clicked words are edited, from where they sit on the page. */
 export function clickEditScreen(message: TextSelectMessage | TextEditMessage, content: StorefrontContent | null, existingPages: readonly (readonly [string, string, string])[]): ClickEditScreen {
+  // The theme's own words name their place on the page: Site words holds them, wherever they sit.
+  if (message.word && isSiteWordKey(message.word)) return { kind: "words", key: message.word };
   if (message.area === "section") {
     return message.section && (homeSectionKeys as readonly string[]).includes(message.section) ? { kind: "section", section: message.section as HomeSectionKey } : { kind: "current" };
   }
@@ -148,6 +153,13 @@ async function locate(screen: ClickEditScreen, words: string, context: string, o
     tally.fields = found.length;
     return found.length ? pickCandidate(found, context, occurrence, root) : null;
   };
+  if (screen.kind === "words") {
+    // The page named the place, so there is exactly one box: no matching of words needed.
+    const box = await rendered(() => screenPanel("Site words")?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="site-word:${screen.key}"]`) ?? null, 15);
+    if (!box) return null;
+    tally.fields = 1;
+    return { kind: "field", field: box, element: box, match: { how: "same" } };
+  }
   if (screen.kind === "section") {
     const inspector = await rendered(() => document.querySelector<HTMLElement>(`[data-section-inspector="${screen.section}"]`));
     // The inspector opens on Content; give its fields a frame to appear.

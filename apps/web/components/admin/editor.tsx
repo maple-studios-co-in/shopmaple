@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Upload, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Type, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
@@ -20,6 +20,7 @@ import { CampaignFields, InstagramFields, PageFields } from "./forms";
 import { InstagramFeedPanel } from "./instagram-feed-panel";
 import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
+import { SiteWordsFields } from "./site-words-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
 import { TerraFields } from "./terra-fields";
@@ -52,13 +53,13 @@ type Document = {
 };
 const tabs = [
   "Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram",
-  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
+  "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
 const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: null, items: ["Overview"] },
-  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram"] },
+  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Site words"] },
   { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
   { label: "Library", items: ["Media"] },
   { label: "Customers", items: ["Enquiries"] },
@@ -66,7 +67,7 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
 ];
 const icons: Record<Tab, typeof House> = {
   Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, "Product highlights": Sparkles, Artwork: ImageIcon,
-  Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
+  Campaigns: Megaphone, Instagram, "Site words": Type, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
   Media: Images, Enquiries: Inbox, History,
 };
 /** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
@@ -76,7 +77,7 @@ const existingPages = [
 ] as const;
 type ExistingPage = (typeof existingPages)[number][0];
 /** Sections whose edits show on a storefront page and can therefore use the live preview. */
-const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
+const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
 function parseDocument(value: unknown): Document {
   const document = value as Document;
   const validUpdatedAt = document?.updatedAt === null || (typeof document?.updatedAt === "string" && document.updatedAt.length <= 64 && Number.isFinite(Date.parse(document.updatedAt)));
@@ -421,7 +422,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         setContentRequest((value) => value + 1);
         return;
       }
-      const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs" } as const)[screen.kind];
+      const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs", words: "Site words" } as const)[screen.kind];
       if (screen.kind === "existing") setExistingPage(screen.page as ExistingPage);
       setPreviewHold(keep);
       if (tabRef.current !== next) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(next); }
@@ -478,6 +479,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
       case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={(index) => { setPreviewHold(null); setSelectedPage(index); }} />;
       case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
+      case "Site words": return <SiteWordsFields value={content.siteWords} onChange={(siteWords) => edit({ ...content, siteWords })} />;
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>

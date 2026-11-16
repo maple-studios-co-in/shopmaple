@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { SiteWord } from "@/components/site-words";
 import { readingSection } from "@/lib/policy-outline";
 
 type Entry = { id: string; number: string; title: string };
@@ -53,15 +54,15 @@ export function PolicyContents({ sections }: { sections: readonly Entry[] }) {
   return (
     <>
       <nav aria-label="On this page" data-policy-contents="list" className="hidden lg:sticky lg:top-8 lg:block lg:self-start">
-        <p className={label}>On this page</p>
+        <p className={label}><SiteWord k="policy.contentsTitle" /></p>
         <ol className="mt-[14px] flex flex-col gap-[14px]">{entries("text-[13px] leading-5")}</ol>
       </nav>
       <nav aria-label="On this page" data-policy-contents="menu" className="lg:hidden">
-        <p className={label}>On this page</p>
+        <p className={label}><SiteWord k="policy.contentsTitle" /></p>
         <details ref={menu} className="group mt-[14px]">
           {/* The arrow points down while closed and turns up once open (owner, 10 Nov 2026). */}
           <summary className="flex w-fit cursor-pointer list-none items-center text-[16px] leading-[25px] font-medium text-maple after:ml-[13px] after:inline-block after:content-['↓'] after:transition-transform after:duration-500 after:ease-[cubic-bezier(.22,1,.36,1)] group-open:after:rotate-180 motion-reduce:after:transition-none [&::-webkit-details-marker]:hidden">
-            Jump to a section
+            <SiteWord k="policy.contentsMenu" />
           </summary>
           <ol className="mt-3 flex flex-col gap-2.5 border-l border-help-rule pl-4">
             {entries("py-0.5 text-[14px] leading-[22px]", () => { if (menu.current) menu.current.open = false; })}

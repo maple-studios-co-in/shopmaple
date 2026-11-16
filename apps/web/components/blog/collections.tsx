@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteWord } from "@/components/site-words";
 import { Suspense } from "react";
 import { ContentImage } from "@/components/content-image";
 import { ProductImage } from "@/components/store/product-image";
@@ -21,10 +22,10 @@ export function BlogCollections({ media }: { media?: TemplateMedia } = {}) {
         <ContentImage data-collections-photo src={photo.image} alt={photo.alt} fill sizes="(max-width: 899px) calc(100vw - 32px), 50vw" />
       </div>
       <div className="blog-collections-copy">
-        <p data-collections-eyebrow className="blog-collections-eyebrow">Maple Furnishers</p>
-        <h2 id="blog-collections-title">Explore our collections</h2>
-        <p data-collections-lede className="blog-collections-lede">Furniture designed around your space, materials and finishes.</p>
-        <Link data-collections-shop href="/collections/all" className="blog-button">Shop Now</Link>
+        <p data-collections-eyebrow className="blog-collections-eyebrow"><SiteWord k="blog.collections.eyebrow" /></p>
+        <h2 id="blog-collections-title"><SiteWord k="blog.collections.heading" /></h2>
+        <p data-collections-lede className="blog-collections-lede"><SiteWord k="blog.collections.lede" /></p>
+        <Link data-collections-shop href="/collections/all" className="blog-button"><SiteWord k="blog.collections.cta" /></Link>
         <Suspense fallback={<div className="blog-collection-tiles" aria-hidden="true" />}>
           <CollectionTiles />
         </Suspense>
