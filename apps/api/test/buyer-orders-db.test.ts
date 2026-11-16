@@ -124,14 +124,18 @@ test("cancel asks Keeri once with the buyer's reason; the order then shows the r
   assert.equal(again.body.code, "CANCELLATION_ALREADY_REQUESTED");
   assert.equal(calls.cancellations.length, 1);
   // Staff decline it in Keeri: the buyer sees that, and is pointed to the team rather than asking again.
-  await event(504, "order.cancellation_declined", { decidedAt: "2026-11-15T10:00:00.000Z" }, new Date("2026-11-15T10:00:00.000Z"));
+  // Decided after the request, which is stamped with the real clock: a fixed date here went stale once it passed.
+  const decided = (minutes: number) => new Date(Date.now() + minutes * 60_000);
+  const firstDecision = decided(1);
+  await event(504, "order.cancellation_declined", { decidedAt: firstDecision.toISOString() }, firstDecision);
   const declined = await request(target).get(`/api/orders/link/${ref(504)}`);
   assert.equal(declined.body.cancelRequest.status, "declined");
   assert.equal(declined.body.cancelRequest.note, undefined);
   assert.equal(declined.body.canCancel, false);
   // With staff's note to the buyer, the page shows their words.
-  await event(504, "order.cancellation_declined", { decidedAt: "2026-11-15T11:00:00.000Z", note: "Your chairs are already being upholstered." },
-    new Date("2026-11-15T11:00:00.000Z"));
+  const secondDecision = decided(2);
+  await event(504, "order.cancellation_declined", { decidedAt: secondDecision.toISOString(), note: "Your chairs are already being upholstered." },
+    secondDecision);
   const noted = await request(target).get(`/api/orders/link/${ref(504)}`);
   assert.deepEqual([noted.body.cancelRequest.status, noted.body.cancelRequest.note], ["declined", "Your chairs are already being upholstered."]);
 });
