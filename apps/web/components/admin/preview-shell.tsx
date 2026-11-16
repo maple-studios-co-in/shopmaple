@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ChromeArtwork } from "@/lib/chrome-artwork";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
@@ -93,6 +94,15 @@ const chromeParts = [[".announcement", "announcement"], [".whatsapp-support", "w
 /** Never words to edit: the admin's own controls inside the frame, hidden helpers, and form controls. */
 const notWords = "[data-preview-edit], [data-preview-hint], .skip-link, script, style, noscript, template, svg, select, option, textarea, input";
 const squash = (text: string) => text.replace(/\s+/g, " ").trim();
+/**
+ * The picture a click lands on, by what changes it: an Artwork placement (`slot`, the nearest one), else a banner, card,
+ * slide, post, film or page banner (`target`). Null when no picture staff chose is there.
+ */
+function pictureOf(node: Element): { slot: string } | { target: string } | null {
+  const placed = node.closest<HTMLElement>("[data-media-slot]"), targeted = node.closest<HTMLElement>("[data-picture-target]");
+  if (placed?.dataset.mediaSlot && (!targeted || targeted.contains(placed))) return { slot: placed.dataset.mediaSlot };
+  return targeted?.dataset.pictureTarget ? { target: targeted.dataset.pictureTarget } : null;
+}
 /** The Site words place clicked words name (their own span), or a form box's placeholder names; undefined elsewhere. */
 const siteWordOf = (node: Element) => node.closest<HTMLElement>("[data-site-word]")?.dataset.siteWord ?? (node as HTMLElement).dataset?.siteWordPlaceholder;
 /** The words around clicked words, as laid out (innerText needs layout; tests have none). Only compared, never saved. */
@@ -268,8 +278,8 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     }
     function onOver(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
-      // A picture from an Artwork placement is outlined as one to click; words inside it are not outlined.
-      const picture = node?.closest<HTMLElement>("[data-media-slot]") ?? null;
+      // A picture staff chose is outlined as one to click; words drawn over it are outlined as words instead.
+      const picture = node && !editableWords(node) ? node.closest<HTMLElement>("[data-media-slot], [data-picture-target]") : null;
       if (picture !== hoveredPicture) {
         hoveredPicture?.removeAttribute("data-preview-media-hover");
         hoveredPicture = picture;
@@ -328,22 +338,23 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       if (!node || node.closest("[data-preview-edit]")) return;
       // Clicks inside the words being typed place the caret, as in any text box.
       if (editing && editing.contains(node)) return;
-      // A picture from an Artwork placement (owner, 16 Nov 2026): open that placement's picture library in the editor.
-      const picture = node.closest<HTMLElement>("[data-media-slot]");
-      if (picture?.dataset.mediaSlot) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (editing) finish(true);
-        post({ type: "media-select", slot: picture.dataset.mediaSlot, path });
-        setNote("Choose the new picture in the library beside the preview.");
-        return;
-      }
       // A form box whose grey words are the theme's (Site words): open their box in the editor; the form box still works.
       const box = node.closest<HTMLElement>("[data-site-word-placeholder]");
       if (box) {
         if (editing) finish(true);
         const placeholder = squash(box.getAttribute("placeholder") ?? "");
         if (placeholder) post({ type: "text-select", text: placeholder.slice(0, 2000), ...describe(box) });
+        return;
+      }
+      // A picture staff chose (owner, 16 Nov 2026): an Artwork placement, a banner, a card, a slide, a post or a film opens
+      // its picture chooser in the editor. Words drawn over a picture (a banner's headline) stay words to type over.
+      const picture = editableWords(node) ? null : pictureOf(node);
+      if (picture) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (editing) finish(true);
+        post({ type: "media-select", ...picture, path });
+        setNote("Choose the new picture in the library beside the preview.");
         return;
       }
       if (!editableWords(node)) {
@@ -397,12 +408,13 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
 }
 
 /** The draft page with the draft's own navigation and footer, a slim ribbon, and in-frame links kept on the draft. */
-export function PreviewFrameDocument({ token, version, path, siteChrome, menuArtwork, children, navigate, view = "draft" }: {
+export function PreviewFrameDocument({ token, version, path, siteChrome, menuArtwork, chromeArtwork, children, navigate, view = "draft" }: {
   token: string;
   version: number;
   path: string;
   siteChrome?: SiteChrome;
   menuArtwork?: MenuArtwork;
+  chromeArtwork?: ChromeArtwork;
   children: ReactNode;
   navigate?: (url: string) => void;
   view?: "draft" | "published";
@@ -423,7 +435,7 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, menuArt
       data-preview-view={view}
     >
       <PreviewNavigation token={live.token} navigate={navigate} view={view}>
-        <StoreChromeView path={path} siteChrome={siteChrome} menuArtwork={menuArtwork}>{children}</StoreChromeView>
+        <StoreChromeView path={path} siteChrome={siteChrome} menuArtwork={menuArtwork} chromeArtwork={chromeArtwork}>{children}</StoreChromeView>
         <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${live.version}` : `Draft preview, not published. Version ${live.version}`}</p>
       </PreviewNavigation>
       <PreviewFrameBridge path={path} version={version} selectable={view === "draft"} onToken={(next, nextVersion) => setLive({ token: next, version: nextVersion })} />

@@ -19,7 +19,7 @@ const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "
 type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
 
 /** A picture clicked in the live preview: show its placement and open its library. Each click brings a new `nonce`. */
-export type ArtworkRequest = { slot: TemplateMediaKey; nonce: number };
+export type ArtworkRequest = { slot: TemplateMediaKey; nonce: number; /** false: show the placement without opening its library (a film is chosen below it). */ library?: boolean };
 
 /** The Artwork screen: every page's artwork, chosen by group and placement. */
 export function TemplateArtworkFields({ films, request, ...props }: Props & { films?: TemplateFilmFieldsProps; request?: ArtworkRequest }) {
@@ -98,7 +98,7 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
               <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">{kind}</p>
               <Field label={`${kind} image URL`} value={url} maxLength={1000} onChange={image => update({ [key]: image })} />
               <MediaPicker label={`${kind} image`} value={url} onChange={image => update({ [key]: image })} session={session} onExpired={onExpired}
-                openRequest={kind === "Desktop" && request?.slot === selected ? request.nonce : undefined} />
+                openRequest={kind === "Desktop" && request?.slot === selected && request.library !== false ? request.nonce : undefined} />
             </div>;
           })}
         </div>

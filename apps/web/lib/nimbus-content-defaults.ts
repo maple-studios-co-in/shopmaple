@@ -1,4 +1,4 @@
-import {
+import { templateMediaKeys,
   collectionSectionKeys, type CollectionLandingContent, type CollectionSectionKey, type LegacyNimbusPageContent,
   type NimbusPageContent, type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
@@ -225,6 +225,9 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
     return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt, slot: key };
   };
+  // Each drawing is an Artwork placement (Icons & logo) where one exists; a card staff added past the design's keeps its drawing.
+  const icon = (key: string, fallback: CollectionArt): { art: CollectionArt; artSlot?: string } => (templateMediaKeys as readonly string[]).includes(key)
+    ? { art: resolveTemplateMedia(key as TemplateMediaKey, site.templateMedia).image || fallback, artSlot: key } : { art: fallback };
   const sections = page.sections.filter(item => item.enabled).map(item => item.key);
   const hero = media("nimbus-hero-poster");
   return {
@@ -244,13 +247,13 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
     roomNav: page.roomNav.map((item, index) => ({ label: item.label, href: roomLinks[index]! })),
     philosophy: { ...page.philosophy },
     origin: { ...page.origin, media: media("nimbus-origin") },
-    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, art: feelingArt[index]! })) },
+    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, ...icon(`icon-nimbus-feeling-${index + 1}`, feelingArt[index] ?? feelingArt[0]!) })) },
     material: {
       eyebrow: page.material.eyebrow,
       heading: page.material.heading,
       body: page.material.body,
       media: media("nimbus-craft-poster"),
-      notes: page.material.notes.map((note, index) => ({ art: noteArt[index]!, label: note.label })),
+      notes: page.material.notes.map((note, index) => ({ ...icon(`icon-nimbus-note-${index + 1}`, noteArt[index] ?? noteArt[0]!), label: note.label })),
       cta: { label: page.material.cta, href: enquiry("Nimbus customization") },
     },
     browse: {
@@ -279,6 +282,6 @@ export function resolveNimbusLanding(site: Pick<StorefrontContent, "nimbusPage" 
       cta: { label: page.consultation.cta, href: enquiry(page.title) },
       email: resolveSiteChrome(site.siteChrome).footer.customerEmail,
     },
-    promise: page.promise.map((item, index) => ({ art: promiseArt[index]!, label: item.label })),
+    promise: page.promise.map((item, index) => ({ ...icon(`icon-collection-promise-${index + 1}`, promiseArt[index] ?? promiseArt[0]!), label: item.label })),
   };
 }

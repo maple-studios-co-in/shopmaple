@@ -44,7 +44,7 @@ function CollectionTiles({
   return (
     <div className={className}>
       {items.filter((item) => item.enabled).map((item) => (
-        <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })}>
+        <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })} data-picture-target={`merch:${categories ? "categories" : "offers"}:${item.key}`}>
           <div>
             <Image
               src={item.image}

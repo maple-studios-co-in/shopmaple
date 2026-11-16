@@ -7,6 +7,8 @@ import { homeSectionKeys, previewTokenPattern, siteWordKeyPattern, templateMedia
 import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
+/** A picture staff chose outside the Artwork placements, as the page names it: "campaign:landing-dining", "merch:offers:clearance". */
+export const pictureTargetPattern = /^(campaign|merch|nimbus-slide|hero-slide|instagram|editorial|film|page-banner)(?::[a-z0-9-]{1,80}){1,2}$/;
 export type PreviewDevice = "desktop" | "tablet" | "phone";
 export type PreviewView = "draft" | "published";
 /** Frame widths in CSS pixels; desktop fills the pane. */
@@ -72,8 +74,11 @@ export type FrameToParentMessage =
   | ({ type: "text-edit"; before: string; after: string } & PreviewTextTarget)
   /** Click-to-edit: whether words on the page are being typed over right now (the pane holds reloads meanwhile). */
   | { type: "editing"; active: boolean }
-  /** Click-to-edit: they clicked a picture drawn from this Artwork placement; the editor opens its picture library. */
-  | { type: "media-select"; slot: TemplateMediaKey; path: string };
+  /**
+   * Click-to-edit: they clicked a picture staff chose. `slot`: an Artwork placement; `target`: a banner, card, slide, post,
+   * film or page banner ("campaign:landing-dining", "merch:categories:sofas"). The editor opens its picture chooser.
+   */
+  | ({ type: "media-select"; path: string } & ({ slot: TemplateMediaKey; target?: undefined } | { target: string; slot?: undefined }));
 export type ParentToFrameMessage =
   | { type: "focus"; section: string | null }
   /** "edit": clicking words on the page edits them; "browse": clicks follow links as on the storefront. */
@@ -141,8 +146,9 @@ export function readPreviewMessage(
   }
   if (message.type === "editing") return typeof message.active === "boolean" ? { type: "editing", active: message.active } : null;
   if (message.type === "media-select") {
-    return typeof message.slot === "string" && (templateMediaKeys as readonly string[]).includes(message.slot) && isPath(message.path)
-      ? { type: "media-select", slot: message.slot as TemplateMediaKey, path: message.path } : null;
+    if (!isPath(message.path)) return null;
+    if (typeof message.slot === "string") return (templateMediaKeys as readonly string[]).includes(message.slot) ? { type: "media-select", slot: message.slot as TemplateMediaKey, path: message.path } : null;
+    return typeof message.target === "string" && pictureTargetPattern.test(message.target) ? { type: "media-select", target: message.target, path: message.path } : null;
   }
   if (message.type === "token") {
     return typeof message.token === "string" && previewTokenPattern.test(message.token) && Number.isSafeInteger(message.version) && (message.version as number) > 0

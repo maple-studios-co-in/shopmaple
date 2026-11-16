@@ -112,8 +112,8 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
         ]} />
         {/* Both photos are required, so clearing one keeps the one already chosen. */}
         {session && onExpired && <>
-          <MediaPicker label="Left image" value={editorial.leftImage} onChange={url => url && next({ leftImage: url })} session={session} onExpired={onExpired} />
-          <MediaPicker label="Right image" value={editorial.rightImage} onChange={url => url && next({ rightImage: url })} session={session} onExpired={onExpired} />
+          <MediaPicker label="Left image" value={editorial.leftImage} onChange={url => url && next({ leftImage: url })} session={session} onExpired={onExpired} target="editorial:left" />
+          <MediaPicker label="Right image" value={editorial.rightImage} onChange={url => url && next({ rightImage: url })} session={session} onExpired={onExpired} target="editorial:right" />
         </>}
       </>;
     }

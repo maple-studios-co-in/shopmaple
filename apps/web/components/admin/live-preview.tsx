@@ -49,8 +49,8 @@ export type LivePreviewProps = {
   onTextSelect?: (message: TextSelectMessage, reply: TextReply) => void;
   /** Click-to-edit: they typed over those words and kept them; reply whether the field took them. */
   onTextEdit?: (message: TextEditMessage, reply: TextReply) => void;
-  /** Click-to-edit: they clicked a picture from this Artwork placement, on this storefront page. */
-  onMediaSelect?: (slot: TemplateMediaKey, path: string) => void;
+  /** Click-to-edit: they clicked a picture staff chose (an Artwork placement, or a banner, card, slide, post or film), on this page. */
+  onMediaSelect?: (picture: { slot: TemplateMediaKey } | { target: string }, path: string) => void;
   /**
    * Whether the page in the frame already shows the draft: every change since it loaded was typed on the page itself.
    * Then a newer token is handed to the page instead of reloading it (owner, 14 Nov 2026: "on edit the page keep reloading").
@@ -149,7 +149,7 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
       else if (message.type === "navigate") { setFramePath(message.path); setFrameStatus("loading"); }
       else if (message.type === "select") selectRef.current?.(message.section);
       else if (message.type === "editing") setFrameEditing(message.active);
-      else if (message.type === "media-select") mediaSelectRef.current?.(message.slot, message.path);
+      else if (message.type === "media-select") mediaSelectRef.current?.(message.slot ? { slot: message.slot } : { target: message.target! }, message.path);
       else if (message.type === "text-select" || message.type === "text-edit") {
         const phase = message.type === "text-select" ? "select" : "edit";
         const reply: TextReply = ({ ok, message: reason }) => source.postMessage(

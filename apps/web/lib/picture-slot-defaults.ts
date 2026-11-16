@@ -18,7 +18,7 @@ import { productBannerPicture } from "@/components/store/product-banner";
  * changes until staff upload a picture: the bundled file, or, where the store showed a Keeri product's photo, that
  * product (`product`), or nothing at all (the category pages' value icons).
  */
-export const pictureSlotGroups = ["Main menu", "Sofas page", "Tables page", "Chairs page", "Blog", "Product page", "Help pages", "Sign-in pages"] as const;
+export const pictureSlotGroups = ["Main menu", "Sofas page", "Tables page", "Chairs page", "Blog", "Product page", "Help pages", "Sign-in pages", "Icons & logo"] as const;
 export type PictureSlotGroup = (typeof pictureSlotGroups)[number];
 export type PictureSlot = TemplateMediaItem & {
   product?: string;
@@ -109,4 +109,33 @@ const others: PictureSlot[] = [
     help: "The photo beside the form on the create-account page (a band above the form on phones). 16:9, at least 1536 × 864 px." }),
 ];
 
-export const pictureSlots: PictureSlot[] = [...menu, ...landing("sofas"), ...landing("tables"), ...landing("chairs"), ...blog, ...others];
+/** Icons and the logo (owner, 16 Nov 2026): each keeps the drawing the store showed until staff upload another. */
+const icon = (key: string, image: string, label: string, help: string, alt = ""): PictureSlot => slot(key, { image, alt, label, group: "Icons & logo", help });
+const iconHelp = "A small line drawing beside its words. Upload a square SVG, PNG or WebP of at least 160 × 160 px, ideally on a transparent background.";
+const icons: PictureSlot[] = [
+  icon("site-logo", "/media/footer/maple-logo.webp", "Logo", "The Maple logo in the header and at the top of the footer. A wide logo of about 1080 × 500 px on a transparent background.", "Maple Furnishers"),
+  icon("icon-footer-map", "/media/footer/map.svg", "Footer: address icon", iconHelp),
+  icon("icon-footer-phone", "/media/footer/phone.svg", "Footer: phone icon", iconHelp),
+  icon("icon-footer-mail", "/media/footer/mail.svg", "Footer: email icon", iconHelp),
+  icon("icon-footer-phone-light", "/media/footer/phone-light.svg", "Footer: phone icon (bulk orders)", iconHelp),
+  icon("icon-footer-mail-light", "/media/footer/mail-light.svg", "Footer: email icon (bulk orders)", iconHelp),
+  icon("icon-footer-marketplace", "/media/footer/amazon.avif", "Footer: marketplace badge", "The badge under “Find Us On” in the footer. About 150 × 56 px.", "Amazon"),
+  icon("icon-contact-phone", "/media/contact/phone.svg", "Contact: call icon", iconHelp),
+  icon("icon-contact-mail", "/media/contact/mail.svg", "Contact: write icon", iconHelp),
+  icon("icon-contact-pin", "/media/contact/pin.svg", "Contact: visit icon", iconHelp),
+  icon("icon-story-handmade", "/media/our-story/handmade.svg", "Our Story: Handmade icon", iconHelp),
+  icon("icon-story-unique-designs", "/media/our-story/unique-designs.svg", "Our Story: Unique designs icon", iconHelp),
+  icon("icon-story-bespoke-pieces", "/media/our-story/bespoke-pieces.svg", "Our Story: Bespoke pieces icon", iconHelp),
+  icon("icon-bulk-custom", "/media/bulk-enquiry/ruler.svg", "Bulk Enquiry: custom specifications icon", iconHelp),
+  icon("icon-bulk-materials", "/media/bulk-enquiry/layers.svg", "Bulk Enquiry: materials icon", iconHelp),
+  icon("icon-bulk-quality", "/media/bulk-enquiry/shield.svg", "Bulk Enquiry: quality icon", iconHelp),
+  icon("icon-bulk-delivery", "/media/bulk-enquiry/truck.svg", "Bulk Enquiry: delivery icon", iconHelp),
+  icon("icon-bulk-price", "/media/bulk-enquiry/tag.svg", "Bulk Enquiry: price icon", iconHelp),
+  ...["comfort", "airy", "quiet"].map((name, at) => icon(`icon-nimbus-feeling-${at + 1}`, `/media/collection-icons/nimbus-${name}.svg`, `Nimbus: feeling card ${at + 1} drawing`, iconHelp)),
+  ...["fabric", "chair", "swatch"].map((name, at) => icon(`icon-nimbus-note-${at + 1}`, `/media/collection-icons/nimbus-${name}.svg`, `Nimbus: detail ${at + 1} icon`, iconHelp)),
+  ...["grounded", "tactile", "nature"].map((name, at) => icon(`icon-terra-feeling-${at + 1}`, `/media/collection-icons/terra-${name}.svg`, `Terra: feeling card ${at + 1} drawing`, iconHelp)),
+  ...["timber", "weave", "stone"].map((name, at) => icon(`icon-terra-note-${at + 1}`, `/media/collection-icons/terra-${name}.svg`, `Terra: detail ${at + 1} icon`, iconHelp)),
+  ...["bespoke", "craft", "delivery"].map((name, at) => icon(`icon-collection-promise-${at + 1}`, `/media/collection-icons/promise-${name}.svg`, `Nimbus and Terra: promise ${at + 1} icon`, iconHelp)),
+];
+
+export const pictureSlots: PictureSlot[] = [...menu, ...landing("sofas"), ...landing("tables"), ...landing("chairs"), ...blog, ...others, ...icons];

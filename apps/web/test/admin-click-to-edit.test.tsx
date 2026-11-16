@@ -666,3 +666,57 @@ test("the storefront marks each picture from an Artwork placement with that plac
   for (const tile of ["sofas", "chairs", "tables", "beds"]) assert.match(hero, new RegExp(`data-media-slot="home-hero-${tile}"`));
   assert.match(renderToStaticMarkup(<HomeCities />), /data-media-slot="home-city-kolkata"/);
 });
+
+test("banner, card and film clicks are read only with a known kind of picture and a storefront address", () => {
+  const frameWindow = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data: { source: previewMessageSource, ...data } }, origin, frameWindow);
+  assert.deepEqual(read({ type: "media-select", target: "campaign:landing-dining", path: "/" }), { type: "media-select", target: "campaign:landing-dining", path: "/" });
+  assert.deepEqual(read({ type: "media-select", target: "merch:categories:sofas", path: "/" })?.type, "media-select");
+  assert.equal(read({ type: "media-select", target: "script:alert", path: "/" }), null, "only known kinds of picture");
+  assert.equal(read({ type: "media-select", target: "campaign:<b>", path: "/" }), null);
+});
+
+test("inside the frame: a banner's picture opens its chooser, while the words drawn over it stay words to type over", async () => {
+  const frame = await renderBridge(
+    <div data-home-section="dining-banner">
+      <section className="campaign-banner"><div className="campaign-scene" data-picture-target="campaign:landing-dining-table">
+        <div className="campaign-art-desktop"><img src="/media/diwali/973-465.png" alt="" /></div>
+        <h2>Make room for one more.</h2>
+      </div></section>
+    </div>,
+  );
+  try {
+    await frame.click(container.querySelector("img")!);
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", target: "campaign:landing-dining-table", path: "/" });
+    frame.sent.length = 0;
+    const words = container.querySelector("h2")!;
+    await frame.click(words);
+    assert.equal(frame.sent.some((message) => message.type === "media-select"), false, "the headline is not a picture");
+    assert.equal(frame.sent.find((message) => message.type === "text-select")?.text, "Make room for one more.");
+    await frame.key(words, "Escape");
+  } finally { await frame.close(); }
+});
+
+test("a banner clicked in the preview opens its campaign's artwork chooser, adding its own artwork when it still shows the theme's", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "media-select", target: "campaign:landing-storage", path: "/" });
+    await until(() => container.querySelector("[data-section-inspector=promos]") !== null, "the promos inspector");
+    await until(() => container.querySelector('[data-picture-target="campaign:landing-storage"]') !== null, "the storage campaign's desktop artwork chooser");
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing storage");
+    await until(() => [...container.querySelectorAll('[data-picture-target="campaign:landing-storage"] button')].some((button) => words(button) === "Close library"), "its library, open");
+  } finally { await app.close(); }
+});
+
+test("the footer's logo and icons, and the contact page's, name their Artwork placements", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { Footer } = await import("../components/footer");
+  const footer = renderToStaticMarkup(<Footer />);
+  for (const slot of ["site-logo", "icon-footer-map", "icon-footer-phone", "icon-footer-mail", "icon-footer-marketplace"]) assert.match(footer, new RegExp(`data-media-slot="${slot}"`));
+  const { resolveChromeArtwork } = await import("../lib/chrome-artwork-resolve");
+  const swapped = resolveChromeArtwork([{ key: "site-logo", image: `/media/uploads/${"a".repeat(64)}.webp`, alt: "Maple" }]);
+  assert.equal(swapped.logo.src, `/media/uploads/${"a".repeat(64)}.webp`);
+  assert.equal(resolveChromeArtwork().map.src, "/media/footer/map.svg", "untouched icons keep the design's drawing");
+});

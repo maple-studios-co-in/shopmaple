@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { chromeArtworkSlots, defaultChromeArtwork, type ChromePicture } from "@/lib/chrome-artwork";
 import Image from "next/image";
 import { useState } from "react";
 import { Search, UserRound, Heart, ShoppingBag, Menu } from "lucide-react";
@@ -18,7 +19,9 @@ export function Header({
   siteChrome = defaultSiteChrome,
   sticky = false,
   menuArtwork,
-}: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean; menuArtwork?: MenuArtwork } = {}) {
+  logo = defaultChromeArtwork.logo,
+}: { siteChrome?: SiteChrome; /** Pinned to the top while the page scrolls (product pages; owner, 10 Nov 2026). */ sticky?: boolean; menuArtwork?: MenuArtwork;
+  /** The logo, an Artwork placement (Icons & logo). */ logo?: ChromePicture } = {}) {
   const { cart, setCartOpen, favourites } = useShop();
   const [search, setSearch] = useState(false),
     [wishlist, setWishlist] = useState(false),
@@ -51,10 +54,11 @@ export function Header({
           <Link href="/" className="brand" aria-label="Maple Furnishers home">
             {/* The logo artwork as a ready-made file: it skips the image resizer, so it paints with the page. */}
             <Image
-              src="/media/footer/maple-logo.webp"
+              src={logo.src}
+              data-media-slot={chromeArtworkSlots.logo}
               width={1080}
               height={500}
-              alt="Maple Furnishers"
+              alt={logo.alt || "Maple Furnishers"}
               unoptimized
               preload
             />

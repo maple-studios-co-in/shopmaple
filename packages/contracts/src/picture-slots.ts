@@ -61,8 +61,19 @@ export const otherPictureKeys = [
   "auth-login", "auth-sign-up",
 ] as const;
 
+/** Icons and the logo, fixed in code until the owner asked for them in the live preview too (16 Nov 2026). */
+export const iconPictureKeys = [
+  "site-logo", "icon-footer-map", "icon-footer-phone", "icon-footer-mail", "icon-footer-phone-light", "icon-footer-mail-light", "icon-footer-marketplace",
+  "icon-contact-phone", "icon-contact-mail", "icon-contact-pin",
+  "icon-story-handmade", "icon-story-unique-designs", "icon-story-bespoke-pieces",
+  "icon-bulk-custom", "icon-bulk-materials", "icon-bulk-quality", "icon-bulk-delivery", "icon-bulk-price",
+  "icon-nimbus-feeling-1", "icon-nimbus-feeling-2", "icon-nimbus-feeling-3", "icon-nimbus-note-1", "icon-nimbus-note-2", "icon-nimbus-note-3",
+  "icon-terra-feeling-1", "icon-terra-feeling-2", "icon-terra-feeling-3", "icon-terra-note-1", "icon-terra-note-2", "icon-terra-note-3",
+  "icon-collection-promise-1", "icon-collection-promise-2", "icon-collection-promise-3",
+] as const;
+
 export const pictureSlotKeys = [
-  ...menuPictureKeys, ...landingBannerKeys, ...landingTileKeys, ...landingValueKeys, ...blogPictureKeys, ...otherPictureKeys,
+  ...menuPictureKeys, ...landingBannerKeys, ...landingTileKeys, ...landingValueKeys, ...blogPictureKeys, ...otherPictureKeys, ...iconPictureKeys,
 ] as const;
 
 /** The landing banners are wide on larger screens and square on phones, so each takes a desktop and a mobile image. */
@@ -74,4 +85,5 @@ export const pictureSlotDecorativeKeys = [
   ...landingValueKeys,
   "blog-bestsellers-promo", "blog-collections-photo",
   ...otherPictureKeys,
+  ...iconPictureKeys,
 ] as const;

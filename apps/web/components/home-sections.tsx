@@ -173,8 +173,8 @@ export function HomeTestimonial({
       {/* The film staff chose (Homepage → Testimonial) plays with its poster; without a film an uploaded poster shows as a
           still beside the words, and without either the words stand alone. */}
       {film
-        ? <AmbientFilm src={film.src} mobileSrc={film.mobileSrc} label={poster.alt} width={720} height={1280}
-          poster={poster.image ? getImageProps({ src: poster.image, alt: poster.alt, width: 720, height: 1280 }).props.src : undefined} />
+        ? <div data-picture-target="film:home-testimonial" style={{ display: "contents" }}><AmbientFilm src={film.src} mobileSrc={film.mobileSrc} label={poster.alt} width={720} height={1280}
+          poster={poster.image ? getImageProps({ src: poster.image, alt: poster.alt, width: 720, height: 1280 }).props.src : undefined} /></div>
         : poster.image && <Image className="home-testimonial-still" data-media-slot="home-testimonial-poster" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
     </section>
   );

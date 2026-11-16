@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { TemplateMediaKey } from "@shopmaple/contracts";
 import { Fragment, type ReactNode } from "react";
 import type { StoryPageContent, StoryPrincipleKey, StorySectionKey, TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
@@ -9,10 +10,11 @@ import { artworkProducts, resolveArtwork, resolveTemplateMedia, type ProductPhot
 
 /** The contact page's enquiry, already about a custom piece, as the menu's Custom Furniture opens it. */
 const conversationHref = `/contact?${new URLSearchParams({ product: "Custom furniture" })}`;
-const principleIcons: Record<StoryPrincipleKey, string> = {
-  handmade: "/media/our-story/handmade.svg",
-  "unique-designs": "/media/our-story/unique-designs.svg",
-  "bespoke-pieces": "/media/our-story/bespoke-pieces.svg",
+/** Each principle's icon: an Artwork placement (Icons & logo), which keeps the design's drawing until staff upload another. */
+const principleIcons: Record<StoryPrincipleKey, TemplateMediaKey> = {
+  handmade: "icon-story-handmade",
+  "unique-designs": "icon-story-unique-designs",
+  "bespoke-pieces": "icon-story-bespoke-pieces",
 };
 
 function Lines({ lines }: { lines: readonly string[] }) {
@@ -71,7 +73,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
           {page.principles.map(item => (
             <li key={item.key} className="story-principle">
               {/* eslint-disable-next-line @next/next/no-img-element -- the design's 80px line drawing */}
-              <img src={principleIcons[item.key]} width={80} height={80} alt="" loading="lazy" decoding="async" />
+              <img src={resolveTemplateMedia(principleIcons[item.key], media).image} data-media-slot={principleIcons[item.key]} width={80} height={80} alt="" loading="lazy" decoding="async" />
               <div>
                 <h3>{item.title}</h3>
                 <p>{item.body}</p>

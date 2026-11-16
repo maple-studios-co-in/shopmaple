@@ -28,7 +28,8 @@ export function HomeEditorial({ content, media }: { content: ResolvedHomeDetails
         <div data-editorial-photo="square" data-flipbook>
           {frames.map((src, i) => (
             <div key={src} data-flip-frame data-active={i === 0 ? "" : undefined} aria-hidden={i === 0 ? undefined : true}>
-              <Image src={src} alt={i === 0 ? content.leftAlt : ""} fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 386px, 32vw" />
+              <Image src={src} alt={i === 0 ? content.leftAlt : ""} data-picture-target={i === 0 ? "editorial:left" : undefined}
+                data-media-slot={i === 0 ? undefined : flipKeys.find((key) => resolveTemplateMedia(key, media).image === src)} fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 386px, 32vw" />
             </div>
           ))}
         </div>
@@ -40,7 +41,7 @@ export function HomeEditorial({ content, media }: { content: ResolvedHomeDetails
       </div>
       <div data-editorial-right>
         <div data-editorial-photo="wide">
-          <Image src={content.rightImage} alt={content.rightAlt} fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 720px, 60vw" />
+          <Image src={content.rightImage} alt={content.rightAlt} data-picture-target="editorial:right" fill sizes="(max-width:749px) calc(100vw - 32px), (min-width:1265px) 720px, 60vw" />
         </div>
       </div>
     </section>

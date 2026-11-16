@@ -17,13 +17,15 @@ export function mediaPreviewUrl(src: string) {
  * Choose an approved image, or with `accept="video"` a film, from the media library; previews go through the private
  * admin transport. The library it opens lists and uploads only that kind.
  */
-export function MediaPicker({ label, value, onChange, onPick, session, onExpired, accept = "image", openRequest }: {
+export function MediaPicker({ label, value, onChange, onPick, session, onExpired, accept = "image", openRequest, target }: {
   label: string; value: string; onChange: (url: string) => void; session: StaffSession; onExpired: () => void;
   /** Receives the chosen file itself instead of `onChange` its address, for a field that keeps more (a film's running time). */
   onPick?: (asset: MediaAsset) => void;
   accept?: MediaKind;
   /** Each new number opens the library and brings it into view (a picture clicked in the live preview). */
   openRequest?: number;
+  /** The storefront picture this chooser changes ("campaign:landing-dining"), as the live preview names it on the page. */
+  target?: string;
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -43,7 +45,7 @@ export function MediaPicker({ label, value, onChange, onPick, session, onExpired
   const previewable = Boolean(value) && (film ? contentFilmSchema : contentImageSchema).safeParse(value).success;
   const Placeholder = film ? Clapperboard : ImageIcon;
   return (
-    <div ref={box} role="group" aria-labelledby={labelId} data-span="full" data-media-picker={accept} className="grid min-w-0 gap-3 rounded-lg border border-line-soft bg-surface p-3 [overflow-wrap:anywhere] sm:p-4">
+    <div ref={box} role="group" aria-labelledby={labelId} data-span="full" data-media-picker={accept} data-picture-target={target} className="grid min-w-0 gap-3 rounded-lg border border-line-soft bg-surface p-3 [overflow-wrap:anywhere] sm:p-4">
       <p id={labelId} className="text-xs font-medium text-foreground">{label}</p>
       <div className="flex min-w-0 flex-wrap items-center gap-3">
         <span className="grid h-[100px] w-[160px] shrink-0 place-items-center overflow-hidden rounded-md border border-line-soft bg-sunken">

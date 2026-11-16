@@ -98,7 +98,7 @@ export async function CampaignBanner({
       aria-label={data.label || data.headline.join(" ")}
       style={vars}
     >
-      <div className="campaign-scene">
+      <div className="campaign-scene" data-picture-target={`campaign:${campaign}`}>
         {data.artwork ? (
           <>
             <div className="campaign-art-desktop" data-artwork="desktop">

@@ -44,7 +44,7 @@ export function TemplateFilmField({ place, value, onChange, session, onExpired }
   return (
     <Card className="gap-3 px-5 py-5 shadow-xs sm:px-6" data-template-film={place}>
       <SectionHeading className="m-0" description={description}>{label}</SectionHeading>
-      <MediaPicker accept="video" label={label} value={current?.src ?? ""} session={session} onExpired={onExpired}
+      <MediaPicker accept="video" label={label} value={current?.src ?? ""} session={session} onExpired={onExpired} target={`film:${place}`}
         onPick={asset => put({ key: place, src: asset.url, ...(current?.mobileSrc ? { mobileSrc: current.mobileSrc } : {}), ...(asset.durationMs ? { durationMs: asset.durationMs } : {}) })}
         onChange={url => { if (!url) save(others); }} />
       {current && <div className="grid gap-2" data-phone-film={place}>

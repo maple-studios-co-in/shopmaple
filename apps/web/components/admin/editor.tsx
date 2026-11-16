@@ -8,7 +8,7 @@ import {
   previewTokenPattern,
   homeSectionKeys,
   storefrontContentSchema,
-  type StorefrontContent,
+  type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { DisabledScope } from "@/components/ui/disabled-scope";
@@ -36,6 +36,7 @@ import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
 import { previewRouteFor } from "@/lib/live-preview";
+import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
@@ -667,12 +668,30 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                   setInspecting((homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : null);
                 }}
                 textEditing={canEdit} onTextSelect={clickToEdit.onTextSelect} onTextEdit={clickToEdit.onTextEdit}
-                onMediaSelect={(slot, framePath) => {
-                  // A picture from an Artwork placement: open Artwork on it with its library, keeping the preview on that page.
+                onMediaSelect={(picture, framePath) => {
+                  // A picture clicked on the page: open what changes it, keeping the preview on that page.
                   if (!canEdit || scheduleEditing) return;
                   setPreviewHold(previewRouteFor(framePath));
-                  setArtworkRequest((current) => ({ slot, nonce: (current?.nonce ?? 0) + 1 }));
-                  if (tabRef.current !== "Artwork") { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab("Artwork"); }
+                  const toArtwork = (slot: TemplateMediaKey, library = true) => {
+                    setArtworkRequest((current) => ({ slot, nonce: (current?.nonce ?? 0) + 1, library }));
+                    if (tabRef.current !== "Artwork") { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab("Artwork"); }
+                  };
+                  // An Artwork placement: Artwork on that placement, with its library open.
+                  if ("slot" in picture) { toArtwork(picture.slot); return; }
+                  // A banner, card, slide, post, film or page banner: the screen that holds its chooser, then the chooser.
+                  const screen = pictureScreen(picture.target);
+                  if (!screen) return;
+                  if (screen.section) {
+                    if (tabRef.current !== "Homepage") { setSelectedPage(0); setTab("Homepage"); }
+                    setFocusedSection(screen.section);
+                    setInspectQuiet(true);
+                    setInspecting(screen.section);
+                    setContentRequest((value) => value + 1);
+                  } else if (screen.filmSlot) toArtwork(screen.filmSlot, false);
+                  else if (screen.tab && tabRef.current !== screen.tab) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(screen.tab); }
+                  void openPictureChooser(picture.target, screen, content).then((opened) => {
+                    if (!opened) setNotice("This picture's chooser could not be opened here. Find it on its screen in the editor.");
+                  });
                 }}
                 isFrameCurrent={() => frameCurrent.current}
                 onFrameReady={(frameVersion) => { frameCurrent.current = frameVersion === document?.version && !dirty; }} />

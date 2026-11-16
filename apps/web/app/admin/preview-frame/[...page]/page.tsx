@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
 import { PreviewFrameDocument, SectionThumbnailDocument } from "@/components/admin/preview-shell";
 import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
@@ -67,7 +68,7 @@ export default async function PreviewFrame({ params, searchParams }: {
   // The draft's own theme words, each marked with its place so click-to-edit opens its field (the published view is not edited).
   return (
     <SiteWordsProvider words={content.siteWords} marked={!published}>
-      <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} menuArtwork={resolveMenuArtwork(content.templateMedia)} view={published ? "published" : "draft"}>
+      <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} menuArtwork={resolveMenuArtwork(content.templateMedia)} chromeArtwork={resolveChromeArtwork(content.templateMedia)} view={published ? "published" : "draft"}>
         <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
       </PreviewFrameDocument>
     </SiteWordsProvider>

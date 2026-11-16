@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
 import { connection } from "next/server";
 // "Maple / Typography" (Figma 180:639): DM Sans Medium for headings and labels, Red Hat Display for reading text.
 import "@fontsource-variable/dm-sans/opsz.css";
@@ -70,7 +71,7 @@ export default async function Layout({
         <ShopProvider>
           <ProductHighlightsProvider value={productHighlights}>
             <SiteWordsProvider words={siteWords}>
-              <StoreChrome siteChrome={siteChrome} menuArtwork={resolveMenuArtwork(templateMedia)}>{children}</StoreChrome>
+              <StoreChrome siteChrome={siteChrome} menuArtwork={resolveMenuArtwork(templateMedia)} chromeArtwork={resolveChromeArtwork(templateMedia)}>{children}</StoreChrome>
             </SiteWordsProvider>
           </ProductHighlightsProvider>
         </ShopProvider>

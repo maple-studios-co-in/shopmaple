@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from "react";
+import type { TemplateMediaKey } from "@shopmaple/contracts";
 import type { BulkPageContent, BulkSectionKey, SiteChrome, TemplateMedia } from "@shopmaple/contracts";
 import { ArrowRight, Check } from "lucide-react";
 import { BulkPageFrame, BulkProposalForm } from "@/components/bulk-enquiry-form";
@@ -10,12 +11,12 @@ import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 
 const indiaMart = "https://m.indiamart.com/maple-furnishers/";
 /** The design's line icons (Figma 298:983); the price promise, which the redesign retired, keeps one drawn to match. */
-const promiseIcons: Record<ResolvedBulkPage["trust"]["items"][number]["key"], string> = {
-  custom: "/media/bulk-enquiry/ruler.svg",
-  materials: "/media/bulk-enquiry/layers.svg",
-  quality: "/media/bulk-enquiry/shield.svg",
-  delivery: "/media/bulk-enquiry/truck.svg",
-  price: "/media/bulk-enquiry/tag.svg",
+const promiseIcons: Record<ResolvedBulkPage["trust"]["items"][number]["key"], TemplateMediaKey> = {
+  custom: "icon-bulk-custom",
+  materials: "icon-bulk-materials",
+  quality: "icon-bulk-quality",
+  delivery: "icon-bulk-delivery",
+  price: "icon-bulk-price",
 };
 
 /** Text whose line breaks are kept (a heading set on two lines in the design); a space after each break keeps the words
@@ -93,7 +94,7 @@ export function BulkEnquiry({ context, content, site }: {
           {page.trust.items.map(item => (
             <li key={item.key} className="bulk-advantage" data-bulk-advantage={item.key} data-reveal="">
               {/* eslint-disable-next-line @next/next/no-img-element -- the design's 42px line icon */}
-              <img src={promiseIcons[item.key]} width={42} height={42} alt="" loading="lazy" decoding="async" />
+              <img src={resolveTemplateMedia(promiseIcons[item.key], media).image} data-media-slot={promiseIcons[item.key]} width={42} height={42} alt="" loading="lazy" decoding="async" />
               <h3>{item.title}</h3>
               <p>{item.body}</p>
             </li>
