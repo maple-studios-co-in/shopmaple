@@ -2,14 +2,14 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ChromeArtwork } from "@/lib/chrome-artwork";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { MousePointer2, Pencil } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
 import type { MenuArtwork } from "@/lib/menu-artwork";
 import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { AdminRoot } from "./admin-root";
-import { previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, type PreviewDevice, type PreviewTextTarget } from "@/lib/live-preview";
+import { keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewTextTarget } from "@/lib/live-preview";
 import { sectionName } from "@/lib/section-thumbnails";
 
 export type PreviewPageOption = { label: string; segments: string[] };
@@ -153,8 +153,17 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
   // The parent exists only in the browser. Read after mounting, so the server's markup and the first render agree.
   const [parent, setParent] = useState<Window | null>(parentWindow ?? null);
   useEffect(() => { setParent(parentWindow === undefined ? embeddingParent() : parentWindow); }, [parentWindow]);
-  /** Click-to-edit is on until the admin switches the preview to Browse. */
-  const [editMode, setEditMode] = useState(true);
+  /**
+   * Edit until the admin says Browse. A page that reloads (or opens from a link followed in Browse) starts in the mode kept
+   * for the tab, so it never edits for a moment while staff are browsing, or follows a link while they are editing.
+   */
+  const [editMode, setEditMode] = useState(() => readPreviewMode() === "edit");
+  // The page says which mode it is in, for its cursors (styles/admin.css) and the pill below.
+  useEffect(() => {
+    if (!parent || !selectable) return;
+    document.documentElement.dataset.previewMode = editMode ? "edit" : "browse";
+    return () => { delete document.documentElement.dataset.previewMode; };
+  }, [parent, selectable, editMode]);
   /** A short reason shown in the hint when the editor could not take the words (a product name from Keeri, say). */
   const [note, setNote] = useState("");
   /** The words being typed over right now: a scroll request never pulls them out from under the caret. */
@@ -176,7 +185,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     function onMessage(event: MessageEvent) {
       const message = readPreviewMessage(event, origin, parent);
       if (!message) return;
-      if (message.type === "mode") { setEditMode(message.mode === "edit"); return; }
+      if (message.type === "mode") { setEditMode(message.mode === "edit"); keepPreviewMode(message.mode); return; }
       if (message.type === "token") {
         tokenRef.current?.(message.token, message.version);
         // A token handed over in place follows the save of words typed on this page. Say so where the eyes are: the save
@@ -212,9 +221,10 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [path, version, parent]);
-  // Hover outlines a section and places its Edit button at the section's top left, inside the viewport.
+  // Hover outlines a section and places its Edit button at the section's top left, inside the viewport: in Edit only, as
+  // Browse shows the page as visitors see it.
   useEffect(() => {
-    if (!parent || !selectable) return;
+    if (!parent || !selectable || !editMode) { setHover(null); return; }
     let current: HTMLElement | null = null;
     const place = () => {
       if (!current) return;
@@ -238,7 +248,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       window.removeEventListener("scroll", place);
       current?.removeAttribute("data-preview-hover");
     };
-  }, [parent, selectable]);
+  }, [parent, selectable, editMode]);
   // Click-to-edit, as in a page builder: hovering words outlines them, clicking turns them into a text box right on the
   // page, and Enter (or clicking away) hands the new words to the editor, which types them into the field that holds
   // them. Esc puts them back. Links don't open while it is on; sliders, tabs and menus without words of their own still
@@ -336,8 +346,9 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     function onClick(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
       if (!node || node.closest("[data-preview-edit]")) return;
-      // Clicks inside the words being typed place the caret, as in any text box.
-      if (editing && editing.contains(node)) return;
+      // Clicks inside the words being typed place the caret, as in any text box (the caret moves on mousedown). The click
+      // itself goes no further: words inside a link used to open its page on the second click (owner, 16 Nov 2026).
+      if (editing && editing.contains(node)) { event.preventDefault(); event.stopPropagation(); return; }
       // A form box whose grey words are the theme's (Site words): open their box in the editor; the form box still works.
       const box = node.closest<HTMLElement>("[data-site-word-placeholder]");
       if (box) {
@@ -358,8 +369,9 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         return;
       }
       if (!editableWords(node)) {
-        // A slider arrow, a tab or a menu button without words of its own keeps working while text is edited.
-        if (node.closest("button, [role=button], [role=tab], summary, label") && !node.closest("a[href]")) return;
+        // A slider arrow, a tab or an accordion without words of its own keeps working, so every slide and panel can be
+        // reached to edit. The header's search, account, wishlist and bag open nothing in Edit; neither does a link.
+        if (node.closest("button, [role=button], [role=tab], summary, label") && !node.closest("a[href], .header-actions")) return;
         event.preventDefault();
         event.stopPropagation();
         if (editing) finish(true);
@@ -373,13 +385,28 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       if (editing) finish(true);
       start(node);
     }
+    // In Edit a form never sends (a click on Send is words to edit; Enter in a box would still send) and a middle click
+    // opens no link in a new tab: only Browse uses the page as a visitor would.
+    function onSubmit(event: Event) {
+      event.preventDefault();
+      event.stopPropagation();
+      setNote("Forms don't send in Edit. Choose Browse to try them.");
+    }
+    function onAuxClick(event: MouseEvent) {
+      const node = event.target instanceof Element ? event.target : null;
+      if (node?.closest("a[href]")) { event.preventDefault(); event.stopPropagation(); }
+    }
     document.addEventListener("mouseover", onOver);
     // On the window, not the document: Next.js roots React at the document, so React's own capture listeners (the
     // preview's link capture among them) would run first there and follow the link before this could stop it.
     window.addEventListener("click", onClick, true);
+    window.addEventListener("submit", onSubmit, true);
+    window.addEventListener("auxclick", onAuxClick, true);
     return () => {
       document.removeEventListener("mouseover", onOver);
       window.removeEventListener("click", onClick, true);
+      window.removeEventListener("submit", onSubmit, true);
+      window.removeEventListener("auxclick", onAuxClick, true);
       hovered?.removeAttribute("data-preview-text-hover");
       hoveredPicture?.removeAttribute("data-preview-media-hover");
       // Switching to Browse keeps what was typed so far.
@@ -390,10 +417,16 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
   if (!parent || !selectable) return null;
   return (
     <>
-      {editMode && (
-        <p data-preview-hint="" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex max-w-[min(520px,calc(100%-24px))] items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 font-sans text-2xs font-semibold text-background shadow-md backdrop-blur">
+      {editMode ? (
+        <p data-preview-hint="" data-preview-mode-pill="edit" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex max-w-[min(520px,calc(100%-24px))] items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 font-sans text-2xs font-semibold text-background shadow-md backdrop-blur">
           <Pencil aria-hidden="true" className="size-3 shrink-0" strokeWidth={1.75} />
-          {note || "Click any text or picture to change it · Enter to keep · Esc to undo"}
+          {note || "Edit: click any text or picture to change it · Enter to keep · Esc to undo"}
+        </p>
+      ) : (
+        // Browsing says so on the page too, so a click that opens a page is never a surprise.
+        <p data-preview-mode-pill="browse" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-background/90 px-3 py-1.5 font-sans text-2xs font-semibold text-foreground shadow-md backdrop-blur">
+          <MousePointer2 aria-hidden="true" className="size-3 shrink-0" strokeWidth={1.75} />
+          Browse: clicks open pages · choose Edit to change words and pictures
         </p>
       )}
       {hover?.section && (

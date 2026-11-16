@@ -208,7 +208,9 @@ test("a link to a page of its own, followed in Browse, opens that page in the fr
 });
 
 /** The frame's side, with a stand-in parent window that records what the bridge tells the editor. */
-async function renderBridge(page: React.ReactNode) {
+async function renderBridge(page: React.ReactNode, { mode = "edit" }: { mode?: "edit" | "browse" } = {}) {
+  // The mode a page starts in is kept for the tab (lib/live-preview.ts): each frame here starts from a known one.
+  window.sessionStorage.setItem("shopmaple-preview-mode", mode);
   const sent: Record<string, any>[] = [];
   const parent = { postMessage: (data: Record<string, any>) => { sent.push(data); } } as unknown as Window;
   const root = createRoot(container);
@@ -356,6 +358,7 @@ test("the frame's server markup has no click-to-edit hint, so the first render i
 const tokenA = "eyJzIjoiZWRpdG9yIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const tokenB = "eyJzIjoiZWRpdG9yIn0.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
 async function setup({ role = "editor", content = defaultStorefrontContent }: { role?: "editor" | "viewer"; content?: StorefrontContent } = {}) {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const puts: any[] = [];
@@ -414,7 +417,7 @@ test("clicking Terra's Explore in the preview opens the Nimbus inspector and lig
   const app = await setup();
   try {
     await app.openPreview();
-    assert.ok(app.button("Click to edit"), "Edit access offers click-to-edit");
+    assert.ok(container.querySelector('[data-click-to-edit="edit"]') && container.querySelector('[data-click-to-edit="browse"]'), "Edit access offers Edit and Browse");
     await app.fromFrame({ type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
     await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
     assert.deepEqual(app.replies.find((reply) => reply.type === "text-result"), { source: previewMessageSource, type: "text-result", phase: "select", ok: true });
@@ -566,7 +569,7 @@ test("View access browses the preview: no click-to-edit switch, and a clicked wo
   const app = await setup({ role: "viewer" });
   try {
     await app.openPreview();
-    assert.equal([...container.querySelectorAll("button")].some((b) => words(b) === "Click to edit" || words(b) === "Browse"), false);
+    assert.equal(container.querySelector("[data-click-to-edit]"), null, "no Edit or Browse choice");
     assert.ok(app.replies.some((reply) => reply.type === "mode" && reply.mode === "browse"), "the frame is told to browse");
     await app.fromFrame({ type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
     await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
@@ -719,4 +722,76 @@ test("the footer's logo and icons, and the contact page's, name their Artwork pl
   const swapped = resolveChromeArtwork([{ key: "site-logo", image: `/media/uploads/${"a".repeat(64)}.webp`, alt: "Maple" }]);
   assert.equal(swapped.logo.src, `/media/uploads/${"a".repeat(64)}.webp`);
   assert.equal(resolveChromeArtwork().map.src, "/media/footer/map.svg", "untouched icons keep the design's drawing");
+});
+
+test("the toolbar offers Edit and Browse as two choices: each click chooses that one, and the page is told", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const app = await setup();
+  try {
+    await app.openPreview();
+    const choice = (name: "edit" | "browse") => container.querySelector<HTMLButtonElement>(`[data-click-to-edit="${name}"]`)!;
+    assert.equal(choice("edit").getAttribute("aria-pressed"), "true", "Edit is the default");
+    assert.equal(choice("browse").getAttribute("aria-pressed"), "false");
+    await act(async () => choice("browse").click());
+    await act(async () => choice("browse").click());
+    assert.equal(choice("browse").getAttribute("aria-pressed"), "true", "pressing Browse again keeps Browse: it never flips back");
+    assert.equal(app.replies.filter((reply) => reply.type === "mode").at(-1)?.mode, "browse");
+    assert.equal(window.sessionStorage.getItem("shopmaple-preview-mode"), "browse", "kept for the tab, so a reloaded page starts browsing");
+    await act(async () => choice("edit").click());
+    assert.equal(choice("edit").getAttribute("aria-pressed"), "true");
+    assert.equal(app.replies.filter((reply) => reply.type === "mode").at(-1)?.mode, "edit");
+  } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await app.close(); }
+});
+
+test("inside the frame, in Edit: a second click in words being typed never opens their link, and forms never send", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const frame = await renderBridge(
+    <div data-home-section="nimbus">
+      <a href="/terra-collection"><span>Explore</span></a>
+      <form><input name="email" /><button type="submit">Send enquiry</button></form>
+    </div>,
+  );
+  try {
+    const link = container.querySelector("a span")!;
+    await frame.click(link);
+    assert.ok(link.hasAttribute("contenteditable"), "the first click makes the words a text box");
+    const again = await frame.click(link);
+    assert.equal(again.defaultPrevented, true, "the second click places the caret and opens nothing");
+    assert.ok(link.hasAttribute("contenteditable"), "still typing");
+    await frame.key(link, "Escape");
+    const submit = new dom.window.Event("submit", { bubbles: true, cancelable: true });
+    await act(async () => { container.querySelector("form")!.dispatchEvent(submit); });
+    assert.equal(submit.defaultPrevented, true, "a form does not send in Edit");
+    assert.match(words(container.querySelector("[data-preview-hint]")), /Forms don.t send in Edit/);
+  } finally { await frame.close(); }
+});
+
+test("inside the frame, in Edit: the header's search, account and bag open nothing; slider arrows and tabs keep working", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const frame = await renderBridge(
+    <>
+      <header className="site-header"><div className="header-actions"><button type="button" aria-label="Search furniture"><svg /></button></div></header>
+      <div data-home-section="nimbus"><button type="button" aria-label="Next collection"><svg /></button></div>
+    </>,
+  );
+  try {
+    const search = await frame.click(container.querySelector('[aria-label="Search furniture"]')!);
+    assert.equal(search.defaultPrevented, true, "the search does not open in Edit");
+    const arrow = await frame.click(container.querySelector('[aria-label="Next collection"]')!);
+    assert.equal(arrow.defaultPrevented, false, "a slider arrow still moves, to reach the next slide's words");
+  } finally { await frame.close(); }
+});
+
+test("inside the frame: a page that loads while staff are browsing starts in Browse, and says so", async () => {
+  const frame = await renderBridge(<div data-home-section="nimbus"><a href="/terra-collection"><span>Explore</span></a></div>, { mode: "browse" });
+  try {
+    const event = await frame.click(container.querySelector("a span")!);
+    assert.equal(event.defaultPrevented, false, "the link opens, as for a visitor");
+    assert.equal(container.querySelector("a span")!.hasAttribute("contenteditable"), false);
+    assert.match(words(container.querySelector('[data-preview-mode-pill="browse"]')), /Browse: clicks open pages/);
+    assert.equal(document.documentElement.dataset.previewMode, "browse");
+    await frame.tell({ type: "mode", mode: "edit" });
+    assert.equal(window.sessionStorage.getItem("shopmaple-preview-mode"), "edit", "the admin's choice is kept for the next page");
+    assert.ok(container.querySelector('[data-preview-mode-pill="edit"]'));
+  } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await frame.close(); }
 });

@@ -5,8 +5,10 @@ import {
   previewDevices,
   previewDeviceWidths,
   previewFrameUrl,
+  keepPreviewMode,
   previewMessageSource,
   readPreviewMessage,
+  readPreviewMode,
   type PreviewDevice,
   type PreviewView,
 } from "@/lib/live-preview";
@@ -79,8 +81,9 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
 export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
-  /** Click-to-edit (the default) or Browse, where clicks follow links as a shopper's would. */
-  const [editMode, setEditMode] = useState(true);
+  /** Edit (the default) or Browse, where clicks follow links as a shopper's would; kept for the tab (lib/live-preview.ts). */
+  const [editMode, setEditMode] = useState(() => readPreviewMode() === "edit");
+  const chooseMode = (edit: boolean) => { setEditMode(edit); keepPreviewMode(edit ? "edit" : "browse"); };
   /** Words on the page are being typed over: a newer draft waits, so a reload never wipes them. */
   const [frameEditing, setFrameEditing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -244,12 +247,21 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {view === "draft" && textEditing && (
-            <Button type="button" variant="ghost" size="sm" aria-pressed={editMode} data-click-to-edit={editMode ? "on" : "off"} onClick={() => setEditMode((value) => !value)}
-              title={editMode ? "Click to edit is on: click any words on the page to change them. Turn it off to follow links." : "Browsing: clicks follow links. Turn on click to edit."}
-              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-semibold text-muted-foreground aria-pressed:bg-accent-tint aria-pressed:text-primary">
-              {editMode ? <MousePointerClick aria-hidden="true" strokeWidth={1.5} /> : <MousePointer2 aria-hidden="true" strokeWidth={1.5} />}
-              <span>{editMode ? "Click to edit" : "Browse"}</span>
-            </Button>
+            // Two plain choices, never one toggle: the single button read "Click to edit" while editing was on, so pressing
+            // it turned editing off and the next click on the page opened that page (owner, 16 Nov 2026).
+            <div role="group" aria-label="What a click on the page does" data-click-mode={editMode ? "edit" : "browse"}
+              className="flex items-center gap-0.5 rounded-full border border-line-soft bg-sunken p-0.5">
+              <Button type="button" variant="ghost" size="sm" aria-pressed={editMode} data-click-to-edit="edit" onClick={() => chooseMode(true)}
+                title="Edit: a click changes the words or the picture you click. Links, buttons and forms on the page do nothing."
+                className="h-6 gap-1 rounded-full px-2.5 text-xs font-semibold text-muted-foreground aria-pressed:bg-card aria-pressed:text-primary aria-pressed:shadow-xs">
+                <MousePointerClick aria-hidden="true" strokeWidth={1.5} /><span>Edit</span>
+              </Button>
+              <Button type="button" variant="ghost" size="sm" aria-pressed={!editMode} data-click-to-edit="browse" onClick={() => chooseMode(false)}
+                title="Browse: a click opens pages and works as it does for visitors. Nothing on the page is edited."
+                className="h-6 gap-1 rounded-full px-2.5 text-xs font-semibold text-muted-foreground aria-pressed:bg-card aria-pressed:text-primary aria-pressed:shadow-xs">
+                <MousePointer2 aria-hidden="true" strokeWidth={1.5} /><span>Browse</span>
+              </Button>
+            </div>
           )}
           <Button type="button" variant="ghost" size="icon-sm" aria-pressed={!auto} title={auto ? "Pause live updates" : "Resume live updates"} onClick={() => onAutoChange(!auto)}>
             {auto ? <Pause aria-hidden="true" strokeWidth={1.5} /> : <Play aria-hidden="true" strokeWidth={1.5} />}

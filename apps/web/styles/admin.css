@@ -137,3 +137,7 @@
 /* Headings that receive focus from code (tabindex=-1) to start screen readers there are not controls. */
 :where(.shop-admin) [tabindex="-1"]:focus-visible { outline: none; }
 
+
+/* Live preview in Edit (owner, 16 Nov 2026: edit and browse must not collide): links and buttons on the page don't look
+   clickable; words show a text cursor and pictures a pointer when hovered (the preview frame's hover rules win). */
+html[data-preview-mode="edit"] :is(a, button, [role="button"], summary, label) { cursor: default; }

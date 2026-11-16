@@ -7,6 +7,18 @@ import { homeSectionKeys, previewTokenPattern, siteWordKeyPattern, templateMedia
 import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
+/**
+ * Edit or Browse, kept for the browser tab: a preview page that reloads, or opens from a link followed in Browse, starts in
+ * the mode staff chose instead of flashing the other one until the admin says (owner, 16 Nov 2026: edit and browse collided).
+ */
+export const previewModeKey = "shopmaple-preview-mode";
+export type PreviewMode = "edit" | "browse";
+export function readPreviewMode(): PreviewMode {
+  try { return window.sessionStorage.getItem(previewModeKey) === "browse" ? "browse" : "edit"; } catch { return "edit"; }
+}
+export function keepPreviewMode(mode: PreviewMode) {
+  try { window.sessionStorage.setItem(previewModeKey, mode); } catch { /* private windows: the admin's next mode message still says */ }
+}
 /** A picture staff chose outside the Artwork placements, as the page names it: "campaign:landing-dining", "merch:offers:clearance". */
 export const pictureTargetPattern = /^(campaign|merch|nimbus-slide|hero-slide|instagram|editorial|film|page-banner)(?::[a-z0-9-]{1,80}){1,2}$/;
 export type PreviewDevice = "desktop" | "tablet" | "phone";
