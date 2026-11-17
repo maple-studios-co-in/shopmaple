@@ -11,6 +11,9 @@ export function Field({
   multiline = false,
   maxLength = 1000,
   className,
+  placeholder,
+  hint,
+  name,
 }: {
   label: string;
   value: string;
@@ -18,11 +21,19 @@ export function Field({
   multiline?: boolean;
   maxLength?: number;
   className?: string;
+  /** Shown while the field is empty: the theme's own words, which the storefront keeps showing until staff write theirs. */
+  placeholder?: string;
+  /** One short line under the field. */
+  hint?: string;
+  /** The control's name, for finding it again (click-to-edit finds a Site words box by "site-word:<place>"). */
+  name?: string;
 }) {
   const props = {
     "aria-label": label,
     value,
     maxLength,
+    placeholder,
+    name,
     onInput: (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange(event.currentTarget.value),
     // Edits arrive through onInput; this only tells React the value is controlled on purpose.
@@ -39,6 +50,7 @@ export function Field({
           <Input {...props} type="text" className="h-10 bg-card text-sm" />
         )}
       </label>
+      {hint && <span className="text-2xs text-muted-foreground">{hint}</span>}
       {near && <span className="absolute top-0 right-0 text-2xs text-faint tabular-nums" aria-hidden="true">{value.length}/{maxLength}</span>}
     </div>
   );

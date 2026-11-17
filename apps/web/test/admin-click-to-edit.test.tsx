@@ -37,9 +37,12 @@ test("click-to-edit messages are read only with a known shape: words, a page add
   const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data }, origin, frameWindow);
   const base = { source: previewMessageSource, path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 };
   assert.deepEqual(read({ ...base, type: "text-select", text: "Explore" }),
-    { type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 });
-  assert.deepEqual(read({ ...base, type: "text-edit", before: "Explore", after: "Discover\nmore" }),
-    { type: "text-edit", before: "Explore", after: "Discover\nmore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1 });
+    { type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1, repeats: 1 }, "no count reads as words shown once");
+  assert.deepEqual(read({ ...base, repeats: 2, type: "text-edit", before: "Explore", after: "Discover\nmore" }),
+    { type: "text-edit", before: "Explore", after: "Discover\nmore", path: "/", section: "nimbus", area: "section", context: "The Terra Collection Explore", occurrence: 1, repeats: 2 });
+  assert.equal(read({ ...base, repeats: 0, type: "text-select", text: "Explore" }), null);
+  assert.equal(read({ ...base, repeats: 1001, type: "text-select", text: "Explore" }), null);
+  assert.equal(read({ ...base, repeats: "4", type: "text-select", text: "Explore" }), null);
   assert.deepEqual(read({ ...base, section: null, area: "footer", type: "text-select", text: "SHOP" })?.type, "text-select", "words outside a section carry a null section");
   assert.equal(read({ ...base, type: "text-select", text: "   " }), null, "blank words are ignored");
   assert.equal(read({ ...base, type: "text-select", text: "x".repeat(2001) }), null, "words are bounded");
@@ -96,6 +99,37 @@ test("a field is matched by its words, by part of them, or with fixed words arou
     assert.equal(address?.match.how, "same", "line breaks read as spaces on the page");
     assert.deepEqual(applyCandidate(address!, "A-2/57\nNew Delhi"), { ok: true });
     assert.equal(host.querySelector("textarea")!.value, "A-2/57\nNew Delhi", "a text box keeps line breaks typed on the page");
+  } finally { host.remove(); }
+});
+
+test("a short word drawn apart from the rest of a short field ('20+' of '20+ Cities') is matched when the page shows the whole field there", () => {
+  const around = "We Are Serving 20+ Cities Delivering comfort and elegance across India.";
+  assert.equal(matchWords("20+ Cities", "20+"), null, "on its own, a short word is still too weak a clue");
+  assert.deepEqual(matchWords("20+ Cities", "20+", around), { how: "part", start: 0, end: 3 });
+  assert.equal(matchWords("20+ Cities", "20+", "We Are Serving 20+ Kolkata Delhi"), null, "not when the field's words are not shown together");
+  const paragraph = `Every one of our pieces is built to order in our own workshop, with 20+ checks before it ships to you.`;
+  assert.equal(matchWords(paragraph, "20+", paragraph), null, "never inside a long field, where a short word is everywhere");
+
+  const host = document.createElement("div");
+  host.innerHTML = '<input aria-label="Cities heading" value="20+ Cities">';
+  document.body.append(host);
+  try {
+    const [figure] = findTextCandidates(host, "20+", around);
+    assert.deepEqual(applyCandidate(figure!, "25+"), { ok: true });
+    assert.equal(host.querySelector("input")!.value, "25+ Cities", "only the figure changes");
+  } finally { host.remove(); }
+});
+
+test("an empty field whose placeholder is the theme's words (the hero headline) is found and filled in", () => {
+  const host = document.createElement("div");
+  host.innerHTML = '<input aria-label="Hero headline" placeholder="Timeless Craftsmanship for Modern Living" value=""><input aria-label="Search" placeholder="Search products" value="">';
+  document.body.append(host);
+  try {
+    const [headline] = findTextCandidates(host, " Timeless Craftsmanship  for Modern Living ");
+    assert.equal(headline?.element.getAttribute("aria-label"), "Hero headline");
+    assert.deepEqual(applyCandidate(headline!, "Made by hand in Delhi"), { ok: true });
+    assert.equal(host.querySelector("input")!.value, "Made by hand in Delhi");
+    assert.equal(findTextCandidates(host, "Search").length, 0, "only a placeholder that is exactly the words counts");
   } finally { host.remove(); }
 });
 
@@ -174,7 +208,9 @@ test("a link to a page of its own, followed in Browse, opens that page in the fr
 });
 
 /** The frame's side, with a stand-in parent window that records what the bridge tells the editor. */
-async function renderBridge(page: React.ReactNode) {
+async function renderBridge(page: React.ReactNode, { mode = "edit" }: { mode?: "edit" | "browse" } = {}) {
+  // The mode a page starts in is kept for the tab (lib/live-preview.ts): each frame here starts from a known one.
+  window.sessionStorage.setItem("shopmaple-preview-mode", mode);
   const sent: Record<string, any>[] = [];
   const parent = { postMessage: (data: Record<string, any>) => { sent.push(data); } } as unknown as Window;
   const root = createRoot(container);
@@ -214,7 +250,7 @@ test("inside the frame: clicked words become a text box; Enter hands the new wor
     assert.ok(terra.hasAttribute("contenteditable"), "the words are a text box on the page");
     assert.equal(terra.getAttribute("data-preview-editing"), "true");
     const select = frame.sent.find((message) => message.type === "text-select")!;
-    assert.deepEqual({ ...select, context: undefined }, { source: previewMessageSource, type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: undefined, occurrence: 1 });
+    assert.deepEqual({ ...select, context: undefined }, { source: previewMessageSource, type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: undefined, occurrence: 1, repeats: 2 });
     assert.match(select.context, /The Terra Collection/);
     assert.doesNotMatch(select.context, /Nimbus Collection/, "the context stops before the other Explore");
     assert.ok(frame.sent.some((message) => message.type === "editing" && message.active === true), "the pane is told typing started");
@@ -230,6 +266,14 @@ test("inside the frame: clicked words become a text box; Enter hands the new wor
     await frame.tell({ type: "text-result", phase: "edit", ok: false, message: "These words can't be changed here." });
     assert.equal(words(terra), "Explore");
     assert.equal(words(container.querySelector("[data-preview-hint]")), "These words can't be changed here.");
+  } finally { await frame.close(); }
+});
+
+test("inside the frame: a new token after kept words says they are saved, and in which draft version", async () => {
+  const frame = await renderBridge(slider);
+  try {
+    await frame.tell({ type: "token", token: tokenB, version: 8 });
+    assert.equal(words(container.querySelector("[data-preview-hint]")), "Saved in draft version 8. It goes live when the draft is published.");
   } finally { await frame.close(); }
 });
 
@@ -314,6 +358,7 @@ test("the frame's server markup has no click-to-edit hint, so the first render i
 const tokenA = "eyJzIjoiZWRpdG9yIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const tokenB = "eyJzIjoiZWRpdG9yIn0.BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB";
 async function setup({ role = "editor", content = defaultStorefrontContent }: { role?: "editor" | "viewer"; content?: StorefrontContent } = {}) {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
   const previous = globalThis.fetch;
   const root = createRoot(container);
   const puts: any[] = [];
@@ -330,6 +375,7 @@ async function setup({ role = "editor", content = defaultStorefrontContent }: { 
       return Response.json({ token: mints++ === 0 ? tokenA : tokenB, version, expiresAt: new Date(Date.now() + 15 * 60_000).toISOString() });
     }
     if (path.startsWith("/api/catalogue")) return Response.json({ items: [], total: 0 });
+    if (path.startsWith("/api/admin/media")) return Response.json({ assets: [], nextCursor: null });
     assert.equal(path, "/api/admin/content", `Unexpected request ${method} ${path}`);
     return Response.json({ version: 4, draft: structuredClone(content), publishedVersion: 2, updatedAt: "2026-11-14T08:00:00Z" });
   };
@@ -371,7 +417,7 @@ test("clicking Terra's Explore in the preview opens the Nimbus inspector and lig
   const app = await setup();
   try {
     await app.openPreview();
-    assert.ok(app.button("Click to edit"), "Edit access offers click-to-edit");
+    assert.ok(container.querySelector('[data-click-to-edit="edit"]') && container.querySelector('[data-click-to-edit="browse"]'), "Edit access offers Edit and Browse");
     await app.fromFrame({ type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
     await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
     assert.deepEqual(app.replies.find((reply) => reply.type === "text-result"), { source: previewMessageSource, type: "text-result", phase: "select", ok: true });
@@ -404,12 +450,67 @@ test("a click-to-edit save never reloads the page: the frame gets the new token 
     await app.openPreview();
     const before = app.frame().getAttribute("src");
     assert.match(before ?? "", new RegExp(tokenA));
-    await app.fromFrame({ type: "text-edit", before: "Explore", after: "Discover Terra", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
+    await app.fromFrame({ type: "text-edit", before: "Explore", after: "Discover Terra", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1, repeats: 2 });
     await until(() => app.puts.length > 0, "the quiet save");
-    await until(() => app.replies.some((reply) => reply.type === "token"), "the new token handed to the page");
+    await until(() => app.replies.some((reply) => reply.type === "token"), "the new token handed to the page (two copies, each its own field)");
     assert.deepEqual(app.replies.find((reply) => reply.type === "token"), { source: previewMessageSource, type: "token", token: tokenB, version: 5 });
     await settle(120);
     assert.equal(app.frame().getAttribute("src"), before, "the frame was not reloaded");
+    await until(() => [...container.querySelectorAll('[data-notice="status"]')].some((node) => /Saved in draft version 5/.test(words(node))), "the saved notice");
+    assert.ok([...container.querySelectorAll('[data-notice="status"]')].some((node) => words(node) === "Saved in draft version 5. A publisher puts it on the live store when they publish the draft."),
+      "the editor says the words are saved, and who puts them live");
+  } finally { await app.close(); }
+});
+
+test("the big hero headline, shown from the theme until staff write their own, is typed into Hero headline and saved", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    const before = app.frame().getAttribute("src");
+    await app.fromFrame({ type: "text-edit", before: "Timeless Craftsmanship for Modern Living", after: "Made by hand in Delhi", path: "/", section: "hero", area: "section",
+      context: "Timeless Craftsmanship for Modern Living Handcrafted furniture that brings elegance to every corner of your home.", occurrence: 0, repeats: 4 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true);
+    assert.equal(app.field("Hero headline")?.value, "Made by hand in Delhi");
+    await until(() => app.puts.length > 0, "the quiet save");
+    assert.equal(app.puts.at(-1).content.homeDetails.hero.headline, "Made by hand in Delhi");
+    assert.equal(app.puts.at(-1).content.homeDetails.hero.intro, undefined, "the intro keeps the theme's words");
+    // The other three photos show the same field: the page reloads once (keeping its place) so they show the new words too.
+    await until(() => app.frame().getAttribute("src") !== before, "the page reloaded with the new draft");
+    assert.match(app.frame().getAttribute("src") ?? "", new RegExp(tokenB));
+    assert.equal(app.replies.some((reply) => reply.type === "token"), false, "no in-place token: the reload carries it");
+  } finally { await app.close(); }
+});
+
+test("the promos' second card is found in its own campaign: the Campaign list switches to it and its headline changes", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-edit", before: "Less clutter.", after: "Less mess.", path: "/", section: "promos", area: "section",
+      context: "Less clutter. More celebration. Up to 25% off selected storage furniture Shop Storage", occurrence: 0 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true, "the words are taken, not refused");
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing storage");
+    assert.equal(app.field("Campaign headline")?.value, "Less mess.\nMore celebration.");
+    await until(() => app.puts.length > 0, "the quiet save");
+    const campaigns = app.puts.at(-1).content.campaigns as { key: string; headline: string[] }[];
+    assert.deepEqual(campaigns.find((campaign) => campaign.key === "landing-storage")?.headline, ["Less mess.", "More celebration."]);
+    assert.deepEqual(campaigns.find((campaign) => campaign.key === "landing-dining")?.headline, ["Come together.", "Stay a little longer."], "the first card is untouched");
+  } finally { await app.close(); }
+});
+
+test("words in none of a section's campaigns are refused and the Campaign list is put back where it was", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-select", text: "Nothing like this", path: "/", section: "promos", area: "section", context: "Nothing like this", occurrence: 0 });
+    await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.type === "text-result")?.ok, false);
+    await settle(120);
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing dining");
+    assert.equal(app.puts.length, 0, "nothing was saved");
   } finally { await app.close(); }
 });
 
@@ -468,7 +569,7 @@ test("View access browses the preview: no click-to-edit switch, and a clicked wo
   const app = await setup({ role: "viewer" });
   try {
     await app.openPreview();
-    assert.equal([...container.querySelectorAll("button")].some((b) => words(b) === "Click to edit" || words(b) === "Browse"), false);
+    assert.equal(container.querySelector("[data-click-to-edit]"), null, "no Edit or Browse choice");
     assert.ok(app.replies.some((reply) => reply.type === "mode" && reply.mode === "browse"), "the frame is told to browse");
     await app.fromFrame({ type: "text-select", text: "Explore", path: "/", section: "nimbus", area: "section", context: terraContext, occurrence: 1 });
     await until(() => app.replies.some((reply) => reply.type === "text-result"), "the editor's answer");
@@ -476,4 +577,221 @@ test("View access browses the preview: no click-to-edit switch, and a clicked wo
     assert.equal(reply.ok, false);
     assert.match(reply.message, /View access/);
   } finally { await app.close(); }
+});
+
+test("the theme's own words (Site words) open their one box on the Site words screen, and are saved with the draft", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-edit", before: "Handpicked favourites", after: "Our favourites", path: "/", section: "bestsellers", area: "section",
+      context: "Handpicked favourites Bestsellers", occurrence: 0, word: "home.bestsellers.eyebrow" });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true);
+    assert.ok(container.querySelector('[data-admin-panel][aria-label="Site words editor"]'), "Site words is open");
+    const box = container.querySelector<HTMLInputElement>('[name="site-word:home.bestsellers.eyebrow"]');
+    assert.equal(box?.value, "Our favourites");
+    assert.equal(container.querySelector<HTMLInputElement>('[name="site-word:home.chairs.eyebrow"]')?.value, "", "the chairs row's own words are another box");
+    await until(() => app.puts.length > 0, "the quiet save");
+    assert.deepEqual(app.puts.at(-1).content.siteWords, { "home.bestsellers.eyebrow": "Our favourites" });
+  } finally { await app.close(); }
+});
+
+test("inside the frame: the theme's own words say their place, and a click on a form box asks for its placeholder's box", async () => {
+  const frame = await renderBridge(
+    <footer className="maple-footer">
+      <p><span data-site-word="footer.imageCredits">Image credits</span></p>
+      <label><span>Full name</span><input placeholder="Your full name" data-site-word-placeholder="contact.form.namePlaceholder" /></label>
+    </footer>,
+  );
+  try {
+    await frame.click(container.querySelector("[data-site-word]")!);
+    const select = frame.sent.find((message) => message.type === "text-select")!;
+    assert.equal(select.word, "footer.imageCredits");
+    assert.equal(select.text, "Image credits");
+    assert.equal(select.area, "footer");
+    await frame.key(container.querySelector("[data-site-word]")!, "Escape");
+
+    frame.sent.length = 0;
+    const event = await frame.click(container.querySelector("input")!);
+    const asked = frame.sent.find((message) => message.type === "text-select")!;
+    assert.deepEqual({ word: asked.word, text: asked.text }, { word: "contact.form.namePlaceholder", text: "Your full name" });
+    assert.equal(event.defaultPrevented, false, "the form box still takes a click");
+    assert.equal(container.querySelector("input")!.hasAttribute("contenteditable"), false);
+  } finally { await frame.close(); }
+});
+
+test("picture clicks are read only for a known Artwork placement on a storefront address", () => {
+  const frameWindow = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data: { source: previewMessageSource, ...data } }, origin, frameWindow);
+  assert.deepEqual(read({ type: "media-select", slot: "contact-studio", path: "/contact" }), { type: "media-select", slot: "contact-studio", path: "/contact" });
+  assert.equal(read({ type: "media-select", slot: "not-a-placement", path: "/" }), null);
+  assert.equal(read({ type: "media-select", slot: "contact-studio", path: "//evil.example/" }), null);
+});
+
+test("inside the frame: a click on a picture from an Artwork placement asks for its library, outlined on hover, never followed", async () => {
+  const frame = await renderBridge(
+    <div data-home-section="cities">
+      <a href="/collections/all"><img data-media-slot="home-city-kolkata" src="/media/cities/kolkata.webp" alt="Kolkata" /></a>
+      <p>Kolkata</p>
+    </div>,
+  );
+  try {
+    const picture = container.querySelector("img")!;
+    await act(async () => { picture.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })); });
+    assert.equal(picture.getAttribute("data-preview-media-hover"), "true", "the picture is outlined as one to click");
+    const event = await frame.click(picture);
+    assert.equal(event.defaultPrevented, true, "the link around the picture does not open");
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", slot: "home-city-kolkata", path: "/" });
+    assert.equal(frame.sent.some((message) => message.type === "text-select"), false);
+    assert.match(words(container.querySelector("[data-preview-hint]")), /library beside the preview/);
+  } finally { await frame.close(); }
+});
+
+test("a picture clicked in the preview opens Artwork on its placement with the picture library open, and the preview stays on its page", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "media-select", slot: "contact-workshop", path: "/contact" });
+    await until(() => container.querySelector('[data-admin-panel][aria-label="Artwork editor"]') !== null, "the Artwork screen");
+    const list = (label: string) => [...container.querySelectorAll<HTMLSelectElement>("select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === label);
+    await until(() => list("Artwork placement")?.value === "contact-workshop", "the clicked placement");
+    assert.equal(list("Artwork group")?.value, "Contact");
+    await until(() => [...container.querySelectorAll("button")].some((button) => words(button) === "Close library"), "the picture library, open");
+    assert.match(app.frame().getAttribute("src") ?? "", /\/admin\/preview-frame\/pages\/contact\?/, "the preview stays on Contact");
+  } finally { await app.close(); }
+});
+
+test("the storefront marks each picture from an Artwork placement with that placement", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { Hero } = await import("../components/hero");
+  const { HomeCities } = await import("../components/home-sections");
+  const hero = renderToStaticMarkup(<Hero />);
+  for (const tile of ["sofas", "chairs", "tables", "beds"]) assert.match(hero, new RegExp(`data-media-slot="home-hero-${tile}"`));
+  assert.match(renderToStaticMarkup(<HomeCities />), /data-media-slot="home-city-kolkata"/);
+});
+
+test("banner, card and film clicks are read only with a known kind of picture and a storefront address", () => {
+  const frameWindow = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data: { source: previewMessageSource, ...data } }, origin, frameWindow);
+  assert.deepEqual(read({ type: "media-select", target: "campaign:landing-dining", path: "/" }), { type: "media-select", target: "campaign:landing-dining", path: "/" });
+  assert.deepEqual(read({ type: "media-select", target: "merch:categories:sofas", path: "/" })?.type, "media-select");
+  assert.equal(read({ type: "media-select", target: "script:alert", path: "/" }), null, "only known kinds of picture");
+  assert.equal(read({ type: "media-select", target: "campaign:<b>", path: "/" }), null);
+});
+
+test("inside the frame: a banner's picture opens its chooser, while the words drawn over it stay words to type over", async () => {
+  const frame = await renderBridge(
+    <div data-home-section="dining-banner">
+      <section className="campaign-banner"><div className="campaign-scene" data-picture-target="campaign:landing-dining-table">
+        <div className="campaign-art-desktop"><img src="/media/diwali/973-465.png" alt="" /></div>
+        <h2>Make room for one more.</h2>
+      </div></section>
+    </div>,
+  );
+  try {
+    await frame.click(container.querySelector("img")!);
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", target: "campaign:landing-dining-table", path: "/" });
+    frame.sent.length = 0;
+    const words = container.querySelector("h2")!;
+    await frame.click(words);
+    assert.equal(frame.sent.some((message) => message.type === "media-select"), false, "the headline is not a picture");
+    assert.equal(frame.sent.find((message) => message.type === "text-select")?.text, "Make room for one more.");
+    await frame.key(words, "Escape");
+  } finally { await frame.close(); }
+});
+
+test("a banner clicked in the preview opens its campaign's artwork chooser, adding its own artwork when it still shows the theme's", async () => {
+  const app = await setup();
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "media-select", target: "campaign:landing-storage", path: "/" });
+    await until(() => container.querySelector("[data-section-inspector=promos]") !== null, "the promos inspector");
+    await until(() => container.querySelector('[data-picture-target="campaign:landing-storage"]') !== null, "the storage campaign's desktop artwork chooser");
+    const chooser = [...container.querySelectorAll<HTMLSelectElement>("[data-section-inspector=promos] select")].find((select) => (select.getAttribute("aria-label") ?? select.labels?.[0]?.textContent ?? "").trim() === "Campaign");
+    assert.equal(chooser?.selectedOptions[0]?.textContent?.toLowerCase(), "landing storage");
+    await until(() => [...container.querySelectorAll('[data-picture-target="campaign:landing-storage"] button')].some((button) => words(button) === "Close library"), "its library, open");
+  } finally { await app.close(); }
+});
+
+test("the footer's logo and icons, and the contact page's, name their Artwork placements", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { Footer } = await import("../components/footer");
+  const footer = renderToStaticMarkup(<Footer />);
+  for (const slot of ["site-logo", "icon-footer-map", "icon-footer-phone", "icon-footer-mail", "icon-footer-marketplace"]) assert.match(footer, new RegExp(`data-media-slot="${slot}"`));
+  const { resolveChromeArtwork } = await import("../lib/chrome-artwork-resolve");
+  const swapped = resolveChromeArtwork([{ key: "site-logo", image: `/media/uploads/${"a".repeat(64)}.webp`, alt: "Maple" }]);
+  assert.equal(swapped.logo.src, `/media/uploads/${"a".repeat(64)}.webp`);
+  assert.equal(resolveChromeArtwork().map.src, "/media/footer/map.svg", "untouched icons keep the design's drawing");
+});
+
+test("the toolbar offers Edit and Browse as two choices: each click chooses that one, and the page is told", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const app = await setup();
+  try {
+    await app.openPreview();
+    const choice = (name: "edit" | "browse") => container.querySelector<HTMLButtonElement>(`[data-click-to-edit="${name}"]`)!;
+    assert.equal(choice("edit").getAttribute("aria-pressed"), "true", "Edit is the default");
+    assert.equal(choice("browse").getAttribute("aria-pressed"), "false");
+    await act(async () => choice("browse").click());
+    await act(async () => choice("browse").click());
+    assert.equal(choice("browse").getAttribute("aria-pressed"), "true", "pressing Browse again keeps Browse: it never flips back");
+    assert.equal(app.replies.filter((reply) => reply.type === "mode").at(-1)?.mode, "browse");
+    assert.equal(window.sessionStorage.getItem("shopmaple-preview-mode"), "browse", "kept for the tab, so a reloaded page starts browsing");
+    await act(async () => choice("edit").click());
+    assert.equal(choice("edit").getAttribute("aria-pressed"), "true");
+    assert.equal(app.replies.filter((reply) => reply.type === "mode").at(-1)?.mode, "edit");
+  } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await app.close(); }
+});
+
+test("inside the frame, in Edit: a second click in words being typed never opens their link, and forms never send", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const frame = await renderBridge(
+    <div data-home-section="nimbus">
+      <a href="/terra-collection"><span>Explore</span></a>
+      <form><input name="email" /><button type="submit">Send enquiry</button></form>
+    </div>,
+  );
+  try {
+    const link = container.querySelector("a span")!;
+    await frame.click(link);
+    assert.ok(link.hasAttribute("contenteditable"), "the first click makes the words a text box");
+    const again = await frame.click(link);
+    assert.equal(again.defaultPrevented, true, "the second click places the caret and opens nothing");
+    assert.ok(link.hasAttribute("contenteditable"), "still typing");
+    await frame.key(link, "Escape");
+    const submit = new dom.window.Event("submit", { bubbles: true, cancelable: true });
+    await act(async () => { container.querySelector("form")!.dispatchEvent(submit); });
+    assert.equal(submit.defaultPrevented, true, "a form does not send in Edit");
+    assert.match(words(container.querySelector("[data-preview-hint]")), /Forms don.t send in Edit/);
+  } finally { await frame.close(); }
+});
+
+test("inside the frame, in Edit: the header's search, account and bag open nothing; slider arrows and tabs keep working", async () => {
+  window.sessionStorage.removeItem("shopmaple-preview-mode");
+  const frame = await renderBridge(
+    <>
+      <header className="site-header"><div className="header-actions"><button type="button" aria-label="Search furniture"><svg /></button></div></header>
+      <div data-home-section="nimbus"><button type="button" aria-label="Next collection"><svg /></button></div>
+    </>,
+  );
+  try {
+    const search = await frame.click(container.querySelector('[aria-label="Search furniture"]')!);
+    assert.equal(search.defaultPrevented, true, "the search does not open in Edit");
+    const arrow = await frame.click(container.querySelector('[aria-label="Next collection"]')!);
+    assert.equal(arrow.defaultPrevented, false, "a slider arrow still moves, to reach the next slide's words");
+  } finally { await frame.close(); }
+});
+
+test("inside the frame: a page that loads while staff are browsing starts in Browse, and says so", async () => {
+  const frame = await renderBridge(<div data-home-section="nimbus"><a href="/terra-collection"><span>Explore</span></a></div>, { mode: "browse" });
+  try {
+    const event = await frame.click(container.querySelector("a span")!);
+    assert.equal(event.defaultPrevented, false, "the link opens, as for a visitor");
+    assert.equal(container.querySelector("a span")!.hasAttribute("contenteditable"), false);
+    assert.match(words(container.querySelector('[data-preview-mode-pill="browse"]')), /Browse: clicks open pages/);
+    assert.equal(document.documentElement.dataset.previewMode, "browse");
+    await frame.tell({ type: "mode", mode: "edit" });
+    assert.equal(window.sessionStorage.getItem("shopmaple-preview-mode"), "edit", "the admin's choice is kept for the next page");
+    assert.ok(container.querySelector('[data-preview-mode-pill="edit"]'));
+  } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await frame.close(); }
 });

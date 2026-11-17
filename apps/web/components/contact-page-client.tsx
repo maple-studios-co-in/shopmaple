@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { SiteWord, useSiteWord, useSiteWordPlaceholder } from "@/components/site-words";
 import { ChevronDown } from "lucide-react";
 import type { EnquiryContext } from "@/lib/enquiry-context";
 import { useEnquiry } from "@/components/use-enquiry";
@@ -8,7 +9,7 @@ const otherTopic = "Something else";
 // The topic and order number lead the message, so the whole stays within the enquiry's 5,000 characters.
 const messageLimit = 4700;
 
-function Field({ id, label, required = false, wide = false, children }: { id: string; label: string; required?: boolean; wide?: boolean; children: ReactNode }) {
+function Field({ id, label, required = false, wide = false, children }: { id: string; label: ReactNode; required?: boolean; wide?: boolean; children: ReactNode }) {
   return (
     <div className={wide ? "contact-field contact-field-wide" : "contact-field"}>
       <label className="contact-label" htmlFor={id}>{label}{required && <span aria-hidden="true"> *</span>}</label>
@@ -44,49 +45,55 @@ export function ContactEnquiryForm({ heading, note, topics, context }: {
       message: lead ? `${lead}\n\n${value("message")}` : value("message"), context,
     });
   }
+  const box = {
+    name: useSiteWordPlaceholder("contact.form.namePlaceholder"), email: useSiteWordPlaceholder("contact.form.emailPlaceholder"),
+    phone: useSiteWordPlaceholder("contact.form.phonePlaceholder"), order: useSiteWordPlaceholder("contact.form.orderPlaceholder"),
+    message: useSiteWordPlaceholder("contact.form.messagePlaceholder"),
+  };
+  const selectTopic = useSiteWord("contact.form.topicPlaceholder");
   const at = (name: string) => `${id}-${name}`;
   return (
     <form ref={form} className="contact-form" onSubmit={submit} onChange={enquiry.clear} aria-labelledby={at("title")}>
       <h3 className="contact-form-title" id={at("title")}>{heading}</h3>
       {(context.product || context.pincode) && (
         <div className="contact-form-context">
-          {context.product && <p>Your enquiry is about <strong>{context.product}</strong>{context.variant && <> · <span>{context.variant}</span></>}</p>}
-          {context.pincode && <p>Delivery pincode: {context.pincode}</p>}
+          {context.product && <p><SiteWord k="contact.form.about" /> <strong>{context.product}</strong>{context.variant && <> · <span>{context.variant}</span></>}</p>}
+          {context.pincode && <p><SiteWord k="contact.form.pincode" /> {context.pincode}</p>}
         </div>
       )}
       <div className="contact-fields">
-        <Field id={at("name")} label="Full name" required>
-          <input id={at("name")} name="name" autoComplete="name" placeholder="Your full name" required maxLength={100} />
+        <Field id={at("name")} label={<SiteWord k="contact.form.nameLabel" />} required>
+          <input id={at("name")} name="name" autoComplete="name" {...box.name} required maxLength={100} />
         </Field>
-        <Field id={at("email")} label="Email address" required>
+        <Field id={at("email")} label={<SiteWord k="contact.form.emailLabel" />} required>
           <input id={at("email")} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false}
-            placeholder="you@example.com" required maxLength={254} />
+            {...box.email} required maxLength={254} />
         </Field>
-        <Field id={at("phone")} label="Phone number">
-          <input id={at("phone")} name="phone" type="tel" autoComplete="tel" placeholder="+91" maxLength={30} />
+        <Field id={at("phone")} label={<SiteWord k="contact.form.phoneLabel" />}>
+          <input id={at("phone")} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} />
         </Field>
-        <Field id={at("topic")} label="I need help with">
+        <Field id={at("topic")} label={<SiteWord k="contact.form.topicLabel" />}>
           {/* The design writes the choice with a small arrow just after it; the native list, unseen over it, does the choosing. */}
           <div className="contact-select">
             <span className="contact-select-value" data-empty={topic ? undefined : ""} aria-hidden="true">
-              {topic || "Select a topic"}<ChevronDown className="contact-select-arrow" strokeWidth={1.75} aria-hidden="true" />
+              {topic || selectTopic}<ChevronDown className="contact-select-arrow" strokeWidth={1.75} aria-hidden="true" />
             </span>
             <select id={at("topic")} name="topic" value={topic} onChange={event => setTopic(event.target.value)}>
-              <option value="">Select a topic</option>
+              <option value="">{selectTopic}</option>
               {[...new Set([...topics, otherTopic])].map(title => <option key={title} value={title}>{title}</option>)}
             </select>
           </div>
         </Field>
-        <Field id={at("order")} label="Order number (optional)" wide>
-          <input id={at("order")} name="order" autoComplete="off" placeholder="For an existing order" maxLength={40} />
+        <Field id={at("order")} label={<SiteWord k="contact.form.orderLabel" />} wide>
+          <input id={at("order")} name="order" autoComplete="off" {...box.order} maxLength={40} />
         </Field>
-        <Field id={at("message")} label="Your message" required wide>
-          <textarea id={at("message")} name="message" placeholder="Tell us about your space, product or question…" required maxLength={messageLimit} />
+        <Field id={at("message")} label={<SiteWord k="contact.form.messageLabel" />} required wide>
+          <textarea id={at("message")} name="message" {...box.message} required maxLength={messageLimit} />
         </Field>
       </div>
       <p className="contact-form-note">{note}</p>
       <button className="contact-button contact-submit" type="submit" disabled={enquiry.pending} data-fill-button="">
-        {enquiry.pending ? "Sending…" : <>Send message<span className="contact-button-arrow" aria-hidden="true">→</span></>}
+        {enquiry.pending ? "Sending…" : <><SiteWord k="contact.form.send" /><span className="contact-button-arrow" aria-hidden="true">→</span></>}
       </button>
       {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="contact-form-status">{enquiry.message}</p>}
     </form>

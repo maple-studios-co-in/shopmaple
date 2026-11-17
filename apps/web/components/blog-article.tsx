@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteWord } from "@/components/site-words";
 import { createElement, Fragment, Suspense } from "react";
 import type { EditorialNode, TemplateMedia } from "@shopmaple/contracts";
 import { AuthoredArticleBody } from "@/components/authored-article-body";
@@ -45,7 +46,7 @@ export function BlogArticle({ blog, record, post, shareUrl, media }: { blog: str
           <ShareThisArticle title={post.title} url={shareUrl} picture={image ? absolute(seoSettings(process.env), image.src) : null} />
           {recent.length > 0 && (
             <section data-sidebar-recent className="blog-sidebar-section" aria-labelledby="blog-recent-title">
-              <h2 id="blog-recent-title">Recent Articles</h2>
+              <h2 id="blog-recent-title"><SiteWord k="blog.recentArticles" /></h2>
               <ul className="blog-sidebar-list">
                 {recent.map((item) => {
                   const href = `/blogs/${blog}/${item.handle}`;
@@ -150,7 +151,7 @@ function ShareThisArticle({ title, url, picture }: { title: string; url: string;
   ];
   return (
     <section data-sidebar-share className="blog-sidebar-section" aria-labelledby="blog-share-title">
-      <h2 id="blog-share-title">Share this article</h2>
+      <h2 id="blog-share-title"><SiteWord k="blog.share" /></h2>
       <div className="blog-share-row">
         <BlogShareButton title={title} url={url} icon="/blog/share.svg" className="blog-share-native" />
         {networks.map((network) => (

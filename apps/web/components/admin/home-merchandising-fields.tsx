@@ -103,7 +103,7 @@ export function HomeMerchandisingFields({ value, onChange, session, onExpired, o
                 ["title", `${name} title`, 120], ["collectionHandle", `${name} collection handle`, 200], ["alt", `${name} image description`, 200],
               ], edit)}
             </FieldGrid>
-            <MediaPicker label={`${name} image`} value={tile.image} onChange={image => patch({ image })} session={session} onExpired={onExpired} />
+            <MediaPicker label={`${name} image`} value={tile.image} onChange={image => patch({ image })} session={session} onExpired={onExpired} target={`merch:${group.key}:${tile.key}`} />
             <CheckField label="Show this tile" aria-label={`Show ${group.singular} tile ${index + 1}`} checked={tile.enabled}
               onChange={event => patch({ enabled: event.currentTarget.checked })} />
           </>;

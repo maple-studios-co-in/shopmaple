@@ -1,4 +1,5 @@
 import { InstagramRail } from "@/components/motion-rail";
+import { SiteWord } from "@/components/site-words";
 import { CityRail } from "@/components/city-rail";
 import instagramPosts from "@/data/instagram-posts.json";
 import { ContentImage as Image, getContentImageProps as getImageProps } from "@/components/content-image";
@@ -100,7 +101,7 @@ export function HomeDifference({
           return (
             <li key={icons[index]} data-difference-promise>
               {/* Only an uploaded icon: the originals were on Shopify (owner, 11 Nov 2026). */}
-              {artwork.image && <Image src={artwork.image} width={60} height={60} alt={artwork.alt} />}
+              {artwork.image && <Image src={artwork.image} width={60} height={60} alt={artwork.alt} data-media-slot={icons[index]} />}
               <span>{text}</span>
             </li>
           );
@@ -172,9 +173,9 @@ export function HomeTestimonial({
       {/* The film staff chose (Homepage → Testimonial) plays with its poster; without a film an uploaded poster shows as a
           still beside the words, and without either the words stand alone. */}
       {film
-        ? <AmbientFilm src={film.src} mobileSrc={film.mobileSrc} label={poster.alt} width={720} height={1280}
+        ? <AmbientFilm src={film.src} mobileSrc={film.mobileSrc} label={poster.alt} width={720} height={1280} pictureTarget="film:home-testimonial"
           poster={poster.image ? getImageProps({ src: poster.image, alt: poster.alt, width: 720, height: 1280 }).props.src : undefined} />
-        : poster.image && <Image className="home-testimonial-still" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
+        : poster.image && <Image className="home-testimonial-still" data-media-slot="home-testimonial-poster" src={poster.image} alt={poster.alt} width={720} height={1280} sizes="(max-width:749px) 100vw, 40vw" />}
     </section>
   );
 }
@@ -190,6 +191,7 @@ export function HomeNewsletter({
     <section className="home-newsletter" id="newsletter" aria-labelledby={headingId}>
       {artwork.image && <div className="home-newsletter-mark" data-newsletter-mark>
         <Image
+          data-media-slot="home-newsletter"
           src={artwork.image}
           alt={artwork.alt}
           width={1080}
@@ -228,18 +230,18 @@ export function HomeValues({
       className="home-values home-container"
       aria-label="Made for real living"
     >
-      {watermark && <div className="home-values-watermark" data-values-watermark data-reveal aria-hidden="true">Maple Furnishers</div>}
+      {watermark && <div className="home-values-watermark" data-values-watermark data-reveal aria-hidden="true"><SiteWord k="home.values.watermark" /></div>}
       {content.map(({ key, title, body }) => {
         const artwork = resolveTemplateMedia(`home-value-${key}`, media);
         return (
           <div key={key}>
-            {artwork.image && <Image src={artwork.image} alt={artwork.alt} width={80} height={80} />}
+            {artwork.image && <Image src={artwork.image} alt={artwork.alt} width={80} height={80} data-media-slot={`home-value-${key}`} />}
             <h3>{title}</h3>
             <p>{body}</p>
           </div>
         );
       })}
-      {watermark && <Link className="home-values-cta" href="/our-story" data-values-cta data-fill-button="">Experience Maple</Link>}
+      {watermark && <Link className="home-values-cta" href="/our-story" data-values-cta data-fill-button=""><SiteWord k="home.values.cta" /></Link>}
     </section>
   );
 }
@@ -282,6 +284,7 @@ export function HomeCities({
             <figure key={key} className="home-city-card">
               <div className="home-city-artwork">
                 <Image
+                  data-media-slot={`home-city-${key}`}
                   src={artwork.image}
                   alt={artwork.alt}
                   width={400}
@@ -303,7 +306,7 @@ export function HomeProject({
   return (
     <section className="home-project home-container">
       <div>
-        <span className="home-project-eyebrow" data-project-eyebrow>Let’s connect</span>
+        <span className="home-project-eyebrow" data-project-eyebrow><SiteWord k="home.project.eyebrow" /></span>
         <h2>{content.heading}</h2>
         <p>
           {content.introBefore.trimEnd()}{" "}
@@ -313,7 +316,7 @@ export function HomeProject({
         <p>{content.body}</p>
         <div className="home-project-promise" data-project-promise>
           <Check size={18} aria-hidden />
-          <span><strong>Quick response</strong> <span>We respond within {content.responseTime}.</span></span>
+          <span><strong><SiteWord k="home.project.promise" /></strong> <span><SiteWord k="home.project.respondWithin" /> {content.responseTime}.</span></span>
         </div>
       </div>
       <HomeProjectForm card />

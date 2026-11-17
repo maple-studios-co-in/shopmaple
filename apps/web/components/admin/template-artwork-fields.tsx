@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { templateMediaDecorativeKeys, templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
@@ -18,13 +18,21 @@ import { TemplateFilmFields, type TemplateFilmFieldsProps } from "./template-fil
 const groups = ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra", ...pictureSlotGroups] as const;
 type Props = { value?: TemplateMedia; onChange: (value: TemplateMedia) => void; session: StaffSession; onExpired: () => void };
 
+/** A picture clicked in the live preview: show its placement and open its library. Each click brings a new `nonce`. */
+export type ArtworkRequest = { slot: TemplateMediaKey; nonce: number; /** false: show the placement without opening its library (a film is chosen below it). */ library?: boolean };
+
 /** The Artwork screen: every page's artwork, chosen by group and placement. */
-export function TemplateArtworkFields({ films, ...props }: Props & { films?: TemplateFilmFieldsProps }) {
+export function TemplateArtworkFields({ films, request, ...props }: Props & { films?: TemplateFilmFieldsProps; request?: ArtworkRequest }) {
   const [group, setGroup] = useState<(typeof groups)[number]>("Homepage");
+  // A picture clicked in the live preview opens on its own group first; the placement and library follow below.
+  useEffect(() => {
+    const wanted = request && templateMediaSlots.find(item => item.key === request.slot)?.group;
+    if (wanted) setGroup(wanted as (typeof groups)[number]);
+  }, [request?.nonce]);
   return (
     <section aria-label="Template artwork">
       <PanelHeader title="Artwork" description="Choose a page and placement to replace its image. Save a draft, then publish when ready." />
-      <ArtworkSlots {...props} keys={templateMediaSlots.filter(item => item.group === group).map(item => item.key)}
+      <ArtworkSlots {...props} request={request} keys={templateMediaSlots.filter(item => item.group === group).map(item => item.key)}
         group={<SelectField label="Artwork group" value={group} onChange={event => setGroup(event.target.value as (typeof groups)[number])}>
           {groups.map(item => <NativeSelectOption key={item} value={item}>{item}</NativeSelectOption>)}
         </SelectField>} />
@@ -37,8 +45,16 @@ export function TemplateArtworkFields({ films, ...props }: Props & { films?: Tem
  * Replace the artwork of one placement among `keys`: the Artwork screen passes a whole group,
  * a homepage section's inspector only the placements that section draws.
  */
-export function ArtworkSlots({ value, onChange, session, onExpired, keys, group }: Props & { keys: readonly TemplateMediaKey[]; group?: ReactNode }) {
+export function ArtworkSlots({ value, onChange, session, onExpired, keys, group, request }: Props & { keys: readonly TemplateMediaKey[]; group?: ReactNode; request?: ArtworkRequest }) {
   const [chosen, setSelected] = useState<TemplateMediaKey>(keys[0]!);
+  // A picture clicked in the live preview: its placement, once its group's placements are here (the group may change first).
+  const handled = useRef(0);
+  const offered = keys.join(" ");
+  useEffect(() => {
+    if (!request || request.nonce === handled.current || !keys.includes(request.slot)) return;
+    handled.current = request.nonce;
+    setSelected(request.slot);
+  }, [request?.nonce, offered]);
   // A new set of placements (another group) starts at its first; the group control keeps focus.
   const selected = keys.includes(chosen) ? chosen : keys[0]!;
   const placement = useRef<HTMLSelectElement>(null);
@@ -81,7 +97,8 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group 
             return <div key={kind} role="group" aria-label={`${kind} artwork`} className="grid min-w-0 content-start gap-3">
               <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">{kind}</p>
               <Field label={`${kind} image URL`} value={url} maxLength={1000} onChange={image => update({ [key]: image })} />
-              <MediaPicker label={`${kind} image`} value={url} onChange={image => update({ [key]: image })} session={session} onExpired={onExpired} />
+              <MediaPicker label={`${kind} image`} value={url} onChange={image => update({ [key]: image })} session={session} onExpired={onExpired}
+                openRequest={kind === "Desktop" && request?.slot === selected && request.library !== false ? request.nonce : undefined} />
             </div>;
           })}
         </div>

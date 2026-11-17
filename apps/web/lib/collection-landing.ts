@@ -48,12 +48,12 @@ export type CollectionLanding = {
   feeling: {
     eyebrow: string;
     heading: string;
-    items: { art: CollectionArt; title: string; body: string }[];
+    items: { art: CollectionArt; artSlot?: string; title: string; body: string }[];
   };
   /** The detail photo, the material story, three illustrated notes and a maple button. */
   material: CollectionCopy & {
     media: CollectionMedia;
-    notes: { art: CollectionArt; label: string }[];
+    notes: { art: CollectionArt; artSlot?: string; label: string }[];
     cta: CollectionLink;
   };
   /** "Explore by collection": four editorial cards in two rows, wide then narrow, then narrow then wide. */
@@ -75,7 +75,7 @@ export type CollectionLanding = {
     email: string;
   };
   /** The Maple promise strip: three illustrated labels. */
-  promise: { art: CollectionArt; label: string }[];
+  promise: { art: CollectionArt; artSlot?: string; label: string }[];
 };
 
 /** An eyebrow, a heading and a line of copy. */
@@ -95,6 +95,8 @@ export type CollectionMedia = {
   mobileSrc?: string;
   /** From the content; an empty string marks a decorative photo. */
   alt: string;
+  /** The Artwork placement the photo comes from, so the live preview can open it for a new one. */
+  slot?: string;
   /** CSS object-position for the crop ("50% 40%"); centred when omitted. */
   focus?: string;
 };
@@ -184,7 +186,7 @@ export type CollectionIcon = "armchair" | "bed-double" | "sofa" | "table-2" | "t
  * One of the design's duotone illustrations ("Maple / Editorial duotone", Figma 311:548 and 311:921; owner, 12 Nov 2026):
  * a maple-and-sand SVG bundled under public/media/collection-icons, decorative beside the words it illustrates.
  */
-export type CollectionArt = `/media/collection-icons/${string}.svg`;
+export type CollectionArt = string;
 /** The promise strip's three illustrations, the same on every collection page. */
 export const promiseArt: readonly CollectionArt[] = [
   "/media/collection-icons/promise-bespoke.svg", "/media/collection-icons/promise-craft.svg", "/media/collection-icons/promise-delivery.svg",

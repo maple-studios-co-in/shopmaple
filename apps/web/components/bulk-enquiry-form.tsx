@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
+import { SiteWord, useSiteWord, useSiteWordPlaceholder } from "@/components/site-words";
 import { ArrowRight } from "lucide-react";
 import type { EnquiryContext } from "@/lib/enquiry-context";
 import { useEnquiry } from "@/components/use-enquiry";
@@ -20,13 +21,13 @@ function proposal(form: HTMLFormElement) {
   return { name: value("name"), email: value("email"), phone: value("phone"), message: [lines.join("\n"), value("message")].filter(Boolean).join("\n\n") };
 }
 
-function Label({ text, required }: { text: string; required?: boolean }) {
+function Label({ text, required }: { text: ReactNode; required?: boolean }) {
   return <span className="bulk-field-label" data-field-label>{text}{required && <span aria-hidden="true"> *</span>}</span>;
 }
-function TextField({ label, required, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+function TextField({ label, required, ...input }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
   return <label className="bulk-field"><Label text={label} required={required} /><input {...input} required={required} /></label>;
 }
-function Choice({ label, name, placeholder, options, required }: { label: string; name: string; placeholder: string; options: string[]; required?: boolean }) {
+function Choice({ label, name, placeholder, options, required }: { label: ReactNode; name: string; placeholder: string; options: string[]; required?: boolean }) {
   return (
     <label className="bulk-field">
       <Label text={label} required={required} />
@@ -49,27 +50,34 @@ export function BulkProposalForm({ copy, email, context }: { copy: BulkProposalC
     event.preventDefault();
     void enquiry.submit({ kind: "bulk", ...proposal(event.currentTarget), context });
   }
+  const box = {
+    name: useSiteWordPlaceholder("bulk.form.namePlaceholder"), company: useSiteWordPlaceholder("bulk.form.companyPlaceholder"),
+    email: useSiteWordPlaceholder("bulk.form.emailPlaceholder"), phone: useSiteWordPlaceholder("bulk.form.phonePlaceholder"),
+    city: useSiteWordPlaceholder("bulk.form.cityPlaceholder"), quantity: useSiteWordPlaceholder("bulk.form.quantityPlaceholder"),
+    requirements: useSiteWordPlaceholder("bulk.form.requirementsPlaceholder"),
+  };
+  const selectType = useSiteWord("bulk.form.typePlaceholder"), selectDelivery = useSiteWord("bulk.form.deliveryPlaceholder");
   return (
     <form className="bulk-form" onSubmit={submit} onChange={enquiry.clear} aria-labelledby={`${id}-title`}>
       <h3 className="bulk-form-title" id={`${id}-title`}>{copy.formHeading}</h3>
       {(context.product || context.pincode) && (
         <p className="bulk-form-context" data-bulk-context>
-          {context.product && <span>About <strong>{context.product}</strong>{context.variant && ` · ${context.variant}`}</span>}
-          {context.pincode && <span>Delivery pincode: {context.pincode}</span>}
+          {context.product && <span><SiteWord k="bulk.form.about" /> <strong>{context.product}</strong>{context.variant && ` · ${context.variant}`}</span>}
+          {context.pincode && <span><SiteWord k="bulk.form.pincode" /> {context.pincode}</span>}
         </p>
       )}
       <div className="bulk-form-fields">
-        <TextField label="Full name" name="name" autoComplete="name" placeholder="Your full name" maxLength={100} required />
-        <TextField label="Company / studio" name="company" autoComplete="organization" placeholder="Business name" maxLength={120} />
-        <TextField label="Email address" name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} placeholder="you@company.com" maxLength={254} required />
-        <TextField label="Phone number" name="phone" type="tel" autoComplete="tel" placeholder="+91" maxLength={30} required />
-        <Choice label="Project type" name="projectType" placeholder="Select project type" options={projectTypes} required />
-        <TextField label="Project city" name="city" autoComplete="address-level2" placeholder="City / location" maxLength={120} required />
-        <TextField label="Approximate quantity" name="quantity" placeholder="Number of pieces" maxLength={60} />
-        <Choice label="Target delivery" name="timeline" placeholder="Select timeframe" options={timelines} />
+        <TextField label={<SiteWord k="bulk.form.nameLabel" />} name="name" autoComplete="name" {...box.name} maxLength={100} required />
+        <TextField label={<SiteWord k="bulk.form.companyLabel" />} name="company" autoComplete="organization" {...box.company} maxLength={120} />
+        <TextField label={<SiteWord k="bulk.form.emailLabel" />} name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} {...box.email} maxLength={254} required />
+        <TextField label={<SiteWord k="bulk.form.phoneLabel" />} name="phone" type="tel" autoComplete="tel" {...box.phone} maxLength={30} required />
+        <Choice label={<SiteWord k="bulk.form.typeLabel" />} name="projectType" placeholder={selectType} options={projectTypes} required />
+        <TextField label={<SiteWord k="bulk.form.cityLabel" />} name="city" autoComplete="address-level2" {...box.city} maxLength={120} required />
+        <TextField label={<SiteWord k="bulk.form.quantityLabel" />} name="quantity" {...box.quantity} maxLength={60} />
+        <Choice label={<SiteWord k="bulk.form.deliveryLabel" />} name="timeline" placeholder={selectDelivery} options={timelines} />
         <label className="bulk-field" data-wide="">
-          <Label text="Your requirements" required />
-          <textarea name="message" rows={5} maxLength={4000} required placeholder="Furniture types, dimensions, materials, budget or anything you have in mind…" />
+          <Label text={<SiteWord k="bulk.form.requirementsLabel" />} required />
+          <textarea name="message" rows={5} maxLength={4000} required {...box.requirements} />
         </label>
       </div>
       <a className="bulk-references" data-bulk-references href={`mailto:${email}?subject=${encodeURIComponent("Project references")}`} aria-describedby={`${id}-mail`}>

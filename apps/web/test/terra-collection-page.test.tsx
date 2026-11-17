@@ -140,7 +140,7 @@ test("contact details come from the footer settings and photos from Terra's artw
   assert.deepEqual(terra.rooms!.items.map(room => room.media.src), ["/media/terra-collection/room-lobby.webp", "/media/terra-collection/room-bedroom.webp", "/media/terra-collection/room-terrace.webp"]);
   const upload = `/media/uploads/${"c".repeat(64)}.webp`;
   const swapped = resolveTerraLanding({ ...defaultStorefrontContent, templateMedia: [{ key: "terra-browse-2", image: upload, alt: "A walnut bed" }] });
-  assert.deepEqual(swapped.browse.items[1]!.media, { src: upload, alt: "A walnut bed" });
+  assert.deepEqual(swapped.browse.items[1]!.media, { src: upload, alt: "A walnut bed", slot: "terra-browse-2" }, "the photo names its placement, so the live preview can open it");
   assert.equal(swapped.browse.items[0]!.media.src, "/media/terra-collection/browse-lounge.webp");
 });
 

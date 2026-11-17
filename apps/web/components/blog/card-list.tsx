@@ -1,5 +1,6 @@
 "use client";
 import { Children, cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from "react";
+import { SiteWord } from "@/components/site-words";
 
 /**
  * The listing's cards (Figma 268:4185), `step` at a time with Load more under them. Every card is in the page from the
@@ -15,7 +16,7 @@ export function BlogCardList({ step, children }: { step: number; children: React
         {cards.map((card, at) => cloneElement(card, { hidden: at >= shown ? true : undefined }))}
       </div>
       {cards.length > shown && (
-        <button type="button" data-load-more className="blog-load-more" onClick={() => setShown((count) => count + step)}>Load more</button>
+        <button type="button" data-load-more className="blog-load-more" onClick={() => setShown((count) => count + step)}><SiteWord k="blog.loadMore" /></button>
       )}
       {cards.length > step && (
         <noscript><style>{"[data-blog-card][hidden]{display:grid!important}[data-load-more]{display:none!important}"}</style></noscript>

@@ -1,12 +1,17 @@
 "use client";
 
 import type { FormEvent } from "react";
+import { SiteWord, useSiteWordPlaceholder } from "@/components/site-words";
 import { useEnquiry } from "@/components/use-enquiry";
 import { ArrowRight } from "lucide-react";
 
 /** `card` is the homepage look (one-line message box, "Send enquiry"); the default is the original form. */
 export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
   const enquiry = useEnquiry();
+  const box = {
+    name: useSiteWordPlaceholder("home.projectForm.name"), email: useSiteWordPlaceholder("home.projectForm.email"),
+    phone: useSiteWordPlaceholder("home.projectForm.phone"), message: useSiteWordPlaceholder("home.projectForm.message"),
+  };
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -20,7 +25,7 @@ export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
           <input
             name="name"
             autoComplete="name"
-            placeholder="Name"
+            {...box.name}
             maxLength={100}
           />
         </label>
@@ -31,7 +36,7 @@ export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
             type="email"
             autoComplete="email"
             required
-            placeholder="Email *"
+            {...box.email}
             maxLength={254}
           />
         </label>
@@ -42,7 +47,7 @@ export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
           name="phone"
           type="tel"
           autoComplete="tel"
-          placeholder="Phone"
+          {...box.phone}
           maxLength={30}
         />
       </label>
@@ -50,13 +55,13 @@ export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
         <span className="sr-only">Tell us about your project</span>
         <textarea
           name="message"
-          placeholder="Tell us about your project"
+          {...box.message}
           rows={6}
           maxLength={5000}
         />
       </label>
       <button className="button" type="submit" disabled={enquiry.pending}>
-        {enquiry.pending ? "Saving…" : card ? <>Send enquiry <ArrowRight size={14} aria-hidden /></> : "Submit"}
+        {enquiry.pending ? "Saving…" : card ? <><SiteWord k="home.projectForm.send" /> <ArrowRight size={14} aria-hidden /></> : "Submit"}
       </button>
       {enquiry.message && <p role={enquiry.failed ? "alert" : "status"} className="home-preview-detail">{enquiry.message}</p>}
     </form>
@@ -66,6 +71,7 @@ export function HomeProjectForm({ card = false }: { card?: boolean } = {}) {
 /** An email for the newsletter list: kept with the enquiries, where staff can filter the admin's inbox to "Newsletter". */
 export function HomeNewsletterForm() {
   const enquiry = useEnquiry();
+  const emailBox = useSiteWordPlaceholder("home.newsletter.email");
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const email = String(new FormData(event.currentTarget).get("email") ?? "");
@@ -84,17 +90,17 @@ export function HomeNewsletterForm() {
           autoComplete="email"
           autoCapitalize="off"
           spellCheck={false}
-          placeholder="Email address"
+          {...emailBox}
           maxLength={254}
           required
         />
         <button className="button" type="submit" disabled={enquiry.pending}>
-          {enquiry.pending ? "Adding…" : "Subscribe"}
+          {enquiry.pending ? "Adding…" : <SiteWord k="home.newsletter.subscribe" />}
         </button>
       </div>
       {enquiry.message && (enquiry.failed
-        ? <p role="alert">We couldn’t add you to the list just now. Please try again.</p>
-        : <p role="status">Thank you. You’re on the list.</p>)}
+        ? <p role="alert"><SiteWord k="home.newsletter.failed" /></p>
+        : <p role="status"><SiteWord k="home.newsletter.thanks" /></p>)}
     </form>
   );
 }

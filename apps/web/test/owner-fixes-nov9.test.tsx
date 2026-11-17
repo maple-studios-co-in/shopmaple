@@ -154,7 +154,8 @@ test("the header is one row: the logo, the menu and the icons, with the logo sen
   const header = source("../components/header.tsx");
   const main = header.slice(header.indexOf('className="header-main"'));
   assert.ok(main.indexOf("<DesktopNavigation") > main.indexOf("brand") && main.indexOf("<DesktopNavigation") < main.indexOf("header-actions"));
-  assert.match(header, /src="\/media\/footer\/maple-logo\.webp"[^>]*unoptimized/);
+  assert.match(header, /src=\{logo\.src\}[^>]*unoptimized/, "the logo, an Artwork placement since 16 Nov 2026, is sent as it is");
+  assert.match(source("../lib/chrome-artwork.ts"), /logo: \{ src: "\/media\/footer\/maple-logo\.webp"/, "until staff upload one, the logo is the bundled file");
   assert.match(source("../app/layout.tsx"), /wide-screens\.css";(?:\s*\/\/[^\n]*)*\s*import "@\/styles\/header-menu\.css";\s*import "@\/styles\/section-rhythm\.css";\s*import "@\/styles\/review-cards\.css";[\s\S]*tailwind\.css/);
   assert.match(source("../styles/header-menu.css"), /\.maple-desktop-nav \{[^}]*border: 0;/, "no rule under the menu");
 });

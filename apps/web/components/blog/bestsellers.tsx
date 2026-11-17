@@ -25,7 +25,7 @@ export async function BlogBestsellers({ handles, media }: { handles: string[]; m
       <h2 id="blog-bestsellers-title" className="blog-section-title">Shop Bestsellers</h2>
       <div className="blog-bestsellers-row">
         <Link data-bestsellers-promo href="/collections/bestsellers" className="blog-bestsellers-promo" aria-label="Maple bestsellers">
-          <ContentImage src={promo.image} alt={promo.alt} fill sizes="(max-width: 749px) calc(100vw - 32px), 266px" />
+          <ContentImage data-media-slot="blog-bestsellers-promo" src={promo.image} alt={promo.alt} fill sizes="(max-width: 749px) calc(100vw - 32px), 266px" />
           <span>Maple</span>
         </Link>
         {products.length ? (

@@ -2,13 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Upload, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Type, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
   homeSectionKeys,
   storefrontContentSchema,
-  type StorefrontContent,
+  type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { DisabledScope } from "@/components/ui/disabled-scope";
@@ -20,6 +20,7 @@ import { CampaignFields, InstagramFields, PageFields } from "./forms";
 import { InstagramFeedPanel } from "./instagram-feed-panel";
 import { SiteChromeFields } from "./site-chrome-fields";
 import { CategoryFields } from "./category-fields";
+import { SiteWordsFields } from "./site-words-fields";
 import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
 import { TerraFields } from "./terra-fields";
@@ -29,11 +30,13 @@ import { AuthoredArticleFields } from "./authored-article-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highlights-fields";
 import { MediaLibrary } from "./media-library";
-import { TemplateArtworkFields } from "./template-artwork-fields";
+import { TemplateArtworkFields, type ArtworkRequest } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
+import { previewRouteFor } from "@/lib/live-preview";
+import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
 import { HistoryPanel, type Revision } from "./history-panel";
@@ -52,13 +55,13 @@ type Document = {
 };
 const tabs = [
   "Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram",
-  "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
+  "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
 const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: null, items: ["Overview"] },
-  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram"] },
+  { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Site words"] },
   { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
   { label: "Library", items: ["Media"] },
   { label: "Customers", items: ["Enquiries"] },
@@ -66,7 +69,7 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
 ];
 const icons: Record<Tab, typeof House> = {
   Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, "Product highlights": Sparkles, Artwork: ImageIcon,
-  Campaigns: Megaphone, Instagram, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
+  Campaigns: Megaphone, Instagram, "Site words": Type, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
   Media: Images, Enquiries: Inbox, History,
 };
 /** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
@@ -76,7 +79,7 @@ const existingPages = [
 ] as const;
 type ExistingPage = (typeof existingPages)[number][0];
 /** Sections whose edits show on a storefront page and can therefore use the live preview. */
-const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
+const previewable = new Set<Tab>(["Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages"]);
 function parseDocument(value: unknown): Document {
   const document = value as Document;
   const validUpdatedAt = document?.updatedAt === null || (typeof document?.updatedAt === "string" && document.updatedAt.length <= 64 && Number.isFinite(Date.parse(document.updatedAt)));
@@ -131,6 +134,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * in the footer of a policy page, say), so the page being edited never jumps away. Choosing a screen clears it.
    */
   const [previewHold, setPreviewHold] = useState<string | null>(null);
+  /** A picture clicked in the live preview: the Artwork screen shows its placement and opens its library. */
+  const [artworkRequest, setArtworkRequest] = useState<ArtworkRequest | null>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
   /**
@@ -139,8 +144,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * save hands the page its new token instead of reloading it.
    */
   const frameCurrent = useRef(false);
-  /** An edit is arriving from click-to-edit right now (the page already shows it). */
-  const editFromFrame = useRef(false);
+  /** An edit is arriving from click-to-edit right now, and whether the page already shows it everywhere it appears. */
+  const editFromFrame = useRef(false), frameShowsAll = useRef(true);
+  /** Edits typed on the page so far, and how many of them a finished save has already confirmed in the notice line. */
+  const frameEdits = useRef(0), frameEditsSaved = useRef(0);
   /** A quiet (live preview) save in flight: shown in status, but never disables the form. */
   const [saving, setSaving] = useState(false);
   /** The last failed quiet save; auto-save pauses until a manual save succeeds. */
@@ -218,7 +225,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     }
   }
   function edit(next: StorefrontContent) {
-    if (!editFromFrame.current) frameCurrent.current = false;
+    // Words typed on the page are already shown there; when they show in other places too (the hero's photos share one
+    // headline), the page reloads after the save so every copy shows them.
+    if (!editFromFrame.current || !frameShowsAll.current) frameCurrent.current = false;
+    if (editFromFrame.current) frameEdits.current += 1;
     latestContent.current = next;
     setContent(next);
     setDirty(true);
@@ -339,6 +349,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       setAutoSaveFailed("");
       if (!quiet) setNotice(action === "save" ? "Draft saved. The published storefront has not changed."
         : action === "publish" ? "Draft published. The storefront now uses this version." : "Restored as a draft. Review it, then publish when ready.");
+      // Words typed on the page save by themselves: confirm it once they are in, and say who puts them live. With Save
+      // draft greyed out afterwards, the owner read the quiet save as "can't save" (live, 16 Nov 2026).
+      if (action === "save" && latestContent.current === sent && frameEdits.current > frameEditsSaved.current) {
+        frameEditsSaved.current = frameEdits.current;
+        if (quiet) setNotice(`Saved in draft version ${accepted.version}. ${publisher ? "Publish draft puts it on the live store." : "A publisher puts it on the live store when they publish the draft."}`);
+      }
       return accepted;
     } catch (error) {
       if (aborted(error) || !alive.current) return null;
@@ -377,6 +393,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     .filter((group) => group.items.length > 0);
   function selectTab(name: Tab) {
     setPreviewHold(null);
+    setArtworkRequest(null);
     if (name === "History") { void history(); return; }
     // Choosing Homepage again from an open inspector returns to the section list.
     if (name === tab) { setInspecting(null); return; }
@@ -395,9 +412,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     content,
     existingPages,
     notice: setNotice,
-    whileApplying: (run) => {
+    whileApplying: (run, elsewhere) => {
       editFromFrame.current = true;
-      try { return run(); } finally { editFromFrame.current = false; }
+      frameShowsAll.current = !elsewhere;
+      try { return run(); } finally { editFromFrame.current = false; frameShowsAll.current = true; }
     },
     open: (screen, keep) => {
       if (screen.kind === "current") return;
@@ -409,7 +427,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         setContentRequest((value) => value + 1);
         return;
       }
-      const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs" } as const)[screen.kind];
+      const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs", words: "Site words" } as const)[screen.kind];
       if (screen.kind === "existing") setExistingPage(screen.page as ExistingPage);
       setPreviewHold(keep);
       if (tabRef.current !== next) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(next); }
@@ -460,12 +478,13 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       }} />;
       case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
-      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired}
+      case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} request={artworkRequest ?? undefined}
         films={{ value: content.templateFilms, onChange: set("templateFilms"), session, onExpired }} />;
       case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
       case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={(index) => { setPreviewHold(null); setSelectedPage(index); }} />;
       case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
+      case "Site words": return <SiteWordsFields value={content.siteWords} onChange={(siteWords) => edit({ ...content, siteWords })} />;
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>
@@ -649,6 +668,31 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                   setInspecting((homeSectionKeys as readonly string[]).includes(section) ? section as HomeSectionKey : null);
                 }}
                 textEditing={canEdit} onTextSelect={clickToEdit.onTextSelect} onTextEdit={clickToEdit.onTextEdit}
+                onMediaSelect={(picture, framePath) => {
+                  // A picture clicked on the page: open what changes it, keeping the preview on that page.
+                  if (!canEdit || scheduleEditing) return;
+                  setPreviewHold(previewRouteFor(framePath));
+                  const toArtwork = (slot: TemplateMediaKey, library = true) => {
+                    setArtworkRequest((current) => ({ slot, nonce: (current?.nonce ?? 0) + 1, library }));
+                    if (tabRef.current !== "Artwork") { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab("Artwork"); }
+                  };
+                  // An Artwork placement: Artwork on that placement, with its library open.
+                  if ("slot" in picture) { toArtwork(picture.slot); return; }
+                  // A banner, card, slide, post, film or page banner: the screen that holds its chooser, then the chooser.
+                  const screen = pictureScreen(picture.target);
+                  if (!screen) return;
+                  if (screen.section) {
+                    if (tabRef.current !== "Homepage") { setSelectedPage(0); setTab("Homepage"); }
+                    setFocusedSection(screen.section);
+                    setInspectQuiet(true);
+                    setInspecting(screen.section);
+                    setContentRequest((value) => value + 1);
+                  } else if (screen.filmSlot) toArtwork(screen.filmSlot, false);
+                  else if (screen.tab && tabRef.current !== screen.tab) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(screen.tab); }
+                  void openPictureChooser(picture.target, screen, content).then((opened) => {
+                    if (!opened) setNotice("This picture's chooser could not be opened here. Find it on its screen in the editor.");
+                  });
+                }}
                 isFrameCurrent={() => frameCurrent.current}
                 onFrameReady={(frameVersion) => { frameCurrent.current = frameVersion === document?.version && !dirty; }} />
             )}

@@ -1,4 +1,4 @@
-import { collectionSectionKeys, type CollectionLandingContent, type StorefrontContent, type TemplateMediaKey } from "@shopmaple/contracts";
+import { collectionSectionKeys, templateMediaKeys, type CollectionLandingContent, type StorefrontContent, type TemplateMediaKey } from "@shopmaple/contracts";
 import { followDesign, promiseArt, type CollectionArt, type CollectionClip, type CollectionIcon, type CollectionLanding, type CollectionMedia } from "@/lib/collection-landing";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
@@ -134,8 +134,11 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
   const page = resolveTerraPageContent(site.terraPage);
   const media = (key: TemplateMediaKey): CollectionMedia => {
     const { image, mobileImage, alt } = resolveTemplateMedia(key, site.templateMedia);
-    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt };
+    return { src: image, ...(mobileImage ? { mobileSrc: mobileImage } : {}), alt, slot: key };
   };
+  // Each drawing is an Artwork placement (Icons & logo) where one exists; a card staff added past the design's keeps its drawing.
+  const icon = (key: string, fallback: CollectionArt): { art: CollectionArt; artSlot?: string } => (templateMediaKeys as readonly string[]).includes(key)
+    ? { art: resolveTemplateMedia(key as TemplateMediaKey, site.templateMedia).image || fallback, artSlot: key } : { art: fallback };
   const about = (thing: string) => terraEnquiryHref(`${page.title}: ${thing}`);
   const rooms = page.rooms ?? defaultTerraPage.rooms!;
   // The film is the one staff chose under Artwork → Terra; without one the opening has no film link.
@@ -165,11 +168,11 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
         media: media(roomKeys[index]!),
       })),
     },
-    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, art: feelingArt[index]! })) },
+    feeling: { ...page.feeling, items: page.feeling.items.map((item, index) => ({ ...item, ...icon(`icon-terra-feeling-${index + 1}`, feelingArt[index] ?? feelingArt[0]!) })) },
     material: {
       ...page.material,
       media: media("terra-detail"),
-      notes: page.material.notes.map((note, index) => ({ art: noteArt[index]!, label: note.label })),
+      notes: page.material.notes.map((note, index) => ({ ...icon(`icon-terra-note-${index + 1}`, noteArt[index] ?? noteArt[0]!), label: note.label })),
       // A customization enquiry, as Nimbus's same button asks about "Nimbus customization".
       cta: { label: page.material.cta, href: terraEnquiryHref("Terra customization") },
     },
@@ -195,6 +198,6 @@ export function resolveTerraLanding(site: Pick<StorefrontContent, "terraPage" | 
       cta: { label: page.consultation.cta, href: terraEnquiryHref(page.title) },
       email: resolveSiteChrome(site.siteChrome).footer.customerEmail,
     },
-    promise: page.promise.map((item, index) => ({ art: promiseArt[index]!, label: item.label })),
+    promise: page.promise.map((item, index) => ({ ...icon(`icon-collection-promise-${index + 1}`, promiseArt[index] ?? promiseArt[0]!), label: item.label })),
   };
 }

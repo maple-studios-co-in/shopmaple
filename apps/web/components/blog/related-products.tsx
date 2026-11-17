@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteWord } from "@/components/site-words";
 import type { Product } from "@shopmaple/contracts";
 import { ProductImage } from "@/components/store/product-image";
 import { getProduct } from "@/lib/catalog";
@@ -17,7 +18,7 @@ export async function BlogRelatedProducts({ handles }: { handles: readonly strin
   if (!products.length) return null;
   return (
     <section data-sidebar-related className="blog-sidebar-section" aria-labelledby="blog-related-title">
-      <h2 id="blog-related-title">Related Products</h2>
+      <h2 id="blog-related-title"><SiteWord k="blog.relatedProducts" /></h2>
       <ul className="blog-sidebar-list">
         {products.map((product) => {
           const href = `/products/${product.handle}`;
@@ -36,7 +37,7 @@ export async function BlogRelatedProducts({ handles }: { handles: readonly strin
                   <BlogAddToCart title={product.title} href={href}
                     variant={{ id: variant.id, pricePaise: variant.pricePaise, published: product.published, available: variant.available }} />
                 ) : (
-                  <Link data-related-view href={href} className="blog-related-button">View</Link>
+                  <Link data-related-view href={href} className="blog-related-button"><SiteWord k="blog.relatedView" /></Link>
                 )}
               </div>
             </li>

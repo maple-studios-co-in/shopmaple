@@ -33,6 +33,7 @@ export function PolicyDocument({ slug, title, content, chrome, media }: { slug: 
       opening={sectioned && intro.length > 0 ? <StoreContent nodes={intro} /> : undefined}
       photo={photo.image}
       photoAlt={photo.alt}
+      photoSlot={(templateMediaKeys as readonly string[]).includes(key) ? key : undefined}
     >
       {!sectioned && <div className={`max-w-[800px] pt-8 pb-16 lg:py-16 ${copy}`}><StoreContent nodes={intro} /></div>}
       {sectioned && <div className="flex flex-col gap-8 pt-8 pb-16 lg:grid lg:grid-cols-[260px_minmax(0,800px)] lg:gap-x-12 lg:py-16 xl:gap-x-[88px]">

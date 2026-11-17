@@ -21,9 +21,9 @@ function Icon({ name }: { name: CollectionIcon }) {
 }
 /** The design's duotone illustrations: 112px on the feeling cards, 40px beside a note or a promise. Decorative: the words
  * beside them say it. */
-function Art({ src, size }: { src: CollectionArt; size: 40 | 112 }) {
+function Art({ src, size, slot }: { src: CollectionArt; size: 40 | 112; slot?: string }) {
   // eslint-disable-next-line @next/next/no-img-element -- a bundled SVG drawn at the design's size
-  return <img className={`collection-art collection-art-${size}`} src={src} alt="" width={size} height={size} loading="lazy" decoding="async" />;
+  return <img className={`collection-art collection-art-${size}`} src={src} alt="" width={size} height={size} loading="lazy" decoding="async" data-media-slot={slot} />;
 }
 
 /** The design writes its links' arrow after the words; screen readers hear the words alone. */
@@ -53,13 +53,13 @@ function Button({ link, tone = "maple" }: { link: CollectionLink; tone?: "maple"
 function Photo({ media, sizes, eager = false }: { media: CollectionMedia; sizes: string; eager?: boolean }) {
   const style: CSSProperties | undefined = media.focus ? { objectPosition: media.focus } : undefined;
   const loading = eager ? { loading: "eager" as const, fetchPriority: "high" as const } : { loading: "lazy" as const };
-  if (!media.mobileSrc) return <Image src={media.src} alt={media.alt} fill sizes={sizes} style={style} {...loading} />;
+  if (!media.mobileSrc) return <Image src={media.src} alt={media.alt} fill sizes={sizes} style={style} {...loading} data-media-slot={media.slot} />;
   const desktop = getContentImageProps({ src: media.src, alt: media.alt, fill: true, sizes, ...loading }).props;
   const phone = getContentImageProps({ src: media.mobileSrc, alt: media.alt, fill: true, sizes: "100vw", ...loading }).props;
   return (
     <picture>
       <source media="(max-width: 749px)" srcSet={phone.srcSet ?? phone.src} sizes={phone.sizes} />
-      <img src={desktop.src} srcSet={desktop.srcSet} sizes={desktop.sizes} alt={media.alt} loading={desktop.loading}
+      <img src={desktop.src} srcSet={desktop.srcSet} sizes={desktop.sizes} alt={media.alt} loading={desktop.loading} data-media-slot={media.slot}
         fetchPriority={desktop.fetchPriority} decoding="async" style={style} />
     </picture>
   );
@@ -74,7 +74,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
   const regions: Record<CollectionSectionKey, () => ReactNode> = {
     hero: () => (
       <section className="collection-hero" id={id("hero")} data-collection-section="hero" aria-labelledby={heading("hero")}>
-        <div className="collection-hero-media">
+        <div className="collection-hero-media" data-picture-target={`film:${page.key}-hero`}>
           <Photo media={page.hero.media} sizes="100vw" eager />
           {page.hero.clip && <CollectionOpeningClip clip={page.hero.clip} />}
         </div>
@@ -156,7 +156,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
         <ul className="collection-feeling-cards">
           {page.feeling.items.map((item, index) => (
             <li className="collection-feeling-card" key={index}>
-              <Art src={item.art} size={112} />
+              <Art src={item.art} size={112} slot={item.artSlot} />
               <h3 className="collection-feeling-title">{item.title}</h3>
               <p className="collection-feeling-text">{item.body}</p>
             </li>
@@ -175,7 +175,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
           <p className="collection-text" data-collection-body="">{page.material.body}</p>
           <ul className="collection-notes">
             {page.material.notes.map((note, index) => (
-              <li key={index}><Art src={note.art} size={40} /><span>{note.label}</span></li>
+              <li key={index}><Art src={note.art} size={40} slot={note.artSlot} /><span>{note.label}</span></li>
             ))}
           </ul>
           <Button link={page.material.cta} />
@@ -215,7 +215,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
           ) : (
             <li className="collection-piece" key={index} data-collection-piece="">
               <div className="collection-piece-photo">
-                <Image src={piece.media.src} alt={piece.media.alt} fill loading="lazy" sizes="(max-width: 749px) 48vw, 24vw"
+                <Image src={piece.media.src} alt={piece.media.alt} data-media-slot={piece.media.slot} fill loading="lazy" sizes="(max-width: 749px) 48vw, 24vw"
                   style={piece.media.focus ? { objectPosition: piece.media.focus } : undefined} />
               </div>
               <div className="collection-piece-body">
@@ -246,7 +246,7 @@ export function CollectionLandingView({ page }: { page: CollectionLanding }) {
     promise: () => (
       <section className="collection-promise" id={id("promise")} data-collection-section="promise" aria-label="The Maple promise">
         <ul>
-          {page.promise.map((item, index) => <li key={index}><Art src={item.art} size={40} /><span>{item.label}</span></li>)}
+          {page.promise.map((item, index) => <li key={index}><Art src={item.art} size={40} slot={item.artSlot} /><span>{item.label}</span></li>)}
         </ul>
       </section>
     ),

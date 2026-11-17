@@ -1,4 +1,5 @@
 import type { ProductCard as ProductCardModel } from "@shopmaple/contracts";
+import { SiteWord } from "@/components/site-words";
 import { ContentImage as Image, getContentImageProps } from "@/components/content-image";
 import { CampaignBanner } from "@/components/campaign-banner";
 import Link from "next/link";
@@ -38,6 +39,7 @@ export function CategoryBanner({
   width,
   height,
   eager = false,
+  slot,
 }: {
   desktop: string;
   mobile: string;
@@ -45,6 +47,8 @@ export function CategoryBanner({
   width: number;
   height: number;
   eager?: boolean;
+  /** The Artwork placement the picture comes from, so the live preview can open it for a new one. */
+  slot?: string;
 }) {
   const image = getContentImageProps({
     src: desktop,
@@ -75,7 +79,7 @@ export function CategoryBanner({
           srcSet={small.srcSet ?? small.src}
           sizes={small.sizes}
         />
-        <img {...image} />
+        <img {...image} data-media-slot={slot} />
       </picture>
     </div>
   );
@@ -111,12 +115,12 @@ export async function CategoryProducts({
       {heading && (
         <header>
           <div>
-            <p className="home-eyebrow">Shop By</p>
+            <p className="home-eyebrow"><SiteWord k="category.shopBy" /></p>
             <h2>{heading}</h2>
           </div>
           {viewAll && (
             <Link href={landingCollectionHref(`/collections/${collection}`)}>
-              View all →
+              <SiteWord k="category.viewAll" />
             </Link>
           )}
         </header>
@@ -206,6 +210,7 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
                   <CampaignBanner campaign={campaign} content={content} eager={hero} />
                 ) : (
                   <CategoryBanner
+                    slot={slot ?? undefined}
                     desktop={artwork!.image}
                     mobile={artwork!.mobileImage || artwork!.image}
                     width={section.width!}
@@ -239,6 +244,7 @@ export async function CategoryLanding({ slug, content: supplied }: { slug: Categ
                 <Link href={landingCollectionHref(item.href!)} key={item.href} data-landing-category>
                   <div>
                     {photo && <Image
+                      data-media-slot={slot ?? undefined}
                       src={photo.image}
                       alt={photo.alt}
                       fill

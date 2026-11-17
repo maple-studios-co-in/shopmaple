@@ -4,6 +4,7 @@ import { Plus, Search } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
+import { heroHeadline, heroIntro } from "@/lib/hero-film";
 import { Notice } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
@@ -48,7 +49,21 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
   const update = <K extends keyof HomeDetails>(key: K, next: HomeDetails[K]) => onChange({ ...page, [key]: next });
   const { hero, difference, nimbus } = page;
   switch (section) {
-    case "hero": return <>
+    case "hero": {
+      // An emptied field drops its key, so the storefront goes back to the theme's own words (shown as the placeholder).
+      const setWords = (key: "headline" | "intro", text: string) => {
+        const next = { ...hero };
+        if (text.trim()) next[key] = text; else delete next[key];
+        update("hero", next);
+      };
+      return <>
+      <div className="grid gap-4">
+        <Field label="Hero headline" value={hero.headline ?? ""} maxLength={120} placeholder={heroHeadline}
+          hint="The big words on the hero photos. Leave empty to keep the original. Your own slides below carry their own words."
+          onChange={text => setWords("headline", text)} />
+        <Field label="Hero intro" value={hero.intro ?? ""} maxLength={300} multiline placeholder={heroIntro}
+          hint="The line under the headline. Leave empty to keep the original." onChange={text => setWords("intro", text)} />
+      </div>
       <TextFields value={hero} onChange={next => update("hero", next)} fields={[["cta", "Hero collection button", 80]]} />
       <div className="grid gap-3 sm:grid-cols-2">
         <GroupedFields items={hero.tiles} legend={tile => tileNames[tile.key]} onChange={tiles => update("hero", { ...hero, tiles })}
@@ -57,6 +72,7 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
       <Notice tone="info">Starting-price labels are display text. Product prices and availability are managed in Keeri.</Notice>
       <HeroSlidesFields hero={hero} onChange={next => update("hero", next)} session={session} onExpired={onExpired} />
     </>;
+    }
     case "difference": return <TextFields value={difference} onChange={next => update("difference", next)} fields={[
       ["eyebrow", "Difference eyebrow", 160], ["heading", "Difference heading", 160], ["cta", "Difference button", 80],
       ...listFields(difference.promises, index => `Difference promise ${index + 1}`, 160, promises => update("difference", { ...difference, promises })),
@@ -96,8 +112,8 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
         ]} />
         {/* Both photos are required, so clearing one keeps the one already chosen. */}
         {session && onExpired && <>
-          <MediaPicker label="Left image" value={editorial.leftImage} onChange={url => url && next({ leftImage: url })} session={session} onExpired={onExpired} />
-          <MediaPicker label="Right image" value={editorial.rightImage} onChange={url => url && next({ rightImage: url })} session={session} onExpired={onExpired} />
+          <MediaPicker label="Left image" value={editorial.leftImage} onChange={url => url && next({ leftImage: url })} session={session} onExpired={onExpired} target="editorial:left" />
+          <MediaPicker label="Right image" value={editorial.rightImage} onChange={url => url && next({ rightImage: url })} session={session} onExpired={onExpired} target="editorial:right" />
         </>}
       </>;
     }

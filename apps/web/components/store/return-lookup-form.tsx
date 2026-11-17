@@ -1,5 +1,6 @@
 "use client";
 import { useId, useRef, useState, type FormEvent } from "react";
+import { SiteWord, useSiteWordPlaceholder } from "@/components/site-words";
 import { createEnquirySender } from "@/lib/enquiry-client";
 import { returnRequest } from "@/lib/return-request";
 import type { CareContact } from "./help-page";
@@ -28,6 +29,7 @@ export function ReturnLookupForm({ care }: { care: CareContact }) {
   const id = useId();
   const sender = useRef<ReturnType<typeof createEnquirySender> | null>(null);
   const [state, setState] = useState<State>({ status: "idle" });
+  const box = { order: useSiteWordPlaceholder("returns.form.orderPlaceholder"), contact: useSiteWordPlaceholder("returns.form.contactPlaceholder") };
   const invalid = (field: "order" | "contact") => state.status === "invalid" && state.field === field;
   const described = (field: "order" | "contact") => (invalid(field) ? `${id}-${field}-error` : undefined);
 
@@ -62,12 +64,12 @@ export function ReturnLookupForm({ care }: { care: CareContact }) {
       aria-labelledby={`${id}-title`}
       className="flex w-full max-w-[560px] flex-col gap-5 rounded-[8px] border border-help-rule bg-white px-[19px] py-[31px] lg:px-[35px]"
     >
-      <h2 id={`${id}-title`} className="text-[28px] leading-[43px] font-medium">Find your order</h2>
+      <h2 id={`${id}-title`} className="text-[28px] leading-[43px] font-medium"><SiteWord k="returns.form.heading" /></h2>
       <div>
         <label className={fieldLabel}>
-          Order number
+          <SiteWord k="returns.form.orderLabel" />
           <input
-            className={control} name="order" placeholder="e.g. #1001" autoComplete="off" spellCheck={false} maxLength={40} required
+            className={control} name="order" {...box.order} autoComplete="off" spellCheck={false} maxLength={40} required
             aria-invalid={invalid("order") || undefined} aria-describedby={described("order")}
           />
         </label>
@@ -75,9 +77,9 @@ export function ReturnLookupForm({ care }: { care: CareContact }) {
       </div>
       <div>
         <label className={fieldLabel}>
-          Email or phone number
+          <SiteWord k="returns.form.contactLabel" />
           <input
-            className={control} name="contact" placeholder="Used when placing your order" autoComplete="email" spellCheck={false} maxLength={254} required
+            className={control} name="contact" {...box.contact} autoComplete="email" spellCheck={false} maxLength={254} required
             aria-invalid={invalid("contact") || undefined} aria-describedby={described("contact")}
           />
         </label>
@@ -90,7 +92,7 @@ export function ReturnLookupForm({ care }: { care: CareContact }) {
         aria-busy={state.status === "sending" || undefined}
         className="w-full cursor-pointer rounded-[4px] border-0 bg-maple py-[15px] text-center text-[14px] leading-[22px] font-medium text-white uppercase after:ml-[7px] after:content-['→'] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple disabled:cursor-wait disabled:opacity-80"
       >
-        {state.status === "sending" ? "Sending" : "Find your order"}
+        {state.status === "sending" ? "Sending" : <SiteWord k="returns.form.submit" />}
       </button>
       {state.status === "phone" && (
         <p role="alert" className="text-[14px] leading-[22px] text-help-ink">
@@ -110,15 +112,15 @@ export function ReturnLookupForm({ care }: { care: CareContact }) {
         <div role="status" className="text-[14px] leading-[22px] text-help-ink">
           {state.status === "sent" && (
             <div className="mb-4 rounded-[4px] bg-help-page px-4 py-3">
-              <p className="font-medium text-maple">Thank you. Your request is with our care team.</p>
+              <p className="font-medium text-maple"><SiteWord k="returns.form.thanks" /></p>
               <p className="mt-1">They will look up order {state.order} and reply to {state.email} about your return or exchange.</p>
               <p className="mt-1 text-[13px] leading-5 text-help-muted">Reference: {state.reference}</p>
             </div>
           )}
         </div>
-        <p data-return-note className="text-[13px] leading-5 text-help-muted">You can find your order number in your confirmation email.</p>
+        <p data-return-note className="text-[13px] leading-5 text-help-muted"><SiteWord k="returns.form.hint" /></p>
         {/* The returns page's standing notice, kept from the old form: sending is not an approval. */}
-        <p className="mt-1 text-[13px] leading-5 text-help-muted">This form saves an enquiry; it does not automatically approve a return or issue a refund.</p>
+        <p className="mt-1 text-[13px] leading-5 text-help-muted"><SiteWord k="returns.form.notice" /></p>
       </div>
     </form>
   );

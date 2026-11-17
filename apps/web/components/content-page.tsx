@@ -11,7 +11,7 @@ export function ContentPage({ page }: { page: Page }) {
         {page.description && <p>{page.description}</p>}
       </header>
       {page.banner && (
-        <Link className="content-page-banner" href={page.banner.href}>
+        <Link className="content-page-banner" href={page.banner.href} data-picture-target={`page-banner:${page.slug}`}>
           <picture>
             <source
               media="(max-width:749px)"

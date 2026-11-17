@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { TemplateMedia } from "@shopmaple/contracts";
 import { Fragment, type ReactNode } from "react";
 import type { ContactPageContent, ContactSectionKey, StorefrontContent } from "@shopmaple/contracts";
 import type { EnquiryContext } from "@/lib/enquiry-context";
@@ -20,9 +21,11 @@ const topicIcons: Record<ContactPageContent["categories"][number]["key"], string
 };
 
 /** An icon from the design, drawn at its own size. */
-function Icon({ name }: { name: string }) {
+function Icon({ name, media }: { name: "phone" | "mail" | "pin"; media?: TemplateMedia }) {
+  // An Artwork placement (Icons & logo): the design's drawing until staff upload another.
+  const slot = `icon-contact-${name}` as const;
   // eslint-disable-next-line @next/next/no-img-element -- the design's 36px line icon
-  return <img className="contact-way-icon" src={`/media/contact/${name}.svg`} width={36} height={36} alt="" loading="lazy" decoding="async" />;
+  return <img className="contact-way-icon" src={resolveTemplateMedia(slot, media).image} data-media-slot={slot} width={36} height={36} alt="" loading="lazy" decoding="async" />;
 }
 function Arrow() {
   return <span className="contact-button-arrow" aria-hidden="true">→</span>;
@@ -57,7 +60,7 @@ export function ContactPage({ context, content, site }: {
         </div>
         <div className="contact-intro-media">
           {/* Under 630px wide the frame's 240px floor makes the photo wider than the window: it is drawn 560px wide. */}
-          <Image src={studio.image} alt={studio.alt} width={1792} height={768} preload sizes="(max-width: 629px) 560px, 89vw" />
+          <Image data-media-slot="contact-studio" src={studio.image} alt={studio.alt} width={1792} height={768} preload sizes="(max-width: 629px) 560px, 89vw" />
         </div>
       </section>
     ),
@@ -66,19 +69,19 @@ export function ContactPage({ context, content, site }: {
         <h2 className="sr-only" id="contact-reach-title">Ways to reach us</h2>
         <ul className="contact-ways">
           <li className="contact-way">
-            <Icon name="phone" />
+            <Icon name="phone" media={site?.templateMedia} />
             <h3>{call.title}</h3>
             <a className="contact-way-detail" href={`tel:${footer.customerPhone}`}>{footer.customerPhoneLabel}</a>
             <p className="contact-way-note">{call.note}</p>
           </li>
           <li className="contact-way">
-            <Icon name="mail" />
+            <Icon name="mail" media={site?.templateMedia} />
             <h3>{write.title}</h3>
             <a className="contact-way-detail" href={`mailto:${footer.customerEmail}`}>{footer.customerEmail}</a>
             <p className="contact-way-note">{write.note}</p>
           </li>
           <li className="contact-way">
-            <Icon name="pin" />
+            <Icon name="pin" media={site?.templateMedia} />
             <h3>{visit.title}</h3>
             <a className="contact-way-detail" href={directions} target="_blank" rel="noreferrer">{visit.detail}{newTab}</a>
             <p className="contact-way-note">{visit.note}</p>
@@ -116,7 +119,7 @@ export function ContactPage({ context, content, site }: {
     visit: (
       <section className="contact-visit" id="contact-visit" data-service-section="visit" aria-labelledby="contact-visit-title">
         <div className="contact-visit-media">
-          <Image src={workshop.image} alt={workshop.alt} width={1536} height={1024} loading="lazy"
+          <Image data-media-slot="contact-workshop" src={workshop.image} alt={workshop.alt} width={1536} height={1024} loading="lazy"
             sizes="(max-width: 799px) calc(100vw - 40px), 32vw" />
         </div>
         <div className="contact-visit-copy">

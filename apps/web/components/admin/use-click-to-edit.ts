@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useRef } from "react";
 import { categoryPageSlugs, homeSectionKeys, type StorefrontContent } from "@shopmaple/contracts";
-import { applyCandidate, findTextCandidates, pickCandidate, rendered, revealCandidate, selectOffering, setFieldValue, type TextCandidate } from "@/lib/admin-focus";
+import { applyCandidate, findTextCandidates, pickCandidate, rendered, revealCandidate, selectNamed, selectOffering, setFieldValue, type TextCandidate } from "@/lib/admin-focus";
 import { previewRouteFor, type FrameToParentMessage, type PreviewTextArea } from "@/lib/live-preview";
 import type { HomeSectionKey } from "@/lib/section-thumbnails";
+import { isSiteWordKey, type SiteWordKey } from "@/lib/site-words";
 
 export type TextSelectMessage = Extract<FrameToParentMessage, { type: "text-select" }>;
 export type TextEditMessage = Extract<FrameToParentMessage, { type: "text-edit" }>;
@@ -21,6 +22,8 @@ export type ClickEditScreen =
   | { kind: "pages"; slug: string }
   | { kind: "category"; slug: string }
   | { kind: "editorial"; choice: string; article?: string }
+  /** A word the theme writes itself (Site words), named by the page. */
+  | { kind: "words"; key: SiteWordKey }
   | { kind: "current" };
 
 /** Navigation & footer's tabs that hold each part of the chrome, in the order to look. */
@@ -33,6 +36,8 @@ const chromeTabs: Record<ChromePart, string[]> = {
 
 /** Where clicked words are edited, from where they sit on the page. */
 export function clickEditScreen(message: TextSelectMessage | TextEditMessage, content: StorefrontContent | null, existingPages: readonly (readonly [string, string, string])[]): ClickEditScreen {
+  // The theme's own words name their place on the page: Site words holds them, wherever they sit.
+  if (message.word && isSiteWordKey(message.word)) return { kind: "words", key: message.word };
   if (message.area === "section") {
     return message.section && (homeSectionKeys as readonly string[]).includes(message.section) ? { kind: "section", section: message.section as HomeSectionKey } : { kind: "current" };
   }
@@ -60,8 +65,11 @@ export type ClickToEditOptions = {
   open: (screen: ClickEditScreen, keep: string) => void;
   /** A message in the editor's notice line. */
   notice: (message: string) => void;
-  /** Runs the typing of a kept edit, so the editor knows the page already shows it (no reload needed). */
-  whileApplying?: <T>(run: () => T) => T;
+  /**
+   * Runs the typing of a kept edit, so the editor knows the page already shows it (no reload needed). `elsewhere`: the
+   * same field also shows in other places on the page, which still show the old words until it reloads.
+   */
+  whileApplying?: <T>(run: () => T, elsewhere: boolean) => T;
 };
 
 const cannotChange = "These words can't be changed here: product names and prices come from Keeri, and some words are part of the store's design.";
@@ -92,7 +100,8 @@ export function useClickToEdit(options: ClickToEditOptions) {
     }
     const screen = clickEditScreen(message, latest.current.content ?? content, existingPages);
     latest.current.open(screen, previewRouteFor(message.path));
-    const candidate = await locate(screen, words, message.context, message.occurrence, latest.current.content);
+    const tally = { fields: 0 };
+    const candidate = await locate(screen, words, message.context, message.occurrence, latest.current.content, tally);
     if (!candidate) {
       reply({ ok: false, message: cannotChange });
       if (editing) notice(`“${words.length > 60 ? `${words.slice(0, 57)}…` : words}”: ${cannotChange} The page was put back.`);
@@ -101,7 +110,10 @@ export function useClickToEdit(options: ClickToEditOptions) {
     revealCandidate(candidate);
     if (!editing) { reply({ ok: true }); return; }
     const apply = () => applyCandidate(candidate, message.after);
-    const result = latest.current.whileApplying ? latest.current.whileApplying(apply) : apply();
+    // Fewer fields than copies of the words on the page: some copies show this one field (the hero's four photos share
+    // one headline), and they change only once the page reloads.
+    const elsewhere = (message.repeats ?? 1) > Math.max(1, tally.fields);
+    const result = latest.current.whileApplying ? latest.current.whileApplying(apply, elsewhere) : apply();
     if (result.ok) reply({ ok: true });
     else { reply({ ok: false, message: result.message }); notice(result.message); }
   }, []);
@@ -133,16 +145,39 @@ function screenPanel(tab: string) {
 }
 
 /** Finds the field holding the words on the opened screen, choosing the page or tab inside it first when needed. */
-async function locate(screen: ClickEditScreen, words: string, context: string, occurrence: number, content: StorefrontContent | null): Promise<TextCandidate | null> {
+async function locate(screen: ClickEditScreen, words: string, context: string, occurrence: number, content: StorefrontContent | null,
+  tally: { fields: number } = { fields: 0 }): Promise<TextCandidate | null> {
   const search = (root: Element | null) => {
     if (!root) return null;
-    const found = findTextCandidates(root, words);
+    const found = findTextCandidates(root, words, context);
+    tally.fields = found.length;
     return found.length ? pickCandidate(found, context, occurrence, root) : null;
   };
+  if (screen.kind === "words") {
+    // The page named the place, so there is exactly one box: no matching of words needed.
+    const box = await rendered(() => screenPanel("Site words")?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="site-word:${screen.key}"]`) ?? null, 15);
+    if (!box) return null;
+    tally.fields = 1;
+    return { kind: "field", field: box, element: box, match: { how: "same" } };
+  }
   if (screen.kind === "section") {
     const inspector = await rendered(() => document.querySelector<HTMLElement>(`[data-section-inspector="${screen.section}"]`));
     // The inspector opens on Content; give its fields a frame to appear.
-    return rendered(() => search(inspector), 8);
+    const found = await rendered(() => search(inspector), 8);
+    if (found || !inspector) return found;
+    // A section of several campaigns (the promos' three cards) shows one campaign's fields at a time: the second and third
+    // cards' words were refused on the live shop (16 Nov 2026). Try each campaign in turn; with no match, put the list back.
+    const chooser = selectNamed(inspector, "Campaign");
+    if (!chooser) return null;
+    const start = chooser.value;
+    for (const option of [...chooser.options]) {
+      if (option.value === start) continue;
+      setFieldValue(chooser, option.value);
+      const next = await rendered(() => (chooser.isConnected && chooser.value === option.value ? search(inspector) : null), 8);
+      if (next) return next;
+    }
+    if (chooser.isConnected && chooser.value !== start) setFieldValue(chooser, start);
+    return null;
   }
   if (screen.kind === "chrome") {
     const panel = await rendered(() => screenPanel("Navigation & footer"));

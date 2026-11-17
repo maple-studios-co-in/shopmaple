@@ -68,7 +68,7 @@ test("template fallback resolution preserves original assets and caller labels w
   // from Keeri products until staff upload photos (owner, 11 Nov 2026: nothing from Shopify).
   // The pictures fixed in code until 12 Nov 2026 became slots too: 5 menu, 10 banners, 22 circles, 12 value icons,
   // 12 blog, 1 product banner, 4 editorial flips, 5 Help pages and 2 sign-in pages (73).
-  assert.equal(templateMediaSlots.length, 74 + 73);
+  assert.equal(templateMediaSlots.length, 74 + 73 + 33, "74 template, 73 picture and 33 icon and logo placements (16 Nov 2026)");
   assert.deepEqual(templateMediaSlots.filter(slot => slot.group === "Nimbus").map(slot => [slot.key, slot.image]), [
     ["nimbus-hero-poster", "/media/nimbus-collection/hero.webp"], ["nimbus-origin", "/media/nimbus-collection/origin.webp"],
     ["nimbus-craft-poster", "/media/nimbus-collection/detail.webp"], ["nimbus-room-living", "/media/nimbus-collection/sofas.webp"],

@@ -1,4 +1,7 @@
 import { DismissibleDetails } from "./dismissible-details";
+import { chromeArtworkSlots, defaultChromeArtwork, type ChromeArtwork } from "@/lib/chrome-artwork";
+import { ContentImage } from "@/components/content-image";
+import { SiteWord } from "@/components/site-words";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type CSSProperties } from "react";
@@ -16,7 +19,8 @@ function Links({ links }: { links: ChromeLink[] }) {
 }
 export function Footer({
   siteChrome = defaultSiteChrome,
-}: { siteChrome?: SiteChrome } = {}) {
+  artwork = defaultChromeArtwork,
+}: { siteChrome?: SiteChrome; /** The logo and icons, Artwork placements (Icons & logo). */ artwork?: ChromeArtwork } = {}) {
   const footer = siteChrome.footer;
   const columns = footer.columns.filter(
     (column) =>
@@ -61,9 +65,10 @@ export function Footer({
           href="/"
           aria-label="Maple Furnishers home"
         >
-          <Image
-            src={"/media/footer/maple-logo.webp"}
-            alt="Maple Furnishers"
+          <ContentImage
+            src={artwork.logo.src}
+            data-media-slot={chromeArtworkSlots.logo}
+            alt={artwork.logo.alt || "Maple Furnishers"}
             width={1080}
             height={500}
             sizes="(max-width:749px) 70vw, 25vw"
@@ -75,7 +80,7 @@ export function Footer({
               <div className="maple-footer-care" key={key}>
                 <h2>{footer.careHeading}</h2>
                 <p>
-                  <Image src={"/media/footer/map.svg"} alt="" width={40} height={42} />
+                  <ContentImage src={artwork.map.src} alt={artwork.map.alt} data-media-slot={chromeArtworkSlots.map} width={40} height={42} />
                   <span>
                     {footer.addressLines.map((line, index) => (
                       <Fragment key={index}>
@@ -86,11 +91,11 @@ export function Footer({
                   </span>
                 </p>
                 <a href={`tel:${footer.customerPhone}`}>
-                  <Image src={"/media/footer/phone.svg"} alt="" width={40} height={42} />{" "}
+                  <ContentImage src={artwork.phone.src} alt={artwork.phone.alt} data-media-slot={chromeArtworkSlots.phone} width={40} height={42} />{" "}
                   {footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${footer.customerEmail}`}>
-                  <Image src={"/media/footer/mail.svg"} alt="" width={40} height={42} /> {footer.customerEmail}
+                  <ContentImage src={artwork.mail.src} alt={artwork.mail.alt} data-media-slot={chromeArtworkSlots.mail} width={40} height={42} /> {footer.customerEmail}
                 </a>
               </div>
             );
@@ -118,9 +123,10 @@ export function Footer({
               return (
                 <div key={key}>
                   <h3>{footer.findUsHeading}</h3>
-                  <Image
-                    src={"/media/footer/amazon.avif"}
-                    alt="Amazon"
+                  <ContentImage
+                    src={artwork.marketplace.src}
+                    data-media-slot={chromeArtworkSlots.marketplace}
+                    alt={artwork.marketplace.alt || "Amazon"}
                     width={150}
                     height={56}
                   />
@@ -133,11 +139,11 @@ export function Footer({
               <div key={key}>
                 <h3>{bulk ? footer.bulkHeading : footer.serviceHeading}</h3>
                 <a href={`tel:${phone}`}>
-                  <Image src={"/media/footer/phone-light.svg"} alt="" width={40} height={42} />{" "}
+                  <ContentImage src={artwork.phoneLight.src} alt={artwork.phoneLight.alt} data-media-slot={chromeArtworkSlots.phoneLight} width={40} height={42} />{" "}
                   {bulk ? footer.bulkPhoneLabel : footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${email}`}>
-                  <Image src={"/media/footer/mail-light.svg"} alt="" width={40} height={42} /> {email}
+                  <ContentImage src={artwork.mailLight.src} alt={artwork.mailLight.alt} data-media-slot={chromeArtworkSlots.mailLight} width={40} height={42} /> {email}
                 </a>
               </div>
             );
@@ -148,11 +154,11 @@ export function Footer({
         <span>
           © {new Date().getFullYear()} {footer.copyrightName}
           {/* The city photos are CC BY-SA, which asks for their credits within reach; the owner took the line off the cities row. */}
-          <a className="maple-footer-credits" href="/media/cities/credits.html">Image credits</a>
+          <a className="maple-footer-credits" href="/media/cities/credits.html"><SiteWord k="footer.imageCredits" /></a>
         </span>
         {footer.policyLinks.some((link) => link.enabled) && (
           <DismissibleDetails className="maple-footer-policies">
-            <summary>Terms and Policies</summary>
+            <summary><SiteWord k="footer.policies" /></summary>
             <nav aria-label="Store policies">
               <Links links={footer.policyLinks} />
             </nav>

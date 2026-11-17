@@ -136,4 +136,3 @@
 :where(.shop-admin) :is(a, button, input, select, summary, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 /* Headings that receive focus from code (tabindex=-1) to start screen readers there are not controls. */
 :where(.shop-admin) [tabindex="-1"]:focus-visible { outline: none; }
-

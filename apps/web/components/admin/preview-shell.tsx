@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ChromeArtwork } from "@/lib/chrome-artwork";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { MousePointer2, Pencil } from "lucide-react";
 import type { SiteChrome } from "@shopmaple/contracts";
 import type { MenuArtwork } from "@/lib/menu-artwork";
 import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { AdminRoot } from "./admin-root";
-import { previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, type PreviewDevice, type PreviewTextTarget } from "@/lib/live-preview";
+import { keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewTextTarget } from "@/lib/live-preview";
 import { sectionName } from "@/lib/section-thumbnails";
 
 export type PreviewPageOption = { label: string; segments: string[] };
@@ -93,6 +94,17 @@ const chromeParts = [[".announcement", "announcement"], [".whatsapp-support", "w
 /** Never words to edit: the admin's own controls inside the frame, hidden helpers, and form controls. */
 const notWords = "[data-preview-edit], [data-preview-hint], .skip-link, script, style, noscript, template, svg, select, option, textarea, input";
 const squash = (text: string) => text.replace(/\s+/g, " ").trim();
+/**
+ * The picture a click lands on, by what changes it: an Artwork placement (`slot`, the nearest one), else a banner, card,
+ * slide, post, film or page banner (`target`). Null when no picture staff chose is there.
+ */
+function pictureOf(node: Element): { slot: string } | { target: string } | null {
+  const placed = node.closest<HTMLElement>("[data-media-slot]"), targeted = node.closest<HTMLElement>("[data-picture-target]");
+  if (placed?.dataset.mediaSlot && (!targeted || targeted.contains(placed))) return { slot: placed.dataset.mediaSlot };
+  return targeted?.dataset.pictureTarget ? { target: targeted.dataset.pictureTarget } : null;
+}
+/** The Site words place clicked words name (their own span), or a form box's placeholder names; undefined elsewhere. */
+const siteWordOf = (node: Element) => node.closest<HTMLElement>("[data-site-word]")?.dataset.siteWord ?? (node as HTMLElement).dataset?.siteWordPlaceholder;
 /** The words around clicked words, as laid out (innerText needs layout; tests have none). Only compared, never saved. */
 const shownText = (node: HTMLElement) => (typeof node.innerText === "string" ? node.innerText : node.textContent ?? "");
 /**
@@ -141,8 +153,17 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
   // The parent exists only in the browser. Read after mounting, so the server's markup and the first render agree.
   const [parent, setParent] = useState<Window | null>(parentWindow ?? null);
   useEffect(() => { setParent(parentWindow === undefined ? embeddingParent() : parentWindow); }, [parentWindow]);
-  /** Click-to-edit is on until the admin switches the preview to Browse. */
-  const [editMode, setEditMode] = useState(true);
+  /**
+   * Edit until the admin says Browse. A page that reloads (or opens from a link followed in Browse) starts in the mode kept
+   * for the tab, so it never edits for a moment while staff are browsing, or follows a link while they are editing.
+   */
+  const [editMode, setEditMode] = useState(() => readPreviewMode() === "edit");
+  // The page says which mode it is in, for its cursors (styles/preview-edit.css) and the pill below.
+  useEffect(() => {
+    if (!parent || !selectable) return;
+    document.documentElement.dataset.previewMode = editMode ? "edit" : "browse";
+    return () => { delete document.documentElement.dataset.previewMode; };
+  }, [parent, selectable, editMode]);
   /** A short reason shown in the hint when the editor could not take the words (a product name from Keeri, say). */
   const [note, setNote] = useState("");
   /** The words being typed over right now: a scroll request never pulls them out from under the caret. */
@@ -164,8 +185,14 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     function onMessage(event: MessageEvent) {
       const message = readPreviewMessage(event, origin, parent);
       if (!message) return;
-      if (message.type === "mode") { setEditMode(message.mode === "edit"); return; }
-      if (message.type === "token") { tokenRef.current?.(message.token, message.version); return; }
+      if (message.type === "mode") { setEditMode(message.mode === "edit"); keepPreviewMode(message.mode); return; }
+      if (message.type === "token") {
+        tokenRef.current?.(message.token, message.version);
+        // A token handed over in place follows the save of words typed on this page. Say so where the eyes are: the save
+        // happens by itself, and with Save draft greyed out the owner took it for "can't save" (16 Nov 2026).
+        setNote(`Saved in draft version ${message.version}. It goes live when the draft is published.`);
+        return;
+      }
       if (message.type === "scroll") {
         // Instant, never smooth: the page was reloaded under the staff member and should simply be where it was.
         (document.scrollingElement ?? document.documentElement).scrollTo?.({ top: message.y, behavior: "instant" });
@@ -194,9 +221,10 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [path, version, parent]);
-  // Hover outlines a section and places its Edit button at the section's top left, inside the viewport.
+  // Hover outlines a section and places its Edit button at the section's top left, inside the viewport: in Edit only, as
+  // Browse shows the page as visitors see it.
   useEffect(() => {
-    if (!parent || !selectable) return;
+    if (!parent || !selectable || !editMode) { setHover(null); return; }
     let current: HTMLElement | null = null;
     const place = () => {
       if (!current) return;
@@ -220,7 +248,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       window.removeEventListener("scroll", place);
       current?.removeAttribute("data-preview-hover");
     };
-  }, [parent, selectable]);
+  }, [parent, selectable, editMode]);
   // Click-to-edit, as in a page builder: hovering words outlines them, clicking turns them into a text box right on the
   // page, and Enter (or clicking away) hands the new words to the editor, which types them into the field that holds
   // them. Esc puts them back. Links don't open while it is on; sliders, tabs and menus without words of their own still
@@ -231,7 +259,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     const plainText = supportsPlainText();
     const layout = document.documentElement.getClientRects().length > 0;
     const visible = (node: Element) => !layout || node.getClientRects().length > 0;
-    let editing: HTMLElement | null = null, hovered: HTMLElement | null = null;
+    let editing: HTMLElement | null = null, hovered: HTMLElement | null = null, hoveredPicture: HTMLElement | null = null;
     let originalHtml = "", originalText = "", target: PreviewTextTarget | null = null;
     const post = (message: Record<string, unknown>) => parent!.postMessage({ source: previewMessageSource, ...message }, origin);
     /** Where the words sit and what surrounds them, so the editor can open the right screen and pick the right field. */
@@ -253,11 +281,21 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         area: sectionNode ? "section" : chrome ? chrome[1] : "page",
         context: squash(shownText(box)).slice(0, 3000),
         occurrence: Math.max(0, repeats.indexOf(node)),
+        repeats: Math.min(1000, Math.max(1, repeats.length)),
+        // The theme's own words carry their place (Site words); a form box carries its placeholder's.
+        ...(siteWordOf(node) ? { word: siteWordOf(node) } : {}),
       };
     }
     function onOver(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
-      const next = node && editableWords(node) && node !== editing ? node : null;
+      // A picture staff chose is outlined as one to click; words drawn over it are outlined as words instead.
+      const picture = node && !editableWords(node) ? node.closest<HTMLElement>("[data-media-slot], [data-picture-target]") : null;
+      if (picture !== hoveredPicture) {
+        hoveredPicture?.removeAttribute("data-preview-media-hover");
+        hoveredPicture = picture;
+        hoveredPicture?.setAttribute("data-preview-media-hover", "true");
+      }
+      const next = !picture && node && editableWords(node) && node !== editing ? node : null;
       if (next === hovered) return;
       hovered?.removeAttribute("data-preview-text-hover");
       hovered = next;
@@ -308,11 +346,32 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     function onClick(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
       if (!node || node.closest("[data-preview-edit]")) return;
-      // Clicks inside the words being typed place the caret, as in any text box.
-      if (editing && editing.contains(node)) return;
+      // Clicks inside the words being typed place the caret, as in any text box (the caret moves on mousedown). The click
+      // itself goes no further: words inside a link used to open its page on the second click (owner, 16 Nov 2026).
+      if (editing && editing.contains(node)) { event.preventDefault(); event.stopPropagation(); return; }
+      // A form box whose grey words are the theme's (Site words): open their box in the editor; the form box still works.
+      const box = node.closest<HTMLElement>("[data-site-word-placeholder]");
+      if (box) {
+        if (editing) finish(true);
+        const placeholder = squash(box.getAttribute("placeholder") ?? "");
+        if (placeholder) post({ type: "text-select", text: placeholder.slice(0, 2000), ...describe(box) });
+        return;
+      }
+      // A picture staff chose (owner, 16 Nov 2026): an Artwork placement, a banner, a card, a slide, a post or a film opens
+      // its picture chooser in the editor. Words drawn over a picture (a banner's headline) stay words to type over.
+      const picture = editableWords(node) ? null : pictureOf(node);
+      if (picture) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (editing) finish(true);
+        post({ type: "media-select", ...picture, path });
+        setNote("Choose the new picture in the library beside the preview.");
+        return;
+      }
       if (!editableWords(node)) {
-        // A slider arrow, a tab or a menu button without words of its own keeps working while text is edited.
-        if (node.closest("button, [role=button], [role=tab], summary, label") && !node.closest("a[href]")) return;
+        // A slider arrow, a tab or an accordion without words of its own keeps working, so every slide and panel can be
+        // reached to edit. The header's search, account, wishlist and bag open nothing in Edit; neither does a link.
+        if (node.closest("button, [role=button], [role=tab], summary, label") && !node.closest("a[href], .header-actions")) return;
         event.preventDefault();
         event.stopPropagation();
         if (editing) finish(true);
@@ -326,14 +385,30 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       if (editing) finish(true);
       start(node);
     }
+    // In Edit a form never sends (a click on Send is words to edit; Enter in a box would still send) and a middle click
+    // opens no link in a new tab: only Browse uses the page as a visitor would.
+    function onSubmit(event: Event) {
+      event.preventDefault();
+      event.stopPropagation();
+      setNote("Forms don't send in Edit. Choose Browse to try them.");
+    }
+    function onAuxClick(event: MouseEvent) {
+      const node = event.target instanceof Element ? event.target : null;
+      if (node?.closest("a[href]")) { event.preventDefault(); event.stopPropagation(); }
+    }
     document.addEventListener("mouseover", onOver);
     // On the window, not the document: Next.js roots React at the document, so React's own capture listeners (the
     // preview's link capture among them) would run first there and follow the link before this could stop it.
     window.addEventListener("click", onClick, true);
+    window.addEventListener("submit", onSubmit, true);
+    window.addEventListener("auxclick", onAuxClick, true);
     return () => {
       document.removeEventListener("mouseover", onOver);
       window.removeEventListener("click", onClick, true);
+      window.removeEventListener("submit", onSubmit, true);
+      window.removeEventListener("auxclick", onAuxClick, true);
       hovered?.removeAttribute("data-preview-text-hover");
+      hoveredPicture?.removeAttribute("data-preview-media-hover");
       // Switching to Browse keeps what was typed so far.
       finish(true);
       cancelEdit.current = () => {};
@@ -342,10 +417,16 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
   if (!parent || !selectable) return null;
   return (
     <>
-      {editMode && (
-        <p data-preview-hint="" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex max-w-[min(520px,calc(100%-24px))] items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 font-sans text-2xs font-semibold text-background shadow-md backdrop-blur">
+      {editMode ? (
+        <p data-preview-hint="" data-preview-mode-pill="edit" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex max-w-[min(520px,calc(100%-24px))] items-center gap-1.5 rounded-full bg-foreground/85 px-3 py-1.5 font-sans text-2xs font-semibold text-background shadow-md backdrop-blur">
           <Pencil aria-hidden="true" className="size-3 shrink-0" strokeWidth={1.75} />
-          {note || "Click any text to change it · Enter to keep · Esc to undo"}
+          {note || "Edit: click any text or picture to change it · Enter to keep · Esc to undo"}
+        </p>
+      ) : (
+        // Browsing says so on the page too, so a click that opens a page is never a surprise.
+        <p data-preview-mode-pill="browse" aria-live="polite" className="pointer-events-none fixed right-3 bottom-8 z-[1001] m-0 inline-flex items-center gap-1.5 rounded-full border border-foreground/15 bg-background/90 px-3 py-1.5 font-sans text-2xs font-semibold text-foreground shadow-md backdrop-blur">
+          <MousePointer2 aria-hidden="true" className="size-3 shrink-0" strokeWidth={1.75} />
+          Browse: clicks open pages · choose Edit to change words and pictures
         </p>
       )}
       {hover?.section && (
@@ -360,12 +441,13 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
 }
 
 /** The draft page with the draft's own navigation and footer, a slim ribbon, and in-frame links kept on the draft. */
-export function PreviewFrameDocument({ token, version, path, siteChrome, menuArtwork, children, navigate, view = "draft" }: {
+export function PreviewFrameDocument({ token, version, path, siteChrome, menuArtwork, chromeArtwork, children, navigate, view = "draft" }: {
   token: string;
   version: number;
   path: string;
   siteChrome?: SiteChrome;
   menuArtwork?: MenuArtwork;
+  chromeArtwork?: ChromeArtwork;
   children: ReactNode;
   navigate?: (url: string) => void;
   view?: "draft" | "published";
@@ -380,13 +462,13 @@ export function PreviewFrameDocument({ token, version, path, siteChrome, menuArt
     // display: contents); the ribbon sits in space reserved at the bottom.
     <div
       data-admin-tokens=""
-      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500 [&_[data-preview-text-hover=true]]:cursor-text [&_[data-preview-text-hover=true]]:outline-1 [&_[data-preview-text-hover=true]]:outline-offset-2 [&_[data-preview-text-hover=true]]:outline-primary [&_[data-preview-text-hover=true]]:outline-dashed [&_[data-preview-editing=true]]:cursor-text [&_[data-preview-editing=true]]:rounded-[2px] [&_[data-preview-editing=true]]:outline-2 [&_[data-preview-editing=true]]:outline-offset-2 [&_[data-preview-editing=true]]:outline-primary [&_[data-preview-editing=true]]:outline-solid"
+      className="relative pb-[26px] [&_[data-home-section]>*]:scroll-mt-6 [&_[data-home-section][data-preview-highlight=true]>*]:shadow-[inset_0_0_0_9999px_var(--admin-accent-tint)] [&_[data-home-section][data-preview-highlight=true]>*]:outline-2 [&_[data-home-section][data-preview-highlight=true]>*]:-outline-offset-2 [&_[data-home-section][data-preview-highlight=true]>*]:outline-primary [&_[data-home-section][data-preview-highlight=true]>*]:outline-solid [&_[data-home-section][data-preview-hover=true]>*]:outline-1 [&_[data-home-section][data-preview-hover=true]>*]:-outline-offset-1 [&_[data-home-section][data-preview-hover=true]>*]:outline-primary/60 [&_[data-home-section][data-preview-hover=true]>*]:outline-dashed motion-safe:[&_[data-home-section]>*]:transition-shadow motion-safe:[&_[data-home-section]>*]:duration-500 [&_[data-preview-text-hover=true]]:cursor-text [&_[data-preview-text-hover=true]]:outline-1 [&_[data-preview-text-hover=true]]:outline-offset-2 [&_[data-preview-text-hover=true]]:outline-primary [&_[data-preview-text-hover=true]]:outline-dashed [&_[data-preview-editing=true]]:cursor-text [&_[data-preview-editing=true]]:rounded-[2px] [&_[data-preview-editing=true]]:outline-2 [&_[data-preview-editing=true]]:outline-offset-2 [&_[data-preview-editing=true]]:outline-primary [&_[data-preview-editing=true]]:outline-solid [&_[data-preview-media-hover=true]]:cursor-pointer [&_[data-preview-media-hover=true]]:outline-2 [&_[data-preview-media-hover=true]]:-outline-offset-2 [&_[data-preview-media-hover=true]]:outline-primary [&_[data-preview-media-hover=true]]:outline-dashed"
       data-preview-version={version}
       data-preview-path={path}
       data-preview-view={view}
     >
       <PreviewNavigation token={live.token} navigate={navigate} view={view}>
-        <StoreChromeView path={path} siteChrome={siteChrome} menuArtwork={menuArtwork}>{children}</StoreChromeView>
+        <StoreChromeView path={path} siteChrome={siteChrome} menuArtwork={menuArtwork} chromeArtwork={chromeArtwork}>{children}</StoreChromeView>
         <p className="pointer-events-none fixed inset-x-0 bottom-0 z-[1000] m-0 bg-primary px-3 py-1 text-center font-sans text-2xs leading-[1.4] font-semibold tracking-[0.01em] text-primary-foreground" role="status">{view === "published" ? `Published storefront, version ${live.version}` : `Draft preview, not published. Version ${live.version}`}</p>
       </PreviewNavigation>
       <PreviewFrameBridge path={path} version={version} selectable={view === "draft"} onToken={(next, nextVersion) => setLive({ token: next, version: nextVersion })} />

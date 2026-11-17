@@ -3,10 +3,24 @@
  * and the frame bridge (components/admin/preview-shell.tsx) share these so the token, URL and
  * messaging rules are testable without a browser.
  */
-import { homeSectionKeys, previewTokenPattern } from "@shopmaple/contracts";
+import { homeSectionKeys, previewTokenPattern, siteWordKeyPattern, templateMediaKeys, type TemplateMediaKey } from "@shopmaple/contracts";
 import type { HomeSectionKey } from "./section-thumbnails";
 
 export const previewMessageSource = "shopmaple-preview";
+/**
+ * Edit or Browse, kept for the browser tab: a preview page that reloads, or opens from a link followed in Browse, starts in
+ * the mode staff chose instead of flashing the other one until the admin says (owner, 16 Nov 2026: edit and browse collided).
+ */
+export const previewModeKey = "shopmaple-preview-mode";
+export type PreviewMode = "edit" | "browse";
+export function readPreviewMode(): PreviewMode {
+  try { return window.sessionStorage.getItem(previewModeKey) === "browse" ? "browse" : "edit"; } catch { return "edit"; }
+}
+export function keepPreviewMode(mode: PreviewMode) {
+  try { window.sessionStorage.setItem(previewModeKey, mode); } catch { /* private windows: the admin's next mode message still says */ }
+}
+/** A picture staff chose outside the Artwork placements, as the page names it: "campaign:landing-dining", "merch:offers:clearance". */
+export const pictureTargetPattern = /^(campaign|merch|nimbus-slide|hero-slide|instagram|editorial|film|page-banner)(?::[a-z0-9-]{1,80}){1,2}$/;
 export type PreviewDevice = "desktop" | "tablet" | "phone";
 export type PreviewView = "draft" | "published";
 /** Frame widths in CSS pixels; desktop fills the pane. */
@@ -52,6 +66,13 @@ export type PreviewTextTarget = {
   context: string;
   /** Which of the visible repeats of these words this is, counted down the page from 0. */
   occurrence: number;
+  /**
+   * How many times these words show in their part of the page (1: only here). Kept words shown more than once reload the
+   * page after saving, so every copy shows them: the hero's four photos share one headline (16 Nov 2026).
+   */
+  repeats?: number;
+  /** The theme's own words name their place (Site words, "home.bestsellers.eyebrow"): their box is opened directly. */
+  word?: string;
 };
 
 export type FrameToParentMessage =
@@ -64,7 +85,12 @@ export type FrameToParentMessage =
   /** Click-to-edit: they typed over those words and kept them (Enter, or clicking away). */
   | ({ type: "text-edit"; before: string; after: string } & PreviewTextTarget)
   /** Click-to-edit: whether words on the page are being typed over right now (the pane holds reloads meanwhile). */
-  | { type: "editing"; active: boolean };
+  | { type: "editing"; active: boolean }
+  /**
+   * Click-to-edit: they clicked a picture staff chose. `slot`: an Artwork placement; `target`: a banner, card, slide, post,
+   * film or page banner ("campaign:landing-dining", "merch:categories:sofas"). The editor opens its picture chooser.
+   */
+  | ({ type: "media-select"; path: string } & ({ slot: TemplateMediaKey; target?: undefined } | { target: string; slot?: undefined }));
 export type ParentToFrameMessage =
   | { type: "focus"; section: string | null }
   /** "edit": clicking words on the page edits them; "browse": clicks follow links as on the storefront. */
@@ -90,12 +116,14 @@ const isPath = (value: unknown): value is string => typeof value === "string" &&
 const isWords = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= 2000;
 
 function readTextTarget(message: Record<string, unknown>): PreviewTextTarget | null {
-  const { path, section, area, context, occurrence } = message;
+  const { path, section, area, context, occurrence, repeats = 1, word } = message;
+  if (word !== undefined && (typeof word !== "string" || word.length > 80 || !siteWordKeyPattern.test(word))) return null;
   if (!isPath(path) || !(section === null || isSection(section))) return null;
   if (typeof area !== "string" || !(previewTextAreas as readonly string[]).includes(area)) return null;
   if (typeof context !== "string" || context.length > 4000) return null;
   if (!Number.isSafeInteger(occurrence) || (occurrence as number) < 0 || (occurrence as number) > 999) return null;
-  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number };
+  if (!Number.isSafeInteger(repeats) || (repeats as number) < 1 || (repeats as number) > 1000) return null;
+  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number, ...(word === undefined ? {} : { word: word as string }) };
 }
 
 /**
@@ -129,6 +157,11 @@ export function readPreviewMessage(
     return target && isWords(message.before) && isWords(message.after) ? { type: "text-edit", before: message.before, after: message.after, ...target } : null;
   }
   if (message.type === "editing") return typeof message.active === "boolean" ? { type: "editing", active: message.active } : null;
+  if (message.type === "media-select") {
+    if (!isPath(message.path)) return null;
+    if (typeof message.slot === "string") return (templateMediaKeys as readonly string[]).includes(message.slot) ? { type: "media-select", slot: message.slot as TemplateMediaKey, path: message.path } : null;
+    return typeof message.target === "string" && pictureTargetPattern.test(message.target) ? { type: "media-select", target: message.target, path: message.path } : null;
+  }
   if (message.type === "token") {
     return typeof message.token === "string" && previewTokenPattern.test(message.token) && Number.isSafeInteger(message.version) && (message.version as number) > 0
       ? { type: "token", token: message.token, version: message.version as number } : null;

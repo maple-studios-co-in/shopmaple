@@ -80,15 +80,15 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
             <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes.">Artwork</SectionHeading>
             {campaign.artwork ? (
               <FieldGrid>
-                <MediaPicker label="Campaign desktop artwork" value={campaign.artwork.desktopImage} onChange={(desktopImage) => artwork({ desktopImage })} {...media} />
-                <MediaPicker label="Campaign mobile artwork" value={campaign.artwork.mobileImage} onChange={(mobileImage) => artwork({ mobileImage })} {...media} />
+                <MediaPicker label="Campaign desktop artwork" value={campaign.artwork.desktopImage} onChange={(desktopImage) => artwork({ desktopImage })} {...media} target={`campaign:${campaign.key}`} />
+                <MediaPicker label="Campaign mobile artwork" value={campaign.artwork.mobileImage} onChange={(mobileImage) => artwork({ mobileImage })} {...media} target={`campaign:${campaign.key}:mobile`} />
                 <Field label="Campaign artwork alt text" value={campaign.artwork.alt} maxLength={200} onChange={(alt) => artwork({ alt })} />
                 <div data-span="full">
                   <ActionButton icon={RotateCcw} onClick={() => update({ artwork: null })}>Restore original campaign artwork</ActionButton>
                 </div>
               </FieldGrid>
             ) : (
-              <ActionButton icon={ImagePlus} onClick={() => update({ artwork: { desktopImage: "", mobileImage: "", alt: campaign.label } })}>
+              <ActionButton icon={ImagePlus} data-picture-create={`campaign:${campaign.key}`} onClick={() => update({ artwork: { desktopImage: "", mobileImage: "", alt: campaign.label } })}>
                 Replace campaign artwork
               </ActionButton>
             )}
@@ -137,7 +137,7 @@ export function InstagramFields(props: Props & { embedded?: boolean; feed?: Reac
               <Field label={`Post ${index + 1} link`} value={post.href} maxLength={300} onChange={(href) => update(index, { href })} />
               <Field label={`Post ${index + 1} alt text`} value={post.alt} maxLength={200} onChange={(alt) => update(index, { alt })} />
               <Field label={`Post ${index + 1} image`} value={post.src} className="sm:col-span-2" onChange={(src) => update(index, { src })} />
-              {media && <MediaPicker label={`Post ${index + 1} library image`} value={post.src} onChange={(src) => update(index, { src })} {...media} />}
+              {media && <MediaPicker label={`Post ${index + 1} library image`} value={post.src} onChange={(src) => update(index, { src })} {...media} target={`instagram:${index}`} />}
             </FieldGrid>
           </li>
         ))}
@@ -209,8 +209,8 @@ export function PageFields(props: Props) {
               <Field label="Desktop image" value={page.banner.desktopImage} onChange={(desktopImage) => banner({ desktopImage })} />
               <Field label="Mobile image" value={page.banner.mobileImage} onChange={(mobileImage) => banner({ mobileImage })} />
               {media && <>
-                <MediaPicker label="Page desktop library image" value={page.banner.desktopImage} onChange={(desktopImage) => banner({ desktopImage })} {...media} />
-                <MediaPicker label="Page mobile library image" value={page.banner.mobileImage} onChange={(mobileImage) => banner({ mobileImage })} {...media} />
+                <MediaPicker label="Page desktop library image" value={page.banner.desktopImage} onChange={(desktopImage) => banner({ desktopImage })} {...media} target={`page-banner:${page.slug}`} />
+                <MediaPicker label="Page mobile library image" value={page.banner.mobileImage} onChange={(mobileImage) => banner({ mobileImage })} {...media} target={`page-banner:${page.slug}:mobile`} />
               </>}
               <Field label="Banner alt text" value={page.banner.alt} maxLength={200} onChange={(alt) => banner({ alt })} />
               <Field label="Banner link" value={page.banner.href} maxLength={500} onChange={(href) => banner({ href })} />

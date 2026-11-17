@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import type { ChromeArtwork } from "@/lib/chrome-artwork";
 import { useState, type ReactNode } from "react";
 import { useShop } from "@/components/shop-provider";
 import { Header } from "@/components/header";
@@ -34,11 +35,14 @@ export function StoreChromeView({
   children,
   siteChrome,
   menuArtwork,
+  chromeArtwork,
 }: {
   path: string | null;
   siteChrome?: SiteChrome;
   /** The mega menu's pictures (lib/menu-artwork.ts). */
   menuArtwork?: MenuArtwork;
+  /** The logo and footer icons (lib/chrome-artwork.ts). */
+  chromeArtwork?: ChromeArtwork;
   children: ReactNode;
 }) {
   // The staff preview frame renders the draft's own chrome inside the page.
@@ -51,9 +55,9 @@ export function StoreChromeView({
   const product = Boolean(path?.startsWith("/products/"));
   return (
     <>
-      <Header siteChrome={siteChrome} sticky={product} menuArtwork={menuArtwork} />
+      <Header siteChrome={siteChrome} sticky={product} menuArtwork={menuArtwork} logo={chromeArtwork?.logo} />
       <main id="main">{children}</main>
-      <Footer siteChrome={siteChrome} />
+      <Footer siteChrome={siteChrome} artwork={chromeArtwork} />
       <CartDrawerOnDemand />
       <WhatsAppLink siteChrome={siteChrome} />
     </>
@@ -63,13 +67,15 @@ export function StoreChrome({
   children,
   siteChrome,
   menuArtwork,
+  chromeArtwork,
 }: {
   children: ReactNode;
   siteChrome?: SiteChrome;
   menuArtwork?: MenuArtwork;
+  chromeArtwork?: ChromeArtwork;
 }) {
   return (
-    <StoreChromeView path={usePathname()} siteChrome={siteChrome} menuArtwork={menuArtwork}>
+    <StoreChromeView path={usePathname()} siteChrome={siteChrome} menuArtwork={menuArtwork} chromeArtwork={chromeArtwork}>
       {children}
     </StoreChromeView>
   );

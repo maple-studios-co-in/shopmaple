@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { TemplateMediaKey } from "@shopmaple/contracts";
 import { Fragment, type ReactNode } from "react";
 import type { StoryPageContent, StoryPrincipleKey, StorySectionKey, TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
@@ -9,10 +10,11 @@ import { artworkProducts, resolveArtwork, resolveTemplateMedia, type ProductPhot
 
 /** The contact page's enquiry, already about a custom piece, as the menu's Custom Furniture opens it. */
 const conversationHref = `/contact?${new URLSearchParams({ product: "Custom furniture" })}`;
-const principleIcons: Record<StoryPrincipleKey, string> = {
-  handmade: "/media/our-story/handmade.svg",
-  "unique-designs": "/media/our-story/unique-designs.svg",
-  "bespoke-pieces": "/media/our-story/bespoke-pieces.svg",
+/** Each principle's icon: an Artwork placement (Icons & logo), which keeps the design's drawing until staff upload another. */
+const principleIcons: Record<StoryPrincipleKey, TemplateMediaKey> = {
+  handmade: "icon-story-handmade",
+  "unique-designs": "icon-story-unique-designs",
+  "bespoke-pieces": "icon-story-bespoke-pieces",
 };
 
 function Lines({ lines }: { lines: readonly string[] }) {
@@ -60,7 +62,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
           {shown.has("journey") && <a className="story-button story-hero-cta" href="#maple-journey" data-fill-button="">{page.heroCta}</a>}
         </div>
         {opening && <div className="story-hero-media">
-          <Image src={opening.image} alt={opening.alt} width={1200} height={1200} sizes="(max-width: 899px) calc(100vw - 40px), 44vw" preload />
+          <Image data-media-slot="story-hero" src={opening.image} alt={opening.alt} width={1200} height={1200} sizes="(max-width: 899px) calc(100vw - 40px), 44vw" preload />
         </div>}
       </section>
     ),
@@ -71,7 +73,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
           {page.principles.map(item => (
             <li key={item.key} className="story-principle">
               {/* eslint-disable-next-line @next/next/no-img-element -- the design's 80px line drawing */}
-              <img src={principleIcons[item.key]} width={80} height={80} alt="" loading="lazy" decoding="async" />
+              <img src={resolveTemplateMedia(principleIcons[item.key], media).image} data-media-slot={principleIcons[item.key]} width={80} height={80} alt="" loading="lazy" decoding="async" />
               <div>
                 <h3>{item.title}</h3>
                 <p>{item.body}</p>
@@ -84,7 +86,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
     "belief-film": (
       <section className="story-belief" data-story-section="belief-film" data-store>
         {belief && <div className="story-belief-media">
-          <Image src={belief.image} alt={belief.alt} width={1080} height={1920} sizes="(max-width: 699px) min(520px, calc(100vw - 40px)), 38vw" />
+          <Image data-media-slot="story-belief" src={belief.image} alt={belief.alt} width={1080} height={1920} sizes="(max-width: 699px) min(520px, calc(100vw - 40px)), 38vw" />
         </div>}
         <div className="story-belief-copy">
           <Eyebrow parts={slashed(page.beliefEyebrow)} />
@@ -103,7 +105,7 @@ export function StoryLanding({ content, media, photos }: { content?: StoryPageCo
             return (
               <article key={chapter.key} className="story-chapter" data-story-chapter={chapter.key}>
                 <div className="story-chapter-media">
-                  <Image src={art.image} alt={art.alt} width={1024} height={1024} sizes="(max-width: 699px) calc(100vw - 40px), 39vw" loading="lazy" draggable={false} />
+                  <Image data-media-slot={`story-${chapter.key}`} src={art.image} alt={art.alt} width={1024} height={1024} sizes="(max-width: 699px) calc(100vw - 40px), 39vw" loading="lazy" draggable={false} />
                 </div>
                 <div className="story-chapter-copy">
                   <Eyebrow parts={["Story", <span key="date" className="story-eyebrow-date">{chapter.date}</span>]} />

@@ -1,5 +1,6 @@
 // The photo is template artwork: a staff preview of an unpublished upload must skip the image optimizer.
 import { ContentImage as Image } from "@/components/content-image";
+import { SiteWord } from "@/components/site-words";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { storePath } from "@/lib/site-origins";
@@ -38,13 +39,15 @@ const titleScales = {
   compact: "lg:text-[length:min(86px,6.01vw)]",
 } as const;
 
-export function HelpPage({ chrome: { links, care }, current, title, opening, photo, photoAlt = "", titleScale = "policy", children }: {
+export function HelpPage({ chrome: { links, care }, current, title, opening, photo, photoAlt = "", photoSlot, titleScale = "policy", children }: {
   chrome: HelpChrome;
   /** This page's address, which marks its tab. */
   current: string;
   title: string;
   opening?: ReactNode;
   photo: string;
+  /** The Artwork placement the photo comes from, so the live preview can open it for a new one. */
+  photoSlot?: string;
   /** The photo only sets the scene unless staff describe the one they chose. */
   photoAlt?: string;
   titleScale?: keyof typeof titleScales;
@@ -57,8 +60,8 @@ export function HelpPage({ chrome: { links, care }, current, title, opening, pho
       <div className="mx-auto w-full max-w-[1432px] px-6 pt-6 lg:px-20">
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center text-[12px] leading-[19px] text-help-muted">
-            <li><Link href="/" className="transition-colors hover:text-maple">Home</Link></li>
-            <li className="before:mx-[7px] before:content-['/']"><Link href="/contact" className="transition-colors hover:text-maple">Help</Link></li>
+            <li><Link href="/" className="transition-colors hover:text-maple"><SiteWord k="help.breadcrumbHome" /></Link></li>
+            <li className="before:mx-[7px] before:content-['/']"><Link href="/contact" className="transition-colors hover:text-maple"><SiteWord k="help.breadcrumbHelp" /></Link></li>
             <li aria-current="page" className="before:mx-[7px] before:content-['/']">{name}</li>
           </ol>
         </nav>
@@ -74,13 +77,13 @@ export function HelpPage({ chrome: { links, care }, current, title, opening, pho
             )}
           </header>
           <div data-help-photo className="relative aspect-[342/150] w-full overflow-hidden bg-cream lg:aspect-[1272/360]">
-            <Image src={photo} alt={photoAlt} fill preload sizes="(min-width: 1432px) 1272px, (min-width: 1024px) calc(100vw - 160px), calc(100vw - 48px)" className="object-cover" />
+            <Image src={photo} alt={photoAlt} data-media-slot={photoSlot} fill preload sizes="(min-width: 1432px) 1272px, (min-width: 1024px) calc(100vw - 160px), calc(100vw - 48px)" className="object-cover" />
           </div>
           <div aria-hidden="true" className="h-px bg-help-rule" />
           {children}
         </article>
         <section data-customer-care aria-labelledby="customer-care-title" className="flex flex-col gap-3 pt-8 pb-11">
-          <h2 id="customer-care-title" className="text-[26px] leading-10 font-medium lg:text-[36px] lg:leading-[56px]">A little help, whenever you need it.</h2>
+          <h2 id="customer-care-title" className="text-[26px] leading-10 font-medium lg:text-[36px] lg:leading-[56px]"><SiteWord k="help.careHeading" /></h2>
           <p className="text-[14px] leading-[22px] text-maple lg:text-[17px] lg:leading-[26px]">
             <a href={`mailto:${care.email}`} className="hover:underline">{care.email}</a>
             <span aria-hidden="true" className="mx-[11px]">|</span>

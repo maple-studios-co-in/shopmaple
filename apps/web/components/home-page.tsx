@@ -1,4 +1,5 @@
 import { ContentImage as Image } from "@/components/content-image";
+import { SiteWord } from "@/components/site-words";
 import { Suspense, type ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
@@ -43,7 +44,7 @@ function CollectionTiles({
   return (
     <div className={className}>
       {items.filter((item) => item.enabled).map((item) => (
-        <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })}>
+        <Link href={`/collections/${item.collectionHandle}`} key={item.key} {...(categories ? { "data-category-tile": "" } : { "data-offer-tile": "" })} data-picture-target={`merch:${categories ? "categories" : "offers"}:${item.key}`}>
           <div>
             <Image
               src={item.image}
@@ -65,6 +66,12 @@ function CollectionTiles({
   );
 }
 
+/** The product rows' own words, changed on Site words or by clicking them in the live preview. */
+const railWords = {
+  bestsellers: { eyebrow: "home.bestsellers.eyebrow", viewAll: "home.bestsellers.viewAll" },
+  chairs: { eyebrow: "home.chairs.eyebrow", viewAll: "home.chairs.viewAll" },
+} as const;
+
 async function HomeProducts({
   handles,
   heading,
@@ -72,13 +79,16 @@ async function HomeProducts({
   browseHref,
   lede,
   scrollbar = false,
+  words,
 }: {
   handles: string[];
   heading?: string;
   label: string;
   browseHref: string;
   /** A sentence under the heading. */
-  lede?: string;
+  lede?: ReactNode;
+  /** Whose theme words the row shows (Site words). */
+  words: keyof typeof railWords;
   /** A plain row: no arrows and no scrollbar, just dragging and touch (Bestsellers). */
   scrollbar?: boolean;
 }) {
@@ -94,11 +104,11 @@ async function HomeProducts({
       {heading && (
         <header className="home-rail-heading">
           <div>
-            <p className="home-eyebrow" data-rail-eyebrow>Handpicked favourites</p>
+            <p className="home-eyebrow" data-rail-eyebrow><SiteWord k={railWords[words].eyebrow} /></p>
             <h2>{heading}</h2>
             {lede && <p className="home-rail-lede" data-rail-lede>{lede}</p>}
           </div>
-          <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall data-fill-button="outline">View all {heading.toLowerCase()} →</Link>
+          <Link href={browseHref} aria-label={`View all ${heading}`} data-rail-viewall data-fill-button="outline"><SiteWord k={railWords[words].viewAll} /> {heading.toLowerCase()} →</Link>
         </header>
       )}
       {products.length ? (
@@ -117,8 +127,8 @@ async function HomeProducts({
         )
       ) : (
         <p className="home-catalogue-unavailable">
-          This collection is temporarily unavailable.{" "}
-          <Link href="/collections/all">Browse all furniture</Link>
+          <SiteWord k="home.rails.unavailable" />{" "}
+          <Link href="/collections/all"><SiteWord k="home.rails.browseAll" /></Link>
         </p>
       )}
     </section>
@@ -191,8 +201,9 @@ export function HomePage({ content, photos }: { content: StorefrontDocument; pho
           heading={copy.bestsellersHeading}
           label="Bestsellers"
           browseHref="/collections/all"
-          lede="Discover the pieces that make a room feel complete."
+          lede={<SiteWord k="home.bestsellers.lede" />}
           scrollbar
+          words="bestsellers"
         />
       </Suspense>
     ),
@@ -205,6 +216,7 @@ export function HomePage({ content, photos }: { content: StorefrontDocument; pho
           label="Chair collection"
           // Straight to the chair listing (frame 1:1094); the bare address keeps the older chairs editorial.
           browseHref="/collections/chairs?page=1"
+          words="chairs"
         />
       </Suspense>
     ),

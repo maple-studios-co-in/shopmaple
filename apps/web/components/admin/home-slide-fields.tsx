@@ -39,11 +39,11 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
     onChange(next.length ? { ...rest, slides: next } : rest);
   };
   const blank = (): HeroSlide => ({ kind: "image", src: "", alt: "", headline: "", intro: "" });
-  const picker = (label: string, slot: "src" | "poster" | "film" | "phone-film", slide: HeroSlide, edit: (slide: HeroSlide) => void) => {
+  const picker = (label: string, slot: "src" | "poster" | "film" | "phone-film", slide: HeroSlide, edit: (slide: HeroSlide) => void, target?: string) => {
     const field = slot === "poster" ? "poster" : slot === "phone-film" ? "mobileSrc" : "src";
     return session && onExpired && (
       <div data-slide-picker={slot}>
-        <MediaPicker label={label} value={slide[field] ?? ""} session={session} onExpired={onExpired} accept={slot === "film" || slot === "phone-film" ? "video" : "image"}
+        <MediaPicker label={label} value={slide[field] ?? ""} session={session} onExpired={onExpired} accept={slot === "film" || slot === "phone-film" ? "video" : "image"} target={target}
           onChange={url => edit(withoutEmpty({ ...slide, [field]: url }, ["poster", "mobileSrc"]))} />
         {slot === "phone-film" && <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">{phoneFilmHint}</p>}
       </div>
@@ -85,7 +85,7 @@ export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero:
             </FieldGrid>
             {video && picker(`${name} film`, "film", slide, change)}
             {video && picker(`${name} phone film`, "phone-film", slide, change)}
-            {picker(video ? `${name} poster` : `${name} picture`, video ? "poster" : "src", slide, change)}
+            {picker(video ? `${name} poster` : `${name} picture`, video ? "poster" : "src", slide, change, `hero-slide:${index}`)}
           </>;
         }} />
       <div><ActionButton icon={X} onClick={() => set([])}>Use the default stills</ActionButton></div>
@@ -119,7 +119,7 @@ export function NimbusSlidesFields({ nimbus, onChange, session, onExpired }: { n
             <Hint>The link is a store page such as /collections/terra. The mobile image is optional and shows on phones.</Hint>
           </FieldGrid>
           {session && onExpired && <>
-            <MediaPicker label={`${name} picture`} value={slide.image} session={session} onExpired={onExpired} onChange={image => change({ ...slide, image })} />
+            <MediaPicker label={`${name} picture`} value={slide.image} session={session} onExpired={onExpired} onChange={image => change({ ...slide, image })} target={`nimbus-slide:${index}`} />
             <MediaPicker label={`${name} phone picture`} value={slide.mobileImage ?? ""} session={session} onExpired={onExpired}
               onChange={mobileImage => change(withoutEmpty({ ...slide, mobileImage }, ["mobileImage"]))} />
           </>}

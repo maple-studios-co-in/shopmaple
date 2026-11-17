@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
 import { PreviewFrameDocument, SectionThumbnailDocument } from "@/components/admin/preview-shell";
 import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
+import { SiteWordsProvider } from "@/components/site-words";
 import { previewMediaContent } from "@/lib/draft-preview";
 import { readThumbnailSection } from "@/lib/live-preview";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
@@ -9,6 +11,7 @@ import { thumbnailContent } from "@/lib/section-thumbnails";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
 import { resolveMenuArtwork } from "@/lib/menu-artwork";
 import "@/styles/admin.css";
+import "@/styles/preview-edit.css";
 // A blog page previews with its own styles, as the storefront's blog route loads them.
 import "@/styles/blog.css";
 // So does Our Story (owner, 10 Nov 2026).
@@ -47,7 +50,7 @@ export default async function PreviewFrame({ params, searchParams }: {
   }
   if (section) {
     const route = renderStorefrontRoute(["home"], thumbnailContent(previewMediaContent(draft.content), section));
-    return route && <SectionThumbnailDocument section={section}>{route.node}</SectionThumbnailDocument>;
+    return route && <SiteWordsProvider words={draft.content.siteWords}><SectionThumbnailDocument section={section}>{route.node}</SectionThumbnailDocument></SiteWordsProvider>;
   }
   const published = view === "published";
   if (published && draft.publishedVersion === null) {
@@ -63,9 +66,12 @@ export default async function PreviewFrame({ params, searchParams }: {
   if (!route) {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no storefront page at this address to preview." }} />;
   }
+  // The draft's own theme words, each marked with its place so click-to-edit opens its field (the published view is not edited).
   return (
-    <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} menuArtwork={resolveMenuArtwork(content.templateMedia)} view={published ? "published" : "draft"}>
-      <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
-    </PreviewFrameDocument>
+    <SiteWordsProvider words={content.siteWords} marked={!published}>
+      <PreviewFrameDocument token={token} version={published ? draft.publishedVersion ?? 0 : draft.version} path={route.path} siteChrome={content.siteChrome} menuArtwork={resolveMenuArtwork(content.templateMedia)} chromeArtwork={resolveChromeArtwork(content.templateMedia)} view={published ? "published" : "draft"}>
+        <ProductHighlightsProvider value={content.productHighlights}>{route.node}</ProductHighlightsProvider>
+      </PreviewFrameDocument>
+    </SiteWordsProvider>
   );
 }

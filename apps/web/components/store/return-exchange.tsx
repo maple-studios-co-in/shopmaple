@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteWord } from "@/components/site-words";
 import type { ReturnsPageContent, TemplateMedia } from "@shopmaple/contracts";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { HelpPage, type HelpChrome } from "./help-page";
@@ -19,17 +20,18 @@ export function ReturnExchange({ content, chrome, media }: { content: ReturnsPag
       opening={<p>{content.intro}</p>}
       photo={photo.image}
       photoAlt={photo.alt}
+      photoSlot="policy-return-exchange"
       titleScale="compact"
     >
       <div className="flex flex-col items-center gap-6 pt-8 pb-12 lg:pt-[60px] lg:pb-20">
         <ReturnLookupForm care={chrome.care} />
         <p data-return-help className="text-center text-[15px] leading-[23px] font-medium text-maple">
-          Need help? <a href={`tel:${chrome.care.phone}`} className="ml-1 hover:underline">{chrome.care.phoneLabel}</a>
+          <SiteWord k="returns.needHelp" /> <a href={`tel:${chrome.care.phone}`} className="ml-1 hover:underline">{chrome.care.phoneLabel}</a>
         </p>
         <section data-return-guidance aria-labelledby="return-guidance-title" className="flex w-full max-w-[800px] flex-col gap-3 pt-6">
-          <h2 id="return-guidance-title" className="text-[22px] leading-[34px] font-medium">Before you raise a request</h2>
+          <h2 id="return-guidance-title" className="text-[22px] leading-[34px] font-medium"><SiteWord k="returns.guidanceHeading" /></h2>
           <p className="text-[16px] leading-[25px]">
-            Report manufacturing defects or transit damage within 24–48 hours of delivery. Keep your order details and clear photos or videos ready. Claims are subject to inspection and approval by Maple Furnishers.
+            <SiteWord k="returns.guidanceBody" />
           </p>
           <p>
             <Link href="/policies/refund-policy" className="text-[15px] leading-[23px] font-medium text-maple after:ml-[7px] after:content-['↗'] hover:underline">

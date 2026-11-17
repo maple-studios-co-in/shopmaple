@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
 import { connection } from "next/server";
 // "Maple / Typography" (Figma 180:639): DM Sans Medium for headings and labels, Red Hat Display for reading text.
 import "@fontsource-variable/dm-sans/opsz.css";
@@ -45,6 +46,7 @@ import { ShopProvider } from "@/components/shop-provider";
 import { StoreChrome } from "@/components/admin/store-chrome";
 import { getPublishedContent } from "@/lib/content";
 import { ProductHighlightsProvider } from "@/components/store/product-highlights";
+import { SiteWordsProvider } from "@/components/site-words";
 import { JsonLd } from "@/components/store/json-ld";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveMenuArtwork } from "@/lib/menu-artwork";
@@ -60,7 +62,7 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const content = await getPublishedContent();
-  const { siteChrome, productHighlights, templateMedia } = content;
+  const { siteChrome, productHighlights, templateMedia, siteWords } = content;
   const seo = seoSettings(process.env);
   return (
     <html lang="en">
@@ -68,7 +70,9 @@ export default async function Layout({
         <JsonLd data={[organizationStructuredData(seo, resolveSiteChrome(siteChrome)), websiteStructuredData(seo)]} />
         <ShopProvider>
           <ProductHighlightsProvider value={productHighlights}>
-            <StoreChrome siteChrome={siteChrome} menuArtwork={resolveMenuArtwork(templateMedia)}>{children}</StoreChrome>
+            <SiteWordsProvider words={siteWords}>
+              <StoreChrome siteChrome={siteChrome} menuArtwork={resolveMenuArtwork(templateMedia)} chromeArtwork={resolveChromeArtwork(templateMedia)}>{children}</StoreChrome>
+            </SiteWordsProvider>
           </ProductHighlightsProvider>
         </ShopProvider>
         <ButtonEffectsIsland />
