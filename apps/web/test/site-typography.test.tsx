@@ -69,6 +69,8 @@ test("the layout loads the two faces with the weights the sheet uses, and no oth
 });
 
 test("the logo stays artwork: the header and footer draw it as an image, not as set type", () => {
-  assert.match(read("components/footer.tsx"), /maple-logo\.webp/);
-  assert.match(read("components/header.tsx"), /alt="Maple Furnishers"/);
+  // The footer draws the logo placement's picture (staff may replace it), which is the logo artwork until they do.
+  assert.match(read("components/footer.tsx"), /<ContentImage[\s\S]{0,200}?src=\{artwork\.logo\.src\}/);
+  assert.match(read("lib/chrome-artwork.ts"), /logo: \{ src: "\/media\/footer\/maple-logo\.webp"/);
+  assert.match(read("components/header.tsx"), /src=\{logo\.src\}[\s\S]{0,200}?alt=\{logo\.alt \|\| "Maple Furnishers"\}/);
 });

@@ -8,9 +8,11 @@ import { filmSourceProps } from "@/lib/film-source";
  * reduced motion see the poster and the film never starts; without script the poster shows as well. With a phone film
  * (`mobileSrc`), screens up to 749px wide play that cut, chosen as the film is attached (lib/film-source.ts).
  */
-export function AmbientFilm({ src, mobileSrc, poster, label, className, width, height }: {
+export function AmbientFilm({ src, mobileSrc, poster, label, className, width, height, pictureTarget }: {
   src: string; mobileSrc?: string; poster?: string; label: string; className?: string; width: number; height: number;
+  /** The live preview's click-to-edit target, set on the film itself so layout rules that select the video still match. */
+  pictureTarget?: string;
 }) {
   return <video className={className} {...filmSourceProps(src, mobileSrc)} poster={poster} width={width} height={height} muted loop playsInline preload="metadata"
-    aria-label={label} data-ambient-film="" />;
+    aria-label={label} data-ambient-film="" data-picture-target={pictureTarget} />;
 }
