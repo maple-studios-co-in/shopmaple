@@ -34,6 +34,20 @@ export const previewDevices: { key: PreviewDevice; label: string }[] = [
 export const previewTokenLeadMs = 60_000;
 
 /** The existing staff-only frame address; the published view is the same route rendered from the published snapshot. */
+/**
+ * The storefront page that shows a campaign, which the live preview opens while it is edited on Campaigns (owner, 17 Nov
+ * 2026: a change to the Sofas banner has to show on the Sofas page, not the homepage).
+ */
+export function campaignPreviewPath(key: string | null | undefined): string {
+  const landing = key ? /^(sofas|tables|chairs)-(?:hero|sale)$/.exec(key) : null;
+  if (landing) return `pages/${landing[1]}`;
+  const collections: Record<string, string> = {
+    "beds-hero": "collections/beds", "beds-sale": "collections/beds",
+    "outdoors-hero": "collections/outdoor-furnitures", "tv-units-hero": "collections/tv-media-units",
+  };
+  return (key && collections[key]) || "home";
+}
+
 export function previewFrameUrl({ path, token, view }: { path: string; token: string; view: PreviewView }) {
   const base = `/admin/preview-frame/${path}?token=${encodeURIComponent(token)}`;
   return view === "published" ? `${base}&view=published` : base;
@@ -105,8 +119,34 @@ export type ParentToFrameMessage =
    * of a reload, so the page never jumps back to the top after each edit.
    */
   | { type: "token"; token: string; version: number }
+  /**
+   * The draft saved a change made in the editor: the frame redraws the page it is on from the new version in place (a
+   * client-side navigation to the same address with the new token), so it never reloads or leaves where it was scrolled
+   * (owner, 17 Nov 2026: a footer icon changed and the page went back to the top).
+   */
+  | { type: "refresh"; token: string; version: number }
+  /** Pictures chosen in the editor this moment: the frame swaps them in where they are, before the draft is even saved. */
+  | { type: "pictures"; items: PreviewPicture[] }
   /** After a reload of the same page, scroll back to where the staff member was. */
   | { type: "scroll"; y: number };
+/**
+ * One picture to swap on the page: an Artwork placement (`slot`) or a banner, card, slide, post or page banner
+ * (`target`), with the address to show (`src`), on phones too unless `mobileSrc` says otherwise.
+ */
+export type PreviewPicture = ({ slot: TemplateMediaKey; target?: undefined } | { target: string; slot?: undefined }) & { src: string; mobileSrc?: string; alt?: string };
+/** Addresses a swapped picture may take: the store's own media, or the staff-only preview of a library upload. */
+const framePicturePattern = /^(?:\/media\/[a-zA-Z0-9_./-]{1,900}|\/api\/admin\/media\/[a-f0-9]{64}\/preview)$/;
+const isFramePicture = (value: unknown): value is string => typeof value === "string" && framePicturePattern.test(value) && !value.includes("..");
+function readPicture(value: unknown): PreviewPicture | null {
+  if (!value || typeof value !== "object") return null;
+  const { slot, target, src, mobileSrc, alt } = value as Record<string, unknown>;
+  if (!isFramePicture(src) || (mobileSrc !== undefined && !isFramePicture(mobileSrc))) return null;
+  if (alt !== undefined && !(typeof alt === "string" && alt.length <= 200)) return null;
+  const rest = { src, ...(mobileSrc === undefined ? {} : { mobileSrc: mobileSrc as string }), ...(alt === undefined ? {} : { alt: alt as string }) };
+  if (typeof slot === "string" && target === undefined) return (templateMediaKeys as readonly string[]).includes(slot) ? { slot: slot as TemplateMediaKey, ...rest } : null;
+  if (typeof target === "string" && slot === undefined) return pictureTargetPattern.test(target) ? { target, ...rest } : null;
+  return null;
+}
 export type PreviewMessage = FrameToParentMessage | ParentToFrameMessage;
 
 const sectionKey = /^[a-z0-9-]{1,40}$/;
@@ -162,9 +202,14 @@ export function readPreviewMessage(
     if (typeof message.slot === "string") return (templateMediaKeys as readonly string[]).includes(message.slot) ? { type: "media-select", slot: message.slot as TemplateMediaKey, path: message.path } : null;
     return typeof message.target === "string" && pictureTargetPattern.test(message.target) ? { type: "media-select", target: message.target, path: message.path } : null;
   }
-  if (message.type === "token") {
+  if (message.type === "token" || message.type === "refresh") {
     return typeof message.token === "string" && previewTokenPattern.test(message.token) && Number.isSafeInteger(message.version) && (message.version as number) > 0
-      ? { type: "token", token: message.token, version: message.version as number } : null;
+      ? { type: message.type, token: message.token, version: message.version as number } : null;
+  }
+  if (message.type === "pictures") {
+    if (!Array.isArray(message.items) || message.items.length === 0 || message.items.length > 40) return null;
+    const items = message.items.map(readPicture);
+    return items.every((item): item is PreviewPicture => item !== null) ? { type: "pictures", items } : null;
   }
   if (message.type === "scroll") {
     return typeof message.y === "number" && Number.isFinite(message.y) && message.y >= 0 && message.y <= 1_000_000 ? { type: "scroll", y: message.y } : null;
@@ -189,7 +234,7 @@ export function readPreviewMessage(
 export function previewRouteFor(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return "home";
-  if (segments.length === 1 && !["home", "pages", "policies", "blogs", "collections", "products"].includes(segments[0]!)) return `pages/${segments[0]}`;
+  if (segments.length === 1 && !["home", "pages", "policies", "blogs", "collections", "products", "favourites", "cart", "checkout", "account", "orders"].includes(segments[0]!)) return `pages/${segments[0]}`;
   return segments.join("/");
 }
 

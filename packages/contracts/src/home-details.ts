@@ -16,7 +16,7 @@ const link = z.lazy(() => contentLinkSchema);
  * One slide of the hero slider; a video needs a poster, which shows before it plays and under reduced motion. A video may
  * also have a phone film (`mobileSrc`, owner 12 Nov 2026), played in place of `src` on screens up to 749px wide.
  */
-const heroSlideSchema = z.object({
+export const heroSlideSchema = z.object({
   kind: z.enum(["image", "video"]),
   src: image,
   mobileSrc: contentFilmSchema.optional(),
@@ -28,7 +28,7 @@ const heroSlideSchema = z.object({
   .refine(slide => slide.kind === "video" || slide.mobileSrc === undefined, { path: ["mobileSrc"], message: "Only a video slide has a phone film" });
 
 /** An extra Nimbus-style collection slide after the base card, which the fields beside `slides` still drive. */
-const nimbusSlideSchema = z.object({
+export const nimbusSlideSchema = z.object({
   heading: text(160), tagline: text(300), features: z.array(text(160)).length(4), cta: text(80),
   href: link, image, mobileImage: image.optional(), alt: text(200),
 }).strict();

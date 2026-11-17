@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { FileText, ImagePlus, Images, Megaphone, Plus, RotateCcw, Trash2 } from "lucide-react";
 import type { StorefrontContent, CampaignContent, ContentPage, EditorialNode } from "@shopmaple/contracts";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { StoreContent } from "@/components/store-content";
 import { pageDocument } from "@/lib/page-document";
+import { campaignPictureWords } from "@/lib/draft-pictures";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
@@ -34,14 +35,25 @@ const tally = (count: number, max: number, noun: string, button: ReactNode) => (
   <><span className="text-xs text-muted-foreground tabular-nums">{count} of {max} {noun}</span>{button}</>
 );
 
-/** `only` narrows the editor to the campaigns one homepage section shows (the section inspector); `embedded` drops the screen header. */
-export function CampaignFields(props: Props & { only?: readonly string[]; embedded?: boolean }) {
-  const { content, onChange, onScheduleEditingChange, only, embedded = false } = props;
+/**
+ * `only` narrows the editor to the campaigns one homepage section shows (the section inspector); `embedded` drops the
+ * screen header. On the Campaigns screen `initialKey` is the campaign to open on and `onCampaignChange` hears which one
+ * is chosen, so the live preview shows the page that campaign is on (`initial` is the report as the screen opens).
+ */
+export function CampaignFields(props: Props & { only?: readonly string[]; embedded?: boolean; initialKey?: string | null; onCampaignChange?: (key: string, initial: boolean) => void }) {
+  const { content, onChange, onScheduleEditingChange, only, embedded = false, initialKey, onCampaignChange } = props;
   const choices = content.campaigns.flatMap((value, index) => !only || only.includes(value.key) ? [index] : []);
   // Chosen by key, so a reloaded draft with campaigns in another order keeps the same one.
-  const [chosenKey, setChosenKey] = useState(content.campaigns[choices[0] ?? 0]?.key);
+  const [chosenKey, setChosenKey] = useState(() => choices.some((index) => content.campaigns[index]!.key === initialKey) ? initialKey! : content.campaigns[choices[0] ?? 0]?.key);
   const selected = choices.find((index) => content.campaigns[index]!.key === chosenKey) ?? choices[0] ?? -1;
   const setSelected = (index: number) => setChosenKey(content.campaigns[index]?.key);
+  const shownKey = content.campaigns[selected]?.key;
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!shownKey) return;
+    onCampaignChange?.(shownKey, !reported.current);
+    reported.current = true;
+  }, [shownKey]);
   const [scheduleEditing, setScheduleEditing] = useState(false);
   useEffect(() => {
     onScheduleEditingChange?.(scheduleEditing);
@@ -77,7 +89,7 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
           </FieldGrid>
           <CampaignScheduleFields key={campaign.key} value={campaign.schedule} onChange={(schedule) => update({ schedule })} onEditingChange={setScheduleEditing} />
           {media && <>
-            <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes.">Artwork</SectionHeading>
+            <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes. While you choose, the live preview shows your first picture at both sizes.">Artwork</SectionHeading>
             {campaign.artwork ? (
               <FieldGrid>
                 <MediaPicker label="Campaign desktop artwork" value={campaign.artwork.desktopImage} onChange={(desktopImage) => artwork({ desktopImage })} {...media} target={`campaign:${campaign.key}`} />
@@ -88,7 +100,7 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
                 </div>
               </FieldGrid>
             ) : (
-              <ActionButton icon={ImagePlus} data-picture-create={`campaign:${campaign.key}`} onClick={() => update({ artwork: { desktopImage: "", mobileImage: "", alt: campaign.label } })}>
+              <ActionButton icon={ImagePlus} data-picture-create={`campaign:${campaign.key}`} onClick={() => update({ artwork: { desktopImage: "", mobileImage: "", alt: campaignPictureWords(campaign) } })}>
                 Replace campaign artwork
               </ActionButton>
             )}

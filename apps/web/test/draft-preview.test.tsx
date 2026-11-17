@@ -120,3 +120,30 @@ test("pictures chosen in hero slides, extra Nimbus cards and the editorial block
   assert.equal(content.homeDetails.editorial.rightImage, preview);
   assert.equal(content.homeDetails.editorial.text, `a path ${upload} in prose`, "prose is left alone");
 });
+
+// Owner, 17 Nov 2026: Browse in the live preview ended on "Draft preview unavailable" past the content pages. Every page a
+// shopper can reach is drawn now; those that belong to one signed-in shopper show the sign-in page, as they do to anyone
+// the preview has not signed in.
+test("every page a shopper can reach has a draft preview, the personal ones showing sign-in", () => {
+  const draft = draftDocument();
+  const at = (segments: string[], query = {}) => {
+    const route = renderStorefrontRoute(segments, draft, query);
+    return route && { title: route.title, path: route.path };
+  };
+  assert.deepEqual(at(["collections", "all"])?.path, "/collections/all");
+  assert.equal(at(["collections", "no-such-collection"]), null, "an unknown collection is still unknown");
+  assert.deepEqual(at(["products", "aero"]), { title: "Product", path: "/products/aero" });
+  assert.deepEqual(at(["favourites"]), { title: "Saved furniture", path: "/favourites" });
+  assert.deepEqual(at(["cart"]), { title: "Your cart", path: "/cart" });
+  assert.deepEqual(at(["checkout"]), { title: "Checkout", path: "/checkout" });
+  assert.deepEqual(at(["account", "login"]), { title: "Sign in", path: "/account/login" });
+  assert.deepEqual(at(["account", "sign-up"]), { title: "Create your account", path: "/account/sign-up" });
+  assert.deepEqual(at(["account", "forgot-password"]), { title: "Reset your password", path: "/account/forgot-password" });
+  for (const personal of [["account"], ["account", "details"], ["account", "orders", "12"], ["orders", "MF-1"], ["orders", "MF-1", "tracking"]]) {
+    assert.deepEqual(at(personal), { title: "Sign in", path: "/account/login" }, personal.join("/"));
+  }
+  const labels = listPreviewPages(draft).map((item) => `${item.label} ${item.segments.join("/")}`);
+  for (const offered of ["All furniture collections/all", "Saved furniture favourites", "Your cart cart", "Checkout checkout", "Sign in account/login"]) {
+    assert.ok(labels.includes(offered), offered);
+  }
+});

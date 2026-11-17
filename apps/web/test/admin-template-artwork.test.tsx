@@ -194,7 +194,7 @@ test("invalid artwork URLs, missing mobile crops and blank descriptions block sa
     await fill("Desktop image URL", "https://tracker.example.invalid/track.png");
     assert.equal(container.querySelector('[aria-label="Desktop artwork"] img'), null);
     await click("Save draft"); assert.equal(app.saved(), undefined);
-    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /templateMedia/);
+    assert.match(container.querySelector('[role="alert"]')?.textContent ?? "", /Check Artwork “Nimbus collection feature”, picture: use an approved image/);
     await fill("Desktop image URL", "/media/room.webp");
     await fill("Mobile image URL", "");
     await click("Save draft"); assert.equal(app.saved(), undefined);

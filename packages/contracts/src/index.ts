@@ -28,6 +28,8 @@ export {
   homeCityKeys,
   homeCitiesLayoutSchema,
   templateMediaSchema,
+  templateMediaItemSchema,
+  instagramPostSchema,
 } from "./content";
 export {
   pictureSlotKeys,
@@ -261,7 +263,7 @@ export * from "./collection-landing";
 export * from "./nimbus-content";
 export * from "./enquiry-admin";
 
-export { homeDetailsSchema } from "./home-details";
+export { homeDetailsSchema, heroSlideSchema, nimbusSlideSchema } from "./home-details";
 export type { HomeDetails } from "./home-details";
 
 export * from "./service-pages";

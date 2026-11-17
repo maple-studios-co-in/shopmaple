@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { getProduct, getProductCards, getRelatedProductCards } from "@/lib/catalog";
+import { getProduct } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
-import { completeLookCategories, lookPieces, otherPieces, pickedLooks } from "@/lib/product-related";
-import { ProductDetail } from "@/components/product-detail";
-import { RelatedProducts } from "@/components/store/related-products";
-import presentationData from "@/data/product-presentation.json";
-import { JsonLd } from "@/components/store/json-ld";
-import { breadcrumbStructuredData, productMetadata, productStructuredData, seoSettings } from "@/lib/seo";
-import { collectionTitles } from "@/lib/collections";
-import { getPublishedContent } from "@/lib/content";
-import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { ProductPageView } from "@/components/store/product-page";
+import { productMetadata, seoSettings } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   // A failed catalogue read must not drop the page's robots tag: the error page that follows is never indexed.
@@ -18,6 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
   if (product === undefined) return { title: "Product", robots: { index: false, follow: false } };
   return product ? productMetadata(seoSettings(process.env), product) : { title: "Product not found", robots: { index: false, follow: false } };
 }
+/** The page itself is components/store/product-page.tsx, which the staff live preview draws from a draft too. */
 export default async function ProductPage({
   params,
   searchParams,
@@ -28,62 +22,10 @@ export default async function ProductPage({
   const [{ handle }, query] = await Promise.all([params, searchParams]);
   const product = await getProduct(handle);
   if (!product) notFound();
+  const variant = typeof query.variant === "string" ? query.variant : undefined;
   // Old keeri-<id> addresses and old variant ids move permanently to the readable address.
-  const moved = productRedirect(handle, product, typeof query.variant === "string" ? query.variant : undefined);
+  const moved = productRedirect(handle, product, variant);
   if (moved) permanentRedirect(moved);
-  // A bundle staff built in Keeri leads "Complete the look" and "Buy in Bundle", with Keeri's quantities. Without one,
-  // "Complete the look" draws from the rooms the piece is styled with, and a room that fails to load only leaves its
-  // pieces out; "You may also like" draws from the piece's own category.
-  // Above both, the pieces Keeri staff picked for a variant lead that variant's "Complete the look" (the first four the
-  // store lists); a variant without picks, or whose picks all fail to load, keeps the choice above.
-  const keeriBundle = product.productPage?.bundles[0];
-  const keeriHandles = (keeriBundle?.items ?? []).map((item) => item.handle).filter((h) => h !== product.handle);
-  const picks = product.variants.map((v) => [v.id, (v.productPage?.completeLook ?? []).filter((p) => p.handle !== product.handle)] as const);
-  const pickedHandles = [...new Set(picks.flatMap(([, list]) => list.map((p) => p.handle)))];
-  const everyPicked = picks.length > 0 && picks.every(([, list]) => list.length);
-  const [related, keeriCards, pickedCards, ...rooms] = await Promise.all([
-    product.category ? getRelatedProductCards(product.category) : [],
-    keeriHandles.length ? getProductCards(keeriHandles).catch(() => []) : [],
-    pickedHandles.length ? getProductCards(pickedHandles).catch(() => []) : [],
-    ...(keeriHandles.length || everyPicked ? [] : completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => []))),
-  ]);
-  const keeriLook = keeriHandles.flatMap((h) => keeriCards.filter((card) => card.handle === h));
-  const look = keeriLook.length ? keeriLook : lookPieces(rooms, product);
-  const lookByVariant = pickedLooks(picks, pickedCards);
-  // "Buy in Bundle" is the bundle staff built in Keeri and nothing else (Keeri's "Complete the look", described in its
-  // docs/shopmaple-product-page.md): its other pieces are read in full for their options, and one that fails to load is
-  // left out. A piece without a Keeri bundle shows none; the store never pairs pieces itself.
-  const bundle = (await Promise.all(keeriLook
-    .map((card) => getProduct(card.handle).catch(() => null))))
-    .filter((piece): piece is NonNullable<typeof piece> => Boolean(piece?.published));
-  const bundleQuantities = keeriLook.length ? Object.fromEntries(keeriBundle!.items.map((item) => [item.handle, item.quantity])) : undefined;
-  // Hand-placed white-background cut-outs (local files) for the pieces Keeri has none for, by their unchanged address.
-  const presentation = Object.hasOwn(presentationData, handle) ? presentationData[handle as keyof typeof presentationData] : undefined;
-  // The banner's photo is template artwork; only its address and description go to the browser.
-  const { image, alt } = resolveTemplateMedia("product-banner", (await getPublishedContent()).templateMedia);
-  const seo = seoSettings(process.env);
-  const trail: [string, string][] = [["Home", "/"],
-    ...(product.category ? [[collectionTitles[product.category] ?? "Furniture", `/collections/${product.category}`] as [string, string]] : []),
-    [product.title, `/products/${product.handle}`]];
-  return (
-    <>
-      <JsonLd data={[productStructuredData(seo, product), breadcrumbStructuredData(seo, trail)]} />
-      <ProductDetail
-        key={product.id}
-        product={product}
-        initialVariant={
-          typeof query.variant === "string" ? query.variant : undefined
-        }
-        presentation={presentation}
-        completeLook={look}
-        lookByVariant={lookByVariant}
-        bundle={bundle}
-        bundleQuantities={bundleQuantities}
-        serverNow={Date.now()}
-        banner={{ image, alt }}
-      >
-        <RelatedProducts products={otherPieces(related, product)} />
-      </ProductDetail>
-    </>
-  );
+  // Called, not mounted, so the route returns the finished page as it always has; it reads the published banner itself.
+  return ProductPageView({ handle, product, variant });
 }

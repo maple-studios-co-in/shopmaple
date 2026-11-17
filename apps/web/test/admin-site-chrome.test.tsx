@@ -66,7 +66,7 @@ test("navigation editing retains invalid text until save and restore removes onl
     await type("Announcement text","Fresh announcement"); await type("Announcement destination","/collections/");
     await type("WhatsApp label","Message our team");
     assert.equal(field("Announcement destination").value,"/collections/");
-    await click("Save draft"); assert.deepEqual(app.calls,["GET"]); assert.match(container.querySelector('[role="alert"]')?.textContent??"",/siteChrome/);
+    await click("Save draft"); assert.deepEqual(app.calls,["GET"]); assert.match(container.querySelector('[role="alert"]')?.textContent??"",/Check Navigation & footer, announcement link/);
     await type("Announcement destination","/collections/all"); await click("Save draft");
     assert.equal(app.saved().content.siteChrome.announcement.text,"Fresh announcement");
     assert.equal(app.saved().content.siteChrome.whatsapp.label,"Message our team");

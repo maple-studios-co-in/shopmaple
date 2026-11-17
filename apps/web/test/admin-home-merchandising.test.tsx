@@ -182,7 +182,7 @@ test("invalid collection links cannot be saved and malformed catalog payloads of
     await fill("Category tile 1 collection handle","https://outside.example/collection");
     await click("Save draft");
     assert.equal(app.saved(),undefined);
-    assert.match(container.textContent??"",/Check homeMerchandising/);
+    assert.match(container.textContent??"",/Check Merchandising, category tile 1, collection/);
   } finally {await app.close();}
 });
 

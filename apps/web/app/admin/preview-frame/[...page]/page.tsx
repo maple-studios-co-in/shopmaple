@@ -22,6 +22,10 @@ import "@/styles/contact-page.css";
 import "@/styles/bulk-enquiry.css";
 // And the collection pages, Nimbus and Terra (Figma 311:548, 311:921; owner 10 Nov 2026).
 import "@/styles/collection-landing.css";
+// And the sign-in pages and the checkout, whose own layouts load these (owner, 17 Nov 2026: every page in the preview).
+import "@/styles/account.css";
+import "@/styles/account-auth.css";
+import "@/styles/checkout-result.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -43,7 +47,10 @@ export default async function PreviewFrame({ params, searchParams }: {
   const { page } = await params;
   const { token, draft } = await loadPreviewRequest(searchParams);
   if (!draft.ok) return <PreviewUnavailable draft={draft} />;
-  const { view, section: sectionParam } = await searchParams;
+  const search = await searchParams;
+  const { view, section: sectionParam } = search;
+  // The frame's own parameters; everything else is the page's query (a collection's page and filters, a variant).
+  const query = Object.fromEntries(Object.entries(search).filter(([key]) => !["token", "view", "section"].includes(key)));
   const section = readThumbnailSection(page, sectionParam);
   if (section === false) {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no homepage section at this address to preview." }} />;
@@ -62,7 +69,7 @@ export default async function PreviewFrame({ params, searchParams }: {
   if (published && content.campaignsAvailable === false) {
     return <PreviewUnavailable draft={{ ok: false, status: 503, code: "PREVIEW_PUBLISHED_UNREACHABLE", message: "The published storefront could not be read. Check that the API is running and try again." }} />;
   }
-  const route = renderStorefrontRoute(page, content);
+  const route = renderStorefrontRoute(page, content, query);
   if (!route) {
     return <PreviewUnavailable draft={{ ok: false, status: 404, code: "PREVIEW_PAGE_UNKNOWN", message: "There is no storefront page at this address to preview." }} />;
   }

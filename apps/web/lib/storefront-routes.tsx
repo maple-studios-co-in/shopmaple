@@ -20,18 +20,80 @@ import { resolveServicePages } from "@/lib/service-page-defaults";
 import { resolveSiteChrome } from "@/lib/site-chrome-defaults";
 import { resolveStoryPageContent } from "@/lib/story-content-defaults";
 import { resolveTerraLanding, resolveTerraPageContent } from "@/lib/terra-content-defaults";
+import { collectionTitles } from "@/lib/collections";
+import { getProduct } from "@/lib/catalog";
+import { CollectionPageView } from "@/components/store/collection-page";
+import { ProductPageView } from "@/components/store/product-page";
+import { Favourites } from "@/components/favourites";
+import { CartContents } from "@/components/cart";
+import { CheckoutChrome } from "@/components/store/checkout-chrome";
+import { AuthPageView, type AuthPageKind } from "@/components/account/auth/auth-pages";
+import CheckoutPage from "@/app/checkout/page";
+import { safeAuthNext } from "@/lib/account/next-path";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
 
 export type StorefrontRoute = { title: string; path: string; node: ReactNode };
+/** An address's query (`?page=2&sort=…`, `?variant=…`, `?next=…`), for the pages that read one. */
+export type StorefrontQuery = Record<string, string | string[] | undefined>;
+
+const single = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
+const authPages: readonly AuthPageKind[] = ["login", "sign-up", "forgot-password"];
+
+/** A piece's page in the staff preview: read from the catalogue like the public page, but never redirected away. */
+async function PreviewProduct({ handle, variant, content }: { handle: string; variant?: string; content: StorefrontDocument }) {
+  const product = await getProduct(handle).catch(() => null);
+  if (!product) {
+    return (
+      <section className="page-section" data-preview-missing="product">
+        <h1>No piece at this address</h1>
+        <p>The catalogue has no published piece called “{handle}”, so the storefront would show its not-found page here.</p>
+      </section>
+    );
+  }
+  // An older keeri-<id> address or variant id would move the shopper on to the readable one; the preview shows it in place.
+  return <ProductPageView handle={handle} product={product} variant={variant} content={content} />;
+}
 
 /**
  * Renders a storefront page from a given content document using the same components
  * the public routes use. The public routes call those components with the published
  * snapshot; the staff preview calls this with a draft. Unknown addresses return null.
+ *
+ * Every page a shopper can reach is drawn (owner, 17 Nov 2026: "I want this to happen for every page"): the content
+ * pages, collection listings and product pages with the draft's banners and words, the wishlist and bag, the checkout in
+ * its own shell, and the sign-in pages. The pages that belong to one signed-in shopper (their account and orders) show
+ * the sign-in page, as they do to anyone not signed in, since the preview signs no shopper in.
  */
-export function renderStorefrontRoute(segments: readonly string[], content: StorefrontDocument): StorefrontRoute | null {
+export function renderStorefrontRoute(segments: readonly string[], content: StorefrontDocument, query: StorefrontQuery = {}): StorefrontRoute | null {
   const [root, second, third, ...rest] = segments.filter(Boolean);
+  if (root === "account" || root === "orders") {
+    const kind = root === "account" && third === undefined && authPages.find((page) => page === second);
+    const page = kind || "login";
+    return {
+      title: page === "sign-up" ? "Create your account" : page === "forgot-password" ? "Reset your password" : "Sign in",
+      path: `/account/${page}`,
+      node: <AuthPageView kind={page} next={safeAuthNext(query.next)} preview media={content.templateMedia} />,
+    };
+  }
   if (rest.length > 0) return null;
   if (root === undefined || (root === "home" && second === undefined)) return { title: "Home", path: "/", node: <HomeWithArtwork content={content} /> };
+  if (root === "collections" && second !== undefined && third === undefined) {
+    if (!Object.hasOwn(collectionTitles, second)) return null;
+    return { title: collectionTitles[second]!, path: `/collections/${second}`, node: <CollectionPageView handle={second} query={query} content={content} /> };
+  }
+  if (root === "products" && second !== undefined && third === undefined) {
+    return { title: "Product", path: `/products/${second}`, node: <PreviewProduct handle={second} variant={single(query.variant)} content={content} /> };
+  }
+  if (root === "favourites" && second === undefined) {
+    return { title: "Saved furniture", path: "/favourites", node: <section className="page-section"><h1>Saved furniture</h1><Favourites /></section> };
+  }
+  if (root === "cart" && second === undefined) {
+    return { title: "Your cart", path: "/cart", node: <section className="page-section cart-page"><h1>Your cart</h1><CartContents /></section> };
+  }
+  if (root === "checkout" && second === undefined) {
+    // The checkout wears its own shell (the store's header and footer step aside there), drawn with the draft's settings.
+    return { title: "Checkout", path: "/checkout", node: <CheckoutChrome kind="checkout" siteChrome={content.siteChrome} logo={resolveChromeArtwork(content.templateMedia).logo}><CheckoutPage /></CheckoutChrome> };
+  }
   if (root === "pages" && second !== undefined && third === undefined) {
     const path = `/${second}`;
     if ((categoryPageSlugs as readonly string[]).includes(second)) {
@@ -83,6 +145,11 @@ export function listPreviewPages(content: StorefrontDocument): { label: string; 
     { label: "Contact", segments: ["pages", "contact"] },
     { label: "Bulk Enquiry", segments: ["pages", "bulk-enquiry"] },
     { label: "Return & Exchange", segments: ["pages", "returns"] },
+    { label: "All furniture", segments: ["collections", "all"] },
+    { label: "Saved furniture", segments: ["favourites"] },
+    { label: "Your cart", segments: ["cart"] },
+    { label: "Checkout", segments: ["checkout"] },
+    { label: "Sign in", segments: ["account", "login"] },
     ...content.pages.filter((page) => page.slug).map((page) => ({ label: page.title || page.slug, segments: ["pages", page.slug] })),
     ...Object.keys(source.policies).map((slug) => ({ label: policies[slug]?.title ?? slug, segments: ["policies", slug] })),
     ...blogs.flatMap((blog) => [
