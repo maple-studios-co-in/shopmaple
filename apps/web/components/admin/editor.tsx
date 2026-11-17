@@ -37,6 +37,8 @@ import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
 import { campaignPreviewPath, previewRouteFor } from "@/lib/live-preview";
 import { describeContentIssue, previewReadyContent, type PreviewReady } from "@/lib/draft-pictures";
+import { pictureChanges } from "@/lib/picture-changes";
+import type { PreviewPicture } from "@/lib/live-preview";
 import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
@@ -173,6 +175,12 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * stood in for, the draft stays unsaved, so an explicit save says what to finish and it cannot be published yet.
    */
   const [previewed, setPreviewed] = useState<({ content: StorefrontContent } & Pick<PreviewReady, "leftOut" | "standIns">) | null>(null);
+  /**
+   * Pictures the last edit chose, swapped into the live preview the moment they are chosen (a new `nonce` each time), and
+   * whether that edit should be saved for the preview at once rather than after the pause meant for typing.
+   */
+  const [pictureFeed, setPictureFeed] = useState<{ nonce: number; items: PreviewPicture[] } | null>(null);
+  const [saveSoon, setSaveSoon] = useState(false);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function acceptDocument(value: unknown) {
@@ -245,6 +253,13 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     }
   }
   function edit(next: StorefrontContent) {
+    // A picture just chosen shows in the live preview at once, swapped in where it is on the page (owner, 17 Nov 2026),
+    // and the draft is saved for the preview straight away: a choice is made once, unlike words being typed.
+    const pictures = pictureChanges(latestContent.current, next);
+    if (pictures.length) {
+      setPictureFeed((feed) => ({ nonce: (feed?.nonce ?? 0) + 1, items: pictures }));
+      setSaveSoon(true);
+    }
     // Words typed on the page are already shown there; when they show in other places too (the hero's photos share one
     // headline), the page reloads after the save so every copy shows them.
     if (!editFromFrame.current || !frameShowsAll.current) frameCurrent.current = false;
@@ -411,9 +426,10 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     if (!liveActive || !liveAuto || !dirty || autoSaveFailed || busy || saving || conflict || scheduleEditing || !document || document.draft === null || !content) return;
     // Already saved for the preview as far as it can be: what is left is still incomplete, and waits for the next edit.
     if (content === previewed?.content) return;
-    const timer = setTimeout(() => { void write("save", undefined, { quiet: true }); }, livePreviewDebounceMs);
+    // A picture choice is saved at once; typing waits for a pause, so a word is not saved letter by letter.
+    const timer = setTimeout(() => { setSaveSoon(false); void write("save", undefined, { quiet: true }); }, saveSoon ? Math.min(60, livePreviewDebounceMs) : livePreviewDebounceMs);
     return () => clearTimeout(timer);
-  }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs, previewed]);
+  }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs, previewed, saveSoon]);
   useEffect(() => { if (!dirty) setLiveBlocked(""); }, [dirty]);
 
   const canManageEnquiries = session.user.canManageEnquiries === true;
@@ -688,7 +704,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             {liveActive && (
               <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""}
-                dirty={dirty && content !== previewed?.content} leftOut={previewed?.leftOut ?? []} standIns={previewed?.standIns ?? []} busy={busy || saving}
+                dirty={dirty && content !== previewed?.content} leftOut={previewed?.leftOut ?? []} standIns={previewed?.standIns ?? []} pictures={pictureFeed} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
                 onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
                 onSelectSection={(section) => {

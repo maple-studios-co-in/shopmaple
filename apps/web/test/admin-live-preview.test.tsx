@@ -535,17 +535,117 @@ test("an unfinished Instagram post is left out of the preview's save and named; 
   } finally { await app.close(); }
 });
 
-test("after browsing to another page inside the frame, a save reloads that page, not the screen's own", async () => {
+test("a save made in the editor never reloads the frame: the page it shows (one browsed to, too) redraws itself in place", async () => {
   const app = await setup();
   try {
     await click("Live preview");
     await click("Homepage");
+    const posted: any[] = [];
+    const frameWindow = frame().contentWindow!;
+    frameWindow.postMessage = ((data: unknown) => { posted.push(data); }) as typeof frameWindow.postMessage;
+    const before = frame().getAttribute("src");
     await fromFrame({ type: "navigate", path: "/sofas" });
     await fromFrame({ type: "ready", path: "/sofas", version: 4, sections: [] });
     await type("Category heading", "Seen on the Sofas page");
-    await until(() => app.posts().length === 2, "the save and the new token");
-    await until(() => frame().getAttribute("src") === `/admin/preview-frame/pages/sofas?token=${encodeURIComponent(tokenB)}`, "the Sofas page again, with the new token");
+    await until(() => posted.some((message) => message.type === "refresh"), "the page asked to redraw itself");
+    assert.deepEqual(posted.find((message) => message.type === "refresh"), { source: previewMessageSource, type: "refresh", token: tokenB, version: 5 });
+    assert.equal(frame().getAttribute("src"), before, "the frame is not reloaded: it stays where it is scrolled");
+    assert.equal(posted.some((message) => message.type === "token"), false, "an editor change is not one the page already shows");
   } finally { await app.close(); }
+});
+
+test("a picture chosen in the editor shows on the page at once, before the save; the save then redraws the page in place", async () => {
+  const app = await setup({ manualSaves: true });
+  const upload = `/media/uploads/${"a".repeat(64)}.webp`;
+  try {
+    await click("Live preview");
+    await click("Artwork");
+    const posted: any[] = [];
+    const frameWindow = frame().contentWindow!;
+    frameWindow.postMessage = ((data: unknown) => { posted.push(data); }) as typeof frameWindow.postMessage;
+    const before = frame().getAttribute("src");
+    await fromFrame({ type: "ready", path: "/", version: 4, sections: [] });
+    await type("Desktop image URL", upload);
+    const swap = posted.find((message) => message.type === "pictures");
+    assert.ok(swap, "the picture is handed to the page with the edit itself");
+    assert.equal(swap.items.length, 1);
+    assert.equal(swap.items[0].slot, "home-workshop-poster");
+    assert.equal(swap.items[0].src, `/api/admin/media/${"a".repeat(64)}/preview`, "an unpublished upload shows through the staff preview route");
+    await until(() => app.pendingCount() === 1, "the save, started at once for a chosen picture");
+    assert.equal(posted.some((message) => message.type === "refresh"), false, "nothing to redraw until the save is in");
+    await app.resolveSave();
+    await until(() => posted.some((message) => message.type === "refresh"), "the redraw in place after the save");
+    assert.equal(frame().getAttribute("src"), before, "no reload");
+    await type("Desktop image URL", "/media/home/typ");
+    await settle(120);
+    assert.equal(posted.filter((message) => message.type === "pictures").length, 1, "an address typed by hand is never swapped in letter by letter");
+  } finally { await app.close(); }
+});
+
+test("inside the frame: chosen pictures swap in where they are, phone parts take the phone picture, and a sliced campaign is covered until the redraw", async () => {
+  const parent = { postMessage: () => {} } as unknown as Window;
+  const root = createRoot(container);
+  const send = (data: Record<string, unknown>) => act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, ...data }, origin: "http://localhost:3000", source: parent })); });
+  const page = (version: number) => (
+    <div>
+      <img data-media-slot="home-newsletter" src="/media/old.webp" srcSet="/media/old.webp 1x" sizes="100vw" alt="Old words" />
+      <picture><source media="(max-width: 749px)" srcSet="/media/old-phone.webp" /><img data-picture-target="merch:categories:sofas" src="/media/old-tile.webp" alt="" /></picture>
+      <div data-picture-target="campaign:sofas-hero">
+        <div data-artwork="desktop"><div className="campaign-art-tile"><img src="/media/slice.png" alt="" /></div></div>
+        <div data-artwork="mobile"><div className="campaign-art-tile"><img src="/media/slice-phone.png" alt="" /></div></div>
+      </div>
+      <PreviewFrameBridge path="/" version={version} parentWindow={parent} />
+    </div>
+  );
+  const a = `/api/admin/media/${"a".repeat(64)}/preview`, b = `/api/admin/media/${"b".repeat(64)}/preview`, c = `/api/admin/media/${"c".repeat(64)}/preview`;
+  try {
+    await act(async () => root.render(page(7)));
+    await send({ type: "pictures", items: [
+      { slot: "home-newsletter", src: a, alt: "New words" },
+      { target: "merch:categories:sofas", src: b, mobileSrc: c, alt: "Sofas" },
+      { target: "campaign:sofas-hero", src: a, mobileSrc: c },
+    ] });
+    const newsletter = container.querySelector<HTMLImageElement>('[data-media-slot="home-newsletter"]')!;
+    assert.deepEqual([newsletter.getAttribute("src"), newsletter.getAttribute("srcset"), newsletter.getAttribute("sizes"), newsletter.alt], [a, null, null, "New words"]);
+    const tile = container.querySelector<HTMLImageElement>('[data-picture-target="merch:categories:sofas"]')!;
+    assert.deepEqual([tile.getAttribute("src"), tile.alt, tile.parentElement!.querySelector("source")!.getAttribute("srcset")], [b, "", c], "a decorative picture keeps its empty description");
+    const covers = [...container.querySelectorAll<HTMLImageElement>("img[data-preview-overlay]")];
+    assert.deepEqual(covers.map((cover) => [cover.closest<HTMLElement>("[data-artwork]")!.dataset.artwork, cover.getAttribute("src")]), [["desktop", a], ["mobile", c]]);
+    assert.deepEqual([...container.querySelectorAll(".campaign-art-tile img")].map((slice) => slice.getAttribute("src")), ["/media/slice.png", "/media/slice-phone.png"], "the slices themselves are left alone");
+    await act(async () => root.render(page(8)));
+    assert.equal(container.querySelectorAll("img[data-preview-overlay]").length, 0, "the redraw of a newer version takes the cover away");
+  } finally { await act(async () => root.unmount()); }
+});
+
+test("inside the frame: a redraw request redraws the page in place from the new version, with its own query and anchor", async () => {
+  const parent = { postMessage: () => {} } as unknown as Window;
+  const root = createRoot(container);
+  const redraws: string[] = [];
+  const tokens: [string, number][] = [];
+  const was = dom.window.location.href;
+  dom.window.history.replaceState(null, "", `/admin/preview-frame/collections/chairs?sort=price-asc&token=${tokenA}#reviews`);
+  try {
+    await act(async () => root.render(<PreviewFrameBridge path="/collections/chairs" version={4} parentWindow={parent} refreshTo={(url) => redraws.push(url)} onToken={(token, version) => tokens.push([token, version])} />));
+    await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, type: "refresh", token: tokenB, version: 5 }, origin: "http://localhost:3000", source: parent })); });
+    assert.deepEqual(redraws, [`/admin/preview-frame/collections/chairs?sort=price-asc&token=${tokenB}#reviews`]);
+    assert.deepEqual(tokens, [[tokenB, 5]], "links followed from here on use the new token");
+  } finally { await act(async () => root.unmount()); dom.window.history.replaceState(null, "", was); }
+});
+
+test("redraw and picture messages are trusted only with a known shape, and pictures only from the store's own media", () => {
+  const origin = "http://localhost:3000", parent = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: parent, data: { source: previewMessageSource, ...data } }, origin, parent);
+  assert.deepEqual(read({ type: "refresh", token: tokenB, version: 5 }), { type: "refresh", token: tokenB, version: 5 });
+  assert.equal(read({ type: "refresh", token: "not a token", version: 5 }), null);
+  const upload = `/api/admin/media/${"a".repeat(64)}/preview`;
+  assert.deepEqual(read({ type: "pictures", items: [{ slot: "home-newsletter", src: upload }] }), { type: "pictures", items: [{ slot: "home-newsletter", src: upload }] });
+  assert.deepEqual(read({ type: "pictures", items: [{ target: "campaign:sofas-hero", src: "/media/home/x.webp", mobileSrc: upload, alt: "Sofa" }] }),
+    { type: "pictures", items: [{ target: "campaign:sofas-hero", src: "/media/home/x.webp", mobileSrc: upload, alt: "Sofa" }] });
+  for (const src of ["https://tracker.example/x.png", "javascript:alert(1)", "/media/../admin", "//evil.example/x.png", "/api/admin/media/abc/preview"])
+    assert.equal(read({ type: "pictures", items: [{ slot: "home-newsletter", src }] }), null, `refused: ${src}`);
+  assert.equal(read({ type: "pictures", items: [{ slot: "not-a-slot", src: upload }] }), null);
+  assert.equal(read({ type: "pictures", items: [{ target: "campaign:sofas-hero", slot: "home-newsletter", src: upload }] }), null, "one place per picture");
+  assert.equal(read({ type: "pictures", items: [] }), null);
 });
 
 test("Campaigns shows the page the chosen campaign is on", async () => {

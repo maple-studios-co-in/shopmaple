@@ -11,6 +11,7 @@ import {
   readPreviewMessage,
   readPreviewMode,
   type PreviewDevice,
+  type PreviewPicture,
   type PreviewView,
 } from "@/lib/live-preview";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,8 @@ export type LivePreviewProps = {
   leftOut?: string[];
   /** What the last save for the preview showed with a stand-in ("Campaign “Sofas hero” banner: phone picture"). */
   standIns?: string[];
+  /** Pictures just chosen in the editor (a new `nonce` each time): swapped in on the page at once, before the save. */
+  pictures?: { nonce: number; items: PreviewPicture[] } | null;
   auto: boolean;
   onAutoChange: (next: boolean) => void;
   onUpdateNow: () => void;
@@ -83,7 +86,7 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
  * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
  * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, leftOut = [], standIns = [], auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, leftOut = [], standIns = [], pictures = null, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
   /** Edit (the default) or Browse, where clicks follow links as a shopper's would; kept for the tab (lib/live-preview.ts). */
@@ -126,8 +129,12 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     if (src === null && shownSrc !== null && !draftRequired && !mintError) return;
     const page = `${path}|${view}`;
     const samePage = page === shownPage.current && src !== null && shownSrc !== null;
-    if (samePage && token && version && frameStatus === "ready" && view === "draft" && currentRef.current?.()) {
-      frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "token", token, version }, window.location.origin);
+    // The same page, loaded and listening: it never reloads. When it already shows the draft (words typed on it) it only
+    // takes the new token; otherwise it redraws itself from the new version in place, keeping where it is scrolled and
+    // whatever is open on it (owner, 17 Nov 2026: a footer icon changed and the preview jumped back to the hero).
+    if (samePage && token && version && frameStatus === "ready") {
+      const type = view === "draft" && currentRef.current?.() ? "token" : "refresh";
+      frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type, token, version }, window.location.origin);
       return;
     }
     let scrolled = 0;
@@ -201,6 +208,11 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     if (frameStatus !== "ready" || view !== "draft") return;
     frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "mode", mode: textEditing && editMode ? "edit" : "browse" }, window.location.origin);
   }, [textEditing, editMode, frameStatus, view]);
+  // A picture chosen in the editor shows on the page at once, swapped in where it is; the save and the redraw follow.
+  useEffect(() => {
+    if (!pictures?.items.length || frameStatus !== "ready" || view !== "draft") return;
+    frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "pictures", items: pictures.items }, window.location.origin);
+  }, [pictures?.nonce]);
   // Scroll the frame to the section being edited.
   useEffect(() => {
     if (frameStatus !== "ready" || view !== "draft") return;

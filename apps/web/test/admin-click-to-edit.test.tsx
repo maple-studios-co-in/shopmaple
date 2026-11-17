@@ -477,10 +477,12 @@ test("the big hero headline, shown from the theme until staff write their own, i
     await until(() => app.puts.length > 0, "the quiet save");
     assert.equal(app.puts.at(-1).content.homeDetails.hero.headline, "Made by hand in Delhi");
     assert.equal(app.puts.at(-1).content.homeDetails.hero.intro, undefined, "the intro keeps the theme's words");
-    // The other three photos show the same field: the page reloads once (keeping its place) so they show the new words too.
-    await until(() => app.frame().getAttribute("src") !== before, "the page reloaded with the new draft");
-    assert.match(app.frame().getAttribute("src") ?? "", new RegExp(tokenB));
-    assert.equal(app.replies.some((reply) => reply.type === "token"), false, "no in-place token: the reload carries it");
+    // The other three photos show the same field: the page redraws from the new draft so they show the new words too. Words
+    // were typed on it, so the page reloads itself for that (keeping its place); the pane never reloads the frame.
+    await until(() => app.replies.some((reply) => reply.type === "refresh"), "the page asked to redraw with the new draft");
+    assert.deepEqual(app.replies.find((reply) => reply.type === "refresh"), { source: previewMessageSource, type: "refresh", token: tokenB, version: 5 });
+    assert.equal(app.frame().getAttribute("src"), before, "the pane does not reload the frame itself");
+    assert.equal(app.replies.some((reply) => reply.type === "token"), false, "no in-place token: the redraw carries it");
   } finally { await app.close(); }
 });
 

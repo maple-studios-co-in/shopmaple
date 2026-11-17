@@ -9,7 +9,7 @@ import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { AdminRoot } from "./admin-root";
-import { keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewTextTarget } from "@/lib/live-preview";
+import { keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewPicture, type PreviewTextTarget } from "@/lib/live-preview";
 import { sectionName } from "@/lib/section-thumbnails";
 
 export type PreviewPageOption = { label: string; segments: string[] };
@@ -161,19 +161,100 @@ function supportsPlainText() {
 }
 
 /**
+ * Shows `then` once `src` has loaded (or failed, or after a second and a half), so a swapped picture never blanks out
+ * while the new one downloads.
+ */
+function whenLoaded(src: string, then: () => void) {
+  if (typeof Image === "undefined") { then(); return; }
+  let done = false;
+  const go = () => { if (!done) { done = true; then(); } };
+  const probe = new Image();
+  probe.onload = go;
+  probe.onerror = go;
+  probe.src = src;
+  window.setTimeout(go, 1500);
+}
+
+/**
+ * Swaps pictures chosen in the editor into the page where they are, before the draft is saved (owner, 17 Nov 2026: "the
+ * changes with updated photo happens there immediately in live preview as I select the image"). Each `<img>` drawn for
+ * the placement or target takes the new address; a phone-only part (a `<source>`, a mobile artwork layer) takes the
+ * phone picture. Only attributes change, never the page's structure, so the redraw that follows the save takes over
+ * cleanly. The one exception is a campaign still drawn from the theme's sliced artwork: the new picture is laid over the
+ * slices, and the redraw removes it again.
+ */
+export function swapPictures(items: readonly PreviewPicture[], doc: Document = document) {
+  for (const item of items) {
+    // Slots and targets were read against fixed patterns ([a-z0-9:-]), so they go into the selector as they are.
+    const selector = item.slot ? `[data-media-slot="${item.slot}"]` : `[data-picture-target="${item.target}"]`;
+    for (const host of doc.querySelectorAll<HTMLElement>(selector)) {
+      if (host.querySelector(".campaign-art-tile")) {
+        for (const layer of host.querySelectorAll<HTMLElement>("[data-artwork]")) {
+          const src = layer.dataset.artwork === "mobile" ? item.mobileSrc ?? item.src : item.src;
+          whenLoaded(src, () => {
+            let cover = layer.querySelector<HTMLImageElement>(":scope > img[data-preview-overlay]");
+            if (!cover) {
+              cover = doc.createElement("img");
+              cover.alt = "";
+              cover.setAttribute("data-preview-overlay", "");
+              Object.assign(cover.style, { position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "cover", zIndex: "1" });
+              layer.append(cover);
+            }
+            cover.src = src;
+          });
+        }
+        continue;
+      }
+      const images = host.tagName === "IMG" ? [host as HTMLImageElement] : [...host.querySelectorAll("img")];
+      for (const image of images) {
+        const src = image.closest('[data-artwork="mobile"]') ? item.mobileSrc ?? item.src : item.src;
+        const picture = image.parentElement?.tagName === "PICTURE" ? image.parentElement : null;
+        whenLoaded(src, () => {
+          picture?.querySelectorAll("source").forEach((source) => { source.srcset = item.mobileSrc ?? item.src; source.removeAttribute("sizes"); });
+          image.removeAttribute("srcset");
+          image.removeAttribute("sizes");
+          image.src = src;
+          // A decorative picture keeps its empty description.
+          if (item.alt !== undefined && image.alt !== "") image.alt = item.alt;
+          image.setAttribute("data-preview-swapped", "");
+        });
+      }
+    }
+  }
+}
+
+/** Where the page was scrolled when it reloaded itself, so it opens there again (sessionStorage, this tab only). */
+const reloadScrollKey = "shopmaple-preview-reload-scroll";
+
+/** The App Router when the page has one (the frame always does; a bare test render does not). */
+function useOptionalRouter() {
+  try { return useRouter(); } catch { return null; }
+}
+
+/**
  * Inside the frame: announces the page and its sections to the embedding admin, and scrolls to
  * and highlights the section the admin asks for. When `selectable` (the draft view), hovering a
  * section outlines it and offers an Edit button that selects it in the editor, and click-to-edit
  * (on until the admin switches to Browse) turns any words on the page into a text box. Only
  * same-origin messages from the parent window are honoured; a top-level preview (no parent) stays silent.
  */
-export function PreviewFrameBridge({ path, version, parentWindow, selectable = false, onToken }: {
+export function PreviewFrameBridge({ path, version, parentWindow, selectable = false, onToken, refreshTo }: {
   path: string; version: number; parentWindow?: Window | null; selectable?: boolean;
   /** The draft saved a change this page already shows: use this token and version from now on (no reload). */
   onToken?: (token: string, version: number) => void;
+  /** Redraws this page from another address in place; the App Router's own (scroll kept) unless a test passes one. */
+  refreshTo?: (url: string) => void;
 }) {
   const tokenRef = useRef(onToken);
   tokenRef.current = onToken;
+  const router = useOptionalRouter();
+  const refreshRef = useRef(refreshTo);
+  refreshRef.current = refreshTo ?? (router ? (url: string) => router.replace(url, { scroll: false }) : undefined);
+  /**
+   * Words were typed on this page since it loaded (click-to-edit). Typing into words React drew can leave it holding text
+   * nodes the browser replaced, so a redraw in place could fail there; such a page reloads instead, and comes back where it was.
+   */
+  const typedHere = useRef(false);
   const [hover, setHover] = useState<{ section: string; top: number; left: number } | null>(null);
   // The parent exists only in the browser. Read after mounting, so the server's markup and the first render agree.
   const [parent, setParent] = useState<Window | null>(parentWindow ?? null);
@@ -218,6 +299,22 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         setNote(`Saved in draft version ${message.version}. It goes live when the draft is published.`);
         return;
       }
+      if (message.type === "pictures") { swapPictures(message.items); return; }
+      if (message.type === "refresh") {
+        // The editor saved a change: redraw this very page (its own query and #anchor kept) from the new version, in place.
+        // A client-side navigation keeps the page's scroll position and everything open on it; before, the whole frame
+        // reloaded and opened at the top (owner, 17 Nov 2026: "I was at the hero section").
+        tokenRef.current?.(message.token, message.version);
+        const url = new URL(window.location.href);
+        url.searchParams.set("token", message.token);
+        const next = `${url.pathname}${url.search}${url.hash}`;
+        const redraw = refreshRef.current;
+        if (typedHere.current || !redraw) {
+          try { window.sessionStorage.setItem(reloadScrollKey, JSON.stringify({ path: url.pathname, y: window.scrollY })); } catch { /* opens at the top */ }
+          window.location.replace(next);
+        } else redraw(next);
+        return;
+      }
       if (message.type === "scroll") {
         // Instant, never smooth: the page was reloaded under the staff member and should simply be where it was.
         (document.scrollingElement ?? document.documentElement).scrollTo?.({ top: message.y, behavior: "instant" });
@@ -246,6 +343,26 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [path, version, parent]);
+  // A newer version has been drawn: a picture laid over a campaign's sliced artwork has served its turn (the page now
+  // draws the saved picture itself, or the slices again when the save kept the original).
+  useEffect(() => {
+    for (const cover of document.querySelectorAll("img[data-preview-overlay]")) cover.remove();
+  }, [version]);
+  // A page that reloaded itself (see `typed`) opens where it was, again once its pictures have taken their place.
+  useEffect(() => {
+    if (!parent) return;
+    let saved: { path?: unknown; y?: unknown } | null = null;
+    try {
+      saved = JSON.parse(window.sessionStorage.getItem(reloadScrollKey) ?? "null");
+      window.sessionStorage.removeItem(reloadScrollKey);
+    } catch { saved = null; }
+    if (!saved || saved.path !== window.location.pathname || typeof saved.y !== "number" || !Number.isFinite(saved.y)) return;
+    const top = saved.y;
+    const restore = () => (document.scrollingElement ?? document.documentElement).scrollTo?.({ top, behavior: "instant" });
+    restore();
+    window.addEventListener("load", restore, { once: true });
+    return () => window.removeEventListener("load", restore);
+  }, [parent]);
   // Hover outlines a section and places its Edit button at the section's top left, inside the viewport: in Edit only, as
   // Browse shows the page as visitors see it.
   useEffect(() => {
@@ -339,6 +456,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
       const typed = keptText(writtenText(node));
       if (!keep || !typed || squash(typed) === squash(originalText) || !target) { node.innerHTML = originalHtml; return; }
       lastEdit.current = { node, html: originalHtml };
+      typedHere.current = true;
       post({ type: "text-edit", before: squash(originalText).slice(0, 2000), after: typed.slice(0, 2000), ...target });
     }
     cancelEdit.current = () => finish(false);
