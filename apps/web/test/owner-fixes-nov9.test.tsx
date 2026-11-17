@@ -216,9 +216,10 @@ test("the banners and circles are sized and drawn as the owner asked", () => {
 });
 
 test("the beds page frames its two banners the same way", () => {
-  const page = source("../app/collections/[handle]/page.tsx");
-  assert.match(page, /<div className="landing-banner-frame" data-landing-banner="hero">\s*<CampaignBanner campaign=\{campaign\} eager \/>/);
-  assert.match(page, /<div className="landing-banner-frame home-container" data-landing-banner="inset">\s*<CampaignBanner campaign="beds-sale" \/>/);
+  // The collection route hands off to the shared view the live preview also draws.
+  const page = source("../components/store/collection-page.tsx");
+  assert.match(page, /<div className="landing-banner-frame" data-landing-banner="hero">\s*<CampaignBanner campaign=\{campaign\} eager content=\{content\} \/>/);
+  assert.match(page, /<div className="landing-banner-frame home-container" data-landing-banner="inset">\s*<CampaignBanner campaign="beds-sale" content=\{content\} \/>/);
 });
 
 // ---- 3. The hotspots ----
