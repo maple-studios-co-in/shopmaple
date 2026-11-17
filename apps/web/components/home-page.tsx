@@ -1,6 +1,6 @@
 import { ContentImage as Image } from "@/components/content-image";
 import { SiteWord } from "@/components/site-words";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type CSSProperties, type ReactNode } from "react";
 import type { HomeCollectionTile } from "@shopmaple/contracts";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -30,8 +30,20 @@ import { resolveHomeMerchandising } from "@/lib/home-merchandising-defaults";
 import { currentHandles } from "@/lib/retired-products";
 import type { ProductPhotos } from "@/lib/template-media-defaults";
 
-/** The bundled offer artwork (public/media/home/offer-*.webp) draws its own arrow; staff uploads do not. */
-const bundledOffer = (src: string) => src.startsWith("/media/home/offer-");
+/**
+ * Where each bundled offer picture used to paint its own arrow (painted out, owner 16 Nov 2026), as the centre's place in
+ * the card in percent: the live arrow takes that spot, clear of the picture's words, which sit lower than on the uploads.
+ */
+const bundledArrowAt: Record<string, { x: number; y: number }> = {
+  "/media/home/offer-clearance-sale.webp": { x: 11.3, y: 78.5 },
+  "/media/home/offer-minimum-30.webp": { x: 11.7, y: 79.4 },
+  "/media/home/offer-best-buy-50k.webp": { x: 11.1, y: 88 },
+  "/media/home/offer-furniture-25k.webp": { x: 10.7, y: 86.1 },
+};
+const arrowPlace = (image: string) => {
+  const at = bundledArrowAt[image];
+  return at ? { "data-offer-arrow-placed": "", style: { "--offer-arrow-x": `${at.x}%`, "--offer-arrow-y": `${at.y}%` } as CSSProperties } : {};
+};
 
 function CollectionTiles({
   items,
@@ -57,9 +69,10 @@ function CollectionTiles({
           </div>
           {categories ? <h3 data-category-title>{item.title}</h3> : null}
           {categories && <ArrowRight aria-hidden size={14} data-category-arrow />}
-          {/* Each offer carries the categories' arrow too, in Maple's dark red (owner, 10 Nov 2026), except the bundled
-              artwork, which draws its own. */}
-          {!categories && !bundledOffer(item.image) && <ArrowRight aria-hidden size={16} data-offer-arrow />}
+          {/* Each offer carries the categories' arrow too, in Maple's dark red (owner, 10 Nov 2026), turning maple when the
+              card is pointed at. The bundled artwork no longer paints an arrow of its own, so every offer gets this one,
+              hover and all (owner, 16 Nov 2026). */}
+          {!categories && <ArrowRight aria-hidden size={16} data-offer-arrow {...arrowPlace(item.image)} />}
         </Link>
       ))}
     </div>

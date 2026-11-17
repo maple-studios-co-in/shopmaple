@@ -14,7 +14,8 @@
  *   [data-ambient-film]  the testimonial's film (components/ambient-film.tsx): muted and looping while at least a quarter
  *                        of it is in view, paused otherwise
  *   [data-marquee]       the Social Proof row: its [data-marquee-track]'s drift eases to rest under the mouse or
- *                        keyboard focus and back when they leave (`data-marquee-eased` while this is in charge)
+ *                        keyboard focus and back when they leave (`data-marquee-eased` while this is in charge); its
+ *                        [data-marquee-prev] and [data-marquee-next] buttons step it one item (`data-marquee-steps`)
  *
  * Under reduced motion nothing moves: every element keeps its finished, server-drawn state, and the
  * stage's numbers still switch collections.
@@ -347,6 +348,93 @@ export function mountMarquee(root: HTMLElement, reduced = reducedMotion()): () =
   };
 }
 
+/** How long one press of the row's previous or next button takes to glide it one item along. */
+export const marqueeStepMs = 520;
+
+/** The row's items, from its first (visible) copy: the copy itself holds them, or a single list inside it does. */
+function marqueeItems(root: HTMLElement): HTMLElement[] {
+  const group = root.querySelector<HTMLElement>("[data-marquee-group]:not([data-marquee-copy])");
+  if (!group) return [];
+  const holder = group.children.length === 1 ? group.firstElementChild! : group;
+  return [...holder.children] as HTMLElement[];
+}
+
+/**
+ * The Social Proof row's previous and next buttons (QA report, 16 Nov 2026): each press glides the row one item along
+ * and settles it with an item's edge at the start, so a post is never left cut in half. While it drifts, this moves the
+ * drift itself (its CSS animation's clock), so the row carries on from wherever the buttons left it; under reduced
+ * motion the row is a plain scroller and the buttons scroll it. Presses in quick succession add up. The buttons show
+ * from `data-marquee-steps`, set here.
+ */
+export function mountMarqueeSteps(root: HTMLElement, reduced = reducedMotion()): () => void {
+  const prev = root.querySelector<HTMLButtonElement>("[data-marquee-prev]");
+  const next = root.querySelector<HTMLButtonElement>("[data-marquee-next]");
+  const track = root.querySelector<HTMLElement>("[data-marquee-track]");
+  const viewport = root.querySelector<HTMLElement>("[data-marquee-viewport]");
+  if (!prev || !next || !track || !viewport) return () => {};
+  const drift = reduced ? undefined : track.getAnimations?.()[0];
+  let frameId = 0;
+  let glide: { from: number; to: number; start?: number } | undefined;
+
+  /**
+   * The distance from one item's start to the next one's (its width and the gap). While it drifts, one copy of the row
+   * is exactly its items' steps end to end, which gives the step to the fraction of a pixel.
+   */
+  const stepSize = () => {
+    const items = marqueeItems(root);
+    const [first, second] = items;
+    if (!first) return 0;
+    if (drift && track.offsetWidth) return track.offsetWidth / 2 / items.length;
+    return second ? second.offsetLeft - first.offsetLeft : first.offsetWidth;
+  };
+  const duration = () => Number(drift?.effect?.getTiming().duration) || 0;
+  const frame = (now: number) => {
+    frameId = 0;
+    if (!glide || !drift) return;
+    glide.start ??= now;
+    const progress = Math.min(1, (now - glide.start) / marqueeStepMs);
+    drift.currentTime = glide.from + (glide.to - glide.from) * easeInOut(progress);
+    if (progress < 1) frameId = requestAnimationFrame(frame);
+    else glide = undefined;
+  };
+  const step = (direction: 1 | -1) => {
+    const size = stepSize();
+    if (!size) return;
+    if (!drift) {
+      viewport.scrollBy({ left: direction * size, behavior: reduced ? "auto" : "smooth" });
+      return;
+    }
+    // One copy of the row is `copy` px long and passes in `length` ms; its items repeat every `size` px across copies.
+    const length = duration(), copy = track.offsetWidth / 2;
+    if (!length || !copy) return;
+    let from = Number(drift.currentTime ?? 0);
+    // Aim from where a glide already under way is heading, so a second quick press goes one item further. A press always
+    // travels at least 40% of an item: an edge closer than that is passed for the one after it.
+    const edge = ((glide?.to ?? from) / length) * copy / size;
+    const target = direction > 0 ? Math.floor(edge + 0.4) + 1 : Math.ceil(edge - 0.4) - 1;
+    let to = ((target * size) / copy) * length;
+    // The drift's clock cannot go below nought (the row would jump to its start); a lap on shows the very same row.
+    if (to < 0) {
+      const laps = Math.ceil(-to / length);
+      to += laps * length;
+      from += laps * length;
+    }
+    glide = { from, to };
+    if (!frameId) frameId = requestAnimationFrame(frame);
+  };
+  const onPrev = () => step(-1);
+  const onNext = () => step(1);
+  prev.addEventListener("click", onPrev);
+  next.addEventListener("click", onNext);
+  root.setAttribute("data-marquee-steps", "");
+  return () => {
+    cancelAnimationFrame(frameId);
+    prev.removeEventListener("click", onPrev);
+    next.removeEventListener("click", onNext);
+    root.removeAttribute("data-marquee-steps");
+  };
+}
+
 export function mountReveal(element: HTMLElement): () => void {
   const stopWatching = watchVisibility(element, 0.2, (seen) => { if (seen) element.setAttribute("data-revealed", ""); });
   return () => { stopWatching(); element.setAttribute("data-revealed", ""); };
@@ -358,6 +446,7 @@ export function mountHomeEffects(root: ParentNode = document): () => void {
   const stops: (() => void)[] = [];
   for (const stage of root.querySelectorAll<HTMLElement>("[data-stage]")) stops.push(mountStage(stage, reduced));
   for (const film of root.querySelectorAll<HTMLVideoElement>("video[data-ambient-film]")) stops.push(mountAmbientFilm(film));
+  for (const row of root.querySelectorAll<HTMLElement>("[data-marquee]")) stops.push(mountMarqueeSteps(row, reduced));
   if (!reduced) {
     for (const host of root.querySelectorAll<HTMLElement>("[data-typed]")) stops.push(mountTyped(host));
     for (const book of root.querySelectorAll<HTMLElement>("[data-flipbook]")) stops.push(mountFlipbook(book));

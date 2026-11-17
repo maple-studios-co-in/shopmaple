@@ -117,6 +117,17 @@
 .maple-desktop-nav > a[aria-current="page"]::after {
   transform: translateX(-50%) scaleX(1);
 }
+/* The open room's word reaches down under the row to its panel, so the pointer never crosses bare header on the way to
+   an option (QA report, 16 Nov 2026: the menu shut before an option could be clicked). The panel, later in the page,
+   sits over the part of this that it covers. */
+.maple-menu-trigger[aria-expanded="true"]::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -28px;
+  right: -28px;
+  height: 36px;
+}
 .maple-menu-trigger:hover,
 .maple-menu-trigger[aria-expanded="true"],
 .maple-desktop-nav > a:hover,
@@ -172,13 +183,82 @@
   border-radius: 14px;
   background: #f5f2ee;
 }
-.maple-mega-feature img {
+/* The room's photo in a round frame, its arrow on the frame's edge (QA report, 16 Nov 2026). The card is one target:
+   its Explore link reaches over the whole card, so the photo, the arrow and the words all answer the pointer together. */
+.maple-mega-feature {
+  position: relative;
+}
+.maple-mega-feature-media {
+  position: relative;
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 236 / 240;
+  aspect-ratio: 1;
+}
+/* The round frame clips its photo on the photo's own layer, so the hover zoom never spills past the edge. */
+.maple-mega-feature-photo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+  background: #ece6df;
+}
+.maple-mega-feature-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(41 37 31 / 0.06);
+}
+.maple-mega-feature-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  transform: scale(var(--feature-zoom, 1));
+  transition: transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+/* The original pictures carry a painted rim and arrow at their edge: drawn about a quarter larger inside the frame, both
+   fall outside it. */
+.maple-mega-feature-media[data-framed-art] .maple-mega-feature-photo img { --feature-zoom: 1.27; }
+.maple-mega-feature-arrow {
+  position: absolute;
+  right: 3%;
+  bottom: 3%;
+  z-index: 2;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff;
+  color: #29251f;
+  box-shadow: 0 6px 16px rgb(41 37 31 / 0.16);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.maple-mega-feature > a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+.maple-mega-feature:hover .maple-mega-feature-photo img { --feature-zoom: 1.06; }
+.maple-mega-feature:hover .maple-mega-feature-media[data-framed-art] .maple-mega-feature-photo img { --feature-zoom: 1.34; }
+.maple-mega-feature:is(:hover, :focus-within) .maple-mega-feature-arrow {
+  background: var(--burgundy);
+  color: #fff;
+  transform: translateX(3px);
+}
+.maple-mega-feature h2 { transition: color 0.3s ease; }
+.maple-mega-feature:hover h2 { color: var(--burgundy); }
+@media (prefers-reduced-motion: reduce) {
+  .maple-mega-feature-photo img,
+  .maple-mega-feature-arrow,
+  .maple-mega-feature h2 { transition: none; }
+  .maple-mega-feature:hover .maple-mega-feature-photo img { --feature-zoom: 1; }
+  .maple-mega-feature:hover .maple-mega-feature-media[data-framed-art] .maple-mega-feature-photo img { --feature-zoom: 1.27; }
 }
 .maple-mega-feature > span {
   margin-top: 14px;
@@ -448,8 +528,10 @@
     gap: 8px;
     padding: 14px;
   }
-  .maple-mega-feature img {
-    max-height: clamp(96px, 100dvh - 520px, 260px);
+  /* The round photo shrinks to fit the window's height, centred in the card. */
+  .maple-mega-feature-media {
+    width: min(100%, clamp(96px, 100dvh - 520px, 260px));
+    align-self: center;
   }
   .maple-mega-feature > span {
     margin-top: 6px;

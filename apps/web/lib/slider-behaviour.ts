@@ -9,7 +9,8 @@ import { chooseFilmSource } from "./film-source";
  *   [data-slider]              the root; `data-slider-autoplay="ms"` turns autoplay on, `data-slider-ready` is set once attached
  *   [data-slider-track]        the scroll-snap row;  [data-slider-slide] one slide, `data-active` on the current one
  *   [data-slider-dot]          a button per slide, `aria-current="true"` on the current one
- *   [data-slider-toggle]       a button that opens and closes its slide's detail panel (`data-open` and `.is-open` on the slide)
+ *   [data-slider-prev] / [data-slider-next]  buttons that step one slide back or on, wrapping round at either end
+ *   [data-slider-toggle]      a button that opens and closes its slide's detail panel (`data-open` and `.is-open` on the slide)
  *   [data-slider-focus-opens]  opens its slide's panel when focused
  *
  * Videos play only while their slide is current, muted and looping, and never under reduced motion. A video carries
@@ -75,6 +76,11 @@ export function mountSlider(root: HTMLElement): () => void {
     const from = event.target instanceof Element ? event.target : null;
     const dot = from?.closest("[data-slider-dot]");
     if (dot && dots.includes(dot as HTMLElement)) return go(dots.indexOf(dot as HTMLElement));
+    const step = from?.closest("[data-slider-prev], [data-slider-next]");
+    if (step && root.contains(step) && slides.length > 1) {
+      const by = step.hasAttribute("data-slider-prev") ? -1 : 1;
+      return go((index + by + slides.length) % slides.length);
+    }
     const toggle = from?.closest("[data-slider-toggle]");
     if (toggle) { const card = toggle.closest("[data-slider-slide]"); open(card, !card?.classList.contains("is-open")); }
   };

@@ -6,6 +6,8 @@ import type { SiteWords } from "@shopmaple/contracts";
  */
 export const siteWordDefaults = {
   // Homepage
+  "home.hero.nimbusLabel": "The Nimbus Collection",
+  "home.hero.terraLabel": "The Terra Collection",
   "home.bestsellers.eyebrow": "Handpicked favourites",
   "home.bestsellers.lede": "Discover the pieces that make a room feel complete.",
   "home.bestsellers.viewAll": "View all",

@@ -93,7 +93,19 @@
   .maple-footer-bottom > div:last-child { margin-left: 0; }
 }
 
-.maple-footer-care img, .maple-footer-contact a img { flex: 0 0 40px; width: 40px; height: 42px; object-fit: contain; }
+.maple-footer-care img, .maple-footer-contact a img { flex: 0 0 40px; width: 40px; height: 40px; object-fit: contain; }
+/* The marketplace logo sits on a small white card, as store badges do: the cut-out's pale edge no longer shows as a white
+   fringe on the burgundy band, and the dark wordmark reads clearly (QA report, 16 Nov 2026). */
+.maple-footer-contact img.maple-footer-marketplace {
+  display: block;
+  box-sizing: border-box;
+  width: 136px;
+  height: auto;
+  padding: 10px 16px 7px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(30 6 4 / 0.22);
+}
 .maple-footer-contact h3 { margin: 0; padding: 11.2px 0; }
 .maple-footer-contact a { margin: 0; min-height: 42px; }
 .maple-footer-contact a + a { margin-top: 12px; }

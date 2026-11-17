@@ -57,10 +57,11 @@ test("the statement band reads as the owner's line, 'custom-built' in script, it
   assert.equal(text(band.querySelector("[data-typed-live]")), "it is custom-built.");
 });
 
-test("offer cards carry the frame's artwork edge to edge, with no second arrow on top of the artwork's own", async () => {
+// The bundled artwork's painted arrow was painted out (owner, 16 Nov 2026): each card carries the live arrow instead.
+test("offer cards carry the frame's artwork edge to edge, each with the live arrow", async () => {
   const tiles = [...section(await renderHome(), "offers").querySelectorAll("[data-offer-tile]")];
   assert.deepEqual(tiles.map((tile) => shownSrc(tile.querySelector("img")!)), ["clearance-sale", "minimum-30", "best-buy-50k", "furniture-25k"].map((key) => `/media/home/offer-${key}.webp`));
-  assert.equal(tiles.filter((tile) => tile.querySelector("[data-offer-arrow]")).length, 0);
+  assert.equal(tiles.filter((tile) => tile.querySelector("[data-offer-arrow]")).length, tiles.length);
 });
 
 test("Our Social Proof has no Instagram icon or handle under its heading", async () => {
@@ -108,13 +109,16 @@ test("Nimbus with the staff's own artwork keeps the word in the artwork, with no
   assert.match(nimbus.querySelector("picture img")!.getAttribute("src")!, /f{64}\.webp/);
 });
 
-test("the hero ships with four slides, as the frame has four dots: four stills of Keeri products (the shop film left with Shopify)", async () => {
+// QA report, 16 Nov 2026: Terra gained two slides of its own, between the Nimbus rooms.
+test("the hero ships with six slides: the workshop, three Nimbus rooms of Keeri products and two Terra photos (the shop film left with Shopify)", async () => {
   const hero = section(await renderHome(), "hero");
   const slides = [...hero.querySelectorAll("[data-hero-slide]")];
-  assert.equal(slides.length, 4);
-  assert.equal(hero.querySelectorAll("[data-slider-dots] button, .slider-dots button").length, 4, "one dot per slide");
-  assert.deepEqual(slides.map((slide) => slide.querySelector("video")), [null, null, null, null], "no film");
-  assert.deepEqual(slides.map((slide) => slide.querySelector("img")!.getAttribute("alt")), ["Maple furniture", "Living room", "Bedroom", "Dining room"]);
+  assert.equal(slides.length, 6);
+  assert.equal(hero.querySelectorAll("[data-slider-dots] button, .slider-dots button").length, 6, "one dot per slide");
+  assert.deepEqual(slides.map((slide) => slide.querySelector("video")), Array(6).fill(null), "no film");
+  const alts = slides.map((slide) => slide.querySelector("img")!.getAttribute("alt") ?? "");
+  assert.deepEqual([alts[0], alts[1], alts[3], alts[5]], ["Maple furniture", "Living room", "Bedroom", "Dining room"]);
+  assert.ok([alts[2], alts[4]].every((alt) => /olive sofa/.test(alt ?? "")), "Terra's photos keep their own descriptions");
   for (const slide of slides) assert.equal(text(slide.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
 });
 

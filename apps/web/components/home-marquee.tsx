@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 /**
  * A row that drifts left on its own, without end, its items staying sharp and slipping out of sight at the
@@ -7,6 +8,9 @@ import type { CSSProperties, ReactNode } from "react";
  * loaded it eases to a stop and back into its drift instead (lib/home-effects.ts). There is no pause button (owner,
  * 10 Nov 2026), and under reduced motion it is a plain row that scrolls. The second copy is hidden from assistive
  * technology and from the tab order.
+ *
+ * Previous and next buttons under the row step it one item at a time (QA report, 16 Nov 2026: the drift was the only
+ * way through it). They show once the homepage's effects have wired them, as the drift needs script to be stepped.
  */
 export function HomeMarquee({ label, className = "", seconds, autoplay = true, items }: {
   label: string;
@@ -25,6 +29,12 @@ export function HomeMarquee({ label, className = "", seconds, autoplay = true, i
           {autoplay && <div className="home-marquee-group" data-marquee-group data-marquee-copy aria-hidden="true">{items(true)}</div>}
         </div>
       </div>
+      {autoplay && (
+        <div className="home-carousel-controls home-marquee-steps">
+          <button type="button" data-marquee-prev aria-label={`Previous ${label}`}><ArrowLeft size={20} aria-hidden="true" /></button>
+          <button type="button" data-marquee-next aria-label={`Next ${label}`}><ArrowRight size={20} aria-hidden="true" /></button>
+        </div>
+      )}
     </div>
   );
 }

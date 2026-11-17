@@ -80,7 +80,7 @@ export function Footer({
               <div className="maple-footer-care" key={key}>
                 <h2>{footer.careHeading}</h2>
                 <p>
-                  <ContentImage src={artwork.map.src} alt={artwork.map.alt} data-media-slot={chromeArtworkSlots.map} width={40} height={42} />
+                  <ContentImage src={artwork.map.src} alt={artwork.map.alt} data-media-slot={chromeArtworkSlots.map} width={40} height={40} />
                   <span>
                     {footer.addressLines.map((line, index) => (
                       <Fragment key={index}>
@@ -91,11 +91,11 @@ export function Footer({
                   </span>
                 </p>
                 <a href={`tel:${footer.customerPhone}`}>
-                  <ContentImage src={artwork.phone.src} alt={artwork.phone.alt} data-media-slot={chromeArtworkSlots.phone} width={40} height={42} />{" "}
+                  <ContentImage src={artwork.phone.src} alt={artwork.phone.alt} data-media-slot={chromeArtworkSlots.phone} width={40} height={40} />{" "}
                   {footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${footer.customerEmail}`}>
-                  <ContentImage src={artwork.mail.src} alt={artwork.mail.alt} data-media-slot={chromeArtworkSlots.mail} width={40} height={42} /> {footer.customerEmail}
+                  <ContentImage src={artwork.mail.src} alt={artwork.mail.alt} data-media-slot={chromeArtworkSlots.mail} width={40} height={40} /> {footer.customerEmail}
                 </a>
               </div>
             );
@@ -124,6 +124,7 @@ export function Footer({
                 <div key={key}>
                   <h3>{footer.findUsHeading}</h3>
                   <ContentImage
+                    className="maple-footer-marketplace"
                     src={artwork.marketplace.src}
                     data-media-slot={chromeArtworkSlots.marketplace}
                     alt={artwork.marketplace.alt || "Amazon"}
@@ -139,11 +140,11 @@ export function Footer({
               <div key={key}>
                 <h3>{bulk ? footer.bulkHeading : footer.serviceHeading}</h3>
                 <a href={`tel:${phone}`}>
-                  <ContentImage src={artwork.phoneLight.src} alt={artwork.phoneLight.alt} data-media-slot={chromeArtworkSlots.phoneLight} width={40} height={42} />{" "}
+                  <ContentImage src={artwork.phoneLight.src} alt={artwork.phoneLight.alt} data-media-slot={chromeArtworkSlots.phoneLight} width={40} height={40} />{" "}
                   {bulk ? footer.bulkPhoneLabel : footer.customerPhoneLabel}
                 </a>
                 <a href={`mailto:${email}`}>
-                  <ContentImage src={artwork.mailLight.src} alt={artwork.mailLight.alt} data-media-slot={chromeArtworkSlots.mailLight} width={40} height={42} /> {email}
+                  <ContentImage src={artwork.mailLight.src} alt={artwork.mailLight.alt} data-media-slot={chromeArtworkSlots.mailLight} width={40} height={40} /> {email}
                 </a>
               </div>
             );

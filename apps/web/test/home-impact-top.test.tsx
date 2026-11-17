@@ -37,10 +37,11 @@ test("the hero is a bento: the slides tile with its headline and four category t
   assert.ok(hero.querySelector("[data-hero-bento]"), "bento container");
   assert.equal(text(hero.querySelector("[data-hero-headline]")), "Timeless Craftsmanship for Modern Living");
   assert.equal(text(hero.querySelector("[data-hero-intro]")), "Handcrafted furniture that brings elegance to every corner of your home.");
-  // The owner's film was on Shopify and left the store (11 Nov 2026): the large tile shows four stills of Keeri products.
+  // The owner's film was on Shopify and left the store (11 Nov 2026): the large tile shows stills, Keeri products for the
+  // workshop and Nimbus, and Terra's own photos between them (QA report, 16 Nov 2026).
   assert.equal(hero.querySelector("[data-hero-film] video"), null);
-  assert.deepEqual([...hero.querySelectorAll("[data-hero-film] [data-hero-slide] img")].map((img) => decodeURIComponent(img.getAttribute("src") ?? "").match(/\/media\/keeri\/([a-z-]+)\.webp/)?.[1]),
-    ["arbor-sofa", "aurevo", "altura-table", "meridian-table"]);
+  assert.deepEqual([...hero.querySelectorAll("[data-hero-film] [data-hero-slide] img")].map((img) => decodeURIComponent(img.getAttribute("src") ?? "").match(/\/media\/(?:keeri|terra-collection)\/([a-z-]+)\.webp/)?.[1]),
+    ["arbor-sofa", "aurevo", "hero", "altura-table", "room-lobby", "meridian-table"]);
   const tiles = [...hero.querySelectorAll("[data-hero-tile]")];
   assert.deepEqual(tiles.map((tile) => tile.getAttribute("data-hero-tile")), ["sofas", "chairs", "tables", "beds"]);
   assert.deepEqual(tiles.map((tile) => text(tile.querySelector("[data-hero-tile-title]"))), ["Sofas", "Chairs", "Tables", "Beds"]);

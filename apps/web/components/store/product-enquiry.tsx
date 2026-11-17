@@ -1,6 +1,7 @@
 "use client";
 import type { FormEvent } from "react";
 import { useEnquiry } from "@/components/use-enquiry";
+import { useEnquiryValidation } from "@/components/enquiry-validation";
 
 const field = "block w-full border-0 bg-white px-[21px] text-[16px] text-black placeholder:text-black focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-maple";
 
@@ -10,17 +11,11 @@ const field = "block w-full border-0 bg-white px-[21px] text-[16px] text-black p
  */
 export function ProductEnquiry({ product, variant, sku }: { product: string; variant: string; sku: string }) {
   const enquiry = useEnquiry();
+  const check = useEnquiryValidation({ name: "optional", phone: "optional", message: "optional" });
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    void enquiry.submit({
-      kind: "project",
-      name: String(form.get("name") ?? ""),
-      email: String(form.get("email") ?? ""),
-      phone: String(form.get("phone") ?? ""),
-      message: String(form.get("message") ?? ""),
-      context: { product, variant, sku, pincode: "" },
-    });
+    const values = check.check(event.currentTarget);
+    if (values) void enquiry.submit({ kind: "project", ...values, context: { product, variant, sku, pincode: "" } });
   }
   return (
     <section data-store data-enquiry aria-labelledby="product-enquiry-title" className="bg-[#f8f7f3] px-4 py-10 font-text md:px-12">
@@ -30,13 +25,13 @@ export function ProductEnquiry({ product, variant, sku }: { product: string; var
           <p className="m-0 max-w-[560px] text-[18px] leading-[1.45] text-[#4b4b4b]">Describe your project to us and our team will come back within 24 hours with options, pricing and a clear timeline.</p>
           <p className="m-0 max-w-[560px] text-[18px] leading-[1.45] text-[#4b4b4b]">Whether the brief is a single statement chair or a complete room, the process starts the same way: with a conversation.</p>
         </div>
-        <form onSubmit={submit} onChange={enquiry.clear} className="grid gap-3.5">
+        <form onSubmit={submit} onChange={event => { enquiry.clear(); check.onChange(event); }} className="grid gap-3.5" noValidate>
           <div className="grid gap-3.5 sm:grid-cols-2">
-            <label><span className="sr-only">Name</span><input name="name" autoComplete="name" placeholder="Name" maxLength={100} className={`${field} h-[59px]`} /></label>
-            <label><span className="sr-only">Email (required)</span><input name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} placeholder="Email" required maxLength={254} className={`${field} h-[59px]`} /></label>
+            <label><span className="sr-only">Name</span><input name="name" autoComplete="name" placeholder="Name" maxLength={100} className={`${field} h-[59px]`} {...check.field("name")} />{check.message("name")}</label>
+            <label><span className="sr-only">Email (required)</span><input name="email" type="email" autoComplete="email" autoCapitalize="off" spellCheck={false} placeholder="Email" required maxLength={254} className={`${field} h-[59px]`} {...check.field("email")} />{check.message("email")}</label>
           </div>
-          <label><span className="sr-only">Phone</span><input name="phone" type="tel" autoComplete="tel" placeholder="Phone" maxLength={30} className={`${field} h-[59px]`} /></label>
-          <label><span className="sr-only">Tell us about your project</span><textarea name="message" placeholder="Tell us about your project" maxLength={5000} className={`${field} h-[289px] resize-y py-[18px]`} /></label>
+          <label><span className="sr-only">Phone</span><input name="phone" type="tel" autoComplete="tel" placeholder="Phone" maxLength={30} className={`${field} h-[59px]`} {...check.field("phone")} />{check.message("phone")}</label>
+          <label><span className="sr-only">Tell us about your project</span><textarea name="message" placeholder="Tell us about your project" maxLength={5000} className={`${field} h-[289px] resize-y py-[18px]`} {...check.field("message")} />{check.message("message")}</label>
           <div className="flex flex-wrap items-center gap-4">
             <button type="submit" disabled={enquiry.pending} className="h-[57px] cursor-pointer rounded-[4px] border-0 bg-[#741a14] px-6 font-text text-[16px] text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,0.68)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#741a14]">
               {enquiry.pending ? "Sending…" : "Submit"}

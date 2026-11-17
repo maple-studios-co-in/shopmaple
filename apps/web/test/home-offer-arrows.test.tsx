@@ -10,8 +10,8 @@ import { defaultStorefrontContent } from "../lib/content-defaults";
 import { resolveHomeMerchandising } from "../lib/home-merchandising-defaults";
 
 // The owner asked for the categories' arrow on each offer card too: at its bottom right, pointing right, in Maple's
-// dark red (10 Nov 2026). The live offers are staff uploads with no arrow of their own; the bundled artwork draws one,
-// so it gets no second (home-impact-followup.test.tsx).
+// dark red (10 Nov 2026). The live offers are staff uploads with no arrow of their own. The bundled artwork painted one,
+// which could not answer the pointer, so it was painted out and every card now carries the live arrow (16 Nov 2026).
 const uploaded = (n: number) => `/media/uploads/${String(n).repeat(64)}.webp`;
 async function home(withUploads = true) {
   const content = structuredClone(defaultStorefrontContent);
@@ -61,8 +61,8 @@ test("the offer arrow sits at the card's bottom left, white with a dark maple ar
   assert.match(hover, /transform: translateX\(3px\);/);
 });
 
-test("the bundled offer artwork, which draws its own arrow, is not given a second", async () => {
+test("the bundled offer artwork carries the live arrow too, so its cards answer the pointer like the uploads", async () => {
   const offers = [...(await home(false)).querySelectorAll('[data-home-section="offers"] a[data-offer-tile]')];
   assert.ok(offers.length >= 4);
-  assert.equal(offers.filter((offer) => offer.querySelector("[data-offer-arrow]")).length, 0);
+  assert.equal(offers.filter((offer) => offer.querySelector("svg[data-offer-arrow]")).length, offers.length);
 });

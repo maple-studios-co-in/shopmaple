@@ -13,3 +13,192 @@ html:has(.site-header) *::-webkit-scrollbar {
 }
 
 /* Shared product-card and product-gallery wishlist control. */
+
+/* ---- Enquiry forms: a box with a problem, and the problem written under it ---------------------------------------
+   (components/enquiry-validation.tsx; QA report, 16 Nov 2026). The box's edge turns red and the words say what to fix. */
+.enquiry-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  color: #b3261e;
+  font: 400 12.5px/1.4 var(--font-text);
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+}
+.enquiry-field-error::before {
+  content: "!";
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: #b3261e;
+  color: #fff;
+  font: 700 10px/1 var(--font-text);
+}
+:where(label:has(.enquiry-field-error)) :is(input, textarea, select)[aria-invalid="true"],
+.home-project-form :is(input, textarea)[aria-invalid="true"],
+[data-home-section="project"] .home-project-form :is(input, textarea)[aria-invalid="true"],
+.home-newsletter-form input[aria-invalid="true"] {
+  border-color: #b3261e;
+  box-shadow: inset 0 0 0 1px #b3261e;
+}
+/* Underlined boxes (Contact, Bulk Enquiry) keep their single line, in red and a touch heavier. */
+.contact-us .contact-form :is(input, textarea)[aria-invalid="true"],
+.bulk-page .bulk-field :is(input, select, textarea)[aria-invalid="true"] {
+  border-bottom-color: #b3261e;
+  box-shadow: 0 1px 0 #b3261e;
+}
+/* On the newsletter's burgundy band the words are light, so they can be read. */
+.home-newsletter .enquiry-field-error {
+  margin-top: 10px;
+  color: #ffe2d8;
+}
+.home-newsletter .enquiry-field-error::before {
+  background: #ffe2d8;
+  color: #741a14;
+}
+.home-newsletter-form input[aria-invalid="true"] {
+  border-color: #ffb4a3;
+  box-shadow: inset 0 0 0 2px #ffb4a3;
+}
+
+/* ---- Side panels slide in and out -----------------------------------------------------------------------------------
+   The bag, the wishlist and the menu come in from their edge, over a veil that fades; a centred dialog
+   rises a touch as it fades in. Each leaves the way it came (QA report, 16 Nov 2026: the panels appeared and vanished at
+   once). The dialog stays in the top layer while it leaves (`overlay`, `display` allow-discrete); a browser without
+   these simply opens and closes them at once, as before. */
+.modal,
+.maple-mobile-drawer {
+  transition:
+    transform 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    overlay 0.46s allow-discrete,
+    display 0.46s allow-discrete;
+}
+.modal::backdrop,
+.maple-mobile-drawer::backdrop {
+  transition: opacity 0.36s ease, overlay 0.46s allow-discrete, display 0.46s allow-discrete;
+}
+/* The bag and the wishlist both open at the right edge (by the icons that open them); the menu at the left. */
+.modal:not([open]) { opacity: 0; transform: translateY(12px) scale(0.98); }
+.modal.cart-drawer:not([open]) { opacity: 1; transform: translateX(100%); }
+.maple-mobile-drawer:not([open]) { opacity: 1; transform: translateX(-100%); }
+.modal:not([open])::backdrop,
+.maple-mobile-drawer:not([open])::backdrop { opacity: 0; }
+@starting-style {
+  .modal[open] { opacity: 0; transform: translateY(12px) scale(0.98); }
+  .modal.cart-drawer[open] { opacity: 1; transform: translateX(100%); }
+  .maple-mobile-drawer[open] { opacity: 1; transform: translateX(-100%); }
+  .modal[open]::backdrop,
+  .maple-mobile-drawer[open]::backdrop { opacity: 0; }
+}
+.modal.cart-drawer[open],
+.maple-mobile-drawer[open] { box-shadow: 0 0 60px rgb(23 17 11 / 0.18); }
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .maple-mobile-drawer,
+  .modal::backdrop,
+  .maple-mobile-drawer::backdrop { transition: none; }
+}
+
+/* ---- Hover feedback on text links ------------------------------------------------------------------------------------
+   Words that lead somewhere answer the pointer, as the sign-in page's links do (QA report, 16 Nov 2026: "Tell Us About
+   Your Space", the footer's links, its contact lines and policies, and the editorial's "Shop Dining" stayed still). A
+   link with an arrow draws a fine underline in from the left and steps its arrow on; a plain link turns burgundy and
+   underlines. */
+[data-home-section="difference"] [data-difference-link],
+.landing-products > header > a,
+[data-home-section="hero"] .category-tile [data-hero-tile-cta] {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0 1px;
+  text-decoration: none;
+  transition: background-size 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.25s ease;
+}
+[data-home-section="difference"] [data-difference-link] svg,
+[data-home-section="hero"] .category-tile [data-hero-tile-cta] svg,
+.maple-mega-custom em svg {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-home-section="difference"] [data-difference-link]:is(:hover, :focus-visible),
+.landing-products > header > a:is(:hover, :focus-visible),
+[data-home-section="hero"] .category-tile:is(:hover, :focus-visible) [data-hero-tile-cta] {
+  background-size: 100% 1px;
+}
+[data-home-section="difference"] [data-difference-link]:is(:hover, :focus-visible) svg,
+[data-home-section="hero"] .category-tile:is(:hover, :focus-visible) [data-hero-tile-cta] svg,
+.maple-mega-custom:is(:hover, :focus-visible) em svg {
+  transform: translateX(4px);
+}
+/* The hero's category tiles: as the photo grows, the name lifts a little and turns burgundy and "View Collection"
+   underlines with its arrow stepping on, on the photo's own curve, so the whole tile answers at once (QA report). */
+[data-home-section="hero"] .category-tile [data-hero-tile-cta] { display: inline-flex; padding-bottom: 2px; }
+[data-home-section="hero"] .category-tile [data-hero-tile-title] {
+  transition: color 0.45s ease, transform 0.9s cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+[data-home-section="hero"] .category-tile:is(:hover, :focus-visible) [data-hero-tile-title] {
+  color: var(--impact-burgundy, #741a14);
+  transform: translateY(-2px);
+}
+/* Footer: its columns' links, the policies menu and its links, the social icons and the logo. */
+.maple-footer-main nav > a,
+.maple-footer-care a,
+.maple-footer-policies summary,
+.maple-footer-policies nav a,
+.maple-footer-bottom > div > a {
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+.maple-footer-main nav > a:hover,
+.maple-footer-care a:hover,
+.maple-footer-policies summary:hover,
+.maple-footer-policies[open] summary,
+.maple-footer-policies nav a:hover,
+.maple-footer-policies nav a:focus-visible {
+  color: #741a14;
+  text-decoration-color: currentColor;
+}
+.maple-footer-policies nav a { display: block; padding: 4px 0; }
+.maple-footer-bottom > div > a { display: inline-grid; place-items: center; }
+.maple-footer-bottom > div > a:hover { color: #741a14; transform: translateY(-2px); }
+.maple-footer-logo { transition: opacity 0.2s ease; }
+.maple-footer-logo:hover { opacity: 0.82; }
+/* The contact band is burgundy: its lines underline in their own light colour, and the icon lifts. */
+.maple-footer-contact a { text-decoration-line: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: text-decoration-color 0.2s ease; }
+.maple-footer-contact a:hover { text-decoration-color: currentColor; }
+.maple-footer-contact a img,
+.maple-footer-care a img { transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+.maple-footer-contact a:hover img,
+.maple-footer-care a:hover img { transform: translateY(-2px); }
+/* The editorial's small capitals link and the enquiry's send button. */
+[data-home-section="editorial"] [data-editorial-cta] { transition: color 0.2s ease, text-underline-offset 0.2s ease; }
+[data-home-section="editorial"] [data-editorial-cta]:hover { color: #741a14; text-underline-offset: 6px; }
+[data-home-section="project"] .home-project-form .button { transition: background-color 0.2s ease, transform 0.2s ease; }
+[data-home-section="project"] .home-project-form .button:hover:not(:disabled) { background: #5c140f; }
+[data-home-section="project"] .home-project-form .button svg { transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+[data-home-section="project"] .home-project-form .button:hover:not(:disabled) svg { transform: translateX(3px); }
+.home-catalogue-unavailable a:hover { color: #741a14; text-decoration: underline; text-underline-offset: 4px; }
+/* A slide's dot brightens under the pointer. */
+.slider-dots button:hover::before { background: rgb(255 255 255 / 0.85); }
+@media (prefers-reduced-motion: reduce) {
+  [data-home-section="difference"] [data-difference-link],
+  .landing-products > header > a,
+  [data-home-section="hero"] .category-tile [data-hero-tile-cta],
+  [data-home-section="difference"] [data-difference-link] svg,
+  [data-home-section="hero"] .category-tile [data-hero-tile-cta] svg,
+  [data-home-section="hero"] .category-tile [data-hero-tile-title],
+  .maple-mega-custom em svg,
+  .maple-footer-bottom > div > a,
+  .maple-footer-contact a img,
+  .maple-footer-care a img { transition: none; }
+  [data-home-section="hero"] .category-tile:is(:hover, :focus-visible) [data-hero-tile-title] { transform: none; }
+}

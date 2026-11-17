@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { cx } from "@/lib/cx";
 import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
 import { useEnquiry } from "@/components/use-enquiry";
+import { useEnquiryValidation } from "@/components/enquiry-validation";
 import { ProductImage } from "./product-image";
 
 // The frame's illustrative samples (Figma 44:479 / 46:630); the final cloths and polishes are confirmed with the quote.
@@ -69,6 +70,7 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const enquiry = useEnquiry();
+  const check = useEnquiryValidation({ name: "required", phone: "required" });
   const [fabric, setFabric] = useState<string | null>(null);
   const [polish, setPolish] = useState<string | null>(null);
   useEffect(() => {
@@ -87,13 +89,15 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
   const shareText = `Hello Maple, here are reference photos for a customised ${product.title}${fabric ? `, fabric ${fabric}` : ""}${polish ? `, wood polish ${polish}` : ""}.`;
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const values = check.check(event.currentTarget);
+    if (!values) return;
     const form = new FormData(event.currentTarget);
     const idea = String(form.get("idea") ?? "").trim();
     void enquiry.submit({
       kind: "project",
-      name: String(form.get("name") ?? ""),
-      email: String(form.get("email") ?? ""),
-      phone: String(form.get("phone") ?? "").trim() ? `+91 ${String(form.get("phone")).trim()}` : "",
+      name: values.name,
+      email: values.email,
+      phone: values.phone.startsWith("+") ? values.phone : `+91 ${values.phone}`,
       message: ["Customisation quote request", `Fabric: ${fabric ?? "Not chosen"}`, `Wood polish: ${polish ?? "Not chosen"}`, ...(idea ? [`Their idea: ${idea}`] : [])].join("\n"),
       context: { product: product.title, variant: variant?.title ?? "", sku: variant?.sku ?? "", pincode: "" },
     });
@@ -114,7 +118,7 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
     <dialog ref={dialog} data-store data-customise aria-labelledby="customise-title" onClose={onClose}
       onClick={(event) => { if (event.target === dialog.current) onClose(); }}
       className="m-0 h-[100dvh] max-h-none w-full max-w-none overflow-hidden border-0 bg-white p-0 font-text text-[#1c1c1c] backdrop:bg-[#17171175] lg:m-auto lg:h-[min(950px,calc(100dvh-48px))] lg:w-[min(1152px,calc(100vw-48px))] lg:rounded-[20px] lg:shadow-[0_16px_60px_rgb(31_18_13/0.18)]">
-      <form onSubmit={submit} onChange={enquiry.clear} className="flex h-full min-h-0 flex-col lg:grid lg:grid-cols-[344px_minmax(0,1fr)]">
+      <form onSubmit={submit} onChange={event => { enquiry.clear(); check.onChange(event); }} noValidate className="flex h-full min-h-0 flex-col lg:grid lg:grid-cols-[344px_minmax(0,1fr)]">
         {/* Desktop: the piece and the live selection (44:480). */}
         <aside className="hidden min-h-0 flex-col gap-6 overflow-y-auto bg-[#f7f3ee] p-8 lg:flex">
           <p className="m-0 text-[11px] leading-[15px] font-semibold tracking-[1.8px] text-maple">MADE AROUND YOU</p>
@@ -201,14 +205,14 @@ export function CustomiseQuote({ open, onClose, product, variant }: {
                 <Step number="04" phone="Get your personal quote" desktop="Where should we send your quote?" lede={["How can the Maple team reach you?", ""]}>
                   <div className="grid gap-3.5 lg:grid-cols-3">
                     <label className="flex flex-col gap-1.5"><span className={label}>Your name *</span>
-                      <input name="name" required autoComplete="name" maxLength={100} placeholder="Full name" className={input} /></label>
+                      <input name="name" required autoComplete="name" maxLength={100} placeholder="Full name" className={input} {...check.field("name")} />{check.message("name")}</label>
                     <label className="flex flex-col gap-1.5"><span className={label}>WhatsApp / phone *</span>
                       <span className="relative block">
                         <span aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[16px] text-[#9b918b] lg:text-[13px]">+91</span>
-                        <input name="phone" type="tel" required inputMode="tel" autoComplete="tel-national" maxLength={20} pattern="[0-9 ]{10,14}" placeholder="Mobile number" aria-label="WhatsApp or phone number, after +91" className={cx(input, "pl-12 lg:pl-10")} />
-                      </span></label>
+                        <input name="phone" type="tel" required inputMode="tel" autoComplete="tel-national" maxLength={20} placeholder="Mobile number" aria-label="WhatsApp or phone number, after +91" className={cx(input, "pl-12 lg:pl-10")} {...check.field("phone")} />
+                      </span>{check.message("phone")}</label>
                     <label className="flex flex-col gap-1.5"><span className={label}>Email *</span>
-                      <input name="email" type="email" required autoComplete="email" autoCapitalize="off" spellCheck={false} maxLength={254} placeholder="you@example.com" className={input} /></label>
+                      <input name="email" type="email" required autoComplete="email" autoCapitalize="off" spellCheck={false} maxLength={254} placeholder="you@example.com" className={input} {...check.field("email")} />{check.message("email")}</label>
                   </div>
                   <p className="m-0 text-[12px] leading-[17px] text-[#756d68] lg:hidden">We’ll only use these details to discuss your customisation request.</p>
                 </Step>

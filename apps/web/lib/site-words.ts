@@ -18,6 +18,8 @@ export type SiteWordEntry = { text: string; label: string; place: SitePlace; mul
 /** Where each word sits and what the Site words screen calls it; the words themselves live in lib/site-word-defaults.ts. */
 const siteWordLabels = {
   // Homepage
+  "home.hero.nimbusLabel": { place: "Homepage", label: "Hero: small heading on the Nimbus photos" },
+  "home.hero.terraLabel": { place: "Homepage", label: "Hero: small heading on the Terra photos" },
   "home.bestsellers.eyebrow": { place: "Homepage", label: "Bestsellers: small heading" },
   "home.bestsellers.lede": { place: "Homepage", label: "Bestsellers: line under the heading" },
   "home.bestsellers.viewAll": { place: "Homepage", label: "Bestsellers: View all link (before the heading)" },
