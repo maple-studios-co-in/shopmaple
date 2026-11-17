@@ -35,8 +35,9 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
       throw new Error("ISOLATED_DATABASE_APPROVAL_REQUIRED");
   }
   // The richest level first. Each needs a Keeri release that offers it; an older Keeri refuses it
-  // with 400 and the sync steps down a level (feature photo, minimum orders, free delivery, offers, product page, variant options, plain).
+  // with 400 and the sync steps down a level (complete the look, feature photo, minimum orders, free delivery, offers, product page, variant options, plain).
   const levels = [
+    { includeAttributes: true, includeProductPage: true, includeOffers: true, includeFreeDelivery: true, includeMinOrder: true, includeFeaturePhoto: true, includeCompleteLook: true },
     { includeAttributes: true, includeProductPage: true, includeOffers: true, includeFreeDelivery: true, includeMinOrder: true, includeFeaturePhoto: true },
     { includeAttributes: true, includeProductPage: true, includeOffers: true, includeFreeDelivery: true, includeMinOrder: true },
     { includeAttributes: true, includeProductPage: true, includeOffers: true, includeFreeDelivery: true },
@@ -45,7 +46,7 @@ export async function pullCatalogueUnion(options: UnionSyncOptions) {
     { includeAttributes: true, includeProductPage: false, includeOffers: false },
     { includeAttributes: false, includeProductPage: false, includeOffers: false },
   ];
-  const unsupported = new Set(["FEATURE_PHOTO_UNSUPPORTED", "MIN_ORDER_UNSUPPORTED", "FREE_DELIVERY_UNSUPPORTED", "OFFERS_UNSUPPORTED", "PRODUCT_PAGE_UNSUPPORTED", "ATTRIBUTES_UNSUPPORTED"]);
+  const unsupported = new Set(["COMPLETE_LOOK_UNSUPPORTED", "FEATURE_PHOTO_UNSUPPORTED", "MIN_ORDER_UNSUPPORTED", "FREE_DELIVERY_UNSUPPORTED", "OFFERS_UNSUPPORTED", "PRODUCT_PAGE_UNSUPPORTED", "ATTRIBUTES_UNSUPPORTED"]);
   const request = async (level: number): Promise<Awaited<ReturnType<typeof fetchKeeriExport>>> => {
     try {
       return await fetchKeeriExport({

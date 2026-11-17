@@ -17,7 +17,7 @@ import { useShop } from "../shop-provider";
 import { Modal } from "./modal";
 import { assurances, cheapestPriced, discountPercent, enquiryLink, freeDelivery, shipsFree, showroom, warrantyLabel } from "./product-assurances";
 import { ProductBanner } from "./product-banner";
-import { CompleteTheLook } from "./complete-the-look";
+import { CompleteTheLook, type LookPiece } from "./complete-the-look";
 import { ProductBundle } from "./product-bundle";
 import { CustomiseQuote } from "./customise-quote";
 import { DealTab, ProductDeal, dealKey, useRunningOffer } from "./product-deal";
@@ -57,9 +57,10 @@ const textCard = (value: string | null | undefined): ReactNode => value?.trim() 
  * holds pieces from the rooms this piece is styled with, for the buy box's "Complete the look"; `bundle` holds two of
  * them in full, for "Buy in Bundle" above the related row. When staff built a Keeri bundle for this piece, the page passes
  * its pieces instead, and `bundleQuantities` (by product handle) carries the quantity Keeri set for each. `serverNow` is
- * the server's clock when it rendered the page, which the offer timer starts from.
+ * the server's clock when it rendered the page, which the offer timer starts from. `lookByVariant` holds, by variant id,
+ * the pieces Keeri staff picked for that variant's "Complete the look"; a variant without any shows `completeLook`.
  */
-export function ProductDetail({ product, initialVariant, presentation, completeLook = [], bundle = [], bundleQuantities, serverNow, banner, children }: {
+export function ProductDetail({ product, initialVariant, presentation, completeLook = [], lookByVariant, bundle = [], bundleQuantities, serverNow, banner, children }: {
   product: Product;
   /** The banner's photo (template artwork `product-banner`), resolved by the page. */
   banner?: { image: string; alt: string };
@@ -67,6 +68,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   initialVariant?: string;
   presentation?: Presentation;
   completeLook?: ProductCard[];
+  lookByVariant?: Record<string, LookPiece[]>;
   bundle?: Product[];
   bundleQuantities?: Record<string, number>;
   children?: ReactNode;
@@ -383,7 +385,7 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
               </p>
             </div>
           )}
-          <CompleteTheLook pieces={completeLook} />
+          <CompleteTheLook pieces={lookByVariant?.[variantId] ?? completeLook} />
           <div data-showroom className="relative rounded-[10px] bg-maple/6 py-4 pr-4 pl-10">
             {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}
             <img src="/product-page/showroom-check.svg" alt="" width={14} height={14} className="absolute top-[20px] left-4 size-3.5" />

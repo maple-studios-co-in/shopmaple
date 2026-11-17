@@ -9,7 +9,7 @@ import { productHighlightsSchema, toProductCard, type Cart, type Product, type P
 import { ProductDetail } from "../components/product-detail";
 import { ShopProvider } from "../components/shop-provider";
 import { ProductHighlightsProvider } from "../components/store/product-highlights";
-import { completeLookCategories, lookPieces } from "../lib/product-related";
+import { completeLookCategories, lookPieces, pickedLooks } from "../lib/product-related";
 import { endsLabel } from "../components/store/product-deal";
 
 // The owner's review file (Figma GJsFInfhys0crdNpQsbUUU, frame 2:371 "Product detail Page"): the buy box (2:434), the
@@ -329,4 +329,19 @@ test("the invitation band is flat maple red #80241C, with no light, shading or g
   assert.match(tailwind, /--color-maple: #80241c;/i, "bg-maple is #80241C");
   assert.doesNotMatch(css, /\[data-reviews-empty\]\s*\{[^}]*gradient/, "no light or darkened edges");
   assert.doesNotMatch(css, /\[data-reviews-empty\]::after/, "no grain");
+});
+
+test("staff's picks become each variant's cards in their order, at most four, leaving out a piece that did not load", () => {
+  const card = (handle: string) => ({ handle, title: handle });
+  const cards = ["sofa", "table", "lamp", "rug", "stool"].map(card);
+  const looks = pickedLooks([
+    ["grey", [{ handle: "table", variantId: "table-oak" }, { handle: "gone", variantId: null }, { handle: "sofa", variantId: null }]],
+    ["oak", ["sofa", "table", "lamp", "rug", "stool"].map((handle) => ({ handle, variantId: null }))],
+    ["blue", []],
+    ["red", [{ handle: "gone", variantId: null }]],
+  ], cards);
+  assert.deepEqual(looks.grey, [{ ...card("table"), variant: "table-oak" }, { ...card("sofa"), variant: null }]);
+  assert.deepEqual(looks.oak!.map((piece) => piece.handle), ["sofa", "table", "lamp", "rug"]);
+  // A variant with nothing to show is not listed, so the page shows its own choice there.
+  assert.deepEqual(Object.keys(looks), ["grey", "oak"]);
 });

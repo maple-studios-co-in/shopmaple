@@ -56,7 +56,7 @@ const tableProduct: Product = { id: "table", handle: "demo-table", title: "Demo 
 // What the route passes for a Keeri bundle: its other pieces as cards and in full, with Keeri's quantities.
 const keeriBundle: { completeLook: ProductCard[]; bundle: Product[]; bundleQuantities: Record<string, number> } = { completeLook: [table], bundle: [tableProduct], bundleQuantities: { "demo-chair": 4, "demo-table": 1 } };
 
-async function mount(check: (doc: Document) => void | Promise<void>, value: Product = demo, pieces: typeof keeriBundle = keeriBundle, variant = "ash-grey") {
+async function mount(check: (doc: Document) => void | Promise<void>, value: Product = demo, pieces: typeof keeriBundle & { lookByVariant?: Record<string, (ProductCard & { variant?: string | null })[]> } = keeriBundle, variant = "ash-grey") {
   const previous = globalThis.fetch;
   globalThis.fetch = async () => Response.json(empty);
   const root = createRoot(document.getElementById("root")!);
@@ -239,4 +239,19 @@ test("the photograph staff picked in Keeri for the band between Specifications a
     assert.match(decodeURIComponent(frame.querySelector("img")!.getAttribute("src")!), /grey-cutout/);
     assert.match(frame.className, /\[&_img\]:object-contain/);
   }, { ...demo, productPage: { ...page, featurePhoto: photo("grey-cutout") } });
+});
+
+test("the pieces staff picked in Keeri for a finish lead its Complete the look; a finish without picks keeps the store's choice", async () => {
+  const sofa: ProductCard = { ...table, id: "sofa", handle: "demo-sofa", title: "Demo Sofa", image: photo("sofa"), category: "sofas" };
+  const picked = { ...keeriBundle, lookByVariant: { grey: [{ ...sofa, variant: "sofa-blue" }, { ...table, variant: null }] } };
+  await mount((doc) => {
+    assert.deepEqual([...doc.querySelectorAll("[data-complete-look] [data-look-name]")].map(text), ["Demo Sofa", "Demo Table"]);
+    // A picked variant opens on its own page; a piece with the buyer choosing opens on the product.
+    assert.deepEqual([...doc.querySelectorAll("[data-complete-look] [data-look-view]")].map((a) => a.getAttribute("href")), ["/products/demo-sofa?variant=sofa-blue", "/products/demo-table"]);
+    // Buy in Bundle stays the Keeri bundle.
+    assert.equal(doc.querySelectorAll("[data-bundle-piece]").length, 2);
+  }, demo, picked);
+  await mount((doc) => {
+    assert.deepEqual([...doc.querySelectorAll("[data-complete-look] [data-look-name]")].map(text), ["Demo Table"]);
+  }, demo, picked, "natural-oak");
 });

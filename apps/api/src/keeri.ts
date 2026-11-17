@@ -261,6 +261,8 @@ export const keeriExportV2Schema = keeriExportSchema.extend({
               eligibility: eligibilitySchema.optional(),
               // The `freeDelivery=1` level: staff's free-delivery tick on a selected ShopMaple row. Absent below that level.
               freeDelivery: z.boolean().optional(),
+              // The `completeLook=1` level: staff's "Complete the look" picks for this variant, in order. Absent below that level.
+              completeLook: z.array(z.object({ modelId: id, variantId: id.nullable() }).strict()).max(8).optional(),
             }),
           )
           .max(500),
@@ -406,6 +408,16 @@ function adaptValidated(
       if (!modelVariants.has(item.modelId) || !handles.has(item.modelId)) throw new Error("Unknown bundle model");
       if (item.variantId && !modelVariants.get(item.modelId)!.has(item.variantId)) throw new Error("Bundle variant mismatch");
     }
+  /**
+   * A variant's "Complete the look" picks as store pieces. Keeri sends only designs in this snapshot; one the store
+   * does not list (no address) is left out, and a picked variant it does not list leaves the buyer choosing.
+   */
+  const lookOf = (modelId: string, picks: { modelId: string; variantId: string | null }[]) => picks.flatMap((pick) => {
+    const handle = handles.get(pick.modelId);
+    if (!handle || pick.modelId === modelId || !modelVariants.has(pick.modelId)) return [];
+    const variantId = pick.variantId && modelVariants.get(pick.modelId)!.has(pick.variantId) ? identity(pick.variantId) : null;
+    return [{ productId: identity(pick.modelId), handle, variantId }];
+  });
   /** The product page's extra data, with Keeri ids turned into store ids (the union maps merged listings). */
   const pageOf = (model: V2Model, eligible: V2Variant[], eligibleIds: Set<string>): ProductPage => {
     const { bundleIds, reviews, ...page } = model.productPage!;
@@ -529,6 +541,7 @@ function adaptValidated(
             options: ((v as V2Variant).attributes ?? [])
               .map((a) => ({ axis: a.axis.trim(), value: a.value.trim(), code: a.code?.trim() || null, hex: a.hex ?? null }))
               .filter((a) => a.axis && a.value),
+            ...((v as V2Variant).completeLook !== undefined ? { completeLook: lookOf(model.id, (v as V2Variant).completeLook!) } : {}),
           } } : {}),
         })),
       }),

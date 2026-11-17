@@ -4,12 +4,17 @@ import { shopMoney } from "@/lib/format";
 import { ProductImage } from "./product-image";
 
 /**
- * Frame 36:476 ("Complete the look"): pieces from the rooms this piece is styled with, one card each with its photo,
+ * Frame 36:476 ("Complete the look"): the pieces Keeri staff picked for the chosen variant, else a Keeri bundle's, else
+ * pieces from the rooms this piece is styled with, one card each with its photo,
  * name and price, listed one below the other (owner, 4 Nov 2026) so the buy box scrolls on past them while the
  * gallery beside it stays put. Each card leads to its piece, where its options are chosen; the frame's "+ Add" would
  * need an option this card cannot choose.
  */
-export function CompleteTheLook({ pieces }: { pieces: ProductCard[] }) {
+/** A card, and the variant Keeri staff picked to show (its page opens on it), or none. */
+export type LookPiece = ProductCard & { variant?: string | null };
+const pieceHref = (piece: LookPiece) => `/products/${piece.handle}${piece.variant ? `?variant=${encodeURIComponent(piece.variant)}` : ""}`;
+
+export function CompleteTheLook({ pieces }: { pieces: LookPiece[] }) {
   if (!pieces.length) return null;
   return (
     <section data-complete-look aria-labelledby="complete-look-title" className="flex min-w-0 flex-col gap-[14px]">
@@ -25,7 +30,7 @@ export function CompleteTheLook({ pieces }: { pieces: ProductCard[] }) {
               <span data-look-name className="line-clamp-2 text-[14px] leading-5 font-semibold text-[#1c1c1c]">{piece.title}</span>
               <span data-look-price className="text-[13px] leading-[18px] text-[#756d68]">{piece.priceFrom ? "From " : ""}{shopMoney(piece.pricePaise)}</span>
             </span>
-            <Link data-look-view href={`/products/${piece.handle}`} aria-label={`View ${piece.title}`}
+            <Link data-look-view href={pieceHref(piece)} aria-label={`View ${piece.title}`}
               className="inline-flex h-9 w-[70px] shrink-0 items-center justify-center rounded-[18px] bg-[#f1ebe8] text-[13px] leading-[18px] font-semibold text-maple no-underline hover:bg-[#eaded8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
               View
             </Link>

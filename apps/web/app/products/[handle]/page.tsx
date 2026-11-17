@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getProduct, getProductCards, getRelatedProductCards } from "@/lib/catalog";
 import { productRedirect } from "@/lib/product-address";
-import { completeLookCategories, lookPieces, otherPieces } from "@/lib/product-related";
+import { completeLookCategories, lookPieces, otherPieces, pickedLooks } from "@/lib/product-related";
 import { ProductDetail } from "@/components/product-detail";
 import { RelatedProducts } from "@/components/store/related-products";
 import presentationData from "@/data/product-presentation.json";
@@ -34,15 +34,22 @@ export default async function ProductPage({
   // A bundle staff built in Keeri leads "Complete the look" and "Buy in Bundle", with Keeri's quantities. Without one,
   // "Complete the look" draws from the rooms the piece is styled with, and a room that fails to load only leaves its
   // pieces out; "You may also like" draws from the piece's own category.
+  // Above both, the pieces Keeri staff picked for a variant lead that variant's "Complete the look" (the first four the
+  // store lists); a variant without picks, or whose picks all fail to load, keeps the choice above.
   const keeriBundle = product.productPage?.bundles[0];
   const keeriHandles = (keeriBundle?.items ?? []).map((item) => item.handle).filter((h) => h !== product.handle);
-  const [related, keeriCards, ...rooms] = await Promise.all([
+  const picks = product.variants.map((v) => [v.id, (v.productPage?.completeLook ?? []).filter((p) => p.handle !== product.handle)] as const);
+  const pickedHandles = [...new Set(picks.flatMap(([, list]) => list.map((p) => p.handle)))];
+  const everyPicked = picks.length > 0 && picks.every(([, list]) => list.length);
+  const [related, keeriCards, pickedCards, ...rooms] = await Promise.all([
     product.category ? getRelatedProductCards(product.category) : [],
     keeriHandles.length ? getProductCards(keeriHandles).catch(() => []) : [],
-    ...(keeriHandles.length ? [] : completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => []))),
+    pickedHandles.length ? getProductCards(pickedHandles).catch(() => []) : [],
+    ...(keeriHandles.length || everyPicked ? [] : completeLookCategories(product.category).map((category) => getRelatedProductCards(category).catch(() => []))),
   ]);
   const keeriLook = keeriHandles.flatMap((h) => keeriCards.filter((card) => card.handle === h));
   const look = keeriLook.length ? keeriLook : lookPieces(rooms, product);
+  const lookByVariant = pickedLooks(picks, pickedCards);
   // "Buy in Bundle" is the bundle staff built in Keeri and nothing else (Keeri's "Complete the look", described in its
   // docs/shopmaple-product-page.md): its other pieces are read in full for their options, and one that fails to load is
   // left out. A piece without a Keeri bundle shows none; the store never pairs pieces itself.
@@ -69,6 +76,7 @@ export default async function ProductPage({
         }
         presentation={presentation}
         completeLook={look}
+        lookByVariant={lookByVariant}
         bundle={bundle}
         bundleQuantities={bundleQuantities}
         serverNow={Date.now()}
