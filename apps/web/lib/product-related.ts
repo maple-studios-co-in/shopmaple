@@ -26,3 +26,17 @@ export function lookPieces<T extends { id: string }>(rooms: T[][], product: { id
     for (const cards of lists) if (i < cards.length && pieces.length < limit && !pieces.some((piece) => piece.id === cards[i]!.id)) pieces.push(cards[i]!);
   return pieces;
 }
+
+/**
+ * Keeri staff's "Complete the look" picks, by variant id: each picked piece's card in staff's order with the variant they
+ * chose, at most `limit`. A piece the store could not load is left out, and a variant left with none is not listed, so
+ * the page shows its own choice there.
+ */
+export function pickedLooks<T extends { handle: string }>(picks: readonly (readonly [string, readonly { handle: string; variantId: string | null }[]])[], cards: T[], limit = 4) {
+  const looks: Record<string, (T & { variant: string | null })[]> = {};
+  for (const [variantId, list] of picks) {
+    const pieces = list.flatMap((pick) => cards.filter((card) => card.handle === pick.handle).map((card) => ({ ...card, variant: pick.variantId }))).slice(0, limit);
+    if (pieces.length) looks[variantId] = pieces;
+  }
+  return looks;
+}

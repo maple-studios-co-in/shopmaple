@@ -16,6 +16,8 @@ export interface KeeriFetchOptions {
   includeMinOrder?: boolean;
   /** The photograph staff picked for the band between Specifications and Details (Keeri's `featurePhoto=1`, which needs `minOrder=1`). */
   includeFeaturePhoto?: boolean;
+  /** Each variant's "Complete the look" picks (Keeri's `completeLook=1`, which needs `featurePhoto=1`). */
+  includeCompleteLook?: boolean;
   trustedOrigin: string;
   token: string;
   tenantId: string;
@@ -31,9 +33,9 @@ export class KeeriFetchError extends Error {
 }
 /**
  * Keeri accepts each opt-in only after the ones before it, in exactly this order:
- * taxonomy, content, attributes, then compareAt and productPage together, then offers, then freeDelivery, then minOrder, then featurePhoto.
+ * taxonomy, content, attributes, then compareAt and productPage together, then offers, then freeDelivery, then minOrder, then featurePhoto, then completeLook.
  */
-export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers" | "includeFreeDelivery" | "includeMinOrder" | "includeFeaturePhoto">) {
+export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonomy" | "includeContent" | "includeAttributes" | "includeProductPage" | "includeOffers" | "includeFreeDelivery" | "includeMinOrder" | "includeFeaturePhoto" | "includeCompleteLook">) {
   const query = new URLSearchParams();
   if (options.includeTaxonomy || options.includeContent) query.set("taxonomy", "1");
   if (options.includeContent) query.set("content", "1");
@@ -45,6 +47,7 @@ export function buildKeeriQuery(options: Pick<KeeriFetchOptions, "includeTaxonom
     if (options.includeOffers && options.includeFreeDelivery) query.set("freeDelivery", "1");
     if (options.includeOffers && options.includeFreeDelivery && options.includeMinOrder) query.set("minOrder", "1");
     if (options.includeOffers && options.includeFreeDelivery && options.includeMinOrder && options.includeFeaturePhoto) query.set("featurePhoto", "1");
+    if (options.includeOffers && options.includeFreeDelivery && options.includeMinOrder && options.includeFeaturePhoto && options.includeCompleteLook) query.set("completeLook", "1");
   }
   const text = query.toString();
   return text ? `?${text}` : "";
@@ -108,6 +111,10 @@ export async function fetchKeeriExport(
     }
     // A Keeri release from before an opt-in (free delivery, offers, the product page, variant options) refuses it
     // with 400; the caller asks again a level down.
+    if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers && options.includeFreeDelivery && options.includeMinOrder && options.includeFeaturePhoto && options.includeCompleteLook) {
+      void response.body?.cancel().catch(() => {});
+      throw new KeeriFetchError("COMPLETE_LOOK_UNSUPPORTED");
+    }
     if (response.status === 400 && options.includeContent && options.includeAttributes && options.includeProductPage && options.includeOffers && options.includeFreeDelivery && options.includeMinOrder && options.includeFeaturePhoto) {
       void response.body?.cancel().catch(() => {});
       throw new KeeriFetchError("FEATURE_PHOTO_UNSUPPORTED");

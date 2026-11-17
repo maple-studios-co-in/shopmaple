@@ -135,21 +135,28 @@ function translateProductPages(products: Product[], productBindings: SourceBindi
   const variantTarget = new Map(variantBindings.map((b) => [b.externalId, b.targetId]));
   const handles = new Map(products.map((p) => [p.id, p.handle]));
   const variant = (value: string | null) => (value === null ? null : variantTarget.get(value) ?? null);
+  // A piece the store does not list is left out; a variant it does not list leaves the buyer choosing.
+  const piece = <T extends { productId: string; variantId: string | null }>(item: T) => {
+    const productId = productTarget.get(item.productId);
+    const handle = productId && handles.get(productId);
+    return handle ? { ...item, productId: productId!, handle, variantId: variant(item.variantId) } : null;
+  };
   return products.map((p) => {
-    if (!p.productPage) return p;
+    const looks = p.variants.some((v) => v.productPage?.completeLook?.length);
+    if (!p.productPage && !looks) return p;
+    const variants = looks ? p.variants.map((v) => v.productPage?.completeLook ? { ...v, productPage: { ...v.productPage,
+      completeLook: v.productPage.completeLook.flatMap((item) => { const found = piece(item); return found && found.productId !== p.id ? [found] : []; }) } } : v) : p.variants;
+    if (!p.productPage) return productSchema.parse({ ...p, variants });
     const page = p.productPage;
     return productSchema.parse({
       ...p,
+      variants,
       productPage: {
         ...page,
         media: page.media.filter((m) => approvedCatalogueImage(m.url)).map((m) => ({ ...m, variantId: variant(m.variantId) })),
         reviews: { ...page.reviews, items: page.reviews.items.map((r) => ({ ...r, variantId: variant(r.variantId) })) },
         bundles: page.bundles.flatMap((bundle) => {
-          const items = bundle.items.map((item) => {
-            const productId = productTarget.get(item.productId);
-            const handle = productId && handles.get(productId);
-            return handle ? { ...item, productId: productId!, handle, variantId: variant(item.variantId) } : null;
-          });
+          const items = bundle.items.map(piece);
           return items.every((item) => item !== null) ? [{ ...bundle, items }] : [];
         }),
       },

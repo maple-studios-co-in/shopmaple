@@ -140,3 +140,28 @@ test("staff's photograph for the band between Specifications and Details reaches
   k.models[0].featurePhotoId = "asset-elsewhere";
   assert.equal(chairOf(k).productPage!.featurePhoto, null);
 });
+
+test("staff's Complete the look picks reach the variant as store pieces, only when Keeri sends the level, leaving out what the store does not list", () => {
+  const chairOf = (k: any) => adaptKeeriExportV2(k, "tenant-demo").products.find((p) => p.handle === "keeri-model-demo")!;
+  const k = fixture();
+  // Below the level the variant carries no picks, and the store keeps choosing.
+  assert.equal("completeLook" in chairOf(k).variants[0]!.productPage!, false);
+  k.models[0].variants[0].completeLook = [
+    { modelId: "model-demo-table", variantId: null },
+    { modelId: "model-not-listed", variantId: null },
+    { modelId: "model-demo", variantId: "variant-demo" },
+  ];
+  const picked = chairOf(k);
+  assert.deepEqual(picked.variants[0]!.productPage!.completeLook, [{ productId: id("model-demo-table"), handle: "keeri-model-demo-table", variantId: null }]);
+  assert.doesNotThrow(() => productSchema.parse(picked));
+  // A picked variant the store does not list leaves the buyer choosing.
+  k.models[0].variants[0].completeLook = [{ modelId: "model-demo-table", variantId: "variant-elsewhere" }];
+  assert.deepEqual(chairOf(k).variants[0]!.productPage!.completeLook, [{ productId: id("model-demo-table"), handle: "keeri-model-demo-table", variantId: null }]);
+  k.models[0].variants[0].completeLook = [];
+  assert.deepEqual(chairOf(k).variants[0]!.productPage!.completeLook, []);
+  // The union names each piece by the store product's current address.
+  k.models[0].variants[0].completeLook = [{ modelId: "model-demo-table", variantId: null }];
+  const plan = planCatalogueUnion(k, "tenant-demo");
+  const table = plan.products.find((p) => p.id === id("model-demo-table"))!;
+  assert.deepEqual(plan.products.find((p) => p.id === id("model-demo"))!.variants[0]!.productPage!.completeLook, [{ productId: table.id, handle: table.handle, variantId: null }]);
+});

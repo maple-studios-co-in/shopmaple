@@ -26,6 +26,19 @@ test("the store asks Keeri for the feature photo at the level after minimum orde
   );
 });
 
+test("the store asks Keeri for each variant's Complete the look picks at the level after the feature photo, and an older Keeri's 400 steps it down", async () => {
+  assert.equal(buildKeeriQuery({ ...richest, includeFeaturePhoto: true, includeCompleteLook: true }), "?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1&minOrder=1&featurePhoto=1&completeLook=1");
+  assert.equal(buildKeeriQuery({ ...richest, includeCompleteLook: true }), "?taxonomy=1&content=1&attributes=1&compareAt=1&productPage=1&offers=1&freeDelivery=1&minOrder=1");
+  await assert.rejects(
+    fetchKeeriExport({
+      endpoint: "https://keeri.example/api/storefront/catalogue/v2", trustedOrigin: "https://keeri.example", token: "t0ken", tenantId: "maple",
+      schemaVersion: 2, ...richest, includeFeaturePhoto: true, includeCompleteLook: true,
+      fetch: (async () => Response.json({ error: "query_not_supported" }, { status: 400 })) as typeof fetch,
+    }),
+    (error: unknown) => error instanceof KeeriFetchError && error.code === "COMPLETE_LOOK_UNSUPPORTED",
+  );
+});
+
 test("a Keeri from before minimum orders refuses the level with 400, reported so the sync steps down", async () => {
   await assert.rejects(
     fetchKeeriExport({

@@ -65,17 +65,17 @@ export const productReviewSchema = z.object({
 }).strict();
 export type ProductReview = z.infer<typeof productReviewSchema>;
 
+/** A piece another product's page points at: the product, its address, and the variant shown or null when the buyer chooses. */
+const pieceSchema = z.object({
+  productId: storeId,
+  handle: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200),
+  variantId: storeId.nullable(),
+});
 export const productBundleSchema = z.object({
   id: line(64),
   name: line(120),
   description: z.string().trim().max(1000).nullable(),
-  items: z.array(z.object({
-    productId: storeId,
-    handle: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(200),
-    /** The default variant, or null when the buyer chooses. */
-    variantId: storeId.nullable(),
-    quantity: z.number().int().min(1).max(20),
-  }).strict()).min(2).max(6),
+  items: z.array(pieceSchema.extend({ quantity: z.number().int().min(1).max(20) }).strict()).min(2).max(6),
 }).strict();
 export type ProductBundle = z.infer<typeof productBundleSchema>;
 
@@ -116,6 +116,8 @@ export const variantProductPageSchema = z.object({
   options: z.array(z.object({
     axis: line(80), value: line(200), code: z.string().trim().max(20).nullable(), hex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable(),
   }).strict()).max(20),
+  /** Keeri staff's "Complete the look" picks for this variant, in order; absent or empty: the store chooses. */
+  completeLook: z.array(pieceSchema.strict()).max(8).optional(),
 }).strict();
 export type VariantProductPage = z.infer<typeof variantProductPageSchema>;
 
