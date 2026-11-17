@@ -158,7 +158,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
    * for the tab, so it never edits for a moment while staff are browsing, or follows a link while they are editing.
    */
   const [editMode, setEditMode] = useState(() => readPreviewMode() === "edit");
-  // The page says which mode it is in, for its cursors (styles/admin.css) and the pill below.
+  // The page says which mode it is in, for its cursors (styles/preview-edit.css) and the pill below.
   useEffect(() => {
     if (!parent || !selectable) return;
     document.documentElement.dataset.previewMode = editMode ? "edit" : "browse";

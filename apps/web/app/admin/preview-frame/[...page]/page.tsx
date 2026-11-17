@@ -11,6 +11,7 @@ import { thumbnailContent } from "@/lib/section-thumbnails";
 import { renderStorefrontRoute } from "@/lib/storefront-routes";
 import { resolveMenuArtwork } from "@/lib/menu-artwork";
 import "@/styles/admin.css";
+import "@/styles/preview-edit.css";
 // A blog page previews with its own styles, as the storefront's blog route loads them.
 import "@/styles/blog.css";
 // So does Our Story (owner, 10 Nov 2026).

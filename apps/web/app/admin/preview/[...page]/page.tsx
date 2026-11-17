@@ -3,6 +3,7 @@ import { PreviewShell } from "@/components/admin/preview-shell";
 import { loadPreviewRequest, PreviewUnavailable } from "@/lib/preview-request";
 import { listPreviewPages, renderStorefrontRoute } from "@/lib/storefront-routes";
 import "@/styles/admin.css";
+import "@/styles/preview-edit.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
