@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { SiteWords } from "@shopmaple/contracts";
-import { siteWordText, type SiteWordKey } from "@/lib/site-words";
+import { siteWordText, type SiteWordKey } from "@/lib/site-word-defaults";
 
 type Words = { words?: SiteWords; marked: boolean };
 const Context = createContext<Words>({ marked: false });
