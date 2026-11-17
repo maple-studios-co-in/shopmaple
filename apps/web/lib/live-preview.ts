@@ -34,6 +34,20 @@ export const previewDevices: { key: PreviewDevice; label: string }[] = [
 export const previewTokenLeadMs = 60_000;
 
 /** The existing staff-only frame address; the published view is the same route rendered from the published snapshot. */
+/**
+ * The storefront page that shows a campaign, which the live preview opens while it is edited on Campaigns (owner, 17 Nov
+ * 2026: a change to the Sofas banner has to show on the Sofas page, not the homepage).
+ */
+export function campaignPreviewPath(key: string | null | undefined): string {
+  const landing = key ? /^(sofas|tables|chairs)-(?:hero|sale)$/.exec(key) : null;
+  if (landing) return `pages/${landing[1]}`;
+  const collections: Record<string, string> = {
+    "beds-hero": "collections/beds", "beds-sale": "collections/beds",
+    "outdoors-hero": "collections/outdoor-furnitures", "tv-units-hero": "collections/tv-media-units",
+  };
+  return (key && collections[key]) || "home";
+}
+
 export function previewFrameUrl({ path, token, view }: { path: string; token: string; view: PreviewView }) {
   const base = `/admin/preview-frame/${path}?token=${encodeURIComponent(token)}`;
   return view === "published" ? `${base}&view=published` : base;

@@ -5,6 +5,7 @@ import {
   previewDevices,
   previewDeviceWidths,
   previewFrameUrl,
+  previewRouteFor,
   keepPreviewMode,
   previewMessageSource,
   readPreviewMessage,
@@ -36,6 +37,10 @@ export type LivePreviewProps = {
   busy: boolean;
   /** Why the draft cannot be saved for the preview right now (an invalid field), or "". */
   blocked: string;
+  /** What the last save for the preview left out because it is still unfinished ("Instagram post 3"). */
+  leftOut?: string[];
+  /** What the last save for the preview showed with a stand-in ("Campaign “Sofas hero” banner: phone picture"). */
+  standIns?: string[];
   auto: boolean;
   onAutoChange: (next: boolean) => void;
   onUpdateNow: () => void;
@@ -78,7 +83,7 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
  * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
  * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, leftOut = [], standIns = [], auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
   /** Edit (the default) or Browse, where clicks follow links as a shopper's would; kept for the tab (lib/live-preview.ts). */
@@ -100,10 +105,20 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
   const [shownSrc, setShownSrc] = useState(src);
   const shownPage = useRef(`${path}|${view}`);
   const restoreScroll = useRef(0);
-  const currentRef = useRef(isFrameCurrent), readyRef = useRef(onFrameReady), viewRef = useRef(view);
+  const currentRef = useRef(isFrameCurrent), readyRef = useRef(onFrameReady), viewRef = useRef(view), pathRef = useRef(path);
   currentRef.current = isFrameCurrent;
   readyRef.current = onFrameReady;
   viewRef.current = view;
+  pathRef.current = path;
+  /**
+   * The page the frame shows when it was browsed to inside the frame (its frame route, and its own query: a collection's
+   * sort, a product's variant), or null while it shows `path`. A save reloads that page, so the change shows where staff
+   * are looking; before, every save took the frame back to the screen's own page, the homepage for most screens (owner,
+   * 17 Nov 2026: a new Sofas banner never showed while the preview sat on the Sofas page). Choosing another page in the
+   * editor (`path`) still goes there.
+   */
+  const browsed = useRef<{ route: string; query: string } | null>(null);
+  const shownPath = useRef(path);
   useEffect(() => {
     if (frameEditing || src === shownSrc) return;
     // Every save mints a token for the new version, and the token is empty meanwhile. Before, that emptied the frame and
@@ -118,8 +133,11 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     let scrolled = 0;
     try { scrolled = samePage ? frame.current?.contentWindow?.scrollY ?? 0 : 0; } catch { scrolled = 0; }
     restoreScroll.current = scrolled;
+    const stay = path === shownPath.current ? browsed.current : null;
+    if (!stay) browsed.current = null;
     shownPage.current = page;
-    setShownSrc(src);
+    shownPath.current = path;
+    setShownSrc(stay && token ? `${previewFrameUrl({ path: stay.route, token, view })}${stay.query ? `&${stay.query}` : ""}` : src);
   }, [src, frameEditing]);
   const hasToken = token !== null;
   const unpublished = view === "published" && publishedVersion === null;
@@ -144,6 +162,19 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
         setFrameStatus("ready");
         setFramePath(message.path);
         setFrameEditing(false);
+        // Where the frame is now, with its own query when the frame's address can be read, so the next reload comes back to
+        // it (see `browsed`).
+        const route = previewRouteFor(message.path);
+        let extra = "";
+        try {
+          const here = new URL(source.location.href);
+          if (here.origin === window.location.origin && here.pathname === `/admin/preview-frame/${route}`) {
+            const query = new URLSearchParams(here.search);
+            for (const own of ["token", "view", "section"]) query.delete(own);
+            extra = query.toString();
+          }
+        } catch { extra = ""; }
+        browsed.current = route === pathRef.current && !extra ? null : { route, query: extra };
         // A reload of the same page: put it back where it was scrolled.
         if (restoreScroll.current > 0) source.postMessage({ source: previewMessageSource, type: "scroll", y: restoreScroll.current }, window.location.origin);
         restoreScroll.current = 0;
@@ -279,6 +310,15 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
           </Button>
         </div>
       </div>
+      {/* What keeps the preview from showing every edit, in full: the status line above has room for a few words only, and
+          a cut-off "Check campaig…" was all the owner saw while the preview waited (17 Nov 2026). */}
+      {view === "draft" && (blocked || leftOut.length > 0 || standIns.length > 0) && !draftRequired && (
+        <div data-preview-attention aria-live="polite" className="mx-3 mb-2 grid max-h-28 gap-1 overflow-y-auto rounded-lg border border-line-soft bg-surface px-3 py-2 text-xs leading-relaxed text-foreground">
+          {blocked && <p data-preview-blocked><span className="font-semibold">The preview is waiting for one fix.</span> {blocked} Everything else shows once it is fixed.</p>}
+          {standIns.length > 0 && <p data-preview-stand-ins><span className="font-semibold">Shown with a stand-in until you add your own:</span> {standIns.join("; ")}. Add {standIns.length === 1 ? "it" : "them"} before you save or publish.</p>}
+          {leftOut.length > 0 && <p data-preview-left-out><span className="font-semibold">Not shown until finished:</span> {leftOut.join("; ")}. Finish or remove {leftOut.length === 1 ? "it" : "them"} to show {leftOut.length === 1 ? "it" : "them"} and to publish.</p>}
+        </div>
+      )}
       <div className="flex min-h-0 flex-1 items-stretch justify-center overflow-hidden px-3 pb-3" ref={stage}>
         <div data-device-frame style={{ width: deviceOuterWidth[device] }} className={cn("flex min-h-0 rounded-[14px] bg-black/10 p-1 shadow-lg", deviceFrame)}>
           {draftRequired ? (

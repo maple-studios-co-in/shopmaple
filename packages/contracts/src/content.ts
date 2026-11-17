@@ -142,7 +142,8 @@ export const templateMediaResponsiveKeys = [
   ...pictureSlotResponsiveKeys,
 ] as const;
 export type TemplateMediaKey = typeof templateMediaKeys[number];
-const templateMediaItemSchema = z.object({
+/** One placement's artwork; exported so the admin can tell which placements of a draft are ready to save. */
+export const templateMediaItemSchema = z.object({
   key: z.enum(templateMediaKeys),
   image: contentImageSchema,
   mobileImage: contentImageSchema.optional(),
@@ -225,6 +226,14 @@ const socialLink = z
   .string()
   .max(300)
   .regex(/^https:\/\/(?:www\.)?instagram\.com\/(?:p|reel)\/[A-Za-z0-9_-]+\/$/);
+/** One hand-picked Instagram post on the homepage. */
+export const instagramPostSchema = z
+  .object({
+    href: socialLink,
+    src: contentImageSchema,
+    alt: text(200).min(1),
+  })
+  .strict();
 export const campaignContentSchema = z
   .object({
     key: z.enum(campaignKeys),
@@ -326,15 +335,7 @@ export const storefrontContentSchema = z
       .strict(),
     campaigns: z.array(campaignContentSchema).max(16),
     instagramPosts: z
-      .array(
-        z
-          .object({
-            href: socialLink,
-            src: contentImageSchema,
-            alt: text(200).min(1),
-          })
-          .strict(),
-      )
+      .array(instagramPostSchema)
       .min(1)
       .max(30),
     pages: z.array(contentPageSchema).max(20),

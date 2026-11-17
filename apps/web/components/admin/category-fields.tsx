@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { categoryPageSlugs, type CategoryPageContent, type CategoryPageSlug, type CategorySectionContent } from "@shopmaple/contracts";
 import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
 import { Badge } from "@/components/ui/badge";
@@ -60,8 +60,16 @@ function CategoryPage({ page, label, update }: { page: CategoryPageContent; labe
   </section>;
 }
 
-export function CategoryFields({ value, onChange }: { value: CategoryPageContent[]; onChange: (value: CategoryPageContent[]) => void }) {
-  const [active, setActive] = useState<CategoryPageSlug>(categoryPageSlugs[0]);
+export function CategoryFields({ value, onChange, initialActive, onActiveChange }: {
+  value: CategoryPageContent[]; onChange: (value: CategoryPageContent[]) => void;
+  /** The page shown first (the one shown last time the screen was open). */
+  initialActive?: CategoryPageSlug;
+  /** The page being edited, so the live preview shows it; `initial` is the report as the screen opens. */
+  onActiveChange?: (slug: CategoryPageSlug, initial: boolean) => void;
+}) {
+  const [active, setActive] = useState<CategoryPageSlug>(initialActive ?? categoryPageSlugs[0]);
+  const reported = useRef(false);
+  useEffect(() => { onActiveChange?.(active, !reported.current); reported.current = true; }, [active]);
   const update = (page: CategoryPageContent) =>
     onChange(value.some(item => item.slug === page.slug) ? value.map(item => (item.slug === page.slug ? page : item)) : [...value, page]);
   return <div>

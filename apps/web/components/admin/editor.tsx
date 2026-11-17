@@ -8,7 +8,7 @@ import {
   previewTokenPattern,
   homeSectionKeys,
   storefrontContentSchema,
-  type StorefrontContent, type TemplateMediaKey,
+  type CategoryPageSlug, type StorefrontContent, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { DisabledScope } from "@/components/ui/disabled-scope";
@@ -35,7 +35,8 @@ import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
-import { previewRouteFor } from "@/lib/live-preview";
+import { campaignPreviewPath, previewRouteFor } from "@/lib/live-preview";
+import { describeContentIssue, previewReadyContent, type PreviewReady } from "@/lib/draft-pictures";
 import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
@@ -134,6 +135,15 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
    * in the footer of a policy page, say), so the page being edited never jumps away. Choosing a screen clears it.
    */
   const [previewHold, setPreviewHold] = useState<string | null>(null);
+  /**
+   * What Campaigns, Category pages and Policies & blogs have open, so the live preview shows the page they change (owner,
+   * 17 Nov 2026: a new Sofas banner has to show on the Sofas page, not the homepage). A choice made there lets go of a page
+   * held by click-to-edit; the report as the screen opens does not.
+   */
+  const [campaignKey, setCampaignKey] = useState<string | null>(null);
+  const [categorySlug, setCategorySlug] = useState<CategoryPageSlug>("sofas");
+  const [editorialAddress, setEditorialAddress] = useState("/policies/privacy-policy");
+  const chosenOnScreen = (initial: boolean) => { if (!initial) setPreviewHold(null); };
   /** A picture clicked in the live preview: the Artwork screen shows its placement and opens its library. */
   const [artworkRequest, setArtworkRequest] = useState<ArtworkRequest | null>(null);
   const tabRef = useRef(tab);
@@ -156,6 +166,13 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   const loadSequence = useRef(0);
   /** The latest local content, so a finished quiet save can tell whether edits arrived meanwhile. */
   const latestContent = useRef<StorefrontContent | null>(null);
+  /**
+   * The local content the live preview last saved, what that save left out because it was still unfinished (a new post
+   * without its link, a banner with no picture yet) and what it showed with a stand-in (a phone picture, a description).
+   * While nothing has changed since, there is nothing new to save for the preview; and while anything was left out or
+   * stood in for, the draft stays unsaved, so an explicit save says what to finish and it cannot be published yet.
+   */
+  const [previewed, setPreviewed] = useState<({ content: StorefrontContent } & Pick<PreviewReady, "leftOut" | "standIns">) | null>(null);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   function acceptDocument(value: unknown) {
@@ -166,17 +183,20 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     setContent(draft);
     setDirty(next.draft === null);
     setConflict(false);
+    setPreviewed(null);
   }
   /**
    * A quiet save accepts only the server's version and metadata, never its copy of the
    * content: anything typed while the save was in flight must survive. If edits arrived
    * meanwhile the draft stays dirty, so the next quiet save follows with the new version.
+   * So does a save that left something unfinished out or showed it with a stand-in: the form is not what was saved.
    */
-  function acceptQuietSave(value: unknown, sent: StorefrontContent) {
+  function acceptQuietSave(value: unknown, sent: StorefrontContent, { leftOut, standIns }: Pick<PreviewReady, "leftOut" | "standIns">) {
     const next = parseDocument(value);
     setDocument(next);
     setConflict(false);
-    setDirty(latestContent.current !== sent);
+    setDirty(latestContent.current !== sent || leftOut.length > 0 || standIns.length > 0);
+    setPreviewed({ content: sent, leftOut, standIns });
   }
   async function load() {
     // Only the newest read may change state: an older read that was aborted (StrictMode's
@@ -238,7 +258,9 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   /** Storefront address the preview opens on, chosen from what is being edited. */
   function previewPath() {
     if (previewHold) return previewHold;
-    if (tab === "Category pages") return "pages/sofas";
+    if (tab === "Category pages") return `pages/${categorySlug}`;
+    if (tab === "Campaigns") return campaignPreviewPath(campaignKey);
+    if (tab === "Policies & blogs") return previewRouteFor(editorialAddress);
     if (tab === "Existing pages") return existingPages.find(([key]) => key === existingPage)![2];
     if (tab === "Pages") {
       const page = [content?.pages[selectedPage], ...(content?.pages ?? [])].find((item) => item?.slug);
@@ -246,7 +268,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
     }
     return "home";
   }
-  const previewTitle = tab === "Category pages" ? "Sofas" : tab === "Existing pages" ? "the selected page" : tab === "Pages" ? "the selected page" : "Home";
+  const previewTitle = tab === "Category pages" ? `${categorySlug[0]!.toUpperCase()}${categorySlug.slice(1)}`
+    : tab === "Campaigns" ? "the campaign's page" : ["Existing pages", "Pages", "Policies & blogs"].includes(tab) ? "the selected page" : "Home";
   /**
    * Mints a preview token for a draft version. Only an expired session is handled here (null);
    * every other outcome is returned so the caller can show it where it belongs. A 409 from
@@ -304,20 +327,24 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   }
   async function write(action: "save" | "publish" | "restore", revisionId?: string, options: { quiet?: boolean } = {}): Promise<Document | null> {
     if (!document || !content || busy || inFlight.current || conflict || scheduleEditing) return null;
+    // A quiet save (live preview) must never disable the form or move focus: it is shown in
+    // the status chip only. Explicit saves, publishes and restores take the busy state.
+    const quiet = options.quiet === true;
+    // What a save sends. The live preview's own save completes a half-chosen picture with stand-ins and leaves out what
+    // cannot show yet, so one unfinished picture or post never holds back every other change (owner, 17 Nov 2026); an
+    // explicit save sends the form as it is, and the draft's check names anything still to finish.
+    const ready: PreviewReady = action === "save" && quiet ? previewReadyContent(content) : { content, leftOut: [], standIns: [] };
     if (action === "save") {
-      const validation = storefrontContentSchema.safeParse(content);
+      const validation = storefrontContentSchema.safeParse(ready.content);
       if (!validation.success) {
         const issue = validation.error.issues[0];
-        const message = issue?.path[0] === "productHighlights" ? highlightsSaveMessage
-          : `Check ${issue?.path.join(" > ") || "the content fields"}: ${issue?.message || "Some values are invalid."}`;
-        if (options.quiet) setLiveBlocked(message);
+        const message = issue?.path[0] === "productHighlights" ? highlightsSaveMessage : describeContentIssue(issue, ready.content);
+        if (quiet) setLiveBlocked(message);
         else setError(message);
         return null;
       }
     }
-    // A quiet save (live preview) must never disable the form or move focus: it is shown in
-    // the status chip only. Explicit saves, publishes and restores take the busy state.
-    const quiet = options.quiet === true;
+    const body = ready.content;
     const sent = content;
     inFlight.current = true;
     setLiveBlocked("");
@@ -328,7 +355,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       const response = await adminRequest(`/api/admin/content${action === "save" ? "" : action === "publish" ? "/publish" : "/rollback"}`, {
         method: action === "save" ? "PUT" : "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": session.csrfToken },
-        body: JSON.stringify({ expectedVersion: document.version, ...(action === "save" ? { content } : action === "restore" ? { revisionId } : {}) }),
+        body: JSON.stringify({ expectedVersion: document.version, ...(action === "save" ? { content: body } : action === "restore" ? { revisionId } : {}) }),
       });
       if (response.status === 401) { onExpired(); return null; }
       if (response.status === 409) {
@@ -344,7 +371,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       }
       const raw: unknown = await response.json();
       const accepted = parseDocument(raw);
-      if (quiet && action === "save") acceptQuietSave(raw, sent!);
+      if (quiet && action === "save") acceptQuietSave(raw, sent!, ready);
       else acceptDocument(raw);
       setAutoSaveFailed("");
       if (!quiet) setNotice(action === "save" ? "Draft saved. The published storefront has not changed."
@@ -382,9 +409,11 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   useEffect(() => {
     // Version 0 (no draft ever saved) is never saved silently: the pane offers that first save explicitly.
     if (!liveActive || !liveAuto || !dirty || autoSaveFailed || busy || saving || conflict || scheduleEditing || !document || document.draft === null || !content) return;
+    // Already saved for the preview as far as it can be: what is left is still incomplete, and waits for the next edit.
+    if (content === previewed?.content) return;
     const timer = setTimeout(() => { void write("save", undefined, { quiet: true }); }, livePreviewDebounceMs);
     return () => clearTimeout(timer);
-  }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs]);
+  }, [liveActive, liveAuto, dirty, autoSaveFailed, busy, saving, conflict, scheduleEditing, content, document, livePreviewDebounceMs, previewed]);
   useEffect(() => { if (!dirty) setLiveBlocked(""); }, [dirty]);
 
   const canManageEnquiries = session.user.canManageEnquiries === true;
@@ -480,16 +509,19 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
       case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} request={artworkRequest ?? undefined}
         films={{ value: content.templateFilms, onChange: set("templateFilms"), session, onExpired }} />;
-      case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing} />;
+      case "Campaigns": return <CampaignFields content={content} onChange={edit} session={session} onExpired={onExpired} onScheduleEditingChange={setScheduleEditing}
+        initialKey={campaignKey} onCampaignChange={(key, initial) => { setCampaignKey(key); chosenOnScreen(initial); }} />;
       case "Instagram": return <InstagramFields content={content} onChange={edit} session={session} onExpired={onExpired} feed={<InstagramFeedPanel session={session} onExpired={onExpired} />} />;
       case "Pages": return <PageFields content={content} onChange={edit} session={session} onExpired={onExpired} onSelectedPageChange={(index) => { setPreviewHold(null); setSelectedPage(index); }} />;
-      case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")} />;
+      case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")}
+        initialActive={categorySlug} onActiveChange={(slug, initial) => { setCategorySlug(slug); chosenOnScreen(initial); }} />;
       case "Site words": return <SiteWordsFields value={content.siteWords} onChange={(siteWords) => edit({ ...content, siteWords })} />;
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>
         <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
-        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} disabled={busy || conflict} session={session} onExpired={onExpired} />
+        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} disabled={busy || conflict} session={session} onExpired={onExpired}
+          onPageChange={(address, initial) => { setEditorialAddress(address); chosenOnScreen(initial); }} />
         <AuthoredArticleFields value={content.authoredArticles} onChange={set("authoredArticles")} session={session} onExpired={onExpired} />
       </>;
       case "Existing pages": return <>
@@ -655,7 +687,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             </section>
             {liveActive && (
               <LivePreview path={previewPath()} title={previewTitle} version={document?.version ?? null} publishedVersion={document?.publishedVersion ?? null}
-                draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""} dirty={dirty} busy={busy || saving}
+                draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""}
+                dirty={dirty && content !== previewed?.content} leftOut={previewed?.leftOut ?? []} standIns={previewed?.standIns ?? []} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
                 onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
                 onSelectSection={(section) => {
@@ -681,6 +714,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                   // A banner, card, slide, post, film or page banner: the screen that holds its chooser, then the chooser.
                   const screen = pictureScreen(picture.target);
                   if (!screen) return;
+                  // Campaigns opens on the clicked banner's campaign, so the preview stays on this page as it opens.
+                  if (screen.tab === "Campaigns" && screen.campaign) setCampaignKey(screen.campaign);
                   if (screen.section) {
                     if (tabRef.current !== "Homepage") { setSelectedPage(0); setTab("Homepage"); }
                     setFocusedSection(screen.section);

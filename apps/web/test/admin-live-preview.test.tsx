@@ -483,3 +483,81 @@ test("while live updates are paused after a failed save the status says so", asy
     assert.doesNotMatch(status, /updating shortly/i);
   } finally { await app.close(); }
 });
+
+// Owner, 17 Nov 2026: "when I am clicking the banner with the new image it should get updated on the live preview".
+async function choose(label: string, value: string) {
+  const select = [...container.querySelectorAll<HTMLSelectElement>("select")].find((node) => node.getAttribute("aria-label") === label
+    || node.labels?.[0]?.textContent?.trim() === label || node.id && container.querySelector(`label[for="${node.id}"]`)?.textContent?.trim() === label);
+  assert.ok(select, `Missing ${label}`);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, "value")!.set!.call(select, value);
+    select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  });
+}
+const fromFrame = async (data: Record<string, unknown>) => {
+  const source = frame().contentWindow!;
+  await act(async () => { dom.window.dispatchEvent(new dom.window.MessageEvent("message", { data: { source: previewMessageSource, ...data }, origin: "http://localhost:3000", source })); });
+};
+
+test("a campaign replacement still waiting for its picture holds back no other edit: the original artwork shows meanwhile", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Campaigns");
+    await choose("Campaign", String(defaultStorefrontContent.campaigns.findIndex((item) => item.key === "sofas-hero")));
+    await click("Replace campaign artwork");
+    await type("Campaign label", "Diwali");
+    await until(() => app.puts().length === 1, "the quiet save, which a picture-less replacement used to refuse");
+    const saved = app.puts()[0]!.body.content.campaigns.find((item: { key: string }) => item.key === "sofas-hero");
+    assert.equal(saved.label, "Diwali");
+    assert.equal(saved.artwork, null, "the replacement with no picture yet keeps the original artwork");
+    assert.equal(container.querySelector("[data-preview-blocked]"), null);
+    assert.ok(container.querySelector('[data-picture-target="campaign:sofas-hero"]'), "the form keeps the replacement being chosen");
+    assert.equal(container.querySelector<HTMLInputElement>('input[aria-label="Campaign artwork alt text"]')?.value, "Settle in for the celebrations.",
+      "the description starts from the campaign's own words (every campaign's label is empty)");
+  } finally { await app.close(); }
+});
+
+test("an unfinished Instagram post is left out of the preview's save and named; the draft stays unsaved and is not saved again and again", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Instagram");
+    const count = defaultStorefrontContent.instagramPosts.length;
+    await click("Add Instagram post");
+    await until(() => app.puts().length === 1, "the quiet save");
+    assert.equal(app.puts()[0]!.body.content.instagramPosts.length, count, "the new post waits for its link and picture");
+    await until(() => container.querySelector("[data-preview-left-out]") !== null, "the note naming what is not shown");
+    assert.match(container.querySelector("[data-preview-left-out]")!.textContent ?? "", new RegExp(`Instagram post ${count + 1}`));
+    assert.equal(button("Save draft").disabled, false, "the post is still only in the form");
+    await settle(200);
+    assert.equal(app.puts().length, 1, "nothing new to save until the next edit");
+  } finally { await app.close(); }
+});
+
+test("after browsing to another page inside the frame, a save reloads that page, not the screen's own", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Homepage");
+    await fromFrame({ type: "navigate", path: "/sofas" });
+    await fromFrame({ type: "ready", path: "/sofas", version: 4, sections: [] });
+    await type("Category heading", "Seen on the Sofas page");
+    await until(() => app.posts().length === 2, "the save and the new token");
+    await until(() => frame().getAttribute("src") === `/admin/preview-frame/pages/sofas?token=${encodeURIComponent(tokenB)}`, "the Sofas page again, with the new token");
+  } finally { await app.close(); }
+});
+
+test("Campaigns shows the page the chosen campaign is on", async () => {
+  const app = await setup();
+  try {
+    await click("Live preview");
+    await click("Campaigns");
+    assert.equal(frame().getAttribute("src"), `/admin/preview-frame/home?token=${encodeURIComponent(tokenA)}`, "the first campaign is on the homepage");
+    const index = defaultStorefrontContent.campaigns.findIndex((item) => item.key === "sofas-hero");
+    await choose("Campaign", String(index));
+    assert.equal(frame().getAttribute("src"), `/admin/preview-frame/pages/sofas?token=${encodeURIComponent(tokenA)}`);
+    await click("Category pages");
+    assert.equal(frame().getAttribute("src"), `/admin/preview-frame/pages/sofas?token=${encodeURIComponent(tokenA)}`);
+  } finally { await app.close(); }
+});

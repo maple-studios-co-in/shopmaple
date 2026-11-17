@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EditorialContent, EditorialNode, EditorialPolicy, EditorialBlog, EditorialArticle } from "@shopmaple/contracts";
 import dynamic from "next/dynamic";
 // The editor (TipTap and ProseMirror) loads only when a policy or article is opened, not with the whole admin.
@@ -11,10 +11,12 @@ import { Field } from "./field";
 import { EditorWithPreview, PreviewPanel, PreviewTitle, SectionHeading, SelectField } from "./kit";
 import type { StaffSession } from "./dashboard";
 
-export function EditorialFields({ value, onChange, disabled = false, session, onExpired }: {
+export function EditorialFields({ value, onChange, disabled = false, session, onExpired, onPageChange }: {
   value?: EditorialContent; onChange: (value: EditorialContent) => void; disabled?: boolean;
   /** With a staff session, the text editor can place pictures from the media library, as the Pages editor does. */
   session?: StaffSession; onExpired?: () => void;
+  /** The storefront address of the page being edited, so the live preview shows it; `initial` is the report as the screen opens. */
+  onPageChange?: (address: string, initial: boolean) => void;
 }) {
   const [selected, setSelected] = useState("policy:privacy-policy");
   const overrides = value ?? { policies: [], blogs: [], articles: [] };
@@ -27,6 +29,8 @@ export function EditorialFields({ value, onChange, disabled = false, session, on
   const document = policy ?? article ?? (kind === "blog" ? blog : undefined);
   const content = policy?.content ?? article?.content;
   const url = policy ? `/policies/${identity}` : `/blogs/${identity}`;
+  const reported = useRef(false);
+  useEffect(() => { onPageChange?.(url, !reported.current); reported.current = true; }, [url]);
   function update(patch: { title?: string; content?: EditorialNode[]; excerpt?: string }) {
     if (policy) {
       const next = { slug: identity, title: policy.title, content: policy.content, ...patch } as EditorialPolicy;

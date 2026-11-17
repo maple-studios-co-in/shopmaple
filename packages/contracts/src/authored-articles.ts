@@ -29,3 +29,5 @@ const articleSchema = z.object({
 export const authoredArticlesSchema = z.array(articleSchema).max(20).refine(articles => new Set(articles.map(article => `${article.blog}/${article.handle}`)).size === articles.length, "Article routes must be unique");
 export type AuthoredArticle = z.infer<typeof articleSchema>;
 export type AuthoredBlock = z.infer<typeof blockSchema>;
+/** One article and one block on their own, so the admin can tell which of a draft's are ready to save. */
+export { articleSchema as authoredArticleSchema, blockSchema as authoredBlockSchema };
