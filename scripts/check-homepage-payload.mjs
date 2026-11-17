@@ -48,7 +48,9 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // out (lib/site-word-defaults.ts holds the words alone). Raised by 7,500 bytes for that (owner's yes).
 // 17 Nov 2026: 289,137 raw after the QA report fixes (#163): enquiry forms check each field as it is typed, the hero
 // gained Terra slides and arrows, and the menu and carousels their arrows. Raised by 4,500 bytes for that (owner's yes).
-assert.ok(totalRaw <= 289_500, `Initial homepage JavaScript exceeds the 289,500-byte raw budget: ${totalRaw}`);
+// 17 Nov 2026: 290,294 raw after the Next.js security patch (16.4.3 to 16.4.6, GHSA-mfr8-8qww-v76h): the framework's own
+// runtime grew; no store code changed. Raised by 1,000 bytes for that (owner's yes).
+assert.ok(totalRaw <= 290_500, `Initial homepage JavaScript exceeds the 290,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
