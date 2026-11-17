@@ -73,20 +73,45 @@ export function PreviewNavigation({ token, children, navigate = (url) => window.
   /** Carried through every in-frame navigation so the published view stays published. */
   view?: "draft" | "published";
 }) {
-  const query = `?token=${encodeURIComponent(token)}${view === "published" ? "&view=published" : ""}`;
+  /** Opens a storefront address inside the frame, with the draft: its own query (a collection's page and filters, a
+   * product's variant) and #anchor kept, the frame's token added. */
+  function go(url: URL) {
+    const search = new URLSearchParams(url.search);
+    for (const key of ["token", "view", "section"]) search.delete(key);
+    search.set("token", token);
+    if (view === "published") search.set("view", "published");
+    // Tell the embedding admin where the preview is going, so its toolbar can follow.
+    embeddingParent()?.postMessage({ source: previewMessageSource, type: "navigate", path: url.pathname }, window.location.origin);
+    // A page of its own ("/our-story") is served at pages/<slug> in the frame; it showed "unavailable" before (14 Nov 2026).
+    navigate(`/admin/preview-frame/${previewRouteFor(url.pathname)}?${search}${url.hash}`);
+  }
   function onClick(event: React.MouseEvent<HTMLDivElement>) {
     const anchor = (event.target as HTMLElement).closest("a[href]");
     if (!(anchor instanceof HTMLAnchorElement) || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
     const url = new URL(anchor.href, window.location.href);
+    // A link to a place on this page ("#reviews") resolves to the frame's own address and scrolls as usual.
     if (url.origin !== window.location.origin || url.pathname.startsWith("/admin")) return;
     event.preventDefault();
-    // Tell the embedding admin where the preview is going, so its toolbar can follow.
-    embeddingParent()?.postMessage({ source: previewMessageSource, type: "navigate", path: url.pathname }, window.location.origin);
-    // A page of its own ("/our-story") is served at pages/<slug> in the frame; it showed "unavailable" before (14 Nov 2026).
-    navigate(`/admin/preview-frame/${previewRouteFor(url.pathname)}${query}`);
+    go(url);
   }
-  // display: contents, so the wrapper changes no layout; it only has to be an ancestor of every link.
-  return <div onClickCapture={onClick} className="contents" data-preview-navigation="">{children}</div>;
+  // A form that asks for a page (method GET: the header's search, a collection's filters and sort) opens its results in the
+  // frame as well, instead of on the published storefront. A form that sends itself (an enquiry) has already cancelled
+  // the browser's own submission by the time this runs, and is left alone.
+  function onSubmit(event: React.FormEvent<HTMLDivElement>) {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || event.defaultPrevented) return;
+    if ((form.getAttribute("method") ?? "get").toLowerCase() !== "get") return;
+    const url = new URL(form.getAttribute("action") || window.location.pathname, window.location.href);
+    if (url.origin !== window.location.origin || url.pathname.startsWith("/admin")) return;
+    event.preventDefault();
+    // Empty boxes are left out of the address, as the collection's filter form does itself.
+    const fields = new URLSearchParams();
+    for (const [key, value] of new FormData(form)) if (typeof value === "string" && value !== "") fields.append(key, value);
+    url.search = fields.toString();
+    go(url);
+  }
+  // display: contents, so the wrapper changes no layout; it only has to be an ancestor of every link and form.
+  return <div onClickCapture={onClick} onSubmit={onSubmit} className="contents" data-preview-navigation="">{children}</div>;
 }
 
 /** The storefront chrome around every page, by the Navigation & footer tab that edits each part. */

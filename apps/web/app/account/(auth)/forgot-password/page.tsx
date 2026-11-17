@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { ForgotPasswordForm } from "@/components/account/auth/auth-forms";
-import { AuthShell } from "@/components/account/auth/auth-shell";
+import { AuthPageView } from "@/components/account/auth/auth-pages";
 import { prepareAuthPage } from "@/lib/account/auth-page";
 import { getPublishedContent } from "@/lib/content";
 
@@ -11,13 +9,5 @@ export const metadata = { title: "Reset your password", robots: { index: false, 
  * password, which also signs in. */
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { next, preview } = await prepareAuthPage(searchParams);
-  const guest = next.startsWith("/checkout") ? "/checkout" : "/";
-  return (
-    <AuthShell
-      editorial="login" media={preview ? undefined : (await getPublishedContent()).templateMedia}
-      aside={<p className="auth-aside-line">Just browsing?&nbsp; <Link href={guest}>Continue as guest</Link></p>}
-    >
-      <ForgotPasswordForm next={next} preview={preview} />
-    </AuthShell>
-  );
+  return <AuthPageView kind="forgot-password" next={next} preview={preview} media={preview ? undefined : (await getPublishedContent()).templateMedia} />;
 }

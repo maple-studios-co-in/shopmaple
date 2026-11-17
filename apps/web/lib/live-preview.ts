@@ -189,7 +189,7 @@ export function readPreviewMessage(
 export function previewRouteFor(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return "home";
-  if (segments.length === 1 && !["home", "pages", "policies", "blogs", "collections", "products"].includes(segments[0]!)) return `pages/${segments[0]}`;
+  if (segments.length === 1 && !["home", "pages", "policies", "blogs", "collections", "products", "favourites", "cart", "checkout", "account", "orders"].includes(segments[0]!)) return `pages/${segments[0]}`;
   return segments.join("/");
 }
 

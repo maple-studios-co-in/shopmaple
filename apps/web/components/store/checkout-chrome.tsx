@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SiteChrome } from "@shopmaple/contracts";
 import { defaultSiteChrome } from "@/lib/site-chrome-defaults";
+import { chromeArtworkSlots, defaultChromeArtwork, type ChromePicture } from "@/lib/chrome-artwork";
 
 const policies = [
   ["Refund policy", "/policies/refund-policy"],
@@ -17,11 +18,14 @@ const policies = [
  * the end. No cart drawer, Contact us button or menu. Each section's layout draws it with `CheckoutChrome`, on the
  * server; the store chrome steps aside on those paths and carries none of it, so no other page's JavaScript does either.
  * Styles: styles/checkout.css (loaded by the root layout), scoped to `.chrome`.
+ *
+ * `logo` is the logo placement's picture (lib/chrome-artwork.ts), so a logo staff upload shows here as in the site header;
+ * without it, the original.
  */
-export function CheckoutChrome({ kind, siteChrome, children }: { kind: "checkout" | "account"; siteChrome?: SiteChrome; children: ReactNode }) {
+export function CheckoutChrome({ kind, siteChrome, logo, children }: { kind: "checkout" | "account"; siteChrome?: SiteChrome; logo?: ChromePicture; children: ReactNode }) {
   return (
     <div className="chrome" data-checkout-chrome={kind}>
-      <CheckoutChromePart part="header" kind={kind} siteChrome={siteChrome} />
+      <CheckoutChromePart part="header" kind={kind} siteChrome={siteChrome} logo={logo} />
       <main id="main" className="chrome-main">{children}</main>
       <CheckoutChromePart part="footer" kind={kind} />
     </div>
@@ -29,7 +33,7 @@ export function CheckoutChrome({ kind, siteChrome, children }: { kind: "checkout
 }
 
 /** One part of the shell: its header (with the brand bar) or its footer. */
-export function CheckoutChromePart({ part, kind, siteChrome = defaultSiteChrome }: { part: "header" | "footer"; kind: "checkout" | "account"; siteChrome?: SiteChrome }) {
+export function CheckoutChromePart({ part, kind, siteChrome = defaultSiteChrome, logo = defaultChromeArtwork.logo }: { part: "header" | "footer"; kind: "checkout" | "account"; siteChrome?: SiteChrome; logo?: ChromePicture }) {
   if (part === "footer")
     return (
       <footer className="chrome-footer">
@@ -63,8 +67,8 @@ export function CheckoutChromePart({ part, kind, siteChrome = defaultSiteChrome 
           <span className="chrome-label">Continue shopping</span>
         </Link>
         <Link href="/" className="chrome-logo" aria-label="Maple Furnishers home">
-          {/* The site header's logo file, painted as it comes (no resizer), as the header does. */}
-          <Image src="/media/footer/maple-logo.webp" width={1080} height={500} alt="Maple Furnishers" unoptimized />
+          {/* The site header's logo, painted as it comes (no resizer), as the header does. */}
+          <Image src={logo.src} data-media-slot={chromeArtworkSlots.logo} width={1080} height={500} alt={logo.alt || "Maple Furnishers"} unoptimized />
         </Link>
         <p className="chrome-secure">
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size design icon */}

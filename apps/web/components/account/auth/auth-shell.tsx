@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import type { TemplateMedia } from "@shopmaple/contracts";
 import { ContentImage } from "@/components/content-image";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { resolveChromeArtwork } from "@/lib/chrome-artwork-resolve";
+import { chromeArtworkSlots } from "@/lib/chrome-artwork";
 
 /**
  * The photograph and its words on the left of each sign-in page: Figma 392:1652 (login) and 392:1697 (sign-up). The
@@ -41,13 +43,15 @@ const lines = (parts: readonly string[]) =>
 export function AuthShell({ editorial, aside, children, media }: { editorial: AuthEditorial; aside: ReactNode; children: ReactNode; /** The published template artwork. */ media?: TemplateMedia }) {
   const art = editorials[editorial];
   const photo = resolveTemplateMedia(art.photo, media);
+  // The logo placement's picture, as the site header shows it (a logo staff upload reaches these pages too).
+  const logo = resolveChromeArtwork(media).logo;
   return (
     <div className="account auth" data-store data-auth={editorial}>
       <main id="main" className="auth-panel">
         <div className="auth-brand">
           <Link href="/" className="auth-logo" aria-label="Maple Furnishers home">
-            {/* The site header's logo file, as the checkout's minimal header paints it. */}
-            <Image src="/media/footer/maple-logo.webp" width={1080} height={500} alt="Maple Furnishers" unoptimized />
+            {/* The site header's logo, as the checkout's minimal header paints it. */}
+            <Image src={logo.src} data-media-slot={chromeArtworkSlots.logo} width={1080} height={500} alt={logo.alt || "Maple Furnishers"} unoptimized />
           </Link>
         </div>
         <div className="auth-body">{children}</div>
@@ -64,7 +68,7 @@ export function AuthShell({ editorial, aside, children, media }: { editorial: Au
       </main>
       <div className="auth-editorial">
         <div className="auth-editorial-media">
-          <ContentImage className="auth-editorial-photo" src={photo.image} alt={photo.alt} fill sizes="(max-width: 959px) 100vw, 54vw" preload />
+          <ContentImage className="auth-editorial-photo" src={photo.image} alt={photo.alt} data-media-slot={art.photo} fill sizes="(max-width: 959px) 100vw, 54vw" preload />
         </div>
         <p className="auth-kicker">Maple Furnishers&nbsp;&nbsp;/&nbsp;&nbsp;The art of living</p>
         <div className="auth-caption">

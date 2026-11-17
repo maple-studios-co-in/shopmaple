@@ -189,6 +189,8 @@ test("clicked words open the screen that edits them, and the preview keeps its p
   assert.equal(previewRouteFor("/our-story"), "pages/our-story");
   assert.equal(previewRouteFor("/king"), "pages/king");
   assert.equal(previewRouteFor("/policies/privacy-policy"), "policies/privacy-policy");
+  // The shopper's own pages keep their address in the frame (17 Nov 2026), rather than being looked up as pages.
+  for (const own of ["favourites", "cart", "checkout", "account", "orders"]) assert.equal(previewRouteFor(`/${own}`), own);
   assert.equal(previewRouteFor("/blogs/news/a-post"), "blogs/news/a-post");
   assert.equal(previewRouteFor("/collections/all"), "collections/all");
 });

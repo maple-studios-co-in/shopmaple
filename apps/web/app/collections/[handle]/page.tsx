@@ -1,13 +1,6 @@
 import { notFound } from "next/navigation";
-import { CampaignBanner, type CampaignKey } from "@/components/campaign-banner";
-import { CollectionListing } from "@/components/collection-listing";
-import { CollectionHero } from "@/components/store/collection-hero";
-import { getCollectionPage } from "@/lib/catalog";
-import { collectionIntro, heroTitle } from "@/lib/collection-intro";
-import {
-  collectionTitles,
-  collectionQuery,
-} from "@/lib/collections";
+import { CollectionPageView } from "@/components/store/collection-page";
+import { collectionTitles } from "@/lib/collections";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
@@ -24,7 +17,7 @@ export async function generateMetadata({
   return { title, description: `${title} by Maple Furnishers: handcrafted luxury furniture, made to order in Delhi and delivered across India.`, alternates: { canonical: path } };
 }
 type Query = Record<string, string | string[] | undefined>;
-const categoryHandles = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"];
+/** The page itself is components/store/collection-page.tsx, which the staff live preview draws from a draft too. */
 export default async function Collection({
   params,
   searchParams,
@@ -34,48 +27,6 @@ export default async function Collection({
 }) {
   const { handle } = await params;
   if (!Object.hasOwn(collectionTitles, handle)) notFound();
-  const query = collectionQuery(await searchParams);
-  // Every collection, chairs included, opens on its listing (owner, 11 Nov 2026): the older chairs editorial was drawn
-  // from Shopify's artwork and products and left with them. The hero shows the collection's first piece with a photo.
-  const result = await getCollectionPage(handle, query);
-  const cover = result.facets?.cover ?? null;
-  const campaign: CampaignKey | undefined = (
-    {
-      beds: "beds-hero",
-      "outdoor-furnitures": "outdoors-hero",
-      "tv-media-units": "tv-units-hero",
-    } as Record<string, CampaignKey>
-  )[handle];
-  // The introduction speaks for the collection's kind of piece: its own category, or the one every listed piece shares.
-  const shared = [...new Set(result.products.map((product) => product.category).filter(Boolean))];
-  const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;
-  return (
-    <>
-      <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />
-      {campaign && (
-        <div className="landing-banner-frame" data-landing-banner="hero">
-          <CampaignBanner campaign={campaign} eager />
-        </div>
-      )}
-      <CollectionListing
-        handle={handle}
-        title={collectionTitles[handle]!}
-        headingLevel="h2"
-        query={result.query}
-        products={result.products}
-        total={result.total}
-        collectionTotal={result.collectionTotal}
-        limit={result.limit}
-        inStock={result.inStock}
-        outOfStock={result.outOfStock}
-        highestPrice={result.highestPrice}
-        facets={result.facets}
-      />
-      {handle === "beds" && (
-        <div className="landing-banner-frame home-container" data-landing-banner="inset">
-          <CampaignBanner campaign="beds-sale" />
-        </div>
-      )}
-    </>
-  );
+  // Called, not mounted, so the route returns the finished page as it always has.
+  return CollectionPageView({ handle, query: await searchParams });
 }

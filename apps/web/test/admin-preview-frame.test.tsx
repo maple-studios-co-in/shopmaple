@@ -63,6 +63,50 @@ test("storefront links inside the frame reopen on the draft with the same token;
   }
 });
 
+// Owner, 17 Nov 2026: every page opens in the preview. A link keeps its own query and anchor (a collection's page and
+// sort, a product's variant), and a form that asks for a page (the search, a collection's filters and sort) opens its
+// result in the frame too, rather than on the published storefront; a form that sends itself is left alone.
+test("links keep their query and anchor in the frame, and search and filter forms open their results on the draft", async () => {
+  const previous = { fetch: globalThis.fetch, FormData: globalThis.FormData };
+  globalThis.fetch = async () => Response.json({ items: [], itemCount: 0, subtotalPaise: 0, currency: "INR", mutationContext: { cartIdentity: "a".repeat(64), revision: 0 }, checkoutEnabled: false, mode: "preview" });
+  Object.assign(globalThis, { FormData: dom.window.FormData });
+  const root = createRoot(document.getElementById("root")!);
+  const assigned: string[] = [];
+  try {
+    await act(async () => root.render(
+      <ShopProvider>
+        <PreviewFrameDocument token={token} version={7} path="/collections/chairs" siteChrome={content.siteChrome} navigate={(url) => assigned.push(url)}>
+          <a href="/collections/chairs?page=2&amp;sort=price-asc">Page two</a>
+          <a href="/products/aero?variant=walnut#reviews">Aero</a>
+          <a href="/favourites">Saved</a>
+          <a href="/account">Account</a>
+          <form action="/collections/all" method="get" data-test="search"><input name="q" defaultValue="aero chair" /><input name="material" defaultValue="" /><button type="submit">Search</button></form>
+          <form data-test="enquiry" onSubmit={(event) => event.preventDefault()}><input name="email" defaultValue="asha@example.com" /><button type="submit">Send</button></form>
+        </PreviewFrameDocument>
+      </ShopProvider>,
+    ));
+    const byText = (text: string) => [...document.querySelectorAll("a")].find((el) => el.textContent === text)!;
+    const tokenParam = `token=${encodeURIComponent(token)}`;
+    click(byText("Page two"));
+    assert.equal(assigned.at(-1), `/admin/preview-frame/collections/chairs?page=2&sort=price-asc&${tokenParam}`);
+    click(byText("Aero"));
+    assert.equal(assigned.at(-1), `/admin/preview-frame/products/aero?variant=walnut&${tokenParam}#reviews`);
+    click(byText("Saved"));
+    assert.equal(assigned.at(-1), `/admin/preview-frame/favourites?${tokenParam}`);
+    click(byText("Account"));
+    assert.equal(assigned.at(-1), `/admin/preview-frame/account?${tokenParam}`);
+    await act(async () => { document.querySelector<HTMLFormElement>('[data-test="search"]')!.requestSubmit(); });
+    assert.equal(assigned.at(-1), `/admin/preview-frame/collections/all?q=aero+chair&${tokenParam}`, "the empty box is left out of the address");
+    const before = assigned.length;
+    await act(async () => { document.querySelector<HTMLFormElement>('[data-test="enquiry"]')!.requestSubmit(); });
+    assert.equal(assigned.length, before, "a form that sends itself is not turned into a page visit");
+  } finally {
+    await act(async () => root.unmount());
+    globalThis.fetch = previous.fetch;
+    Object.assign(globalThis, { FormData: previous.FormData });
+  }
+});
+
 test("every link of a real draft page renders inside the navigation wrapper", async () => {
   const route = renderStorefrontRoute(["home"], { ...content, campaignsAvailable: true });
   assert.ok(route);

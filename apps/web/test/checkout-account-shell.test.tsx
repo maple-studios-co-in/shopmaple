@@ -50,10 +50,12 @@ test("the shell keeps the brand bar and ends with the four policies", () => {
 test("account pages say Your Maple account; checkout and the order status page keep Secure checkout", () => {
   assert.match(shell("account").querySelector("header")!.textContent!, /Your Maple account/);
   assert.match(shell("checkout").querySelector("header")!.textContent!, /Secure checkout/);
-  // Each section's layout draws its shell with the published announcement.
+  // Each section's layout draws its shell with the published announcement and the logo placement's picture (17 Nov 2026:
+  // a logo staff upload reaches these pages too).
   for (const [path, kind] of [["../app/account/(signed-in)/layout.tsx", "account"], ["../app/checkout/layout.tsx", "checkout"], ["../app/orders/layout.tsx", "checkout"]] as const) {
     const source = read(path);
-    assert.match(source, new RegExp(`<CheckoutChrome kind="${kind}" siteChrome=\\{\\(await getPublishedContent\\(\\)\\)\\.siteChrome\\}>`), path);
+    assert.match(source, /const content = await getPublishedContent\(\);/, path);
+    assert.match(source, new RegExp(`<CheckoutChrome kind="${kind}" siteChrome=\\{content\\.siteChrome\\} logo=\\{resolveChromeArtwork\\(content\\.templateMedia\\)\\.logo\\}>`), path);
   }
   // The sign-in pages (Figma 392:1652, 392:1697) are a full-screen split of their own: no shell around them.
   for (const path of ["../app/account/layout.tsx", "../app/account/(auth)/layout.tsx"]) assert.doesNotMatch(read(path), /CheckoutChrome/, path);
