@@ -46,7 +46,9 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // 17 Nov 2026: 284,573 raw after click-to-edit for the theme's own words (#162): every page's client code carries the
 // default words for the 90 editable places and the markers the live preview clicks. The Site words screen's labels stay
 // out (lib/site-word-defaults.ts holds the words alone). Raised by 7,500 bytes for that (owner's yes).
-assert.ok(totalRaw <= 285_000, `Initial homepage JavaScript exceeds the 285,000-byte raw budget: ${totalRaw}`);
+// 17 Nov 2026: 289,137 raw after the QA report fixes (#163): enquiry forms check each field as it is typed, the hero
+// gained Terra slides and arrows, and the menu and carousels their arrows. Raised by 4,500 bytes for that (owner's yes).
+assert.ok(totalRaw <= 289_500, `Initial homepage JavaScript exceeds the 289,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
@@ -59,4 +61,5 @@ assert.ok(totalRaw <= 285_000, `Initial homepage JavaScript exceeds the 285,000-
 // registry-leak check stays the main guard.
 // 17 Nov 2026: 85,664 gzip after the same click-to-edit words (#162). Raised by 2,500 bytes for that (owner's yes); the
 // registry-leak check stays the main guard.
-assert.ok(totalGzip <= 86_000, `Initial homepage JavaScript exceeds the 86,000-byte gzip budget: ${totalGzip}`);
+// 17 Nov 2026: 87,210 gzip after the same QA report fixes (#163). Raised by 1,500 bytes for that (owner's yes).
+assert.ok(totalGzip <= 87_500, `Initial homepage JavaScript exceeds the 87,500-byte gzip budget: ${totalGzip}`);
