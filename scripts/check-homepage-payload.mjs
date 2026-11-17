@@ -43,7 +43,10 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // minOrderQuantity, and both schemas are parsed by code every page loads (the bag in the layout). The helpers that use
 // it live in @shopmaple/contracts/minimum-order, outside the homepage. Raised by 500 bytes for that (owner's yes); the
 // gzip budget below is unchanged.
-assert.ok(totalRaw <= 277_500, `Initial homepage JavaScript exceeds the 277,500-byte raw budget: ${totalRaw}`);
+// 17 Nov 2026: 284,573 raw after click-to-edit for the theme's own words (#162): every page's client code carries the
+// default words for the 90 editable places and the markers the live preview clicks. The Site words screen's labels stay
+// out (lib/site-word-defaults.ts holds the words alone). Raised by 7,500 bytes for that (owner's yes).
+assert.ok(totalRaw <= 285_000, `Initial homepage JavaScript exceeds the 285,000-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
@@ -54,4 +57,6 @@ assert.ok(totalRaw <= 277_500, `Initial homepage JavaScript exceeds the 277,500-
 // 10 Nov 2026: 83,009 gzip after product offers: the shared contracts every page loads gained the product's offer and
 // the checkout's promo code and promotion, while the campaign deals left the layout. Raised by 500 bytes for that; the
 // registry-leak check stays the main guard.
-assert.ok(totalGzip <= 83_500, `Initial homepage JavaScript exceeds the 83,500-byte gzip budget: ${totalGzip}`);
+// 17 Nov 2026: 85,664 gzip after the same click-to-edit words (#162). Raised by 2,500 bytes for that (owner's yes); the
+// registry-leak check stays the main guard.
+assert.ok(totalGzip <= 86_000, `Initial homepage JavaScript exceeds the 86,000-byte gzip budget: ${totalGzip}`);
