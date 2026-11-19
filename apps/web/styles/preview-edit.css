@@ -2,3 +2,7 @@
    clickable; words show a text cursor and pictures a pointer when hovered (the preview frame's hover rules win).
    Kept out of admin.css, whose base rules must all sit under :where(.shop-admin); this one styles the previewed store page. */
 html[data-preview-mode="edit"] :is(a, button, [role="button"], summary, label) { cursor: default; }
+
+/* A product card's Sale tag sits in a layer clicks pass through (to the photo's link); in Edit its words take the click,
+   so the tag can be changed like any other Site words (owner, 19 Nov 2026). */
+html[data-preview-mode="edit"] [data-card-badges] [data-site-word] { pointer-events: auto; }

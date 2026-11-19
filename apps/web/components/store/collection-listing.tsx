@@ -14,6 +14,7 @@ import type { ProductCardModel } from "@/lib/product-card-model";
 import { categoryNames } from "@/lib/format";
 import { cx } from "@/lib/cx";
 import { ProductCard } from "../product-card";
+import { SiteWord, useSiteWord, useSiteWordPlaceholder } from "../site-words";
 
 type Props = {
   handle: string;
@@ -43,8 +44,12 @@ const option = "flex cursor-pointer items-center gap-2 text-ui text-taupe hover:
 const check = "m-0 size-[13px] shrink-0 cursor-pointer accent-brand";
 const field = "h-8 w-[64px] rounded-[4px] border border-solid border-sand bg-white px-2 text-ui text-espresso [appearance:textfield] focus-visible:outline-2 focus-visible:outline-brand [&::-webkit-inner-spin-button]:appearance-none";
 
-/** Frame 1:1139 ("Filters"): one form, submitted by Apply filters, so the address always says what is shown. */
+/** Frame 1:1139 ("Filters"): one form, submitted by Apply filters, so the address always says what is shown. Its words are
+ * Site words (owner, 19 Nov 2026), so staff change each from the live preview. */
 function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id: string }) {
+  const anyPrice = useSiteWord("collection.filters.anyPrice");
+  const sides = { w: useSiteWord("collection.filters.width"), d: useSiteWord("collection.filters.depth") };
+  const minBox = useSiteWordPlaceholder("collection.filters.min"), maxBox = useSiteWordPlaceholder("collection.filters.max");
   const categories = facets?.categories ?? [];
   const materials = facets?.materials ?? [];
   const colours = facets?.colours ?? [];
@@ -60,18 +65,18 @@ function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id:
       {query.q && <input type="hidden" name="q" value={query.q} />}
       {query.category && <input type="hidden" name="category" value={query.category} />}
       <div role="group" aria-labelledby={`${id}-availability`} className="flex flex-col gap-3">
-        <h3 id={`${id}-availability`} className={heading}>Availability</h3>
+        <h3 id={`${id}-availability`} className={heading}><SiteWord k="collection.filters.availability" /></h3>
         <div className="flex flex-col gap-1">
-          {([["in", "In stock"], ["out", "Made to order"]] as const).map(([value, text]) => (
+          {([["in", "collection.filters.inStock"], ["out", "collection.filters.madeToOrder"]] as const).map(([value, word]) => (
             <label key={value} className={option}>
               <input type="checkbox" name="availability" value={value} defaultChecked={query.availability === value} className={check} />
-              {text}
+              <SiteWord k={word} />
             </label>
           ))}
         </div>
       </div>
       <div role="group" aria-labelledby={`${id}-price`} className="flex flex-col gap-3">
-        <h3 id={`${id}-price`} className={heading}>Price range</h3>
+        <h3 id={`${id}-price`} className={heading}><SiteWord k="collection.filters.price" /></h3>
         <div className="flex flex-wrap items-center gap-1.5 text-ui text-taupe">
           <label className="flex items-center gap-1">
             Rs.
@@ -80,16 +85,17 @@ function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id:
           <span aria-hidden="true">—</span>
           <label className="flex items-center gap-1">
             Rs.
-            <input aria-label="Maximum price in rupees" name="max" type="number" min="0" step="1" placeholder={highestPrice === null ? "Any price" : rupees(highestPrice)} defaultValue={query.max} className={field} />
+            <input aria-label="Maximum price in rupees" name="max" type="number" min="0" step="1" placeholder={highestPrice === null ? anyPrice : rupees(highestPrice)} defaultValue={query.max} className={field} />
           </label>
         </div>
         <p className="collection-price-caption m-0 text-label text-taupe">
-          {highestPrice === null ? "Prices available on request" : `Up to Rs. ${rupees(highestPrice)} in this collection`}
+          {highestPrice === null ? <SiteWord k="collection.filters.priceOnRequest" />
+            : <><SiteWord k="collection.filters.priceUpTo" /> {rupees(highestPrice)} <SiteWord k="collection.filters.priceInCollection" /></>}
         </p>
       </div>
       {categories.length > 0 && (
         <div role="group" aria-labelledby={`${id}-category`} className="flex flex-col gap-3">
-          <h3 id={`${id}-category`} className={heading}>Category</h3>
+          <h3 id={`${id}-category`} className={heading}><SiteWord k="collection.filters.category" /></h3>
           <ul data-filter-categories className="m-0 flex list-none flex-col gap-1 p-0">
             {categories.map((category) => {
               const current = category.kind === "collection" ? category.current : query.category === category.handle;
@@ -106,9 +112,9 @@ function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id:
           </ul>
         </div>
       )}
-      {([["material", "Material", materials], ["colour", "Colour", colours]] as const).map(([name, title, values]) => values.length > 0 && (
+      {([["material", "collection.filters.material", materials], ["colour", "collection.filters.colour", colours]] as const).map(([name, title, values]) => values.length > 0 && (
         <div key={name} role="group" aria-labelledby={`${id}-${name}`} className="flex flex-col gap-3">
-          <h3 id={`${id}-${name}`} className={heading}>{title}</h3>
+          <h3 id={`${id}-${name}`} className={heading}><SiteWord k={title} /></h3>
           <div className="flex flex-wrap gap-x-4 gap-y-1.5">
             {values.map((facet) => (
               <label key={facet.key} className={option}>
@@ -120,18 +126,18 @@ function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id:
         </div>
       ))}
       <div role="group" aria-labelledby={`${id}-size`} data-filter-size className="flex flex-col gap-3">
-        <h3 id={`${id}-size`} className={heading}>Size</h3>
+        <h3 id={`${id}-size`} className={heading}><SiteWord k="collection.filters.size" /></h3>
         {/* Frame 1:1152 sets "Width +   Depth +" on one line; an opened one takes the line for its fields. */}
         <div className="flex flex-wrap gap-x-4 gap-y-2">
-          {([["w", "Width"], ["d", "Depth"]] as const).map(([side, text]) => (
+          {([["w", "collection.filters.width"], ["d", "collection.filters.depth"]] as const).map(([side, word]) => (
             <details key={side} open={Boolean(query[`${side}min`] || query[`${side}max`])} className="group/size open:basis-full">
               <summary className="w-fit cursor-pointer list-none text-ui text-taupe hover:text-espresso [&::-webkit-details-marker]:hidden">
-                {text} <span aria-hidden="true" className="inline-block transition-transform group-open/size:rotate-45 motion-reduce:transition-none">+</span>
+                <SiteWord k={word} /> <span aria-hidden="true" className="inline-block transition-transform group-open/size:rotate-45 motion-reduce:transition-none">+</span>
               </summary>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-label text-taupe">
-                <input aria-label={`Minimum ${text.toLowerCase()} in centimetres`} name={`${side}min`} type="number" min="1" max="999" step="1" placeholder="Min" defaultValue={query[`${side}min`]} className={cx(field, "w-[64px]")} />
+                <input aria-label={`Minimum ${sides[side].toLowerCase()} in centimetres`} name={`${side}min`} type="number" min="1" max="999" step="1" {...minBox} defaultValue={query[`${side}min`]} className={cx(field, "w-[64px]")} />
                 <span aria-hidden="true">—</span>
-                <input aria-label={`Maximum ${text.toLowerCase()} in centimetres`} name={`${side}max`} type="number" min="1" max="999" step="1" placeholder="Max" defaultValue={query[`${side}max`]} className={cx(field, "w-[64px]")} />
+                <input aria-label={`Maximum ${sides[side].toLowerCase()} in centimetres`} name={`${side}max`} type="number" min="1" max="999" step="1" {...maxBox} defaultValue={query[`${side}max`]} className={cx(field, "w-[64px]")} />
                 cm
               </div>
             </details>
@@ -139,25 +145,25 @@ function FilterFields({ handle, query, highestPrice, facets, id }: Props & { id:
         </div>
       </div>
       <button type="submit" data-fill-button="" className="w-full cursor-pointer rounded-[6px] border-0 bg-brand p-[14px] text-ui font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-        Apply filters →
+        <SiteWord k="collection.filters.apply" />
       </button>
     </form>
   );
 }
 
 /** The ticked filters, each removable on its own: "Made to order", "Wood", "Width up to 80 cm". */
-function appliedFilters(handle: string, query: CollectionQuery) {
+function appliedFilters(handle: string, query: CollectionQuery, words: { inStock: string; madeToOrder: string; width: string; depth: string }) {
   const href = (patch: Partial<CollectionQuery>) => collectionHref(handle, { ...query, ...patch });
   return [
     query.q && { key: "q", text: `Search: ${query.q}`, name: "search", href: href({ q: "" }) },
-    query.availability && { key: "availability", text: query.availability === "in" ? "In stock" : "Made to order", name: "availability", href: href({ availability: "" }) },
+    query.availability && { key: "availability", text: query.availability === "in" ? words.inStock : words.madeToOrder, name: "availability", href: href({ availability: "" }) },
     query.min && { key: "min", text: `From Rs. ${rupees(Number(query.min) * 100)}`, name: "minimum price", href: href({ min: "" }) },
     query.max && { key: "max", text: `Up to Rs. ${rupees(Number(query.max) * 100)}`, name: "maximum price", href: href({ max: "" }) },
     query.category && { key: "category", text: categoryNames[query.category] ?? query.category, name: "category", href: href({ category: "" }) },
     ...keys(query.material).map((key) => ({ key: `material-${key}`, text: label(materialFacets, key), name: `${label(materialFacets, key)} material`, href: href({ material: without(query.material, key) }) })),
     ...keys(query.colour).map((key) => ({ key: `colour-${key}`, text: label(colourFacets, key), name: `${label(colourFacets, key)} colour`, href: href({ colour: without(query.colour, key) }) })),
-    (query.wmin || query.wmax) && { key: "width", text: `Width ${sizeText(query.wmin, query.wmax)}`, name: "width", href: href({ wmin: "", wmax: "" }) },
-    (query.dmin || query.dmax) && { key: "depth", text: `Depth ${sizeText(query.dmin, query.dmax)}`, name: "depth", href: href({ dmin: "", dmax: "" }) },
+    (query.wmin || query.wmax) && { key: "width", text: `${words.width} ${sizeText(query.wmin, query.wmax)}`, name: "width", href: href({ wmin: "", wmax: "" }) },
+    (query.dmin || query.dmax) && { key: "depth", text: `${words.depth} ${sizeText(query.dmin, query.dmax)}`, name: "depth", href: href({ dmin: "", dmax: "" }) },
   ].filter((chip): chip is { key: string; text: string; name: string; href: string } => Boolean(chip));
 }
 
@@ -170,16 +176,23 @@ export function CollectionListing(props: Props) {
   const Heading = props.headingLevel ?? "h1";
   const dialog = useRef<HTMLDialogElement>(null);
   const dialogTitle = useId();
-  const chips = appliedFilters(handle, query);
+  const chips = appliedFilters(handle, query, {
+    inStock: useSiteWord("collection.filters.inStock"), madeToOrder: useSiteWord("collection.filters.madeToOrder"),
+    width: useSiteWord("collection.filters.width"), depth: useSiteWord("collection.filters.depth"),
+  });
   const filtered = chips.length > 0;
-  const name = /^all\b/i.test(title) ? title : `All ${title.toLowerCase()}`;
+  const sortWords: Record<string, string> = {
+    featured: useSiteWord("collection.sort.featured"), title: useSiteWord("collection.sort.title"), "title-desc": useSiteWord("collection.sort.titleDesc"),
+    "price-asc": useSiteWord("collection.sort.priceAsc"), "price-desc": useSiteWord("collection.sort.priceDesc"),
+  };
+  const name = /^all\b/i.test(title) ? <>{title}</> : <><SiteWord k="collection.results.all" /> {title.toLowerCase()}</>;
   return (
     <section id="collection-products" data-store aria-label={title} className="bg-linen px-4 py-10 font-text text-espresso md:px-8 lg:px-16 lg:py-16">
       <div className="mx-auto grid max-w-[1312px] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start wide:max-w-none">
         <aside data-filters aria-label="Collection filters" className="hidden rounded-[12px] bg-white p-[22px] lg:block">
           <div className="mb-[22px] flex items-baseline gap-5">
-            <h2 className="m-0 text-subhead font-medium text-espresso">Filters</h2>
-            <Link data-clear-filters href={resetHref(handle)} className="text-subhead font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-brand">Clear all</Link>
+            <h2 className="m-0 text-subhead font-medium text-espresso"><SiteWord k="collection.filters.heading" /></h2>
+            <Link data-clear-filters href={resetHref(handle)} className="text-subhead font-bold text-espresso no-underline hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"><SiteWord k="collection.filters.clearAll" /></Link>
           </div>
           <FilterFields {...props} id="desktop" />
         </aside>
@@ -187,17 +200,17 @@ export function CollectionListing(props: Props) {
           <div className="flex flex-wrap items-center gap-x-10 gap-y-3 xl:gap-x-20">
             <Heading className="m-0 text-price font-bold text-espresso">{name}</Heading>
             <p data-results-count className="collection-item-count m-0 text-price font-bold text-espresso" aria-live="polite">
-              {total} {total === 1 ? "product" : "products"}
+              {total} <SiteWord k={total === 1 ? "collection.results.product" : "collection.results.products"} />
             </p>
             <form action={`/collections/${handle}`} method="get" className="collection-sort flex items-center gap-1 text-price font-bold text-espresso">
               {Object.entries(query)
                 .filter(([key, value]) => !["page", "sort"].includes(key) && value)
                 .map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
-              <label htmlFor="collection-sort">Sort:</label>
+              <label htmlFor="collection-sort"><SiteWord k="collection.results.sort" /></label>
               <span className="relative inline-flex items-center">
                 <select id="collection-sort" name="sort" defaultValue={query.sort} onChange={(event) => event.currentTarget.form?.requestSubmit()}
                   className="cursor-pointer appearance-none border-0 bg-transparent py-1 pr-5 pl-1 text-price font-bold text-espresso focus-visible:outline-2 focus-visible:outline-brand">
-                  {sortOptions.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                  {sortOptions.map(([value, text]) => <option key={value} value={value}>{sortWords[value] ?? text}</option>)}
                 </select>
                 <span aria-hidden="true" className="pointer-events-none absolute right-0">↓</span>
               </span>
@@ -205,12 +218,12 @@ export function CollectionListing(props: Props) {
             </form>
             <button type="button" className="collection-mobile-filter ml-auto inline-flex cursor-pointer items-center gap-2 rounded-[6px] border border-solid border-sand bg-white px-3 py-2 text-ui font-bold text-espresso lg:hidden"
               onClick={() => dialog.current?.showModal()}>
-              <SlidersHorizontal size={16} aria-hidden="true" /> Filters
+              <SlidersHorizontal size={16} aria-hidden="true" /> <SiteWord k="collection.filters.heading" />
             </button>
           </div>
           {filtered && (
             <div className="collection-applied flex flex-wrap items-center gap-2" aria-label="Applied filters">
-              <p className="collection-filter-summary m-0 mr-2 text-meta text-taupe">{total} of {collectionTotal} pieces</p>
+              <p className="collection-filter-summary m-0 mr-2 text-meta text-taupe">{total} of {collectionTotal} <SiteWord k="collection.results.pieces" /></p>
               {chips.map((chip) => (
                 <Link key={chip.key} className="collection-filter-chip inline-flex items-center gap-1.5 rounded-full border border-solid border-sand bg-white px-3 py-1 text-meta text-espresso no-underline hover:border-brand"
                   href={chip.href} aria-label={`Remove ${chip.name} filter`}>
@@ -218,7 +231,7 @@ export function CollectionListing(props: Props) {
                   <X size={13} aria-hidden="true" />
                 </Link>
               ))}
-              <Link className="collection-reset text-meta font-bold text-brand" href={resetHref(handle)}>Clear all</Link>
+              <Link className="collection-reset text-meta font-bold text-brand" href={resetHref(handle)}><SiteWord k="collection.filters.clearAll" /></Link>
             </div>
           )}
           {products.length ? (
@@ -230,35 +243,35 @@ export function CollectionListing(props: Props) {
             </div>
           ) : (
             <div className="rounded-[12px] bg-white p-8 text-center">
-              <h2 className="m-0 font-heading text-h3 font-medium text-espresso">{filtered ? "No matching pieces" : "More pieces are on their way"}</h2>
-              <p className="m-0 mt-2 text-ui text-taupe">{filtered ? "Try different filters, or clear them." : "This collection has no products in the current preview."}</p>
+              <h2 className="m-0 font-heading text-h3 font-medium text-espresso"><SiteWord k={filtered ? "collection.empty.filteredHeading" : "collection.empty.heading"} /></h2>
+              <p className="m-0 mt-2 text-ui text-taupe"><SiteWord k={filtered ? "collection.empty.filteredText" : "collection.empty.text"} /></p>
               <Link className="mt-4 inline-flex rounded-[6px] bg-brand px-5 py-3 text-ui font-bold text-white no-underline" href={filtered ? resetHref(handle) : "/collections/all"}>
-                {filtered ? "Clear filters" : "Browse all furniture"}
+                <SiteWord k={filtered ? "collection.empty.filteredButton" : "collection.empty.button"} />
               </Link>
             </div>
           )}
           {total > limit && (
             <nav className="collection-pagination flex items-center justify-center gap-6 text-ui text-espresso" aria-label="Collection pages">
-              {query.page > 1 && <Link className="font-bold text-brand" href={collectionHref(handle, query, query.page - 1)}>Previous</Link>}
-              <span>Page {query.page} of {Math.ceil(total / limit)}</span>
-              {total > query.page * limit && <Link className="font-bold text-brand" href={collectionHref(handle, query, query.page + 1)}>Next</Link>}
+              {query.page > 1 && <Link className="font-bold text-brand" href={collectionHref(handle, query, query.page - 1)}><SiteWord k="collection.pages.previous" /></Link>}
+              <span><SiteWord k="collection.pages.page" /> {query.page} of {Math.ceil(total / limit)}</span>
+              {total > query.page * limit && <Link className="font-bold text-brand" href={collectionHref(handle, query, query.page + 1)}><SiteWord k="collection.pages.next" /></Link>}
             </nav>
           )}
           <div data-custom-order className="flex flex-col items-start gap-5 bg-cream p-6 md:flex-row md:items-center md:justify-between md:gap-8">
-            <h2 className="m-0 font-heading text-h3 font-medium text-espresso">Can’t find what you’re looking for?</h2>
+            <h2 className="m-0 font-heading text-h3 font-medium text-espresso"><SiteWord k="collection.custom.heading" /></h2>
             <Link href="/contact" className="inline-flex min-w-[260px] shrink-0 items-center justify-center rounded-[6px] border border-solid border-sand bg-white p-[14px] text-ui font-bold text-brand no-underline hover:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-              Request custom order →
+              <SiteWord k="collection.custom.button" />
             </Link>
           </div>
-          <p className="collection-preview-note m-0 text-label text-taupe">A selection from our catalogue. Prices and availability are from the preview snapshot.</p>
+          <p className="collection-preview-note m-0 text-label text-taupe"><SiteWord k="collection.note" /></p>
         </div>
       </div>
       <dialog ref={dialog} aria-labelledby={dialogTitle} className="m-0 ml-auto h-dvh max-h-none w-[min(360px,100vw)] max-w-none overflow-y-auto border-0 bg-white p-[22px] font-text text-espresso backdrop:bg-espresso/40"
         onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }}>
         <div className="mb-[22px] flex items-center justify-between gap-4">
-          <h2 id={dialogTitle} className="m-0 text-subhead font-medium">Filters</h2>
+          <h2 id={dialogTitle} className="m-0 text-subhead font-medium"><SiteWord k="collection.filters.heading" /></h2>
           <div className="flex items-center gap-4">
-            <Link href={resetHref(handle)} className="text-ui font-bold text-espresso">Clear all</Link>
+            <Link href={resetHref(handle)} className="text-ui font-bold text-espresso"><SiteWord k="collection.filters.clearAll" /></Link>
             <button type="button" aria-label="Close filters" onClick={() => dialog.current?.close()} className="grid size-9 cursor-pointer place-items-center rounded-full border-0 bg-cream p-0">
               <X size={18} aria-hidden="true" />
             </button>

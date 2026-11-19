@@ -818,3 +818,27 @@ test("a click anywhere on a collection hero that is not on words opens its pictu
     assert.ok(frame.sent.some((message) => message.type === "text-select"));
   } finally { await frame.close(); }
 });
+
+// Owner, 19 Nov 2026: a click on a card's photo on a collection page did nothing. A product's photo comes with the product
+// from Keeri, so the preview says where it is changed; it opens no picture chooser (not even the block's around it, as on
+// a collection hero's featured piece) and no page.
+test("a click on a product's photo says it comes from Keeri, and opens no picture chooser and no page", async () => {
+  const frame = await renderBridge(
+    <>
+      <section data-collection-hero="" data-media-slot-area="collection-hero-beds">
+        <div><h1>Beds</h1><aside data-featured-product=""><span><img data-product-photo="" src="/media/keeri/aster.webp" alt="Aster" /></span></aside></div>
+      </section>
+      <article data-product-card=""><div data-card-image=""><a href="/products/aster"><img data-product-photo="" src="/media/keeri/aster.webp" alt="Aster" /></a></div></article>
+    </>,
+  );
+  try {
+    for (const photo of container.querySelectorAll("img")) {
+      await act(async () => { photo.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })); });
+      assert.equal(container.querySelector("[data-preview-media-hover]"), null, "a product's photo is not outlined as a picture to swap");
+      const event = await frame.click(photo);
+      assert.equal(event.defaultPrevented, true, "the card's link does not open");
+      assert.match(words(container.querySelector("[data-preview-hint]")), /comes from the product in Keeri/);
+    }
+    assert.equal(frame.sent.some((message) => message.type === "media-select" || message.type === "text-select"), false);
+  } finally { await frame.close(); }
+});

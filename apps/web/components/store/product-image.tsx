@@ -7,6 +7,7 @@ import { ImageOff } from "lucide-react";
  * A product photo, or a labelled placeholder when the image is missing or fails to load (legacy `.product-image-placeholder`).
  * A photo filling its frame fades in over the frame's colour instead of popping in, unless it is
  * preloaded (the first, most important photo paints at once) or the visitor asks for reduced motion.
+ * Both carry `data-product-photo`: in the live preview a click on one says the photo comes with the product from Keeri.
  */
 type Props = Omit<ImageProps, "src"> & { src?: string | null };
 export function ProductImage({ src, alt, onError, onLoad, className, ...props }: Props) {
@@ -18,6 +19,7 @@ export function ProductImage({ src, alt, onError, onLoad, className, ...props }:
     return (
       <div
         data-image-placeholder
+        data-product-photo=""
         className="flex size-full min-h-[76px] flex-col items-center justify-center gap-2.5 bg-[#f3f1eb] p-4 text-center text-[12px] text-[#66645c]"
         role="img"
         aria-label={`${alt || "Product"} — Image unavailable`}
@@ -32,6 +34,7 @@ export function ProductImage({ src, alt, onError, onLoad, className, ...props }:
       src={src}
       alt={alt}
       {...props}
+      data-product-photo=""
       unoptimized={props.unoptimized || attempts > 0}
       // A photo that finished before the page woke up never fires onLoad, so the element is asked directly.
       ref={(image) => { if (image?.complete && image.naturalWidth > 0 && loaded !== src) setLoaded(src); }}

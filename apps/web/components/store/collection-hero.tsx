@@ -5,6 +5,7 @@ import { shopMoney } from "@/lib/format";
 import type { CollectionIntroCopy } from "@/lib/collection-intro";
 import { cx } from "@/lib/cx";
 import { ContentImage } from "@/components/content-image";
+import { SiteWord } from "@/components/site-words";
 import { ProductImage } from "./product-image";
 
 /** The hero's photo and its piece; `width` (the photo's own pixels) and `position` come with a chosen photo. */
@@ -40,26 +41,26 @@ export function CollectionHero({ title, crumb, intro, cover, slot, picture }: {
         <div className="flex max-w-[850px] flex-col items-start gap-4 lg:gap-[26px]">
           <nav aria-label="Breadcrumb" className="text-[14px] leading-[1.35] font-medium md:text-[16px]">
             <ol className="m-0 flex list-none flex-wrap items-center gap-x-3 p-0">
-              <li><Link href="/" className="text-white no-underline hover:underline">Home</Link></li>
+              <li><Link href="/" className="text-white no-underline hover:underline"><SiteWord k="collection.hero.breadcrumbHome" /></Link></li>
               <li aria-hidden="true">/</li>
-              <li><Link href="/collections/all" className="text-white no-underline hover:underline">Collections</Link></li>
+              <li><Link href="/collections/all" className="text-white no-underline hover:underline"><SiteWord k="collection.hero.breadcrumbAll" /></Link></li>
               <li aria-hidden="true">/</li>
               <li aria-current="page">{crumb}</li>
             </ol>
           </nav>
           <h1 id="collection-hero-title" className="m-0 text-[38px] leading-[1.15] font-medium md:text-[48px] lg:text-[58px] lg:leading-[1.35]">{title}</h1>
-          <p data-hero-line className="m-0 text-[18px] leading-[1.35] font-medium md:text-[24px]">{intro.heading}</p>
+          <p data-hero-line className="m-0 text-[18px] leading-[1.35] font-medium md:text-[24px]"><SiteWord k={intro.word} /></p>
         </div>
         {cover?.handle && (
           <aside data-featured-product aria-label="Featured product" className="hidden w-[260px] shrink-0 flex-col items-center gap-4 rounded-[24px] bg-[rgb(48_38_33/0.64)] p-6 text-center backdrop-blur-[9px] lg:flex">
-            <p className="m-0 text-[16px] leading-[1.35] font-semibold">Featured product</p>
+            <p className="m-0 text-[16px] leading-[1.35] font-semibold"><SiteWord k="collection.hero.featured" /></p>
             <span className="relative block size-[136px] overflow-hidden rounded-full [&_img]:object-cover">
               <ProductImage src={cover.image} alt={cover.title} fill sizes="136px" />
             </span>
             <p className="m-0 w-full font-heading text-[20px] leading-[1.35] font-medium">{cover.title}</p>
-            {cover.pricePaise != null && <p className="m-0 text-[19px] leading-[1.35] font-medium">{cover.priceFrom ? "From " : ""}{shopMoney(cover.pricePaise)}</p>}
+            {cover.pricePaise != null && <p className="m-0 text-[19px] leading-[1.35] font-medium">{cover.priceFrom ? <><SiteWord k="productCard.from" />{" "}</> : null}{shopMoney(cover.pricePaise)}</p>}
             <Link href={`/products/${cover.handle}`} className="text-[14px] leading-[1.35] font-medium text-white underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-              Discover the {intro.noun} →
+              <SiteWord k="collection.hero.discover" /> {intro.noun} →
             </Link>
           </aside>
         )}

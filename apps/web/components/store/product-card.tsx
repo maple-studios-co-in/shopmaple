@@ -3,6 +3,7 @@ import { ArrowRight, Truck } from "lucide-react";
 import { discountPercent, type ProductCardModel } from "@/lib/product-card-model";
 import { shopMoney } from "@/lib/format";
 import { ProductImage } from "../product-image";
+import { SiteWord } from "../site-words";
 import { CardLimitedBadge, CardNewBadge, CardRating } from "./card-highlights";
 import { CardOptionThumbs, hasOptionPhotos } from "./card-option-thumbs";
 import { SaveButton } from "./save-button";
@@ -28,7 +29,7 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
           <ProductImage src={product.image ?? undefined} alt={product.title} fill sizes={imageSizes} className="object-cover transition-transform duration-500 group-hover/card:scale-[1.03] motion-reduce:transition-none" />
         </Link>
         <div data-card-badges className="pointer-events-none absolute top-3 left-3 flex flex-col items-start gap-1.5">
-          {sale ? <span data-card-sale className="bg-brand px-1.5 py-1 text-2xs leading-none font-bold tracking-[0.04em] text-white uppercase">Sale</span> : null}
+          {sale ? <span data-card-sale className="bg-brand px-1.5 py-1 text-2xs leading-none font-bold tracking-[0.04em] text-white uppercase"><SiteWord k="productCard.sale" /></span> : null}
           <CardNewBadge handle={product.handle} />
           <CardLimitedBadge handle={product.handle} />
         </div>
@@ -44,18 +45,18 @@ export function ProductCard({ product, imageSizes = "(max-width: 650px) 48vw, (m
         </div>
         <p data-card-price className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-price font-bold text-brand">
           <span>
-            {product.priceFrom ? "From " : ""}
-            {shopMoney(product.pricePaise)}
+            {product.priceFrom ? <><SiteWord k="productCard.from" />{" "}</> : null}
+            {product.pricePaise === null ? <SiteWord k="productCard.priceOnRequest" /> : shopMoney(product.pricePaise)}
           </span>
           {sale && percent !== null ? <span data-card-discount className="rounded-[4px] bg-[#e6f2e3] px-1.5 py-1 text-[10px] leading-none font-bold text-[#2f6b3a]">{percent}% OFF</span> : null}
           {sale ? <del className="basis-full text-label font-normal text-taupe">{shopMoney(product.compareAtPaise!)}</del> : null}
         </p>
-        {product.freeDelivery ? <p data-card-free-delivery className="m-0 inline-flex items-center gap-1 text-meta font-semibold text-[#2f6b32]"><Truck aria-hidden="true" className="size-3.5" strokeWidth={1.75} />Free delivery</p> : null}
-        {product.otherOptionsOnRequest && <p data-card-options className="m-0 text-meta text-taupe">Other options on request</p>}
+        {product.freeDelivery ? <p data-card-free-delivery className="m-0 inline-flex items-center gap-1 text-meta font-semibold text-[#2f6b32]"><Truck aria-hidden="true" className="size-3.5" strokeWidth={1.75} /><SiteWord k="productCard.freeDelivery" /></p> : null}
+        {product.otherOptionsOnRequest && <p data-card-options className="m-0 text-meta text-taupe"><SiteWord k="productCard.otherOptions" /></p>}
         {product.optionCount > 1 && hasOptionPhotos(product) && <CardOptionThumbs product={product} />}
         {product.optionCount > 1 && !hasOptionPhotos(product) && (
           <Link data-card-options href={href} className="mt-auto inline-flex items-center gap-1 pt-1 text-meta font-semibold text-taupe no-underline hover:text-brand" aria-label={`View ${product.optionCount} options for ${product.title}`}>
-            {product.optionCount} options <ArrowRight aria-hidden="true" className="size-3.5" />
+            {product.optionCount} <SiteWord k="productCard.options" /> <ArrowRight aria-hidden="true" className="size-3.5" />
           </Link>
         )}
       </div>

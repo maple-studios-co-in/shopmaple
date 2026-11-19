@@ -11,7 +11,7 @@ export { siteWordText, type SiteWordKey };
  *
  * Adding a word: give it a key here (place.part.name), then show it with <SiteWord k="..." /> or useSiteWord("...").
  */
-export const sitePlaces = ["Homepage", "Footer", "Category pages", "Contact", "Bulk Enquiry", "Return & Exchange", "Policies & help", "Blog"] as const;
+export const sitePlaces = ["Homepage", "Footer", "Category pages", "Collection pages", "Product cards", "Contact", "Bulk Enquiry", "Return & Exchange", "Policies & help", "Blog"] as const;
 export type SitePlace = (typeof sitePlaces)[number];
 export type SiteWordEntry = { text: string; label: string; place: SitePlace; multiline?: boolean };
 
@@ -124,6 +124,68 @@ const siteWordLabels = {
   "blog.collections.heading": { place: "Blog", label: "Collections block: heading" },
   "blog.collections.lede": { place: "Blog", label: "Collections block: line under the heading" },
   "blog.collections.cta": { place: "Blog", label: "Collections block: button" },
+
+  // Collection pages (/collections/..., owner 19 Nov 2026): the hero's own words, then the listing's
+  "collection.hero.breadcrumbHome": { place: "Collection pages", label: "Top: breadcrumb, first link" },
+  "collection.hero.breadcrumbAll": { place: "Collection pages", label: "Top: breadcrumb, second link" },
+  "collection.hero.featured": { place: "Collection pages", label: "Top: featured product card heading" },
+  "collection.hero.discover": { place: "Collection pages", label: "Top: featured product link (before the kind of piece)" },
+  "collection.intro.chairs": { place: "Collection pages", label: "Top: line under the title, chair collections" },
+  "collection.intro.sofas": { place: "Collection pages", label: "Top: line under the title, sofa collections" },
+  "collection.intro.tables": { place: "Collection pages", label: "Top: line under the title, table collections" },
+  "collection.intro.beds": { place: "Collection pages", label: "Top: line under the title, bed collections" },
+  "collection.intro.storage": { place: "Collection pages", label: "Top: line under the title, storage collections" },
+  "collection.intro.outdoors": { place: "Collection pages", label: "Top: line under the title, outdoor collections" },
+  "collection.intro.everything": { place: "Collection pages", label: "Top: line under the title, mixed collections (All, Sale…)" },
+  "collection.filters.heading": { place: "Collection pages", label: "Filters: heading (and the phone button)" },
+  "collection.filters.clearAll": { place: "Collection pages", label: "Filters: Clear all link" },
+  "collection.filters.availability": { place: "Collection pages", label: "Filters: availability heading" },
+  "collection.filters.inStock": { place: "Collection pages", label: "Filters: in stock choice" },
+  "collection.filters.madeToOrder": { place: "Collection pages", label: "Filters: made to order choice" },
+  "collection.filters.price": { place: "Collection pages", label: "Filters: price heading" },
+  "collection.filters.priceOnRequest": { place: "Collection pages", label: "Filters: price note when no piece has a price" },
+  "collection.filters.priceUpTo": { place: "Collection pages", label: "Filters: price note, before the highest price" },
+  "collection.filters.priceInCollection": { place: "Collection pages", label: "Filters: price note, after the highest price" },
+  "collection.filters.anyPrice": { place: "Collection pages", label: "Filters: highest price box when no piece has a price" },
+  "collection.filters.category": { place: "Collection pages", label: "Filters: category heading" },
+  "collection.filters.material": { place: "Collection pages", label: "Filters: material heading" },
+  "collection.filters.colour": { place: "Collection pages", label: "Filters: colour heading" },
+  "collection.filters.size": { place: "Collection pages", label: "Filters: size heading" },
+  "collection.filters.width": { place: "Collection pages", label: "Filters: width" },
+  "collection.filters.depth": { place: "Collection pages", label: "Filters: depth" },
+  "collection.filters.min": { place: "Collection pages", label: "Filters: smallest size box" },
+  "collection.filters.max": { place: "Collection pages", label: "Filters: largest size box" },
+  "collection.filters.apply": { place: "Collection pages", label: "Filters: button" },
+  "collection.results.all": { place: "Collection pages", label: "Products: word before the collection's name" },
+  "collection.results.product": { place: "Collection pages", label: "Products: count, one piece" },
+  "collection.results.products": { place: "Collection pages", label: "Products: count, several pieces" },
+  "collection.results.pieces": { place: "Collection pages", label: "Products: count with filters on (after “3 of 12”)" },
+  "collection.results.sort": { place: "Collection pages", label: "Products: sort label" },
+  "collection.sort.featured": { place: "Collection pages", label: "Sort: featured" },
+  "collection.sort.title": { place: "Collection pages", label: "Sort: A to Z" },
+  "collection.sort.titleDesc": { place: "Collection pages", label: "Sort: Z to A" },
+  "collection.sort.priceAsc": { place: "Collection pages", label: "Sort: price low to high" },
+  "collection.sort.priceDesc": { place: "Collection pages", label: "Sort: price high to low" },
+  "collection.empty.filteredHeading": { place: "Collection pages", label: "No results with filters: heading" },
+  "collection.empty.filteredText": { place: "Collection pages", label: "No results with filters: text" },
+  "collection.empty.filteredButton": { place: "Collection pages", label: "No results with filters: button" },
+  "collection.empty.heading": { place: "Collection pages", label: "Empty collection: heading" },
+  "collection.empty.text": { place: "Collection pages", label: "Empty collection: text" },
+  "collection.empty.button": { place: "Collection pages", label: "Empty collection: button" },
+  "collection.pages.previous": { place: "Collection pages", label: "Page links: previous" },
+  "collection.pages.next": { place: "Collection pages", label: "Page links: next" },
+  "collection.pages.page": { place: "Collection pages", label: "Page links: word before the page number" },
+  "collection.custom.heading": { place: "Collection pages", label: "Custom order: heading" },
+  "collection.custom.button": { place: "Collection pages", label: "Custom order: button" },
+  "collection.note": { place: "Collection pages", label: "Note under the products" },
+
+  // Product cards, on every page that shows them
+  "productCard.priceOnRequest": { place: "Product cards", label: "Price, when a piece has none" },
+  "productCard.from": { place: "Product cards", label: "Word before a starting price" },
+  "productCard.sale": { place: "Product cards", label: "Sale tag on the photo" },
+  "productCard.freeDelivery": { place: "Product cards", label: "Free delivery line" },
+  "productCard.otherOptions": { place: "Product cards", label: "Line when other options are made on request" },
+  "productCard.options": { place: "Product cards", label: "Word after the number of options" },
 } as const satisfies Record<SiteWordKey, Omit<SiteWordEntry, "text">>;
 
 export const siteWordList = Object.fromEntries(
