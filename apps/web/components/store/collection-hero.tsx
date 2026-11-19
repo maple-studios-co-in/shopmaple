@@ -4,6 +4,7 @@ import type { CollectionFacets } from "@shopmaple/contracts";
 import { shopMoney } from "@/lib/format";
 import type { CollectionIntroCopy } from "@/lib/collection-intro";
 import { cx } from "@/lib/cx";
+import { ContentImage } from "@/components/content-image";
 import { ProductImage } from "./product-image";
 
 /** The hero's photo and its piece; `width` (the photo's own pixels) and `position` come with a chosen photo. */
@@ -14,12 +15,22 @@ export type HeroCover = NonNullable<CollectionFacets["cover"]> & { width?: numbe
  * gradient, with the trail, the collection's name and its line on the left, and that piece featured on the right with
  * its price and a way to it. A photo of known size is never drawn wider than its own pixels: on a wider screen it keeps
  * to the right and fades into the dark behind the title, so it stays sharp.
+ *
+ * `picture`, a photo staff chose for this collection page on the Artwork screen (`slot`, owner 19 Nov 2026), fills the
+ * width in place of the piece's photo; the featured piece stays. The whole hero names its placement, so in the live
+ * preview a click anywhere on it that is not on words opens that picture's chooser, with or without a photo yet.
  */
-export function CollectionHero({ title, crumb, intro, cover }: { title: string; crumb: string; intro: CollectionIntroCopy; cover: HeroCover | null | undefined }) {
+export function CollectionHero({ title, crumb, intro, cover, slot, picture }: {
+  title: string; crumb: string; intro: CollectionIntroCopy; cover: HeroCover | null | undefined; slot?: string; picture?: string;
+}) {
   return (
-    <section data-store data-collection-hero aria-labelledby="collection-hero-title" className="relative isolate flex min-h-[420px] overflow-hidden bg-espresso font-text text-white lg:h-[500px]">
-      {cover && (
-        <div data-hero-photo className={cx("absolute inset-y-0 right-0 -z-10 w-full [&_img]:object-cover [&_img]:[object-position:var(--hero-position)]", cover.width ? "[mask-image:linear-gradient(to_right,transparent,#000_24%)]" : undefined)}
+    <section data-store data-collection-hero data-media-slot-area={slot} aria-labelledby="collection-hero-title" className="relative isolate flex min-h-[420px] overflow-hidden bg-espresso font-text text-white lg:h-[500px]">
+      {picture ? (
+        <div data-hero-photo data-media-slot={slot} className="absolute inset-0 -z-10 [&_img]:object-cover">
+          <ContentImage src={picture} alt="" fill preload sizes="100vw" />
+        </div>
+      ) : cover && (
+        <div data-hero-photo data-media-slot={slot} className={cx("absolute inset-y-0 right-0 -z-10 w-full [&_img]:object-cover [&_img]:[object-position:var(--hero-position)]", cover.width ? "[mask-image:linear-gradient(to_right,transparent,#000_24%)]" : undefined)}
           style={{ maxWidth: cover.width ? `${cover.width}px` : undefined, "--hero-position": cover.position ?? "center" } as CSSProperties}>
           <ProductImage src={cover.image} alt="" fill preload sizes={cover.width ? `min(100vw, ${cover.width}px)` : "100vw"} />
         </div>

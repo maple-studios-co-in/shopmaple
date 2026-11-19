@@ -72,8 +72,39 @@ export const iconPictureKeys = [
   "icon-collection-promise-1", "icon-collection-promise-2", "icon-collection-promise-3",
 ] as const;
 
+/**
+ * The wide photo at the top of every collection page (/collections/<handle>), editable since the owner found the Tables,
+ * Beds and Collections pages' heroes could not be changed (19 Nov 2026). By handle and page name, as the catalogue
+ * registry (catalogue-registry.ts, server only) lists the collections; a test keeps the two in step. Until staff upload
+ * one, a hero shows its collection's first product photo, as it always has.
+ */
+export const collectionHeroPages = [
+  ["all", "All Furniture"], ["sofas", "Sofas"], ["chairs", "Chairs"], ["tables", "Tables"], ["beds", "Beds"], ["storage", "Storage"],
+  ["outdoor-furnitures", "Outdoor Furnitures"], ["outdoors", "Outdoors"], ["tv-media-units", "TV & Media Units"], ["clearance-sale", "Clearance Sale"],
+  ["minimum-60-off", "Minimum 30% Off"], ["best-buy-under-rs-50-000", "Best Buy Under Rs. 50,000"], ["furniture-store-under-rs-25-000", "Furniture Under Rs. 25,000"],
+  ["bestseller-chairs", "Bestseller Chairs"], ["frontpage", "Home page"], ["chair-collection", "Chairs"], ["living-room", "Living Room"],
+  ["bedroom-accents", "Bedroom Accents"], ["l-shape-sofa-set", "L Shape Sofa Set"], ["luxe-velvet-hotel-lounge", "Luxe Velvet, Hotel Lounge"],
+  ["console-tables", "Console Tables"], ["center-tables", "Center Tables"], ["center-tables-1", "Center Tables"], ["bed-room", "Bed Room"],
+  ["office-suite", "Office Suite"], ["hotel-luxury", "Hotel Luxury"], ["bentley-chair", "Bentley Chair"], ["dining-chair", "Dining Chairs"],
+  ["sleek-chair", "Sleek Chair"], ["bedroom-chair", "Bedroom Chair"], ["arm-chair", "Arm Chairs"], ["accent-chair", "Accent Chairs"],
+  ["lounge-wing-chair", "Lounge/Wing Chair"], ["rocking-chair", "Rocking Chair"], ["iconic-bar-chair", "Iconic/Bar Chair"], ["bentley", "bentley"],
+  ["sofa-set-designs", "Designer Sofa Sets"], ["wooden-sofas", "Wooden Sofas"], ["fabric-sofas", "Fabric Sofas"], ["l-shape-sofa", "L Shape Sofa"],
+  ["chesterfield-sofas", "Chesterfield Sofas"], ["sofa-cum-beds", "Sofa Cum Beds"], ["recliners", "Recliners"], ["3-seater-sofas", "3 Seater Sofas"],
+  ["2-seater-sofas", "2 Seater Sofas"], ["dining-chairs-1", "Dining-Chairs"], ["rocking-chairs", "Rocking Chairs"], ["wing-chair", "Wing Chair"],
+  ["bedroom-sofa", "Bedroom Sofa"], ["5-seater-sofa", "5 Seater Sofas"], ["7-seater-sofa", "7 Seater Sofas"], ["sofa-sets", "Sofa Sets"],
+  ["sofa-chairs", "Sofa Chairs"], ["bedroom-nimbus", "Bedroom-Nimbus"], ["dining-room-nimbus", "Dining Room - Nimbus"], ["living-room-nimbus", "Living Room Nimbus"],
+  ["dining", "Dining Tables"], ["bar", "Bar"], ["sofa-table", "Sofa Tables"], ["side-table", "Side Tables"], ["dinings", "Dining Sets"], ["consoles", "Consoles"],
+  ["nimbus", "Nimbus"], ["king-size-beds", "King Size Beds"], ["queen-size-beds", "Queen Size Beds"], ["double-size-beds", "Double Size Beds"],
+  ["single-size-beds", "Single Size Beds"], ["solid-wood-beds", "Solid Wood Beds"], ["fabric-beds", "Fabric Beds"], ["sofas-and-chairs", "Sofas & Chairs"],
+  ["3-seater-sofa", "3 Seater Sofas"], ["kids-beds", "Kids Beds"], ["office-chairs", "Office Chairs"], ["benches", "Benches & Ottomans"],
+] as const;
+type HeroKeys<T extends readonly (readonly [string, string])[]> = { [K in keyof T]: T[K] extends readonly [infer Handle extends string, string] ? `collection-hero-${Handle}` : never };
+/** `collection-hero-<handle>`, one placement per collection page. */
+export const collectionHeroKeys = collectionHeroPages.map(([handle]) => `collection-hero-${handle}`) as unknown as HeroKeys<typeof collectionHeroPages>;
+
 export const pictureSlotKeys = [
   ...menuPictureKeys, ...landingBannerKeys, ...landingTileKeys, ...landingValueKeys, ...blogPictureKeys, ...otherPictureKeys, ...iconPictureKeys,
+  ...collectionHeroKeys,
 ] as const;
 
 /** The landing banners are wide on larger screens and square on phones, so each takes a desktop and a mobile image. */
@@ -86,4 +117,6 @@ export const pictureSlotDecorativeKeys = [
   "blog-bestsellers-promo", "blog-collections-photo",
   ...otherPictureKeys,
   ...iconPictureKeys,
+  // A hero photo sits behind the collection's name, which speaks for it.
+  ...collectionHeroKeys,
 ] as const;

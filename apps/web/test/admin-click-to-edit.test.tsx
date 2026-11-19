@@ -799,3 +799,22 @@ test("inside the frame: a page that loads while staff are browsing starts in Bro
     assert.ok(container.querySelector('[data-preview-mode-pill="edit"]'));
   } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await frame.close(); }
 });
+
+// Owner, 19 Nov 2026: a collection page's hero photo sits behind its words, so a click lands on the words' layer, never on
+// the photo. The hero names its placement for the whole block.
+test("a click anywhere on a collection hero that is not on words opens its picture, though the words' layer is what is clicked", async () => {
+  const frame = await renderBridge(
+    <section data-collection-hero="" data-media-slot-area="collection-hero-beds">
+      <div data-hero-photo="" data-media-slot="collection-hero-beds"><img src="/media/keeri/aster.webp" alt="" /></div>
+      <div data-test="layer"><h1>Beds</h1><aside data-featured-product=""><img src="/media/keeri/aster.webp" alt="Aster" /></aside></div>
+    </section>,
+  );
+  try {
+    await frame.click(container.querySelector('[data-test="layer"]')!);
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", slot: "collection-hero-beds", path: "/" });
+    const pictures = frame.sent.filter((message) => message.type === "media-select").length;
+    await frame.click(container.querySelector("h1")!);
+    assert.equal(frame.sent.filter((message) => message.type === "media-select").length, pictures, "the title is words to type over, not the picture");
+    assert.ok(frame.sent.some((message) => message.type === "text-select"));
+  } finally { await frame.close(); }
+});

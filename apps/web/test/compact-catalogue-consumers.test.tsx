@@ -17,6 +17,8 @@ async function transport(run: (requests: URL[]) => Promise<void>, reply: (url: U
   globalThis.fetch = async input => { const url = new URL(String(input), "http://localhost"); requests.push(url); return Response.json(reply(url)); };
   try { await run(requests); } finally { globalThis.fetch = previous; if (previousApi === undefined) delete process.env.API_URL; else process.env.API_URL = previousApi; }
 }
+/** The catalogue requests a page made, in order; the published content is one shared read per request, not a catalogue read. */
+const catalogueReads = (requests: URL[]) => requests.filter((request) => request.pathname !== "/api/content/storefront").map((request) => request.pathname);
 function listing(node: ReactNode): Record<string, unknown> | undefined {
   for (const child of Children.toArray(node)) if (isValidElement<Record<string, unknown>>(child)) {
     if (child.type === CollectionListing) return child.props;
@@ -28,8 +30,9 @@ function listing(node: ReactNode): Record<string, unknown> | undefined {
 test("a normal collection makes one compact read and displays its authoritative page and facets", async () => {
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "all" }), searchParams: Promise.resolve({ q: " oak ", sort_by: "price-descending", page: "999" }) }))!;
-    // Only the page: the hero features the collection's own first piece with a photo, from the same answer.
-    assert.deepEqual(requests.map((request) => request.pathname), ["/api/catalogue/collections/all"], "one collection page must not fetch the whole catalogue");
+    // Only the page: the hero features the collection's own first piece with a photo, from the same answer. (The published
+    // content, which may give the hero a photo of its own, is the request's shared read: the layout reads it too.)
+    assert.deepEqual(catalogueReads(requests), ["/api/catalogue/collections/all"], "one collection page must not fetch the whole catalogue");
     assert.equal(requests[0]!.pathname, "/api/catalogue/collections/all");
     assert.equal(requests[0]!.searchParams.get("limit"), "24");
     assert.equal(requests[0]!.searchParams.get("q"), "oak");
@@ -67,7 +70,7 @@ test("the bare chairs address opens on its listing with one compact page read an
   await transport(async requests => {
     const result = listing(await Collection({ params: Promise.resolve({ handle: "chairs" }), searchParams: Promise.resolve({}) }))!;
     // The older chairs editorial (Shopify's artwork and products) left the store on 11 Nov 2026.
-    assert.deepEqual(requests.map(request => request.pathname), ["/api/catalogue/collections/chairs"], "no editorial card batches");
+    assert.deepEqual(catalogueReads(requests), ["/api/catalogue/collections/chairs"], "no editorial card batches");
     assert.equal(requests[0]!.searchParams.get("limit"), "24");
     assert.equal(requests[0]!.searchParams.has("q"), false);
     assert.equal(requests[0]!.searchParams.has("category"), false);

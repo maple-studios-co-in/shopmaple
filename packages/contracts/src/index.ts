@@ -40,6 +40,8 @@ export {
   blogCoverKeys,
   blogPictureKeys,
   otherPictureKeys,
+  collectionHeroPages,
+  collectionHeroKeys,
 } from "./picture-slots";
 export type {
   StorefrontContent,

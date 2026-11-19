@@ -4,7 +4,9 @@ import { CollectionHero } from "@/components/store/collection-hero";
 import { getCollectionPage } from "@/lib/catalog";
 import { collectionIntro, heroTitle } from "@/lib/collection-intro";
 import { collectionQuery, collectionTitles } from "@/lib/collections";
-import type { StorefrontDocument } from "@/lib/content";
+import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
+import { resolveTemplateMedia } from "@/lib/template-media-defaults";
+import { collectionHeroKeys, type TemplateMediaKey } from "@shopmaple/contracts";
 
 type Query = Record<string, string | string[] | undefined>;
 const categoryHandles = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"];
@@ -20,6 +22,11 @@ export async function CollectionPageView({ handle, query: search, content }: { h
   // from Shopify's artwork and products and left with them. The hero shows the collection's first piece with a photo.
   const result = await getCollectionPage(handle, query);
   const cover = result.facets?.cover ?? null;
+  // The hero's own photo, when staff chose one (owner, 19 Nov 2026): an Artwork placement per collection page, read from the
+  // draft in the live preview. Without one the hero keeps the collection's first product photo. Read after the listing,
+  // so the catalogue is asked first as before.
+  const slot = (collectionHeroKeys as readonly string[]).includes(`collection-hero-${handle}`) ? `collection-hero-${handle}` as TemplateMediaKey : undefined;
+  const chosen = slot ? resolveTemplateMedia(slot, (content ?? await getPublishedContent()).templateMedia).image : "";
   const campaign: CampaignKey | undefined = (
     {
       beds: "beds-hero",
@@ -32,7 +39,8 @@ export async function CollectionPageView({ handle, query: search, content }: { h
   const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;
   return (
     <>
-      <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover} />
+      <CollectionHero title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover}
+        slot={slot} picture={chosen || undefined} />
       {campaign && (
         <div className="landing-banner-frame" data-landing-banner="hero">
           <CampaignBanner campaign={campaign} eager content={content} />

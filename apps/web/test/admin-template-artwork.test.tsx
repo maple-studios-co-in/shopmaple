@@ -72,7 +72,7 @@ test("legacy Artwork browsing shows grouped original placements without creating
     assert.equal(button("Save draft").disabled, true, "Existing clean drafts remain clean");
     await click("Artwork");
     assert.deepEqual([...container.querySelectorAll('select[aria-label="Artwork group"] option')].map(o=>o.textContent), ["Homepage", "Homepage icons", "Cities", "Nimbus", "Our Story", "Contact", "Bulk Enquiry", "Terra",
-      "Main menu", "Sofas page", "Tables page", "Chairs page", "Blog", "Product page", "Help pages", "Sign-in pages", "Icons & logo"]);
+      "Main menu", "Sofas page", "Tables page", "Chairs page", "Collection pages", "Blog", "Product page", "Help pages", "Sign-in pages", "Icons & logo"]);
     // Eight homepage placements, then the editorial's four flip photos (owner, 12 Nov 2026).
     assert.equal(container.querySelector('select[aria-label="Artwork placement"]')?.children.length, 12);
     await select("Artwork placement", "home-nimbus");
