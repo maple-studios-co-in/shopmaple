@@ -91,17 +91,42 @@ test("an unfinished post, slide, tile or page is left out of the preview and nam
     instagramPosts: [...base.instagramPosts, { href: "", src: "", alt: "" }],
     pages: [{ slug: "", title: "", description: "", body: "", banner: null }],
     homeMerchandising: { bestsellers: [], chairs: [], categories: [tile("chairs", upload("g")), tile("new-tile", "")], offers: [] },
-    homeDetails: { ...base.homeDetails!, hero: { ...base.homeDetails!.hero, slides: [{ kind: "image", src: "", alt: "", headline: "", intro: "" }] } },
+    homeDetails: { ...base.homeDetails!, hero: { ...base.homeDetails!.hero, slides: [{ kind: "image", src: "", alt: "", headline: "", intro: "", button: { label: "", href: "/sofas" } }] } },
   };
   const ready = previewReadyContent(content);
   assert.ok(valid(ready.content), "the rest of the draft is saved for the preview");
-  assert.deepEqual(ready.leftOut, ["Page “1”", `Instagram post ${content.instagramPosts.length}`, "Merchandising, category tile 2", "Homepage hero slide 1"]);
+  assert.deepEqual(ready.leftOut, ["Page “1”", `Instagram post ${content.instagramPosts.length}`, "Merchandising, category tile 2", "Homepage hero slide 1 button"]);
   assert.deepEqual(ready.standIns, ["Merchandising, category tile 1: description"]);
   assert.equal(ready.content.instagramPosts.length, base.instagramPosts.length);
   assert.equal(ready.content.homeMerchandising!.categories[0]!.alt, "Chairs", "a finished tile is described by its title meanwhile");
-  assert.equal(ready.content.homeDetails!.hero.slides, undefined, "with no slide ready the hero shows its default stills");
+  assert.deepEqual(ready.content.homeDetails!.hero.slides, [{ kind: "image", button: null }],
+    "a slide still being written shows Maple's photo for its place, without its unfinished button (owner, 19 Nov 2026)");
   const issue = storefrontContentSchema.safeParse(content).error?.issues[0];
   assert.match(describeContentIssue(issue, content), /^Check (Page “1”|Instagram post \d|Merchandising, category tile \d|Homepage hero)/, "an explicit save says what to finish");
+});
+
+// Owner, 19 Nov 2026: the slider keeps the number of slides chosen while each one is being finished.
+test("a hero slide being finished keeps its place: a video waiting for its film shows Maple's photo, an unfinished button is hidden", () => {
+  const base = fresh();
+  const film = "/media/uploads/" + "f".repeat(64) + ".mp4";
+  const slides = [
+    { kind: "video", headline: "Coming soon", poster: upload("c") },
+    { kind: "image", src: upload("b"), headline: "Sale", button: { label: "", href: "/sofas" } },
+    { kind: "image", src: "https://example.com/a.jpg", mobileImage: upload("d"), headline: "", alt: "" },
+    { kind: "video", src: film, poster: upload("c"), headline: "Ready", button: { label: "Watch", href: "/our-story" } },
+  ] as NonNullable<NonNullable<StorefrontContent["homeDetails"]>["hero"]["slides"]>;
+  const content: StorefrontContent = { ...base, homeDetails: { ...base.homeDetails!, hero: { ...base.homeDetails!.hero, slides } } };
+  const ready = previewReadyContent(content);
+  assert.ok(valid(ready.content));
+  assert.deepEqual(ready.content.homeDetails!.hero.slides, [
+    { kind: "image", headline: "Coming soon" },
+    { kind: "image", src: upload("b"), headline: "Sale", button: null },
+    { kind: "image" },
+    slides[3],
+  ]);
+  assert.deepEqual(ready.standIns, ["Homepage hero slide 1: film", "Homepage hero slide 3: picture"]);
+  assert.deepEqual(ready.leftOut, ["Homepage hero slide 2 button"]);
+  assert.equal(content.homeDetails!.hero.slides![0]!.kind, "video", "the form keeps what staff entered");
 });
 
 test("a page banner whose link is still being typed is left out before its page is", () => {

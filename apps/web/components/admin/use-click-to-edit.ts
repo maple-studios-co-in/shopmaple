@@ -101,7 +101,7 @@ export function useClickToEdit(options: ClickToEditOptions) {
     const screen = clickEditScreen(message, latest.current.content ?? content, existingPages);
     latest.current.open(screen, previewRouteFor(message.path));
     const tally = { fields: 0 };
-    const candidate = await locate(screen, words, message.context, message.occurrence, latest.current.content, tally);
+    const candidate = await locate(screen, words, message.context, message.occurrence, latest.current.content, tally, message.field);
     if (!candidate) {
       reply({ ok: false, message: cannotChange });
       if (editing) notice(`“${words.length > 60 ? `${words.slice(0, 57)}…` : words}”: ${cannotChange} The page was put back.`);
@@ -111,8 +111,8 @@ export function useClickToEdit(options: ClickToEditOptions) {
     if (!editing) { reply({ ok: true }); return; }
     const apply = () => applyCandidate(candidate, message.after);
     // Fewer fields than copies of the words on the page: some copies show this one field (the hero's four photos share
-    // one headline), and they change only once the page reloads.
-    const elsewhere = (message.repeats ?? 1) > Math.max(1, tally.fields);
+    // one headline), and they change only once the page reloads. Words that named their own field are that copy alone.
+    const elsewhere = !message.field && (message.repeats ?? 1) > Math.max(1, tally.fields);
     const result = latest.current.whileApplying ? latest.current.whileApplying(apply, elsewhere) : apply();
     if (result.ok) reply({ ok: true });
     else { reply({ ok: false, message: result.message }); notice(result.message); }
@@ -146,7 +146,7 @@ function screenPanel(tab: string) {
 
 /** Finds the field holding the words on the opened screen, choosing the page or tab inside it first when needed. */
 async function locate(screen: ClickEditScreen, words: string, context: string, occurrence: number, content: StorefrontContent | null,
-  tally: { fields: number } = { fields: 0 }): Promise<TextCandidate | null> {
+  tally: { fields: number } = { fields: 0 }, named?: string): Promise<TextCandidate | null> {
   const search = (root: Element | null) => {
     if (!root) return null;
     const found = findTextCandidates(root, words, context);
@@ -162,6 +162,12 @@ async function locate(screen: ClickEditScreen, words: string, context: string, o
   }
   if (screen.kind === "section") {
     const inspector = await rendered(() => document.querySelector<HTMLElement>(`[data-section-inspector="${screen.section}"]`));
+    // Words that name their field (a hero slide's, "hero-slide:2:headline"): that very field, however many slides show the
+    // same words (owner, 19 Nov 2026). The name was read against a fixed pattern, so it goes into the selector as it is.
+    if (named) {
+      const box = await rendered(() => inspector?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${named}"]`) ?? null, 15);
+      if (box) { tally.fields = 1; return { kind: "field", field: box, element: box, match: { how: "same" } }; }
+    }
     // The inspector opens on Content; give its fields a frame to appear.
     const found = await rendered(() => search(inspector), 8);
     if (found || !inspector) return found;

@@ -12,6 +12,7 @@ import {
   readPreviewMode,
   type PreviewDevice,
   type PreviewPicture,
+  type PreviewSlider,
   type PreviewView,
 } from "@/lib/live-preview";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,8 @@ export type LivePreviewProps = {
   /** The token shared with the section thumbnails (usePreviewToken in the editor). */
   previewToken: PreviewToken;
   focusedSection: string | null;
+  /** The slide a slider's editor has open: the frame shows it and holds it in view; `index: null` lets the slider run. */
+  slide?: { slider: PreviewSlider; index: number | null };
   /** The staff member pressed "Edit" on a section inside the preview. */
   onSelectSection?: (section: string) => void;
   /** Click-to-edit is offered (Edit or Publish access); View access only browses. */
@@ -86,7 +89,7 @@ const deviceOuterWidth: Record<PreviewDevice, number> = {
  * down to fit the pane so a tablet is a true 820 px layout), full-screen mode, and the
  * origin-checked conversation with the frame; the token comes from the editor's usePreviewToken.
  */
-export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, leftOut = [], standIns = [], pictures = null, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
+export function LivePreview({ path, title, version, publishedVersion, draftRequired, onSaveFirst, paused, dirty, busy, blocked, leftOut = [], standIns = [], pictures = null, auto, onAutoChange, onUpdateNow, onClose, previewToken, focusedSection, slide, onSelectSection, textEditing = false, onTextSelect, onTextEdit, onMediaSelect, isFrameCurrent, onFrameReady }: LivePreviewProps) {
   const [device, setDevice] = useState<PreviewDevice>("desktop");
   const [view, setView] = useState<PreviewView>("draft");
   /** Edit (the default) or Browse, where clicks follow links as a shopper's would; kept for the tab (lib/live-preview.ts). */
@@ -213,6 +216,11 @@ export function LivePreview({ path, title, version, publishedVersion, draftRequi
     if (!pictures?.items.length || frameStatus !== "ready" || view !== "draft") return;
     frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "pictures", items: pictures.items }, window.location.origin);
   }, [pictures?.nonce]);
+  // The slide being edited shows in the frame and stays there; told again after each redraw, which may attach the slider anew.
+  useEffect(() => {
+    if (!slide || frameStatus !== "ready" || view !== "draft") return;
+    frame.current?.contentWindow?.postMessage({ source: previewMessageSource, type: "slide", slider: slide.slider, index: slide.index }, window.location.origin);
+  }, [slide?.slider, slide?.index, frameStatus, view, version]);
   // Scroll the frame to the section being edited.
   useEffect(() => {
     if (frameStatus !== "ready" || view !== "draft") return;

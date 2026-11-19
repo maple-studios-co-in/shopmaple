@@ -842,3 +842,68 @@ test("a click on a product's photo says it comes from Keeri, and opens no pictur
     assert.equal(frame.sent.some((message) => message.type === "media-select" || message.type === "text-select"), false);
   } finally { await frame.close(); }
 });
+
+// Owner, 19 Nov 2026: the hero's slides, each with its own words. A slide's words name their own field, so a click on one
+// slide's headline types into that slide's field though every slide says the same; the slide open in the editor shows in
+// the frame and stays there while it is edited.
+test("slide messages, and fields named by the page, are read only with a known shape", () => {
+  const frameWindow = {};
+  const read = (data: Record<string, unknown>) => readPreviewMessage({ origin, source: frameWindow, data: { source: previewMessageSource, ...data } }, origin, frameWindow);
+  assert.deepEqual(read({ type: "slide", slider: "hero", index: 2 }), { type: "slide", slider: "hero", index: 2 });
+  assert.deepEqual(read({ type: "slide", slider: "hero", index: null }), { type: "slide", slider: "hero", index: null });
+  assert.equal(read({ type: "slide", slider: "nimbus", index: 0 }), null, "only the hero's slides");
+  assert.equal(read({ type: "slide", slider: "hero", index: -1 }), null);
+  assert.equal(read({ type: "slide", slider: "hero", index: 1.5 }), null);
+  const select = { type: "text-select", text: "Sale", path: "/", section: "hero", area: "section", context: "Sale", occurrence: 0, repeats: 3 };
+  assert.equal((read({ ...select, field: "hero-slide:2:headline" }) as { field?: string } | null)?.field, "hero-slide:2:headline");
+  assert.equal(read({ ...select, field: "hero-slide:2:alt" }), null, "only a slide's words");
+  assert.equal(read({ ...select, field: 'x"], [name="y' }), null, "never anything that could reach another field");
+});
+
+test("inside the frame: a slide's words name their own field, and the slide the editor has open is shown and held", async () => {
+  const { Hero } = await import("../components/hero");
+  const hero = { ...defaultStorefrontContent.homeDetails!.hero, slides: [
+    { kind: "image" as const, src: "/media/uploads/" + "a".repeat(64) + ".webp", headline: "Same words" },
+    { kind: "image" as const, src: "/media/uploads/" + "b".repeat(64) + ".webp", headline: "Same words" },
+  ] };
+  // The hero as the server draws it (its links need the app's router to draw in the browser).
+  const frame = await renderBridge(<div data-home-section="hero" dangerouslySetInnerHTML={{ __html: renderToString(<Hero content={hero} />) }} />);
+  try {
+    const second = container.querySelectorAll("[data-hero-headline]")[1]!;
+    await frame.click(second);
+    const message = frame.sent.find((item) => item.type === "text-select");
+    assert.equal(message?.field, "hero-slide:1:headline", "the second slide's own field");
+    assert.equal(message?.occurrence, 1);
+    await frame.key(second, "Escape");
+    const root = container.querySelector("[data-slider='hero']")!;
+    await frame.tell({ type: "slide", slider: "hero", index: 1 });
+    assert.equal(root.getAttribute("data-slider-pin"), "1", "the slide being edited is held in view");
+    await frame.tell({ type: "slide", slider: "hero", index: null });
+    assert.equal(root.hasAttribute("data-slider-pin"), false, "and let go once it is closed");
+  } finally { await frame.close(); }
+});
+
+test("a click on one slide's headline types into that slide's own field, though every slide says the same, and shows that slide", async () => {
+  const base = structuredClone(defaultStorefrontContent);
+  const same = "Timeless Craftsmanship";
+  const content: StorefrontContent = { ...base, homeDetails: { ...base.homeDetails!, hero: { ...base.homeDetails!.hero, slides: [
+    { kind: "image", still: "home-workshop-poster", headline: same },
+    { kind: "image", still: "nimbus-slide-living", headline: same },
+    { kind: "image", still: "terra-hero", headline: same },
+  ] } } };
+  const app = await setup({ content });
+  try {
+    await app.openPreview();
+    await app.fromFrame({ type: "text-edit", before: same, after: "The Diwali edit", path: "/", section: "hero", area: "section",
+      context: same, occurrence: 1, repeats: 3, field: "hero-slide:1:headline" });
+    await until(() => app.replies.some((reply) => reply.type === "text-result" && reply.phase === "edit"), "the editor's answer");
+    assert.equal(app.replies.find((reply) => reply.phase === "edit")?.ok, true);
+    assert.equal(app.field("Slide 2 headline")?.value, "The Diwali edit");
+    assert.equal(app.field("Slide 1 headline")?.value, same, "the first slide's words are untouched");
+    await until(() => app.puts.length > 0, "the quiet save");
+    assert.deepEqual(app.puts.at(-1).content.homeDetails.hero.slides.map((slide: { headline?: string }) => slide.headline), [same, "The Diwali edit", same]);
+    await until(() => app.replies.some((reply) => reply.type === "token"), "the page took the new token in place");
+    assert.equal(app.replies.some((reply) => reply.type === "refresh"), false, "no redraw: only that slide's words changed, and the page shows them");
+    await until(() => app.replies.some((reply) => reply.type === "slide" && reply.slider === "hero" && reply.index === 1), "the frame told to show slide 2");
+  } finally { await app.close(); }
+});

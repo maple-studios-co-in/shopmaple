@@ -84,7 +84,8 @@ export function SectionInspector({ section, content, edit, session, onExpired, o
         ))}
       </FieldGrid>}
       {detailSections.includes(section) && <div className="grid gap-4">
-        <HomeDetailFields section={section as HomeDetailSection} value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} session={session} onExpired={onExpired} />
+        <HomeDetailFields section={section as HomeDetailSection} value={content.homeDetails} onChange={(homeDetails) => edit({ ...content, homeDetails })} session={session} onExpired={onExpired}
+          templateMedia={content.templateMedia} siteWords={content.siteWords} />
       </div>}
       {merchandising[section] && <HomeMerchandisingFields only={merchandising[section]} embedded value={content.homeMerchandising}
         onChange={(homeMerchandising) => edit({ ...content, homeMerchandising })} session={session} onExpired={onExpired} />}

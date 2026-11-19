@@ -25,17 +25,21 @@ test("documents published before slides existed still parse and keep no slides",
   if (parsed.success) { assert.equal(parsed.data.hero.slides, undefined); assert.equal(parsed.data.nimbus.slides, undefined); }
 });
 
-test("hero slides accept one to six image or video slides with a poster for video", () => {
+// Owner, 19 Nov 2026: staff choose how many slides (up to eight), and every word on a slide is optional.
+test("hero slides accept one to eight image or video slides", () => {
   assert.equal(ok(withHero([videoSlide])), true);
   assert.equal(ok(withHero([heroSlide, videoSlide, heroSlide])), true);
-  assert.equal(ok(withHero(Array(6).fill(heroSlide))), true);
-  assert.equal(ok(withHero(Array(7).fill(heroSlide))), false, "at most six");
+  assert.equal(ok(withHero(Array(8).fill(heroSlide))), true);
+  assert.equal(ok(withHero(Array(9).fill(heroSlide))), false, "at most eight");
   assert.equal(ok(withHero([])), false, "an empty list is no slider; omit the field instead");
+  const { poster: _poster, ...noPoster } = videoSlide;
+  assert.equal(ok(withHero([noPoster])), true, "a video's cover is optional (the admin makes one from the film)");
+  assert.equal(ok(withHero([{ kind: "image" }])), true, "a picture slide without a picture or words shows Maple's photo for its place");
 });
 
-test("hero slides reject a video without a poster, unapproved media hosts and unknown fields", () => {
-  const { poster: _poster, ...noPoster } = videoSlide;
-  assert.equal(ok(withHero([noPoster])), false, "a video needs a poster image");
+test("hero slides reject a video without its film, unapproved media hosts and unknown fields", () => {
+  const { src: _src, ...noFilm } = videoSlide;
+  assert.equal(ok(withHero([noFilm])), false, "a video needs its film");
   assert.equal(ok(withHero([{ ...heroSlide, src: "https://example.com/a.jpg" }])), false);
   assert.equal(ok(withHero([{ ...videoSlide, src: "http://shop.maplefurnishers.com/cdn/shop/a.mp4" }])), false);
   assert.equal(ok(withHero([{ ...videoSlide, src: "https://shop.maplefurnishers.com/cdn/shop/videos/c/vp/abc/abc.mp4?v=0" }])), false, "a film on Shopify");
@@ -44,7 +48,8 @@ test("hero slides reject a video without a poster, unapproved media hosts and un
   assert.equal(ok(withHero([{ ...videoSlide, poster: "https://evil.example/p.jpg" }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, kind: "audio" }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, extra: "x" }])), false);
-  for (const field of ["alt", "headline", "intro"]) assert.equal(ok(withHero([{ ...heroSlide, [field]: "  " }])), false, `${field} must not be blank`);
+  for (const field of ["alt", "eyebrow", "headline", "intro"]) assert.equal(ok(withHero([{ ...heroSlide, [field]: "  " }])), false, `${field} is absent or has words`);
+  assert.equal(ok(withHero([{ ...heroSlide, eyebrow: "e".repeat(61) }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, headline: "h".repeat(121) }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, intro: "i".repeat(301) }])), false);
   assert.equal(ok(withHero([{ ...heroSlide, alt: "a".repeat(201) }])), false);
