@@ -126,8 +126,17 @@ const squash = (text: string) => text.replace(/\s+/g, " ").trim();
 function pictureOf(node: Element): { slot: string } | { target: string } | null {
   const placed = node.closest<HTMLElement>("[data-media-slot]"), targeted = node.closest<HTMLElement>("[data-picture-target]");
   if (placed?.dataset.mediaSlot && (!targeted || targeted.contains(placed))) return { slot: placed.dataset.mediaSlot };
-  return targeted?.dataset.pictureTarget ? { target: targeted.dataset.pictureTarget } : null;
+  if (targeted?.dataset.pictureTarget) return { target: targeted.dataset.pictureTarget };
+  // A product's own photo inside such a block (the hero's featured piece) belongs to the product, not to the block.
+  if (isProductPhoto(node)) return null;
+  // A picture drawn behind the words over it (a collection page's hero, owner 19 Nov 2026): the block names its placement,
+  // so a click anywhere on it that is not on words opens the picture, though the layer with the words is what is clicked.
+  const area = node.closest<HTMLElement>("[data-media-slot-area]")?.dataset.mediaSlotArea;
+  return area ? { slot: area } : null;
 }
+/** A product's photo (ProductImage marks each): it comes with the product from Keeri, so the admin has no picture to swap. */
+const isProductPhoto = (node: Element) => node.closest("[data-product-photo]") !== null && !node.closest("button, [role=button]");
+const productPhotoNote = "This photo comes from the product in Keeri. Change it on the product in Keeri, and every page that shows the product follows.";
 /** The Site words place clicked words name (their own span), or a form box's placeholder names; undefined elsewhere. */
 const siteWordOf = (node: Element) => node.closest<HTMLElement>("[data-site-word]")?.dataset.siteWord ?? (node as HTMLElement).dataset?.siteWordPlaceholder;
 /** The words around clicked words, as laid out (innerText needs layout; tests have none). Only compared, never saved. */
@@ -431,13 +440,15 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
     function onOver(event: MouseEvent) {
       const node = event.target instanceof Element ? event.target : null;
       // A picture staff chose is outlined as one to click; words drawn over it are outlined as words instead.
-      const picture = node && !editableWords(node) ? node.closest<HTMLElement>("[data-media-slot], [data-picture-target]") : null;
+      const picture = node && !editableWords(node)
+        ? node.closest<HTMLElement>("[data-media-slot], [data-picture-target]") ?? (isProductPhoto(node) ? null : node.closest<HTMLElement>("[data-media-slot-area]"))
+        : null;
       if (picture !== hoveredPicture) {
         hoveredPicture?.removeAttribute("data-preview-media-hover");
         hoveredPicture = picture;
         hoveredPicture?.setAttribute("data-preview-media-hover", "true");
       }
-      const next = !picture && node && editableWords(node) && node !== editing ? node : null;
+      const next = !picture && node && editableWords(node) && !isProductPhoto(node) && node !== editing ? node : null;
       if (next === hovered) return;
       hovered?.removeAttribute("data-preview-text-hover");
       hovered = next;
@@ -509,6 +520,15 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         if (editing) finish(true);
         post({ type: "media-select", ...picture, path });
         setNote("Choose the new picture in the library beside the preview.");
+        return;
+      }
+      // A product's photo (a card on a collection page, the hero's featured piece, a product page): it comes from Keeri.
+      // Say where it is changed, instead of a click that silently does nothing (owner, 19 Nov 2026).
+      if (isProductPhoto(node)) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (editing) finish(true);
+        setNote(productPhotoNote);
         return;
       }
       if (!editableWords(node)) {

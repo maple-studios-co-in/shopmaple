@@ -3,7 +3,8 @@ import { useState } from "react";
 import Image, { type ImageProps } from "next/image";
 import { ImageOff } from "lucide-react";
 
-// Legacy markup's photo, or the placeholder when it is missing or fails to load.
+// Legacy markup's photo, or the placeholder when it is missing or fails to load. Both carry `data-product-photo`: in the
+// live preview a click on one says the photo comes with the product from Keeri (owner, 19 Nov 2026).
 type Props = Omit<ImageProps, "src"> & { src?: string | null };
 export function ProductImage({ src, alt, onError, ...props }: Props) {
   const [failed, setFailed] = useState<{ src: string; attempts: number } | null>(null);
@@ -13,6 +14,7 @@ export function ProductImage({ src, alt, onError, ...props }: Props) {
     return (
       <div
         className="product-image-placeholder"
+        data-product-photo=""
         role="img"
         aria-label={`${alt || "Product"} — Image unavailable`}
       >
@@ -25,6 +27,7 @@ export function ProductImage({ src, alt, onError, ...props }: Props) {
       src={src}
       alt={alt}
       {...props}
+      data-product-photo=""
       unoptimized={props.unoptimized || attempts > 0}
       onError={(event) => {
         setFailed({ src, attempts: attempts + 1 });

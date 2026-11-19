@@ -7,7 +7,11 @@ import { pictureSlots, type PictureSlotGroup } from "@/lib/picture-slot-defaults
  * first published on Shopify left the store (owner, 11 Nov 2026). Such a placement shows, until staff upload their own,
  * the first photo of `product` (a Keeri product the store lists) or, without one, nothing at all.
  */
-export type TemplateMediaSlot = TemplateMediaItem & { product?: string; label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" | PictureSlotGroup; help?: string };
+export type TemplateMediaSlot = TemplateMediaItem & {
+  product?: string; label: string; group: "Homepage" | "Homepage icons" | "Cities" | "Nimbus" | "Our Story" | "Contact" | "Bulk Enquiry" | "Terra" | PictureSlotGroup; help?: string;
+  /** What the store shows here until staff upload a picture, when the page itself picks it (a collection's first product photo). */
+  standIn?: string;
+};
 
 /** Original template assets. Staff-facing labels are never included in published overrides. */
 export const templateMediaSlots: TemplateMediaSlot[] = [
@@ -101,7 +105,7 @@ export const templateMediaSlots: TemplateMediaSlot[] = [
 export function resolveTemplateMedia(key: TemplateMediaKey, value?: TemplateMedia, fallbackAlt?: string): TemplateMediaItem {
   const override = value?.find(item => item.key === key);
   if (override) return { ...override };
-  const { label: _label, group: _group, product: _product, help: _help, ...asset } = templateMediaSlots.find(item => item.key === key)!;
+  const { label: _label, group: _group, product: _product, help: _help, standIn: _standIn, ...asset } = templateMediaSlots.find(item => item.key === key)!;
   return { ...asset, alt: fallbackAlt ?? asset.alt };
 }
 

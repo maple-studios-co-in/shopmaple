@@ -50,7 +50,10 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // gained Terra slides and arrows, and the menu and carousels their arrows. Raised by 4,500 bytes for that (owner's yes).
 // 17 Nov 2026: 290,294 raw after the Next.js security patch (16.4.3 to 16.4.6, GHSA-mfr8-8qww-v76h): the framework's own
 // runtime grew; no store code changed. Raised by 1,000 bytes for that (owner's yes).
-assert.ok(totalRaw <= 290_500, `Initial homepage JavaScript exceeds the 290,500-byte raw budget: ${totalRaw}`);
+// 19 Nov 2026: 295,823 raw after editable collection pages (#167): every page's client code carries the default words
+// for the collection hero, intros and listing (about 3 KB), and the listing and live preview gained their edit markers.
+// Raised by 6,000 bytes for that (owner's yes). Sending collection words only to collection pages is the follow-up.
+assert.ok(totalRaw <= 296_500, `Initial homepage JavaScript exceeds the 296,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
@@ -64,4 +67,6 @@ assert.ok(totalRaw <= 290_500, `Initial homepage JavaScript exceeds the 290,500-
 // 17 Nov 2026: 85,664 gzip after the same click-to-edit words (#162). Raised by 2,500 bytes for that (owner's yes); the
 // registry-leak check stays the main guard.
 // 17 Nov 2026: 87,210 gzip after the same QA report fixes (#163). Raised by 1,500 bytes for that (owner's yes).
-assert.ok(totalGzip <= 87_500, `Initial homepage JavaScript exceeds the 87,500-byte gzip budget: ${totalGzip}`);
+// 19 Nov 2026: 89,060 gzip after the same editable collection pages (#167). Raised by 2,000 bytes for that (owner's
+// yes); the registry-leak check stays the main guard.
+assert.ok(totalGzip <= 89_500, `Initial homepage JavaScript exceeds the 89,500-byte gzip budget: ${totalGzip}`);

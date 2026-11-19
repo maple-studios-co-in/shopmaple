@@ -101,7 +101,8 @@ function previewCampaign(campaign: CampaignContent, notes: Notes): CampaignConte
   if (!pair) return { ...campaign, artwork: null };
   const alt = described(art.alt, () => campaignPictureWords(campaign), name, notes);
   if (pair[0] === art.desktopImage && pair[1] === art.mobileImage && alt === art.alt) return campaign;
-  return { ...campaign, artwork: { desktopImage: pair[0], mobileImage: pair[1], alt } };
+  // The rest of the artwork (how the announcement shows it) is kept as staff set it.
+  return { ...campaign, artwork: { ...art, desktopImage: pair[0], mobileImage: pair[1], alt } };
 }
 
 function previewMediaItem(item: TemplateMediaItem, notes: Notes): TemplateMediaItem | null {

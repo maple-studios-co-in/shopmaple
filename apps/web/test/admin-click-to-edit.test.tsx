@@ -799,3 +799,46 @@ test("inside the frame: a page that loads while staff are browsing starts in Bro
     assert.ok(container.querySelector('[data-preview-mode-pill="edit"]'));
   } finally { window.sessionStorage.removeItem("shopmaple-preview-mode"); await frame.close(); }
 });
+
+// Owner, 19 Nov 2026: a collection page's hero photo sits behind its words, so a click lands on the words' layer, never on
+// the photo. The hero names its placement for the whole block.
+test("a click anywhere on a collection hero that is not on words opens its picture, though the words' layer is what is clicked", async () => {
+  const frame = await renderBridge(
+    <section data-collection-hero="" data-media-slot-area="collection-hero-beds">
+      <div data-hero-photo="" data-media-slot="collection-hero-beds"><img src="/media/keeri/aster.webp" alt="" /></div>
+      <div data-test="layer"><h1>Beds</h1><aside data-featured-product=""><img src="/media/keeri/aster.webp" alt="Aster" /></aside></div>
+    </section>,
+  );
+  try {
+    await frame.click(container.querySelector('[data-test="layer"]')!);
+    assert.deepEqual(frame.sent.find((message) => message.type === "media-select"), { source: previewMessageSource, type: "media-select", slot: "collection-hero-beds", path: "/" });
+    const pictures = frame.sent.filter((message) => message.type === "media-select").length;
+    await frame.click(container.querySelector("h1")!);
+    assert.equal(frame.sent.filter((message) => message.type === "media-select").length, pictures, "the title is words to type over, not the picture");
+    assert.ok(frame.sent.some((message) => message.type === "text-select"));
+  } finally { await frame.close(); }
+});
+
+// Owner, 19 Nov 2026: a click on a card's photo on a collection page did nothing. A product's photo comes with the product
+// from Keeri, so the preview says where it is changed; it opens no picture chooser (not even the block's around it, as on
+// a collection hero's featured piece) and no page.
+test("a click on a product's photo says it comes from Keeri, and opens no picture chooser and no page", async () => {
+  const frame = await renderBridge(
+    <>
+      <section data-collection-hero="" data-media-slot-area="collection-hero-beds">
+        <div><h1>Beds</h1><aside data-featured-product=""><span><img data-product-photo="" src="/media/keeri/aster.webp" alt="Aster" /></span></aside></div>
+      </section>
+      <article data-product-card=""><div data-card-image=""><a href="/products/aster"><img data-product-photo="" src="/media/keeri/aster.webp" alt="Aster" /></a></div></article>
+    </>,
+  );
+  try {
+    for (const photo of container.querySelectorAll("img")) {
+      await act(async () => { photo.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })); });
+      assert.equal(container.querySelector("[data-preview-media-hover]"), null, "a product's photo is not outlined as a picture to swap");
+      const event = await frame.click(photo);
+      assert.equal(event.defaultPrevented, true, "the card's link does not open");
+      assert.match(words(container.querySelector("[data-preview-hint]")), /comes from the product in Keeri/);
+    }
+    assert.equal(frame.sent.some((message) => message.type === "media-select" || message.type === "text-select"), false);
+  } finally { await frame.close(); }
+});

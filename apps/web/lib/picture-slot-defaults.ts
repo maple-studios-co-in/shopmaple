@@ -1,5 +1,6 @@
 import {
   blogCoverKeys,
+  collectionHeroPages,
   categoryPageSectionKeys,
   categoryTileKeys,
   categoryValueKeys,
@@ -18,7 +19,7 @@ import { productBannerPicture } from "@/components/store/product-banner";
  * changes until staff upload a picture: the bundled file, or, where the store showed a Keeri product's photo, that
  * product (`product`), or nothing at all (the category pages' value icons).
  */
-export const pictureSlotGroups = ["Main menu", "Sofas page", "Tables page", "Chairs page", "Blog", "Product page", "Help pages", "Sign-in pages", "Icons & logo"] as const;
+export const pictureSlotGroups = ["Main menu", "Sofas page", "Tables page", "Chairs page", "Collection pages", "Blog", "Product page", "Help pages", "Sign-in pages", "Icons & logo"] as const;
 export type PictureSlotGroup = (typeof pictureSlotGroups)[number];
 export type PictureSlot = TemplateMediaItem & {
   product?: string;
@@ -26,6 +27,8 @@ export type PictureSlot = TemplateMediaItem & {
   group: PictureSlotGroup | "Homepage";
   /** Where the picture appears and the size that suits it, for staff. */
   help: string;
+  /** What the store shows here until staff upload a picture, when the page picks it itself. */
+  standIn?: string;
 };
 
 const slot = (key: string, rest: Omit<PictureSlot, "key">): PictureSlot => ({ key: key as TemplateMediaKey, ...rest });
@@ -138,4 +141,13 @@ const icons: PictureSlot[] = [
   ...["bespoke", "craft", "delivery"].map((name, at) => icon(`icon-collection-promise-${at + 1}`, `/media/collection-icons/promise-${name}.svg`, `Nimbus and Terra: promise ${at + 1} icon`, iconHelp)),
 ];
 
-export const pictureSlots: PictureSlot[] = [...menu, ...landing("sofas"), ...landing("tables"), ...landing("chairs"), ...blog, ...others, ...icons];
+/**
+ * The wide photo at the top of each collection page (owner, 19 Nov 2026: the Tables, Beds and Collections heroes could not
+ * be changed). Until staff upload one, the hero shows the collection's first product photo, as it always has.
+ */
+const collectionHeroes: PictureSlot[] = collectionHeroPages.map(([handle, title]) => slot(`collection-hero-${handle}`, {
+  image: "", alt: "", label: `${title} (/collections/${handle})`, group: "Collection pages", standIn: "the collection's first product photo",
+  help: `The wide photo behind “${title}” at the top of the collection page /collections/${handle}. It fills the width under a dark wash, with the page title on the left and the featured product card on the right, so keep the furniture to the right. Landscape, at least 2400 × 1000 px; phones crop it taller around the middle.`,
+}));
+
+export const pictureSlots: PictureSlot[] = [...menu, ...landing("sofas"), ...landing("tables"), ...landing("chairs"), ...collectionHeroes, ...blog, ...others, ...icons];

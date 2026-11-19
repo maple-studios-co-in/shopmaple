@@ -78,12 +78,14 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SectionHeading className="m-0">{slot.label}</SectionHeading>
           <Badge variant="secondary" className={cn("rounded-md border-0 font-semibold", overridden ? "bg-accent-tint text-primary" : "bg-neutral-bg text-neutral")}>
-            {overridden ? "Custom artwork in this draft" : slot.image ? "Using original artwork" : slot.product ? "Using a Keeri product photo" : "No artwork shown"}
+            {overridden ? "Custom artwork in this draft" : slot.image ? "Using original artwork" : slot.standIn ? "Chosen by the page" : slot.product ? "Using a Keeri product photo" : "No artwork shown"}
           </Badge>
         </div>
         {slot.help && <Prose className="text-sm">{slot.help}</Prose>}
         {!overridden && !slot.image && <Notice tone="info">
-          {slot.product
+          {slot.standIn
+            ? `Until you upload one, this shows ${slot.standIn}.`
+            : slot.product
             ? `The original artwork was on Shopify and has left the store. Until you upload one, the store shows the first photo of the Keeri product “${slot.product}”.`
             : "The original artwork was on Shopify and has left the store. Until you upload one, the store leaves this image out."}
         </Notice>}

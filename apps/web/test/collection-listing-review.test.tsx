@@ -176,3 +176,23 @@ test("the API's facets keep to their shape, and a page from before them still re
   assert.equal(collectionFacetsSchema.safeParse(facets).success, true);
   assert.equal(collectionFacetsSchema.safeParse({ ...facets, cover: { image: "http://insecure.example/a.jpg", title: "A" } }).success, false);
 });
+
+// Owner, 19 Nov 2026: on Beds, Collections and Storage the words under the cards ("Can't find what you're looking for?")
+// and the cards' own words could not be changed from the live preview. They are Site words now, and each card's photo
+// names itself as the product's, so the preview can say where a photo is changed.
+test("the listing's words and the cards' own words are Site words: the staff's own on the page, each naming its place in the draft preview", async () => {
+  const { SiteWordsProvider } = await import("../components/site-words");
+  const words = { "collection.custom.heading": "Need something made to measure?", "collection.filters.heading": "Refine" };
+  const page = (marked: boolean) => renderToStaticMarkup(<ShopProvider><SiteWordsProvider words={words} marked={marked}>{listing()}</SiteWordsProvider></ShopProvider>);
+  const shop = page(false), draft = page(true);
+  assert.match(shop, /<h2[^>]*>Need something made to measure\?<\/h2>/);
+  assert.match(shop, /<h2[^>]*>Refine<\/h2>/);
+  assert.match(shop, />Request custom order →</, "unchanged words keep the theme's own");
+  assert.doesNotMatch(shop, /data-site-word=/, "the storefront carries no editing marks");
+  for (const key of ["collection.custom.heading", "collection.custom.button", "collection.note", "collection.filters.heading", "collection.filters.availability",
+    "collection.filters.apply", "collection.results.products", "collection.results.sort", "productCard.sale"])
+    assert.match(draft, new RegExp(`data-site-word="${key.replace(/\./g, "\\.")}"`), key);
+  assert.match(draft, /<span data-site-word="collection\.custom\.heading">Need something made to measure\?<\/span>/);
+  assert.match(draft, /placeholder="Min" data-site-word-placeholder="collection\.filters\.min"/, "the size boxes' grey words name their place too");
+  assert.equal((shop.match(/data-product-photo=""/g) ?? []).length, 2, "each card's photo is marked as the product's");
+});
