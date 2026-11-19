@@ -265,8 +265,8 @@ export * from "./collection-landing";
 export * from "./nimbus-content";
 export * from "./enquiry-admin";
 
-export { homeDetailsSchema, heroSlideSchema, nimbusSlideSchema } from "./home-details";
-export type { HomeDetails } from "./home-details";
+export { homeDetailsSchema, heroCaptionPositions, heroCaptionSchema, heroSlideButtonSchema, heroSlideLimit, heroSlideSchema, heroStillKeys, nimbusSlideSchema } from "./home-details";
+export type { HeroCaption, HeroCaptionPosition, HeroSlide, HomeDetails } from "./home-details";
 
 export * from "./service-pages";
 

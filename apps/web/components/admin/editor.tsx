@@ -33,12 +33,13 @@ import { MediaLibrary } from "./media-library";
 import { TemplateArtworkFields, type ArtworkRequest } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
+import { PreviewSlideContext } from "./preview-slide";
 import { usePreviewToken, type MintResult } from "./use-preview-token";
 import { useClickToEdit } from "./use-click-to-edit";
 import { campaignPreviewPath, previewRouteFor } from "@/lib/live-preview";
 import { describeContentIssue, previewReadyContent, type PreviewReady } from "@/lib/draft-pictures";
 import { pictureChanges } from "@/lib/picture-changes";
-import type { PreviewPicture } from "@/lib/live-preview";
+import type { PreviewPicture, PreviewSlider } from "@/lib/live-preview";
 import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
 import { EmptyState, Notice, Skeleton } from "./crm-primitives";
@@ -121,6 +122,11 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   const [selectedPage, setSelectedPage] = useState(0);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [liveOpen, setLiveOpen] = useState(false);
+  /** The slide a slider's editor has open (the hero's): the live preview shows it and holds it there (owner, 19 Nov 2026). */
+  const [previewSlide, setPreviewSlide] = useState<{ slider: PreviewSlider; index: number | null }>({ slider: "hero", index: null });
+  const showSlide = useCallback((slider: PreviewSlider, index: number | null) => {
+    setPreviewSlide((now) => (now.slider === slider && now.index === index ? now : { slider, index }));
+  }, []);
   const [liveAuto, setLiveAuto] = useState(true);
   const [liveBlocked, setLiveBlocked] = useState("");
   /** Phone width shows either the editor or the preview; wider screens show both. */
@@ -696,7 +702,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
               {!canEdit && <p role="note" data-view-only className="mb-4 rounded-md bg-neutral-bg px-3 py-2 text-xs text-muted-foreground">You have View access: you can look and preview. Changing content needs Edit, which is set on Keeri&apos;s Roles screen.</p>}
               <fieldset disabled={busy || conflict || !canEdit} data-admin-panel-body className="m-0 min-w-0 border-0 p-0">
                 <legend className="sr-only">{tab} editor</legend>
-                {screen()}
+                <PreviewSlideContext.Provider value={showSlide}>{screen()}</PreviewSlideContext.Provider>
               </fieldset>
               </DisabledScope>
               )}
@@ -706,7 +712,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
                 draftRequired={document?.draft === null} onSaveFirst={() => void write("save")} paused={autoSaveFailed !== ""}
                 dirty={dirty && content !== previewed?.content} leftOut={previewed?.leftOut ?? []} standIns={previewed?.standIns ?? []} pictures={pictureFeed} busy={busy || saving}
                 blocked={liveBlocked} auto={liveAuto} onAutoChange={setLiveAuto} onUpdateNow={() => void write("save", undefined, { quiet: true })}
-                onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection}
+                onClose={() => setLiveOpen(false)} previewToken={previewToken} focusedSection={focusedSection} slide={previewSlide}
                 onSelectSection={(section) => {
                   // An open campaign schedule would be lost; the preview waits until it is applied or cancelled.
                   if (scheduleEditing) return;

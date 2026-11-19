@@ -1,15 +1,16 @@
 "use client";
 import { useState } from "react";
 import { Plus, Search } from "lucide-react";
-import type { HomeDetails } from "@shopmaple/contracts";
+import type { HomeDetails, TemplateMedia } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { resolveHomeDetails } from "@/lib/home-details-defaults";
 import { heroHeadline, heroIntro } from "@/lib/hero-film";
 import { Notice } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
-import { HeroSlidesFields, NimbusSlidesFields } from "./home-slide-fields";
-import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, TextFields, listFields, usePendingFocus } from "./kit";
+import { HeroSliderFields } from "./hero-slider-fields";
+import { NimbusSlidesFields } from "./home-slide-fields";
+import { ActionButton, ContentPanel, ContentPanels, GroupedFields, RemoveButton, Subsection, TextFields, listFields, usePendingFocus } from "./kit";
 import { MediaPicker } from "./media-picker";
 import { ProductSearch } from "./product-search";
 
@@ -40,10 +41,12 @@ export function HomeDetailsFields({ value, onChange, session, onExpired }: { val
 }
 
 /** One homepage section's text fields; the section inspector and the panels above share them. */
-export function HomeDetailFields({ section, value, onChange, session, onExpired }: {
+export function HomeDetailFields({ section, value, onChange, session, onExpired, templateMedia, siteWords }: {
   section: HomeDetailSection; value?: HomeDetails; onChange: (value: HomeDetails) => void;
   /** Staff session and expiry handler, for the media library and catalogue search a section may use. */
   session?: StaffSession; onExpired?: () => void;
+  /** The Artwork placements and changed Site words, so the hero's slides show Maple's photos and words as the page does. */
+  templateMedia?: TemplateMedia; siteWords?: Readonly<Record<string, string | undefined>>;
 }) {
   const page = resolveHomeDetails(value);
   const update = <K extends keyof HomeDetails>(key: K, next: HomeDetails[K]) => onChange({ ...page, [key]: next });
@@ -57,20 +60,25 @@ export function HomeDetailFields({ section, value, onChange, session, onExpired 
         update("hero", next);
       };
       return <>
-      <div className="grid gap-4">
-        <Field label="Hero headline" value={hero.headline ?? ""} maxLength={120} placeholder={heroHeadline}
-          hint="The big words on the hero photos. Leave empty to keep the original. Your own slides below carry their own words."
-          onChange={text => setWords("headline", text)} />
-        <Field label="Hero intro" value={hero.intro ?? ""} maxLength={300} multiline placeholder={heroIntro}
-          hint="The line under the headline. Leave empty to keep the original." onChange={text => setWords("intro", text)} />
-      </div>
-      <TextFields value={hero} onChange={next => update("hero", next)} fields={[["cta", "Hero collection button", 80]]} />
+      {/* The slider first (owner, 19 Nov 2026): how many slides, each one's picture or video, words and look. */}
+      <HeroSliderFields hero={hero} onChange={next => update("hero", next)} session={session} onExpired={onExpired} templateMedia={templateMedia} siteWords={siteWords} />
+      {hero.slides
+        ? <Notice tone="info">Each slide above has its own words. The words of Maple&apos;s default slides are kept for when you go back to them.</Notice>
+        : <Subsection title="Words on Maple's default slides" description="One headline, line and button over all of Maple's default slides. Choosing a number of slides above gives each slide its own.">
+          <div className="grid gap-4">
+            <Field label="Hero headline" value={hero.headline ?? ""} maxLength={120} placeholder={heroHeadline}
+              hint="The big words on the hero photos. Leave empty to keep the original."
+              onChange={text => setWords("headline", text)} />
+            <Field label="Hero intro" value={hero.intro ?? ""} maxLength={300} multiline placeholder={heroIntro}
+              hint="The line under the headline. Leave empty to keep the original." onChange={text => setWords("intro", text)} />
+          </div>
+          <TextFields value={hero} onChange={next => update("hero", next)} fields={[["cta", "Hero collection button", 80]]} />
+        </Subsection>}
       <div className="grid gap-3 sm:grid-cols-2">
         <GroupedFields items={hero.tiles} legend={tile => tileNames[tile.key]} onChange={tiles => update("hero", { ...hero, tiles })}
           fields={tile => [["label", `${tileNames[tile.key]} tile label`, 80], ["priceLabel", `${tileNames[tile.key]} starting-price label`, 80]]} />
       </div>
       <Notice tone="info">Starting-price labels are display text. Product prices and availability are managed in Keeri.</Notice>
-      <HeroSlidesFields hero={hero} onChange={next => update("hero", next)} session={session} onExpired={onExpired} />
     </>;
     }
     case "difference": return <TextFields value={difference} onChange={next => update("difference", next)} fields={[

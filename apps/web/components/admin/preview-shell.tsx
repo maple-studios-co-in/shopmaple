@@ -9,7 +9,7 @@ import { StoreChromeView } from "@/components/admin/store-chrome";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { AdminRoot } from "./admin-root";
-import { keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewPicture, type PreviewTextTarget } from "@/lib/live-preview";
+import { editFieldPattern, keepPreviewMode, previewDevices, previewMessageSource, previewRouteFor, readPreviewMessage, readPreviewMode, type PreviewDevice, type PreviewPicture, type PreviewTextTarget } from "@/lib/live-preview";
 import { sectionName } from "@/lib/section-thumbnails";
 
 export type PreviewPageOption = { label: string; segments: string[] };
@@ -137,6 +137,11 @@ function pictureOf(node: Element): { slot: string } | { target: string } | null 
 /** A product's photo (ProductImage marks each): it comes with the product from Keeri, so the admin has no picture to swap. */
 const isProductPhoto = (node: Element) => node.closest("[data-product-photo]") !== null && !node.closest("button, [role=button]");
 const productPhotoNote = "This photo comes from the product in Keeri. Change it on the product in Keeri, and every page that shows the product follows.";
+/** The editor field clicked words name ("hero-slide:2:headline"), when the page names one. */
+const editFieldOf = (node: Element) => {
+  const field = node.closest<HTMLElement>("[data-edit-field]")?.dataset.editField;
+  return field && editFieldPattern.test(field) ? field : undefined;
+};
 /** The Site words place clicked words name (their own span), or a form box's placeholder names; undefined elsewhere. */
 const siteWordOf = (node: Element) => node.closest<HTMLElement>("[data-site-word]")?.dataset.siteWord ?? (node as HTMLElement).dataset?.siteWordPlaceholder;
 /** The words around clicked words, as laid out (innerText needs layout; tests have none). Only compared, never saved. */
@@ -230,6 +235,20 @@ export function swapPictures(items: readonly PreviewPicture[], doc: Document = d
       }
     }
   }
+}
+
+/**
+ * Shows the slide staff are editing and holds it in view (owner, 19 Nov 2026: each slide is edited where it can be seen), or
+ * lets the slider run again (null). The slider reads `data-slider-pin` when it attaches and on `slider:pin`
+ * (lib/slider-behaviour.ts), so a slider whose script has not loaded yet, or attaches again after a redraw, shows it too.
+ */
+export function pinSlide(slider: string, index: number | null, doc: Document = document) {
+  const root = doc.querySelector<HTMLElement>(`[data-slider="${slider}"]`);
+  if (!root) return;
+  if (index === null) root.removeAttribute("data-slider-pin");
+  else root.setAttribute("data-slider-pin", String(index));
+  const View = doc.defaultView;
+  if (View) root.dispatchEvent(new View.CustomEvent("slider:pin"));
 }
 
 /** Where the page was scrolled when it reloaded itself, so it opens there again (sessionStorage, this tab only). */
@@ -338,6 +357,7 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         if (!message.ok && message.message) setNote(message.message);
         return;
       }
+      if (message.type === "slide") { pinSlide(message.slider, message.index); return; }
       if (message.type !== "focus") return;
       for (const node of sections()) {
         if (message.section !== null && node.dataset.homeSection === message.section) {
@@ -435,6 +455,8 @@ export function PreviewFrameBridge({ path, version, parentWindow, selectable = f
         repeats: Math.min(1000, Math.max(1, repeats.length)),
         // The theme's own words carry their place (Site words); a form box carries its placeholder's.
         ...(siteWordOf(node) ? { word: siteWordOf(node) } : {}),
+        // A slide's words name their own field, so the right slide's field is typed into (owner, 19 Nov 2026).
+        ...(editFieldOf(node) ? { field: editFieldOf(node) } : {}),
       };
     }
     function onOver(event: MouseEvent) {
