@@ -8,6 +8,7 @@ import { NativeSelectOption } from "@/components/ui/native-select";
 import { StoreContent } from "@/components/store-content";
 import { pageDocument } from "@/lib/page-document";
 import { campaignPictureWords } from "@/lib/draft-pictures";
+import { campaignArtworkDisplay, type CampaignArtworkDisplay } from "@/lib/campaign-artwork";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
@@ -34,6 +35,22 @@ const mediaProps = ({ session, onExpired }: Props) => (session && onExpired ? { 
 const tally = (count: number, max: number, noun: string, button: ReactNode) => (
   <><span className="text-xs text-muted-foreground tabular-nums">{count} of {max} {noun}</span>{button}</>
 );
+
+/**
+ * How the homepage announcement strip shows its picture (owner, 19 Nov 2026; lib/campaign-artwork.ts): a finished banner,
+ * shown whole, or a photo beside the campaign's words. Only the announcement is drawn as a strip, so only it offers this.
+ */
+function AnnouncementDisplay({ value, onChange }: { value: CampaignArtworkDisplay; onChange: (value: CampaignArtworkDisplay) => void }) {
+  return <div data-span="full" className="grid gap-2" data-announcement-display={value}>
+    <SelectField label="How the announcement shows the picture" value={value} onChange={(event) => onChange(event.target.value === "photo" ? "photo" : "banner")}>
+      <NativeSelectOption value="banner">The whole banner: the picture has its own words and button</NativeSelectOption>
+      <NativeSelectOption value="photo">A photo on the left, beside this campaign&apos;s words</NativeSelectOption>
+    </SelectField>
+    <Hint>{value === "banner"
+      ? "Shown whole and uncropped across the strip, at the picture's own shape, and the mobile artwork on phones; a click opens the campaign destination. Use a 1900 × 350 px banner and a 500 × 500 px mobile banner. The copy above is not written on it (screen readers still hear the button label)."
+      : "The picture fills the left half of the strip and fades into the copy above, written beside it. Use a photo without words."}</Hint>
+  </div>;
+}
 
 /**
  * `only` narrows the editor to the campaigns one homepage section shows (the section inspector); `embedded` drops the
@@ -95,6 +112,7 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
                 <MediaPicker label="Campaign desktop artwork" value={campaign.artwork.desktopImage} onChange={(desktopImage) => artwork({ desktopImage })} {...media} target={`campaign:${campaign.key}`} />
                 <MediaPicker label="Campaign mobile artwork" value={campaign.artwork.mobileImage} onChange={(mobileImage) => artwork({ mobileImage })} {...media} target={`campaign:${campaign.key}:mobile`} />
                 <Field label="Campaign artwork alt text" value={campaign.artwork.alt} maxLength={200} onChange={(alt) => artwork({ alt })} />
+                {campaign.key === "landing-announcement" && <AnnouncementDisplay value={campaignArtworkDisplay(campaign.artwork)} onChange={(display) => artwork({ display })} />}
                 <div data-span="full">
                   <ActionButton icon={RotateCcw} onClick={() => update({ artwork: null })}>Restore original campaign artwork</ActionButton>
                 </div>

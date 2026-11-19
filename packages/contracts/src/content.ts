@@ -252,6 +252,12 @@ export const campaignContentSchema = z
         desktopImage: contentImageSchema,
         mobileImage: contentImageSchema,
         alt: text(200).min(1),
+        /**
+         * The homepage announcement strip only (owner, 19 Nov 2026): "banner", the picture is a finished banner with its own
+         * words and button, shown whole; "photo", a photo for the strip's left side beside the campaign's words. Absent, a
+         * library picture is a banner and the theme's own photo is a photo. Every other banner ignores it.
+         */
+        display: z.enum(["banner", "photo"]).optional(),
       })
       .strict()
       .nullable()

@@ -5,6 +5,7 @@ import { CampaignWindow } from "./campaign-window";
 import campaigns from "@/data/diwali-campaigns.json";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import { defaultStorefrontContent } from "@/lib/content-defaults";
+import { campaignArtworkDisplay } from "@/lib/campaign-artwork";
 
 export type CampaignKey = keyof typeof campaigns;
 type Artwork = (typeof campaigns)[CampaignKey]["desktop"];
@@ -90,6 +91,29 @@ export async function CampaignBanner({
       data.desktop.gradient ??
       "linear-gradient(90deg, #741a14 0%, rgba(116,26,20,.84) 53%, rgba(116,26,20,0) 100%)",
   } as CSSProperties;
+  // The announcement strip showing a finished banner staff uploaded (owner, 19 Nov 2026; lib/campaign-artwork.ts): the
+  // picture is the whole banner, uncropped at its own proportions, the phone banner on phones, and one link to the
+  // campaign. Its words are the picture's own, so the strip writes none over or beside it; the button's words stay for
+  // screen readers. Every other banner, and the strip's photo design, is drawn below as before.
+  if (layout === "strip" && data.artwork && campaignArtworkDisplay(data.artwork) === "banner") {
+    const art = data.artwork;
+    const whole = (
+      <section className="campaign-banner" data-campaign={campaign} data-campaign-layout="strip" data-campaign-whole=""
+        aria-label={data.label || data.headline.join(" ")}>
+        <Link className="campaign-scene campaign-whole-link" href={data.href} data-picture-target={`campaign:${campaign}`}>
+          <picture className="campaign-whole-picture">
+            <source media="(max-width: 749px)" srcSet={art.mobileImage} />
+            {/* Not the image optimizer: the banner keeps its own proportions, whatever size staff upload, and library
+                uploads are already web-sized WebP. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={art.desktopImage} alt={art.alt} decoding="async" loading={eager ? "eager" : "lazy"} fetchPriority={eager ? "high" : "auto"} />
+          </picture>
+          <span className="sr-only">{data.cta}</span>
+        </Link>
+      </section>
+    );
+    return data.schedule ? <CampaignWindow schedule={data.schedule} serverNow={Date.now()}>{whole}</CampaignWindow> : whole;
+  }
   const banner = (
     <section
       className={`campaign-banner${compact ? " campaign-compact" : ""}`}
