@@ -67,4 +67,6 @@ assert.ok(totalRaw <= 296_500, `Initial homepage JavaScript exceeds the 296,500-
 // 17 Nov 2026: 85,664 gzip after the same click-to-edit words (#162). Raised by 2,500 bytes for that (owner's yes); the
 // registry-leak check stays the main guard.
 // 17 Nov 2026: 87,210 gzip after the same QA report fixes (#163). Raised by 1,500 bytes for that (owner's yes).
-assert.ok(totalGzip <= 87_500, `Initial homepage JavaScript exceeds the 87,500-byte gzip budget: ${totalGzip}`);
+// 19 Nov 2026: 89,060 gzip after the same editable collection pages (#167). Raised by 2,000 bytes for that (owner's
+// yes); the registry-leak check stays the main guard.
+assert.ok(totalGzip <= 89_500, `Initial homepage JavaScript exceeds the 89,500-byte gzip budget: ${totalGzip}`);
