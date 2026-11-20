@@ -1,10 +1,12 @@
 import {
   authoredArticleSchema, authoredBlockSchema, contentImageSchema, contentPageSchema, heroSlideSchema, homeCollectionTileSchema,
-  instagramPostSchema, nimbusSlideSchema, templateMediaDecorativeKeys, templateMediaItemSchema, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys,
+  instagramPostSchema, nimbusSlideSchema, templateMediaDecorativeKeys, templateMediaItemSchema, templateMediaResponsiveKeys,
   type AuthoredArticle, type AuthoredBlock, type CampaignContent, type ContentPage, type HomeCollectionTile, type HomeDetails,
   type StorefrontContent, type TemplateMediaItem, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import { templateMediaSlots } from "./template-media-defaults";
+// The collection banners' optional phone picture (owner, 20 Nov 2026); imported on its own line, apart from the list above.
+import { templateMediaPhoneOptionalKeys } from "@shopmaple/contracts";
 
 /*
  * The draft as the live preview saves it (owner, 17 Nov 2026: "when I am clicking the banner with the new image it should
