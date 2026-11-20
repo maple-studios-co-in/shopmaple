@@ -12,7 +12,7 @@ import { nimbusPageContentSchema } from "./nimbus-content";
 import { collectionLandingContentSchema } from "./collection-landing";
 import { templateFilmsSchema } from "./template-films";
 import { siteWordsSchema } from "./site-words";
-import { pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
+import { collectionHeroKeys, pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -142,16 +142,29 @@ export const templateMediaResponsiveKeys = [
   ...pictureSlotResponsiveKeys,
 ] as const;
 export type TemplateMediaKey = typeof templateMediaKeys[number];
+/**
+ * The collection pages' banners (owner, 20 Nov 2026: each collection page opens with a banner the size of the category
+ * pages' banners). Each may have a square phone picture beside its wide one, and says how it shows its picture: "banner",
+ * the picture is the whole banner with its own words, as on the category pages; "photo", a photo behind the collection's
+ * name and line. Without a choice a picture shows as the whole banner.
+ */
+export const templateMediaPhoneOptionalKeys = collectionHeroKeys;
+export const collectionBannerDisplays = ["banner", "photo"] as const;
+export type CollectionBannerDisplay = (typeof collectionBannerDisplays)[number];
 /** One placement's artwork; exported so the admin can tell which placements of a draft are ready to save. */
 export const templateMediaItemSchema = z.object({
   key: z.enum(templateMediaKeys),
   image: contentImageSchema,
   mobileImage: contentImageSchema.optional(),
   alt: z.string().max(200).refine(value => !/[\u0000-\u001f\u007f]/.test(value), "Use text without control characters"),
+  display: z.enum(collectionBannerDisplays).optional(),
 }).strict().superRefine((value, ctx) => {
   const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(value.key);
-  if (responsive !== (value.mobileImage !== undefined))
+  const phoneOptional = (templateMediaPhoneOptionalKeys as readonly string[]).includes(value.key);
+  if (!phoneOptional && responsive !== (value.mobileImage !== undefined))
     ctx.addIssue({ code: "custom", path: ["mobileImage"], message: responsive ? "Choose both desktop and mobile artwork" : "This artwork has one image" });
+  if (!phoneOptional && value.display !== undefined)
+    ctx.addIssue({ code: "custom", path: ["display"], message: "Only a collection page's banner says how it shows its picture" });
   if (!value.alt.trim() && !(templateMediaDecorativeKeys as readonly string[]).includes(value.key))
     ctx.addIssue({ code: "custom", path: ["alt"], message: "Describe this artwork" });
 });

@@ -1,4 +1,4 @@
-import { contentImageSchema, templateMediaResponsiveKeys, type StorefrontContent, type TemplateMediaKey } from "@shopmaple/contracts";
+import { contentImageSchema, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys, type StorefrontContent, type TemplateMediaKey } from "@shopmaple/contracts";
 import type { PreviewPicture } from "./live-preview";
 import { resolveTemplateMedia } from "./template-media-defaults";
 
@@ -55,7 +55,8 @@ export function pictureChanges(previous: StorefrontContent | null, next: Storefr
     const keys = new Set([...(previous.templateMedia ?? []), ...(next.templateMedia ?? [])].map((item) => item.key));
     for (const key of keys) {
       const before = resolveTemplateMedia(key, previous.templateMedia), after = resolveTemplateMedia(key, next.templateMedia);
-      const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(key);
+      // A collection page's banner may have a phone picture too (owner, 20 Nov 2026).
+      const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(key) || (templateMediaPhoneOptionalKeys as readonly string[]).includes(key);
       add({ slot: key }, [after.image, responsive ? after.mobileImage : undefined], [before.image, responsive ? before.mobileImage : undefined], after.alt);
     }
   }
