@@ -7,10 +7,8 @@ import { JSDOM } from "jsdom";
 import { collectionFacetsSchema, facetCounts, filterCollection, productColours, productMaterials, productSize, type CollectionFacets, type CollectionProduct } from "@shopmaple/contracts";
 import { collectionCategories } from "@shopmaple/contracts/catalogue-registry";
 import { CollectionListing } from "../components/collection-listing";
-import { CollectionHero } from "../components/store/collection-hero";
 import { ShopProvider } from "../components/shop-provider";
 import { collectionQuery } from "../lib/collections";
-import { collectionIntro, heroTitle } from "../lib/collection-intro";
 import { toProductCard } from "../lib/product-card-model";
 
 // The owner's review file (Figma GJsFInfhys0crdNpQsbUUU, frame 1:1094 "Maple / Product Listing"): the collection
@@ -154,22 +152,6 @@ test("the results: heading, count, sort, four-across cards and the custom order 
     assert.equal(custom.querySelector("a")?.getAttribute("href"), "/contact");
     assert.equal(text(custom.querySelector("a")), "Request custom order →");
   });
-});
-
-test("the immersive hero: the trail, the collection's name and line, and its first piece featured with price and link", () => {
-  const html = new JSDOM(renderToStaticMarkup(<CollectionHero title={heroTitle("chairs", "Chairs")} crumb="Chairs" intro={collectionIntro("chairs")} cover={facets.cover} />)).window.document;
-  assert.deepEqual([...html.querySelectorAll("nav[aria-label=Breadcrumb] li")].map(text), ["Home", "/", "Collections", "/", "Chairs"]);
-  assert.deepEqual([...html.querySelectorAll("nav[aria-label=Breadcrumb] a")].map((link) => link.getAttribute("href")), ["/", "/collections/all"]);
-  assert.equal(text(html.querySelector("h1")), "Dining & Accent Chairs", "the frame's own title for chairs");
-  assert.equal(text(html.querySelector("[data-hero-line]")), "Made for long conversations.");
-  const featured = html.querySelector("[data-featured-product]")!;
-  assert.deepEqual([...featured.querySelectorAll("p")].map(text), ["Featured product", "Aero Dining Chair", "Rs. 23,600.00"]);
-  assert.equal(featured.querySelector("a")?.getAttribute("href"), "/products/aero-dining-chair");
-  assert.equal(text(featured.querySelector("a")), "Discover the chair →");
-  assert.equal(heroTitle("accent-chair", "Accent Chairs"), "Accent Chairs");
-  const plain = new JSDOM(renderToStaticMarkup(<CollectionHero title="All Furniture" crumb="All Furniture" intro={collectionIntro(null)} cover={null} />)).window.document;
-  assert.equal(text(plain.querySelector("[data-hero-line]")), "Made to be lived with.");
-  assert.equal(plain.querySelector("[data-featured-product]"), null, "no piece, no featured card");
 });
 
 test("the API's facets keep to their shape, and a page from before them still reads", () => {

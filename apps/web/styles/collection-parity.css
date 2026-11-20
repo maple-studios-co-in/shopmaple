@@ -18,3 +18,134 @@
   color: var(--muted);
   font-size: 0.85em;
 }
+
+/* ---- Collection banner (owner, 20 Nov 2026) ---------------------------------------------- */
+/* Each collection page (/collections/<handle>) opens with a banner the size and padding of the category pages' banners
+   (CategoryBanner in components/category-landing.tsx), in place of the full-width dark hero. Its frame takes their classes
+   as they are (landing-banner-frame home-container): the page's side margins, 30px above and below, the product cards'
+   12px corners. This sets the same shape, 2784 x 400 (1360 x 195 at 1440px), square on phones, and what is drawn in it. */
+.collection-banner {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 2784 / 400;
+  container-type: inline-size;
+  background: linear-gradient(90deg, #6b1611 0%, #7a1d16 48%, #8a271d 100%);
+  color: #fff;
+}
+@media (max-width: 768px) {
+  .collection-banner { aspect-ratio: 1; }
+}
+/* The page stands on the listing's linen from the header down, so no band of the page's own background shows behind the
+   banner, and the listing starts 30px under it: the space the category pages keep around their banners (the frame's
+   margin), where the listing's own top padding had left 94px. */
+.collection-page {
+  display: flow-root;
+  background: var(--color-linen, #faf8f4);
+}
+.collection-page > [data-landing-banner="inset"] + #collection-products { padding-top: 0; }
+/* A picture is the whole banner, cropped to its shape as the category pages' banners are. */
+.collection-banner-picture,
+.collection-banner-picture img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.collection-banner-picture img { object-fit: cover; }
+/* Words over a photo: the photo fills the banner under a burgundy shade by the words. */
+.collection-banner-photo {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.collection-banner-photo img {
+  object-fit: cover;
+  object-position: var(--banner-position, center);
+}
+.collection-banner-shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgb(107 22 17 / 0.97) 0%, rgb(107 22 17 / 0.88) 30%, rgb(107 22 17 / 0.4) 58%, rgb(107 22 17 / 0) 80%);
+  pointer-events: none;
+}
+/* No photo: Maple's burgundy with a soft light and the strip's rosette, large and faint, on the right. */
+.collection-banner[data-banner-photo="none"] .collection-banner-shade {
+  background: radial-gradient(90% 160% at 86% 30%, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0) 60%);
+}
+.collection-banner-rosette {
+  position: absolute;
+  top: 50%;
+  right: 6%;
+  z-index: -1;
+  width: auto;
+  height: 150%;
+  color: rgb(255 255 255 / 0.1);
+  transform: translateY(-50%);
+}
+.collection-banner-copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(6px, 0.8cqw, 12px);
+  max-width: 64%;
+  padding-inline: clamp(20px, 4cqw, 56px);
+}
+.collection-banner-trail ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: rgb(255 255 255 / 0.82);
+  font: 500 clamp(11px, 0.95cqw, 13px)/1.3 var(--font-text);
+  letter-spacing: 0.02em;
+}
+.collection-banner-trail a {
+  color: inherit;
+  text-decoration: none;
+}
+.collection-banner-trail a:hover,
+.collection-banner-trail a:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.collection-banner h1 {
+  margin: 0;
+  color: #fff;
+  font: 500 clamp(24px, 3.2cqw, 46px)/1.08 var(--font-heading);
+  letter-spacing: -0.01em;
+}
+.collection-banner-copy > p {
+  margin: 0;
+  max-width: 48ch;
+  color: rgb(255 255 255 / 0.9);
+  font: 400 clamp(12px, 1.2cqw, 17px)/1.4 var(--font-text);
+}
+/* On a tablet the banner is about 100-140px tall: the trail gives the title and its line the room. */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .collection-banner-trail { display: none; }
+}
+/* Phones: the banner is square, as the category pages' are; the words sit at its foot over a shade rising from it. */
+@media (max-width: 768px) {
+  .collection-banner-copy {
+    justify-content: flex-end;
+    gap: 10px;
+    max-width: none;
+    padding: 22px;
+  }
+  .collection-banner[data-banner-photo="none"] .collection-banner-copy { justify-content: center; }
+  .collection-banner h1 { font-size: clamp(28px, 9cqw, 38px); }
+  .collection-banner-copy > p { font-size: 15px; }
+  .collection-banner-trail ol { font-size: 12px; }
+  .collection-banner-shade {
+    background: linear-gradient(0deg, rgb(107 22 17 / 0.96) 0%, rgb(107 22 17 / 0.74) 40%, rgb(107 22 17 / 0) 72%);
+  }
+  .collection-banner-rosette { top: 22%; right: -12%; height: 80%; }
+}

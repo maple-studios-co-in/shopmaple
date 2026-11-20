@@ -1,6 +1,6 @@
 import {
   authoredArticleSchema, authoredBlockSchema, contentImageSchema, contentPageSchema, heroSlideSchema, homeCollectionTileSchema,
-  instagramPostSchema, nimbusSlideSchema, templateMediaDecorativeKeys, templateMediaItemSchema, templateMediaResponsiveKeys,
+  instagramPostSchema, nimbusSlideSchema, templateMediaDecorativeKeys, templateMediaItemSchema, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys,
   type AuthoredArticle, type AuthoredBlock, type CampaignContent, type ContentPage, type HomeCollectionTile, type HomeDetails,
   type StorefrontContent, type TemplateMediaItem, type TemplateMediaKey,
 } from "@shopmaple/contracts";
@@ -49,6 +49,8 @@ const slotOf = (key: TemplateMediaKey) => templateMediaSlots.find((slot) => slot
 const placementName = (key: TemplateMediaKey) => `Artwork “${slotOf(key)?.label ?? key}”`;
 const responsiveKey = (key: TemplateMediaKey) => (templateMediaResponsiveKeys as readonly string[]).includes(key);
 const decorativeKey = (key: TemplateMediaKey) => (templateMediaDecorativeKeys as readonly string[]).includes(key);
+/** A collection page's banner: its phone picture is optional (owner, 20 Nov 2026). */
+const phoneOptionalKey = (key: TemplateMediaKey) => (templateMediaPhoneOptionalKeys as readonly string[]).includes(key);
 
 /** A list where each item may change or go: the same array back when nothing did. */
 function mapList<T>(items: readonly T[], each: (item: T, index: number) => T | null): T[] {
@@ -114,7 +116,9 @@ function previewMediaItem(item: TemplateMediaItem, notes: Notes): TemplateMediaI
     if (pair[0] !== item.image || pair[1] !== item.mobileImage) next = { ...next, image: pair[0], mobileImage: pair[1] };
   } else {
     if (!isPicture(item.image)) { notes.leave(name); return null; }
-    if (item.mobileImage !== undefined) { const { mobileImage: _none, ...rest } = next; next = rest; }
+    // A collection banner keeps a phone picture that is a library picture; one being chosen shows the wide picture meanwhile.
+    const keepPhone = phoneOptionalKey(item.key) && isPicture(item.mobileImage);
+    if (item.mobileImage !== undefined && !keepPhone) { const { mobileImage: _none, ...rest } = next; next = rest; }
   }
   if (!decorativeKey(item.key) && isBlank(item.alt)) next = { ...next, alt: described(item.alt, () => wordsFrom(slotOf(item.key)?.alt, slotOf(item.key)?.label), name, notes) };
   return next;
