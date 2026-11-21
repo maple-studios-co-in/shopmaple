@@ -41,6 +41,7 @@
     "deepmerge-ts": "^8.0.0",
     "tsup": {
       "esbuild": "^0.28.2"
-    }
+    },
+    "effect": "3.22.1"
   }
 }
