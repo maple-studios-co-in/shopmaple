@@ -104,16 +104,21 @@ test("with several slides the first is active and each dot is a real button nami
   assert.deepEqual(dots.map(dot => dot.getAttribute("type")), ["button", "button", "button"]);
 });
 
-test("a draft slide that is not finished yet is left out; none left means the default stills", () => {
+// Owner, 19 Nov 2026: a slide added before its picture shows Maple's photo for its place, so the slider keeps the number of
+// slides chosen; only a video slide still waiting for its film is left out.
+test("a slide not finished yet: no picture shows Maple's photo for its place, no film is left out, none left means the default stills", () => {
   const blank = { ...slides[1]!, src: "" };
-  assert.equal(all(doc(<Hero content={content([slides[1]!, blank])} />), "[data-hero-slide]").length, 1);
-  const none = doc(<Hero content={content([blank])} photos={photos} />);
+  const page = doc(<Hero content={content([slides[1]!, blank])} photos={photos} />);
+  assert.equal(all(page, "[data-hero-slide]").length, 2);
+  assert.equal(all(page, "[data-hero-slide] img")[1]!.getAttribute("src"), keeri("aurevo"), "the second place's photo");
+  const waiting = { kind: "video" as const, headline: "Coming soon" } as NonNullable<HomeDetails["hero"]["slides"]>[number];
+  const none = doc(<Hero content={content([waiting])} photos={photos} />);
   assert.equal(none.querySelector("video"), null);
   assert.equal(all(none, "[data-hero-slide] img").length, 6);
   const noPoster = { ...slides[0]!, poster: undefined };
-  const fallback = doc(<Hero content={content([noPoster])} photos={photos} />);
-  assert.equal(fallback.querySelector("video"), null, "a film without a poster is unfinished, so the stills show");
-  assert.equal(all(fallback, "[data-hero-slide] img")[0]!.getAttribute("src"), keeri("arbor"));
+  const uncovered = doc(<Hero content={content([noPoster])} photos={photos} />);
+  assert.equal(uncovered.querySelector("[data-hero-slide] img"), null, "a film without a cover has no picture under it");
+  assert.equal(uncovered.querySelector("video")?.getAttribute("data-hero-poster"), "none", "so the film itself shows");
 });
 
 const mountHero = (check: Parameters<typeof inBrowser>[2], options: { reduced?: boolean } = {}, many = slides) =>

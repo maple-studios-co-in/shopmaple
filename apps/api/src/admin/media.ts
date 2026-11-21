@@ -325,9 +325,10 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
  for (const item of list(document.templateMedia)) { image(record(item).image); image(record(item).mobileImage); }
  // The films chosen for the homepage testimonial and the collection pages, shown or not, each with its phone film.
  for (const item of list(document.templateFilms)) { film(record(item).src); film(record(item).mobileSrc); }
- // Homepage details: hero slides (a video slide's film, phone film and poster), extra Nimbus cards and the editorial block.
+ // Homepage details: hero slides (a video slide's film, phone film and poster; an image slide's picture and phone picture),
+ // extra Nimbus cards and the editorial block.
  const details = record(document.homeDetails);
- for (const value of list(record(details.hero).slides)) { const slide = record(value); if (slide.kind === "video") film(slide.src); else image(slide.src); film(slide.mobileSrc); image(slide.poster); }
+ for (const value of list(record(details.hero).slides)) { const slide = record(value); if (slide.kind === "video") film(slide.src); else image(slide.src); film(slide.mobileSrc); image(slide.poster); image(slide.mobileImage); }
  for (const slide of list(record(details.nimbus).slides)) { image(record(slide).image); image(record(slide).mobileImage); }
  image(record(details.editorial).leftImage); image(record(details.editorial).rightImage);
  for (const item of list(document.authoredArticles)) {

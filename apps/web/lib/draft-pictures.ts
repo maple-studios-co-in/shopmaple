@@ -1,5 +1,5 @@
 import {
-  authoredArticleSchema, authoredBlockSchema, contentImageSchema, contentPageSchema, heroSlideSchema, homeCollectionTileSchema,
+  authoredArticleSchema, authoredBlockSchema, contentFilmSchema, contentImageSchema, contentPageSchema, heroSlideButtonSchema, heroSlideSchema, homeCollectionTileSchema,
   instagramPostSchema, nimbusSlideSchema, templateMediaDecorativeKeys, templateMediaItemSchema, templateMediaResponsiveKeys,
   type AuthoredArticle, type AuthoredBlock, type CampaignContent, type ContentPage, type HomeCollectionTile, type HomeDetails,
   type StorefrontContent, type TemplateMediaItem, type TemplateMediaKey,
@@ -91,6 +91,35 @@ function described(alt: string, words: () => string, name: string, notes: Notes)
   if (!isBlank(alt)) return alt;
   notes.stand(`${name}: description`);
   return words();
+}
+
+/**
+ * A hero slide as the preview shows it, so the slider keeps the number of slides chosen while each is being finished
+ * (owner, 19 Nov 2026): a video slide still waiting for its film, or an image slide whose address is not a library picture,
+ * shows Maple's photo for its place meanwhile; a button still missing its words or a store address is hidden meanwhile;
+ * words left empty are no words. Only a slide that still fails after that is left out.
+ */
+function previewHeroSlide(slide: HeroSlide, name: string, notes: Notes): HeroSlide | null {
+  let item: HeroSlide = slide;
+  const drop = (keys: (keyof HeroSlide)[]) => {
+    if (!keys.some((key) => key in item)) return;
+    const next = { ...item };
+    for (const key of keys) delete next[key];
+    item = next;
+  };
+  if (item.kind === "video" && !contentFilmSchema.safeParse(item.src).success) {
+    notes.stand(`${name}: film`);
+    item = { ...item, kind: "image" };
+    drop(["src", "poster", "mobileSrc"]);
+  }
+  if (item.kind === "image" && !isEmpty(item.src) && !isPicture(item.src)) { notes.stand(`${name}: picture`); drop(["src", "mobileImage"]); }
+  if (item.kind === "image" && isEmpty(item.src)) drop(["src", "mobileImage"]);
+  if (!isEmpty(item.poster) && !isPicture(item.poster)) drop(["poster"]);
+  if (!isEmpty(item.mobileImage) && !isPicture(item.mobileImage)) drop(["mobileImage"]);
+  drop((["eyebrow", "headline", "intro", "alt"] as const).filter((key) => key in item && isBlank(item[key])));
+  if (item.button && !heroSlideButtonSchema.safeParse(item.button).success) { notes.leave(`${name} button`); item = { ...item, button: null }; }
+  if (!heroSlideSchema.safeParse(item).success) { notes.leave(name); return null; }
+  return item;
 }
 
 function previewCampaign(campaign: CampaignContent, notes: Notes): CampaignContent {
@@ -200,13 +229,7 @@ export function previewReadyContent(content: StorefrontContent): PreviewReady {
     const details = content.homeDetails;
     let hero = details.hero, nimbus = details.nimbus;
     if (hero.slides) {
-      const slides = mapList(hero.slides, (slide: HeroSlide, index) => {
-        const name = `Homepage hero slide ${index + 1}`;
-        const pictured = slide.kind === "video" ? isPicture(slide.poster) : isPicture(slide.src);
-        const item = pictured && isBlank(slide.alt) ? { ...slide, alt: described(slide.alt, () => wordsFrom(slide.headline, slide.intro), name, notes) } : slide;
-        if (!heroSlideSchema.safeParse(item).success) { notes.leave(name); return null; }
-        return item;
-      });
+      const slides = mapList(hero.slides, (slide: HeroSlide, index) => previewHeroSlide(slide, `Homepage hero slide ${index + 1}`, notes));
       if (slides !== hero.slides) {
         // With no slide ready the hero shows its default stills, as it does before the first slide is added.
         if (slides.length) hero = { ...hero, slides };

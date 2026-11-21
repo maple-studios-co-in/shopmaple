@@ -1,14 +1,10 @@
 "use client";
 import { useRef } from "react";
-import { Plus, X } from "lucide-react";
 import type { HomeDetails } from "@shopmaple/contracts";
-import { Notice } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
-import { ActionButton, EditableList, FieldGrid, Hint, SelectField, Subsection, textField, textFields } from "./kit";
+import { EditableList, FieldGrid, Hint, Subsection, textField, textFields } from "./kit";
 import { MediaPicker } from "./media-picker";
-import { phoneFilmHint } from "./template-film-fields";
 
-type HeroSlide = NonNullable<HomeDetails["hero"]["slides"]>[number];
 type NimbusSlide = NonNullable<HomeDetails["nimbus"]["slides"]>[number];
 type Media = { session?: StaffSession; onExpired?: () => void };
 
@@ -20,77 +16,11 @@ function rows<T>(slides: readonly T[], known: string[]): Row<T>[] {
   return slides.map((slide, i) => ({ id: (known[i] ??= rowId()), slide }));
 }
 
-/** A film from the media library, as a video slide's `src` is. */
-const isFilm = (src: string) => /^\/media\/uploads\/[a-f0-9]{64}\.(?:mp4|webm)$/.test(src);
-
 /** An object without the properties whose text is empty (an optional address that was cleared). */
 function withoutEmpty<T extends object>(value: T, keys: (keyof T)[]): T {
   const next = { ...value };
   for (const key of keys) if (next[key] === "" || next[key] === undefined) delete next[key];
   return next;
-}
-
-/** The hero tile's slider: add, order and edit slides. With none, the hero shows four default stills. */
-export function HeroSlidesFields({ hero, onChange, session, onExpired }: { hero: HomeDetails["hero"]; onChange: (hero: HomeDetails["hero"]) => void } & Media) {
-  const slides = hero.slides;
-  const known = useRef<string[]>([]).current;
-  const set = (next: HeroSlide[]) => {
-    const { slides: _removed, ...rest } = hero;
-    onChange(next.length ? { ...rest, slides: next } : rest);
-  };
-  const blank = (): HeroSlide => ({ kind: "image", src: "", alt: "", headline: "", intro: "" });
-  const picker = (label: string, slot: "src" | "poster" | "film" | "phone-film", slide: HeroSlide, edit: (slide: HeroSlide) => void, target?: string) => {
-    const field = slot === "poster" ? "poster" : slot === "phone-film" ? "mobileSrc" : "src";
-    return session && onExpired && (
-      <div data-slide-picker={slot}>
-        <MediaPicker label={label} value={slide[field] ?? ""} session={session} onExpired={onExpired} accept={slot === "film" || slot === "phone-film" ? "video" : "image"} target={target}
-          onChange={url => edit(withoutEmpty({ ...slide, [field]: url }, ["poster", "mobileSrc"]))} />
-        {slot === "phone-film" && <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">{phoneFilmHint}</p>}
-      </div>
-    );
-  };
-  /**
-   * Changing a slide's kind keeps its pictures where they still fit: an image slide's picture becomes the video's poster
-   * and back. A film is never an image slide's picture, nor a picture a video's film.
-   */
-  const rekind = (slide: HeroSlide, kind: HeroSlide["kind"]): HeroSlide => {
-    if (kind === slide.kind) return slide;
-    const film = isFilm(slide.src);
-    // An image slide has no phone film.
-    return kind === "video"
-      ? withoutEmpty({ ...slide, kind, src: film ? slide.src : "", poster: slide.poster || (film ? "" : slide.src) }, ["poster"])
-      : withoutEmpty({ ...slide, kind, src: !film && slide.src ? slide.src : slide.poster ?? "", poster: "", mobileSrc: "" }, ["poster", "mobileSrc"]);
-  };
-  return <Subsection title="Hero slides"
-    description="Slides of the large hero tile, with a dot for each. With none, the hero shows four stills: the Workshop video poster and the three Nimbus slideshow rooms (your uploads, else photos of Keeri products). A video slide plays a film from the media library on its own, muted, over its poster, and on phones its phone film when it has one; visitors who ask for reduced motion see the poster.">
-    {!slides ? <div>
-      <ActionButton icon={Plus} onClick={() => set([blank()])}>Add hero slide</ActionButton>
-      <p className="mt-2 max-w-[68ch] text-xs text-muted-foreground">Your slides replace the default stills.</p>
-    </div> : <>
-      <Notice tone="info">For a video slide, upload the film (MP4 or WebM, up to 80 MB, exported for the web) in the media library and choose it with its poster picture below.</Notice>
-      <EditableList name="Hero slide" items={rows(slides, known)} identity={row => row.id} min={1} max={6} create={() => ({ id: rowId(), slide: blank() })}
-        onChange={next => { known.splice(0, known.length, ...next.map(row => row.id)); set(next.map(row => row.slide)); }}
-        render={({ slide, id }, index, edit) => {
-          const name = `Hero slide ${index + 1}`, change = (next: HeroSlide) => edit({ id, slide: next });
-          const video = slide.kind === "video";
-          return <>
-            <FieldGrid>
-              <SelectField label={`${name} kind`} value={slide.kind} onChange={event => change(rekind(slide, event.currentTarget.value as HeroSlide["kind"]))}>
-                <option value="image">Image</option>
-                <option value="video">Video</option>
-              </SelectField>
-              {!video && textField(`${name} media address`, slide.src, 1000, src => change({ ...slide, src }))}
-              {textFields(slide, [[ "alt", `${name} image description`, 200], ["headline", `${name} headline`, 120], ["intro", `${name} intro`, 300, true]], change)}
-              <Hint>{video ? "Choose the film and its poster below. The poster shows while the film loads and for visitors who ask for reduced motion." : "Paste an approved address, or choose from the media library below."}</Hint>
-            </FieldGrid>
-            {video && picker(`${name} film`, "film", slide, change)}
-            {video && picker(`${name} phone film`, "phone-film", slide, change)}
-            {picker(video ? `${name} poster` : `${name} picture`, video ? "poster" : "src", slide, change, `hero-slide:${index}`)}
-          </>;
-        }} />
-      <div><ActionButton icon={X} onClick={() => set([])}>Use the default stills</ActionButton></div>
-    </>}
-  </Subsection>;
 }
 
 /** The Nimbus slider's extra collections after the base card. */

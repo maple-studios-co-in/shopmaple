@@ -78,8 +78,14 @@ export function pictureChanges(previous: StorefrontContent | null, next: Storefr
 
   const details = next.homeDetails, old = previous.homeDetails;
   if (details && details !== old) {
-    const heroPicture = (slide?: NonNullable<typeof details.hero.slides>[number]) => slide && (slide.kind === "video" ? slide.poster : slide.src);
-    details.hero.slides?.forEach((slide, index) => add({ target: `hero-slide:${index}` }, [heroPicture(slide)], [heroPicture(old?.hero.slides?.[index])], slide.alt));
+    type HeroSlide = NonNullable<typeof details.hero.slides>[number];
+    // A video slide shows its poster; an image slide its picture, and on phones its phone picture when it has one.
+    const heroPicture = (slide?: HeroSlide) => slide && (slide.kind === "video" ? slide.poster : slide.src);
+    const heroPhone = (slide?: HeroSlide) => (slide?.kind === "image" && slide.src ? slide.mobileImage : undefined);
+    details.hero.slides?.forEach((slide, index) => {
+      const before = old?.hero.slides?.[index];
+      add({ target: `hero-slide:${index}` }, [heroPicture(slide), heroPhone(slide)], [heroPicture(before), heroPhone(before)], slide.alt);
+    });
     details.nimbus.slides?.forEach((slide, index) => {
       const before = old?.nimbus.slides?.[index];
       add({ target: `nimbus-slide:${index}` }, [slide.image, slide.mobileImage], [before?.image, before?.mobileImage], slide.alt);
