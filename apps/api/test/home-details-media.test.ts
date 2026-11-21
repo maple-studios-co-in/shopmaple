@@ -40,8 +40,8 @@ async function upload(background: string) {
   assert.equal(response.status, 201);
   return response.body.asset as { id: string; url: string; sha256: string; previewUrl: string };
 }
-const details = (slideSrc: string, poster: string, nimbus: string, left: string, right: string) => ({
-  hero: { cta: "Explore", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: key, priceLabel: "From" })), slides: [{ kind: "video", src: "/media/films/workshop.mp4", poster, alt: "Film", headline: "Hello", intro: "World" }, { kind: "image", src: slideSrc, alt: "Room", headline: "Two", intro: "Slide" }] },
+const details = (slideSrc: string, poster: string, nimbus: string, left: string, right: string, phone?: string) => ({
+  hero: { cta: "Explore", tiles: ["sofas", "chairs", "tables", "beds"].map(key => ({ key, label: key, priceLabel: "From" })), slides: [{ kind: "video", src: "/media/films/workshop.mp4", poster, alt: "Film", headline: "Hello", intro: "World" }, { kind: "image", src: slideSrc, ...(phone ? { mobileImage: phone } : {}), alt: "Room", headline: "Two", intro: "Slide" }] },
   difference: { eyebrow: "A", heading: "B", cta: "C", promises: ["a", "b", "c", "d"] },
   nimbus: { heading: "Nimbus", tagline: "Soft", features: ["a", "b", "c", "d"], cta: "Go", slides: [{ heading: "Terra", tagline: "Earthy", features: ["a", "b", "c", "d"], cta: "Go", href: "/collections/all", image: nimbus, alt: "Terra" }] },
   testimonial: { title: "T", paragraphs: ["p"], name: "N", attribution: "A" },
@@ -52,12 +52,13 @@ const details = (slideSrc: string, poster: string, nimbus: string, left: string,
   editorial: { title: "Pull up a chair", text: "Stay", cta: "Shop", href: "/collections/all", leftImage: left, leftAlt: "Left", rightImage: right, rightAlt: "Right" },
 });
 test("library pictures chosen in hero slides, extra Nimbus cards and the editorial block become public when published", async () => {
-  const [slide, poster, nimbus, left, right] = [await upload("#aa0000"), await upload("#00aa00"), await upload("#0000aa"), await upload("#aaaa00"), await upload("#00aaaa")];
+  const [slide, poster, nimbus, left, right, phone] = [await upload("#aa0000"), await upload("#00aa00"), await upload("#0000aa"), await upload("#aaaa00"), await upload("#00aaaa"), await upload("#aa00aa")];
   const version = (await db.shopContent.findUnique({ where: { id: "storefront" } }))?.version ?? 0;
-  const saved = await http.put("/api/admin/content").set(auth).send({ expectedVersion: version, content: { ...fixture(), homeDetails: details(slide.url, poster.url, nimbus.url, left.url, right.url) } });
+  // A picture slide's phone picture (owner, 19 Nov 2026) is published with it.
+  const saved = await http.put("/api/admin/content").set(auth).send({ expectedVersion: version, content: { ...fixture(), homeDetails: details(slide.url, poster.url, nimbus.url, left.url, right.url, phone.url) } });
   assert.equal(saved.status, 200, JSON.stringify(saved.body));
-  for (const asset of [slide, poster, nimbus, left, right]) assert.equal((await http.get(asset.url)).status, 404, "private until publication");
+  for (const asset of [slide, poster, nimbus, left, right, phone]) assert.equal((await http.get(asset.url)).status, 404, "private until publication");
   const published = await http.post("/api/admin/content/publish").set(auth).send({ expectedVersion: saved.body.version });
   assert.equal(published.status, 200, JSON.stringify(published.body));
-  for (const asset of [slide, poster, nimbus, left, right]) assert.equal((await http.get(asset.url)).status, 200, `${asset.url} is public after publishing`);
+  for (const asset of [slide, poster, nimbus, left, right, phone]) assert.equal((await http.get(asset.url)).status, 200, `${asset.url} is public after publishing`);
 });

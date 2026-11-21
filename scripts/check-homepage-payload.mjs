@@ -53,7 +53,9 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // 19 Nov 2026: 295,823 raw after editable collection pages (#167): every page's client code carries the default words
 // for the collection hero, intros and listing (about 3 KB), and the listing and live preview gained their edit markers.
 // Raised by 6,000 bytes for that (owner's yes). Sending collection words only to collection pages is the follow-up.
-assert.ok(totalRaw <= 296_500, `Initial homepage JavaScript exceeds the 296,500-byte raw budget: ${totalRaw}`);
+// 21 Nov 2026: 296,680 raw after the hero slider studio (#168): the homepage hero draws each slide's caption placement,
+// tone, shade, size, label and button, and a phone picture per slide. Raised by 1,000 bytes for that (owner's yes).
+assert.ok(totalRaw <= 297_500, `Initial homepage JavaScript exceeds the 297,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.

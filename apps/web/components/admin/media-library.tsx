@@ -41,6 +41,8 @@ export const maxFilmBytes = 80 * 1024 * 1024;
 const acceptedTypes: Record<MediaKind, string[]> = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/webm"] };
 /** Extensions offered beside the types: some file pickers (the macOS one in embedded browsers) grey out every file for a type-only list. */
 const acceptedExtensions: Record<MediaKind, string[]> = { image: [".jpg", ".jpeg", ".png", ".webp"], video: [".mp4", ".m4v", ".webm"] };
+/** A file input's `accept` for one kind: its types and their extensions. */
+export const uploadAccept = (kind: MediaKind) => [...acceptedTypes[kind], ...acceptedExtensions[kind]].join(",");
 const typeByExtension: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm" };
 /**
  * The file's type as the upload sends it: the browser's own when it is one we take, else the one its extension names
@@ -64,13 +66,13 @@ type FilmReply = { status: number; body: unknown };
  * Sends a film to the web app's streaming upload route with progress. Fetch cannot report upload progress, and an 80 MB
  * film can take minutes, so this is the one admin request made with XMLHttpRequest.
  */
-function sendFilm(file: File, csrfToken: string, onProgress: (fraction: number) => void, signal: { abort?: () => void }): Promise<FilmReply> {
+function sendFilm(file: File, csrfToken: string, onProgress: (fraction: number) => void, signal: { abort?: () => void }, label = file.name): Promise<FilmReply> {
  return new Promise((resolve, reject) => {
   const request = new XMLHttpRequest();
   request.open("POST", "/api/admin/media/films");
   request.setRequestHeader("Content-Type", uploadType(file, "video") ?? file.type);
   request.setRequestHeader("X-CSRF-Token", csrfToken);
-  request.setRequestHeader("X-Media-Label", encodeURIComponent(file.name.slice(0, 160)));
+  request.setRequestHeader("X-Media-Label", encodeURIComponent(label.slice(0, 160)));
   request.timeout = 11 * 60_000;
   request.upload.onprogress = event => { if (event.lengthComputable && event.total) onProgress(event.loaded / event.total); };
   request.onload = () => { let body: unknown = null; try { body = JSON.parse(request.responseText); } catch { /* not JSON */ } resolve({ status: request.status, body }); };
@@ -80,6 +82,42 @@ function sendFilm(file: File, csrfToken: string, onProgress: (fraction: number) 
   signal.abort = () => request.abort();
   request.send(file);
  });
+}
+/** The upload was refused because the staff session has ended. */
+export class MediaSessionExpired extends Error {
+ constructor() { super("Your session has ended. Sign in again, then upload the file again."); this.name = "MediaSessionExpired"; }
+}
+/** Why a file cannot go into the library as `kind` (its type or its size), checked before anything is sent; "" when it can. */
+export function uploadProblem(file: Pick<File, "name" | "type" | "size">, kind: MediaKind): string {
+ const film = kind === "video";
+ return !uploadType(file, kind) || file.size > (film ? maxFilmBytes : 8 * 1024 * 1024)
+  ? film ? "Choose an MP4 or WebM film up to 80 MB." : "Choose a JPEG, PNG or WebP image up to 8 MiB." : "";
+}
+type AdminSend = (path: string, options?: Omit<RequestInit, "signal">) => Promise<Response>;
+/**
+ * Puts one file into the media library and returns it as the library lists it: an image through `send` (the admin's own
+ * bounded request), a film with progress (XMLHttpRequest, as an 80 MB film can take minutes). The library's Upload buttons
+ * and the hero slide editor's own (owner, 19 Nov 2026: upload a picture or a film right where the slide is) both use it.
+ * Throws MediaSessionExpired when the session has ended, and an Error with the reason in plain words otherwise.
+ */
+export async function uploadToLibrary(file: File, kind: MediaKind, { csrfToken, send, onProgress, abort, label = file.name }: {
+ csrfToken: string; send: AdminSend; onProgress?: (fraction: number) => void; abort?: { abort?: () => void }; label?: string;
+}): Promise<MediaAsset> {
+ const problem = uploadProblem(file, kind);
+ if (problem) throw Error(problem);
+ const film = kind === "video";
+ let status: number, body: unknown;
+ if (film) ({ status, body } = await sendFilm(file, csrfToken, onProgress ?? (() => {}), abort ?? {}, label));
+ else {
+  const headers = { "Content-Type": uploadType(file, kind)!, "X-CSRF-Token": csrfToken, "X-Media-Label": encodeURIComponent(label.slice(0, 160)) };
+  const response = await send("/api/admin/media", { method: "POST", credentials: "same-origin", headers, body: file });
+  status = response.status; body = await response.json().catch(() => null);
+ }
+ if (status === 401) throw new MediaSessionExpired();
+ const message = body && typeof body === "object" && "message" in body && typeof body.message === "string" ? body.message : "";
+ if (status === 413) throw Error(film ? "This film is larger than 80 MB. Export a shorter or smaller film and try again." : message || "Upload failed. Please try again.");
+ if (status < 200 || status >= 300) throw Error(message || "Upload failed. Please try again.");
+ return parseAsset(body && typeof body === "object" && "asset" in body ? body.asset : null);
 }
 const grid = "grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-4";
 /** Loading shape: the same grid of cards, image frame and two lines of metadata. */
@@ -127,28 +165,18 @@ export function MediaLibrary({ session, onExpired, onSelect, accept, heading: He
  }
  useEffect(() => { active.current = true; void load(); return () => { active.current = false; filmRequest.current.abort?.(); }; }, [send, accept]);
  async function upload(file: File) {
-  const film = uploadKind === "video";
-  const type = uploadType(file, uploadKind);
-  if (!type || file.size > (film ? maxFilmBytes : 8 * 1024 * 1024)) {
-   setUploadError(film ? "Choose an MP4 or WebM film up to 80 MB." : "Choose a JPEG, PNG or WebP image up to 8 MiB."); return;
-  }
-  setUploading(file.name); setUploadError(""); setProgress(film ? 0 : null);
+  const problem = uploadProblem(file, uploadKind);
+  if (problem) { setUploadError(problem); return; }
+  setUploading(file.name); setUploadError(""); setProgress(uploadKind === "video" ? 0 : null);
   try {
-   let status: number, body: unknown;
-   if (film) ({ status, body } = await sendFilm(file, session.csrfToken, fraction => { if (active.current) setProgress(fraction); }, filmRequest.current));
-   else {
-    const headers = { "Content-Type": type, "X-CSRF-Token": session.csrfToken, "X-Media-Label": encodeURIComponent(file.name.slice(0, 160)) };
-    const response = await send("/api/admin/media", { method: "POST", credentials: "same-origin", headers, body: file });
-    status = response.status; body = await response.json().catch(() => null);
-   }
+   const asset = await uploadToLibrary(file, uploadKind, { csrfToken: session.csrfToken, send, abort: filmRequest.current, onProgress: fraction => { if (active.current) setProgress(fraction); } });
    if (!active.current) return;
-   if (status === 401) { setAssets([]); setUploadOpen(false); expired.current(); return; }
-   const message = body && typeof body === "object" && "message" in body && typeof body.message === "string" ? body.message : "";
-   if (status === 413) throw Error(film ? "This film is larger than 80 MB. Export a shorter or smaller film and try again." : message || "Upload failed. Please try again.");
-   if (status < 200 || status >= 300) throw Error(message || "Upload failed. Please try again.");
-   const asset = parseAsset(body && typeof body === "object" && "asset" in body ? body.asset : null);
    setAssets(previous => [asset, ...previous.filter(a => a.id !== asset.id)]); setLoaded(true); setUploadOpen(false);
-  } catch (err) { if (active.current && !aborted(err)) setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again."); }
+  } catch (err) {
+   if (!active.current) return;
+   if (err instanceof MediaSessionExpired) { setAssets([]); setUploadOpen(false); expired.current(); return; }
+   if (!aborted(err)) setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+  }
   finally { if (active.current) { setUploading(null); setProgress(null); } }
  }
  function openUpload(trigger: HTMLElement, kind: MediaKind) { lastTrigger.current = trigger; setUploadKind(kind); setUploadError(""); setUploadOpen(true); }

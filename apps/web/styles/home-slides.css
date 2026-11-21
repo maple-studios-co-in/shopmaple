@@ -116,10 +116,99 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
-[data-home-section="hero"] .hero-slide > img {
+[data-home-section="hero"] .hero-slide > img,
+[data-home-section="hero"] .hero-slide > picture > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* A video slide without a poster shows the film itself at every time (the poster normally covers it until it plays). */
+[data-home-section="hero"] .hero-film video[data-hero-poster="none"] {
+  opacity: 1;
+}
+
+/* ---- Hero slide words: where they sit and how they read (owner, 19 Nov 2026) ------------------- */
+/* Each slide shades its own picture behind its words, darkest by the words: `--shade` is the colour, `--shade-near` and
+   `--shade-mid` how strong it is by the words and halfway across, and the angle points away from the words. The values
+   without any choice are the theme's own shade (it was one shade over the whole tile, the same on every slide). Light
+   words sit on a dark brown shade, dark words on a cream one. */
+[data-home-section="hero"] .hero-slide {
+  --shade: 60 40 28;
+  --shade-near: 0.82;
+  --shade-mid: 0.62;
+  --shade-angle: 90deg;
+  --phone-shade-far: 0.35;
+  --phone-shade-near: 0.6;
+  --phone-shade-angle: 180deg;
+}
+[data-home-section="hero"] .hero-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--shade-angle), rgb(var(--shade) / var(--shade-near)) 0%, rgb(var(--shade) / var(--shade-mid)) 50%, rgb(var(--shade) / 0) 85%);
+  pointer-events: none;
+}
+[data-home-section="hero"] .hero-slide[data-caption-shade="none"]::after { content: none; }
+[data-home-section="hero"] .hero-slide[data-caption-shade="soft"] { --shade-near: 0.5; --shade-mid: 0.3; --phone-shade-far: 0.18; --phone-shade-near: 0.36; }
+[data-home-section="hero"] .hero-slide[data-caption-tone="dark"] { --shade: 250 248 244; --shade-near: 0.9; --shade-mid: 0.72; --phone-shade-far: 0.45; --phone-shade-near: 0.78; }
+[data-home-section="hero"] .hero-slide[data-caption-tone="dark"][data-caption-shade="soft"] { --shade-near: 0.62; --shade-mid: 0.4; --phone-shade-far: 0.25; --phone-shade-near: 0.5; }
+[data-home-section="hero"] .hero-slide[data-caption-position="right"] { --shade-angle: 270deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="top"] { --shade-angle: 180deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="bottom"] { --shade-angle: 0deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="top-left"] { --shade-angle: 135deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="top-right"] { --shade-angle: 225deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="bottom-left"] { --shade-angle: 45deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="bottom-right"] { --shade-angle: 315deg; }
+[data-home-section="hero"] .hero-slide[data-caption-position="center"]::after {
+  background: radial-gradient(ellipse at center, rgb(var(--shade) / var(--shade-near)) 0%, rgb(var(--shade) / var(--shade-mid)) 40%, rgb(var(--shade) / 0) 82%);
+}
+
+/* Where the words sit. The theme's place (the middle of the left side) is in styles/home-impact.css; these move them to
+   the top or bottom row (clear of the dots and arrows), the centre column (centred words) or the right (words to the right). */
+[data-home-section="hero"] .hero-slide[data-caption-position^="top"] .hero-introduction { top: 34px; bottom: auto; transform: none; }
+[data-home-section="hero"] .hero-slide[data-caption-position^="bottom"] .hero-introduction { top: auto; bottom: 64px; transform: none; }
+[data-home-section="hero"] .hero-slide[data-caption-position$="right"] .hero-introduction { left: auto; right: 38px; text-align: right; }
+[data-home-section="hero"] .hero-slide[data-caption-position$="right"] .hero-introduction > p { margin-left: auto; }
+[data-home-section="hero"] .hero-slide:is([data-caption-position="top"], [data-caption-position="center"], [data-caption-position="bottom"]) .hero-introduction {
+  left: 50%;
+  right: auto;
+  width: min(420px, calc(100% - 76px));
+  text-align: center;
+  transform: translateX(-50%);
+}
+[data-home-section="hero"] .hero-slide[data-caption-position="center"] .hero-introduction { transform: translate(-50%, -46%); }
+[data-home-section="hero"] .hero-slide:is([data-caption-position="top"], [data-caption-position="center"], [data-caption-position="bottom"]) .hero-introduction > p {
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+/* How large the headline is: the theme's is the medium. */
+[data-home-section="hero"] .hero-slide[data-caption-size="small"] .hero-introduction h2 { margin-bottom: 16px; font-size: 30px; line-height: 1.1; }
+[data-home-section="hero"] .hero-slide[data-caption-size="small"] .hero-introduction > p:not(.hero-eyebrow) { margin-bottom: 22px; }
+[data-home-section="hero"] .hero-slide[data-caption-size="large"] .hero-introduction { width: min(340px, calc(100% - 76px)); }
+[data-home-section="hero"] .hero-slide[data-caption-size="large"] .hero-introduction h2 { margin-bottom: 24px; font-size: 48px; line-height: 1.04; }
+[data-home-section="hero"] .hero-slide[data-caption-size="large"] .hero-introduction > p:not(.hero-eyebrow) { max-width: 240px; font-size: 14px; }
+[data-home-section="hero"] .hero-slide[data-caption-size="large"]:is([data-caption-position="top"], [data-caption-position="center"], [data-caption-position="bottom"]) .hero-introduction { width: min(520px, calc(100% - 76px)); }
+[data-home-section="hero"] .hero-slide[data-caption-size="large"]:is([data-caption-position="top"], [data-caption-position="center"], [data-caption-position="bottom"]) .hero-introduction > p:not(.hero-eyebrow) { max-width: 380px; }
+
+/* Dark words, for a light picture: ink words over a cream shade; the button keeps its burgundy. */
+[data-home-section="hero"] .hero-slide[data-caption-tone="dark"] .hero-introduction,
+[data-home-section="hero"] .hero-slide[data-caption-tone="dark"] .hero-introduction h2 { color: var(--impact-ink); }
+[data-home-section="hero"] .hero-slide[data-caption-tone="dark"] .hero-introduction > p.hero-eyebrow { color: rgb(41 37 31 / 0.78); }
+
+@media (max-width: 749px) {
+  /* The phone tile is tall, so the shade runs down it (the theme's), darker at the bottom, or at the top for words there. */
+  [data-home-section="hero"] .hero-slide::after,
+  [data-home-section="hero"] .hero-slide[data-caption-position="center"]::after {
+    background: linear-gradient(var(--phone-shade-angle), rgb(var(--shade) / var(--phone-shade-far)) 0%, rgb(var(--shade) / var(--phone-shade-near)) 100%);
+  }
+  [data-home-section="hero"] .hero-slide[data-caption-position^="top"] { --phone-shade-angle: 0deg; }
+  [data-home-section="hero"] .hero-slide[data-caption-position^="top"] .hero-introduction { top: 28px; }
+  [data-home-section="hero"] .hero-slide[data-caption-position^="bottom"] .hero-introduction { bottom: 62px; }
+  [data-home-section="hero"] .hero-slide:is([data-caption-position="top"], [data-caption-position="center"], [data-caption-position="bottom"]) .hero-introduction { width: calc(100% - 56px); }
+  [data-home-section="hero"] .hero-slide[data-caption-size="large"] .hero-introduction { width: calc(100% - 56px); }
+  [data-home-section="hero"] .hero-slide[data-caption-size="large"] .hero-introduction h2 { font-size: clamp(36px, 10.5vw, 44px); }
+  [data-home-section="hero"] .hero-slide[data-caption-size="small"] .hero-introduction h2 { font-size: 28px; }
 }
 
 /* ---- Nimbus ---------------------------------------------------------------------------- */

@@ -87,6 +87,11 @@ export type PreviewTextTarget = {
   repeats?: number;
   /** The theme's own words name their place (Site words, "home.bestsellers.eyebrow"): their box is opened directly. */
   word?: string;
+  /**
+   * Words that name the editor field holding them (`data-edit-field`, "hero-slide:2:headline"): that field is the one,
+   * however many slides show the same words (owner, 19 Nov 2026).
+   */
+  field?: string;
 };
 
 export type FrameToParentMessage =
@@ -128,7 +133,15 @@ export type ParentToFrameMessage =
   /** Pictures chosen in the editor this moment: the frame swaps them in where they are, before the draft is even saved. */
   | { type: "pictures"; items: PreviewPicture[] }
   /** After a reload of the same page, scroll back to where the staff member was. */
-  | { type: "scroll"; y: number };
+  | { type: "scroll"; y: number }
+  /**
+   * The slide staff are editing in a slider's editor (the hero's, owner 19 Nov 2026): the frame shows it and holds it in view
+   * while they edit it; `index: null` lets the slider run again.
+   */
+  | { type: "slide"; slider: PreviewSlider; index: number | null };
+/** The sliders whose slides the editor can show in the frame. */
+export const previewSliders = ["hero"] as const;
+export type PreviewSlider = (typeof previewSliders)[number];
 /**
  * One picture to swap on the page: an Artwork placement (`slot`) or a banner, card, slide, post or page banner
  * (`target`), with the address to show (`src`), on phones too unless `mobileSrc` says otherwise.
@@ -155,15 +168,21 @@ const isPath = (value: unknown): value is string => typeof value === "string" &&
 /** Words a click-to-edit message may carry: plain, bounded, never blank. */
 const isWords = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= 2000;
 
+/** An editor field named on the page: "hero-slide:<n>:<part>". */
+export const editFieldPattern = /^hero-slide:\d{1,2}:(?:eyebrow|headline|intro|button)$/;
 function readTextTarget(message: Record<string, unknown>): PreviewTextTarget | null {
-  const { path, section, area, context, occurrence, repeats = 1, word } = message;
+  const { path, section, area, context, occurrence, repeats = 1, word, field } = message;
   if (word !== undefined && (typeof word !== "string" || word.length > 80 || !siteWordKeyPattern.test(word))) return null;
+  if (field !== undefined && (typeof field !== "string" || !editFieldPattern.test(field))) return null;
   if (!isPath(path) || !(section === null || isSection(section))) return null;
   if (typeof area !== "string" || !(previewTextAreas as readonly string[]).includes(area)) return null;
   if (typeof context !== "string" || context.length > 4000) return null;
   if (!Number.isSafeInteger(occurrence) || (occurrence as number) < 0 || (occurrence as number) > 999) return null;
   if (!Number.isSafeInteger(repeats) || (repeats as number) < 1 || (repeats as number) > 1000) return null;
-  return { path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number, ...(word === undefined ? {} : { word: word as string }) };
+  return {
+    path, section, area: area as PreviewTextArea, context, occurrence: occurrence as number, repeats: repeats as number,
+    ...(word === undefined ? {} : { word: word as string }), ...(field === undefined ? {} : { field: field as string }),
+  };
 }
 
 /**
@@ -215,6 +234,12 @@ export function readPreviewMessage(
     return typeof message.y === "number" && Number.isFinite(message.y) && message.y >= 0 && message.y <= 1_000_000 ? { type: "scroll", y: message.y } : null;
   }
   if (message.type === "mode") return message.mode === "edit" || message.mode === "browse" ? { type: "mode", mode: message.mode } : null;
+  if (message.type === "slide") {
+    if (typeof message.slider !== "string" || !(previewSliders as readonly string[]).includes(message.slider)) return null;
+    const index = message.index;
+    return index === null || (Number.isSafeInteger(index) && (index as number) >= 0 && (index as number) < 100)
+      ? { type: "slide", slider: message.slider as PreviewSlider, index: index as number | null } : null;
+  }
   if (message.type === "text-result") {
     if ((message.phase !== "select" && message.phase !== "edit") || typeof message.ok !== "boolean") return null;
     if (message.message !== undefined && !(typeof message.message === "string" && message.message.length <= 300)) return null;

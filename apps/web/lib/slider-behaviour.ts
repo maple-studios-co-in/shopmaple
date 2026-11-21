@@ -12,6 +12,8 @@ import { chooseFilmSource } from "./film-source";
  *   [data-slider-prev] / [data-slider-next]  buttons that step one slide back or on, wrapping round at either end
  *   [data-slider-toggle]      a button that opens and closes its slide's detail panel (`data-open` and `.is-open` on the slide)
  *   [data-slider-focus-opens]  opens its slide's panel when focused
+ *   [data-slider-pin="n"]      shows slide n and holds it there (the live preview, while staff edit that slide; owner,
+ *                              19 Nov 2026); a `slider:pin` event on the root says it changed
  *
  * Videos play only while their slide is current, muted and looping, and never under reduced motion. A video carries
  * `data-playing` while it plays, so its stylesheet can show the slide's poster picture at every other time. A video with
@@ -23,15 +25,19 @@ export function mountSlider(root: HTMLElement): () => void {
   const dots = [...root.querySelectorAll<HTMLElement>("[data-slider-dot]")];
   const interval = Number(root.dataset.sliderAutoplay) || 0;
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-  let index = Math.max(0, slides.findIndex(slide => slide.hasAttribute("data-active")));
+  // Attached again after the draft preview redrew the slides in place: carry on from the slide in view.
+  const inView = track && track.clientWidth ? Math.round(track.scrollLeft / track.clientWidth) : 0;
+  let index = inView > 0 && inView < slides.length ? inView : Math.max(0, slides.findIndex(slide => slide.hasAttribute("data-active")));
   let timer: ReturnType<typeof setTimeout> | undefined;
   let settle: ReturnType<typeof setTimeout> | undefined;
   let target: number | null = null;
   let held = false;
+  /** The slide staff are editing in the live preview, held in view until they move on; null otherwise. */
+  let pinned: number | null = null;
 
   const schedule = () => {
     clearTimeout(timer);
-    if (!interval || slides.length < 2 || held || reduced?.matches) return;
+    if (!interval || slides.length < 2 || held || pinned !== null || reduced?.matches) return;
     timer = setTimeout(() => go((index + 1) % slides.length), interval);
   };
   const show = () => {
@@ -44,16 +50,25 @@ export function mountSlider(root: HTMLElement): () => void {
     });
     dots.forEach((dot, i) => { if (i === index) dot.setAttribute("aria-current", "true"); else dot.removeAttribute("aria-current"); });
   };
-  function go(next: number) {
+  function go(next: number, instant = false) {
     index = next;
     target = next;
     // A smooth scroll passes through the slides between; the current one only changes where it lands.
     clearTimeout(settle);
     settle = setTimeout(() => { target = null; }, 800);
     show();
-    track?.scrollTo?.({ left: next * track.clientWidth, behavior: reduced?.matches ? "auto" : "smooth" });
+    track?.scrollTo?.({ left: next * track.clientWidth, behavior: instant || reduced?.matches ? "auto" : "smooth" });
     schedule();
   }
+  /** Reads `data-slider-pin`: a slide number holds that slide in view; none lets the slider run again. */
+  const readPin = (instant: boolean) => {
+    const value = root.getAttribute("data-slider-pin");
+    const at = value === null || value === "" ? NaN : Number(value);
+    pinned = Number.isInteger(at) && slides.length ? Math.min(Math.max(at, 0), slides.length - 1) : null;
+    if (pinned !== null && pinned !== index) go(pinned, instant);
+    else schedule();
+  };
+  const onPin = () => readPin(false);
   const onScroll = () => {
     const width = track?.clientWidth;
     if (!track || !width) return;
@@ -115,10 +130,13 @@ export function mountSlider(root: HTMLElement): () => void {
   root.addEventListener("pointerleave", onLeave);
   root.addEventListener("focusin", onFocusIn);
   root.addEventListener("focusout", onFocusOut);
+  root.addEventListener("slider:pin", onPin);
   reduced?.addEventListener?.("change", onMotion);
   for (const video of videos) { video.addEventListener("playing", onPlaying); video.addEventListener("pause", onStopped); video.addEventListener("emptied", onStopped); }
   show();
-  schedule();
+  // Already scrolled to the slide in view (attached again), or to the one staff are editing.
+  if (index > 0) track?.scrollTo?.({ left: index * track.clientWidth, behavior: "auto" });
+  readPin(true);
   root.setAttribute("data-slider-ready", "");
   return () => {
     clearTimeout(timer);
@@ -130,6 +148,7 @@ export function mountSlider(root: HTMLElement): () => void {
     root.removeEventListener("pointerleave", onLeave);
     root.removeEventListener("focusin", onFocusIn);
     root.removeEventListener("focusout", onFocusOut);
+    root.removeEventListener("slider:pin", onPin);
     reduced?.removeEventListener?.("change", onMotion);
     for (const video of videos) { video.removeEventListener("playing", onPlaying); video.removeEventListener("pause", onStopped); video.removeEventListener("emptied", onStopped); video.removeAttribute("data-playing"); }
     root.removeAttribute("data-slider-ready");
