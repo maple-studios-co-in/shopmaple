@@ -142,12 +142,14 @@ const icons: PictureSlot[] = [
 ];
 
 /**
- * The wide photo at the top of each collection page (owner, 19 Nov 2026: the Tables, Beds and Collections heroes could not
- * be changed). Until staff upload one, the hero shows the collection's first product photo, as it always has.
+ * The banner at the top of each collection page (owner, 19 Nov 2026: the heroes could not be changed; 20 Nov 2026: a banner
+ * the size of the category pages' banners in place of the full-width hero). Until staff choose a picture, the banner writes
+ * the collection's name and line on Maple's burgundy, over the collection's first product photo when it has one.
  */
 const collectionHeroes: PictureSlot[] = collectionHeroPages.map(([handle, title]) => slot(`collection-hero-${handle}`, {
-  image: "", alt: "", label: `${title} (/collections/${handle})`, group: "Collection pages", standIn: "the collection's first product photo",
-  help: `The wide photo behind “${title}” at the top of the collection page /collections/${handle}. It fills the width under a dark wash, with the page title on the left and the featured product card on the right, so keep the furniture to the right. Landscape, at least 2400 × 1000 px; phones crop it taller around the middle.`,
+  image: "", alt: "", label: `${title} (/collections/${handle})`, group: "Collection pages",
+  standIn: "the collection's name and line on Maple's burgundy, over its first product photo",
+  help: `The banner at the top of the collection page /collections/${handle}, the size of the category pages' banners. Upload a finished banner with its own words, as on the category pages, or a photo for the page to write “${title}” and its line over. Wide: 2784 × 400 px. Phones show a square, so add a square phone picture too.`,
 }));
 
 export const pictureSlots: PictureSlot[] = [...menu, ...landing("sofas"), ...landing("tables"), ...landing("chairs"), ...collectionHeroes, ...blog, ...others, ...icons];

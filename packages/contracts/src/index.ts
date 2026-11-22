@@ -25,6 +25,8 @@ export {
   templateMediaKeys,
   templateMediaResponsiveKeys,
   templateMediaDecorativeKeys,
+  templateMediaPhoneOptionalKeys,
+  collectionBannerDisplays,
   homeCityKeys,
   homeCitiesLayoutSchema,
   templateMediaSchema,
@@ -53,6 +55,7 @@ export type {
   TemplateMediaKey,
   TemplateMediaItem,
   TemplateMedia,
+  CollectionBannerDisplay,
   CampaignContent,
   ContentPage,
 } from "./content";

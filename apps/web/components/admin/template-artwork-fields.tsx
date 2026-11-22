@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
-import { templateMediaDecorativeKeys, templateMediaResponsiveKeys, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey } from "@shopmaple/contracts";
+import {
+  templateMediaDecorativeKeys, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys,
+  type CollectionBannerDisplay, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey,
+} from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
 import { pictureSlotGroups } from "@/lib/picture-slot-defaults";
 import { Badge } from "@/components/ui/badge";
@@ -61,9 +64,13 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
   const slot = templateMediaSlots.find(item => item.key === selected)!;
   const artwork = resolveTemplateMedia(selected, value);
   const responsive = templateMediaResponsiveKeys.some(key => key === selected), decorative = templateMediaDecorativeKeys.some(key => key === selected);
+  // A collection page's banner (owner, 20 Nov 2026): a wide picture, an optional square one for phones, and how it shows.
+  const banner = templateMediaPhoneOptionalKeys.some(key => key === selected);
   const overridden = value?.some(item => item.key === selected) ?? false;
-  function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt">>) {
-    const next = { ...artwork, ...patch };
+  function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt" | "display">>) {
+    const next: TemplateMediaItem = { ...artwork, ...patch };
+    // An optional phone picture that was cleared is no phone picture.
+    if (banner && !next.mobileImage) delete next.mobileImage;
     onChange(overridden ? value!.map(item => item.key === selected ? next : item) : [...(value ?? []), next]);
   }
   return (
@@ -93,20 +100,35 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
           This picture is also the poster of its film: the still shown before the film plays and to visitors who ask for reduced motion. Choose the film itself below.{selected === "home-testimonial-poster" && " The image description also labels the film."}
         </Notice>}
         {responsive && <Notice tone="info">This placement needs both desktop and mobile images. Changing one keeps the other crop.</Notice>}
-        <div className={cn("grid gap-5", responsive && "@xl:grid-cols-2")} key={selected}>
-          {(responsive ? (["Desktop", "Mobile"] as const) : (["Desktop"] as const)).map(kind => {
+        {banner && <Notice tone="info">
+          This banner is the size of the category pages&apos; banners: 2784 × 400 px, shown 1360 × 195 on a laptop. Phones show it square: add a square phone picture (at least 1000 × 1000 px), or phones show the middle of the wide one.
+        </Notice>}
+        <div className={cn("grid gap-5", (responsive || banner) && "@xl:grid-cols-2")} key={selected}>
+          {(responsive || banner ? (["Desktop", "Mobile"] as const) : (["Desktop"] as const)).map(kind => {
             const key = kind === "Desktop" ? "image" : "mobileImage", url = artwork[key] ?? "";
             return <div key={kind} role="group" aria-label={`${kind} artwork`} className="grid min-w-0 content-start gap-3">
-              <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">{kind}</p>
+              <p className="text-xs font-semibold tracking-[0.02em] text-muted-foreground uppercase">{banner && kind === "Mobile" ? "Phone (optional)" : kind}</p>
               <Field label={`${kind} image URL`} value={url} maxLength={1000} onChange={image => update({ [key]: image })} />
               <MediaPicker label={`${kind} image`} value={url} onChange={image => update({ [key]: image })} session={session} onExpired={onExpired}
                 openRequest={kind === "Desktop" && request?.slot === selected && request.library !== false ? request.nonce : undefined} />
             </div>;
           })}
         </div>
+        {banner && <div className="grid gap-2 border-t border-line-soft pt-5">
+          <SelectField label="How the banner shows the picture" value={artwork.display ?? "banner"} disabled={!artwork.image}
+            onChange={event => update({ display: event.target.value as CollectionBannerDisplay })}>
+            <NativeSelectOption value="banner">The whole banner, with its own words (as on the category pages)</NativeSelectOption>
+            <NativeSelectOption value="photo">A photo behind the collection&apos;s name and line</NativeSelectOption>
+          </SelectField>
+          <Prose className="text-xs">{artwork.image
+            ? "Choose “A photo” for a picture without words: the page writes the collection's name and line over it, on Maple's burgundy."
+            : "Until you choose a picture, the banner writes the collection's name and line on Maple's burgundy, over its first product photo."}</Prose>
+        </div>}
         <div className="grid gap-2 border-t border-line-soft pt-5">
           <Field label="Image description" value={artwork.alt} maxLength={200} onChange={alt => update({ alt })} />
-          <Prose className="text-xs">{decorative
+          <Prose className="text-xs">{banner
+            ? "For a whole banner, write the banner's words here for visitors using a screen reader. A photo behind the page's words may stay blank."
+            : decorative
             ? "Leave the description blank if this artwork is decorative. Otherwise describe what it communicates."
             : "Describe what the image communicates for visitors using a screen reader. A description is required."}</Prose>
         </div>
