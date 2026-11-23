@@ -195,16 +195,31 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
   // The header stays pinned on product pages (owner, 10 Nov 2026): its height, measured, is where the page's own sticky
   // parts stop. Until this runs, styles/product-parity.css gives the header's usual heights.
   const page = useRef<HTMLDivElement>(null);
+  const galleryColumn = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const header = document.querySelector<HTMLElement>(".site-header[data-sticky]");
     const root = page.current;
     if (!header || !root) return;
-    const measure = () => root.style.setProperty("--site-header-offset", `${Math.round(header.getBoundingClientRect().height)}px`);
+    const measure = () => {
+      const headerHeight = Math.round(header.getBoundingClientRect().height);
+      root.style.setProperty("--site-header-offset", `${headerHeight}px`);
+      // Where the photos start on the page as it opens (the announcement, the header and the section's top padding): the
+      // photo's frame is as tall as the window below that, so all of it shows on the first screen (owner, 23 Nov 2026).
+      const column = galleryColumn.current, section = column?.parentElement;
+      if (section) root.style.setProperty("--gallery-top-at-load", `${Math.round(section.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(section).paddingTop) || 0))}px`);
+      // The photos scroll up with the page once, then stay put while the buy box scrolls on, until the buy box ends (owner,
+      // 4, 10 and 23 Nov 2026: "left part should be on one scroll then will become static until right part finishes"):
+      // 24px under the pinned header when they fit the window; when taller, once their foot shows 24px above the window's
+      // bottom, so all of the photo is seen.
+      if (column) root.style.setProperty("--gallery-top", `${Math.min(headerHeight + 24, Math.round(window.innerHeight - column.getBoundingClientRect().height - 24))}px`);
+    };
     measure();
-    if (typeof ResizeObserver !== "function") return;
+    window.addEventListener("resize", measure);
+    if (typeof ResizeObserver !== "function") return () => window.removeEventListener("resize", measure);
     const observer = new ResizeObserver(measure);
     observer.observe(header);
-    return () => observer.disconnect();
+    if (galleryColumn.current) observer.observe(galleryColumn.current);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
   }, []);
   async function share() {
     const url = window.location.href;
@@ -269,15 +284,25 @@ export function ProductDetail({ product, initialVariant, presentation, completeL
     // 30px between the sections (owner, 9 Nov 2026).
     <div ref={page} data-store data-product-page className="flex flex-col gap-[30px] bg-white font-text text-black">
       <ProductVisit handle={product.handle} />
-      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 md:px-12 md:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(clamp(400px,40vw,455px),32%)] lg:gap-[clamp(24px,2.4vw,35px)]">
-        {/* What sits under the gallery (View real images, 40px and a 16px gap) comes off its height, so the column still fits the window.
-            It stops 24px under the pinned header (owner, 10 Nov 2026). */}
-        <div className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[calc(var(--site-header-offset,0px)+24px)] lg:self-start" style={realPhotos.length ? { ["--gallery-below" as string]: "56px" } : undefined}>
+      {/* Frame 2:374 from 1024px (owner, 23 Nov 2026: "this is how the section should look like", "increase the width of
+          the image ... and reduce the width of aero section", then "zoom out the left portion a bit so that it is completed
+          in one screen" with "the right portion remains the same"): the 114px thumbnails at the page's left gutter, 12px,
+          the 720px photo frame (as tall as the first screen allows, product-gallery.tsx), 35px, the buy box to the right
+          gutter, never under the frame's 455px. On a narrower window the photos column gives way first (minmax(0, auto)),
+          so the row never runs past the window. */}
+      <section aria-label={product.title} className="grid gap-8 px-4 pt-6 md:px-12 md:pt-12 lg:grid-cols-[minmax(0px,auto)_minmax(clamp(400px,40vw,455px),1fr)] lg:gap-[clamp(24px,2.45vw,35px)]">
+        {/* The photos, pinned beside the buy box (owner, 4 Nov 2026) at --gallery-top: 24px under the pinned header (owner,
+            10 Nov 2026). From 1024px View real images sits on the photo's bottom-left corner, 16px in, so the column ends
+            with the photo and all of it shows on the first screen. */}
+        <div ref={galleryColumn} data-gallery-column className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[var(--gallery-top,calc(var(--site-header-offset,0px)+24px))] lg:self-start">
           <ProductGallery images={images} title={product.title} selected={shown} onSelect={setImage}
             cutoutImage={cutoutFor(variantId)?.image}
             onZoom={() => setZoom(true)} saved={saved} onSave={() => toggleFavourite(product.handle)} />
-          <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title} />
+          <ProductRealImages groups={realPhotos} variantId={variantId} title={product.title}
+            className={cx("lg:absolute lg:bottom-4 lg:z-[2] lg:h-9 lg:px-3.5 lg:text-[13px] lg:shadow-[0_6px_18px_-8px_rgb(41_37_31/0.35)]", images.length > 1 ? "lg:left-[calc(clamp(84px,8vw,114px)+28px)]" : "lg:left-4")} />
         </div>
+        {/* The buy box (frame 2:434): one column in the frame's order that scrolls with the page (owner, 23 Nov 2026:
+            "everything on right should be on scroll"), from the photos to the right gutter. */}
         <div data-product-info className="flex min-w-0 flex-col gap-5 rounded-[20px] border border-solid border-maple/8 bg-white p-5 sm:p-[22px]">
           {(category || isNew || isLimited) && (
             <div className="flex flex-wrap items-center gap-2">

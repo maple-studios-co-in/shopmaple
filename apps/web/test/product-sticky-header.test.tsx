@@ -79,8 +79,14 @@ test("the product page measures the pinned header, and its photos and questions'
     assert.equal(page.style.getPropertyValue("--site-header-offset"), "76px", "and measured again when it changes");
     const column = document.querySelector("[data-gallery]")!.parentElement!;
     assert.match(column.className, /lg:sticky/);
-    assert.match(column.className, /lg:top-\[calc\(var\(--site-header-offset,0px\)\+24px\)\]/, "the photos stop 24px under the header");
-    assert.match(document.querySelector("[data-main-image]")!.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)-var\(--site-header-offset,0px\)\)\]/, "and still fit the window under it");
+    assert.match(column.className, /lg:top-\[var\(--gallery-top,calc\(var\(--site-header-offset,0px\)\+24px\)\)\]/, "the photos stop at --gallery-top, 24px under the header until it is measured");
+    assert.equal(page.style.getPropertyValue("--gallery-top"), "100px", "a column that fits the window stops 24px under the header");
+    // The owner's idea (23 Nov 2026): "everything on right should be on scroll and left part should be on one scroll then
+    // will become static until right part finishes". The photo is sized from where the photos start as the page opens
+    // (measured), so all of it shows on the first screen; the photos pin, and the buy box scrolls on past them.
+    assert.equal(page.style.getPropertyValue("--gallery-top-at-load"), "0px", "where the photos start is measured");
+    assert.match(document.querySelector("[data-main-image]")!.className, /lg:max-h-none/, "the photo takes the height its width gives it");
+    assert.doesNotMatch(document.querySelector("[data-product-info]")!.className, /sticky/, "the buy box scrolls with the page");
     const heading = document.querySelector("[data-faq-heading]")!;
     assert.match(heading.className, /lg:top-\[calc\(var\(--site-header-offset,0px\)\+32px\)\]/, "the questions' heading too");
   } finally {

@@ -186,13 +186,19 @@ test("the photo frame narrows to the photo's shape on a short window instead of 
     assert.ok(frame, "the frame is marked");
     assert.ok(frame.contains(document.querySelector("[data-main-image]")), "the large photo sits inside the frame");
     const classes = frame.className;
-    // Width follows the same height caps as the photo, at 4:5.
+    // Below 1024px the width follows the photo's height cap, at 4:5. From 1024px (owner, 23 Nov 2026: "zoom out the left
+    // portion a bit so that it is completed in one screen", "the right portion remains the same") the frame keeps the
+    // 720px width that places the buy box, never wider than its track, and is only as tall as the first screen allows.
     assert.match(classes, /(^| )mx-auto( |$)/);
     assert.ok(classes.includes("max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)]"));
-    assert.ok(classes.includes("lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)]"));
-    // The large photo stays 4:5 at every width: a square frame on wide screens cropped the piece top and bottom.
+    assert.ok(classes.includes("lg:w-[720px]"), "from 1024px the frame keeps the photo's 720px width");
+    assert.ok(classes.includes("lg:max-w-full"), "and never runs past its track");
     const photo = document.querySelector("[data-main-image]")!;
+    for (const name of ["lg:aspect-auto", "lg:h-[min(900px,max(320px,calc(100svh-var(--gallery-top-at-load,186px)-16px)))]", "lg:max-h-none"])
+      assert.ok(photo.classList.contains(name), `the photo's frame: ${name}`);
+    // The photo is never cropped: 4:5 below 1024px, and from there shown whole in its frame.
     assert.match(photo.className, /(^| )aspect-\[4\/5\]( |$)/);
     assert.doesNotMatch(photo.className, /aspect-square/);
+    assert.match(photo.querySelector("img")!.className, /lg:object-contain|(^| )object-contain( |$)/, "shown whole from 1024px");
   });
 });
