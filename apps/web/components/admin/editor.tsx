@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BookOpen, CircleCheck, Ellipsis, Eye, FileText, Files, History, House, Image as ImageIcon, Images, Inbox, Instagram,
-  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Save, Sparkles, Tags, TriangleAlert, Type, Upload, X,
+  ExternalLink, LayoutDashboard, LayoutGrid, Megaphone, PanelsTopLeft, Ruler, Save, Sparkles, Tags, Trash2, TriangleAlert, Type, Upload, X,
 } from "lucide-react";
 import {
   previewTokenPattern,
@@ -30,6 +30,7 @@ import { AuthoredArticleFields } from "./authored-article-fields";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highlights-fields";
 import { MediaLibrary } from "./media-library";
+import { BannerSizesPanel } from "./banner-sizes-panel";
 import { TemplateArtworkFields, type ArtworkRequest } from "./template-artwork-fields";
 import { EnquiryInbox } from "./enquiry-inbox";
 import { LivePreview } from "./live-preview";
@@ -39,6 +40,7 @@ import { useClickToEdit } from "./use-click-to-edit";
 import { campaignPreviewPath, previewRouteFor } from "@/lib/live-preview";
 import { describeContentIssue, previewReadyContent, type PreviewReady } from "@/lib/draft-pictures";
 import { pictureChanges } from "@/lib/picture-changes";
+import { countMediaReferences, replaceMediaReferences } from "@/lib/media-references";
 import type { PreviewPicture, PreviewSlider } from "@/lib/live-preview";
 import { openPictureChooser, pictureScreen } from "./open-picture";
 import { AdminSidebar, CommandPalette, SectionPicker, StaffMenu, StatusChip, SidebarTrigger } from "./admin-shell";
@@ -59,7 +61,7 @@ type Document = {
 };
 const tabs = [
   "Overview", "Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram",
-  "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Enquiries", "History",
+  "Site words", "Pages", "Existing pages", "Policies & blogs", "Category pages", "Media", "Removed media", "Enquiries", "History", "Banner sizes",
 ] as const;
 type Tab = (typeof tabs)[number];
 /** Sidebar structure: Overview on its own, then grouped sections. */
@@ -67,14 +69,17 @@ const navGroups: { label: string | null; items: Tab[] }[] = [
   { label: null, items: ["Overview"] },
   { label: "Storefront", items: ["Homepage", "Navigation & footer", "Merchandising", "Product highlights", "Artwork", "Campaigns", "Instagram", "Site words"] },
   { label: "Pages", items: ["Pages", "Existing pages", "Policies & blogs", "Category pages"] },
-  { label: "Library", items: ["Media"] },
+  // Removed media (owner, 23 Nov 2026): removed files on a screen of their own, where a publisher alone deletes permanently.
+  { label: "Library", items: ["Media", "Removed media"] },
   { label: "Customers", items: ["Enquiries"] },
   { label: "Publishing", items: ["History"] },
+  // Settings (owner, 23 Nov 2026): choices that apply at once, outside the draft. Banner sizes: the only picture sizes uploads may have.
+  { label: "Settings", items: ["Banner sizes"] },
 ];
 const icons: Record<Tab, typeof House> = {
   Overview: LayoutDashboard, Homepage: House, "Navigation & footer": PanelsTopLeft, Merchandising: LayoutGrid, "Product highlights": Sparkles, Artwork: ImageIcon,
   Campaigns: Megaphone, Instagram, "Site words": Type, Pages: FileText, "Existing pages": Files, "Policies & blogs": BookOpen, "Category pages": Tags,
-  Media: Images, Enquiries: Inbox, History,
+  Media: Images, "Removed media": Trash2, Enquiries: Inbox, History, "Banner sizes": Ruler,
 };
 /** The theme's own pages on the Existing pages screen, with the storefront address each previews. */
 const existingPages = [
@@ -527,6 +532,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
         if (siteChrome === undefined) delete next.siteChrome; else next.siteChrome = siteChrome;
         edit(next);
       }} />;
+      case "Removed media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" mode="removed" />;
       case "Merchandising": return <HomeMerchandisingFields value={content.homeMerchandising} onChange={set("homeMerchandising")} session={session} onExpired={onExpired} />;
       case "Product highlights": return <ProductHighlightsFields value={content.productHighlights} onChange={set("productHighlights")} onExpired={onExpired} />;
       case "Artwork": return <TemplateArtworkFields value={content.templateMedia} onChange={set("templateMedia")} session={session} onExpired={onExpired} request={artworkRequest ?? undefined}
@@ -538,7 +544,11 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "Category pages": return <CategoryFields value={content.landingPages} onChange={set("landingPages")}
         initialActive={categorySlug} onActiveChange={(slug, initial) => { setCategorySlug(slug); chosenOnScreen(initial); }} />;
       case "Site words": return <SiteWordsFields value={content.siteWords} onChange={(siteWords) => edit({ ...content, siteWords })} />;
-      case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
+      // Media manages the library (owner, 23 Nov 2026); an edited picture can take the original's place everywhere in the draft.
+      case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" draft={{
+        uses: (url) => countMediaReferences(content, url),
+        replace: (from, to) => { const uses = countMediaReferences(content, from); if (uses) edit(replaceMediaReferences(content, from, to)); return uses; },
+      }} />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>
         <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
@@ -697,6 +707,9 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
             >
               {tab === "Enquiries" && canManageEnquiries ? (
                 <EnquiryInbox session={session} onExpired={onExpired} />
+              ) : tab === "Banner sizes" ? (
+                // Not part of the draft: the rules apply as soon as a publisher saves them.
+                <BannerSizesPanel session={session} onExpired={onExpired} />
               ) : !content ? unavailableDraft : (
               <DisabledScope disabled={busy || conflict || !canEdit} notice={conflict ? "Another editor saved a newer version. Reload the latest draft before editing again." : !canEdit ? "You have View access: you can look and preview. Changing content needs Edit, which is set on Keeri's Roles screen." : undefined}>
               {!canEdit && <p role="note" data-view-only className="mb-4 rounded-md bg-neutral-bg px-3 py-2 text-xs text-muted-foreground">You have View access: you can look and preview. Changing content needs Edit, which is set on Keeri&apos;s Roles screen.</p>}

@@ -10,7 +10,7 @@ import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 import { createApp } from "../src/app.js";
 import { HttpError } from "../src/cart.js";
-import { registerMediaRoutes, prepareMediaForPublication } from "../src/admin/media.js";
+import { registerMediaRoutes, prepareMediaForPublication, imageUploadsPerMinute } from "../src/admin/media.js";
 const url = process.env.TEST_DATABASE_URL;
 if(!url || new URL(url).pathname !== "/shopmaple_test") throw Error("Dedicated test database required");
 const db = new PrismaClient({datasources:{db:{url}}});
@@ -84,8 +84,8 @@ test("concurrent identical uploads create one asset and no temporary leftovers",
 });
 test("upload rate limit bounds repeated authenticated decoding requests",async()=>{
  const http=request(app());
- const results=[];for(let i=0;i<11;i++)results.push((await upload(http,Buffer.from("bad"))).status);
- assert.equal(results[0],400);assert.equal(results[10],429);
+ const results=[];for(let i=0;i<=imageUploadsPerMinute;i++)results.push((await upload(http,Buffer.from("bad"))).status);
+ assert.equal(results[0],400);assert.equal(results[imageUploadsPerMinute-1],400,"a folder of pictures uploads in one go (owner, 23 Nov 2026)");assert.equal(results[imageUploadsPerMinute],429);
 });
 test("library pagination is stable and private metadata never leaks creator credentials",async()=>{
  const first=await request(app()).get("/api/admin/media?limit=1").set("Cookie",`shop_admin=${token}`);
