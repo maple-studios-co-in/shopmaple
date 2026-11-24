@@ -25,8 +25,7 @@ import { StoryFields } from "./story-fields";
 import { NimbusFields } from "./nimbus-fields";
 import { TerraFields } from "./terra-fields";
 import { ServicePageFields } from "./service-page-fields";
-import { EditorialFields } from "./editorial-fields";
-import { AuthoredArticleFields } from "./authored-article-fields";
+import { EditorialManager, type EditorialRequest } from "./editorial-manager";
 import { HomeMerchandisingFields } from "./home-merchandising-fields";
 import { ProductHighlightsFields, highlightsSaveMessage } from "./product-highlights-fields";
 import { MediaLibrary } from "./media-library";
@@ -151,6 +150,8 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
   const [campaignKey, setCampaignKey] = useState<string | null>(null);
   const [categorySlug, setCategorySlug] = useState<CategoryPageSlug>("sofas");
   const [editorialAddress, setEditorialAddress] = useState("/policies/privacy-policy");
+  /** A policy, blog or article clicked in the live preview, for Policies & blogs to open. */
+  const [editorialRequest, setEditorialRequest] = useState<EditorialRequest | null>(null);
   const chosenOnScreen = (initial: boolean) => { if (!initial) setPreviewHold(null); };
   /** A picture clicked in the live preview: the Artwork screen shows its placement and opens its library. */
   const [artworkRequest, setArtworkRequest] = useState<ArtworkRequest | null>(null);
@@ -480,6 +481,7 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       }
       const next = ({ chrome: "Navigation & footer", existing: "Existing pages", pages: "Pages", category: "Category pages", editorial: "Policies & blogs", words: "Site words" } as const)[screen.kind];
       if (screen.kind === "existing") setExistingPage(screen.page as ExistingPage);
+      if (screen.kind === "editorial") setEditorialRequest({ choice: screen.choice, at: Date.now() });
       setPreviewHold(keep);
       if (tabRef.current !== next) { setSelectedPage(0); setFocusedSection(null); setInspecting(null); setTab(next); }
     },
@@ -541,10 +543,9 @@ export function ContentEditor({ session, initialContent, onExpired, account, liv
       case "Media": return <MediaLibrary session={session} onExpired={onExpired} heading="h2" />;
       case "History": return <HistoryPanel revisions={revisions} loading={busy} canRestore={publisher} dirty={dirty} current={content} onRestore={(id) => void write("restore", id)} onExpired={onExpired} />;
       case "Policies & blogs": return <>
-        <PanelHeader title="Policies & blogs" description="Policies, blog indexes and authored articles share the storefront's editorial layout." />
-        <EditorialFields value={content.editorialContent} onChange={set("editorialContent")} disabled={busy || conflict} session={session} onExpired={onExpired}
+        <PanelHeader title="Policies & blogs" description="Write and manage the policy pages, blog articles and blogs. Changes stay in your draft until it is published." />
+        <EditorialManager content={content} onChange={edit} disabled={busy || conflict} session={session} onExpired={onExpired} request={editorialRequest}
           onPageChange={(address, initial) => { setEditorialAddress(address); chosenOnScreen(initial); }} />
-        <AuthoredArticleFields value={content.authoredArticles} onChange={set("authoredArticles")} session={session} onExpired={onExpired} />
       </>;
       case "Existing pages": return <>
         <PanelHeader title="Existing pages" description="Edit the storefront pages that ship with the theme. Changes stay in your draft until published." />

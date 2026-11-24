@@ -8,13 +8,18 @@
  * characters from pasted documents are removed.
  */
 import type { JSONContent } from "@tiptap/react";
-import { contentImageSchema, safeLink, storeMedia, type EditorialNode } from "@shopmaple/contracts";
+import { contentImageSchema, editorialAligns, editorialColors, safeLink, storeMedia, type EditorialAlign, type EditorialColor, type EditorialNode } from "@shopmaple/contracts";
 
 type Mark = NonNullable<JSONContent["marks"]>[number];
 type Element = Exclude<EditorialNode, string>;
-const markOf: Record<string, Mark["type"]> = { strong: "bold", b: "bold", em: "italic", i: "italic", u: "underline" };
+// The editor's marks for each stored inline tag (strikethrough, highlight, superscript and subscript from 24 Nov 2026).
+const markOf: Record<string, Mark["type"]> = { strong: "bold", b: "bold", em: "italic", i: "italic", u: "underline", s: "strike", mark: "highlight", sup: "superscript", sub: "subscript" };
 const element = (node: EditorialNode): node is Element => typeof node !== "string";
 const controls = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
+/** An alignment or a colour the store renders; anything else reads as none. */
+const alignOf = (value: unknown): EditorialAlign | undefined => (editorialAligns as readonly unknown[]).includes(value) ? value as EditorialAlign : undefined;
+const colorOf = (value: unknown): EditorialColor | undefined => typeof value === "string" && Object.hasOwn(editorialColors, value) ? value as EditorialColor : undefined;
+const alignAttrs = (align: unknown) => alignOf(align) ? { textAlign: alignOf(align) } : {};
 
 /** Inline content, with the marks of the tags around it; runs of whitespace read as one space. */
 function inline(nodes: EditorialNode[], marks: Mark[] = []): JSONContent[] {
@@ -26,8 +31,9 @@ function inline(nodes: EditorialNode[], marks: Mark[] = []): JSONContent[] {
     if (node.tag === "br") return [{ type: "hardBreak" }];
     if (node.tag === "img") return [];
     if (node.tag === "a") return inline(node.children, [...marks, { type: "link", attrs: { href: node.href } }]);
+    if (node.tag === "span" && colorOf(node.color)) return inline(node.children, [...marks.filter((mark) => mark.type !== "textColor"), { type: "textColor", attrs: { color: colorOf(node.color) } }]);
     const mark = markOf[node.tag];
-    return inline(node.children, mark ? [...marks, { type: mark }] : marks);
+    return inline(node.children, mark && !marks.some((item) => item.type === mark) ? [...marks, { type: mark }] : marks);
   });
 }
 /** A paragraph's words without the spaces a browser would not show at its start and end. */
@@ -43,15 +49,16 @@ const image = (node: Element): JSONContent => ({ type: "image", attrs: { src: no
 const nestedImages = (nodes: EditorialNode[]): Element[] => nodes.flatMap((node) => !element(node) ? [] : node.tag === "img" ? [node] : nestedImages(node.children));
 
 /** A run of inline content as paragraphs; images, which cannot sit in a line of text, follow it. */
-function paragraphs(nodes: EditorialNode[], bare: boolean): JSONContent[] {
+function paragraphs(nodes: EditorialNode[], bare: boolean, align?: unknown): JSONContent[] {
   const content = trimmed(inline(nodes));
+  const attrs = { ...(bare ? { bare: true } : {}), ...alignAttrs(align) };
   return [
-    ...(content.length ? [{ type: "paragraph", ...(bare ? { attrs: { bare: true } } : {}), content }] : []),
+    ...(content.length ? [{ type: "paragraph", ...(Object.keys(attrs).length ? { attrs } : {}), content }] : []),
     ...nestedImages(nodes).map(image),
   ];
 }
 
-const inlineTags = new Set(["strong", "b", "em", "i", "u", "a", "span", "br", "img"]);
+const inlineTags = new Set(["strong", "b", "em", "i", "u", "s", "mark", "sup", "sub", "a", "span", "br", "img"]);
 /** Block content; text stored directly in a container becomes a `bare` paragraph. */
 function blocks(nodes: EditorialNode[]): JSONContent[] {
   const out: JSONContent[] = [];
@@ -70,9 +77,9 @@ const cell = (nodes: EditorialNode[]): JSONContent[] => { const content = blocks
 
 function block(node: Element): JSONContent[] {
   const level = /^h([1-6])$/.exec(node.tag)?.[1];
-  if (level) return [{ type: "heading", attrs: { level: Number(level) }, content: trimmed(inline(node.children)) }, ...nestedImages(node.children).map(image)];
+  if (level) return [{ type: "heading", attrs: { level: Number(level), ...alignAttrs(node.align) }, content: trimmed(inline(node.children)) }, ...nestedImages(node.children).map(image)];
   switch (node.tag) {
-    case "p": return paragraphs(node.children, false);
+    case "p": return paragraphs(node.children, false, node.align);
     case "div": return [{ type: "div", content: cell(node.children) }];
     case "ul": case "ol":
       return [{ type: node.tag === "ul" ? "bulletList" : "orderedList", content: node.children.filter(element).map((item) => ({ type: "listItem", content: cell(item.children) })) }];
@@ -93,17 +100,24 @@ function block(node: Element): JSONContent[] {
 }
 
 export function toEditorDoc(nodes: EditorialNode[]): JSONContent {
-  return { type: "doc", content: blocks(nodes) };
+  // A new, empty page still opens with a line to write on (a document needs one block); it saves as nothing until typed in.
+  const content = blocks(nodes);
+  return { type: "doc", content: content.length ? content : [{ type: "paragraph" }] };
 }
 
-/** Text with its marks as nested tags: link outermost, then bold, italic, underline. */
+/**
+ * Text with its marks as nested tags, from the inside out: superscript or subscript, underline, strikethrough, italic,
+ * bold, highlight, then the colour, and the link outermost. A colour outside the store's palette is dropped.
+ */
 function textNode(node: JSONContent): EditorialNode[] {
   const text = node.text?.replace(controls, "");
   if (!text) return [];
   let out: EditorialNode = text;
   const marks = node.marks ?? [];
-  for (const [type, tag] of [["underline", "u"], ["italic", "em"], ["bold", "strong"]] as const)
+  for (const [type, tag] of [["superscript", "sup"], ["subscript", "sub"], ["underline", "u"], ["strike", "s"], ["italic", "em"], ["bold", "strong"], ["highlight", "mark"]] as const)
     if (marks.some((m) => m.type === type)) out = { tag, children: [out] };
+  const color = colorOf(marks.find((m) => m.type === "textColor")?.attrs?.color);
+  if (color) out = { tag: "span", color, children: [out] };
   const href = marks.find((m) => m.type === "link")?.attrs?.href;
   if (typeof href === "string" && safeLink(href)) out = { tag: "a", href, children: [out] };
   return [out];
@@ -123,7 +137,8 @@ function fromChildren(content: JSONContent[] = []): EditorialNode[] {
   const out: EditorialNode[] = [];
   let lastBare = false;
   for (const node of content) {
-    if (node.type === "paragraph" && node.attrs?.bare) {
+    // A bare line staff aligned becomes a real paragraph, which can carry the alignment.
+    if (node.type === "paragraph" && node.attrs?.bare && !alignOf(node.attrs?.textAlign)) {
       const words = fromInline(node.content);
       if (!words.length) continue;
       if (lastBare) out.push({ tag: "br", children: [] });
@@ -140,8 +155,14 @@ const plain = (node: JSONContent): string => (node.text ?? (node.content ?? []).
 function fromBlock(node: JSONContent): EditorialNode[] {
   const children = () => fromChildren(node.content);
   switch (node.type) {
-    case "paragraph": { const content = fromInline(node.content); return content.length ? [{ tag: "p", children: content }] : []; }
-    case "heading": return [{ tag: `h${Math.min(6, Math.max(1, Number(node.attrs?.level) || 2))}`, children: fromInline(node.content) }];
+    case "paragraph": {
+      const content = fromInline(node.content), align = alignOf(node.attrs?.textAlign);
+      return content.length ? [{ tag: "p", ...(align ? { align } : {}), children: content }] : [];
+    }
+    case "heading": {
+      const align = alignOf(node.attrs?.textAlign);
+      return [{ tag: `h${Math.min(6, Math.max(1, Number(node.attrs?.level) || 2))}`, ...(align ? { align } : {}), children: fromInline(node.content) }];
+    }
     case "div": return [{ tag: "div", children: children() }];
     case "bulletList": return [{ tag: "ul", children: (node.content ?? []).flatMap(fromBlock) }];
     case "orderedList": return [{ tag: "ol", children: (node.content ?? []).flatMap(fromBlock) }];
