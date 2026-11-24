@@ -43,6 +43,11 @@
   background: var(--color-linen, #faf8f4);
 }
 .collection-page > [data-landing-banner="inset"] + #collection-products { padding-top: 0; }
+/* The beds page opens on its campaign hero alone (owner, 23 Nov 2026): the full-width hero meets the header, as the
+   homepage's opening does, and the listing starts 30px under it, as it does under the other collection pages' banner
+   (it was 30px of the frame's margin plus the listing's own 64px). */
+.collection-page[data-hero-only] > [data-landing-banner="hero"]:first-child { margin-top: 0; }
+.collection-page[data-hero-only] > [data-landing-banner="hero"] + #collection-products { padding-top: 0; }
 /* A picture is the whole banner, cropped to its shape as the category pages' banners are. */
 .collection-banner-picture,
 .collection-banner-picture img {

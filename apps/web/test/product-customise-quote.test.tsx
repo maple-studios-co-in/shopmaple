@@ -160,7 +160,7 @@ test("a piece with a single option offers customisation too, and the gallery sta
     assert.equal(dialog.open, true);
     assert.match(text(dialog)!, /Aero Dining Chair/);
     const photo = doc.querySelector<HTMLElement>("[data-main-image]")!;
-    assert.match(photo.className, /lg:max-h-\[calc\(100svh-48px-var\(--gallery-below,0px\)-var\(--site-header-offset,0px\)\)\]/, "no taller than the window on a desktop (owner, 4 Nov 2026), less what sits under it and the pinned header (10 Nov 2026)");
+    assert.match(photo.className, /lg:max-h-none/, "it fills its column on a desktop (owner, 23 Nov 2026)");
     assert.ok(photo.closest(".lg\\:sticky"), "and pinned while the buy box scrolls past");
   }, { ...product, variants: product.variants.slice(0, 1) });
 });

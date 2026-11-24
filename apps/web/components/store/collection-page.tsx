@@ -5,11 +5,21 @@ import { getCollectionPage } from "@/lib/catalog";
 import { collectionIntro, heroTitle } from "@/lib/collection-intro";
 import { collectionQuery, collectionTitles } from "@/lib/collections";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
+import { defaultStorefrontContent } from "@/lib/content-defaults";
 import { resolveTemplateMedia } from "@/lib/template-media-defaults";
-import { collectionHeroKeys, type TemplateMediaKey } from "@shopmaple/contracts";
+import { collectionHeroKeys, isCampaignActive, type TemplateMediaKey } from "@shopmaple/contracts";
 
 type Query = Record<string, string | string[] | undefined>;
 const categoryHandles = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"];
+/** Pages that open on their campaign hero alone, without the banner above it (owner, 23 Nov 2026, for the beds page). */
+const heroOnlyHandles = new Set(["beds"]);
+
+/** Whether a campaign banner draws on the page as it is served, judged as CampaignBanner judges it. */
+function campaignShows(content: StorefrontDocument, key: CampaignKey) {
+  if (!content.campaignsAvailable) return false;
+  const schedule = (content.campaigns.find((item) => item.key === key) ?? defaultStorefrontContent.campaigns.find((item) => item.key === key))?.schedule;
+  return !schedule || isCampaignActive(schedule, Date.now());
+}
 
 /**
  * A collection's listing page (/collections/<handle>): its banner, its campaign banners and the filtered, paged pieces. The
@@ -26,7 +36,8 @@ export async function CollectionPageView({ handle, query: search, content }: { h
   // read from the draft in the live preview, with its phone picture and how it shows. Without one the banner keeps the
   // collection's first product photo. Read after the listing, so the catalogue is asked first as before.
   const slot = (collectionHeroKeys as readonly string[]).includes(`collection-hero-${handle}`) ? `collection-hero-${handle}` as TemplateMediaKey : undefined;
-  const chosen = slot ? resolveTemplateMedia(slot, (content ?? await getPublishedContent()).templateMedia) : null;
+  const storefront = content ?? await getPublishedContent();
+  const chosen = slot ? resolveTemplateMedia(slot, storefront.templateMedia) : null;
   const picture = chosen?.image
     ? { image: chosen.image, ...(chosen.mobileImage ? { mobileImage: chosen.mobileImage } : {}), alt: chosen.alt, display: chosen.display ?? "banner" as const }
     : undefined;
@@ -37,15 +48,21 @@ export async function CollectionPageView({ handle, query: search, content }: { h
       "tv-media-units": "tv-units-hero",
     } as Record<string, CampaignKey>
   )[handle];
+  // The beds page opens on its campaign hero alone (owner, 23 Nov 2026: "I only want the below one banner"); the banner
+  // above it doubled the opening. Its listing's heading ("All beds") is then the page's heading. Whenever the hero is not
+  // drawn (a schedule outside its dates, or campaigns unavailable), the banner comes back, so the page never opens bare.
+  const heroOnly = heroOnlyHandles.has(handle) && campaign !== undefined && campaignShows(storefront, campaign);
   // The introduction speaks for the collection's kind of piece: its own category, or the one every listed piece shares.
   const shared = [...new Set(result.products.map((product) => product.category).filter(Boolean))];
   const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;
   // One linen background from the header down (styles/collection-parity.css), so the banner stands on the listing's own.
   return (
-    <div className="collection-page" data-collection-page>
+    <div className="collection-page" data-collection-page data-hero-only={heroOnly ? "" : undefined}>
       {/* The banner the size of the category pages' banners (owner, 20 Nov 2026), in place of the full-width dark hero. */}
-      <CollectionBanner title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover}
-        slot={slot} picture={picture} />
+      {!heroOnly && (
+        <CollectionBanner title={heroTitle(handle, collectionTitles[handle]!)} crumb={collectionTitles[handle]!} intro={collectionIntro(kind)} cover={cover}
+          slot={slot} picture={picture} />
+      )}
       {campaign && (
         <div className="landing-banner-frame" data-landing-banner="hero">
           <CampaignBanner campaign={campaign} eager content={content} />
@@ -54,7 +71,7 @@ export async function CollectionPageView({ handle, query: search, content }: { h
       <CollectionListing
         handle={handle}
         title={collectionTitles[handle]!}
-        headingLevel="h2"
+        headingLevel={heroOnly ? "h1" : "h2"}
         query={result.query}
         products={result.products}
         total={result.total}

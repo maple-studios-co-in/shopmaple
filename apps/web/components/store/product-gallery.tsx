@@ -5,8 +5,9 @@ import { Heart } from "lucide-react";
 import { cx } from "@/lib/cx";
 import { ProductImage } from "./product-image";
 
-// The photo column: the window less the gutters, the gap, the buy box (at least 455 px, 32 % of the grid) and the thumbnail strip.
-const STAGE_SIZES = "(max-width:1023px) 100vw, calc(100vw - 257px - max(455px, (100vw - 96px) * 0.32))";
+// The photo's frame from 1024px: 720px, never wider than the window less the gutters, the gap, a 455px buy box and the
+// thumbnails (712px in all).
+const STAGE_SIZES = "(max-width:1023px) 100vw, min(720px, calc(100vw - 712px))";
 // Thumbnails beyond this count mount their image only once they near the strip's viewport.
 const EAGER_THUMBNAILS = 12;
 const initialWindow = (count: number) => new Set(Array.from({ length: Math.min(count, EAGER_THUMBNAILS) }, (_, i) => i));
@@ -85,7 +86,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
   return (
     <div
       data-gallery
-      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[clamp(84px,7.5vw,114px)_minmax(0,1fr)] lg:items-start lg:gap-3")}
+      className={cx("flex min-w-0 flex-col gap-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand sm:gap-4", images.length > 1 && "lg:grid lg:grid-cols-[clamp(84px,8vw,114px)_minmax(0,1fr)] lg:items-start lg:gap-3")}
       role="group"
       aria-label="Product images"
       tabIndex={images.length > 1 ? 0 : undefined}
@@ -101,13 +102,18 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
         const { props } = getImageProps({ src: href, alt: "", fill: true, sizes: STAGE_SIZES });
         return <link key={href} rel="preload" as="image" href={props.src} imageSrcSet={props.srcSet} imageSizes={props.srcSet ? props.sizes : undefined} />;
       })}
-      {/* The frame keeps the photos' 4:5 shape at every width and is never wider than that shape at the height it may take.
-          A square frame on wide screens, or a height cap on short ones, cropped the piece top and bottom (owner, 14 Nov 2026). */}
-      <div data-gallery-frame className={cx("relative mx-auto w-full max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)] overflow-hidden rounded-[20px] border border-solid lg:max-w-[calc((100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))*0.8)] lg:rounded-[30px]", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
+      {/* Below 1024px the frame keeps the photos' 4:5 shape: a square frame, or a height cap, cropped the piece top and
+          bottom (owner, 14 Nov 2026). From 1024px the frame is as wide as frame 2:374's 720px photo (narrower only where the
+          row has less room beside the buy box's 455px), so the buy box keeps its place and width (owner, 23 Nov 2026: "the
+          right portion remains the same"); and it is only as tall as the window below where it starts as the page opens,
+          less 16px, up to the frame's 900px, so all of it shows on the first screen ("zoom out the left portion a bit so
+          that it is completed in one screen"). The photo is shown whole inside it, zoomed out to its height, on white;
+          no photo is cut. */}
+      <div data-gallery-frame className={cx("relative mx-auto w-full max-w-[calc(max(360px,calc(100svh-140px-var(--site-header-offset,0px)))*0.8)] overflow-hidden rounded-[20px] border border-solid lg:mx-0 lg:w-[720px] lg:max-w-full lg:rounded-[30px] lg:border-maple/8 lg:bg-white", cutout ? "border-maple/8 bg-white" : "border-transparent bg-cream", images.length > 1 && "lg:col-start-2")}>
         {images.length ? (
           <button
             data-main-image
-            className={cx("relative block aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))]", cutout ? "bg-white" : "bg-cream")}
+            className={cx("relative block aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full cursor-zoom-in overflow-hidden border-0 p-0 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-brand lg:aspect-auto lg:h-[min(900px,max(320px,calc(100svh-var(--gallery-top-at-load,186px)-16px)))] lg:max-h-none lg:bg-white", cutout ? "bg-white" : "bg-cream")}
             aria-label="Enlarge product image"
             onClick={(event) => {
               if (swiped.current && event.detail > 0) { swiped.current = false; return; }
@@ -146,7 +152,7 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
                 alt={title + " — view " + (selected + 1)}
                 fill
                 sizes={STAGE_SIZES}
-                className={src === cutoutImage ? "object-contain" : "object-cover"}
+                className={src === cutoutImage ? "object-contain" : "object-cover lg:object-contain"}
                 preload={src === initialSrc.current}
                 onLoad={() => setReadySrc(src)}
                 onError={() => setReadySrc(src)}
@@ -154,12 +160,12 @@ export function ProductGallery({ images, title, selected, onSelect, onZoom, save
             </span>
             {settledSrc && settledSrc !== src && (
               <span className="absolute inset-0" aria-hidden="true">
-                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === cutoutImage ? "object-contain" : "object-cover"} />
+                <ProductImage src={settledSrc} alt="" fill sizes={STAGE_SIZES} className={settledSrc === cutoutImage ? "object-contain" : "object-cover lg:object-contain"} />
               </span>
             )}
           </button>
         ) : (
-          <div data-main-image className="grid aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full lg:max-h-[calc(100svh-48px-var(--gallery-below,0px)-var(--site-header-offset,0px))] place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
+          <div data-main-image className="grid aspect-[4/5] max-h-[max(360px,calc(100svh-140px-var(--site-header-offset,0px)))] w-full lg:aspect-auto lg:h-[min(900px,max(320px,calc(100svh-var(--gallery-top-at-load,186px)-16px)))] lg:max-h-none place-content-center justify-items-center gap-2 text-meta text-[#5e574f]"><ProductImage alt={title} /></div>
         )}
         <button type="button" onClick={onSave} aria-label={saved ? "Remove from saved furniture" : "Save furniture"} aria-pressed={saved}
           className="absolute top-4 right-4 z-[2] grid size-10 cursor-pointer place-items-center rounded-full border-0 bg-white p-0 text-brand shadow-xs hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">

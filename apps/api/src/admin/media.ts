@@ -7,9 +7,11 @@ import express, { type Express, type NextFunction, type Request, type Response }
 import { rateLimit } from "express-rate-limit";
 import type { Prisma, PrismaClient, ShopMediaAsset } from "@prisma/client";
 import sharp from "sharp";
+import { defaultMediaUploadRules, imageFileProblem, imageSizeProblem, type MediaUploadRules } from "@shopmaple/contracts/media-upload-rules";
 import { HttpError } from "../cart.js";
 import { requireStaff } from "./auth.js";
 import { filmHeadBytes, FilmInvalid, inspectFilm, sniffFilm, type FilmContainer } from "./film-inspect.js";
+import { readMediaUploadRules } from "./settings.js";
 export type MediaConfig = { webOrigin: string; secureCookies: boolean; mediaRoot?: string };
 const shaPattern = /^[a-f0-9]{64}$/;
 const imageFilename = /^[a-f0-9]{64}\.webp$/;
@@ -18,6 +20,11 @@ const publicFilename = /^[a-f0-9]{64}\.(?:webp|mp4|webm)$/;
 const imageReference = /^\/media\/uploads\/([a-f0-9]{64})\.webp$/;
 const filmReference = /^\/media\/uploads\/([a-f0-9]{64})\.(mp4|webm)$/;
 const maxBytes = 8 * 1024 * 1024, diskQuota = 250 * 1024 * 1024;
+/**
+ * Image uploads a client may start in a minute. Staff upload a whole folder at once (owner, 23 Nov 2026: bulk upload), so
+ * this is above the films' 10; decoding stays bounded by the two active uploads per process.
+ */
+export const imageUploadsPerMinute = 60;
 /** Films (owner, 12 Nov 2026): ready-made MP4 or WebM up to 80 MB each, at most 40 films and 3 GiB in all. */
 export const maxFilmBytes = 80 * 1024 * 1024, filmDiskQuota = 3 * 1024 * 1024 * 1024, maxFilms = 40;
 const filmTypes: Record<string, FilmContainer> = { "video/mp4": "mp4", "video/webm": "webm" };
@@ -30,17 +37,29 @@ const unavailable = () => new HttpError(503, "MEDIA_STORAGE_UNAVAILABLE", "Image
 /** A film's extension, from its stored name (`<sha>.mp4`); an image's is always webp. */
 const extension = (row: ShopMediaAsset) => row.kind === "video" ? row.storageKey.slice(65) : "webp";
 function serialize(row: ShopMediaAsset) {
- return { id: row.id, sha256: row.sha256, kind: row.kind, label: row.label, width: row.width, height: row.height, bytes: row.bytes, mimeType: row.mimeType, durationMs: row.durationMs, faststart: row.faststart, createdAt: row.createdAt.toISOString(), publicAt: row.publicAt?.toISOString() ?? null, url: `/media/uploads/${row.sha256}.${extension(row)}`, previewUrl: `/api/admin/media/${row.sha256}/preview` };
+ return { id: row.id, sha256: row.sha256, kind: row.kind, label: row.label, width: row.width, height: row.height, bytes: row.bytes, mimeType: row.mimeType, durationMs: row.durationMs, faststart: row.faststart, createdAt: row.createdAt.toISOString(), publicAt: row.publicAt?.toISOString() ?? null, removedAt: row.removedAt?.toISOString() ?? null, url: `/media/uploads/${row.sha256}.${extension(row)}`, previewUrl: `/api/admin/media/${row.sha256}/preview` };
 }
-async function normalize(body: Buffer, mime: string) {
+/**
+ * Decodes an upload and re-encodes it as WebP fitted within 2560 px. The upload rules' sizes (Settings, owner 23 Nov 2026)
+ * are checked against the picture as staff made it: its own size, turned upright, before it is fitted; a refused picture
+ * is never re-encoded.
+ */
+async function normalize(body: Buffer, mime: string, rules: MediaUploadRules = defaultMediaUploadRules) {
+ let refusal = "";
  try {
   const decoder = sharp(body, { limitInputPixels: 24_000_000, animated: true, failOn: "warning" });
   const meta = await decoder.metadata();
   const formats: Record<string, string> = { jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
   if (!meta.format || formats[meta.format] !== mime || (meta.pages ?? 1) !== 1 || !meta.width || !meta.height || meta.width * meta.height > 24_000_000) throw invalid();
-  const { data, info } = await decoder.rotate().resize({ width: 2560, height: 2560, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
-  return { data, width: info.width, height: info.height, sha256: createHash("sha256").update(data).digest("hex") };
+  // EXIF orientations 5 to 8 turn the picture a quarter, so its upright width is the stored height.
+  const upright = (meta.orientation ?? 1) >= 5 ? { width: meta.height, height: meta.width } : { width: meta.width, height: meta.height };
+  refusal = imageSizeProblem(rules, upright);
+  if (!refusal) {
+   const { data, info } = await decoder.rotate().resize({ width: 2560, height: 2560, fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer({ resolveWithObject: true });
+   return { data, width: info.width, height: info.height, sha256: createHash("sha256").update(data).digest("hex") };
+  }
  } catch { throw invalid(); }
+ throw new HttpError(422, "MEDIA_SIZE_NOT_ALLOWED", refusal);
 }
 async function checkedRoot(root: string | undefined) {
  if (!root || !isAbsolute(root)) throw unavailable();
@@ -189,7 +208,8 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   next();
  };
  const limiter = rateLimit({ windowMs: 60_000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false, message: { code: "MEDIA_UPLOAD_LIMIT", message: "Too many uploads. Please wait a minute and try again." } });
- app.post("/api/admin/media", guard, limiter, async (req, res) => {
+ const imageLimiter = rateLimit({ windowMs: 60_000, limit: imageUploadsPerMinute, standardHeaders: "draft-8", legacyHeaders: false, message: { code: "MEDIA_UPLOAD_LIMIT", message: "Too many uploads. Please wait a minute and try again." } });
+ app.post("/api/admin/media", guard, imageLimiter, async (req, res) => {
   if (!config.mediaRoot || !isAbsolute(config.mediaRoot)) throw unavailable();
   if (!["image/jpeg", "image/png", "image/webp"].includes(req.get("Content-Type") ?? "")) throw new HttpError(415, "MEDIA_TYPE_REJECTED", "Choose a JPEG, PNG or WebP image.");
   if (activeUploads >= 2) throw new HttpError(429, "MEDIA_UPLOAD_BUSY", "Other images are uploading. Please try again shortly.");
@@ -202,14 +222,20 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   let label: string;
   try { label = decodeURIComponent(req.get("X-Media-Label") ?? "Uploaded image").trim(); } catch { throw invalid(); }
   if (!label || label.length > 160 || /[\u0000-\u001f\u007f]/.test(label)) throw new HttpError(400, "MEDIA_INVALID_LABEL", "Use an image label of up to 160 characters.");
-  const image = await normalize(req.body, req.get("Content-Type")!);
+  // The largest picture file Settings allows (5 MB unless a publisher chose otherwise; owner, 23 Nov 2026), within the 8 MB
+  // the body parser takes at most.
+  const rules = await readMediaUploadRules(db);
+  const tooLarge = imageFileProblem(rules, req.body.length);
+  if (tooLarge) throw new HttpError(413, "MEDIA_TOO_LARGE", tooLarge);
+  const image = await normalize(req.body, req.get("Content-Type")!, rules);
   const root = await checkedRoot(config.mediaRoot);
   const result = await db.$transaction(async tx => {
    // Shared with every API worker: enforce quota and content-addressed deduplication atomically.
    await tx.$executeRaw`SELECT pg_advisory_xact_lock(684019735)`;
    const staff = await requireStaff(tx, req, config.secureCookies, true, false, true);
    const existing = await tx.shopMediaAsset.findUnique({ where: { sha256: image.sha256 } });
-   if (existing) return { asset: existing, created: false };
+   // The same picture uploaded again comes back into the library if it had been removed.
+   if (existing) return { asset: existing.removedAt ? await tx.shopMediaAsset.update({ where: { id: existing.id }, data: { removedAt: null, removedById: null } }) : existing, created: false };
    const count = await tx.shopMediaAsset.count({ where: { kind: "image" } });
    if (count >= 500 || await diskUsage(root, "image") + image.data.length > diskQuota) throw new HttpError(409, "MEDIA_QUOTA_REACHED", "The image library is full. Contact your administrator.");
    const storageKey = `${image.sha256}.webp`;
@@ -249,7 +275,7 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
      await tx.$executeRaw`SELECT pg_advisory_xact_lock(684019735)`;
      const staff = await requireStaff(tx, req, config.secureCookies, true, false, true);
      const existing = await tx.shopMediaAsset.findUnique({ where: { sha256: film.sha256 } });
-     if (existing) return { asset: existing, created: false };
+     if (existing) return { asset: existing.removedAt ? await tx.shopMediaAsset.update({ where: { id: existing.id }, data: { removedAt: null, removedById: null } }) : existing, created: false };
      const count = await tx.shopMediaAsset.count({ where: { kind: "video" } });
      if (count >= maxFilms || await diskUsage(root, "video") + film.bytes > filmDiskQuota) throw new HttpError(409, "MEDIA_QUOTA_REACHED", "The film library is full. Contact your administrator.");
      const storageKey = `${film.sha256}.${container}`;
@@ -264,10 +290,12 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
  });
  app.get("/api/admin/media", async (req, res) => {
   await requireStaff(db, req, config.secureCookies);
-  const limit = req.query.limit === undefined ? 24 : Number(req.query.limit), cursor = req.query.cursor, kind = req.query.kind;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 50 || (cursor !== undefined && (typeof cursor !== "string" || !/^[a-z0-9]{1,100}$/.test(cursor))) || (kind !== undefined && kind !== "image" && kind !== "video")) throw new HttpError(400, "MEDIA_INVALID_PAGE", "Choose a valid image page.");
+  const limit = req.query.limit === undefined ? 24 : Number(req.query.limit), cursor = req.query.cursor, kind = req.query.kind, removed = req.query.removed;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50 || (cursor !== undefined && (typeof cursor !== "string" || !/^[a-z0-9]{1,100}$/.test(cursor))) || (kind !== undefined && kind !== "image" && kind !== "video") || (removed !== undefined && removed !== "1")) throw new HttpError(400, "MEDIA_INVALID_PAGE", "Choose a valid image page.");
   if (cursor && !await db.shopMediaAsset.findUnique({ where: { id: cursor as string } })) throw new HttpError(400, "MEDIA_INVALID_PAGE", "This image page is unavailable. Reload the library.");
-  const rows = await db.shopMediaAsset.findMany({ where: kind ? { kind } : {}, orderBy: { id: "desc" }, take: limit + 1, ...(cursor ? { cursor: { id: cursor as string }, skip: 1 } : {}) });
+  // The library and its pickers list what is in it; `removed=1` lists what was removed from it (owner, 23 Nov 2026).
+  const where = { ...(kind ? { kind: kind as ShopMediaAsset["kind"] } : {}), removedAt: removed === "1" ? { not: null } : null };
+  const rows = await db.shopMediaAsset.findMany({ where, orderBy: { id: "desc" }, take: limit + 1, ...(cursor ? { cursor: { id: cursor as string }, skip: 1 } : {}) });
   const assets = rows.slice(0, limit);
   res.json({ assets: assets.map(serialize), nextCursor: rows.length > limit ? assets.at(-1)!.id : null });
  });
@@ -277,6 +305,65 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   const asset = await db.shopMediaAsset.findUnique({ where: { sha256: sha } }); if (!asset) throw missing();
   await serveFile(req, res, config.mediaRoot, asset, false);
  });
+ /**
+  * Managing the library (owner, 23 Nov 2026: "an option for delete and edit of images in media gallery"): rename, remove
+  * (hidden from the library and its pickers, the file kept so pages that use it keep working), restore, where a file is
+  * used, and delete permanently (the row and the file; a publisher's step, from the library or from Removed, only for a
+  * file that neither the draft nor the live storefront uses).
+  */
+ const jsonBody = express.json({ limit: "4kb" });
+ const findAsset = async (id: unknown) => {
+  if (typeof id !== "string" || !/^[a-z0-9]{1,100}$/.test(id)) throw missing();
+  const asset = await db.shopMediaAsset.findUnique({ where: { id } });
+  if (!asset) throw missing();
+  return asset;
+ };
+ const usageOf = async (asset: ShopMediaAsset) => {
+  const document = await db.shopContent.findUnique({ where: { id: "storefront" }, select: { draft: true, published: true } });
+  const url = `/media/uploads/${asset.sha256}.${extension(asset)}`;
+  return { draft: mediaUsage(document?.draft).get(url) ?? [], published: mediaUsage(document?.published).get(url) ?? [] };
+ };
+ app.patch("/api/admin/media/:id", guard, jsonBody, async (req, res) => {
+  const asset = await findAsset(req.params.id);
+  const label = typeof (req.body as { label?: unknown } | undefined)?.label === "string" ? ((req.body as { label: string }).label).trim() : "";
+  if (!label || label.length > 160 || /[\u0000-\u001f\u007f]/.test(label)) throw new HttpError(400, "MEDIA_INVALID_LABEL", "Use a name of up to 160 characters.");
+  res.json({ asset: serialize(await db.shopMediaAsset.update({ where: { id: asset.id }, data: { label } })) });
+ });
+ app.post("/api/admin/media/:id/remove", guard, async (req, res) => {
+  const staff = await requireStaff(db, req, config.secureCookies, true);
+  const asset = await findAsset(req.params.id);
+  const updated = asset.removedAt ? asset : await db.shopMediaAsset.update({ where: { id: asset.id }, data: { removedAt: new Date(), removedById: staff.user.id } });
+  res.json({ asset: serialize(updated) });
+ });
+ app.post("/api/admin/media/:id/restore", guard, async (req, res) => {
+  const asset = await findAsset(req.params.id);
+  const updated = asset.removedAt ? await db.shopMediaAsset.update({ where: { id: asset.id }, data: { removedAt: null, removedById: null } }) : asset;
+  res.json({ asset: serialize(updated) });
+ });
+ app.get("/api/admin/media/:id/usage", async (req, res) => {
+  await requireStaff(db, req, config.secureCookies);
+  res.json(await usageOf(await findAsset(req.params.id)));
+ });
+ app.delete("/api/admin/media/:id", guard, async (req, res) => {
+  await requireStaff(db, req, config.secureCookies, true, true);
+  const asset = await db.$transaction(async tx => {
+   // The same lock as uploads and publishing, so a publish cannot take this file up while it is deleted.
+   await tx.$executeRaw`SELECT pg_advisory_xact_lock(684019735)`;
+   const row = await tx.shopMediaAsset.findUnique({ where: { id: (await findAsset(req.params.id)).id } });
+   if (!row) throw missing();
+   // From the library or from Removed alike (owner, 23 Nov 2026: the two kinds of delete side by side).
+   const document = await tx.shopContent.findUnique({ where: { id: "storefront" }, select: { draft: true, published: true } });
+   const url = `/media/uploads/${row.sha256}.${extension(row)}`;
+   const places = [...new Set([...(mediaUsage(document?.published).get(url) ?? []).map(place => `${place} (live)`), ...(mediaUsage(document?.draft).get(url) ?? []).map(place => `${place} (draft)`)])];
+   if (places.length) throw new HttpError(409, "MEDIA_IN_USE", `It is still used: ${places.slice(0, 6).join("; ")}${places.length > 6 ? `; and ${places.length - 6} more` : ""}. Choose another ${row.kind === "video" ? "film" : "picture"} there and save${document?.published ? " and publish" : ""} first.`);
+   await tx.shopMediaAsset.delete({ where: { id: row.id } });
+   return row;
+  }, { timeout: 20_000 });
+  // The row is gone, so nothing serves the file any more; a file that cannot be unlinked is left unreachable, as a crash
+  // between writing and recording an upload leaves one (docs/media-library.md).
+  if (config.mediaRoot && isAbsolute(config.mediaRoot) && (asset.kind === "video" ? filmFilename : imageFilename).test(asset.storageKey)) await unlink(join(config.mediaRoot, asset.storageKey)).catch(() => {});
+  res.json({ deleted: asset.id });
+ });
  app.get("/media/uploads/:filename", async (req, res) => {
   // Missing/private files must not become negatively cached during publication.
   res.set("Cache-Control", "no-store");
@@ -285,16 +372,90 @@ export function registerMediaRoutes(app: Express, db: PrismaClient, config: Medi
   await serveFile(req, res, config.mediaRoot, asset, true);
  });
 }
+type MediaVisit = (kind: "image" | "film", value: unknown, place: string) => void;
 /**
- * Walks every field of the content document that may reference a library upload and marks
- * those uploads public. Keep this field list in step with `previewMediaContent` in
- * apps/web/lib/draft-preview.ts, which rewrites the same image and film fields (by key name) for
- * the staff preview.
+ * Every field of a content document that may name a library file, each with where it sits in words staff know. Shared by
+ * publication (which files to check and make public) and the library (where a file is used, before it is deleted). Keep
+ * this field list in step with `previewMediaContent` in apps/web/lib/draft-preview.ts.
+ */
+export function walkMediaFields(content: unknown, visit: MediaVisit) {
+ const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+ const list = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
+ const named = (value: unknown, fallback: string) => typeof value === "string" && value.trim() ? value.trim().slice(0, 60) : fallback;
+ /** Every picture in a rich-text document (an editorial tag tree); words are never treated as pictures. */
+ function pictures(nodes: unknown, place: string): void {
+  for (const value of list(nodes)) {
+   const node = record(value);
+   if (node.tag === "img") visit("image", node.src, place);
+   pictures(node.children, place);
+  }
+ }
+ const document = record(content);
+ const merchandising = record(document.homeMerchandising);
+ // Hidden tiles remain part of the published document and use the same private-media gate.
+ list(merchandising.categories).forEach((item, index) => visit("image", record(item).image, `Merchandising, category tile ${index + 1}`));
+ list(merchandising.offers).forEach((item, index) => visit("image", record(item).image, `Merchandising, offer card ${index + 1}`));
+ // All template slots are published references, including artwork in hidden sections.
+ for (const value of list(document.templateMedia)) {
+  const item = record(value), key = named(item.key, "artwork");
+  visit("image", item.image, `Artwork, ${key}`); visit("image", item.mobileImage, `Artwork, ${key} (phones)`);
+ }
+ // The films chosen for the homepage testimonial and the collection pages, shown or not, each with its phone film.
+ for (const value of list(document.templateFilms)) {
+  const item = record(value), key = named(item.key, "film");
+  visit("film", item.src, `Films, ${key}`); visit("film", item.mobileSrc, `Films, ${key} (phones)`);
+ }
+ // Homepage details: hero slides (a video slide's film, phone film and poster; an image slide's picture and phone picture),
+ // extra Nimbus cards and the editorial block.
+ const details = record(document.homeDetails);
+ list(record(details.hero).slides).forEach((value, index) => {
+  const slide = record(value), place = `Homepage hero, slide ${index + 1}`;
+  if (slide.kind === "video") visit("film", slide.src, place); else visit("image", slide.src, place);
+  visit("film", slide.mobileSrc, `${place} (phone film)`); visit("image", slide.poster, `${place} (cover)`); visit("image", slide.mobileImage, `${place} (phones)`);
+ });
+ list(record(details.nimbus).slides).forEach((value, index) => {
+  const slide = record(value);
+  visit("image", slide.image, `Nimbus cards, card ${index + 1}`); visit("image", slide.mobileImage, `Nimbus cards, card ${index + 1} (phones)`);
+ });
+ visit("image", record(details.editorial).leftImage, "Homepage editorial, left picture"); visit("image", record(details.editorial).rightImage, "Homepage editorial, right picture");
+ for (const value of list(document.authoredArticles)) {
+  const article = record(value), place = `Blog post “${named(article.title, named(article.slug, "untitled"))}”`;
+  visit("image", record(article.cover).src, place);
+  for (const block of list(article.blocks)) if (record(block).type === "image") visit("image", record(block).src, place);
+ }
+ list(document.instagramPosts).forEach((item, index) => visit("image", record(item).src, `Instagram, post ${index + 1}`));
+ for (const value of list(document.campaigns)) {
+  const campaign = record(value), artwork = record(campaign.artwork), place = `Campaign “${named(campaign.key, "campaign")}”`;
+  visit("image", artwork.desktopImage, `${place}, wide picture`); visit("image", artwork.mobileImage, `${place}, phone picture`);
+ }
+ for (const value of list(document.pages)) {
+  const page = record(value), banner = record(page.banner), place = `Page “${named(page.title, named(page.slug, "untitled"))}”`;
+  visit("image", banner.desktopImage, `${place}, banner`); visit("image", banner.mobileImage, `${place}, phone banner`);
+  for (const block of list(page.blocks)) if (record(block).type === "image") visit("image", record(block).src, place);
+  pictures(page.content, place);
+ }
+ // Rich-text policies and articles may hold media library pictures too.
+ const editorial = record(document.editorialContent);
+ for (const item of list(editorial.policies)) pictures(record(item).content, `Policy “${named(record(item).title, "untitled")}”`);
+ for (const item of list(editorial.articles)) pictures(record(item).content, `Article “${named(record(item).title, "untitled")}”`);
+}
+/** Where each library file is used in a content document: its address, and the places that name it. */
+export function mediaUsage(content: unknown): Map<string, string[]> {
+ const usage = new Map<string, string[]>();
+ walkMediaFields(content, (_kind, value, place) => {
+  if (typeof value !== "string" || !value.startsWith("/media/uploads/")) return;
+  const places = usage.get(value) ?? [];
+  if (!places.includes(place)) places.push(place);
+  usage.set(value, places);
+ });
+ return usage;
+}
+/**
+ * Checks every library file the content names (walkMediaFields) and marks those files public, in the publishing
+ * transaction. The staff preview rewrites the same image and film fields (by key name) in apps/web/lib/draft-preview.ts.
  */
 export async function prepareMediaForPublication(tx: Prisma.TransactionClient, content: unknown, mediaRoot?: string) {
  const hashes = new Set<string>(), films = new Map<string, string>();
- const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
- const list = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
  function image(value: unknown) {
   if (typeof value !== "string" || !value.startsWith("/media/uploads/")) return;
   const match = imageReference.exec(value);
@@ -308,45 +469,7 @@ export async function prepareMediaForPublication(tx: Prisma.TransactionClient, c
   if (!match) throw new HttpError(400, "MEDIA_REFERENCE_INVALID", "Choose a valid film from the media library.");
   films.set(match[1]!, match[2]!);
  }
- /** Every picture in a rich-text document (an editorial tag tree); words are never treated as pictures. */
- function pictures(nodes: unknown): void {
-  for (const value of list(nodes)) {
-   const node = record(value);
-   if (node.tag === "img") image(node.src);
-   pictures(node.children);
-  }
- }
- const document = record(content);
- const merchandising = record(document.homeMerchandising);
- // Hidden tiles remain part of the published document and use the same private-media gate.
- for (const rail of [merchandising.categories, merchandising.offers])
-  for (const item of list(rail)) image(record(item).image);
- // All template slots are published references, including artwork in hidden sections.
- for (const item of list(document.templateMedia)) { image(record(item).image); image(record(item).mobileImage); }
- // The films chosen for the homepage testimonial and the collection pages, shown or not, each with its phone film.
- for (const item of list(document.templateFilms)) { film(record(item).src); film(record(item).mobileSrc); }
- // Homepage details: hero slides (a video slide's film, phone film and poster; an image slide's picture and phone picture),
- // extra Nimbus cards and the editorial block.
- const details = record(document.homeDetails);
- for (const value of list(record(details.hero).slides)) { const slide = record(value); if (slide.kind === "video") film(slide.src); else image(slide.src); film(slide.mobileSrc); image(slide.poster); image(slide.mobileImage); }
- for (const slide of list(record(details.nimbus).slides)) { image(record(slide).image); image(record(slide).mobileImage); }
- image(record(details.editorial).leftImage); image(record(details.editorial).rightImage);
- for (const item of list(document.authoredArticles)) {
-  const article = record(item);
-  image(record(article.cover).src);
-  for (const block of list(article.blocks)) if (record(block).type === "image") image(record(block).src);
- }
- for (const item of list(document.instagramPosts)) image(record(item).src);
- for (const item of list(document.campaigns)) { const artwork = record(record(item).artwork); image(artwork.desktopImage); image(artwork.mobileImage); }
- for (const item of list(document.pages)) {
-  const page = record(item), banner = record(page.banner);
-  image(banner.desktopImage); image(banner.mobileImage);
-  for (const block of list(page.blocks)) if (record(block).type === "image") image(record(block).src);
-  pictures(page.content);
- }
- // Rich-text policies and articles may hold media library pictures too.
- const editorial = record(document.editorialContent);
- for (const item of [...list(editorial.policies), ...list(editorial.articles)]) pictures(record(item).content);
+ walkMediaFields(content, (kind, value) => kind === "image" ? image(value) : film(value));
  if (!hashes.size && !films.size) return;
  const absent = () => new HttpError(400, "MEDIA_REFERENCE_MISSING", "An image is missing from the media library. Choose it again before publishing.");
  const absentFilm = () => new HttpError(400, "MEDIA_REFERENCE_MISSING", "A film is missing from the media library. Choose it again before publishing.");

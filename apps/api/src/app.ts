@@ -9,6 +9,7 @@ import { registerEmergencyResetRoutes } from "./admin/emergency-reset.js";
 import { keeriSessionGuard, registerKeeriSignInRoutes } from "./admin/keeri-session.js";
 import { signInOffer, type AdminSignIn } from "./admin/keeri-sign-in.js";
 import { registerMediaRoutes } from "./admin/media.js";
+import { registerSettingsRoutes } from "./admin/settings.js";
 import { registerEnquiryAdminRoutes } from "./admin/enquiries.js";
 import { registerEnquiryDeliveryAdminRoutes } from "./admin/enquiry-delivery.js";
 import type { EnquiryDeliveryConfig } from "./enquiry-delivery-provider.js";
@@ -131,6 +132,7 @@ export function createApp(
   }
   registerStaffRoutes(app, db, config.secureCookies, adminSignIn);
   registerContentRoutes(app, db, config.secureCookies, config.mediaRoot, config.previewSecret);
+  registerSettingsRoutes(app, db, config.secureCookies);
   registerEnquiryAdminRoutes(app, db, config.secureCookies, config.keeriLeads ?? null);
   registerEnquiryDeliveryAdminRoutes(app, db, config.secureCookies, config.enquiryDelivery ?? null, config.keeriLeads ?? null);
   registerCatalogueViewRoutes(app, db);

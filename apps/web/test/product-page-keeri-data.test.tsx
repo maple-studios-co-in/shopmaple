@@ -156,6 +156,10 @@ test("View real images opens the photos staff marked as real, on the finish bein
   ] } };
   await mount(async (doc) => {
     assert.equal(text(doc.querySelector("button[data-real-images]")), "View real images (3)");
+    // From 1024px it sits on the photo's bottom-left corner, so the photos column ends with the photo (owner, 23 Nov 2026).
+    const button = doc.querySelector<HTMLElement>("button[data-real-images]")!;
+    for (const name of ["lg:absolute", "lg:bottom-4"]) assert.ok(button.classList.contains(name), name);
+    assert.match(button.className, /hover:bg-\[#f7f2f1\]/, "its hover is opaque, as it sits on a photo");
     await click(doc.querySelector("button[data-real-images]")!);
     assert.deepEqual([...doc.querySelectorAll("[data-real-finish]")].map((b) => [text(b), b.getAttribute("aria-pressed")]),
       [["The piece", "false"], ["Ash Grey", "true"], ["Natural Oak", "false"]]);

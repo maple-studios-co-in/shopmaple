@@ -157,6 +157,50 @@ test("the collection page opens with the banner, drawn from the draft's picture,
   } finally { globalThis.fetch = previousFetch; }
 });
 
+test("the beds page opens on its campaign hero alone, and the banner comes back whenever that hero is off", async () => {
+  // Owner, 23 Nov 2026, on the beds page: "these two banners are coming but I only want the below one banner".
+  const previousFetch = globalThis.fetch;
+  let content = structuredClone(defaultStorefrontContent);
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname.includes("/api/content/storefront")) return Response.json({ version: 12, content });
+    return Response.json({
+      handle: url.pathname.split("/").at(-1), query: { q: "", sort: "title", availability: "", min: "", max: "", category: "", page: 1 },
+      products: [], total: 0, collectionTotal: 0, inStock: 0, outOfStock: 0, highestPrice: null, limit: 24, published: true, mode: "preview", checkoutEnabled: false,
+    });
+  };
+  try {
+    const { default: Collection } = await import("../app/collections/[handle]/page");
+    const page = async (handle: string) => new JSDOM(await new Response(await renderToReadableStream(
+      <ShopProvider>{await Collection({ params: Promise.resolve({ handle }), searchParams: Promise.resolve({}) })}</ShopProvider>,
+    )).text()).window.document;
+    const beds = await page("beds");
+    const root = beds.querySelector("[data-collection-page]")!;
+    assert.equal(beds.querySelector("[data-collection-banner]"), null, "no banner above the hero");
+    assert.ok(root.hasAttribute("data-hero-only"), "marked, for the hero's spacing (styles/collection-parity.css)");
+    assert.equal(root.firstElementChild?.getAttribute("data-landing-banner"), "hero", "the campaign hero opens the page");
+    assert.ok(root.firstElementChild?.querySelector('[data-campaign="beds-hero"]'));
+    assert.equal(beds.querySelectorAll("h1").length, 1, "one heading for the page");
+    assert.match(text(beds.querySelector("#collection-products h1")) ?? "", /beds/i, "the listing's heading is the page's heading");
+    const outdoor = await page("outdoor-furnitures");
+    assert.ok(outdoor.querySelector("[data-collection-banner]"), "the other pages with a campaign hero keep their banner");
+    assert.equal(outdoor.querySelector("[data-collection-page]")!.hasAttribute("data-hero-only"), false);
+    // A hero outside its dates is not drawn: the page opens on the banner rather than on nothing.
+    content = structuredClone(defaultStorefrontContent);
+    content.campaigns.find((campaign) => campaign.key === "beds-hero")!.schedule = { startsAt: "2020-01-01T00:00:00.000Z", endsAt: "2020-02-01T00:00:00.000Z" };
+    const ended = await page("beds");
+    assert.ok(ended.querySelector("[data-collection-banner]"), "the banner comes back");
+    assert.equal(ended.querySelector("[data-collection-page]")!.hasAttribute("data-hero-only"), false);
+    assert.equal(ended.querySelectorAll("h1").length, 1);
+  } finally { globalThis.fetch = previousFetch; }
+});
+
+test("the beds page's hero meets the header and the listing starts 30px under it", () => {
+  const css = readFileSync(new URL("../styles/collection-parity.css", import.meta.url), "utf8");
+  assert.match(css, /\.collection-page\[data-hero-only\] > \[data-landing-banner="hero"\]:first-child \{ margin-top: 0; \}/);
+  assert.match(css, /\.collection-page\[data-hero-only\] > \[data-landing-banner="hero"\] \+ #collection-products \{ padding-top: 0; \}/);
+});
+
 test("staff choose each banner's phone picture and how it shows on the Artwork screen", async () => {
   const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000/admin" });
   const previous = { window: globalThis.window, document: globalThis.document, HTMLElement: globalThis.HTMLElement };
