@@ -398,7 +398,7 @@ function PolicyEditor({ slug, content, apply, disabled, media, notice, onOpen }:
             <Hint>This policy has no link in the footer.</Hint>
             <div><Button type="button" variant="outline" size="sm" disabled={disabled || room <= 0} onClick={() => apply(admin.addFooterLink(content, slug, policy.title), "Added to the footer.")}>
               <Plus aria-hidden="true" />Add to footer</Button></div>
-            {room <= 0 && <Hint>The footer holds {admin.footerPolicyLinkLimit} policy links; remove one in Navigation & footer first.</Hint>}
+            {room <= 0 && <Hint>The footer holds {admin.footerPolicyLinkLimit} policy links; remove one in Navigation &amp; footer first.</Hint>}
           </>}
         </ContentPanel>
         <ContentPanel title="Photo">
