@@ -26,3 +26,7 @@ test('the staging web heap cap leaves room under its memory restart', () => {
   const cap = Number(/--max-old-space-size=(\d+)/.exec(web.node_args)?.[1]);
   assert.ok(cap > 0 && cap + 256 <= megabytes(web.max_memory_restart));
 });
+
+test('the staging web process keeps glibc to two allocator arenas, as production', () => {
+  assert.equal(byName['shopmaple-staging-web'].env.MALLOC_ARENA_MAX, '2');
+});
