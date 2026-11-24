@@ -50,6 +50,9 @@ test('structured page byte cap includes retained body and banner; whole document
   assert.equal(parse(boundary).success, true);
   assert.equal(parse({ ...boundary, description: 'x' }).success, false);
   assert.equal(parse({ ...boundary, banner: { desktopImage: '/media/a.webp', mobileImage: '/media/b.webp', alt: 'Banner', href: '/', label: 'Home' } }).success, false);
-  const pages = Array.from({ length: 3 }, (_, i) => ({ ...boundary, slug: `page-${i}` }));
-  assert.equal(storefrontContentSchema.safeParse({ ...base, pages }).success, false, 'document remains capped at 128 KiB');
+  // Six-letter addresses, as 'studio', so each page stays exactly at its own limit.
+  const pages = Array.from({ length: 12 }, (_, i) => ({ ...boundary, slug: `pg-${String(i).padStart(3, '0')}` }));
+  assert.equal(storefrontContentSchema.safeParse({ ...base, pages }).success, true, 'twelve full pages fit');
+  const policies = Array.from({ length: 12 }, (_, i) => ({ slug: `policy-${i}`, title: 'Policy', content: Array(3).fill('x'.repeat(16000)) }));
+  assert.equal(storefrontContentSchema.safeParse({ ...base, pages, editorialContent: { policies, blogs: [], articles: [] } }).success, false, 'document remains capped at 1 MiB');
 });

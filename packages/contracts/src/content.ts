@@ -326,6 +326,8 @@ export const contentPageSchema = z
     if ((page.blocks !== undefined || page.content !== undefined) && new TextEncoder().encode(JSON.stringify(page)).length > 48 * 1024)
       ctx.addIssue({ code: "custom", message: "Page exceeds 48 KiB" });
   });
+/** The whole storefront content, as stored and as the admin sends it (the API's request limit matches). */
+export const contentByteLimit = 1024 * 1024;
 export const storefrontContentSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -401,8 +403,9 @@ export const storefrontContentSchema = z
           code: "custom",
           message: "Content identities must be unique",
         });
-    if (new TextEncoder().encode(JSON.stringify(value)).length > 128 * 1024)
-      ctx.addIssue({ code: "custom", message: "Content exceeds 128 KiB" });
+    // Room for every policy and article in full (owner, 24 Nov 2026: add as many as needed); the API takes up to 1 MiB.
+    if (new TextEncoder().encode(JSON.stringify(value)).length > contentByteLimit)
+      ctx.addIssue({ code: "custom", message: "Content exceeds 1 MiB" });
   });
 export type StorefrontContent = z.infer<typeof storefrontContentSchema>;
 export type CampaignContent = z.infer<typeof campaignContentSchema>;

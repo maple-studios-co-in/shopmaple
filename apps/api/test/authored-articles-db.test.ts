@@ -151,13 +151,14 @@ test('malformed authored data and route collisions reject saves without changing
     [article(), article()],
     [{ ...article(), title: ' ' }],
     [{ ...article(), blocks: [{ id: 'image', type: 'image', src: 'https://evil.invalid/x', alt: 'x' }] }],
-    [{ ...article(), blocks: Array.from({ length: 7 }, (_, i) => ({ id: `p-${i}`, type: 'paragraph', text: 'a'.repeat(8000) })) }],
+    // Over the 56 KiB a whole article may take (24 Nov 2026).
+    [{ ...article(), blocks: Array.from({ length: 8 }, (_, i) => ({ id: `p-${i}`, type: 'paragraph', text: 'a'.repeat(8000) })) }],
   ]) {
     const response = await http.put('/api/admin/content').set(auth).send({ expectedVersion: version, content: { ...fixture(), authoredArticles } });
     assert.equal(response.status, 400); assert.equal(response.body.code, 'INVALID_INPUT');
     assert.deepEqual(await snapshot(), before);
   }
-  const oversized = await http.put('/api/admin/content').set(auth).send({ expectedVersion: version, content: { ...fixture(), authoredArticles: [{ ...article(), excerpt: 'a'.repeat(140000) }] } });
+  const oversized = await http.put('/api/admin/content').set(auth).send({ expectedVersion: version, content: { ...fixture(), authoredArticles: [{ ...article(), excerpt: 'a'.repeat(1_300_000) }] } });
   assert.equal(oversized.status, 413); assert.deepEqual(await snapshot(), before);
 });
 
@@ -169,10 +170,10 @@ test('legacy page links retain existing publication behavior', async () => {
 });
 
 test('server publication metadata cannot overflow article bounds or commit a partial ledger', async () => {
-  const value = { ...article('near-size-limit'), blocks: Array.from({ length: 7 }, (_, i) => ({ id: `part-${i}`, type: 'paragraph', text: i < 6 ? 'a'.repeat(8000) : 'a' })) };
-  // Make a valid 48 KiB draft whose server-owned timestamp would exceed the limit.
-  value.blocks[6]!.text = 'a'.repeat(48 * 1024 - Buffer.byteLength(JSON.stringify(value)) + 1);
-  assert.equal(Buffer.byteLength(JSON.stringify(value)), 48 * 1024);
+  const value = { ...article('near-size-limit'), blocks: Array.from({ length: 8 }, (_, i) => ({ id: `part-${i}`, type: 'paragraph', text: i < 7 ? 'a'.repeat(8000) : 'a' })) };
+  // Make a valid 56 KiB draft whose server-owned timestamp would exceed the limit.
+  value.blocks[7]!.text = 'a'.repeat(56 * 1024 - Buffer.byteLength(JSON.stringify(value)) + 1);
+  assert.equal(Buffer.byteLength(JSON.stringify(value)), 56 * 1024);
   const saved = await save({ ...fixture(), authoredArticles: [value] });
   const before = await snapshot();
   const response = await publish(saved.version);

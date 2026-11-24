@@ -40,13 +40,22 @@ test("editorial documents reject executable nodes, hidden fields and unsafe link
 
 test("editorial identity and text limits cannot introduce routes, dates, images or duplicate documents", () => {
   const original = fixture();
+  // Policies and blogs staff add have addresses of their own (owner, 24 Nov 2026); they stay under /policies and /blogs.
+  for (const value of [
+    { ...original, policies: [...original.policies, { slug: "warranty", title: "Warranty", content: [], hidden: true, photo: { src: "/media/policies/terms-of-service.jpg", alt: "" }, seoTitle: "Warranty", seoDescription: "Five years." }] },
+    { ...original, blogs: [...original.blogs, { handle: "care-guides", title: "Care guides", description: "Looking after wood.", hidden: false }] },
+    { ...original, articles: [{ ...original.articles[0], hidden: true, author: "Maple team", seoTitle: "Measuring", seoDescription: "How to measure." }] },
+  ]) assert.equal(parse(value).success, true, JSON.stringify(value).slice(0, 120));
   for (const value of [
     { ...original, html: "<p>extra</p>" },
-    { ...original, policies: [{ ...original.policies[0], slug: "checkout" }] },
+    { ...original, policies: [{ ...original.policies[0], slug: "Checkout" }] },
+    { ...original, policies: [{ ...original.policies[0], slug: "../checkout" }] },
+    { ...original, policies: [{ ...original.policies[0], hidden: "yes" }] },
+    { ...original, policies: [{ ...original.policies[0], photo: { src: "https://evil.invalid/a.png", alt: "" } }] },
+    { ...original, blogs: [{ handle: "other blog", title: "Other" }] },
     { ...original, policies: [...original.policies, ...original.policies] },
     { ...original, blogs: [...original.blogs, ...original.blogs] },
     { ...original, articles: [...original.articles, ...original.articles] },
-    { ...original, blogs: [{ handle: "other", title: "Other" }] },
     { ...original, articles: [{ ...original.articles[0], handle: "new-story" }] },
     { ...original, articles: [{ ...original.articles[0], blog: "news" }] },
     { ...original, articles: [{ ...original.articles[0], publishedAt: "2030-01-01" }] },
@@ -140,8 +149,13 @@ test("approved editorial links, media and literal markup survive validation as t
   if (result.success) assert.deepEqual(result.data.editorialContent!.policies[0]!.content, content);
 });
 
-test("the document byte limit includes article titles and excerpts", () => {
-  assert.equal(parse({ policies: [], blogs: [], articles: [{ ...fixture().articles[0], title: "x".repeat(300), excerpt: "x".repeat(2000), content: Array(3).fill("x".repeat(16000)) }] }).success, false, "Whole article must fit48KiB including title and excerpt");
+test("an article's text holds 48 KiB, and the whole entry with its title, excerpt and listing words 56 KiB", () => {
+  const article = { ...fixture().articles[0], title: "x".repeat(300), excerpt: "x".repeat(2000), content: [...Array(3).fill("x".repeat(16000)), "x".repeat(1130)] };
+  assert.ok(Buffer.byteLength(JSON.stringify(article.content), "utf8") <= 48 * 1024, "the text is within its own limit");
+  assert.equal(parse({ policies: [], blogs: [], articles: [article] }).success, true, "a full document still has room for its title and excerpt");
+  const wide = { ...article, title: "界".repeat(300), excerpt: "界".repeat(2000), seoTitle: "界".repeat(120), seoDescription: "界".repeat(300), author: "界".repeat(80) };
+  assert.ok(Buffer.byteLength(JSON.stringify(wide), "utf8") > 56 * 1024);
+  assert.equal(parse({ policies: [], blogs: [], articles: [wide] }).success, false, "the whole entry is limited in UTF-8 bytes");
 });
 
 test("absolute links must retain canonical paths without parent traversal", () => {
@@ -152,23 +166,25 @@ test("cyclic documents fail safely and independently valid documents still obey 
   const cyclic: { tag: string; children: unknown[] } = { tag: "div", children: [] };
   cyclic.children.push(cyclic);
   assert.equal(parse({ policies: [{ slug: "privacy-policy", title: "Privacy", content: [cyclic] }], blogs: [], articles: [] }).success, false);
-  const policy = (slug: string) => ({ slug, title: "Policy", content: Array(3).fill("x".repeat(16000)) });
-  const policies = ["privacy-policy", "refund-policy", "shipping-policy"].map(policy);
-  for (const document of policies) {
+  const text = Array(3).fill("x".repeat(16000));
+  const policies = Array.from({ length: 20 }, (_, index) => ({ slug: `policy-${index + 1}`, title: "Policy", content: text }));
+  const articles = fixture().articles.slice(0, 1).flatMap(article => ["how-to-measure-furniture-before-ordering-online", "standard-dining-table-size-guide-for-indian-homes",
+    "space-saving-furniture-ideas-for-small-homes", "how-to-identify-quality-furniture-before-you-buy"].map(handle => ({ ...article, handle, content: text })));
+  for (const document of policies.slice(0, 3)) {
     assert.equal(parse({ policies: [document], blogs: [], articles: [] }).success, true, `${document.slug} must be independently valid`);
   }
-  const editorialContent = { policies, blogs: [], articles: [] };
-  assert.ok(Buffer.byteLength(JSON.stringify(editorialContent), "utf8") > 128 * 1024, "Editorial documents alone must exceed the whole-store limit, independently of default copy");
+  const editorialContent = { policies, blogs: [], articles };
+  assert.ok(Buffer.byteLength(JSON.stringify(editorialContent), "utf8") > 1024 * 1024, "Editorial documents alone must exceed the whole-store limit, independently of default copy");
   const result = parse(editorialContent);
-  assert.equal(result.success, false, "Independently valid documents must still obey the 128 KiB whole-store limit");
-  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
+  assert.equal(result.success, false, "Independently valid documents must still obey the 1 MiB whole-store limit");
+  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 1 MiB"));
 });
 
 test("the 48KiB document limit accepts the exact boundary and rejects one additional byte", () => {
   const policy = { slug: "privacy-policy", title: "Privacy", content: ["x".repeat(16000), "x".repeat(16000), "x".repeat(16000), ""] };
-  const spare = 48 * 1024 - Buffer.byteLength(JSON.stringify(policy), "utf8");
+  const spare = 48 * 1024 - Buffer.byteLength(JSON.stringify(policy.content), "utf8");
   policy.content[3] = "x".repeat(spare);
-  assert.equal(Buffer.byteLength(JSON.stringify(policy), "utf8"), 49152);
+  assert.equal(Buffer.byteLength(JSON.stringify(policy.content), "utf8"), 49152, "the text alone is measured");
   assert.equal(parse({ policies: [policy], blogs: [], articles: [] }).success, true);
   policy.content[3] += "x";
   assert.equal(parse({ policies: [policy], blogs: [], articles: [] }).success, false);

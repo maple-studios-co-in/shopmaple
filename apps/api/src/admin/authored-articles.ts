@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { articleHandles, blogHandles, policySlugs, categories, type EditorialNode, type StorefrontContent } from "@shopmaple/contracts";
+import { categories, visibleEditorial, type EditorialNode, type StorefrontContent } from "@shopmaple/contracts";
 import { collectionTitles } from "@shopmaple/contracts/catalogue-registry";
 import { HttpError } from "../cart.js";
 
@@ -30,7 +30,11 @@ function documentLinks(nodes: readonly EditorialNode[]): string[] {
 }
 
 export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient, content: StorefrontContent) {
-  const articlePaths = new Set((content.authoredArticles ?? []).flatMap(article => article.blocks.flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : [])));
+  // Store links in staff's own articles: rich text (from 24 Nov 2026) and the link blocks of articles written before.
+  const articlePaths = new Set((content.authoredArticles ?? []).flatMap(article => [
+    ...(article.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : []),
+    ...documentLinks(article.content ?? []).filter(href => href.startsWith("/")).map(href => href.split("#")[0]!),
+  ]));
   const pagePaths = new Set(content.pages.flatMap(page => [
     ...(page.blocks ?? []).flatMap(block => block.type === "link" ? [block.href.split("#")[0]!] : []),
     // Store links written in rich text; email, phone and other Maple sites are not store pages.
@@ -39,13 +43,14 @@ export async function validateAuthoredContentLinks(tx: Prisma.TransactionClient,
   const chromePaths = new Set(enabledChromePaths(content));
   const paths = new Set([...articlePaths, ...pagePaths, ...chromePaths]);
   if (!paths.size) return;
+  // Policies, blogs and articles that will be on the site: a link to one staff hid or removed must not be published.
+  const editorial = visibleEditorial(content.editorialContent, content.authoredArticles);
   const destinations = new Set([
     "/", "/account", "/favourites",
     // Pages live at /<slug>; their old /pages/<slug> addresses redirect there, so links saved before the move still publish.
     ...[...originalPages, ...content.pages.map(page => page.slug)].flatMap(slug => [`/${slug}`, `/pages/${slug}`]),
-    ...policySlugs.map(slug => `/policies/${slug}`), ...blogHandles.map(handle => `/blogs/${handle}`),
-    ...articleHandles.map(handle => `/blogs/recent-stories/${handle}`),
-    ...(content.authoredArticles ?? []).map(article => `/blogs/${article.blog}/${article.handle}`),
+    ...editorial.policies.map(slug => `/policies/${slug}`), ...editorial.blogs.map(handle => `/blogs/${handle}`),
+    ...editorial.articles.map(article => `/blogs/${article.blog}/${article.handle}`),
     ...[...collectionHandles].map(handle => `/collections/${handle}`),
   ]);
   const productHandles = [...paths].filter(path => path.startsWith("/products/")).map(path => path.slice("/products/".length));
@@ -65,7 +70,9 @@ export async function normalizeArticlePublicationDates(tx: Prisma.TransactionCli
   if (content.authoredArticles === undefined) return content;
   const identities = content.authoredArticles.map(({ blog, handle }) => ({ blog, handle }));
   if (!identities.length) return content;
-  if (publish) await tx.shopArticlePublication.createMany({ data: identities, skipDuplicates: true });
+  // An article is dated when it first goes on the site: a hidden one is dated when a publish first shows it.
+  const shown = content.authoredArticles.filter(article => !article.hidden).map(({ blog, handle }) => ({ blog, handle }));
+  if (publish && shown.length) await tx.shopArticlePublication.createMany({ data: shown, skipDuplicates: true });
   const publications = await tx.shopArticlePublication.findMany({ where: { OR: identities } });
   const dates = new Map(publications.map(row => [`${row.blog}/${row.handle}`, row.publishedAt.toISOString()]));
   return { ...content, authoredArticles: content.authoredArticles.map(article => ({ ...article, publishedAt: dates.get(`${article.blog}/${article.handle}`) ?? null })) };

@@ -197,7 +197,8 @@ test("strict content validation rejects malicious links, oversized bodies and in
         { ...content, campaigns: [{ key: "landing-announcement", label: "test", headline: ["test"], supporting: "", offer: [], eligibility: "", cta: "Click", href: "javascript:alert(1)" }] },
     ])
         assert.equal((await save(agent, csrf, 7, invalid)).status, 400);
-    assert.equal((await save(agent, csrf, 7, { ...content, pages: [{ ...content.pages[0], body: "x".repeat(140000) }] })).status, 413);
+    // The content route takes up to 1200 KB, room for the 1 MiB document (owner, 24 Nov 2026: many policies and articles).
+    assert.equal((await save(agent, csrf, 7, { ...content, pages: [{ ...content.pages[0], body: "x".repeat(1_300_000) }] })).status, 413);
     const large = { ...content, pages: Array.from({ length: 4 }, (_, i) => ({ ...content.pages[0], slug: `guide-${i}`, body: "x".repeat(7000) })) };
     assert.equal((await save(agent, csrf, 7, large)).status, 200, "admin content accepts its scoped body size above the commerce 16 KiB cap");
     assert.equal((await request(createApp(db, config)).post("/api/enquiries").set("Origin", origin).send({ message: "x".repeat(20000) })).status, 413);
@@ -508,7 +509,8 @@ test("editorial drafts require publisher authority and retain isolated, conflict
         { ...editorialContent, policies: [...editorialContent.policies, ...editorialContent.policies] },
         { ...editorialContent, articles: [{ ...editorialContent.articles[0], publishedAt: "2030-01-01" }] },
         { ...editorialContent, articles: [{ ...editorialContent.articles[0], blog: "news" }] },
-        { ...editorialContent, blogs: [{ handle: "checkout", title: "Checkout" }] },
+        // Staff may add blogs (owner, 24 Nov 2026), but only at lowercase addresses.
+        { ...editorialContent, blogs: [{ handle: "Checkout Page", title: "Checkout" }] },
     ];
     for (const value of invalid) assert.equal((await save(editor.agent, editor.csrf, restored.body.version, { ...next, editorialContent: value })).status, 400);
     assert.equal((await publisher.agent.get("/api/admin/content")).body.version, restored.body.version);
