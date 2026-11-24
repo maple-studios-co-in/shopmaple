@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { contentLimitMessage, overTheContentLimit } from "./support/oversized-content";
 
 const details = () => ({
   hero: { cta: "Explore furniture", tiles: [
@@ -69,13 +70,11 @@ test("home details reject missing identities, blank or unbounded text and non-co
     assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, homeDetails }).success, false);
 });
 
-test("the complete content payload still enforces its 128 KiB bound", () => {
-  const oversized = { ...defaultStorefrontContent, homeDetails: details(), pages: Array.from({ length: 20 }, (_, i) => ({
-    slug: `large-page-${i}`, title: "Page", description: "Description", body: "x".repeat(8000), banner: null,
-  })) };
+test("the complete content payload still enforces its 1 MiB bound", () => {
+  const oversized = { ...defaultStorefrontContent, homeDetails: details(), ...overTheContentLimit() };
   const result = storefrontContentSchema.safeParse(oversized);
   assert.equal(result.success, false);
-  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
+  if (!result.success) assert.deepEqual(result.error.issues.map(issue => issue.message), [contentLimitMessage]);
 });
 
 test("new drafts include original home details and resolving legacy revisions returns independent defaults", async () => {

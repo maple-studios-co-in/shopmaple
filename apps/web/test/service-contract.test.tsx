@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { contentLimitMessage, overTheContentLimit } from "./support/oversized-content";
 
 const serviceFixture = () => ({
   contact: {
@@ -140,11 +141,22 @@ test("service content rejects unknown capabilities, changed identities, incomple
   }
 });
 
-test("the complete content payload still enforces the 128 KiB UTF-8 limit", () => {
+test("the complete content payload still enforces the 1 MiB limit, counted in UTF-8 bytes", () => {
   const content = { ...defaultStorefrontContent, servicePages: serviceFixture() };
   assert.equal(storefrontContentSchema.safeParse(content).success, true);
+  // Three-byte characters in the answers and the pages, beside fourteen full policies: under 1 MiB counted as
+  // characters and over it counted as bytes, so only a byte count refuses it.
   content.servicePages.contact.categories.forEach(category => category.questions.forEach(question => { question.answer = "界".repeat(4000); }));
-  assert.equal(storefrontContentSchema.safeParse(content).success, false);
+  const filler = overTheContentLimit();
+  const wide = {
+    ...content,
+    pages: filler.pages.map(page => ({ ...page, body: "界".repeat(8000) })),
+    editorialContent: { ...filler.editorialContent, policies: filler.editorialContent.policies.slice(0, 14) },
+  };
+  assert.ok(JSON.stringify(wide).length < 1024 * 1024, "under the limit as characters");
+  const result = storefrontContentSchema.safeParse(wide);
+  assert.equal(result.success, false);
+  if (!result.success) assert.deepEqual(result.error.issues.map(issue => issue.message), [contentLimitMessage]);
 });
 
 test("service fallback preserves original page copy and returns isolated editable drafts", async () => {

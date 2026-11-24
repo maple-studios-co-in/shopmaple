@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { storefrontContentSchema } from "../../../packages/contracts/src/content";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { contentLimitMessage, overTheContentLimit } from "./support/oversized-content";
 
 const item = { key: "home-newsletter", image: "/media/artwork.webp", alt: "Maple room" };
 const parse = (templateMedia: unknown) => storefrontContentSchema.safeParse({ ...defaultStorefrontContent, templateMedia });
@@ -39,11 +40,11 @@ test("template artwork enforces approved media and nonblank control-free bounded
   assert.equal(parse([{ ...item, alt: "x".repeat(200) }]).success, true);
   assert.equal(parse([{ ...item, key: "home-nimbus", mobileImage: "https://evil.invalid/mobile.jpg" }]).success, false);
 });
-test("template media remains within the whole-document 128 KiB bound", () => {
-  const content = { ...defaultStorefrontContent, templateMedia: [item], pages: Array.from({ length: 20 }, (_, index) => ({ slug: `guide-${index}`, title: "Guide", description: "", body: "x".repeat(8000), banner: null })) };
+test("template media remains within the whole-document 1 MiB bound", () => {
+  const content = { ...defaultStorefrontContent, templateMedia: [item], ...overTheContentLimit() };
   const result = storefrontContentSchema.safeParse(content);
   assert.equal(result.success, false);
-  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
+  if (!result.success) assert.deepEqual(result.error.issues.map(issue => issue.message), [contentLimitMessage]);
 });
 
 test("template fallback resolution preserves original assets and caller labels without sharing mutable items", async () => {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { contentLimitMessage, overTheContentLimit } from "./support/oversized-content";
 
 const tile = () => ({ key: "living", title: "Living room", collectionHandle: "living-room", image: "/media/living.webp", alt: "A living room", enabled: true });
 const merchandising = () => ({ bestsellers: ["second-product", "first-product"], chairs: ["chair-two", "chair-one"], categories: [tile(), { ...tile(), key: "dining", enabled: false }], offers: [{ ...tile(), key: "sale" }] });
@@ -48,10 +49,10 @@ test("merchandising rejects duplicate identities, invalid slugs, oversized array
   for (const homeMerchandising of invalid) assert.equal(storefrontContentSchema.safeParse({ ...defaultStorefrontContent, homeMerchandising }).success, false);
 });
 
-test("merchandising keeps the complete document within the 128 KiB content bound", () => {
-  const result = storefrontContentSchema.safeParse({ ...defaultStorefrontContent, homeMerchandising: merchandising(), pages: Array.from({ length: 20 }, (_, i) => ({ slug: `large-${i}`, title: "Page", description: "Description", body: "x".repeat(8000), banner: null })) });
+test("merchandising keeps the complete document within the 1 MiB content bound", () => {
+  const result = storefrontContentSchema.safeParse({ ...defaultStorefrontContent, homeMerchandising: merchandising(), ...overTheContentLimit() });
   assert.equal(result.success, false);
-  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
+  if (!result.success) assert.deepEqual(result.error.issues.map(issue => issue.message), [contentLimitMessage]);
 });
 
 test("legacy resolution restores original selections and every resolution isolates nested edits", async () => {
