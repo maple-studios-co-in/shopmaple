@@ -659,6 +659,16 @@
 .blog-article-body li {
   margin: 6px 0;
 }
+/* A list item written in the rich text editor keeps its words in a paragraph; it reads as one line of the list. */
+.blog-article-body li > p {
+  margin: 0;
+}
+.blog-article-body li > p + p {
+  margin-top: 8px;
+}
+.blog-article-body li > :is(ul, ol) {
+  margin: 6px 0 0;
+}
 .blog-article-body hr {
   margin: 32px 0;
   border: 0;

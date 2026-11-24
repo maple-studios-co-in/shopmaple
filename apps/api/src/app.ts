@@ -109,7 +109,8 @@ export function createApp(
   app.use("/api/admin", keeriSessionGuard(db, config.secureCookies, adminSignIn));
   registerMediaRoutes(app, db, config);
   registerReviewRoutes(app, db, { webOrigin: config.webOrigin, keeri: config.keeriReviews, enquiryDelivery: config.enquiryDelivery });
-  app.use("/api/admin/content", express.json({ limit: "128kb" }));
+  // The whole draft in one request: up to the content's own 1 MiB limit (contentByteLimit), with room for JSON escaping.
+  app.use("/api/admin/content", express.json({ limit: "1200kb" }));
   app.use(express.json({ limit: "16kb" }));
   app.use("/api", (req, res, next) => {
     if (

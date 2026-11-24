@@ -55,7 +55,10 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // Raised by 6,000 bytes for that (owner's yes). Sending collection words only to collection pages is the follow-up.
 // 21 Nov 2026: 296,680 raw after the hero slider studio (#168): the homepage hero draws each slide's caption placement,
 // tone, shade, size, label and button, and a phone picture per slide. Raised by 1,000 bytes for that (owner's yes).
-assert.ok(totalRaw <= 297_500, `Initial homepage JavaScript exceeds the 297,500-byte raw budget: ${totalRaw}`);
+// 24 Nov 2026: 298,604 raw after staff-added policies, blogs and articles (#172): the content every page loads gained
+// their fields and addresses. Raised by 2,000 bytes for that (owner's yes). Sending those words only to the pages that
+// show them is the same follow-up as the collection words above.
+assert.ok(totalRaw <= 299_500, `Initial homepage JavaScript exceeds the 299,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
@@ -71,4 +74,6 @@ assert.ok(totalRaw <= 297_500, `Initial homepage JavaScript exceeds the 297,500-
 // 17 Nov 2026: 87,210 gzip after the same QA report fixes (#163). Raised by 1,500 bytes for that (owner's yes).
 // 19 Nov 2026: 89,060 gzip after the same editable collection pages (#167). Raised by 2,000 bytes for that (owner's
 // yes); the registry-leak check stays the main guard.
-assert.ok(totalGzip <= 89_500, `Initial homepage JavaScript exceeds the 89,500-byte gzip budget: ${totalGzip}`);
+// 24 Nov 2026: 89,937 gzip after the same policies, blogs and articles (#172). Raised by 1,000 bytes for that (owner's
+// yes); the registry-leak check stays the main guard.
+assert.ok(totalGzip <= 90_500, `Initial homepage JavaScript exceeds the 90,500-byte gzip budget: ${totalGzip}`);

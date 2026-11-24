@@ -277,6 +277,8 @@ export * from "./editorial-content";
 
 export * from "./authored-articles";
 
+export * from "./editorial-routes";
+
 export * from "./site-chrome";
 export { previewTokenPattern } from "./admin-preview";
 

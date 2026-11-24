@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { storefrontContentSchema } from "@shopmaple/contracts";
 import { defaultStorefrontContent } from "../lib/content-defaults";
+import { contentLimitMessage, overTheContentLimit } from "./support/oversized-content";
 import { defaultNimbusPage, legacyNimbusPage, resolveNimbusPageContent } from "../lib/nimbus-content-defaults";
 
 const nimbusEdit = () => ({
@@ -137,11 +138,8 @@ test("Nimbus fallback and edited resolutions are isolated copies without mutatin
   assert.equal(resolved.title, "Nimbus for your home");
 });
 
-test("adding Nimbus preserves the shared 128 KiB document bound", () => {
-  const result = storefrontContentSchema.safeParse({
-    ...defaultStorefrontContent,
-    pages: Array.from({ length: 17 }, (_, index) => ({ slug: `guide-${index}`, title: "Furniture guide", description: "Care", body: "x".repeat(8000), banner: null })),
-  });
+test("adding Nimbus preserves the shared 1 MiB document bound", () => {
+  const result = storefrontContentSchema.safeParse({ ...defaultStorefrontContent, ...overTheContentLimit() });
   assert.equal(result.success, false);
-  if (!result.success) assert.ok(result.error.issues.some(issue => issue.message === "Content exceeds 128 KiB"));
+  if (!result.success) assert.deepEqual(result.error.issues.map(issue => issue.message), [contentLimitMessage]);
 });

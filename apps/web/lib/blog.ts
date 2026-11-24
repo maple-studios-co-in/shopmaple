@@ -36,7 +36,13 @@ const plain = (node: EditorialNode): string => typeof node === "string" ? node :
  * the author's name as a small heading and "Author | Maple Furnishers"; the design names the author in the byline
  * instead, so the name moves there and is not printed twice. An article with no sign-off has no named author.
  */
-export function signOff(post: Pick<BlogPost, "content" | "blocks">): { author: string | null; content: EditorialNode[] } {
+export function signOff(post: Pick<BlogPost, "content" | "blocks" | "author">): { author: string | null; content: EditorialNode[] } {
+  const found = signOffIn(post);
+  // An author staff named in the admin (owner, 24 Nov 2026) signs the article instead; a written sign-off still leaves the text.
+  const named = post.author?.replace(/\s+/g, " ").trim();
+  return named ? { author: named, content: found.content } : found;
+}
+function signOffIn(post: Pick<BlogPost, "content" | "blocks">): { author: string | null; content: EditorialNode[] } {
   const { content } = post;
   if (post.blocks) return { author: null, content };
   const elements = content.flatMap((node, at) => typeof node === "string" ? [] : [{ node, at }]);

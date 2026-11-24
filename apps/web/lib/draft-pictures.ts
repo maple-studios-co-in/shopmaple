@@ -263,8 +263,11 @@ export function previewReadyContent(content: StorefrontContent): PreviewReady {
       let item = article;
       if (item.cover && isPicture(item.cover.src) && isBlank(item.cover.alt))
         item = { ...item, cover: { ...item.cover, alt: described(item.cover.alt, () => wordsFrom(item.title), `${name} cover`, notes) } };
-      const blocks = previewBlocks(item.blocks, wordsFrom(item.title), name, notes);
-      if (blocks !== item.blocks) item = { ...item, blocks };
+      // Articles written in blocks before rich text (24 Nov 2026) keep their blocks until edited.
+      if (item.blocks) {
+        const blocks = previewBlocks(item.blocks, wordsFrom(item.title), name, notes);
+        if (blocks !== item.blocks) item = { ...item, blocks };
+      }
       // An article with no block ready cannot be saved; it is left out whole until one is.
       if (!authoredArticleSchema.safeParse(item).success) { notes.leave(name); return null; }
       return item;

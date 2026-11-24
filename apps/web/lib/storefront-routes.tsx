@@ -9,7 +9,6 @@ import { HomeWithArtwork, StoryWithArtwork } from "@/components/artwork-pages";
 import { ContentPage } from "@/components/content-page";
 import { PolicyArticle } from "@/components/policy-page";
 import { BulkEnquiry, Contact, ReturnsPageContent, emptyEnquiryContext } from "@/components/service-pages";
-import source from "@/data/store-content.json";
 import type { StorefrontDocument } from "@/lib/content";
 import { resolveCategoryPageContent } from "@/lib/category-content-defaults";
 import { resolveEditorialContent } from "@/lib/editorial-content-defaults";
@@ -116,14 +115,15 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
     const page = content.pages.find((page) => page.slug === second);
     return page ? { title: page.title, path, node: <ContentPage page={page} /> } : null;
   }
+  // Policies and blogs as the draft has them: staff's own included, hidden ones left out, and staff's articles shown
+  // before their first publication (owner, 24 Nov 2026).
   if (root === "policies" && second !== undefined && third === undefined) {
-    if (!Object.hasOwn(source.policies, second)) return null;
-    const policy = resolveEditorialContent(content.editorialContent).policies[second];
+    const { policies } = resolveEditorialContent(content.editorialContent);
+    const policy = Object.hasOwn(policies, second) ? policies[second] : undefined;
     return policy ? { title: policy.title, path: `/policies/${second}`, node: <PolicyArticle policy={policy} slug={second} footer={resolveSiteChrome(content.siteChrome).footer} media={content.templateMedia} /> } : null;
   }
   if (root === "blogs" && second !== undefined) {
-    if (!source.blogs.some((item) => item.handle === second)) return null;
-    const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
+    const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia, { preview: true });
     const record = blogs.find((item) => item.handle === second);
     if (!record) return null;
     if (third === undefined) return { title: record.title, path: `/blogs/${second}`, node: <BlogIndex blog={second} title={record.title} articles={record.articles} bestsellers={resolveHomeMerchandising(content.homeMerchandising).bestsellers} media={content.templateMedia} /> };
@@ -135,7 +135,7 @@ export function renderStorefrontRoute(segments: readonly string[], content: Stor
 
 /** Preview destinations offered in the preview banner, derived from the document being previewed. */
 export function listPreviewPages(content: StorefrontDocument): { label: string; segments: string[] }[] {
-  const { blogs, policies } = resolveEditorialContent(content.editorialContent, content.authoredArticles);
+  const { blogs, policies } = resolveEditorialContent(content.editorialContent, content.authoredArticles, undefined, { preview: true });
   return [
     { label: "Home", segments: ["home"] },
     ...categoryPageSlugs.map((slug) => ({ label: resolveCategoryPageContent(slug, content.landingPages).title, segments: ["pages", slug] })),
@@ -151,7 +151,7 @@ export function listPreviewPages(content: StorefrontDocument): { label: string; 
     { label: "Checkout", segments: ["checkout"] },
     { label: "Sign in", segments: ["account", "login"] },
     ...content.pages.filter((page) => page.slug).map((page) => ({ label: page.title || page.slug, segments: ["pages", page.slug] })),
-    ...Object.keys(source.policies).map((slug) => ({ label: policies[slug]?.title ?? slug, segments: ["policies", slug] })),
+    ...Object.entries(policies).map(([slug, policy]) => ({ label: policy.title, segments: ["policies", slug] })),
     ...blogs.flatMap((blog) => [
       { label: blog.title, segments: ["blogs", blog.handle] },
       ...blog.articles.map((article) => ({ label: `${blog.title}: ${article.title}`, segments: ["blogs", blog.handle, article.handle] })),
