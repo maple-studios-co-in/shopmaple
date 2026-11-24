@@ -1,5 +1,5 @@
-import { createElement, Fragment } from "react";
-import { managedUpload, siteHosts, storeMedia } from "@shopmaple/contracts";
+import { createElement, Fragment, type CSSProperties } from "react";
+import { editorialAligns, editorialColors, editorialHighlight, managedUpload, siteHosts, storeMedia } from "@shopmaple/contracts";
 import { ContentImage as Image } from "@/components/content-image";
 import { storeOrigins } from "@/lib/site-origins";
 export type ContentNode =
@@ -10,6 +10,8 @@ export type ContentNode =
       href?: string;
       src?: string;
       alt?: string;
+      align?: string;
+      color?: string;
     };
 const tags = new Set([
   "div",
@@ -28,6 +30,11 @@ const tags = new Set([
   "em",
   "i",
   "u",
+  // The rich text editor's strikethrough, highlight, superscript and subscript (owner, 24 Nov 2026).
+  "s",
+  "mark",
+  "sup",
+  "sub",
   "br",
   "a",
   "blockquote",
@@ -40,6 +47,17 @@ const tags = new Set([
   "span",
   "hr",
 ]);
+const alignable = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6"]);
+/**
+ * The only styles stored text may carry: an alignment the editor offers on a paragraph or heading, a colour from the
+ * store's palette on a span (by name), and the highlighter's colour. Anything else is ignored, never drawn.
+ */
+function styleOf(node: Exclude<ContentNode, string>): CSSProperties | undefined {
+  if (alignable.has(node.tag) && (editorialAligns as readonly (string | undefined)[]).includes(node.align)) return { textAlign: node.align as CSSProperties["textAlign"] };
+  if (node.tag === "span" && node.color && Object.hasOwn(editorialColors, node.color)) return { color: editorialColors[node.color as keyof typeof editorialColors].hex };
+  if (node.tag === "mark") return { backgroundColor: editorialHighlight, color: "inherit", padding: "0 0.1em", borderRadius: "2px" };
+  return undefined;
+}
 function destination(href: string) {
   try {
     // A relative link, or one to the store's own addresses (SITE_URL, SITE_ALIASES), is a path here; the old shop's
@@ -114,10 +132,12 @@ export function StoreContent({ nodes, previewUploads = false }: { nodes: Content
         }
         if (!tags.has(node.tag)) return null;
         const tag = node.tag === "h1" ? "h2" : node.tag;
+        const style = styleOf(node);
         const props = {
           key: index,
           ...(tag === "a" ? { href: destination(node.href || "") } : {}),
           ...(tag === "table" ? { tabIndex: 0, "aria-label": "Content table" } : {}),
+          ...(style ? { style } : {}),
         };
         return createElement(
           tag,

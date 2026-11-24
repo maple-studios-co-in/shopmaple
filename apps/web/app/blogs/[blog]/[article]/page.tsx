@@ -18,10 +18,11 @@ export async function generateMetadata({
   const { blogs } = resolveEditorialContent(content.editorialContent, content.authoredArticles, content.templateMedia);
   const post = blogs.find((item) => item.handle === blog)?.articles.find((item) => item.handle === article);
   if (!post) return { title: "Article" };
-  const path = `/blogs/${blog}/${article}`, description = pageDescription(post.excerpt);
+  // What staff wrote for search engines (owner, 24 Nov 2026), else the article's own title and excerpt.
+  const path = `/blogs/${blog}/${article}`, description = pageDescription(post.seoDescription || post.excerpt), title = post.seoTitle || post.title;
   return {
-    title: post.title, description, alternates: { canonical: path },
-    openGraph: { type: "article", siteName: "Maple Furnishers", locale: "en_IN", url: path, title: post.title, description,
+    title, description, alternates: { canonical: path },
+    openGraph: { type: "article", siteName: "Maple Furnishers", locale: "en_IN", url: path, title, description,
       ...(post.publishedAt ? { publishedTime: post.publishedAt } : {}), ...(post.cover ? { images: [{ url: post.cover.src, alt: post.cover.alt }] } : {}) },
   };
 }

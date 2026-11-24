@@ -4,7 +4,7 @@
  * schema.org structured data. Pure functions, so every rule is tested without a server.
  */
 import type { Metadata, MetadataRoute } from "next";
-import { categories, policySlugs, primarySiteUrl, type Product, type SiteChrome } from "@shopmaple/contracts";
+import { categories, primarySiteUrl, type Product, type SiteChrome } from "@shopmaple/contracts";
 
 export type SeoSettings = { siteUrl: string; indexing: boolean };
 const brand = "Maple Furnishers";
@@ -40,15 +40,20 @@ export const robotsMeta = (settings: SeoSettings) => ({ index: settings.indexing
 /** Pages that always exist, beside products, content pages, policies and articles. */
 const fixedPages = ["/", "/collections/all", ...categories.map((category) => `/collections/${category}`),
   "/sofas", "/tables", "/chairs", "/our-story", "/nimbus-collection", "/terra-collection",
-  "/contact", "/bulk-enquiry", "/returns", "/blogs/recent-stories"];
+  "/contact", "/bulk-enquiry", "/returns"];
+/** A policy, blog or article address segment, as the contracts accept them; anything else is left out of the sitemap. */
+const segment = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export function sitemapEntries(settings: SeoSettings, input: {
   products: Product[]; pages: string[]; policies: string[]; articles: { blog: string; handle: string }[];
+  /** The blogs on the site (staff can add and hide blogs); without it, the imported Recent Stories blog. */
+  blogs?: string[];
 }): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [
     ...fixedPages.map((path) => ({ url: absolute(settings, path) })),
     ...input.pages.map((slug) => ({ url: absolute(settings, `/${slug}`) })),
-    ...input.policies.filter((slug) => (policySlugs as readonly string[]).includes(slug)).map((slug) => ({ url: absolute(settings, `/policies/${slug}`) })),
-    ...input.articles.map((article) => ({ url: absolute(settings, `/blogs/${article.blog}/${article.handle}`) })),
+    ...(input.blogs ?? ["recent-stories"]).filter((handle) => segment.test(handle)).map((handle) => ({ url: absolute(settings, `/blogs/${handle}`) })),
+    ...input.policies.filter((slug) => segment.test(slug)).map((slug) => ({ url: absolute(settings, `/policies/${slug}`) })),
+    ...input.articles.filter((article) => segment.test(article.blog) && segment.test(article.handle)).map((article) => ({ url: absolute(settings, `/blogs/${article.blog}/${article.handle}`) })),
     ...input.products.filter((product) => product.published).map((product) => ({
       url: absolute(settings, `/products/${product.handle}`),
       lastModified: new Date(product.sourceUpdatedAt),

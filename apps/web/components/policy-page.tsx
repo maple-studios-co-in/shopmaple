@@ -7,8 +7,8 @@ type Policy = ReturnType<typeof resolveEditorialContent>["policies"][string];
 
 /**
  * A policy is written in the page editor and shown as its Help page; the footer gives the Help tabs and
- * the customer care contact.
+ * the customer care contact. A photo staff chose for the policy leads (owner, 24 Nov 2026).
  */
 export function PolicyArticle({ policy, slug, footer, media }: { policy: Policy; slug: string; footer: SiteChrome["footer"]; media?: TemplateMedia }) {
-  return <PolicyDocument slug={slug} title={policy.title} content={policy.content} chrome={helpChromeFrom(footer)} media={media} />;
+  return <PolicyDocument slug={slug} title={policy.title} content={policy.content} chrome={helpChromeFrom(footer)} media={media} photo={policy.photo ?? undefined} />;
 }

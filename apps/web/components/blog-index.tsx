@@ -8,7 +8,7 @@ import { BlogFeaturedSlider } from "@/components/blog/featured-slider";
 import { StoryPicture } from "@/components/blog/story-picture";
 import { blogAuthor, blogCardsStep, blogFeaturedCount, blogImage, longDate, newestFirst, signOff, type BlogPost } from "@/lib/blog";
 
-type Story = Pick<BlogPost, "handle" | "title" | "publishedAt" | "excerpt" | "cover" | "content" | "blocks">;
+type Story = Pick<BlogPost, "handle" | "title" | "publishedAt" | "excerpt" | "cover" | "content" | "blocks" | "author">;
 
 /**
  * The blog listing as Figma 268:4185 draws it (owner, 10 Nov 2026): the title, a slider of the newest stories, every
