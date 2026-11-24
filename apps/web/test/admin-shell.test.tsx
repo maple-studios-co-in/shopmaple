@@ -18,6 +18,8 @@ async function setup(options: { role?: "editor" | "publisher"; canManageEnquirie
   const root = createRoot(container);
   globalThis.fetch = async (input) => {
     const path = String(input);
+    // Settings, Banner sizes reads the upload rules (owner, 23 Nov 2026).
+    if (path === "/api/admin/settings/media-uploads") return Response.json({ rules: { restrictSizes: false, sizes: [] }, updatedAt: null, updatedBy: null });
     assert.equal(path, "/api/admin/content", `Unexpected request ${path}`);
     return Response.json({ version: 4, draft: structuredClone(defaultStorefrontContent), publishedVersion: options.publishedVersion === undefined ? 2 : options.publishedVersion, updatedAt: "2026-10-26T12:00:00Z" });
   };
@@ -47,14 +49,16 @@ test("the sidebar groups sections, marks exactly one current section and moves i
   const app = await setup({ canManageEnquiries: true });
   try {
     const groups = [...nav().querySelectorAll<HTMLElement>("[data-nav-group]")].map((g) => g.dataset.navGroup);
-    assert.deepEqual(groups, ["Storefront", "Pages", "Library", "Customers", "Publishing"]);
+    assert.deepEqual(groups, ["Storefront", "Pages", "Library", "Customers", "Publishing", "Settings"]);
     assert.deepEqual(current(), ["Overview"]);
     const inGroup = (name: string) => [...nav().querySelectorAll<HTMLElement>("[data-nav-group]")].find((g) => [...g.querySelectorAll("button")].some((b) => b.textContent === name))?.dataset.navGroup;
     assert.equal(inGroup("Campaigns"), "Storefront");
     assert.equal(inGroup("Policies & blogs"), "Pages");
     assert.equal(inGroup("Media"), "Library");
+    assert.equal(inGroup("Removed media"), "Library", "removed files, and deleting them permanently, on a screen of their own (owner, 23 Nov 2026)");
     assert.equal(inGroup("Enquiries"), "Customers");
     assert.equal(inGroup("History"), "Publishing");
+    assert.equal(inGroup("Banner sizes"), "Settings", "Settings holds the banner sizes uploads may have (owner, 23 Nov 2026)");
     await act(async () => navButton("Campaigns").click());
     assert.deepEqual(current(), ["Campaigns"]);
     assert.equal(container.querySelector("h2")?.textContent, "Campaigns");
@@ -139,4 +143,21 @@ test("draft actions show only on screens that edit the draft", async () => {
       assert.deepEqual(actions(), [], `${screen} has no draft actions`);
     }
   } finally { await app.close(); }
+});
+
+test("Settings, Banner sizes opens outside the draft, and only a publisher can change it", async () => {
+  for (const role of ["publisher", "editor"] as const) {
+    const app = await setup({ role });
+    try {
+      await act(async () => navButton("Banner sizes").click());
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
+      assert.deepEqual(current(), ["Banner sizes"]);
+      assert.equal(container.querySelector("h2")?.textContent, "Banner sizes");
+      const rule = container.querySelector<HTMLButtonElement>("[data-banner-sizes] button[role=switch]");
+      assert.ok(rule, "the switch that turns the rule on");
+      assert.equal(rule.disabled, role !== "publisher", role);
+      assert.equal(Boolean(container.querySelector("[data-banner-sizes] form")), role === "publisher", "the form that adds a size");
+      assert.equal(container.querySelector("[data-admin-panel-body]"), null, "not inside the draft's fieldset");
+    } finally { await app.close(); }
+  }
 });

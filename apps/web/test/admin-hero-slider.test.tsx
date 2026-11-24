@@ -209,6 +209,8 @@ test("a picture uploaded from the computer goes into the library and onto the sl
   const requests: { url: string; method: string; headers: Record<string, string> }[] = [];
   const previous = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
+    // The upload rules (Settings, Banner sizes) are read before a picture is sent; none are set here.
+    if (String(input).startsWith("/api/admin/settings/")) return Response.json({ code: "NOT_FOUND" }, { status: 404 });
     requests.push({ url: String(input), method: init?.method ?? "GET", headers: (init?.headers ?? {}) as Record<string, string> });
     return Response.json({ asset: asset("img1", "image", upload, "sofa.png") }, { status: 201 });
   };
@@ -225,7 +227,7 @@ test("a picture uploaded from the computer goes into the library and onto the sl
     assert.equal(slides()![0]!.src, upload, "the slide shows the upload");
     assert.ok(container.querySelector(`img[src="/api/admin/media/${"a".repeat(64)}/preview"]`), "previewed privately");
     await chooseFile("Upload image", new dom.window.File(["gif"], "spin.gif", { type: "image/gif" }) as unknown as File);
-    assert.match(text(), /Choose a JPEG, PNG or WebP image up to 8 MiB/, "a file of another kind is refused before sending");
+    assert.match(text(), /Choose a JPEG, PNG or WebP image up to 8 MB/, "a file of another kind is refused before sending");
     assert.equal(requests.length, 1);
   } finally { globalThis.fetch = previous; await close(); }
 });
@@ -279,6 +281,8 @@ test("pictures and videos also come from the library, each list showing only its
   const requested: string[] = [];
   const previous = globalThis.fetch;
   globalThis.fetch = async input => {
+    // The upload rules (Settings, Banner sizes) are read before a picture is sent; none are set here.
+    if (String(input).startsWith("/api/admin/settings/")) return Response.json({ code: "NOT_FOUND" }, { status: 404 });
     requested.push(String(input));
     return String(input).endsWith("kind=video")
       ? Response.json({ assets: [asset("film1", "video", film, "Workshop film")], nextCursor: null })

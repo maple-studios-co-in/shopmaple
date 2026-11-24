@@ -463,6 +463,16 @@ model ShopAdmin {
   contactActivity ContactActivity[] @relation("ContactActivityActor")
   followUpTasks FollowUpTask[] @relation("FollowUpTaskAssignee")
   createdFollowUpTasks FollowUpTask[] @relation("FollowUpTaskCreator")
+  settingsChanged ShopSetting[]
+}
+/// Admin settings that take effect at once, outside the draft-and-publish content (owner, 23 Nov 2026). One row per
+/// setting, its value checked by the shared schema for its key: "media-uploads" holds the media library's upload rules.
+model ShopSetting {
+  key String @id
+  value Json
+  updatedAt DateTime @updatedAt
+  updatedById String?
+  updatedBy ShopAdmin? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 }
 model ShopAdminSession {
   id String @id @default(cuid())
@@ -549,7 +559,13 @@ model ShopMediaAsset {
   createdBy ShopAdmin @relation(fields: [createdById], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   publicAt DateTime?
+  /// Removed from the library (owner, 23 Nov 2026): hidden from the library and its pickers, its file kept so pages that
+  /// use it keep working; restored by Restore or by uploading the same picture again. Null while it is in the library.
+  removedAt DateTime?
+  /// Who removed it, for the Removed list.
+  removedById String?
   @@index([createdAt, id])
+  @@index([removedAt])
 }
 model EnquiryReviewAudit {
   id String @id @default(cuid())

@@ -11,7 +11,8 @@
     "./enquiry-delivery": "./src/enquiry-delivery.ts",
     "./whatsapp": "./src/whatsapp.ts",
     "./checkout-consent": "./src/checkout-consent.ts",
-    "./minimum-order": "./src/minimum-order.ts"
+    "./minimum-order": "./src/minimum-order.ts",
+    "./media-upload-rules": "./src/media-upload-rules.ts"
   },
   "dependencies": {
     "zod": "^4.1.12"

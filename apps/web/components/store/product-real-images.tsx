@@ -7,10 +7,11 @@ import { Modal } from "./modal";
 import { ProductImage } from "./product-image";
 
 /**
- * "View real images" under the gallery: unedited photographs of the actual piece that staff marked in Keeri, by finish.
- * It opens on the finish being viewed when that finish has some, and is not shown at all when nothing is marked.
+ * "View real images" under the gallery (from 1024px the product page sets it on the photo's corner through `className`):
+ * unedited photographs of the actual piece that staff marked in Keeri, by finish. It opens on the finish being viewed when
+ * that finish has some, and is not shown at all when nothing is marked. Its hover is opaque, as it may sit on a photo.
  */
-export function ProductRealImages({ groups, variantId, title }: { groups: RealPhotoGroup[]; variantId: string; title: string }) {
+export function ProductRealImages({ groups, variantId, title, className }: { groups: RealPhotoGroup[]; variantId: string; title: string; className?: string }) {
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   if (!groups.length) return null;
@@ -23,7 +24,7 @@ export function ProductRealImages({ groups, variantId, title }: { groups: RealPh
   return (
     <>
       <button type="button" data-real-images onClick={show}
-        className="inline-flex h-10 cursor-pointer items-center gap-2 self-start rounded-[30px] border border-solid border-maple/20 bg-white px-4 text-[14px] leading-[1.35] font-medium text-maple hover:bg-maple/6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple">
+        className={cx("inline-flex h-10 cursor-pointer items-center gap-2 self-start rounded-[30px] border border-solid border-maple/20 bg-white px-4 text-[14px] leading-[1.35] font-medium text-maple hover:bg-[#f7f2f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-maple", className)}>
         <Camera aria-hidden="true" className="size-4" />
         View real images <span className="text-[#756d68]">({count})</span>
       </button>

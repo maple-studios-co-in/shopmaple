@@ -12,6 +12,8 @@ export const TABLE_POLICY = {
   _prisma_migrations: 'keep', Product: 'keep', Variant: 'keep', ProductHandleAlias: 'keep', ProductSourceIdentity: 'keep',
   VariantSourceIdentity: 'keep', CatalogueSyncState: 'keep', ShopContent: 'keep', ShopContentRevision: 'keep',
   ShopMediaAsset: 'keep', ShopArticlePublication: 'keep', InstagramFeedPost: 'keep', EnquiryReviewAudit: 'keep',
+  // Admin settings (the media library's upload rules): no customer data, and their editor is a kept staff account.
+  ShopSetting: 'keep',
   // Staff accounts stay so staff can sign in to staging admin (behind Cloudflare Access); their sessions do not.
   ShopAdmin: 'keep',
   // Orders, payments, Keeri's order updates (they carry staff cancellation reasons and refund ids), buyers' cancellation
