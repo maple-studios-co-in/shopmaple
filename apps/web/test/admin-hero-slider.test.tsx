@@ -176,6 +176,10 @@ test("how the words look: where they sit, light or dark, the shade behind them a
     await click("Large");
     assert.deepEqual(slides()![0]!.caption, { position: "top-right", tone: "dark", shade: "soft", size: "large" });
     assert.equal(button("Dark").getAttribute("aria-pressed"), "true");
+    // The type style, as every banner offers it (owner, 25 Nov 2026), each named in its own style.
+    assert.equal(container.querySelector("[data-font-choice]")?.getAttribute("data-font-choice"), "modern", "the theme's own style to start");
+    await click("Serif italic");
+    assert.deepEqual(slides()![0]!.caption, { position: "top-right", tone: "dark", shade: "soft", size: "large", font: "serif-italic" });
     assert.equal(homeDetailsSchema.safeParse(latest).success, true);
   } finally { await close(); }
 });

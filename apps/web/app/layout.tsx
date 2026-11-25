@@ -32,6 +32,7 @@ import "@/styles/home-editorial.css";
 import "@/styles/storefront-interactions.css";
 import "@/styles/checkout.css";
 import "@/styles/button-fill.css";
+import "@/styles/banner-look.css";
 // Big screens: the page grows with the screen from 1600px (owner, 4 Nov 2026); after the sheets it repeats.
 import "@/styles/wide-screens.css";
 // The header and its menu (Figma 256:3836), 30px between sections everywhere, and review cards that show whole lines

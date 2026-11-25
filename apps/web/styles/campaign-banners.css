@@ -15,7 +15,7 @@
 .campaign-copy:has(.campaign-label,.campaign-supporting,.campaign-eligibility){top:2cqw;gap:.421053cqw}
 .campaign-copy p,.campaign-copy h2{margin:0;color:inherit;padding:0}
 .campaign-copy .campaign-label{font-size:.578947cqw;line-height:.842105cqw;font-weight:600;letter-spacing:.094737cqw;color:#deba7d}
-.campaign-copy h2{font-family:var(--font-heading);font-weight:500;font-size:2.421053cqw;line-height:2.578947cqw;letter-spacing:normal}
+.campaign-copy h2{font-family:var(--font-heading);font-weight:500;font-size:calc(2.421053cqw * var(--banner-scale,1));line-height:calc(2.578947cqw * var(--banner-scale,1));letter-spacing:normal}
 .campaign-copy h2 span,.campaign-offer span{display:block}
 .campaign-copy .campaign-supporting{font-size:.947368cqw;line-height:1.315789cqw}
 .campaign-copy .campaign-offer{font-size:.947368cqw;line-height:1.315789cqw;font-weight:400}
@@ -32,7 +32,7 @@
  .campaign-copy{top:var(--campaign-mobile-copy-y);left:var(--campaign-mobile-copy-x);width:var(--campaign-mobile-copy-width);gap:var(--campaign-mobile-copy-gap)}
  .campaign-copy:has(.campaign-label,.campaign-supporting,.campaign-eligibility){top:5cqw;gap:1cqw}
  .campaign-copy .campaign-label{font-size:max(10px,2cqw);line-height:max(14px,2.8cqw);letter-spacing:.26cqw}
- .campaign-copy h2{font-size:6.4cqw;line-height:7cqw;letter-spacing:normal}
+ .campaign-copy h2{font-size:calc(6.4cqw * var(--banner-scale,1));line-height:calc(7cqw * var(--banner-scale,1));letter-spacing:normal}
  .campaign-copy .campaign-supporting{font-size:3cqw;line-height:4cqw}
  .campaign-copy .campaign-offer{font-size:3cqw;line-height:4.2cqw}
  .campaign-copy .campaign-eligibility{font-size:max(10px,2.2cqw);line-height:max(14px,3cqw);letter-spacing:.26cqw}
@@ -50,7 +50,7 @@
 [data-campaign-layout="card"] .campaign-copy{top:var(--campaign-mobile-copy-y);left:var(--campaign-mobile-copy-x);width:var(--campaign-mobile-copy-width);gap:var(--campaign-mobile-copy-gap)}
 [data-campaign-layout="card"] .campaign-copy:has(.campaign-label,.campaign-supporting,.campaign-eligibility){top:5cqw;gap:1cqw}
 [data-campaign-layout="card"] .campaign-copy .campaign-label{font-size:max(10px,2cqw);line-height:max(14px,2.8cqw);letter-spacing:.26cqw}
-[data-campaign-layout="card"] .campaign-copy h2{font-size:6.4cqw;line-height:7cqw;letter-spacing:normal}
+[data-campaign-layout="card"] .campaign-copy h2{font-size:calc(6.4cqw * var(--banner-scale,1));line-height:calc(7cqw * var(--banner-scale,1));letter-spacing:normal}
 [data-campaign-layout="card"] .campaign-copy .campaign-supporting{font-size:3cqw;line-height:4cqw}
 [data-campaign-layout="card"] .campaign-copy .campaign-offer{font-size:3cqw;line-height:4.2cqw}
 [data-campaign-layout="card"] .campaign-copy .campaign-eligibility{font-size:max(10px,2.2cqw);line-height:max(14px,3cqw);letter-spacing:.26cqw}

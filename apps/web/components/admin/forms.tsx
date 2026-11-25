@@ -2,16 +2,18 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { FileText, ImagePlus, Images, Megaphone, Plus, RotateCcw, Trash2 } from "lucide-react";
-import type { StorefrontContent, CampaignContent, ContentPage, EditorialNode } from "@shopmaple/contracts";
+import { bannerLookOf, type StorefrontContent, type CampaignContent, type ContentPage, type EditorialNode } from "@shopmaple/contracts";
 import { Button } from "@/components/ui/button";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { StoreContent } from "@/components/store-content";
 import { pageDocument } from "@/lib/page-document";
+import { cn } from "@/lib/utils";
 import { campaignPictureWords } from "@/lib/draft-pictures";
 import { campaignArtworkDisplay, type CampaignArtworkDisplay } from "@/lib/campaign-artwork";
 import type { StaffSession } from "./dashboard";
 import { MediaPicker } from "./media-picker";
 import { CampaignScheduleFields } from "./campaign-schedule-fields";
+import { BannerLookFields } from "./banner-look-fields";
 import { Field } from "./field";
 import { EmptyState } from "./crm-primitives";
 import {
@@ -80,6 +82,10 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
   const media = mediaProps(props);
   const update = (patch: Partial<CampaignContent>) => onChange({ ...content, campaigns: patchAt(content.campaigns, selected, patch) });
   const artwork = (patch: Partial<NonNullable<CampaignContent["artwork"]>>) => campaign?.artwork && update({ artwork: { ...campaign.artwork, ...patch } });
+  const look = bannerLookOf(campaign?.look);
+  // The announcement showing a finished banner draws neither words nor button over it (AnnouncementDisplay).
+  const wholeStrip = campaign?.key === "landing-announcement" && campaign.artwork && campaignArtworkDisplay(campaign.artwork) === "banner";
+  const buttonWords = look.button && !campaign?.cta.trim();
   return <>
     {!embedded && <PanelHeader title="Campaigns" description="Update campaign copy, destination and artwork. Original artwork stays in place until you choose a replacement." />}
     {!campaign ? (
@@ -97,13 +103,17 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
           <SectionHeading description="Use one line per headline or offer line, up to three. Destinations must be store links such as /collections/chairs.">Copy</SectionHeading>
           <FieldGrid>
             <Field label="Campaign label" value={campaign.label} maxLength={120} onChange={(label) => update({ label })} />
-            <Field label="Campaign button label" value={campaign.cta} maxLength={80} onChange={(cta) => update({ cta })} />
+            <Field label="Campaign button label" value={campaign.cta} maxLength={80} onChange={(cta) => update({ cta })}
+              hint={buttonWords ? "Write the button's words, or turn the button off below: without words it is not shown." : undefined} />
             <Field label="Campaign headline" value={campaign.headline.join("\n")} maxLength={362} multiline onChange={(headline) => update({ headline: headline.split("\n") })} />
             <Field label="Campaign supporting copy" value={campaign.supporting} maxLength={300} multiline onChange={(supporting) => update({ supporting })} />
             <Field label="Campaign offer" value={campaign.offer.join("\n")} maxLength={362} multiline onChange={(offer) => update({ offer: offer ? offer.split("\n") : [] })} />
             <Field label="Campaign eligibility" value={campaign.eligibility} maxLength={300} onChange={(eligibility) => update({ eligibility })} />
             <Field label="Campaign destination" value={campaign.href} maxLength={500} onChange={(href) => update({ href })} />
           </FieldGrid>
+          <SectionHeading className="mt-8" description="Keep or remove the words, the button and the shade behind them, and choose how the words look. For a picture that already has its own words and button, turn both off.">How the banner looks</SectionHeading>
+          <BannerLookFields value={look} onChange={(next) => update({ look: next })} strip={campaign.key === "landing-announcement"}
+            note={wholeStrip ? "The announcement shows its picture as the whole banner, so it draws no words or button over it. These apply when it shows a photo beside the words." : undefined} />
           <CampaignScheduleFields key={campaign.key} value={campaign.schedule} onChange={(schedule) => update({ schedule })} onEditingChange={setScheduleEditing} />
           {media && <>
             <SectionHeading description="The storefront keeps the original artwork until you choose a replacement for both sizes. While you choose, the live preview shows your first picture at both sizes.">Artwork</SectionHeading>
@@ -124,13 +134,22 @@ export function CampaignFields(props: Props & { only?: readonly string[]; embedd
             )}
           </>}
         </div>
-        <PreviewPanel tone="accent" aria-label="Campaign preview" eyebrow="Copy preview" footnote="Local copy preview · Artwork is managed separately">
-          <p className="text-xs font-semibold tracking-[0.04em] uppercase">{campaign.label}</p>
-          <PreviewTitle className="text-2xl">{campaign.headline.map((line, index) => <span key={index}>{line}<br /></span>)}</PreviewTitle>
-          <p>{campaign.supporting}</p>
-          <p className="font-medium">{campaign.offer.join(" · ")}</p>
-          <p className="text-xs text-primary-foreground/85">{campaign.eligibility}</p>
-          <span className="w-fit rounded-sm bg-card px-4 py-2 text-xs font-semibold text-primary">{campaign.cta}</span>
+        <PreviewPanel tone={look.tone === "dark" ? "card" : "accent"} aria-label="Campaign preview" eyebrow="Copy preview"
+          footnote="Local copy preview · The live preview shows the picture and shade">
+          <div data-banner-font={look.font} className="grid gap-3">
+            {look.words ? <>
+              {campaign.label.trim() && <p className="text-xs font-semibold tracking-[0.04em] uppercase">{campaign.label}</p>}
+              {campaign.headline.some((line) => line.trim()) && <PreviewTitle className="banner-font-sample text-2xl">
+                {campaign.headline.filter((line) => line.trim()).map((line, index) => <span key={index}>{line}<br /></span>)}
+              </PreviewTitle>}
+              {campaign.supporting.trim() && <p>{campaign.supporting}</p>}
+              {campaign.offer.some((line) => line.trim()) && <p className="font-medium">{campaign.offer.filter((line) => line.trim()).join(" · ")}</p>}
+              {campaign.eligibility.trim() && <p className={cn("text-xs", look.tone === "dark" ? "text-muted-foreground" : "text-primary-foreground/85")}>{campaign.eligibility}</p>}
+            </> : <p className="text-xs opacity-85">No words on the banner: its picture speaks for itself.</p>}
+            {look.button && campaign.cta.trim()
+              ? <span className={cn("w-fit rounded-sm px-4 py-2 text-xs font-semibold", look.tone === "dark" ? "bg-primary text-primary-foreground" : "bg-card text-primary")}>{campaign.cta}</span>
+              : <p className="text-xs opacity-85">No button: the whole banner opens {campaign.href || "its destination"}.</p>}
+          </div>
         </PreviewPanel>
       </EditorWithPreview>
     </>}
@@ -244,7 +263,8 @@ export function PageFields(props: Props) {
               </>}
               <Field label="Banner alt text" value={page.banner.alt} maxLength={200} onChange={(alt) => banner({ alt })} />
               <Field label="Banner link" value={page.banner.href} maxLength={500} onChange={(href) => banner({ href })} />
-              <Field label="Banner button label" value={page.banner.label} maxLength={80} onChange={(label) => banner({ label })} />
+              <Field label="Banner button label" value={page.banner.label} maxLength={80} onChange={(label) => banner({ label })}
+                hint="Optional. Leave empty for a banner that has its own button: the whole banner still opens the link." />
               <div data-span="full">
                 <ActionButton icon={Trash2} variant="ghost" className={dangerButton} onClick={() => update({ banner: null })}>Remove page banner</ActionButton>
               </div>
@@ -263,7 +283,7 @@ export function PageFields(props: Props) {
           {page.description && <p className="text-muted-foreground">{page.description}</p>}
           <div className="store-prose [overflow-wrap:anywhere]"><StoreContent nodes={pageDocument(page)} previewUploads /></div>
           {page.banner && (
-            <p className="rounded-md bg-sunken px-3 py-2 text-xs text-foreground">Banner: {page.banner.alt || "Add an image description"} · {page.banner.label}</p>
+            <p className="rounded-md bg-sunken px-3 py-2 text-xs text-foreground">Banner: {page.banner.alt || "Add an image description"} · {page.banner.label.trim() || "No button"}</p>
           )}
         </PreviewPanel>
       </EditorWithPreview>

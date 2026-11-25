@@ -1,0 +1,124 @@
+/* How a banner's words look, as staff set it for each banner (owner, 25 Nov 2026: "gradient, texts, cta all should be
+   completely editable ... also add an option to change the font style"; packages/contracts/src/banner-look.ts).
+   Every banner names its choices on its own element (data-banner-*), and these rules turn them into type and colour.
+   "Modern", "medium", "strong" and "light" are each banner's own look as the theme drew it, so a banner without choices
+   of its own is unchanged. */
+
+/* ---- Type styles: the headline's face and weight; the smaller lines follow the face ----------------------------------
+   A style reaches only the words of the banner it is set on (owner, 25 Nov 2026: "only reflects on the banner area text
+   not anywhere else"): its values live on the banner's own element, and the rules below that use them name a banner's
+   words. Modern's values are each banner's own (DM Sans at 500, Red Hat Display for the lines), so it changes nothing. */
+[data-banner-font] {
+  --banner-heading-font: var(--font-heading);
+  --banner-heading-weight: 500;
+  --banner-heading-scale: 1;
+  --banner-text-font: var(--font-text);
+}
+[data-banner-font="modern-light"] { --banner-heading-weight: 300; }
+[data-banner-font="modern-bold"] { --banner-heading-weight: 700; }
+[data-banner-font="display"] { --banner-heading-font: "Red Hat Display", var(--font-heading); --banner-heading-weight: 700; }
+/* A classic serif every device has (Georgia on computers and iPhones; the system serif on Android): no file to wait for. */
+[data-banner-font="serif"],
+[data-banner-font="serif-italic"] {
+  --banner-heading-font: Georgia, "Times New Roman", serif;
+  --banner-heading-weight: 400;
+  --banner-text-font: Georgia, "Times New Roman", serif;
+}
+/* Capitals read larger than lower case at the same size, so they are set a little smaller (and spaced, below). */
+[data-banner-font="capitals"] { --banner-heading-scale: 0.84; }
+
+/* The headlines a style sets: a campaign banner's, a hero slide's, a collection banner's, and the admin's samples. */
+.campaign-banner[data-banner-font] .campaign-copy h2,
+[data-home-section="hero"] .hero-slide[data-banner-font] .hero-introduction h2,
+.collection-banner[data-banner-font] h1,
+[data-banner-font] .banner-font-sample {
+  font-family: var(--banner-heading-font);
+  font-weight: var(--banner-heading-weight);
+}
+/* Their smaller lines follow the face (a serif banner's lines are serif too). */
+.campaign-banner[data-banner-font] .campaign-copy :is(.campaign-label, .campaign-supporting, .campaign-offer, .campaign-eligibility),
+[data-home-section="hero"] .hero-slide[data-banner-font] .hero-introduction > p,
+.collection-banner[data-banner-font] .collection-banner-copy > p {
+  font-family: var(--banner-text-font);
+}
+/* Slant, case and spacing only where a style asks for them, so every other headline keeps its own. */
+.campaign-banner[data-banner-font="serif-italic"] .campaign-copy h2,
+[data-home-section="hero"] .hero-slide[data-banner-font="serif-italic"] .hero-introduction h2,
+.collection-banner[data-banner-font="serif-italic"] h1,
+[data-banner-font="serif-italic"] .banner-font-sample { font-style: italic; }
+.campaign-banner[data-banner-font="capitals"] .campaign-copy h2,
+[data-home-section="hero"] .hero-slide[data-banner-font="capitals"] .hero-introduction h2,
+.collection-banner[data-banner-font="capitals"] h1,
+[data-banner-font="capitals"] .banner-font-sample { text-transform: uppercase; letter-spacing: 0.06em; }
+.campaign-banner[data-banner-font="display"] .campaign-copy h2,
+[data-home-section="hero"] .hero-slide[data-banner-font="display"] .hero-introduction h2,
+.collection-banner[data-banner-font="display"] h1,
+[data-banner-font="display"] .banner-font-sample { letter-spacing: -0.01em; }
+
+/* ---- Headline size: a scale on each banner's own sizes (they set font-size × --banner-scale) ----------------------- */
+[data-banner-size="small"] { --banner-size: 0.8; }
+[data-banner-size="large"] { --banner-size: 1.22; }
+[data-banner-font],
+[data-banner-size] { --banner-scale: calc(var(--banner-size, 1) * var(--banner-heading-scale, 1)); }
+
+/* ---- Campaign banners -------------------------------------------------------------------------------------------------- */
+/* Words with no shade behind them keep a faint glow of the opposite colour, so they stay readable over a busy photo. */
+.campaign-banner[data-banner-shade="none"]:not([data-campaign-layout="strip"]) .campaign-copy :is(h2, p) { text-shadow: 0 1px 14px rgb(0 0 0 / 0.38); }
+.campaign-banner[data-banner-shade="none"][data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-copy :is(h2, p) { text-shadow: 0 0 14px rgb(250 247 242 / 0.75); }
+/* A soft shade lets more of the picture through; "none" draws no shade at all (components/campaign-banner.tsx). */
+.campaign-banner[data-banner-shade="soft"] :is(.campaign-shade, .campaign-bottom-shade) { opacity: 0.55; }
+.campaign-banner[data-banner-shade="none"] :is(.campaign-shade, .campaign-bottom-shade) { display: none; }
+/* Without a button the whole banner is the link. */
+.campaign-scene-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.campaign-scene-link:focus-visible {
+  outline: 3px solid #741a14;
+  outline-offset: 3px;
+}
+/* Dark words, for a light picture: ink words over a cream shade, burgundy small lines and a burgundy button. The
+   announcement strip keeps its own light ground and dark words, so it is left as it is. */
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) { color: #2a2420; }
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-copy :is(.campaign-label, .campaign-eligibility) { color: #741a14; }
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-shade {
+  background-image: linear-gradient(90deg, rgb(250 247 242 / 0.95) 0%, rgb(250 247 242 / 0.82) 53%, rgb(250 247 242 / 0) 100%);
+}
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-bottom-shade {
+  background: linear-gradient(180deg, transparent, rgb(250 247 242 / 0.8));
+}
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-cta {
+  border-color: rgb(42 36 32 / 0.75);
+  color: #2a2420;
+}
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-cta[data-fill-button] { --fill: #741a14; --fill-ink: #fff; }
+.campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-cta:focus-visible { outline-color: #741a14; }
+/* On the homepage the banners' buttons are solid: burgundy with white words on a light banner. */
+[data-home-section] .campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-cta {
+  background: #741a14;
+  color: #fff;
+}
+/* On phones and on the homepage's cards the shade runs from the top. */
+@container (max-width: 749px) {
+  .campaign-banner[data-banner-tone="dark"]:not([data-campaign-layout="strip"]) .campaign-shade {
+    background-image: linear-gradient(180deg, rgb(250 247 242 / 0.95) 0%, rgb(250 247 242 / 0.8) 46%, rgb(250 247 242 / 0) 100%);
+  }
+}
+.campaign-banner[data-campaign-layout="card"][data-banner-tone="dark"] .campaign-shade {
+  background-image: linear-gradient(180deg, rgb(250 247 242 / 0.95) 0%, rgb(250 247 242 / 0.8) 46%, rgb(250 247 242 / 0) 100%);
+}
+
+/* ---- A collection page's own banner: its name and line over a photo staff chose (Artwork screen) ---------------------- */
+.collection-banner[data-banner-shade="soft"] .collection-banner-shade { opacity: 0.55; }
+.collection-banner[data-banner-tone="dark"] .collection-banner-shade {
+  background: linear-gradient(90deg, rgb(250 247 242 / 0.96) 0%, rgb(250 247 242 / 0.86) 30%, rgb(250 247 242 / 0.4) 58%, rgb(250 247 242 / 0) 80%);
+}
+.collection-banner[data-banner-tone="dark"] :is(h1, .collection-banner-copy > p) { color: #2a2420; }
+.collection-banner[data-banner-tone="dark"] .collection-banner-trail ol { color: rgb(42 36 32 / 0.78); }
+.collection-banner[data-banner-tone="dark"] .collection-banner-trail :is(a:hover, a:focus-visible) { color: #741a14; }
+@media (max-width: 768px) {
+  .collection-banner[data-banner-tone="dark"] .collection-banner-shade {
+    background: linear-gradient(0deg, rgb(250 247 242 / 0.96) 0%, rgb(250 247 242 / 0.78) 40%, rgb(250 247 242 / 0) 72%);
+  }
+}
