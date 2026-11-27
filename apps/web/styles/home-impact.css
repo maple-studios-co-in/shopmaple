@@ -201,7 +201,7 @@
 }
 [data-campaign-layout="strip"] .campaign-copy h2 {
   color: var(--impact-ink);
-  font: 500 clamp(28px, 3.3cqw, 60px) / 1.1 var(--font-heading);
+  font: 500 calc(clamp(28px, 3.3cqw, 60px) * var(--banner-scale, 1)) / 1.1 var(--font-heading);
   color: #2a2420;
 }
 [data-campaign-layout="strip"] .campaign-copy .campaign-label {

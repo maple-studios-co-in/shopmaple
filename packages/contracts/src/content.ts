@@ -13,6 +13,7 @@ import { collectionLandingContentSchema } from "./collection-landing";
 import { templateFilmsSchema } from "./template-films";
 import { siteWordsSchema } from "./site-words";
 import { collectionHeroKeys, pictureSlotDecorativeKeys, pictureSlotKeys, pictureSlotResponsiveKeys } from "./picture-slots";
+import { bannerLookSchema, collectionBannerLookSchema } from "./banner-look";
 export const homeSectionKeys = [
   "hero",
   "announcement",
@@ -158,6 +159,8 @@ export const templateMediaItemSchema = z.object({
   mobileImage: contentImageSchema.optional(),
   alt: z.string().max(200).refine(value => !/[\u0000-\u001f\u007f]/.test(value), "Use text without control characters"),
   display: z.enum(collectionBannerDisplays).optional(),
+  /** How the collection's name and line read over a photo (display "photo"; owner, 25 Nov 2026). */
+  look: collectionBannerLookSchema.optional(),
 }).strict().superRefine((value, ctx) => {
   const responsive = (templateMediaResponsiveKeys as readonly string[]).includes(value.key);
   const phoneOptional = (templateMediaPhoneOptionalKeys as readonly string[]).includes(value.key);
@@ -165,6 +168,8 @@ export const templateMediaItemSchema = z.object({
     ctx.addIssue({ code: "custom", path: ["mobileImage"], message: responsive ? "Choose both desktop and mobile artwork" : "This artwork has one image" });
   if (!phoneOptional && value.display !== undefined)
     ctx.addIssue({ code: "custom", path: ["display"], message: "Only a collection page's banner says how it shows its picture" });
+  if (!phoneOptional && value.look !== undefined)
+    ctx.addIssue({ code: "custom", path: ["look"], message: "Only a collection page's banner has words over its picture" });
   if (!value.alt.trim() && !(templateMediaDecorativeKeys as readonly string[]).includes(value.key))
     ctx.addIssue({ code: "custom", path: ["alt"], message: "Describe this artwork" });
 });
@@ -260,6 +265,8 @@ export const campaignContentSchema = z
     schedule: campaignScheduleSchema.nullable().optional(),
     // Legacy and unread (see campaignDealSchema); campaigns saved with one stay valid.
     deal: campaignDealSchema.optional(),
+    /** Whether the words and button show, the shade behind them and the type style (banner-look.ts; owner, 25 Nov 2026). */
+    look: bannerLookSchema.optional(),
     artwork: z
       .object({
         desktopImage: contentImageSchema,
@@ -316,7 +323,8 @@ export const contentPageSchema = z
         mobileImage: contentImageSchema,
         alt: text(200).min(1),
         href: contentLinkSchema,
-        label: text(80).min(1),
+        /** The button's words; empty, the banner has no button and links as a whole (owner, 25 Nov 2026). */
+        label: text(80),
       })
       .strict()
       .nullable(),

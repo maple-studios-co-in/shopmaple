@@ -185,7 +185,10 @@ export function CollectionListing(props: Props) {
     featured: useSiteWord("collection.sort.featured"), title: useSiteWord("collection.sort.title"), "title-desc": useSiteWord("collection.sort.titleDesc"),
     "price-asc": useSiteWord("collection.sort.priceAsc"), "price-desc": useSiteWord("collection.sort.priceDesc"),
   };
-  const name = /^all\b/i.test(title) ? <>{title}</> : <><SiteWord k="collection.results.all" /> {title.toLowerCase()}</>;
+  // "All" and the collection's name read as a sentence, its short capitals kept ("All TV & media units", not "All tv & …"):
+  // on the pages that open on their campaign banner this is the page's heading (owner, 25 Nov 2026).
+  const sentence = title.split(/(\s+)/).map((word) => /^[A-Z0-9]{2,}$/.test(word) ? word : word.toLowerCase()).join("");
+  const name = /^all\b/i.test(title) ? <>{title}</> : <><SiteWord k="collection.results.all" /> {sentence}</>;
   return (
     <section id="collection-products" data-store aria-label={title} className="bg-linen px-4 py-10 font-text text-espresso md:px-8 lg:px-16 lg:py-16">
       <div className="mx-auto grid max-w-[1312px] gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start wide:max-w-none">

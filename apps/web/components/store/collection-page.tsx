@@ -11,8 +11,6 @@ import { collectionHeroKeys, isCampaignActive, type TemplateMediaKey } from "@sh
 
 type Query = Record<string, string | string[] | undefined>;
 const categoryHandles = ["sofas", "chairs", "tables", "beds", "storage", "outdoors"];
-/** Pages that open on their campaign hero alone, without the banner above it (owner, 23 Nov 2026, for the beds page). */
-const heroOnlyHandles = new Set(["beds"]);
 
 /** Whether a campaign banner draws on the page as it is served, judged as CampaignBanner judges it. */
 function campaignShows(content: StorefrontDocument, key: CampaignKey) {
@@ -39,7 +37,8 @@ export async function CollectionPageView({ handle, query: search, content }: { h
   const storefront = content ?? await getPublishedContent();
   const chosen = slot ? resolveTemplateMedia(slot, storefront.templateMedia) : null;
   const picture = chosen?.image
-    ? { image: chosen.image, ...(chosen.mobileImage ? { mobileImage: chosen.mobileImage } : {}), alt: chosen.alt, display: chosen.display ?? "banner" as const }
+    ? { image: chosen.image, ...(chosen.mobileImage ? { mobileImage: chosen.mobileImage } : {}), alt: chosen.alt, display: chosen.display ?? "banner" as const,
+      ...(chosen.look ? { look: chosen.look } : {}) }
     : undefined;
   const campaign: CampaignKey | undefined = (
     {
@@ -48,10 +47,11 @@ export async function CollectionPageView({ handle, query: search, content }: { h
       "tv-media-units": "tv-units-hero",
     } as Record<string, CampaignKey>
   )[handle];
-  // The beds page opens on its campaign hero alone (owner, 23 Nov 2026: "I only want the below one banner"); the banner
-  // above it doubled the opening. Its listing's heading ("All beds") is then the page's heading. Whenever the hero is not
-  // drawn (a schedule outside its dates, or campaigns unavailable), the banner comes back, so the page never opens bare.
-  const heroOnly = heroOnlyHandles.has(handle) && campaign !== undefined && campaignShows(storefront, campaign);
+  // A page with a campaign hero opens on it alone: two banners one under the other doubled the opening (owner, 23 Nov 2026
+  // for beds; 25 Nov 2026 for every page: "there should not be any two such banners immediately one below another"). Its
+  // listing's heading ("All beds") is then the page's heading. Whenever the hero is not drawn (a schedule outside its
+  // dates, or campaigns unavailable), the page's own banner comes back, so the page never opens bare.
+  const heroOnly = campaign !== undefined && campaignShows(storefront, campaign);
   // The introduction speaks for the collection's kind of piece: its own category, or the one every listed piece shares.
   const shared = [...new Set(result.products.map((product) => product.category).filter(Boolean))];
   const kind = categoryHandles.includes(handle) ? handle : shared.length === 1 ? shared[0] : null;

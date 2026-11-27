@@ -157,8 +157,9 @@ test("the collection page opens with the banner, drawn from the draft's picture,
   } finally { globalThis.fetch = previousFetch; }
 });
 
-test("the beds page opens on its campaign hero alone, and the banner comes back whenever that hero is off", async () => {
-  // Owner, 23 Nov 2026, on the beds page: "these two banners are coming but I only want the below one banner".
+test("a page with a campaign hero opens on it alone, and its banner comes back whenever that hero is off", async () => {
+  // Owner, 23 Nov 2026, on the beds page: "these two banners are coming but I only want the below one banner"; 25 Nov 2026,
+  // for Outdoor and TV & media units and every page: "there should not be any two such banners immediately one below another".
   const previousFetch = globalThis.fetch;
   let content = structuredClone(defaultStorefrontContent);
   globalThis.fetch = async (input) => {
@@ -182,9 +183,18 @@ test("the beds page opens on its campaign hero alone, and the banner comes back 
     assert.ok(root.firstElementChild?.querySelector('[data-campaign="beds-hero"]'));
     assert.equal(beds.querySelectorAll("h1").length, 1, "one heading for the page");
     assert.match(text(beds.querySelector("#collection-products h1")) ?? "", /beds/i, "the listing's heading is the page's heading");
-    const outdoor = await page("outdoor-furnitures");
-    assert.ok(outdoor.querySelector("[data-collection-banner]"), "the other pages with a campaign hero keep their banner");
-    assert.equal(outdoor.querySelector("[data-collection-page]")!.hasAttribute("data-hero-only"), false);
+    for (const [handle, key, words] of [["outdoor-furnitures", "outdoors-hero", /outdoor/i], ["tv-media-units", "tv-units-hero", /tv|media/i]] as const) {
+      const other = await page(handle);
+      const top = other.querySelector("[data-collection-page]")!;
+      assert.equal(other.querySelector("[data-collection-banner]"), null, `${handle}: no banner above its hero`);
+      assert.ok(top.hasAttribute("data-hero-only"));
+      assert.ok(top.firstElementChild?.querySelector(`[data-campaign="${key}"]`), `${handle}: its campaign hero opens the page`);
+      assert.equal(other.querySelectorAll("h1").length, 1);
+      assert.match(text(other.querySelector("#collection-products h1")) ?? "", words);
+    }
+    const sofas = await page("sofas");
+    assert.ok(sofas.querySelector("[data-collection-banner]"), "a page without a campaign hero keeps its own banner");
+    assert.equal(sofas.querySelector("[data-collection-page]")!.hasAttribute("data-hero-only"), false);
     // A hero outside its dates is not drawn: the page opens on the banner rather than on nothing.
     content = structuredClone(defaultStorefrontContent);
     content.campaigns.find((campaign) => campaign.key === "beds-hero")!.schedule = { startsAt: "2020-01-01T00:00:00.000Z", endsAt: "2020-02-01T00:00:00.000Z" };

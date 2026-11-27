@@ -43,9 +43,9 @@
   background: var(--color-linen, #faf8f4);
 }
 .collection-page > [data-landing-banner="inset"] + #collection-products { padding-top: 0; }
-/* The beds page opens on its campaign hero alone (owner, 23 Nov 2026): the full-width hero meets the header, as the
-   homepage's opening does, and the listing starts 30px under it, as it does under the other collection pages' banner
-   (it was 30px of the frame's margin plus the listing's own 64px). */
+/* A page with a campaign hero (Beds, Outdoor furniture, TV & media units) opens on it alone (owner, 23 and 25 Nov 2026):
+   the full-width hero meets the header, as the homepage's opening does, and the listing starts 30px under it, as it does
+   under the other collection pages' banner (it was 30px of the frame's margin plus the listing's own 64px). */
 .collection-page[data-hero-only] > [data-landing-banner="hero"]:first-child { margin-top: 0; }
 .collection-page[data-hero-only] > [data-landing-banner="hero"] + #collection-products { padding-top: 0; }
 /* A picture is the whole banner, cropped to its shape as the category pages' banners are. */
@@ -124,7 +124,7 @@
 .collection-banner h1 {
   margin: 0;
   color: #fff;
-  font: 500 clamp(24px, 3.2cqw, 46px)/1.08 var(--font-heading);
+  font: 500 calc(clamp(24px, 3.2cqw, 46px) * var(--banner-scale, 1))/1.08 var(--font-heading);
   letter-spacing: -0.01em;
 }
 .collection-banner-copy > p {
@@ -146,7 +146,7 @@
     padding: 22px;
   }
   .collection-banner[data-banner-photo="none"] .collection-banner-copy { justify-content: center; }
-  .collection-banner h1 { font-size: clamp(28px, 9cqw, 38px); }
+  .collection-banner h1 { font-size: calc(clamp(28px, 9cqw, 38px) * var(--banner-scale, 1)); }
   .collection-banner-copy > p { font-size: 15px; }
   .collection-banner-trail ol { font-size: 12px; }
   .collection-banner-shade {

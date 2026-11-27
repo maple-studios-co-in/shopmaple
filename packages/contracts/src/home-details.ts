@@ -2,6 +2,7 @@ import { z } from "zod";
 import { catalogueHandleSchema } from "./catalogue-cards";
 import { contentImageSchema, contentLinkSchema } from "./content";
 import { contentFilmSchema } from "./template-films";
+import { bannerFonts } from "./banner-look";
 
 const text = (max: number) => z.string().min(1).max(max).refine(
   value => value.trim().length > 0 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value),
@@ -28,6 +29,8 @@ export const heroCaptionSchema = z.object({
   tone: z.enum(["light", "dark"]),
   shade: z.enum(["none", "soft", "strong"]),
   size: z.enum(["small", "medium", "large"]),
+  /** The words' type style, as every banner offers it (banner-look.ts; owner, 25 Nov 2026); absent, the theme's. */
+  font: z.enum(bannerFonts).optional(),
 }).strict();
 /**
  * Maple's own photos a hero slide can show instead of a picture of its own: the default slides' stills (an upload on the

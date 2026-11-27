@@ -293,3 +293,4 @@ export * from "./instagram-feed";
 export * from "./site-address";
 export * from "./shopify-media-removal";
 export * from "./site-words";
+export * from "./banner-look";

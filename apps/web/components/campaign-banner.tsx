@@ -6,6 +6,7 @@ import campaigns from "@/data/diwali-campaigns.json";
 import { getPublishedContent, type StorefrontDocument } from "@/lib/content";
 import { defaultStorefrontContent } from "@/lib/content-defaults";
 import { campaignArtworkDisplay } from "@/lib/campaign-artwork";
+import { bannerLookOf } from "@shopmaple/contracts";
 
 export type CampaignKey = keyof typeof campaigns;
 type Artwork = (typeof campaigns)[CampaignKey]["desktop"];
@@ -114,15 +115,18 @@ export async function CampaignBanner({
     );
     return data.schedule ? <CampaignWindow schedule={data.schedule} serverNow={Date.now()}>{whole}</CampaignWindow> : whole;
   }
-  const banner = (
-    <section
-      className={`campaign-banner${compact ? " campaign-compact" : ""}`}
-      data-campaign={campaign}
-      data-campaign-layout={layout ?? (compact ? "card" : "band")}
-      aria-label={data.label || data.headline.join(" ")}
-      style={vars}
-    >
-      <div className="campaign-scene" data-picture-target={`campaign:${campaign}`}>
+  // How the banner shows (owner, 25 Nov 2026: "gradient, texts, cta all should be completely editable"; banner-look.ts):
+  // each part is drawn only when it is on and has words, so a cleared button leaves nothing behind; the shade sits
+  // behind words only; without a button the banner itself is the link to the campaign's destination.
+  const look = bannerLookOf("look" in data ? data.look : undefined);
+  const headline = data.headline.filter((line) => line.trim());
+  const offer = data.offer.filter((line) => line.trim());
+  const words = look.words && Boolean(data.label.trim() || headline.length || data.supporting?.trim() || offer.length || data.eligibility.trim());
+  const button = look.button && data.cta.trim().length > 0;
+  const shade = words && look.shade !== "none";
+  const name = data.label.trim() || headline.join(" ") || data.artwork?.alt || data.cta.trim() || "Campaign";
+  const sceneChildren = (
+    <>
         {data.artwork ? (
           <>
             <div className="campaign-art-desktop" data-artwork="desktop">
@@ -150,12 +154,12 @@ export async function CampaignBanner({
             <ArtworkLayer artwork={data.mobile} mobile />
           </>
         )}
-        <div className="campaign-shade" aria-hidden="true" />
-        {campaign.startsWith("landing-") && (
+        {shade && <div className="campaign-shade" aria-hidden="true" />}
+        {shade && campaign.startsWith("landing-") && (
           <div className="campaign-bottom-shade" aria-hidden="true" />
         )}
-        <div className="campaign-copy">
-          {layout === "strip" && (
+        {(words || button) && <div className="campaign-copy">
+          {words && layout === "strip" && (
             <span className="campaign-ornament" data-campaign-ornament aria-hidden="true">
               <i />
               <svg data-strip-rosette viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.3">
@@ -166,29 +170,55 @@ export async function CampaignBanner({
               <i />
             </span>
           )}
-          {data.label && <p className="campaign-label">{data.label}</p>}
-          <h2>
-            {data.headline.map((line) => (
-              <span key={line}>{line}</span>
-            ))}
-          </h2>
-          {data.supporting && (
+          {words && data.label.trim() && <p className="campaign-label">{data.label}</p>}
+          {words && headline.length > 0 && (
+            <h2>
+              {headline.map((line, index) => (
+                <span key={index}>{line}</span>
+              ))}
+            </h2>
+          )}
+          {words && data.supporting?.trim() && (
             <p className="campaign-supporting">{data.supporting}</p>
           )}
-          {data.offer.length > 0 && (
+          {words && offer.length > 0 && (
             <p className="campaign-offer">
-              {data.offer.map((line) => (
-                <span key={line}>{line}</span>
+              {offer.map((line, index) => (
+                <span key={index}>{line}</span>
               ))}
             </p>
           )}
-          {data.eligibility && <p className="campaign-eligibility">{data.eligibility}</p>}
-          <Link className="campaign-cta" href={data.href} data-fill-button="">
-            {data.cta}
-            <span aria-hidden="true"> →</span>
-          </Link>
-        </div>
-      </div>
+          {words && data.eligibility.trim() && <p className="campaign-eligibility">{data.eligibility}</p>}
+          {button && (
+            <Link className="campaign-cta" href={data.href} data-fill-button="">
+              {data.cta}
+              <span aria-hidden="true"> →</span>
+            </Link>
+          )}
+        </div>}
+    </>
+  );
+  const banner = (
+    <section
+      className={`campaign-banner${compact ? " campaign-compact" : ""}`}
+      data-campaign={campaign}
+      data-campaign-layout={layout ?? (compact ? "card" : "band")}
+      data-banner-shade={shade ? look.shade : "none"}
+      data-banner-tone={look.tone}
+      data-banner-size={look.size}
+      data-banner-font={look.font}
+      data-banner-words={words ? undefined : "none"}
+      data-banner-button={button ? undefined : "none"}
+      aria-label={name}
+      style={vars}
+    >
+      {button ? (
+        <div className="campaign-scene" data-picture-target={`campaign:${campaign}`}>{sceneChildren}</div>
+      ) : (
+        // No button: the whole banner is the link. Its words, when shown, name it; otherwise the campaign's name does.
+        <Link className="campaign-scene campaign-scene-link" href={data.href} data-picture-target={`campaign:${campaign}`}
+          aria-label={words ? undefined : name}>{sceneChildren}</Link>
+      )}
     </section>
   );
   return data.schedule ? <CampaignWindow schedule={data.schedule} serverNow={Date.now()}>{banner}</CampaignWindow> : banner;

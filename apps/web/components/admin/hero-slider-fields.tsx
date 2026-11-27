@@ -17,6 +17,7 @@ import { resolveTemplateMedia } from "@/lib/template-media-defaults";
 import { cn } from "@/lib/utils";
 import { Notice } from "./crm-primitives";
 import type { StaffSession } from "./dashboard";
+import { Choice, FontChoice } from "./banner-look-fields";
 import { Field } from "./field";
 import { filmPoster } from "./film-poster";
 import { ActionButton, CheckField, ConfirmPanel, MoveButtons, RemoveButton, SelectField, Subsection, focusRing, swap } from "./kit";
@@ -77,20 +78,6 @@ const linkSuggestions: readonly (readonly [string, string])[] = [
   ["/tables", "Tables"], ["/collections/beds", "Beds"], ["/collections/all", "All furniture"], ["/our-story", "Our story"],
 ];
 
-/** A row of choices, one pressed: for a slide's kind and the words' colour, shade and size. */
-function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: readonly (readonly [T, string])[]; onChange: (value: T) => void }) {
-  const id = useId();
-  return <div role="group" aria-labelledby={id} className="grid min-w-0 gap-1.5">
-    <span id={id} className="text-xs font-medium text-foreground">{label}</span>
-    <div className="inline-flex w-fit max-w-full flex-wrap gap-0.5 rounded-full bg-black/[0.06] p-[3px]">
-      {options.map(([option, text]) => (
-        <button key={option} type="button" aria-pressed={value === option} onClick={() => onChange(option)}
-          className={cn("h-7 rounded-full px-3 text-xs font-semibold text-muted-foreground transition-colors duration-150 ease-admin hover:text-foreground",
-            focusRing, "aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-xs")}>{text}</button>
-      ))}
-    </div>
-  </div>;
-}
 
 /** Nine places for the words, laid out as they sit on the slide; each shows two lines of words where they would go. */
 function PositionGrid({ name, value, onChange }: { name: string; value: HeroCaptionPosition; onChange: (value: HeroCaptionPosition) => void }) {
@@ -397,6 +384,7 @@ function SlideCard({ row, index, count, open, onOpen, update, onMove, onDuplicat
             <Choice label="Shade behind them" value={caption.shade} options={[["none", "None"], ["soft", "Soft"], ["strong", "Strong"]] as const} onChange={value => setCaption("shade", value)} />
             <Choice label="Headline size" value={caption.size} options={[["small", "Small"], ["medium", "Medium"], ["large", "Large"]] as const} onChange={value => setCaption("size", value)} />
           </div>
+          <FontChoice value={caption.font ?? "modern"} onChange={value => setCaption("font", value)} />
           <p className="text-xs text-muted-foreground">Light words read best on a darker picture, dark words on a lighter one. The live preview shows this slide as you change it.</p>
         </fieldset>
       </div>

@@ -169,6 +169,7 @@ export function Hero({
                 data-caption-tone={slide.caption.tone}
                 data-caption-shade={words ? slide.caption.shade : "none"}
                 data-caption-size={slide.caption.size}
+                data-banner-font={slide.caption.font ?? "modern"}
                 data-picture-target={slide.target}
                 data-active={i === 0 ? "true" : undefined}
                 role={many ? "group" : undefined}

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import type { CollectionBannerDisplay, CollectionFacets } from "@shopmaple/contracts";
+import { defaultCollectionBannerLook, type CollectionBannerDisplay, type CollectionBannerLook, type CollectionFacets } from "@shopmaple/contracts";
 import type { CollectionIntroCopy } from "@/lib/collection-intro";
 import { getContentImageProps } from "@/components/content-image";
 import { SiteWord } from "@/components/site-words";
@@ -9,7 +9,7 @@ import { ProductImage } from "./product-image";
 /** The collection's first piece with a photo, which the banner shows until staff choose a picture of their own. */
 export type CollectionCover = NonNullable<CollectionFacets["cover"]> & { width?: number; position?: string };
 /** The picture staff chose for this collection's banner on the Artwork screen, and how it shows. */
-export type CollectionBannerPicture = { image: string; mobileImage?: string; alt: string; display: CollectionBannerDisplay };
+export type CollectionBannerPicture = { image: string; mobileImage?: string; alt: string; display: CollectionBannerDisplay; look?: CollectionBannerLook };
 
 /** The category pages' banner sizes (components/category-landing.tsx), so the browser fetches no bigger a file than shown. */
 const sizes = "(min-width: 1440px) 1360px, (max-width: 749px) calc(100vw - 32px), calc(100vw - 80px)";
@@ -58,9 +58,13 @@ export function CollectionBanner({ title, crumb, intro, cover, slot, picture }: 
 }) {
   const whole = picture?.display === "banner";
   const photo = picture ? "chosen" : cover?.image ? "piece" : "none";
+  // How the words read over a photo staff chose (Artwork screen; owner, 25 Nov 2026): the shade, light or dark words, their
+  // size and type style. Over the collection's own product photo, or no photo, the banner keeps the theme's look.
+  const look = picture && !whole ? { ...defaultCollectionBannerLook, ...picture.look } : null;
   return (
     <div className="landing-banner-frame home-container" data-landing-banner="inset">
       <section data-store data-collection-banner={whole ? "banner" : "words"} data-banner-photo={photo} data-media-slot-area={slot}
+        data-banner-shade={look?.shade} data-banner-tone={look?.tone} data-banner-size={look?.size} data-banner-font={look?.font}
         aria-labelledby="collection-banner-title" className="collection-banner">
         {whole ? (
           <>
@@ -76,7 +80,7 @@ export function CollectionBanner({ title, crumb, intro, cover, slot, picture }: 
                 <ProductImage src={cover.image} alt="" fill preload sizes={sizes} />
               </div>
             ) : <Rosette />}
-            <div className="collection-banner-shade" aria-hidden="true" />
+            {look?.shade !== "none" && <div className="collection-banner-shade" aria-hidden="true" />}
             <div className="collection-banner-copy">
               <nav aria-label="Breadcrumb" className="collection-banner-trail">
                 <ol>

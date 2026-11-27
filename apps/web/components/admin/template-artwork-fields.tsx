@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import {
-  templateMediaDecorativeKeys, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys,
+  defaultCollectionBannerLook, templateMediaDecorativeKeys, templateMediaPhoneOptionalKeys, templateMediaResponsiveKeys,
   type CollectionBannerDisplay, type TemplateMedia, type TemplateMediaItem, type TemplateMediaKey,
 } from "@shopmaple/contracts";
 import { resolveTemplateMedia, templateMediaSlots } from "@/lib/template-media-defaults";
@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { Notice } from "./crm-primitives";
+import { WordsLookFields } from "./banner-look-fields";
 import type { StaffSession } from "./dashboard";
 import { Field } from "./field";
 import { ActionButton, FieldGrid, PanelHeader, Prose, SectionHeading, SelectField } from "./kit";
@@ -67,10 +68,12 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
   // A collection page's banner (owner, 20 Nov 2026): a wide picture, an optional square one for phones, and how it shows.
   const banner = templateMediaPhoneOptionalKeys.some(key => key === selected);
   const overridden = value?.some(item => item.key === selected) ?? false;
-  function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt" | "display">>) {
+  function update(patch: Partial<Pick<TemplateMediaItem, "image" | "mobileImage" | "alt" | "display" | "look">>) {
     const next: TemplateMediaItem = { ...artwork, ...patch };
     // An optional phone picture that was cleared is no phone picture.
     if (banner && !next.mobileImage) delete next.mobileImage;
+    // The words' look belongs to a photo behind the words; a whole banner has none.
+    if (next.display !== "photo") delete next.look;
     onChange(overridden ? value!.map(item => item.key === selected ? next : item) : [...(value ?? []), next]);
   }
   return (
@@ -123,6 +126,9 @@ export function ArtworkSlots({ value, onChange, session, onExpired, keys, group,
           <Prose className="text-xs">{artwork.image
             ? "Choose “A photo” for a picture without words: the page writes the collection's name and line over it, on Maple's burgundy."
             : "Until you choose a picture, the banner writes the collection's name and line on Maple's burgundy, over its first product photo."}</Prose>
+          {artwork.image && artwork.display === "photo" && <div className="mt-3">
+            <WordsLookFields value={{ ...defaultCollectionBannerLook, ...artwork.look }} onChange={look => update({ look })} />
+          </div>}
         </div>}
         <div className="grid gap-2 border-t border-line-soft pt-5">
           <Field label="Image description" value={artwork.alt} maxLength={200} onChange={alt => update({ alt })} />

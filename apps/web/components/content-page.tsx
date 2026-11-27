@@ -11,7 +11,9 @@ export function ContentPage({ page }: { page: Page }) {
         {page.description && <p>{page.description}</p>}
       </header>
       {page.banner && (
-        <Link className="content-page-banner" href={page.banner.href} data-picture-target={`page-banner:${page.slug}`}>
+        // The button's words are optional (owner, 25 Nov 2026): a finished banner can carry its own; the banner is still the link.
+        <Link className="content-page-banner" href={page.banner.href} data-picture-target={`page-banner:${page.slug}`}
+          data-banner-button={page.banner.label.trim() ? undefined : "none"}>
           <picture>
             <source
               media="(max-width:749px)"
@@ -25,7 +27,7 @@ export function ContentPage({ page }: { page: Page }) {
               sizes="100vw"
             />
           </picture>
-          <span>{page.banner.label}</span>
+          {page.banner.label.trim() && <span>{page.banner.label}</span>}
         </Link>
       )}
       <div className={page.content || page.blocks ? "content-page-copy store-prose" : "content-page-copy"}>
