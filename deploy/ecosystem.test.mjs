@@ -15,3 +15,11 @@ test("the store web process caps its heap well below PM2's memory restart", () =
   assert.ok(cap + 256 <= megabytes(web.max_memory_restart), `heap cap ${cap} MB leaves too little room under ${web.max_memory_restart}`);
   assert.match(web.node_args, /--env-file=\/home\/deploy\/shopmaple\/shared\/store\.env/);
 });
+
+// The heap cap did not stop the restarts: the growth was native memory spread over about 20 glibc allocator arenas
+// (image resizing threads and Node's thread pool), which glibc rarely returns to the system (24 Nov 2026).
+test("the store web process keeps glibc to two allocator arenas", () => {
+  const web = apps.find((app) => app.name === "shopmaple-web");
+  assert.equal(web.env.MALLOC_ARENA_MAX, "2");
+  assert.equal(web.env.NODE_ENV, "production");
+});
