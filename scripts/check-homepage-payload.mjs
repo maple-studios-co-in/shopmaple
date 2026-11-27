@@ -58,7 +58,9 @@ assert.deepEqual(rows.flatMap(row => row.matches.map(value => ({ path: row.path,
 // 24 Nov 2026: 298,604 raw after staff-added policies, blogs and articles (#172): the content every page loads gained
 // their fields and addresses. Raised by 2,000 bytes for that (owner's yes). Sending those words only to the pages that
 // show them is the same follow-up as the collection words above.
-assert.ok(totalRaw <= 299_500, `Initial homepage JavaScript exceeds the 299,500-byte raw budget: ${totalRaw}`);
+// 27 Nov 2026: 299,593 raw after the banners' look controls (#174): the content every page loads gained each banner's
+// look and its choices. Raised by 1,000 bytes for that (owner's yes); gzip (90,225) is within its budget, unchanged below.
+assert.ok(totalRaw <= 300_500, `Initial homepage JavaScript exceeds the 300,500-byte raw budget: ${totalRaw}`);
 // 3 Nov 2026: 80,159 gzip after #100 loads Shopify photos from Shopify's resizer with one retry and a fade-in on every
 // card photo (the mega menu's promise strip now loads only when the menu opens). Raised by 1,000 bytes for that; the
 // registry-leak check above is unchanged and still the main guard.
